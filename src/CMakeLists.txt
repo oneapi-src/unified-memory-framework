@@ -6,6 +6,10 @@ set(UMF_SOURCES
     memory_pool.c
     memory_provider.c
     memory_provider_get_last_failed.c
+    pool/pool_null.c
+    pool/pool_trace.c
+    provider/provider_null.c
+    provider/provider_trace.c
 )
 
 if(MSVC)
