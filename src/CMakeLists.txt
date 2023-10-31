@@ -53,6 +53,7 @@ set(BA_SOURCES
 
 set(UMF_SOURCES
     ${BA_SOURCES}
+    ipc.c
     memory_pool.c
     memory_provider.c
     memory_provider_get_last_failed.c

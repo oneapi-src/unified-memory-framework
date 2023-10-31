@@ -10,22 +10,30 @@ VERSION 1.0
 
 EXPORTS
     DllMain
+    umfCloseIPCHandle
     umfFree
+    umfGetIPCHandle
     umfGetLastFailedMemoryProvider
     umfMemoryProviderAlloc
     umfMemoryProviderAllocationMerge
     umfMemoryProviderAllocationSplit
+    umfMemoryProviderCloseIPCHandle
     umfMemoryProviderCreate
     umfMemoryProviderCreateFromMemspace
     umfMemoryProviderDestroy
     umfMemoryProviderFree
+    umfMemoryProviderGetIPCHandle
+    umfMemoryProviderGetIPCHandleSize
     umfMemoryProviderGetLastNativeError
     umfMemoryProviderGetMinPageSize
     umfMemoryProviderGetName
     umfMemoryProviderGetRecommendedPageSize
+    umfMemoryProviderOpenIPCHandle
     umfMemoryProviderPurgeForce
     umfMemoryProviderPurgeLazy
+    umfMemoryProviderPutIPCHandle
     umfMemspaceDestroy
+    umfOpenIPCHandle
     umfPoolAlignedMalloc
     umfPoolByPtr
     umfPoolCalloc
@@ -39,4 +47,5 @@ EXPORTS
     umfPoolMallocUsableSize
     umfPoolRealloc
     umfProxyPoolOps
+    umfPutIPCHandle
     umfOsMemoryProviderOps

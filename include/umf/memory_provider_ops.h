@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023 Intel Corporation
+ * Copyright (C) 2023-2024 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -75,6 +75,61 @@ typedef struct umf_memory_provider_ext_ops_t {
                                      size_t totalSize, size_t firstSize);
 
 } umf_memory_provider_ext_ops_t;
+
+///
+/// @brief This structure comprises optional IPC API. The API allows sharing of
+/// memory objects across different processes. A memory provider implementation can keep them NULL.
+///
+typedef struct umf_memory_provider_ipc_ops_t {
+    ///
+    /// @brief Retrieve the size of opaque data structure required to store IPC data.
+    /// @param provider pointer to the memory provider.
+    /// @param size [out] pointer to the size.
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+    ///         UMF_RESULT_ERROR_NOT_SUPPORTED if IPC functionality is not supported by this provider.
+    umf_result_t (*get_ipc_handle_size)(void *provider, size_t *size);
+
+    ///
+    /// @brief Retrieve an IPC memory handle for the specified allocation.
+    /// @param provider pointer to the memory provider.
+    /// @param ptr beginning of the virtual memory range.
+    /// @param size size of the memory address range.
+    /// @param providerIpcData [out] pointer to the preallocated opaque data structure to store IPC handle.
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+    ///         UMF_RESULT_ERROR_INVALID_ARGUMENT if ptr was not allocated by this provider.
+    ///         UMF_RESULT_ERROR_NOT_SUPPORTED if IPC functionality is not supported by this provider.
+    umf_result_t (*get_ipc_handle)(void *provider, const void *ptr, size_t size,
+                                   void *providerIpcData);
+
+    ///
+    /// @brief Release IPC handle retrieved with get_ipc_handle function.
+    /// @param provider pointer to the memory provider.
+    /// @param providerIpcData pointer to the IPC opaque data structure.
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+    ///         UMF_RESULT_ERROR_INVALID_ARGUMENT if providerIpcData was not created by this provider.
+    ///         UMF_RESULT_ERROR_NOT_SUPPORTED if IPC functionality is not supported by this provider.
+    umf_result_t (*put_ipc_handle)(void *provider, void *providerIpcData);
+
+    ///
+    /// @brief Open IPC handle.
+    /// @param provider pointer to the memory provider.
+    /// @param providerIpcData pointer to the IPC opaque data structure.
+    /// @param ptr [out] pointer to the memory to be used in the current process.
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+    ///         UMF_RESULT_ERROR_INVALID_ARGUMENT if providerIpcData cannot be handled by the provider.
+    ///         UMF_RESULT_ERROR_NOT_SUPPORTED if IPC functionality is not supported by this provider.
+    umf_result_t (*open_ipc_handle)(void *provider, void *providerIpcData,
+                                    void **ptr);
+
+    ///
+    /// @brief Closes an IPC memory handle.
+    /// @param provider pointer to the memory provider.
+    /// @param ptr pointer to the memory retrieved with open_ipc_handle function.
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+    ///         UMF_RESULT_ERROR_INVALID_ARGUMENT if invalid \p ptr is passed.
+    ///         UMF_RESULT_ERROR_NOT_SUPPORTED if IPC functionality is not supported by this provider.
+    umf_result_t (*close_ipc_handle)(void *provider, void *ptr);
+} umf_memory_provider_ipc_ops_t;
 
 ///
 /// @brief This structure comprises function pointers used by corresponding
@@ -180,6 +235,11 @@ typedef struct umf_memory_provider_ops_t {
     /// @brief Optional ops
     ///
     umf_memory_provider_ext_ops_t ext;
+
+    ///
+    /// @brief Optional IPC ops. The API allows sharing of memory objects across different processes.
+    ///
+    umf_memory_provider_ipc_ops_t ipc;
 } umf_memory_provider_ops_t;
 
 #ifdef __cplusplus

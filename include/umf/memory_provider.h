@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023 Intel Corporation
+ * Copyright (C) 2023-2024 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -135,6 +135,65 @@ umf_result_t umfMemoryProviderPurgeLazy(umf_memory_provider_handle_t hProvider,
 ///
 umf_result_t umfMemoryProviderPurgeForce(umf_memory_provider_handle_t hProvider,
                                          void *ptr, size_t size);
+
+///
+/// @brief Retrieve the size of opaque data structure required to store IPC data.
+/// \param hProvider [in] handle to the memory provider.
+/// \param size [out] pointer to the size.
+/// \return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+///         UMF_RESULT_ERROR_NOT_SUPPORTED if IPC functionality is not supported by this provider.
+umf_result_t
+umfMemoryProviderGetIPCHandleSize(umf_memory_provider_handle_t hProvider,
+                                  size_t *size);
+
+///
+/// @brief Retrieve an IPC memory handle for the specified allocation.
+/// \param hProvider [in] handle to the memory provider.
+/// \param ptr [in] beginning of the virtual memory range returned by
+///                 umfMemoryProviderAlloc function.
+/// \param size [in] size of the memory address range.
+/// \param providerIpcData [out] pointer to the preallocated opaque data structure to store IPC handle.
+/// \return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+///         UMF_RESULT_ERROR_INVALID_ARGUMENT if ptr was not allocated by this provider.
+///         UMF_RESULT_ERROR_NOT_SUPPORTED if IPC functionality is not supported by this provider.
+umf_result_t
+umfMemoryProviderGetIPCHandle(umf_memory_provider_handle_t hProvider,
+                              const void *ptr, size_t size,
+                              void *providerIpcData);
+
+///
+/// @brief Release IPC handle retrieved with get_ipc_handle function.
+/// @param hProvider [in] handle to the memory provider.
+/// @param providerIpcData [in] pointer to the IPC opaque data structure.
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+///         UMF_RESULT_ERROR_INVALID_ARGUMENT if providerIpcData was not created by this provider.
+///         UMF_RESULT_ERROR_NOT_SUPPORTED if IPC functionality is not supported by this provider.
+umf_result_t
+umfMemoryProviderPutIPCHandle(umf_memory_provider_handle_t hProvider,
+                              void *providerIpcData);
+
+///
+/// @brief Open IPC handle.
+/// @param hProvider [in] handle to the memory provider.
+/// @param providerIpcData [in] pointer to the IPC opaque data structure.
+/// @param ptr [out] pointer to the memory to be used in the current process.
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+///         UMF_RESULT_ERROR_INVALID_ARGUMENT if providerIpcData cannot be handled by the provider.
+///         UMF_RESULT_ERROR_NOT_SUPPORTED if IPC functionality is not supported by this provider.
+umf_result_t
+umfMemoryProviderOpenIPCHandle(umf_memory_provider_handle_t hProvider,
+                               void *providerIpcData, void **ptr);
+
+///
+/// @brief Close an IPC memory handle.
+/// @param hProvider [in] handle to the memory provider.
+/// @param ptr [in] pointer returned by umfMemoryProviderOpenIPCHandle function.
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+///         UMF_RESULT_ERROR_INVALID_ARGUMENT if invalid \p hProvider or \p ptr are passed.
+///         UMF_RESULT_ERROR_NOT_SUPPORTED if IPC functionality is not supported by this provider.
+umf_result_t
+umfMemoryProviderCloseIPCHandle(umf_memory_provider_handle_t hProvider,
+                                void *ptr);
 
 ///
 /// @brief Retrieve name of a given memory \p hProvider.

@@ -614,7 +614,12 @@ static umf_memory_provider_ops_t UMF_OS_MEMORY_PROVIDER_OPS = {
     .ext.purge_lazy = os_purge_lazy,
     .ext.purge_force = os_purge_force,
     .ext.allocation_merge = os_allocation_merge,
-    .ext.allocation_split = os_allocation_split};
+    .ext.allocation_split = os_allocation_split,
+    .ipc.get_ipc_handle_size = NULL,
+    .ipc.get_ipc_handle = NULL,
+    .ipc.put_ipc_handle = NULL,
+    .ipc.open_ipc_handle = NULL,
+    .ipc.close_ipc_handle = NULL};
 
 umf_memory_provider_ops_t *umfOsMemoryProviderOps(void) {
     return &UMF_OS_MEMORY_PROVIDER_OPS;
