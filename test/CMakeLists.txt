@@ -2,6 +2,9 @@
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED YES)
+
 include(FetchContent)
 FetchContent_Declare(
   googletest
@@ -32,3 +35,5 @@ function(add_umf_test name)
 endfunction()
 
 add_umf_test(base base.cpp)
+add_umf_test(memoryPool memoryPoolAPI.cpp test_helpers.c)
+add_umf_test(memoryProvider memoryProviderAPI.cpp test_helpers.c)
