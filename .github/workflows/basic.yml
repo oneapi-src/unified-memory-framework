@@ -1,0 +1,37 @@
+name: Build and test
+
+on: [push, pull_request]
+
+jobs:
+  ubuntu-build:
+    name: Build - ubuntu
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Install apt packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang git cmake python3-pip
+
+      - name: Install pip packages
+        run: |
+          pip3 install clang-format==15.0.7
+
+      # TODO: fix formatting issues
+      # - name: Run code-style check
+      #   run: |
+      #     output=$(find . -path "./build" -prune -false -o -regex '.*\.\(cpp\|h\|c\|hpp\|cc\|cxx\)' -exec clang-format -style=file --dry-run -Werror {} \; 2>&1 >/dev/null)
+      #     if [[ $output != "" ]]; then echo "$output" && exit 1; fi
+
+      - name: Build UMF and run tests
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Debug
+          make -j$(nproc)
+          ctest --output-on-failure
