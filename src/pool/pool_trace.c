@@ -18,7 +18,7 @@ struct trace_pool {
 };
 
 static enum umf_result_t
-traceInitialize(umf_memory_provider_handle_t *providers, size_t numProviders,
+traceInitialize(umf_memory_provider_handle_t provider,
                 void *params, void **pool)
 {
     struct trace_pool *trace_pool =
@@ -30,9 +30,8 @@ traceInitialize(umf_memory_provider_handle_t *providers, size_t numProviders,
     trace_pool->params.hUpstreamPool = pub_params->hUpstreamPool;
     trace_pool->params.trace = pub_params->trace;
 
-    (void)providers;
-    (void)numProviders;
-    assert(providers && numProviders);
+    (void)provider;
+    assert(provider);
 
     *pool = trace_pool;
     return UMF_RESULT_SUCCESS;

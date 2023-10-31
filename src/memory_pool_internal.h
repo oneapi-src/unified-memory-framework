@@ -22,11 +22,8 @@ struct umf_memory_pool_t {
     void *pool_priv;
     struct umf_memory_pool_ops_t ops;
 
-    // Holds array of memory providers. All providers are wrapped
-    // by memory tracking providers (owned and released by UMF).
-    umf_memory_provider_handle_t *providers;
-
-    size_t numProviders;
+    // Memory provider used by the pool.
+    umf_memory_provider_handle_t provider;
 };
 
 #ifdef __cplusplus

@@ -9,13 +9,12 @@
 #include <umf/memory_pool_ops.h>
 #include <pool/pool_null.h>
 
-static enum umf_result_t nullInitialize(umf_memory_provider_handle_t *providers,
-                                        size_t numProviders, void *params,
+static enum umf_result_t nullInitialize(umf_memory_provider_handle_t provider,
+                                        void *params,
                                         void **pool) {
-    (void)providers;
-    (void)numProviders;
+    (void)provider;
     (void)params;
-    assert(providers && numProviders);
+    assert(provider);
     *pool = NULL;
     return UMF_RESULT_SUCCESS;
 }
