@@ -3,13 +3,14 @@
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 set(UMF_SOURCES
+    critnib/critnib.c
     memory_pool.c
     memory_provider.c
     memory_provider_get_last_failed.c
     pool/disjoint/pool_disjoint.cpp
     pool/disjoint/pool_disjoint_impl.cpp
     provider/provider_tracking.c
-    critnib/critnib.c
+    provider/provider_fixed.c
 )
 
 if(MSVC)
