@@ -5,13 +5,14 @@
 include(${UMF_CMAKE_SOURCE_DIR}/cmake/helpers.cmake)
 
 set(UMF_SOURCES
+    critnib/critnib.c
     memory_pool.c
     memory_provider.c
     memory_provider_get_last_failed.c
     pool/pool_disjoint.cpp
     provider/provider_os_memory.c
     provider/provider_tracking.c
-    critnib/critnib.c
+    provider/provider_fixed.c
 )
 
 set(UMF_SOURCES_LINUX
