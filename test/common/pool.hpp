@@ -36,8 +36,8 @@ auto makePoolWithOOMProvider(int allocNum, Args &&...args) {
     auto [ret, provider] =
         umf::memoryProviderMakeUnique<provider_mock_out_of_mem>(allocNum);
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
-    auto [retp, pool] = umf::poolMakeUnique<T, 1, Args...>(
-        {std::move(provider)}, std::forward<Args>(args)...);
+    auto [retp, pool] = umf::poolMakeUnique<T, Args...>(
+        std::move(provider), std::forward<Args>(args)...);
     EXPECT_EQ(retp, UMF_RESULT_SUCCESS);
     return std::move(pool);
 }
@@ -84,7 +84,7 @@ bool isCallocSupported(umf_memory_pool_handle_t hPool) {
 }
 
 struct pool_base {
-    umf_result_t initialize(umf_memory_provider_handle_t *, size_t) noexcept {
+    umf_result_t initialize(umf_memory_provider_handle_t) noexcept {
         return UMF_RESULT_SUCCESS;
     };
     void *malloc([[maybe_unused]] size_t size) noexcept { return nullptr; }
@@ -130,9 +130,8 @@ struct malloc_pool : public pool_base {
 };
 
 struct proxy_pool : public pool_base {
-    umf_result_t initialize(umf_memory_provider_handle_t *providers,
-                            [[maybe_unused]] size_t numProviders) noexcept {
-        this->provider = providers[0];
+    umf_result_t initialize(umf_memory_provider_handle_t provider) noexcept {
+        this->provider = provider;
         return UMF_RESULT_SUCCESS;
     }
     void *malloc(size_t size) noexcept { return aligned_malloc(size, 0); }
