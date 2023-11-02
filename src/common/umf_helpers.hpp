@@ -2,8 +2,7 @@
  *
  * Copyright (C) 2023 Intel Corporation
  *
- * Part of the Unified-Runtime Project, under the Apache License v2.0 with LLVM Exceptions.
- * See LICENSE.TXT
+ * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
@@ -71,8 +70,8 @@ umf_memory_pool_ops_t poolMakeUniqueOps() {
     umf_memory_pool_ops_t ops;
 
     ops.version = UMF_VERSION_CURRENT;
-    ops.initialize = [](umf_memory_provider_handle_t *providers,
-                        size_t numProviders, void *params, void **obj) {
+    ops.initialize = [](umf_memory_provider_handle_t provider,
+                        void *params, void **obj) {
         try {
             *obj = new T;
         } catch (...) {
@@ -81,7 +80,7 @@ umf_memory_pool_ops_t poolMakeUniqueOps() {
 
         return detail::initialize<T>(
             reinterpret_cast<T *>(*obj),
-            std::tuple_cat(std::make_tuple(providers, numProviders),
+            std::tuple_cat(std::make_tuple(provider),
                            *reinterpret_cast<ArgsTuple *>(params)));
     };
     ops.finalize = [](void *obj) { delete reinterpret_cast<T *>(obj); };
