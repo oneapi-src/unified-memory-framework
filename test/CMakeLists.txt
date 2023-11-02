@@ -35,5 +35,5 @@ function(add_umf_test name)
 endfunction()
 
 add_umf_test(base base.cpp)
-add_umf_test(memoryPool memoryPoolAPI.cpp test_helpers.c)
-add_umf_test(memoryProvider memoryProviderAPI.cpp test_helpers.c)
+add_umf_test(memoryPool memoryPoolAPI.cpp common/test_helpers.c)
+add_umf_test(memoryProvider memoryProviderAPI.cpp common/test_helpers.c)
