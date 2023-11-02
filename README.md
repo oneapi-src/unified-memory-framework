@@ -5,8 +5,7 @@
 ### Requirements
 
 Required packages:
-- C compiler
-- only for tests: C++ compiler with C++17 support
+- C++ compiler with C++17 support
 - [CMake](https://cmake.org/) >= 3.14.0
 
 ### Windows
