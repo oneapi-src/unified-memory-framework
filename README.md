@@ -1,5 +1,7 @@
 # Unified Memory Framework
 
+[![GHA build status](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/basic.yml/badge.svg?branch=main)](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/basic.yml)
+
 ## Building
 
 ### Requirements
