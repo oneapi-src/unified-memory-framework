@@ -9,7 +9,7 @@
 #include <memory>
 #include <string>
 
-#include "umf_helpers.hpp"
+#include "umf.h"
 
 namespace usm {
 

@@ -22,6 +22,7 @@
 #include <iostream>
 
 #include "pool_disjoint_impl.hpp"
+#include "umf_helpers.hpp"
 
 namespace usm {
 
