@@ -24,16 +24,14 @@ struct umf_memory_pool_ops_t;
 ///
 /// \brief Creates new memory pool.
 /// \param ops instance of umf_memory_pool_ops_t
-/// \param providers array of memory providers that will be used for coarse-grain allocations.
-///        Should contain at least one memory provider.
-/// \param numProvider number of elements in the providers array
+/// \param provider memory provider that will be used for coarse-grain allocations.
 /// \param params pointer to pool-specific parameters
 /// \param hPool [out] handle to the newly created memory pool
 /// \return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 ///
 enum umf_result_t umfPoolCreate(const struct umf_memory_pool_ops_t *ops,
-                                umf_memory_provider_handle_t *providers,
-                                size_t numProviders, void *params,
+                                umf_memory_provider_handle_t provider,
+                                void *params,
                                 umf_memory_pool_handle_t *hPool);
 
 ///
@@ -135,17 +133,14 @@ enum umf_result_t umfPoolGetLastAllocationError(umf_memory_pool_handle_t hPool);
 umf_memory_pool_handle_t umfPoolByPtr(const void *ptr);
 
 ///
-/// \brief Retrieve memory providers associated with a given pool.
+/// \brief Retrieve memory provider associated with a given pool.
 /// \param hPool specified memory pool
-/// \param hProviders [out] pointer to an array of memory providers. If numProviders is not equal to or
-///        greater than the real number of providers, UMF_RESULT_ERROR_INVALID_ARGUMENT is returned.
-/// \param numProviders [in] number of memory providers to return
-/// \param numProvidersRet pointer to the actual number of memory providers
+/// \param hProvider [out] memory providers handle.
 /// \return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+///         UMF_RESULT_ERROR_INVALID_ARGUMENT if hProvider is NULL
 enum umf_result_t
-umfPoolGetMemoryProviders(umf_memory_pool_handle_t hPool, size_t numProviders,
-                          umf_memory_provider_handle_t *hProviders,
-                          size_t *numProvidersRet);
+umfPoolGetMemoryProvider(umf_memory_pool_handle_t hPool,
+                          umf_memory_provider_handle_t *hProvider);
 
 #ifdef __cplusplus
 }

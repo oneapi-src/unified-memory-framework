@@ -33,8 +33,8 @@ struct umf_memory_pool_ops_t {
     /// \param params pool-specific params
     /// \param pool [out] returns pointer to the pool
     /// \return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
-    enum umf_result_t (*initialize)(umf_memory_provider_handle_t *providers,
-                                    size_t numProviders, void *params,
+    enum umf_result_t (*initialize)(umf_memory_provider_handle_t provider,
+                                    void *params,
                                     void **pool);
 
     ///
