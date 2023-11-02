@@ -14,13 +14,12 @@
 #include "pool_disjoint.hpp"
 
 struct disjoint_memory_pool {
-    umf_memory_provider_handle_t mem_provider;
     usm::DisjointPool *disjoint_pool;
 };
 
 enum umf_result_t
-disjoint_pool_initialize(umf_memory_provider_handle_t *providers,
-                         size_t numProviders, void *params, void **pool) {
+disjoint_pool_initialize(umf_memory_provider_handle_t provider,
+                         void *params, void **pool) {
     struct umf_disjoint_pool_params *pub_params = (struct umf_disjoint_pool_params *)params;
     usm::DisjointPoolConfig config{};
     config.SlabMinSize = pub_params->SlabMinSize;
@@ -38,9 +37,8 @@ disjoint_pool_initialize(umf_memory_provider_handle_t *providers,
         abort();
     }
 
-    pool_data->mem_provider = providers[0];
     pool_data->disjoint_pool = new usm::DisjointPool();
-    pool_data->disjoint_pool->initialize(providers, numProviders, config);
+    pool_data->disjoint_pool->initialize(provider, config);
 
     *pool = (void *)pool_data;
 

@@ -60,8 +60,8 @@ class DisjointPool {
     class AllocImpl;
     using Config = DisjointPoolConfig;
 
-    umf_result_t initialize(umf_memory_provider_handle_t *providers,
-                            size_t numProviders, DisjointPoolConfig parameters);
+    umf_result_t initialize(umf_memory_provider_handle_t provider,
+                            DisjointPoolConfig parameters);
     void *malloc(size_t size);
     void *calloc(size_t, size_t);
     void *realloc(void *, size_t);
