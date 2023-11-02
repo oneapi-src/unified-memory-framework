@@ -29,7 +29,7 @@ TEST_F(test, memoryPoolTrace) {
     auto provider = tracingProvider.get();
 
     auto [ret, proxyPool] =
-        umf::poolMakeUnique<umf_test::proxy_pool>(&provider, 1);
+        umf::poolMakeUnique<umf_test::proxy_pool>(provider);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 
     umf_memory_provider_handle_t providerDesc = nullProviderCreate();
@@ -87,71 +87,56 @@ TEST_F(test, memoryPoolTrace) {
     umfMemoryProviderDestroy(providerDesc);
 }
 
-TEST_F(test, memoryPoolWithCustomProviders) {
-    umf_memory_provider_handle_t providers[] = {nullProviderCreate(),
-                                                nullProviderCreate()};
+TEST_F(test, memoryPoolWithCustomProvider) {
+    umf_memory_provider_handle_t provider = nullProviderCreate();
 
     struct pool : public umf_test::pool_base {
-        umf_result_t initialize(umf_memory_provider_handle_t *providers,
-                                size_t numProviders) noexcept {
-            EXPECT_NE_NOEXCEPT(providers, nullptr);
-            EXPECT_EQ_NOEXCEPT(numProviders, 2);
+        umf_result_t initialize(umf_memory_provider_handle_t provider) noexcept {
+            EXPECT_NE_NOEXCEPT(provider, nullptr);
             return UMF_RESULT_SUCCESS;
         }
     };
 
-    auto ret = umf::poolMakeUnique<pool>(providers, 2);
+    auto ret = umf::poolMakeUnique<pool>(provider);
     ASSERT_EQ(ret.first, UMF_RESULT_SUCCESS);
     ASSERT_NE(ret.second, nullptr);
 
-    for (auto &provider : providers) {
-        umfMemoryProviderDestroy(provider);
-    }
+    umfMemoryProviderDestroy(provider);
 }
 
-TEST_F(test, retrieveMemoryProviders) {
-    static constexpr size_t numProviders = 4;
-    std::array<umf_memory_provider_handle_t, numProviders> providers = {
-        (umf_memory_provider_handle_t)0x1, (umf_memory_provider_handle_t)0x2,
-        (umf_memory_provider_handle_t)0x3, (umf_memory_provider_handle_t)0x4};
+TEST_F(test, retrieveMemoryProvider) {
+    umf_memory_provider_handle_t provider = (umf_memory_provider_handle_t)0x1;
 
-    auto [ret, pool] = umf::poolMakeUnique<umf_test::proxy_pool>(
-        providers.data(), numProviders);
+    auto [ret, pool] = umf::poolMakeUnique<umf_test::proxy_pool>(provider);
 
-    std::array<umf_memory_provider_handle_t, numProviders> retProviders;
-    size_t numProvidersRet = 0;
+    umf_memory_provider_handle_t retProvider;
 
-    ret = umfPoolGetMemoryProviders(pool.get(), 0, nullptr, &numProvidersRet);
+    ret = umfPoolGetMemoryProvider(pool.get(), &retProvider);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
-    ASSERT_EQ(numProvidersRet, numProviders);
-
-    ret = umfPoolGetMemoryProviders(pool.get(), numProviders,
-                                    retProviders.data(), nullptr);
-    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
-    ASSERT_EQ(retProviders, providers);
+    ASSERT_EQ(retProvider, provider);
 }
 
 INSTANTIATE_TEST_SUITE_P(
     mallocPoolTest, umfPoolTest, ::testing::Values([] {
-        return umf::poolMakeUnique<umf_test::malloc_pool, 1>(
-                   {umf_test::wrapProviderUnique(nullProviderCreate())})
+        return umf::poolMakeUnique<umf_test::malloc_pool>(
+                   umf_test::wrapProviderUnique(nullProviderCreate()))
             .second;
     }));
 
 INSTANTIATE_TEST_SUITE_P(
     mallocProviderPoolTest, umfPoolTest, ::testing::Values([] {
-        return umf::poolMakeUnique<umf_test::proxy_pool, 1>(
-                   {umf::memoryProviderMakeUnique<umf_test::provider_malloc>()
-                        .second})
+        return umf::poolMakeUnique<umf_test::proxy_pool>(
+                   umf::memoryProviderMakeUnique<umf_test::provider_malloc>()
+                        .second)
             .second;
     }));
 
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(umfMultiPoolTest);
 INSTANTIATE_TEST_SUITE_P(
     mallocMultiPoolTest, umfMultiPoolTest, ::testing::Values([] {
-        return umf::poolMakeUnique<umf_test::proxy_pool, 1>(
-                   {umf::memoryProviderMakeUnique<umf_test::provider_malloc>()
-                        .second})
+        return umf::poolMakeUnique<umf_test::proxy_pool>(
+                   umf::memoryProviderMakeUnique<umf_test::provider_malloc>()
+                        .second)
             .second;
     }));
 
@@ -166,15 +151,7 @@ INSTANTIATE_TEST_SUITE_P(
 ////////////////// Negative test cases /////////////////
 
 TEST_F(test, memoryPoolInvalidProvidersNullptr) {
-    auto ret = umf::poolMakeUnique<umf_test::pool_base>(nullptr, 1);
-    ASSERT_EQ(ret.first, UMF_RESULT_ERROR_INVALID_ARGUMENT);
-}
-
-TEST_F(test, memoryPoolInvalidProvidersNum) {
-    auto nullProvider = umf_test::wrapProviderUnique(nullProviderCreate());
-    umf_memory_provider_handle_t providers[] = {nullProvider.get()};
-
-    auto ret = umf::poolMakeUnique<umf_test::pool_base>(providers, 0);
+    auto ret = umf::poolMakeUnique<umf_test::pool_base>(nullptr);
     ASSERT_EQ(ret.first, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 }
 
@@ -190,31 +167,27 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST_P(poolInitializeTest, errorPropagation) {
     auto nullProvider = umf_test::wrapProviderUnique(nullProviderCreate());
-    umf_memory_provider_handle_t providers[] = {nullProvider.get()};
+    umf_memory_provider_handle_t provider = nullProvider.get();
 
     struct pool : public umf_test::pool_base {
         umf_result_t
-        initialize([[maybe_unused]] umf_memory_provider_handle_t *providers,
-                   [[maybe_unused]] size_t numProviders,
+        initialize([[maybe_unused]] umf_memory_provider_handle_t provider,
                    umf_result_t errorToReturn) noexcept {
             return errorToReturn;
         }
     };
-    auto ret = umf::poolMakeUnique<pool>(providers, 1, this->GetParam());
+    auto ret = umf::poolMakeUnique<pool>(provider, this->GetParam());
     ASSERT_EQ(ret.first, this->GetParam());
     ASSERT_EQ(ret.second, nullptr);
 }
 
 TEST_F(test, retrieveMemoryProvidersError) {
-    static constexpr size_t numProviders = 4;
-    std::array<umf_memory_provider_handle_t, numProviders> providers = {
-        (umf_memory_provider_handle_t)0x1, (umf_memory_provider_handle_t)0x2,
-        (umf_memory_provider_handle_t)0x3, (umf_memory_provider_handle_t)0x4};
+    umf_memory_provider_handle_t provider = (umf_memory_provider_handle_t)0x1;
 
     auto [ret, pool] = umf::poolMakeUnique<umf_test::proxy_pool>(
-        providers.data(), numProviders);
+        provider);
 
-    ret = umfPoolGetMemoryProviders(pool.get(), 1, providers.data(), nullptr);
+    ret = umfPoolGetMemoryProvider(pool.get(), nullptr);
     ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 }
 
@@ -259,7 +232,7 @@ TEST_F(test, getLastFailedMemoryProvider) {
 
     auto hProvider = providerUnique1.get();
 
-    auto [ret, pool] = umf::poolMakeUnique<umf_test::proxy_pool>(&hProvider, 1);
+    auto [ret, pool] = umf::poolMakeUnique<umf_test::proxy_pool>(hProvider);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 
     auto ptr = umfPoolMalloc(pool.get(), allocSize);
