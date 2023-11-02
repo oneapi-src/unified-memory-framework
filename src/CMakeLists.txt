@@ -9,7 +9,7 @@ set(UMF_SOURCES
     pool/pool_null.c
     pool/pool_trace.c
     pool/disjoint/pool_disjoint.cpp
-    pool/disjoint/pool_disjoint_heap_manager.cpp
+    pool/disjoint/pool_disjoint_impl.cpp
     provider/provider_null.c
     provider/provider_trace.c
 )
