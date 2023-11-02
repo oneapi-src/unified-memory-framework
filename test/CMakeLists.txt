@@ -54,6 +54,7 @@ add_umf_test(base base.cpp)
 add_umf_test(memoryPool memoryPoolAPI.cpp)
 add_umf_test(memoryProvider memoryProviderAPI.cpp)
 add_umf_test(disjointPool disjoint_pool.cpp)
+add_umf_test(disjointFixedMallocPool disjointFixedMallocPool.cpp)
 
 if(LINUX) # OS-specific functions are implemented only for Linux now
     add_umf_test(provider_os_memory provider_os_memory.cpp)
