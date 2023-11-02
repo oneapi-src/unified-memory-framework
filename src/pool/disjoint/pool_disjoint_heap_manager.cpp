@@ -98,15 +98,21 @@ enum umf_result_t disjoint_get_last_allocation_error(void *pool) {
     return UMF_RESULT_SUCCESS;
 }
 
+/*
+ * Do not use C++ designated initializers,
+ * because they are available starting from C++20,
+ * when [-Wpedantic] is set and they are treated
+ * as an error on Windows.
+ */
 struct umf_memory_pool_ops_t UMF_DISJOINT_POOL_OPS = {
-    .version = UMF_VERSION_CURRENT,
-    .initialize = disjoint_pool_initialize,
-    .finalize = disjoint_pool_finalize,
-    .malloc = disjoint_malloc,
-    .calloc = disjoint_calloc,
-    .realloc = disjoint_realloc,
-    .aligned_malloc = disjoint_aligned_malloc,
-    .malloc_usable_size = NULL,
-    .free = disjoint_free,
-    .get_last_allocation_error = disjoint_get_last_allocation_error,
+    /* .version = */ UMF_VERSION_CURRENT,
+    /* .initialize = */ disjoint_pool_initialize,
+    /* .finalize = */ disjoint_pool_finalize,
+    /* .malloc = */ disjoint_malloc,
+    /* .calloc = */ disjoint_calloc,
+    /* .realloc = */ disjoint_realloc,
+    /* .aligned_malloc = */ disjoint_aligned_malloc,
+    /* .malloc_usable_size = */ NULL,
+    /* .free = */ disjoint_free,
+    /* .get_last_allocation_error = */ disjoint_get_last_allocation_error,
 };
