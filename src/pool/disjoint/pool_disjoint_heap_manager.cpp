@@ -1,0 +1,112 @@
+// Copyright (C) 2023 Intel Corporation
+// Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#include <umf/memory_pool_ops.h>
+#include <umf/memory_provider.h>
+
+#include "pool/pool_disjoint.h"
+#include "pool_disjoint.hpp"
+
+struct disjoint_memory_pool {
+    umf_memory_provider_handle_t mem_provider;
+    usm::DisjointPool *disjoint_pool;
+};
+
+enum umf_result_t
+disjoint_pool_initialize(umf_memory_provider_handle_t *providers,
+                         size_t numProviders, void *params, void **pool) {
+    struct umf_disjoint_pool_params *pub_params = (struct umf_disjoint_pool_params *)params;
+    usm::DisjointPoolConfig config{};
+    config.SlabMinSize = pub_params->SlabMinSize;
+    config.MaxPoolableSize = pub_params->MaxPoolableSize;
+    config.Capacity = pub_params->Capacity;
+    config.MinBucketSize = pub_params->MinBucketSize;
+    config.CurPoolSize = pub_params->CurPoolSize;
+    config.PoolTrace = pub_params->PoolTrace;
+
+    struct disjoint_memory_pool *pool_data =
+        (struct disjoint_memory_pool *)malloc(
+            sizeof(struct disjoint_memory_pool));
+    if (!pool_data) {
+        fprintf(stderr, "cannot allocate memory for metadata\n");
+        abort();
+    }
+
+    pool_data->mem_provider = providers[0];
+    pool_data->disjoint_pool = new usm::DisjointPool();
+    pool_data->disjoint_pool->initialize(providers, numProviders, config);
+
+    *pool = (void *)pool_data;
+
+    (void)params;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+void disjoint_pool_finalize(void *pool) {
+    struct disjoint_memory_pool *pool_data =
+        (struct disjoint_memory_pool *)pool;
+    delete pool_data->disjoint_pool;
+    free((struct disjoint_memory_pool *)pool);
+    pool = NULL;
+}
+
+void *disjoint_malloc(void *pool, size_t size) {
+    struct disjoint_memory_pool *pool_data =
+        (struct disjoint_memory_pool *)pool;
+    return pool_data->disjoint_pool->malloc(size);
+}
+
+void *disjoint_calloc(void *pool, size_t num, size_t size) {
+    (void)pool;
+    (void)num;
+    (void)size;
+    return 0; // TODO
+}
+
+void *disjoint_realloc(void *pool, void *ptr, size_t size) {
+    (void)pool;
+    (void)ptr;
+    (void)size;
+    return 0; // TODO
+}
+
+void *disjoint_aligned_malloc(void *pool, size_t size, size_t alignment) {
+    struct disjoint_memory_pool *pool_data =
+        (struct disjoint_memory_pool *)pool;
+    return pool_data->disjoint_pool->aligned_malloc(size, alignment);
+}
+
+enum umf_result_t disjoint_free(void *pool, void *ptr) {
+    struct disjoint_memory_pool *pool_data =
+        (struct disjoint_memory_pool *)pool;
+    pool_data->disjoint_pool->free(ptr);
+    return UMF_RESULT_SUCCESS;
+}
+
+enum umf_result_t disjoint_get_last_allocation_error(void *pool) {
+    struct disjoint_memory_pool *pool_data =
+        (struct disjoint_memory_pool *)pool;
+    /* TODO */
+    (void)pool_data;
+    return UMF_RESULT_SUCCESS;
+}
+
+struct umf_memory_pool_ops_t UMF_DISJOINT_POOL_OPS = {
+    .version = UMF_VERSION_CURRENT,
+    .initialize = disjoint_pool_initialize,
+    .finalize = disjoint_pool_finalize,
+    .malloc = disjoint_malloc,
+    .calloc = disjoint_calloc,
+    .realloc = disjoint_realloc,
+    .aligned_malloc = disjoint_aligned_malloc,
+    .malloc_usable_size = NULL,
+    .free = disjoint_free,
+    .get_last_allocation_error = disjoint_get_last_allocation_error,
+};

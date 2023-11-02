@@ -8,6 +8,8 @@ set(UMF_SOURCES
     memory_provider_get_last_failed.c
     pool/pool_null.c
     pool/pool_trace.c
+    pool/disjoint/pool_disjoint.cpp
+    pool/disjoint/pool_disjoint_heap_manager.cpp
     provider/provider_null.c
     provider/provider_trace.c
 )
@@ -29,4 +31,4 @@ target_sources(unified_memory_framework PRIVATE memory_pool_default.c)
 
 add_library(${PROJECT_NAME}::unified_memory_framework ALIAS unified_memory_framework)
 
-target_include_directories(unified_memory_framework PUBLIC ../include)
+target_include_directories(unified_memory_framework PUBLIC ../include ./common)
