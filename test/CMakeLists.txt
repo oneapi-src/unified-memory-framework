@@ -28,7 +28,8 @@ function(add_umf_test name)
         ${PROJECT_NAME}::unified_memory_framework
         GTest::gtest_main)
     target_include_directories(${TEST_TARGET_NAME} PRIVATE
-        ${UMF_TEST_DIR}/common)
+        ${UMF_TEST_DIR}/common
+        ${CMAKE_SOURCE_DIR}/src/pool/disjoint)
     add_test(NAME  umf-${name}
         COMMAND ${TEST_TARGET_NAME}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
@@ -43,3 +44,4 @@ add_subdirectory(common)
 add_umf_test(base base.cpp)
 add_umf_test(memoryPool memoryPoolAPI.cpp)
 add_umf_test(memoryProvider memoryProviderAPI.cpp)
+add_umf_test(disjointPool disjoint_pool.cpp)
