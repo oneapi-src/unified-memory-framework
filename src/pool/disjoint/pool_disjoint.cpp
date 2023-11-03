@@ -19,7 +19,7 @@ struct disjoint_memory_pool {
 
 enum umf_result_t
 disjoint_pool_initialize(umf_memory_provider_handle_t provider,
-                         void *params, void **pool) {
+                         void *params, void **pool) try {
     struct umf_disjoint_pool_params *pub_params = (struct umf_disjoint_pool_params *)params;
     usm::DisjointPoolConfig config{};
     config.SlabMinSize = pub_params->SlabMinSize;
@@ -29,22 +29,15 @@ disjoint_pool_initialize(umf_memory_provider_handle_t provider,
     config.CurPoolSize = pub_params->CurPoolSize;
     config.PoolTrace = pub_params->PoolTrace;
 
-    struct disjoint_memory_pool *pool_data =
-        (struct disjoint_memory_pool *)malloc(
-            sizeof(struct disjoint_memory_pool));
-    if (!pool_data) {
-        fprintf(stderr, "cannot allocate memory for metadata\n");
-        abort();
-    }
-
+    struct disjoint_memory_pool *pool_data = new struct disjoint_memory_pool;
     pool_data->disjoint_pool = new usm::DisjointPool();
     pool_data->disjoint_pool->initialize(provider, config);
-
     *pool = (void *)pool_data;
-
-    (void)params;
-
     return UMF_RESULT_SUCCESS;
+} catch(std::bad_alloc&) {
+   return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+} catch (...) {
+   return UMF_RESULT_ERROR_UNKNOWN;
 }
 
 void disjoint_pool_finalize(void *pool) {
