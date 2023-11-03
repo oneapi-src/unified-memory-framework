@@ -6,7 +6,7 @@
 #include <stdlib.h>
 
 #include <umf/memory_pool_ops.h>
-#include <pool/pool_trace.h>
+#include "pool_trace.h"
 
 struct umf_pool_trace_params_priv {
     umf_memory_pool_handle_t hUpstreamPool;

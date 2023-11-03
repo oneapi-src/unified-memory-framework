@@ -6,7 +6,7 @@
 #include <stdlib.h>
 
 #include <umf/memory_provider_ops.h>
-#include <provider/provider_null.h>
+#include "provider_null.h"
 
 static enum umf_result_t nullInitialize(void *params, void **pool) {
     (void)params;

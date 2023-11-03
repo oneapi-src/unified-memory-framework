@@ -5,11 +5,12 @@
 
 #include <assert.h>
 
+#include "umf/memory_pool.h"
 #include "umf/memory_provider.h"
-#include "pool/pool_null.h"
-#include "pool/pool_trace.h"
-#include "provider/provider_null.h"
-#include "provider/provider_trace.h"
+#include "pool_null.h"
+#include "pool_trace.h"
+#include "provider_null.h"
+#include "provider_trace.h"
 
 umf_memory_provider_handle_t nullProviderCreate(void) {
     umf_memory_provider_handle_t hProvider;
