@@ -7,7 +7,7 @@
 #include <stdlib.h>
 
 #include <umf/memory_pool_ops.h>
-#include <pool/pool_null.h>
+#include "pool_null.h"
 
 static enum umf_result_t nullInitialize(umf_memory_provider_handle_t provider,
                                         void *params,

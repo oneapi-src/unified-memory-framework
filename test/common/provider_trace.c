@@ -6,7 +6,7 @@
 #include <stdlib.h>
 
 #include <umf/memory_provider_ops.h>
-#include <provider/provider_trace.h>
+#include "provider_trace.h"
 
 struct umf_provider_trace_params_priv {
     umf_memory_provider_handle_t hUpstreamProvider;

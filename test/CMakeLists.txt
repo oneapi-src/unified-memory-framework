@@ -24,6 +24,7 @@ function(add_umf_test name)
         ${ARGN})
     target_link_libraries(${TEST_TARGET_NAME}
         PRIVATE
+        test_common
         ${PROJECT_NAME}::unified_memory_framework
         GTest::gtest_main)
     target_include_directories(${TEST_TARGET_NAME} PRIVATE
@@ -34,6 +35,8 @@ function(add_umf_test name)
     set_tests_properties(umf-${name} PROPERTIES LABELS "umf")
 endfunction()
 
+add_subdirectory(common)
+
 add_umf_test(base base.cpp)
-add_umf_test(memoryPool memoryPoolAPI.cpp common/test_helpers.c)
-add_umf_test(memoryProvider memoryProviderAPI.cpp common/test_helpers.c)
+add_umf_test(memoryPool memoryPoolAPI.cpp)
+add_umf_test(memoryProvider memoryProviderAPI.cpp)

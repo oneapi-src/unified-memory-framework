@@ -6,12 +6,8 @@ set(UMF_SOURCES
     memory_pool.c
     memory_provider.c
     memory_provider_get_last_failed.c
-    pool/pool_null.c
-    pool/pool_trace.c
     pool/disjoint/pool_disjoint.cpp
     pool/disjoint/pool_disjoint_impl.cpp
-    provider/provider_null.c
-    provider/provider_trace.c
 )
 
 if(MSVC)
