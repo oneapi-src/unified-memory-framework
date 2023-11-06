@@ -16,6 +16,7 @@ include(helpers)
 # Build Options
 option(UMF_DEVELOPER_MODE "enable developer checks, treats warnings as errors" OFF)
 option(UMF_BUILD_SHARED_LIBRARY "Build UMF as shared library" OFF)
+option(UMF_ENABLE_POOL_TRACKING "Build UMF with pool tracking" ON)
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
