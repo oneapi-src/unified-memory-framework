@@ -44,7 +44,7 @@ void disjoint_pool_finalize(void *pool) {
     struct disjoint_memory_pool *pool_data =
         (struct disjoint_memory_pool *)pool;
     delete pool_data->disjoint_pool;
-    free((struct disjoint_memory_pool *)pool);
+    delete pool_data;
     pool = NULL;
 }
 
