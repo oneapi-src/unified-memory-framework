@@ -8,10 +8,12 @@ set(UMF_SOURCES
     memory_provider_get_last_failed.c
     pool/disjoint/pool_disjoint.cpp
     pool/disjoint/pool_disjoint_impl.cpp
+    provider/provider_tracking.c
+    critnib/critnib.c
 )
 
 if(MSVC)
-    set(UMF_SOURCES ${UMF_SOURCES} utils/utils_windows.c)
+    set(UMF_SOURCES ${UMF_SOURCES} utils/utils_windows.c provider/provider_tracking_windows.cpp)
 else()
     set(UMF_SOURCES ${UMF_SOURCES} utils/utils_posix.c)
 endif()
@@ -23,8 +25,12 @@ else()
     add_umf_library(unified_memory_framework STATIC ${UMF_SOURCES})
 endif()
 
-target_sources(unified_memory_framework PRIVATE memory_pool_default.c)
+if (UMF_ENABLE_POOL_TRACKING)
+    target_sources(unified_memory_framework PRIVATE memory_pool_tracking.c)
+else()
+    target_sources(unified_memory_framework PRIVATE memory_pool_default.c)
+endif()
 
 add_library(${PROJECT_NAME}::unified_memory_framework ALIAS unified_memory_framework)
 
-target_include_directories(unified_memory_framework PUBLIC ../include ./common)
+target_include_directories(unified_memory_framework PUBLIC ../include ./common ./provider ./critnib)
