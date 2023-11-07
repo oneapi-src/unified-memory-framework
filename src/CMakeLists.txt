@@ -11,7 +11,7 @@ set(UMF_SOURCES
     memory_provider_get_last_failed.c
     pool/pool_disjoint.cpp
     provider/provider_tracking.c
-    provider/provider_fixed.c
+    provider/provider_coarse.c
 )
 
 if(MSVC)
