@@ -13,7 +13,7 @@
 #include "test_helpers.h"
 
 #include <pool/pool_disjoint.h>
-#include <provider/provider_fixed.h>
+#include <provider/provider_coarse.h>
 
 using umf_test::test;
 
@@ -106,7 +106,7 @@ struct umf_memory_provider_ops_t UMF_MALLOC_MEMORY_PROVIDER_OPS = {
     mallocName,
 };
 
-TEST_F(test, disjointFixedMallocPool_basic) {
+TEST_F(test, disjointcoarseMallocPool_basic) {
     umf_memory_provider_handle_t malloc_memory_provider;
     umfMemoryProviderCreate(&UMF_MALLOC_MEMORY_PROVIDER_OPS, NULL,
                             &malloc_memory_provider);
@@ -117,18 +117,18 @@ TEST_F(test, disjointFixedMallocPool_basic) {
 
     const size_t init_buffer_size = 20 * MB;
 
-    fixed_memory_provider_params_t fixed_memory_provider_params = {
+    coarse_memory_provider_params_t coarse_memory_provider_params = {
         malloc_memory_provider, // upstream_memory_provider
         init_buffer_size,
         true, // immediate_init
         true, // trace
     };
 
-    umf_memory_provider_handle_t fixed_memory_provider;
-    umfMemoryProviderCreate(&UMF_FIXED_MEMORY_PROVIDER_OPS,
-                            &fixed_memory_provider_params,
-                            &fixed_memory_provider);
-    ASSERT_NE(fixed_memory_provider, nullptr);
+    umf_memory_provider_handle_t coarse_memory_provider;
+    umfMemoryProviderCreate(&UMF_COARSE_MEMORY_PROVIDER_OPS,
+                            &coarse_memory_provider_params,
+                            &coarse_memory_provider);
+    ASSERT_NE(coarse_memory_provider, nullptr);
 
     umf_disjoint_pool_params disjoint_memory_pool_params;
     disjoint_memory_pool_params.SlabMinSize = 4096;
@@ -137,7 +137,7 @@ TEST_F(test, disjointFixedMallocPool_basic) {
     disjoint_memory_pool_params.MinBucketSize = 64;
 
     umf_memory_pool_handle_t pool;
-    umfPoolCreate(&UMF_DISJOINT_POOL_OPS, fixed_memory_provider,
+    umfPoolCreate(&UMF_DISJOINT_POOL_OPS, coarse_memory_provider,
                   &disjoint_memory_pool_params, &pool);
     ASSERT_NE(pool, nullptr);
 
@@ -152,14 +152,14 @@ TEST_F(test, disjointFixedMallocPool_basic) {
     // alloc 2x 2MB
     void *p1 = umfPoolMalloc(pool, 2 * MB);
 
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).used_size, 2 * MB);
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).blocks_num, 2);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).used_size, 2 * MB);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).blocks_num, 2);
 
     void *p2 = umfPoolMalloc(pool, 2 * MB);
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).used_size, 4 * MB);
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).blocks_num, 3);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).used_size, 4 * MB);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).blocks_num, 3);
     ASSERT_NE(p1, p2);
 
     // swap pointers to get p1 < p2
@@ -173,14 +173,14 @@ TEST_F(test, disjointFixedMallocPool_basic) {
     // there should be no block merging between used and not-used blocks
     umf_result_t res = umfPoolFree(pool, p1);
     ASSERT_EQ(res, UMF_RESULT_SUCCESS);
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).used_size, 2 * MB);
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).blocks_num, 3);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).used_size, 2 * MB);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).blocks_num, 3);
 
     p1 = umfPoolMalloc(pool, 2 * MB);
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).used_size, 4 * MB);
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).blocks_num, 3);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).used_size, 4 * MB);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).blocks_num, 3);
 
     // free all allocs
     // overall alloc size shouldn't change
@@ -188,34 +188,34 @@ TEST_F(test, disjointFixedMallocPool_basic) {
     // and the remaining init block
     res = umfPoolFree(pool, p1);
     ASSERT_EQ(res, UMF_RESULT_SUCCESS);
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).blocks_num, 3);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).blocks_num, 3);
     res = umfPoolFree(pool, p2);
     ASSERT_EQ(res, UMF_RESULT_SUCCESS);
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).used_size, 0 * MB);
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).blocks_num, 1);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).used_size, 0 * MB);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).blocks_num, 1);
 
     // alloc whole buffer
     // after this, there should be one single block
     p1 = umfPoolMalloc(pool, init_buffer_size);
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).used_size, init_buffer_size);
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).blocks_num, 1);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).used_size, init_buffer_size);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).blocks_num, 1);
 
     // free all memory
     // alloc 2 MB block - the init block should be splitted
     res = umfPoolFree(pool, p1);
     p1 = umfPoolMalloc(pool, 2 * MB);
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).used_size, 2 * MB);
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).blocks_num, 2);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).used_size, 2 * MB);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).blocks_num, 2);
 
     // alloc additional 2 MB
     // the non-used block should be used
     p2 = umfPoolMalloc(pool, 2 * MB);
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).used_size, 4 * MB);
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).blocks_num, 3);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).used_size, 4 * MB);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).blocks_num, 3);
     ASSERT_NE(p1, p2);
 
     // make sure that p1 < p2
@@ -228,22 +228,22 @@ TEST_F(test, disjointFixedMallocPool_basic) {
     // swap pointers to get p1 < p2
     umfPoolFree(pool, p2);
     umfPoolFree(pool, p1);
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).used_size, 0 * MB);
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).blocks_num, 1);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).used_size, 0 * MB);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).blocks_num, 1);
 
     // alloc 10x 2 MB - this should occupy all allocated memory
     constexpr int allocs_size = 10;
     void *allocs[allocs_size] = {0};
     for (int i = 0; i < allocs_size; i++) {
-        ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).used_size, i * 2 * MB);
+        ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).used_size, i * 2 * MB);
         allocs[i] = umfPoolMalloc(pool, 2 * MB);
         ASSERT_NE(allocs[i], nullptr);
     }
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).used_size, 20 * MB);
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).used_size, 20 * MB);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
     // there should be no block with the free memory
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).blocks_num, allocs_size);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).blocks_num, allocs_size);
 
     // free all memory
     for (int i = 0; i < allocs_size; i++) {
@@ -251,16 +251,16 @@ TEST_F(test, disjointFixedMallocPool_basic) {
         ASSERT_EQ(res, UMF_RESULT_SUCCESS);
     }
 
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).blocks_num, 1);
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).used_size, 0 * MB);
-    ASSERT_EQ(umfFixedMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).blocks_num, 1);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).used_size, 0 * MB);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
 
     umfPoolDestroy(pool);
-    umfMemoryProviderDestroy(fixed_memory_provider);
+    umfMemoryProviderDestroy(coarse_memory_provider);
     umfMemoryProviderDestroy(malloc_memory_provider);
 }
 
-TEST_F(test, disjointFixedMallocPool_simple1) {
+TEST_F(test, disjointcoarseMallocPool_simple1) {
     umf_memory_provider_handle_t malloc_memory_provider;
     umfMemoryProviderCreate(&UMF_MALLOC_MEMORY_PROVIDER_OPS, NULL,
                             &malloc_memory_provider);
@@ -271,18 +271,18 @@ TEST_F(test, disjointFixedMallocPool_simple1) {
 
     const size_t init_buffer_size = 20 * MB;
 
-    fixed_memory_provider_params_t fixed_memory_provider_params = {
+    coarse_memory_provider_params_t coarse_memory_provider_params = {
         malloc_memory_provider, // upstream_memory_provider
         init_buffer_size,
         false, // immediate_init
         true,  // trace
     };
 
-    umf_memory_provider_handle_t fixed_memory_provider;
-    umfMemoryProviderCreate(&UMF_FIXED_MEMORY_PROVIDER_OPS,
-                            &fixed_memory_provider_params,
-                            &fixed_memory_provider);
-    ASSERT_NE(fixed_memory_provider, nullptr);
+    umf_memory_provider_handle_t coarse_memory_provider;
+    umfMemoryProviderCreate(&UMF_COARSE_MEMORY_PROVIDER_OPS,
+                            &coarse_memory_provider_params,
+                            &coarse_memory_provider);
+    ASSERT_NE(coarse_memory_provider, nullptr);
 
     umf_disjoint_pool_params disjoint_memory_pool_params;
     disjoint_memory_pool_params.SlabMinSize = 4096;
@@ -291,7 +291,7 @@ TEST_F(test, disjointFixedMallocPool_simple1) {
     disjoint_memory_pool_params.MinBucketSize = 64;
 
     umf_memory_pool_handle_t pool;
-    umfPoolCreate(&UMF_DISJOINT_POOL_OPS, fixed_memory_provider,
+    umfPoolCreate(&UMF_DISJOINT_POOL_OPS, coarse_memory_provider,
                   &disjoint_memory_pool_params, &pool);
     ASSERT_NE(pool, nullptr);
 
@@ -317,7 +317,7 @@ TEST_F(test, disjointFixedMallocPool_simple1) {
         }
 
         if (max_alloc_size == 0) {
-            max_alloc_size = umfFixedMemoryProviderGetStats(pp).alloc_size;
+            max_alloc_size = umfCoarseMemoryProviderGetStats(pp).alloc_size;
         }
 
         for (int i = 0; i < 6; i++) {
@@ -335,7 +335,7 @@ TEST_F(test, disjointFixedMallocPool_simple1) {
         }
 
         // all s2 should fit into single block leaved after freeing s1
-        ASSERT_LE(umfFixedMemoryProviderGetStats(pp).alloc_size,
+        ASSERT_LE(umfCoarseMemoryProviderGetStats(pp).alloc_size,
                   max_alloc_size);
 
         for (int i = 0; i < 6; i++) {
@@ -345,11 +345,11 @@ TEST_F(test, disjointFixedMallocPool_simple1) {
     }
 
     umfPoolDestroy(pool);
-    umfMemoryProviderDestroy(fixed_memory_provider);
+    umfMemoryProviderDestroy(coarse_memory_provider);
     umfMemoryProviderDestroy(malloc_memory_provider);
 }
 
-TEST_F(test, disjointFixedMallocPool_simple2) {
+TEST_F(test, disjointcoarseMallocPool_simple2) {
 
     umf_memory_provider_handle_t malloc_memory_provider;
     umfMemoryProviderCreate(&UMF_MALLOC_MEMORY_PROVIDER_OPS, NULL,
@@ -361,18 +361,18 @@ TEST_F(test, disjointFixedMallocPool_simple2) {
 
     const size_t init_buffer_size = 20 * MB;
 
-    fixed_memory_provider_params_t fixed_memory_provider_params = {
+    coarse_memory_provider_params_t coarse_memory_provider_params = {
         malloc_memory_provider, // upstream_memory_provider
         init_buffer_size,
         false, // immediate_init
         true,  // trace
     };
 
-    umf_memory_provider_handle_t fixed_memory_provider;
-    umfMemoryProviderCreate(&UMF_FIXED_MEMORY_PROVIDER_OPS,
-                            &fixed_memory_provider_params,
-                            &fixed_memory_provider);
-    ASSERT_NE(fixed_memory_provider, nullptr);
+    umf_memory_provider_handle_t coarse_memory_provider;
+    umfMemoryProviderCreate(&UMF_COARSE_MEMORY_PROVIDER_OPS,
+                            &coarse_memory_provider_params,
+                            &coarse_memory_provider);
+    ASSERT_NE(coarse_memory_provider, nullptr);
 
     umf_disjoint_pool_params disjoint_memory_pool_params;
     disjoint_memory_pool_params.SlabMinSize = 4096;
@@ -381,7 +381,7 @@ TEST_F(test, disjointFixedMallocPool_simple2) {
     disjoint_memory_pool_params.MinBucketSize = 64;
 
     umf_memory_pool_handle_t pool;
-    umfPoolCreate(&UMF_DISJOINT_POOL_OPS, fixed_memory_provider,
+    umfPoolCreate(&UMF_DISJOINT_POOL_OPS, coarse_memory_provider,
                   &disjoint_memory_pool_params, &pool);
     ASSERT_NE(pool, nullptr);
 
@@ -402,11 +402,11 @@ TEST_F(test, disjointFixedMallocPool_simple2) {
     }
 
     umfPoolDestroy(pool);
-    umfMemoryProviderDestroy(fixed_memory_provider);
+    umfMemoryProviderDestroy(coarse_memory_provider);
     umfMemoryProviderDestroy(malloc_memory_provider);
 }
 
-TEST_F(test, disjointFixedMallocPool_random) {
+TEST_F(test, disjointcoarseMallocPool_random) {
 
     umf_memory_provider_handle_t malloc_memory_provider;
     umfMemoryProviderCreate(&UMF_MALLOC_MEMORY_PROVIDER_OPS, NULL,
@@ -418,18 +418,18 @@ TEST_F(test, disjointFixedMallocPool_random) {
 
     const size_t init_buffer_size = 20 * MB;
 
-    fixed_memory_provider_params_t fixed_memory_provider_params = {
+    coarse_memory_provider_params_t coarse_memory_provider_params = {
         malloc_memory_provider, // upstream_memory_provider
         init_buffer_size,
         false, // immediate_init
         true,  // trace
     };
 
-    umf_memory_provider_handle_t fixed_memory_provider;
-    umfMemoryProviderCreate(&UMF_FIXED_MEMORY_PROVIDER_OPS,
-                            &fixed_memory_provider_params,
-                            &fixed_memory_provider);
-    ASSERT_NE(fixed_memory_provider, nullptr);
+    umf_memory_provider_handle_t coarse_memory_provider;
+    umfMemoryProviderCreate(&UMF_COARSE_MEMORY_PROVIDER_OPS,
+                            &coarse_memory_provider_params,
+                            &coarse_memory_provider);
+    ASSERT_NE(coarse_memory_provider, nullptr);
 
     umf_disjoint_pool_params disjoint_memory_pool_params;
     disjoint_memory_pool_params.SlabMinSize = 4096;
@@ -438,7 +438,7 @@ TEST_F(test, disjointFixedMallocPool_random) {
     disjoint_memory_pool_params.MinBucketSize = 64;
 
     umf_memory_pool_handle_t pool;
-    umfPoolCreate(&UMF_DISJOINT_POOL_OPS, fixed_memory_provider,
+    umfPoolCreate(&UMF_DISJOINT_POOL_OPS, coarse_memory_provider,
                   &disjoint_memory_pool_params, &pool);
     ASSERT_NE(pool, nullptr);
 
@@ -511,6 +511,6 @@ TEST_F(test, disjointFixedMallocPool_random) {
     }
 
     umfPoolDestroy(pool);
-    umfMemoryProviderDestroy(fixed_memory_provider);
+    umfMemoryProviderDestroy(coarse_memory_provider);
     umfMemoryProviderDestroy(malloc_memory_provider);
 }

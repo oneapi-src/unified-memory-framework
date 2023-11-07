@@ -10,7 +10,7 @@ set(UMF_SOURCES
     pool/disjoint/pool_disjoint.cpp
     pool/disjoint/pool_disjoint_impl.cpp
     provider/provider_tracking.c
-    provider/provider_fixed.c
+    provider/provider_coarse.c
 )
 
 if(MSVC)
