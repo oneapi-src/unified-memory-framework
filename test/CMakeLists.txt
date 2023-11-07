@@ -66,7 +66,7 @@ add_umf_test(NAME base SRCS base.cpp)
 add_umf_test(NAME memoryPool SRCS memoryPoolAPI.cpp malloc_compliance_tests.cpp LIBS ${LIBS_JEMALLOC})
 add_umf_test(NAME memoryProvider SRCS memoryProviderAPI.cpp)
 add_umf_test(NAME disjointPool SRCS disjoint_pool.cpp malloc_compliance_tests.cpp)
-add_umf_test(NAME disjointFixedMallocPool SRCS disjointFixedMallocPool.cpp)
+add_umf_test(NAME disjointCoarseMallocPool SRCS disjointCoarseMallocPool.cpp)
 add_umf_test(NAME c_api_disjoint_pool SRCS c_api/disjoint_pool.c)
 add_umf_test(NAME memory_pool_internal SRCS memory_pool_internal.cpp)
 
