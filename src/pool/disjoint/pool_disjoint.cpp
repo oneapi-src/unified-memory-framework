@@ -55,17 +55,15 @@ void *disjoint_malloc(void *pool, size_t size) {
 }
 
 void *disjoint_calloc(void *pool, size_t num, size_t size) {
-    (void)pool;
-    (void)num;
-    (void)size;
-    return 0; // TODO
+    struct disjoint_memory_pool *pool_data =
+        (struct disjoint_memory_pool *)pool;
+    return pool_data->disjoint_pool->calloc(num, size);
 }
 
 void *disjoint_realloc(void *pool, void *ptr, size_t size) {
-    (void)pool;
-    (void)ptr;
-    (void)size;
-    return 0; // TODO
+    struct disjoint_memory_pool *pool_data =
+        (struct disjoint_memory_pool *)pool;
+    return pool_data->disjoint_pool->realloc(ptr, size);
 }
 
 void *disjoint_aligned_malloc(void *pool, size_t size, size_t alignment) {
@@ -84,9 +82,7 @@ enum umf_result_t disjoint_free(void *pool, void *ptr) {
 enum umf_result_t disjoint_get_last_allocation_error(void *pool) {
     struct disjoint_memory_pool *pool_data =
         (struct disjoint_memory_pool *)pool;
-    /* TODO */
-    (void)pool_data;
-    return UMF_RESULT_SUCCESS;
+    return pool_data->disjoint_pool->get_last_allocation_error();
 }
 
 /*
