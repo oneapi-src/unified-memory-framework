@@ -11,3 +11,5 @@ set(COMMON_SOURCES
 )
 
 add_umf_library(test_common STATIC ${COMMON_SOURCES})
+
+target_include_directories(test_common PRIVATE ../../include)
