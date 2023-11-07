@@ -12,7 +12,7 @@ set(UMF_SOURCES
     pool/pool_disjoint.cpp
     provider/provider_os_memory.c
     provider/provider_tracking.c
-    provider/provider_fixed.c
+    provider/provider_coarse.c
 )
 
 set(UMF_SOURCES_LINUX

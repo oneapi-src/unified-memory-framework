@@ -20,16 +20,16 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <provider/provider_fixed.h>
+#include <provider/provider_coarse.h>
 
 #ifndef BYTE
 #define BYTE unsigned char
 #endif
 
-static enum umf_result_t fixed_memory_provider_alloc(void *provider,
-                                                     size_t size,
-                                                     size_t alignment,
-                                                     void **resultPtr);
+static enum umf_result_t coarse_memory_provider_alloc(void *provider,
+                                                      size_t size,
+                                                      size_t alignment,
+                                                      void **resultPtr);
 
 typedef struct block_t {
     size_t size;
@@ -167,7 +167,7 @@ static block_t *block_merge_with_next(block_t *block, block_t **head) {
     return block;
 }
 
-typedef struct fixed_memory_provider_t {
+typedef struct coarse_memory_provider_t {
     umf_memory_provider_handle_t upstream_memory_provider;
 
     size_t used_size;
@@ -179,9 +179,9 @@ typedef struct fixed_memory_provider_t {
     pthread_mutex_t lock;
 
     bool trace;
-} fixed_memory_provider_t;
+} coarse_memory_provider_t;
 
-static bool debug_check(fixed_memory_provider_t *provider) {
+static bool debug_check(coarse_memory_provider_t *provider) {
     assert(provider);
 
     size_t sum_used = 0;
@@ -308,8 +308,8 @@ static bool debug_check(fixed_memory_provider_t *provider) {
     return true;
 }
 
-static enum umf_result_t fixed_memory_provider_initialize(void *params,
-                                                          void **provider) {
+static enum umf_result_t coarse_memory_provider_initialize(void *params,
+                                                           void **provider) {
     void *init_buffer = NULL;
 
     if (provider == NULL) {
@@ -321,93 +321,94 @@ static enum umf_result_t fixed_memory_provider_initialize(void *params,
     }
 
     // check params
-    fixed_memory_provider_params_t *fixed_params =
-        (fixed_memory_provider_params_t *)params;
-    if (fixed_params->upstream_memory_provider == NULL) {
+    coarse_memory_provider_params_t *coarse_params =
+        (coarse_memory_provider_params_t *)params;
+    if (coarse_params->upstream_memory_provider == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    fixed_memory_provider_t *fixed_provider =
-        (fixed_memory_provider_t *)malloc(sizeof(fixed_memory_provider_t));
+    coarse_memory_provider_t *coarse_provider =
+        (coarse_memory_provider_t *)malloc(sizeof(coarse_memory_provider_t));
 
-    if (!fixed_provider) {
+    if (!coarse_provider) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    if (pthread_mutex_init(&fixed_provider->lock, NULL) != 0) {
-        free(fixed_provider);
+    if (pthread_mutex_init(&coarse_provider->lock, NULL) != 0) {
+        free(coarse_provider);
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
 
-    fixed_provider->trace = fixed_params->trace;
-    fixed_provider->upstream_memory_provider =
-        fixed_params->upstream_memory_provider;
-    fixed_provider->block_list = NULL;
-    fixed_provider->alloc_list = NULL;
-    fixed_provider->alloc_size = 0;
-    fixed_provider->used_size = 0;
+    coarse_provider->trace = coarse_params->trace;
+    coarse_provider->upstream_memory_provider =
+        coarse_params->upstream_memory_provider;
+    coarse_provider->block_list = NULL;
+    coarse_provider->alloc_list = NULL;
+    coarse_provider->alloc_size = 0;
+    coarse_provider->used_size = 0;
 
-    if (fixed_params->immediate_init) {
-        fixed_memory_provider_alloc(
-            fixed_provider, fixed_params->init_buffer_size, 0, &init_buffer);
+    if (coarse_params->immediate_init) {
+        coarse_memory_provider_alloc(
+            coarse_provider, coarse_params->init_buffer_size, 0, &init_buffer);
 
         if (init_buffer == NULL) {
-            pthread_mutex_destroy(&fixed_provider->lock);
-            free(fixed_provider);
+            pthread_mutex_destroy(&coarse_provider->lock);
+            free(coarse_provider);
             return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
         }
 
         // since we use alloc func, we have set the block as unused
-        fixed_provider->used_size = 0;
-        fixed_provider->block_list->used = false;
-        fixed_provider->alloc_size = fixed_params->init_buffer_size;
+        coarse_provider->used_size = 0;
+        coarse_provider->block_list->used = false;
+        coarse_provider->alloc_size = coarse_params->init_buffer_size;
     }
 
-    *provider = fixed_provider;
+    *provider = coarse_provider;
 
-    assert(debug_check(fixed_provider));
+    assert(debug_check(coarse_provider));
 
     return UMF_RESULT_SUCCESS;
 }
 
-static void fixed_memory_provider_finalize(void *provider) {
+static void coarse_memory_provider_finalize(void *provider) {
     if (provider == NULL) {
         assert(0);
         return;
     }
 
-    fixed_memory_provider_t *fixed_provider =
-        (struct fixed_memory_provider_t *)provider;
+    coarse_memory_provider_t *coarse_provider =
+        (struct coarse_memory_provider_t *)provider;
 
-    block_t *alloc = fixed_provider->alloc_list;
+    block_t *alloc = coarse_provider->alloc_list;
     while (alloc) {
-        enum umf_result_t ret = umfMemoryProviderFree(
-            fixed_provider->upstream_memory_provider, alloc->data, alloc->size);
+        enum umf_result_t ret =
+            umfMemoryProviderFree(coarse_provider->upstream_memory_provider,
+                                  alloc->data, alloc->size);
         assert(ret == UMF_RESULT_SUCCESS);
-        assert(fixed_provider->alloc_size >= alloc->size);
-        fixed_provider->alloc_size -= alloc->size;
+        assert(coarse_provider->alloc_size >= alloc->size);
+        coarse_provider->alloc_size -= alloc->size;
 
         block_t *to_free = alloc;
         alloc = alloc->next;
         free(to_free);
     }
-    assert(fixed_provider->alloc_size == 0);
+    assert(coarse_provider->alloc_size == 0);
 
-    block_t *block = fixed_provider->block_list;
+    block_t *block = coarse_provider->block_list;
     while (block) {
         block_t *to_free = block;
         block = block->next;
         free(to_free);
     }
 
-    pthread_mutex_destroy(&fixed_provider->lock);
-    free(fixed_provider);
+    pthread_mutex_destroy(&coarse_provider->lock);
+    free(coarse_provider);
 }
 
-static enum umf_result_t fixed_memory_provider_alloc(void *provider,
-                                                     size_t size,
-                                                     size_t alignment,
-                                                     void **resultPtr) {
+static enum umf_result_t coarse_memory_provider_alloc(void *provider,
+                                                      size_t size,
+                                                      size_t alignment,
+                                                      void **resultPtr) {
     enum umf_result_t ret = UMF_RESULT_SUCCESS;
 
     if (provider == NULL) {
@@ -418,18 +419,18 @@ static enum umf_result_t fixed_memory_provider_alloc(void *provider,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    fixed_memory_provider_t *fixed_provider =
-        (struct fixed_memory_provider_t *)provider;
-    assert(debug_check(fixed_provider));
+    coarse_memory_provider_t *coarse_provider =
+        (struct coarse_memory_provider_t *)provider;
+    assert(debug_check(coarse_provider));
 
-    if (pthread_mutex_lock(&fixed_provider->lock) != 0) {
+    if (pthread_mutex_lock(&coarse_provider->lock) != 0) {
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
 
     // Try to reuse existing blocks first.
     // If the block that we want to reuse is has greater size, split it.
     // Try to merge split part with the successor if it is not used.
-    block_t *curr = fixed_provider->block_list;
+    block_t *curr = coarse_provider->block_list;
     while (curr) {
         if (!curr->used && (curr->size > size)) {
             // Split the existing block and put the new block after the existing.
@@ -440,10 +441,10 @@ static enum umf_result_t fixed_memory_provider_alloc(void *provider,
             assert(origin);
             void *data = curr->data + size;
 
-            block_t *new_block = block_list_add(&fixed_provider->block_list,
+            block_t *new_block = block_list_add(&coarse_provider->block_list,
                                                 data, curr->size - size);
             if (new_block == NULL) {
-                if (pthread_mutex_unlock(&fixed_provider->lock) != 0) {
+                if (pthread_mutex_unlock(&coarse_provider->lock) != 0) {
                     return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
                 }
 
@@ -457,40 +458,40 @@ static enum umf_result_t fixed_memory_provider_alloc(void *provider,
             curr->size = size;
 
             *resultPtr = curr->data;
-            fixed_provider->used_size += size;
+            coarse_provider->used_size += size;
 
-            if (fixed_provider->trace) {
-                printf("FIXED_ALLOC (split_block) %lu used %lu alloc %lu\n",
-                       size, fixed_provider->used_size,
-                       fixed_provider->alloc_size);
+            if (coarse_provider->trace) {
+                printf("coarse_ALLOC (split_block) %lu used %lu alloc %lu\n",
+                       size, coarse_provider->used_size,
+                       coarse_provider->alloc_size);
             }
 
             // Try to merge new empty block with the next one.
             new_block =
-                block_merge_with_next(new_block, &fixed_provider->block_list);
+                block_merge_with_next(new_block, &coarse_provider->block_list);
 
-            if (pthread_mutex_unlock(&fixed_provider->lock) != 0) {
+            if (pthread_mutex_unlock(&coarse_provider->lock) != 0) {
                 return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
             }
 
-            assert(debug_check(fixed_provider));
+            assert(debug_check(coarse_provider));
             return UMF_RESULT_SUCCESS;
         } else if (!curr->used && (curr->size == size)) {
             curr->used = true;
             *resultPtr = curr->data;
-            fixed_provider->used_size += size;
+            coarse_provider->used_size += size;
 
-            if (fixed_provider->trace) {
-                printf("FIXED_ALLOC (same_block) %lu used %lu alloc %lu\n",
-                       size, fixed_provider->used_size,
-                       fixed_provider->alloc_size);
+            if (coarse_provider->trace) {
+                printf("coarse_ALLOC (same_block) %lu used %lu alloc %lu\n",
+                       size, coarse_provider->used_size,
+                       coarse_provider->alloc_size);
             }
 
-            if (pthread_mutex_unlock(&fixed_provider->lock) != 0) {
+            if (pthread_mutex_unlock(&coarse_provider->lock) != 0) {
                 return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
             }
 
-            assert(debug_check(fixed_provider));
+            assert(debug_check(coarse_provider));
             return UMF_RESULT_SUCCESS;
         }
 
@@ -500,9 +501,9 @@ static enum umf_result_t fixed_memory_provider_alloc(void *provider,
     // TODO - reuse last block if it is empty
 
     // no suitable block - try to get more memory from the upstream provider
-    assert(fixed_provider->upstream_memory_provider);
+    assert(coarse_provider->upstream_memory_provider);
 
-    umfMemoryProviderAlloc(fixed_provider->upstream_memory_provider, size,
+    umfMemoryProviderAlloc(coarse_provider->upstream_memory_provider, size,
                            alignment, resultPtr);
 
     if (*resultPtr == NULL) {
@@ -510,7 +511,7 @@ static enum umf_result_t fixed_memory_provider_alloc(void *provider,
     }
 
     block_t *alloc =
-        block_list_add(&fixed_provider->alloc_list, *resultPtr, size);
+        block_list_add(&coarse_provider->alloc_list, *resultPtr, size);
 
     if (alloc == NULL) {
         ret = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
@@ -519,7 +520,7 @@ static enum umf_result_t fixed_memory_provider_alloc(void *provider,
 
     // create new block and add it to the list
     block_t *new_block =
-        block_list_add(&fixed_provider->block_list, *resultPtr, size);
+        block_list_add(&coarse_provider->block_list, *resultPtr, size);
 
     if (new_block == NULL) {
         assert(0);
@@ -530,45 +531,45 @@ static enum umf_result_t fixed_memory_provider_alloc(void *provider,
     new_block->used = true;
     new_block->origin = alloc;
 
-    fixed_provider->alloc_size += size;
-    fixed_provider->used_size += size;
+    coarse_provider->alloc_size += size;
+    coarse_provider->used_size += size;
 
-    if (fixed_provider->trace) {
-        printf("FIXED_ALLOC (upstream) %lu used %lu alloc %lu\n", size,
-               fixed_provider->used_size, fixed_provider->alloc_size);
+    if (coarse_provider->trace) {
+        printf("coarse_ALLOC (upstream) %lu used %lu alloc %lu\n", size,
+               coarse_provider->used_size, coarse_provider->alloc_size);
     }
 
-    if (pthread_mutex_unlock(&fixed_provider->lock) != 0) {
+    if (pthread_mutex_unlock(&coarse_provider->lock) != 0) {
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
 
-    assert(debug_check(fixed_provider));
+    assert(debug_check(coarse_provider));
     return UMF_RESULT_SUCCESS;
 
 block_error:
     free(alloc);
 
 alloc_error:
-    umfMemoryProviderFree(fixed_provider->upstream_memory_provider, *resultPtr,
+    umfMemoryProviderFree(coarse_provider->upstream_memory_provider, *resultPtr,
                           size);
     return ret;
 }
 
-static enum umf_result_t fixed_memory_provider_free(void *provider, void *ptr,
-                                                    size_t bytes) {
+static enum umf_result_t coarse_memory_provider_free(void *provider, void *ptr,
+                                                     size_t bytes) {
     if (provider == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    fixed_memory_provider_t *fixed_provider =
-        (struct fixed_memory_provider_t *)provider;
-    assert(debug_check(fixed_provider));
+    coarse_memory_provider_t *coarse_provider =
+        (struct coarse_memory_provider_t *)provider;
+    assert(debug_check(coarse_provider));
 
-    if (pthread_mutex_lock(&fixed_provider->lock) != 0) {
+    if (pthread_mutex_lock(&coarse_provider->lock) != 0) {
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
 
-    block_t *block = fixed_provider->block_list;
+    block_t *block = coarse_provider->block_list;
     while (block && block->data != ptr) {
         block = block->next;
     }
@@ -582,34 +583,34 @@ static enum umf_result_t fixed_memory_provider_free(void *provider, void *ptr,
         assert(bytes == block->size);
     }
 
-    if (fixed_provider->trace) {
-        printf("FIXED_FREE (return_block_to_pool) %lu used %lu alloc %lu\n",
-               block->size, fixed_provider->used_size - block->size,
-               fixed_provider->alloc_size);
+    if (coarse_provider->trace) {
+        printf("coarse_FREE (return_block_to_pool) %lu used %lu alloc %lu\n",
+               block->size, coarse_provider->used_size - block->size,
+               coarse_provider->alloc_size);
     }
 
-    assert(fixed_provider->used_size >= block->size);
-    fixed_provider->used_size -= block->size;
+    assert(coarse_provider->used_size >= block->size);
+    coarse_provider->used_size -= block->size;
 
     block->used = false;
 
     // Merge with prev and/or next block if they are unused and have continuous
     // data.
     block = block_merge_with_prev(block);
-    block = block_merge_with_next(block, &fixed_provider->block_list);
+    block = block_merge_with_next(block, &coarse_provider->block_list);
 
-    assert(debug_check(fixed_provider));
+    assert(debug_check(coarse_provider));
 
-    if (pthread_mutex_unlock(&fixed_provider->lock) != 0) {
+    if (pthread_mutex_unlock(&coarse_provider->lock) != 0) {
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
 
     return UMF_RESULT_SUCCESS;
 }
 
-static void fixed_memory_provider_get_last_native_error(void *provider,
-                                                        const char **ppMessage,
-                                                        int32_t *pError) {
+static void coarse_memory_provider_get_last_native_error(void *provider,
+                                                         const char **ppMessage,
+                                                         int32_t *pError) {
     if (provider == NULL) {
         return;
     }
@@ -620,75 +621,75 @@ static void fixed_memory_provider_get_last_native_error(void *provider,
 }
 
 static enum umf_result_t
-fixed_memory_provider_get_min_page_size(void *provider, void *ptr,
-                                        size_t *pageSize) {
+coarse_memory_provider_get_min_page_size(void *provider, void *ptr,
+                                         size_t *pageSize) {
     if (provider == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    fixed_memory_provider_t *fixed_provider =
-        (struct fixed_memory_provider_t *)provider;
+    coarse_memory_provider_t *coarse_provider =
+        (struct coarse_memory_provider_t *)provider;
 
-    assert(fixed_provider->upstream_memory_provider);
+    assert(coarse_provider->upstream_memory_provider);
     enum umf_result_t ret = umfMemoryProviderGetMinPageSize(
-        fixed_provider->upstream_memory_provider, ptr, pageSize);
+        coarse_provider->upstream_memory_provider, ptr, pageSize);
 
     return ret;
 }
 
 static enum umf_result_t
-fixed_memory_provider_get_recommended_page_size(void *provider, size_t size,
-                                                size_t *pageSize) {
+coarse_memory_provider_get_recommended_page_size(void *provider, size_t size,
+                                                 size_t *pageSize) {
     if (provider == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    fixed_memory_provider_t *fixed_provider =
-        (struct fixed_memory_provider_t *)provider;
+    coarse_memory_provider_t *coarse_provider =
+        (struct coarse_memory_provider_t *)provider;
 
-    assert(fixed_provider->upstream_memory_provider);
+    assert(coarse_provider->upstream_memory_provider);
     enum umf_result_t ret = umfMemoryProviderGetRecommendedPageSize(
-        fixed_provider->upstream_memory_provider, size, pageSize);
+        coarse_provider->upstream_memory_provider, size, pageSize);
 
     return ret;
 }
 
-static const char *fixed_memory_provider_get_name(void *provider) {
+static const char *coarse_memory_provider_get_name(void *provider) {
     (void)provider;
 
-    return "fixed";
+    return "coarse";
 }
 
-struct umf_memory_provider_ops_t UMF_FIXED_MEMORY_PROVIDER_OPS = {
+struct umf_memory_provider_ops_t UMF_COARSE_MEMORY_PROVIDER_OPS = {
     .version = UMF_VERSION_CURRENT,
-    .initialize = fixed_memory_provider_initialize,
-    .finalize = fixed_memory_provider_finalize,
-    .alloc = fixed_memory_provider_alloc,
-    .free = fixed_memory_provider_free,
-    .get_last_native_error = fixed_memory_provider_get_last_native_error,
+    .initialize = coarse_memory_provider_initialize,
+    .finalize = coarse_memory_provider_finalize,
+    .alloc = coarse_memory_provider_alloc,
+    .free = coarse_memory_provider_free,
+    .get_last_native_error = coarse_memory_provider_get_last_native_error,
     .get_recommended_page_size =
-        fixed_memory_provider_get_recommended_page_size,
-    .get_min_page_size = fixed_memory_provider_get_min_page_size,
-    .get_name = fixed_memory_provider_get_name,
+        coarse_memory_provider_get_recommended_page_size,
+    .get_min_page_size = coarse_memory_provider_get_min_page_size,
+    .get_name = coarse_memory_provider_get_name,
 };
 
-fixed_memory_provider_stats_t umfFixedMemoryProviderGetStats(void *provider) {
+coarse_memory_provider_stats_t umfCoarseMemoryProviderGetStats(void *provider) {
     assert(provider);
 
-    fixed_memory_provider_t *fixed_provider =
-        (struct fixed_memory_provider_t *)provider;
+    coarse_memory_provider_t *coarse_provider =
+        (struct coarse_memory_provider_t *)provider;
 
     // count blocks
     size_t blocks_num = 0;
-    block_t *block = fixed_provider->block_list;
+    block_t *block = coarse_provider->block_list;
     while (block) {
         blocks_num++;
         block = block->next;
     }
 
-    fixed_memory_provider_stats_t stats;
-    stats.alloc_size = fixed_provider->alloc_size;
-    stats.used_size = fixed_provider->used_size;
+    coarse_memory_provider_stats_t stats;
+    stats.alloc_size = coarse_provider->alloc_size;
+    stats.used_size = coarse_provider->used_size;
     stats.blocks_num = blocks_num;
 
     return stats;
