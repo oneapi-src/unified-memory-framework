@@ -10,24 +10,13 @@
 #include "provider_null.h"
 #include "provider_trace.h"
 
-static usm::DisjointPool::Config poolConfig() {
-    usm::DisjointPool::Config config{};
+umf_disjoint_pool_params poolConfig() {
+    umf_disjoint_pool_params config{};
     config.SlabMinSize = 4096;
     config.MaxPoolableSize = 4096;
     config.Capacity = 4;
     config.MinBucketSize = 64;
     return config;
-}
-
-struct umf_disjoint_pool_params get_params(void) {
-    return {
-        4096, /* SlabMinSize */
-        4096, /* MaxPoolableSize */
-        4,    /* Capacity */
-        64,   /* MinBucketSize */
-        0,    /* CurPoolSize */
-        0,    /* PoolTrace */
-    };
 }
 
 static auto makePool() {
@@ -45,7 +34,7 @@ static auto makePool() {
     };
 
     umf_memory_pool_handle_t pool = NULL;
-    struct umf_disjoint_pool_params params = get_params();
+    struct umf_disjoint_pool_params params = poolConfig();
     enum umf_result_t retp =
         umfPoolCreate(&UMF_DISJOINT_POOL_OPS, provider_handle, &params, &pool);
     EXPECT_EQ(retp, UMF_RESULT_SUCCESS);

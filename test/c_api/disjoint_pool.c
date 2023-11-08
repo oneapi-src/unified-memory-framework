@@ -24,6 +24,28 @@ void test_disjoint_pool_default_params() {
     umfMemoryProviderDestroy(provider);
 }
 
+void test_disjoint_pool_shared_limits() {
+    umf_memory_provider_handle_t provider = nullProviderCreate();
+    enum umf_result_t retp;
+    umf_memory_pool_handle_t pool = NULL;
+    struct umf_disjoint_pool_params params = umfDisjointPoolParamsDefault();
+
+    struct umf_disjoint_pool_shared_limits *limits =
+        umfDisjointPoolSharedLimitsCreate(1024);
+    params.SharedLimits = limits;
+
+    retp = umfPoolCreate(&UMF_DISJOINT_POOL_OPS, provider, &params, &pool);
+
+    // TODO: use asserts
+    if (retp != UMF_RESULT_SUCCESS) {
+        abort();
+    }
+
+    umfPoolDestroy(pool);
+    umfMemoryProviderDestroy(provider);
+    umfDisjointPoolSharedLimitsDestroy(limits);
+}
+
 int main() {
     test_disjoint_pool_default_params();
     return 0;
