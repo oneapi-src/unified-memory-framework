@@ -119,7 +119,6 @@ static block_t *block_merge_with_prev(block_t *block) {
 
     if (block->prev && block->prev->used == false &&
         (block->prev->data + block->prev->size == block->data)) {
-
         // set neighbors
         block->prev->next = block->next;
         block->prev->size += block->size;
@@ -143,7 +142,6 @@ static block_t *block_merge_with_next(block_t *block, block_t **head) {
 
     if (block->next && block->next->used == false &&
         (block->data + block->size == block->next->data)) {
-
         // set neighbors
         block->next->prev = block->prev;
         block->next->size += block->size;
@@ -181,6 +179,7 @@ typedef struct coarse_memory_provider_t {
     bool trace;
 } coarse_memory_provider_t;
 
+#ifndef NDEBUG
 static bool debug_check(coarse_memory_provider_t *provider) {
     assert(provider);
 
@@ -307,6 +306,7 @@ static bool debug_check(coarse_memory_provider_t *provider) {
 
     return true;
 }
+#endif
 
 static enum umf_result_t coarse_memory_provider_initialize(void *params,
                                                            void **provider) {
@@ -384,7 +384,12 @@ static void coarse_memory_provider_finalize(void *provider) {
         enum umf_result_t ret =
             umfMemoryProviderFree(coarse_provider->upstream_memory_provider,
                                   alloc->data, alloc->size);
+
+        // We would continue to deallocate alloc blocks even if the upstream
+        // provider doesn't return success.
         assert(ret == UMF_RESULT_SUCCESS);
+        (void)ret;
+
         assert(coarse_provider->alloc_size >= alloc->size);
         coarse_provider->alloc_size -= alloc->size;
 
