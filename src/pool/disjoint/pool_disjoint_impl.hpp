@@ -14,8 +14,6 @@
 
 namespace usm {
 
-inline constexpr size_t MIN_BUCKET_DEFAULT_SIZE = 8;
-
 // Configuration for specific USM allocator instance
 class DisjointPoolConfig : public umf_disjoint_pool_params {
   public:
