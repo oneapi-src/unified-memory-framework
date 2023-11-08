@@ -7,6 +7,11 @@ jobs:
     name: Build - ubuntu
     runs-on: ubuntu-22.04
 
+    strategy:
+      matrix:
+        build_type: [Debug, Release]
+        pool_tracking: ['-DUMF_ENABLE_POOL_TRACKING=ON', '-DUMF_ENABLE_POOL_TRACKING=OFF']
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -32,9 +37,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake .. -DCMAKE_BUILD_TYPE=Debug -DUMF_ENABLE_POOL_TRACKING=OFF
+          cmake .. -DCMAKE_BUILD_TYPE=${{matrix.build_type}} ${{matrix.pool_tracking}}
           make -j$(nproc)
           ctest --output-on-failure
-          cmake .. -DCMAKE_BUILD_TYPE=Debug -DUMF_ENABLE_POOL_TRACKING=ON
-          make -j$(nproc)
-          ctest --output-on-failure
+          
