@@ -275,7 +275,7 @@ class DisjointPool::AllocImpl {
     std::vector<std::unique_ptr<Bucket>> Buckets;
 
     // Configuration for this instance
-    DisjointPool::Config params;
+    umf_disjoint_pool_params params;
 
     umf_disjoint_pool_shared_limits DefaultSharedLimits = {
         (std::numeric_limits<size_t>::max)(), 0};
@@ -285,12 +285,12 @@ class DisjointPool::AllocImpl {
 
   public:
     AllocImpl(umf_memory_provider_handle_t hProvider,
-              DisjointPool::Config params)
-        : MemHandle{hProvider}, params(params) {
+              umf_disjoint_pool_params *params)
+        : MemHandle{hProvider}, params(*params) {
 
         // Generate buckets sized such as: 64, 96, 128, 192, ..., CutOff.
         // Powers of 2 and the value halfway between the powers of 2.
-        auto Size1 = params.MinBucketSize;
+        auto Size1 = this->params.MinBucketSize;
         // Buckets sized smaller than the bucket default size- 8 aren't needed.
         Size1 = std::max(Size1, UMF_DISJOINT_POOL_MIN_BUCKET_DEFAULT_SIZE);
         auto Size2 = Size1 + Size1 / 2;
@@ -322,7 +322,7 @@ class DisjointPool::AllocImpl {
 
     size_t SlabMinSize() { return params.SlabMinSize; };
 
-    DisjointPool::Config &getParams() { return params; }
+    umf_disjoint_pool_params &getParams() { return params; }
 
     struct umf_disjoint_pool_shared_limits *getLimits() {
         if (params.SharedLimits) {
@@ -896,14 +896,14 @@ void DisjointPool::AllocImpl::printStats(bool &TitlePrinted,
 }
 
 umf_result_t DisjointPool::initialize(umf_memory_provider_handle_t provider,
-                                      DisjointPool::Config parameters) {
+                                      umf_disjoint_pool_params *parameters) {
     if (!provider) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
     // MinBucketSize parameter must be a power of 2 for bucket sizes
     // to generate correctly.
-    if (!parameters.MinBucketSize ||
-        !((parameters.MinBucketSize & (parameters.MinBucketSize - 1)) == 0)) {
+    if (!parameters->MinBucketSize ||
+        !((parameters->MinBucketSize & (parameters->MinBucketSize - 1)) == 0)) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
