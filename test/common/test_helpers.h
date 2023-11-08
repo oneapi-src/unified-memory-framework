@@ -7,6 +7,7 @@
 #define UMF_TEST_HELPERS_H 1
 
 #include <umf/base.h>
+#include <umf/memory_pool.h>
 #include <umf/memory_provider_ops.h>
 
 #ifdef __cplusplus
