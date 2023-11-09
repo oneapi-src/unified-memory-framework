@@ -15,9 +15,10 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(helpers)
 
 # Build Options
-option(UMF_DEVELOPER_MODE "enable developer checks, treats warnings as errors" OFF)
 option(UMF_BUILD_SHARED_LIBRARY "Build UMF as shared library" OFF)
+option(UMF_BUILD_TESTS "Build UMF tests" ON)
 option(UMF_ENABLE_POOL_TRACKING "Build UMF with pool tracking" ON)
+option(UMF_DEVELOPER_MODE "enable developer checks, treats warnings as errors" OFF)
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -72,7 +73,9 @@ install(
     EXPORT ${PROJECT_NAME}-targets)
 
 add_subdirectory(src)
-add_subdirectory(test)
+if(UMF_BUILD_TESTS)
+    add_subdirectory(test)
+endif()
 
 # Add the list of installed targets to the install. This includes the namespace
 # which all installed targets will be prefixed with, e.g. for the headers
