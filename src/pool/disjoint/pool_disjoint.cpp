@@ -10,7 +10,6 @@
 #include <umf/memory_pool_ops.h>
 #include <umf/memory_provider.h>
 
-#include "pool/pool_disjoint.h"
 #include "pool_disjoint_impl.hpp"
 
 struct disjoint_memory_pool {

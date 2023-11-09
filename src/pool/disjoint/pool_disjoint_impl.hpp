@@ -10,13 +10,14 @@
 #include <string>
 
 #include "umf.h"
+#include "pool/pool_disjoint.h"
 
 namespace usm {
 
 inline constexpr size_t MIN_BUCKET_DEFAULT_SIZE = 8;
 
 // Configuration for specific USM allocator instance
-class DisjointPoolConfig {
+class DisjointPoolConfig : public umf_disjoint_pool_params {
   public:
     DisjointPoolConfig();
 
@@ -31,26 +32,6 @@ class DisjointPoolConfig {
         // Total size of pooled memory
         std::atomic<size_t> TotalSize;
     };
-
-    // Minimum allocation size that will be requested from the system.
-    // By default this is the minimum allocation size of each memory type.
-    size_t SlabMinSize = 0;
-
-    // Allocations up to this limit will be subject to chunking/pooling
-    size_t MaxPoolableSize = 0;
-
-    // When pooling, each bucket will hold a max of 4 unfreed slabs
-    size_t Capacity = 0;
-
-    // Holds the minimum bucket size valid for allocation of a memory type.
-    // This value must be a power of 2.
-    size_t MinBucketSize = MIN_BUCKET_DEFAULT_SIZE;
-
-    // Holds size of the pool managed by the allocator.
-    size_t CurPoolSize = 0;
-
-    // Whether to print pool usage statistics
-    int PoolTrace = 0;
 
     std::shared_ptr<SharedLimits> limits;
 };
