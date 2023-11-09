@@ -27,17 +27,19 @@ jobs:
         run: |
           pip3 install clang-format==15.0.7
 
-      # TODO: fix formatting issues
-      # - name: Run code-style check
-      #   run: |
-      #     output=$(find . -path "./build" -prune -false -o -regex '.*\.\(cpp\|h\|c\|hpp\|cc\|cxx\)' -exec clang-format -style=file --dry-run -Werror {} \; 2>&1 >/dev/null)
-      #     if [[ $output != "" ]]; then echo "$output" && exit 1; fi
-
-      - name: Build UMF and run tests
+      - name: Prepare build and run CMake
         run: |
           mkdir build
           cd build
-          cmake .. -DCMAKE_BUILD_TYPE=${{matrix.build_type}} ${{matrix.pool_tracking}}
+          cmake .. -DUMF_FORMAT_CODE_STYLE=ON -DCMAKE_BUILD_TYPE=${{matrix.build_type}} ${{matrix.pool_tracking}}
+
+      - name: Run code-style check     
+        working-directory: ${{github.workspace}}/build
+        run: |
+          make clang-format-check
+
+      - name: Build UMF and run tests
+        working-directory: ${{github.workspace}}/build
+        run: |
           make -j$(nproc)
           ctest --output-on-failure
-          
