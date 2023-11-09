@@ -75,8 +75,7 @@ void *disjoint_aligned_malloc(void *pool, size_t size, size_t alignment) {
 enum umf_result_t disjoint_free(void *pool, void *ptr) {
     struct disjoint_memory_pool *pool_data =
         (struct disjoint_memory_pool *)pool;
-    pool_data->disjoint_pool->free(ptr);
-    return UMF_RESULT_SUCCESS;
+    return pool_data->disjoint_pool->free(ptr);
 }
 
 enum umf_result_t disjoint_get_last_allocation_error(void *pool) {
