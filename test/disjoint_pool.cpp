@@ -4,10 +4,11 @@
 
 #include "memoryPool.hpp"
 #include "pool.hpp"
+#include "pool/pool_disjoint.h"
+#include "pool_disjoint_impl.hpp"
+#include "provider.hpp"
 #include "provider_null.h"
 #include "provider_trace.h"
-#include "provider.hpp"
-#include "pool_disjoint_impl.hpp"
 
 static usm::DisjointPool::Config poolConfig() {
     usm::DisjointPool::Config config{};
@@ -18,14 +19,38 @@ static usm::DisjointPool::Config poolConfig() {
     return config;
 }
 
+struct umf_disjoint_pool_params get_params(void) {
+    return {
+        4096, /* SlabMinSize */
+        4096, /* MaxPoolableSize */
+        4,    /* Capacity */
+        64,   /* MinBucketSize */
+        0,    /* CurPoolSize */
+        0,    /* PoolTrace */
+    };
+}
+
 static auto makePool() {
     auto [ret, provider] =
         umf::memoryProviderMakeUnique<umf_test::provider_malloc>();
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
-    auto [retp, pool] = umf::poolMakeUnique<usm::DisjointPool>(
-        {std::move(provider)}, poolConfig());
+
+    umf_memory_provider_handle_t provider_handle;
+    provider_handle = provider.release();
+
+    // capture provider and destroy it after the pool is destroyed
+    auto poolDestructor = [provider_handle](umf_memory_pool_handle_t pool) {
+        umfPoolDestroy(pool);
+        umfMemoryProviderDestroy(provider_handle);
+    };
+
+    umf_memory_pool_handle_t pool = NULL;
+    struct umf_disjoint_pool_params params = get_params();
+    enum umf_result_t retp =
+        umfPoolCreate(&UMF_DISJOINT_POOL_OPS, provider_handle, &params, &pool);
     EXPECT_EQ(retp, UMF_RESULT_SUCCESS);
-    return std::move(pool);
+
+    return umf::pool_unique_handle_t(pool, std::move(poolDestructor));
 }
 
 using umf_test::test;
@@ -48,19 +73,23 @@ TEST_F(test, freeErrorPropagation) {
         umf::memoryProviderMakeUnique<memory_provider>();
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 
-    auto config = poolConfig();
-    config.MaxPoolableSize =
-        0; // force all allocations to go to memory provider
+    umf_memory_provider_handle_t provider_handle;
+    provider_handle = providerUnique.get();
 
-    auto [retp, pool] = umf::poolMakeUnique<usm::DisjointPool>(
-        {std::move(providerUnique)}, config);
+    // force all allocations to go to memory provider
+    struct umf_disjoint_pool_params params = get_params();
+    params.MaxPoolableSize = 0;
+
+    umf_memory_pool_handle_t pool = NULL;
+    enum umf_result_t retp =
+        umfPoolCreate(&UMF_DISJOINT_POOL_OPS, provider_handle, &params, &pool);
     EXPECT_EQ(retp, UMF_RESULT_SUCCESS);
 
     static constexpr size_t size = 1024;
-    void *ptr = umfPoolMalloc(pool.get(), size);
+    void *ptr = umfPoolMalloc(pool, size);
 
     freeReturn = UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
-    auto freeRet = umfPoolFree(pool.get(), ptr);
+    auto freeRet = umfPoolFree(pool, ptr);
 
     EXPECT_EQ(freeRet, freeReturn);
 }
