@@ -5,16 +5,17 @@
 
 #include <assert.h>
 
-#include "umf/memory_pool.h"
-#include "umf/memory_provider.h"
 #include "pool_null.h"
 #include "pool_trace.h"
 #include "provider_null.h"
 #include "provider_trace.h"
+#include "umf/memory_pool.h"
+#include "umf/memory_provider.h"
 
 umf_memory_provider_handle_t nullProviderCreate(void) {
     umf_memory_provider_handle_t hProvider;
-    enum umf_result_t ret = umfMemoryProviderCreate(&UMF_NULL_PROVIDER_OPS, NULL, &hProvider);
+    enum umf_result_t ret =
+        umfMemoryProviderCreate(&UMF_NULL_PROVIDER_OPS, NULL, &hProvider);
 
     (void)ret; /* silence unused variable warning */
     assert(ret == UMF_RESULT_SUCCESS);
@@ -24,11 +25,12 @@ umf_memory_provider_handle_t nullProviderCreate(void) {
 umf_memory_provider_handle_t
 traceProviderCreate(umf_memory_provider_handle_t hUpstreamProvider,
                     void (*trace)(const char *)) {
-    struct umf_provider_trace_params params = {.hUpstreamProvider = hUpstreamProvider,
-                                 .trace = trace};
+    struct umf_provider_trace_params params = {
+        .hUpstreamProvider = hUpstreamProvider, .trace = trace};
 
     umf_memory_provider_handle_t hProvider;
-    enum umf_result_t ret = umfMemoryProviderCreate(&UMF_TRACE_PROVIDER_OPS, &params, &hProvider);
+    enum umf_result_t ret =
+        umfMemoryProviderCreate(&UMF_TRACE_PROVIDER_OPS, &params, &hProvider);
 
     (void)ret; /* silence unused variable warning */
     assert(ret == UMF_RESULT_SUCCESS);
@@ -40,7 +42,7 @@ tracePoolCreate(umf_memory_pool_handle_t hUpstreamPool,
                 umf_memory_provider_handle_t providerDesc,
                 void (*trace)(const char *)) {
     struct umf_pool_trace_params params = {.hUpstreamPool = hUpstreamPool,
-                                 .trace = trace};
+                                           .trace = trace};
 
     umf_memory_pool_handle_t hPool;
     enum umf_result_t ret =

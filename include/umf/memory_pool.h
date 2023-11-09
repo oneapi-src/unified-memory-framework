@@ -31,8 +31,7 @@ struct umf_memory_pool_ops_t;
 ///
 enum umf_result_t umfPoolCreate(const struct umf_memory_pool_ops_t *ops,
                                 umf_memory_provider_handle_t provider,
-                                void *params,
-                                umf_memory_pool_handle_t *hPool);
+                                void *params, umf_memory_pool_handle_t *hPool);
 
 ///
 /// \brief Destroys memory pool.
@@ -140,7 +139,7 @@ umf_memory_pool_handle_t umfPoolByPtr(const void *ptr);
 ///         UMF_RESULT_ERROR_INVALID_ARGUMENT if hProvider is NULL
 enum umf_result_t
 umfPoolGetMemoryProvider(umf_memory_pool_handle_t hPool,
-                          umf_memory_provider_handle_t *hProvider);
+                         umf_memory_provider_handle_t *hProvider);
 
 #ifdef __cplusplus
 }

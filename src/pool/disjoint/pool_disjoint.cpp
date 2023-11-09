@@ -17,9 +17,10 @@ struct disjoint_memory_pool {
 };
 
 enum umf_result_t
-disjoint_pool_initialize(umf_memory_provider_handle_t provider,
-                         void *params, void **pool) try {
-    struct umf_disjoint_pool_params *pub_params = (struct umf_disjoint_pool_params *)params;
+disjoint_pool_initialize(umf_memory_provider_handle_t provider, void *params,
+                         void **pool) try {
+    struct umf_disjoint_pool_params *pub_params =
+        (struct umf_disjoint_pool_params *)params;
     usm::DisjointPoolConfig config{};
     config.SlabMinSize = pub_params->SlabMinSize;
     config.MaxPoolableSize = pub_params->MaxPoolableSize;
@@ -33,10 +34,10 @@ disjoint_pool_initialize(umf_memory_provider_handle_t provider,
     pool_data->disjoint_pool->initialize(provider, config);
     *pool = (void *)pool_data;
     return UMF_RESULT_SUCCESS;
-} catch(std::bad_alloc&) {
-   return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+} catch (std::bad_alloc &) {
+    return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
 } catch (...) {
-   return UMF_RESULT_ERROR_UNKNOWN;
+    return UMF_RESULT_ERROR_UNKNOWN;
 }
 
 void disjoint_pool_finalize(void *pool) {

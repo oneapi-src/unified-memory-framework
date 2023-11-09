@@ -70,8 +70,8 @@ umf_memory_pool_ops_t poolMakeUniqueOps() {
     umf_memory_pool_ops_t ops;
 
     ops.version = UMF_VERSION_CURRENT;
-    ops.initialize = [](umf_memory_provider_handle_t provider,
-                        void *params, void **obj) {
+    ops.initialize = [](umf_memory_provider_handle_t provider, void *params,
+                        void **obj) {
         try {
             *obj = new T;
         } catch (...) {
@@ -142,8 +142,7 @@ auto memoryProviderMakeUnique(Args &&...args) {
 /// replaced by dtor). All arguments passed to this function are
 /// forwarded to T::initialize().
 template <typename T, typename... Args>
-auto poolMakeUnique(umf_memory_provider_handle_t provider,
-                    Args &&...args) {
+auto poolMakeUnique(umf_memory_provider_handle_t provider, Args &&...args) {
     auto argsTuple = std::make_tuple(std::forward<Args>(args)...);
     auto ops = detail::poolMakeUniqueOps<T, decltype(argsTuple)>();
 
@@ -157,8 +156,7 @@ auto poolMakeUnique(umf_memory_provider_handle_t provider,
 /// This overload takes ownership of memory provider and destroys
 /// it after memory pool is destroyed.
 template <typename T, typename... Args>
-auto poolMakeUnique(provider_unique_handle_t provider,
-                    Args &&...args) {
+auto poolMakeUnique(provider_unique_handle_t provider, Args &&...args) {
     auto argsTuple = std::make_tuple(std::forward<Args>(args)...);
     auto ops = detail::poolMakeUniqueOps<T, decltype(argsTuple)>();
 
@@ -172,8 +170,7 @@ auto poolMakeUnique(provider_unique_handle_t provider,
     };
 
     umf_memory_pool_handle_t hPool = nullptr;
-    auto ret = umfPoolCreate(&ops, provider_handle,
-                             &argsTuple, &hPool);
+    auto ret = umfPoolCreate(&ops, provider_handle, &argsTuple, &hPool);
     return std::pair<umf_result_t, pool_unique_handle_t>{
         ret, pool_unique_handle_t(hPool, std::move(poolDestructor))};
 }

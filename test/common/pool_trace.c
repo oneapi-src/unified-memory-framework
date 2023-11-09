@@ -5,8 +5,8 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include <umf/memory_pool_ops.h>
 #include "pool_trace.h"
+#include <umf/memory_pool_ops.h>
 
 struct umf_pool_trace_params_priv {
     umf_memory_pool_handle_t hUpstreamPool;
@@ -17,14 +17,13 @@ struct trace_pool {
     struct umf_pool_trace_params_priv params;
 };
 
-static enum umf_result_t
-traceInitialize(umf_memory_provider_handle_t provider,
-                void *params, void **pool)
-{
+static enum umf_result_t traceInitialize(umf_memory_provider_handle_t provider,
+                                         void *params, void **pool) {
     struct trace_pool *trace_pool =
         (struct trace_pool *)malloc(sizeof(struct trace_pool));
-    if (NULL == trace_pool)
+    if (NULL == trace_pool) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
 
     struct umf_pool_trace_params *pub_params = params;
     trace_pool->params.hUpstreamPool = pub_params->hUpstreamPool;

@@ -18,8 +18,7 @@
 
 enum umf_result_t umfPoolCreate(const struct umf_memory_pool_ops_t *ops,
                                 umf_memory_provider_handle_t provider,
-                                void *params,
-                                umf_memory_pool_handle_t *hPool) {
+                                void *params, umf_memory_pool_handle_t *hPool) {
     if (!provider) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
@@ -75,9 +74,10 @@ umf_memory_pool_handle_t umfPoolByPtr(const void *ptr) {
 
 enum umf_result_t
 umfPoolGetMemoryProvider(umf_memory_pool_handle_t hPool,
-                          umf_memory_provider_handle_t *hProvider) {
-    if (!hProvider)
+                         umf_memory_provider_handle_t *hProvider) {
+    if (!hProvider) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
 
     umfTrackingMemoryProviderGetUpstreamProvider(
         umfMemoryProviderGetPriv(hPool->provider), hProvider);
