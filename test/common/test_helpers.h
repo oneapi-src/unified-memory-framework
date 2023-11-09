@@ -14,8 +14,8 @@ extern "C" {
 #endif
 
 umf_memory_provider_handle_t nullProviderCreate(void);
-umf_memory_provider_handle_t traceProviderCreate(
-                    umf_memory_provider_handle_t hUpstreamProvider,
+umf_memory_provider_handle_t
+traceProviderCreate(umf_memory_provider_handle_t hUpstreamProvider,
                     void (*trace)(const char *));
 
 umf_memory_pool_handle_t

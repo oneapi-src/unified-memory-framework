@@ -9,8 +9,8 @@
 #include <memory>
 #include <string>
 
-#include "umf.h"
 #include "pool/pool_disjoint.h"
+#include "umf.h"
 
 namespace usm {
 

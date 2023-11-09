@@ -2,16 +2,14 @@
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-
 #include <assert.h>
 #include <stdlib.h>
 
-#include <umf/memory_pool_ops.h>
 #include "pool_null.h"
+#include <umf/memory_pool_ops.h>
 
 static enum umf_result_t nullInitialize(umf_memory_provider_handle_t provider,
-                                        void *params,
-                                        void **pool) {
+                                        void *params, void **pool) {
     (void)provider;
     (void)params;
     assert(provider);

@@ -20,6 +20,9 @@ Required packages:
 - C++ compiler with C++17 support
 - [CMake](https://cmake.org/) >= 3.14.0
 
+For development and contributions:
+- clang-format-15.0 (can be installed with `python -m pip install clang-format==15.0.7`)
+
 ### Windows
 
 Generating Visual Studio Project. EXE and binaries will be in **build/bin/{build_config}**
@@ -40,6 +43,22 @@ $ cd build
 $ cmake {path_to_source_dir}
 $ make
 ```
+## Contributions
+
+All code has to be formatted using clang-format. To check the formatting do:
+
+```bash
+$ mkdir build
+$ cd build
+$ cmake {path_to_source_dir} -DUMF_FORMAT_CODE_STYLE=ON
+$ make clang-format-check
+```
+
+Additionally, to apply code formatting do:
+
+```bash
+$ make clang-format-apply
+```
 
 ### CMake standard options
 
@@ -51,3 +70,4 @@ List of options provided by CMake:
 | UMF_BUILD_TESTS | Build UMF tests | ON/OFF | ON |
 | UMF_ENABLE_POOL_TRACKING | Build UMF with pool tracking | ON/OFF | ON |
 | UMF_DEVELOPER_MODE | Treat warnings as errors and enables additional checks | ON/OFF | OFF |
+| UMF_FORMAT_CODE_STYLE | Add clang-format-check and clang-format-apply targets to make | ON/OFF | OFF |

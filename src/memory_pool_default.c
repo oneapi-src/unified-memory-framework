@@ -16,8 +16,7 @@
 
 enum umf_result_t umfPoolCreate(const struct umf_memory_pool_ops_t *ops,
                                 umf_memory_provider_handle_t provider,
-                                void *params,
-                                umf_memory_pool_handle_t *hPool) {
+                                void *params, umf_memory_pool_handle_t *hPool) {
     if (!provider) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
@@ -33,8 +32,7 @@ enum umf_result_t umfPoolCreate(const struct umf_memory_pool_ops_t *ops,
     pool->provider = provider;
 
     pool->ops = *ops;
-    ret = ops->initialize(pool->provider, params,
-                          &pool->pool_priv);
+    ret = ops->initialize(pool->provider, params, &pool->pool_priv);
     if (ret != UMF_RESULT_SUCCESS) {
         free(pool);
         return ret;
@@ -61,7 +59,7 @@ umf_memory_pool_handle_t umfPoolByPtr(const void *ptr) {
 
 enum umf_result_t
 umfPoolGetMemoryProvider(umf_memory_pool_handle_t hPool,
-                          umf_memory_provider_handle_t *hProvider) {
+                         umf_memory_provider_handle_t *hProvider) {
     if (!hProvider) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
