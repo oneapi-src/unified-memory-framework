@@ -43,3 +43,40 @@ jobs:
         run: |
           make -j$(nproc)
           ctest --output-on-failure
+
+  windows-build:
+    name: Build - Windows
+    strategy:
+      matrix:
+        os: ['windows-2019']
+        build_type: [Debug, Release]
+        compiler: [{c: cl.exe, cxx: cl.exe}]
+    runs-on: ${{matrix.os}}
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - uses: actions/setup-python@v4
+      with:
+        python-version: 3.9
+
+    - name: Install prerequisites
+      run: python3 -m pip install clang-format==15.0.7
+
+    - name: Configure CMake
+      run: >
+        cmake
+        -B${{github.workspace}}/build
+        -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
+        -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
+        -DCMAKE_POLICY_DEFAULT_CMP0094=NEW
+        -DUMF_ENABLE_POOL_TRACKING=ON
+        -DUMF_DEVELOPER_MODE=ON
+        -DUMF_FORMAT_CODE_STYLE=ON
+
+    - name: Build all
+      run: cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} -j 2
+
+    - name: Test
+      working-directory: ${{github.workspace}}/build
+      run: ctest -C ${{matrix.build_type}} --output-on-failure
