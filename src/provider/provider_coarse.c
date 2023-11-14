@@ -31,6 +31,9 @@ static enum umf_result_t coarse_memory_provider_alloc(void *provider,
                                                       size_t alignment,
                                                       void **resultPtr);
 
+static enum umf_result_t coarse_memory_provider_free(void *provider, void *ptr,
+                                                     size_t bytes);
+
 typedef struct block_t {
     size_t size;
     BYTE *data;
@@ -358,10 +361,13 @@ static enum umf_result_t coarse_memory_provider_initialize(void *params,
             return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
         }
 
-        // since we use alloc func, we have set the block as unused
-        coarse_provider->used_size = 0;
-        coarse_provider->block_list->used = false;
-        coarse_provider->alloc_size = coarse_params->init_buffer_size;
+        coarse_memory_provider_free(coarse_provider, init_buffer,
+                                    coarse_params->init_buffer_size);
+
+        // since we use alloc and free functions, we have set the block as unused
+        assert(coarse_provider->used_size == 0);
+        assert(coarse_provider->block_list->used == false);
+        assert(coarse_provider->alloc_size == coarse_params->init_buffer_size);
     }
 
     *provider = coarse_provider;
