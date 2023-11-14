@@ -12,7 +12,6 @@
 */
 
 #include <assert.h>
-#include <pthread.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -20,6 +19,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <../utils/utils.h>
 #include <provider/provider_coarse.h>
 
 #ifndef BYTE
@@ -174,7 +174,7 @@ typedef struct coarse_memory_provider_t {
     block_t *block_list;
     block_t *alloc_list;
 
-    pthread_mutex_t lock;
+    struct os_mutex_t *lock;
 
     bool trace;
 } coarse_memory_provider_t;
@@ -334,7 +334,8 @@ static enum umf_result_t coarse_memory_provider_initialize(void *params,
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    if (pthread_mutex_init(&coarse_provider->lock, NULL) != 0) {
+    coarse_provider->lock = util_mutex_create();
+    if (coarse_provider->lock == NULL) {
         free(coarse_provider);
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
@@ -352,7 +353,7 @@ static enum umf_result_t coarse_memory_provider_initialize(void *params,
             coarse_provider, coarse_params->init_buffer_size, 0, &init_buffer);
 
         if (init_buffer == NULL) {
-            pthread_mutex_destroy(&coarse_provider->lock);
+            util_mutex_destroy(coarse_provider->lock);
             free(coarse_provider);
             return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
         }
@@ -406,7 +407,7 @@ static void coarse_memory_provider_finalize(void *provider) {
         free(to_free);
     }
 
-    pthread_mutex_destroy(&coarse_provider->lock);
+    util_mutex_destroy(coarse_provider->lock);
     free(coarse_provider);
 }
 
@@ -428,7 +429,7 @@ static enum umf_result_t coarse_memory_provider_alloc(void *provider,
         (struct coarse_memory_provider_t *)provider;
     assert(debug_check(coarse_provider));
 
-    if (pthread_mutex_lock(&coarse_provider->lock) != 0) {
+    if (util_mutex_lock(coarse_provider->lock) != 0) {
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
 
@@ -449,7 +450,7 @@ static enum umf_result_t coarse_memory_provider_alloc(void *provider,
             block_t *new_block = block_list_add(&coarse_provider->block_list,
                                                 data, curr->size - size);
             if (new_block == NULL) {
-                if (pthread_mutex_unlock(&coarse_provider->lock) != 0) {
+                if (util_mutex_unlock(coarse_provider->lock) != 0) {
                     return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
                 }
 
@@ -475,7 +476,7 @@ static enum umf_result_t coarse_memory_provider_alloc(void *provider,
             new_block =
                 block_merge_with_next(new_block, &coarse_provider->block_list);
 
-            if (pthread_mutex_unlock(&coarse_provider->lock) != 0) {
+            if (util_mutex_unlock(coarse_provider->lock) != 0) {
                 return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
             }
 
@@ -492,7 +493,7 @@ static enum umf_result_t coarse_memory_provider_alloc(void *provider,
                        coarse_provider->alloc_size);
             }
 
-            if (pthread_mutex_unlock(&coarse_provider->lock) != 0) {
+            if (util_mutex_unlock(coarse_provider->lock) != 0) {
                 return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
             }
 
@@ -544,7 +545,7 @@ static enum umf_result_t coarse_memory_provider_alloc(void *provider,
                coarse_provider->used_size, coarse_provider->alloc_size);
     }
 
-    if (pthread_mutex_unlock(&coarse_provider->lock) != 0) {
+    if (util_mutex_unlock(coarse_provider->lock) != 0) {
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
 
@@ -570,7 +571,7 @@ static enum umf_result_t coarse_memory_provider_free(void *provider, void *ptr,
         (struct coarse_memory_provider_t *)provider;
     assert(debug_check(coarse_provider));
 
-    if (pthread_mutex_lock(&coarse_provider->lock) != 0) {
+    if (util_mutex_lock(coarse_provider->lock) != 0) {
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
 
@@ -606,7 +607,7 @@ static enum umf_result_t coarse_memory_provider_free(void *provider, void *ptr,
 
     assert(debug_check(coarse_provider));
 
-    if (pthread_mutex_unlock(&coarse_provider->lock) != 0) {
+    if (util_mutex_unlock(coarse_provider->lock) != 0) {
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
 
