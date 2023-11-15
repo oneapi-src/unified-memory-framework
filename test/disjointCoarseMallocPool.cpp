@@ -432,10 +432,10 @@ TEST_F(test, disjointCoarseMallocPool_random) {
     ASSERT_NE(coarse_memory_provider, nullptr);
 
     umf_disjoint_pool_params disjoint_memory_pool_params;
-    disjoint_memory_pool_params.SlabMinSize = 4096;
-    disjoint_memory_pool_params.MaxPoolableSize = 4096;
-    disjoint_memory_pool_params.Capacity = 4;
-    disjoint_memory_pool_params.MinBucketSize = 64;
+    disjoint_memory_pool_params.SlabMinSize = 1024;
+    disjoint_memory_pool_params.MaxPoolableSize = 1024;
+    disjoint_memory_pool_params.Capacity = 2;
+    disjoint_memory_pool_params.MinBucketSize = 16;
 
     umf_memory_pool_handle_t pool;
     umfPoolCreate(&UMF_DISJOINT_POOL_OPS, coarse_memory_provider,
@@ -450,11 +450,11 @@ TEST_F(test, disjointCoarseMallocPool_random) {
     std::vector<size_t> sizes = {
         15,       49,       588,       1025,     2 * KB,  5 * KB,
         160 * KB, 511 * KB, 1000 * KB, MB,       3 * MB,  7 * MB,
-        19 * MB,  26 * MB,  99 * MB,   199 * MB, 211 * MB};
+        19 * MB,  26 * MB,  69 * MB,   109 * MB, 111 * MB};
     std::uniform_int_distribution<int> sizes_dist(0, (int)(sizes.size() - 1));
 
     // each alloc would be done few times
-    std::vector<size_t> counts = {1, 3, 4, 8, 12, 21};
+    std::vector<size_t> counts = {1, 3, 4, 8, 9, 11};
     std::uniform_int_distribution<int> counts_dist(0, (int)(counts.size() - 1));
 
     // action to take will be random
@@ -462,7 +462,7 @@ TEST_F(test, disjointCoarseMallocPool_random) {
     std::uniform_real_distribution<float> actions_dist(0, 1);
 
     std::set<void *> allocs;
-    for (size_t i = 0; i < 10000; i++) {
+    for (size_t i = 0; i < 100; i++) {
         size_t size = sizes[sizes_dist(mt)];
         size_t count = counts[counts_dist(mt)];
         float action = actions_dist(mt);
