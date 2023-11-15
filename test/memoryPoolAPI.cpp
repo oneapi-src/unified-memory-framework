@@ -140,14 +140,6 @@ INSTANTIATE_TEST_SUITE_P(
             .second;
     }));
 
-INSTANTIATE_TEST_SUITE_P(
-    proxyPoolOOMTest, umfMemTest,
-    ::testing::Values(std::tuple(
-        [] {
-            return umf_test::makePoolWithOOMProvider<umf_test::proxy_pool>(10);
-        },
-        0)));
-
 ////////////////// Negative test cases /////////////////
 
 TEST_F(test, memoryPoolInvalidProvidersNullptr) {

@@ -66,7 +66,7 @@ TEST_F(test, freeErrorPropagation) {
     provider_handle = providerUnique.get();
 
     // force all allocations to go to memory provider
-    struct umf_disjoint_pool_params params = get_params();
+    struct umf_disjoint_pool_params params = poolConfig();
     params.MaxPoolableSize = 0;
 
     umf_memory_pool_handle_t pool = NULL;
@@ -86,14 +86,14 @@ TEST_F(test, freeErrorPropagation) {
 INSTANTIATE_TEST_SUITE_P(disjointPoolTests, umfPoolTest,
                          ::testing::Values(makePool));
 
-INSTANTIATE_TEST_SUITE_P(
-    disjointPoolTests, umfMemTest,
-    ::testing::Values(std::make_tuple(
-        [] {
-            return umf_test::makePoolWithOOMProvider<usm::DisjointPool>(
-                static_cast<int>(poolConfig().Capacity), poolConfig());
-        },
-        static_cast<int>(poolConfig().Capacity) / 2)));
+INSTANTIATE_TEST_SUITE_P(disjointPoolTests, umfMemTest,
+                         ::testing::Values(std::make_tuple(
+                             [] {
+                                 return umf_test::makePoolWithOOMProvider(
+                                     static_cast<int>(poolConfig().Capacity),
+                                     &UMF_DISJOINT_POOL_OPS, poolConfig());
+                             },
+                             static_cast<int>(poolConfig().Capacity) / 2)));
 
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(umfMultiPoolTest);
 INSTANTIATE_TEST_SUITE_P(disjointMultiPoolTests, umfMultiPoolTest,

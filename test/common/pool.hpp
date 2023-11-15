@@ -31,15 +31,26 @@ auto wrapPoolUnique(umf_memory_pool_handle_t hPool) {
     return umf::pool_unique_handle_t(hPool, &umfPoolDestroy);
 }
 
-template <typename T, typename... Args>
-auto makePoolWithOOMProvider(int allocNum, Args &&...args) {
+template <typename Param>
+auto makePoolWithOOMProvider(int allocNum, umf_memory_pool_ops_t *ops,
+                             Param &&params) {
     auto [ret, provider] =
         umf::memoryProviderMakeUnique<provider_mock_out_of_mem>(allocNum);
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
-    auto [retp, pool] = umf::poolMakeUnique<T, Args...>(
-        std::move(provider), std::forward<Args>(args)...);
-    EXPECT_EQ(retp, UMF_RESULT_SUCCESS);
-    return std::move(pool);
+
+    umf_memory_pool_handle_t pool;
+    ret = umfPoolCreate(ops, provider.get(), (void *)&params, &pool);
+
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    // capture provider and destroy it after the pool is destroyed
+    auto poolDestructor =
+        [provider_handle = provider.release()](umf_memory_pool_handle_t pool) {
+            umfPoolDestroy(pool);
+            umfMemoryProviderDestroy(provider_handle);
+        };
+
+    return umf::pool_unique_handle_t(pool, std::move(poolDestructor));
 }
 
 bool isReallocSupported(umf_memory_pool_handle_t hPool) {
