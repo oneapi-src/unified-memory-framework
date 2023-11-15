@@ -41,6 +41,8 @@ endfunction()
 
 add_subdirectory(common)
 
+add_umf_test(c_api_disjoint_pool c_api/disjoint_pool.c)
+
 add_umf_test(base base.cpp)
 add_umf_test(memoryPool memoryPoolAPI.cpp)
 add_umf_test(memoryProvider memoryProviderAPI.cpp)
