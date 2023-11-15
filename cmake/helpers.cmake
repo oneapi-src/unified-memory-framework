@@ -6,6 +6,8 @@
 # helpers.cmake -- helper functions for top-level CMakeLists.txt
 #
 
+include(FetchContent)
+
 # Sets ${ret} to version of program specified by ${name} in major.minor format
 function(get_program_version_major_minor name ret)
     execute_process(COMMAND ${name} --version
@@ -86,4 +88,27 @@ function(add_umf_library name)
         ${UMF_CMAKE_SOURCE_DIR}/src/common)
     add_umf_target_compile_options(${name})
     add_umf_target_link_options(${name})
+endfunction()
+
+# A wrapper around FetchContent_Declare that supports git checkout
+function(FetchContentCheckout_Declare SRC_DIR GIT_REPOSITORY GIT_BRANCH GIT_HASH)
+    set(external-content-dir ${SRC_DIR})
+    message(STATUS "Fetching all content from ${GIT_REPOSITORY}/${GIT_BRANCH} commit hash ${GIT_HASH}")
+    if(NOT EXISTS ${external-content-dir}/.git)
+        execute_process(COMMAND git init -b ${GIT_BRANCH}
+            WORKING_DIRECTORY ${external-content-dir})
+        execute_process(COMMAND git remote add origin ${GIT_REPOSITORY}
+            WORKING_DIRECTORY ${external-content-dir})
+    endif()
+    execute_process(COMMAND git fetch origin ${GIT_BRANCH}
+        WORKING_DIRECTORY ${external-content-dir})
+    execute_process(COMMAND git config advice.detachedHead false
+        WORKING_DIRECTORY ${external-content-dir})
+    execute_process(COMMAND git reset --hard ${GIT_HASH}
+        WORKING_DIRECTORY ${external-content-dir})
+    FetchContent_Declare(
+        ${name}
+        GIT_REPOSITORY ${GIT_REPOSITORY}
+        GIT_TAG        ${GIT_HASH}
+        SOURCE_DIR     ${external-content-dir}/)
 endfunction()
