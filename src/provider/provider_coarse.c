@@ -472,7 +472,7 @@ static enum umf_result_t coarse_memory_provider_alloc(void *provider,
             coarse_provider->used_size += size;
 
             if (coarse_provider->trace) {
-                printf("coarse_ALLOC (split_block) %lu used %lu alloc %lu\n",
+                printf("coarse_ALLOC (split_block) %zu used %zu alloc %zu\n",
                        size, coarse_provider->used_size,
                        coarse_provider->alloc_size);
             }
@@ -493,7 +493,7 @@ static enum umf_result_t coarse_memory_provider_alloc(void *provider,
             coarse_provider->used_size += size;
 
             if (coarse_provider->trace) {
-                printf("coarse_ALLOC (same_block) %lu used %lu alloc %lu\n",
+                printf("coarse_ALLOC (same_block) %zu used %zu alloc %zu\n",
                        size, coarse_provider->used_size,
                        coarse_provider->alloc_size);
             }
@@ -546,7 +546,7 @@ static enum umf_result_t coarse_memory_provider_alloc(void *provider,
     coarse_provider->used_size += size;
 
     if (coarse_provider->trace) {
-        printf("coarse_ALLOC (upstream) %lu used %lu alloc %lu\n", size,
+        printf("coarse_ALLOC (upstream) %zu used %zu alloc %zu\n", size,
                coarse_provider->used_size, coarse_provider->alloc_size);
     }
 
@@ -595,7 +595,7 @@ static enum umf_result_t coarse_memory_provider_free(void *provider, void *ptr,
     }
 
     if (coarse_provider->trace) {
-        printf("coarse_FREE (return_block_to_pool) %lu used %lu alloc %lu\n",
+        printf("coarse_FREE (return_block_to_pool) %zu used %zu alloc %zu\n",
                block->size, coarse_provider->used_size - block->size,
                coarse_provider->alloc_size);
     }
