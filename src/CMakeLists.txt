@@ -13,6 +13,7 @@ set(UMF_SOURCES
     provider/provider_os_memory.c
     provider/provider_tracking.c
     provider/provider_coarse.c
+    ravl/ravl.c
 )
 
 set(UMF_SOURCES_LINUX
@@ -55,4 +56,4 @@ endif()
 
 add_library(${PROJECT_NAME}::unified_memory_framework ALIAS unified_memory_framework)
 
-target_include_directories(unified_memory_framework PUBLIC ../include ./common ./provider ./critnib)
+target_include_directories(unified_memory_framework PUBLIC ../include ./common ./provider ./critnib ./utils)
