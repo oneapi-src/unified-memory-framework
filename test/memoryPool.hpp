@@ -34,6 +34,8 @@ struct umfPoolTest : umf_test::test,
 
     umf::pool_unique_handle_t pool;
     static constexpr int NTHREADS = 5;
+    static constexpr std::array<int, 7> nonAlignedAllocSizes = {5,  7,   23, 55,
+                                                                80, 119, 247};
 };
 
 struct umfMultiPoolTest : umfPoolTest {
@@ -84,6 +86,15 @@ TEST_P(umfPoolTest, allocFree) {
     ASSERT_NE(ptr, nullptr);
     std::memset(ptr, 0, allocSize);
     umfPoolFree(pool.get(), ptr);
+}
+
+TEST_P(umfPoolTest, allocFreeNonAlignedSizes) {
+    for (const auto &allocSize : nonAlignedAllocSizes) {
+        auto *ptr = umfPoolMalloc(pool.get(), allocSize);
+        ASSERT_NE(ptr, nullptr);
+        std::memset(ptr, 0, allocSize);
+        umfPoolFree(pool.get(), ptr);
+    }
 }
 
 TEST_P(umfPoolTest, reallocFree) {

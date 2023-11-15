@@ -14,9 +14,9 @@ set(UMF_SOURCES
 )
 
 if(MSVC)
-    set(UMF_SOURCES ${UMF_SOURCES} utils/utils_windows.c provider/provider_tracking_windows.cpp)
+    set(UMF_SOURCES ${UMF_SOURCES} utils/utils_windows_concurrency.c provider/provider_tracking_windows.cpp utils/utils_windows_math.c)
 else()
-    set(UMF_SOURCES ${UMF_SOURCES} utils/utils_posix.c)
+    set(UMF_SOURCES ${UMF_SOURCES} utils/utils_posix_concurrency.c utils/utils_posix_math.c)
 endif()
 
 if(UMF_BUILD_SHARED_LIBRARY)
