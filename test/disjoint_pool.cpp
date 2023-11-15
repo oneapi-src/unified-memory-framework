@@ -86,6 +86,83 @@ TEST_F(test, freeErrorPropagation) {
     EXPECT_EQ(freeRet, freeReturn);
 }
 
+TEST_F(test, sharedLimits) {
+#if !UMF_ENABLE_POOL_TRACKING_TESTS
+    GTEST_SKIP() << "Pool Tracking needs to be enabled";
+#endif
+
+    static size_t numAllocs = 0;
+    static size_t numFrees = 0;
+
+    struct memory_provider : public umf_test::provider_base {
+        enum umf_result_t alloc(size_t size, size_t, void **ptr) noexcept {
+            *ptr = malloc(size);
+            numAllocs++;
+            return UMF_RESULT_SUCCESS;
+        }
+        enum umf_result_t free(void *ptr,
+                               [[maybe_unused]] size_t size) noexcept {
+            ::free(ptr);
+            numFrees++;
+            return UMF_RESULT_SUCCESS;
+        }
+    };
+
+    static constexpr size_t SlabMinSize = 1024;
+    static constexpr size_t MaxSize = 4 * SlabMinSize;
+
+    auto config = poolConfig();
+    config.SlabMinSize = SlabMinSize;
+
+    auto limits =
+        std::unique_ptr<umf_disjoint_pool_shared_limits,
+                        decltype(&umfDisjointPoolSharedLimitsDestroy)>(
+            umfDisjointPoolSharedLimitsCreate(MaxSize),
+            &umfDisjointPoolSharedLimitsDestroy);
+
+    config.SharedLimits = limits.get();
+
+    auto [ret, provider] = umf::memoryProviderMakeUnique<memory_provider>();
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    umf_memory_pool_handle_t pool1 = NULL;
+    umf_memory_pool_handle_t pool2 = NULL;
+    ret = umfPoolCreate(&UMF_DISJOINT_POOL_OPS, provider.get(), (void *)&config,
+                        &pool1);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+    auto poolHandle1 = umf_test::wrapPoolUnique(pool1);
+
+    ret = umfPoolCreate(&UMF_DISJOINT_POOL_OPS, provider.get(), (void *)&config,
+                        &pool2);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+    auto poolHandle2 = umf_test::wrapPoolUnique(pool2);
+
+    EXPECT_EQ(0, numAllocs);
+    EXPECT_EQ(0, numFrees);
+
+    std::vector<std::unique_ptr<void, decltype(&umfFree)>> ptrs;
+    for (size_t i = 0; i < MaxSize / SlabMinSize; i++) {
+        ptrs.emplace_back(umfPoolMalloc(pool1, SlabMinSize), &umfFree);
+        ptrs.emplace_back(umfPoolMalloc(pool2, SlabMinSize), &umfFree);
+    }
+
+    EXPECT_EQ(MaxSize / SlabMinSize * 2, numAllocs);
+    EXPECT_EQ(0, numFrees);
+
+    ptrs.clear();
+
+    // There should still be MaxSize memory in the pool (MaxSize/SlabMinSize allocations)
+    EXPECT_EQ(MaxSize / SlabMinSize * 2, numAllocs);
+    EXPECT_EQ(MaxSize / SlabMinSize, numFrees);
+
+    poolHandle1.reset();
+    poolHandle2.reset();
+
+    // All memory should be freed now
+    EXPECT_EQ(MaxSize / SlabMinSize * 2, numAllocs);
+    EXPECT_EQ(MaxSize / SlabMinSize * 2, numFrees);
+}
+
 INSTANTIATE_TEST_SUITE_P(disjointPoolTests, umfPoolTest,
                          ::testing::Values(makePool));
 
