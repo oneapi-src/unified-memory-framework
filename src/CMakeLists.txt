@@ -13,6 +13,7 @@ set(UMF_SOURCES
     provider/provider_os_memory.c
     provider/provider_tracking.c
     provider/provider_coarse.c
+    ravl/ravl.c
 )
 
 set(UMF_SOURCES_LINUX
