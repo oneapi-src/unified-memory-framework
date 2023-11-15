@@ -478,8 +478,7 @@ static enum umf_result_t coarse_memory_provider_alloc(void *provider,
             }
 
             // Try to merge new empty block with the next one.
-            new_block =
-                block_merge_with_next(new_block, &coarse_provider->block_list);
+            block_merge_with_next(new_block, &coarse_provider->block_list);
 
             if (util_mutex_unlock(coarse_provider->lock) != 0) {
                 return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
@@ -608,7 +607,7 @@ static enum umf_result_t coarse_memory_provider_free(void *provider, void *ptr,
     // Merge with prev and/or next block if they are unused and have continuous
     // data.
     block = block_merge_with_prev(block);
-    block = block_merge_with_next(block, &coarse_provider->block_list);
+    block_merge_with_next(block, &coarse_provider->block_list);
 
     assert(debug_check(coarse_provider));
 
