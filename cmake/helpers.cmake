@@ -55,22 +55,18 @@ endfunction()
 function(add_umf_target_link_options name)
     if(NOT MSVC)
         if (NOT APPLE)
-            target_link_libraries(${name} PRIVATE "") #LINKER:-z,relro,-z,now
+            target_compile_options(${name} PRIVATE "-z,relro,-z,now")
         endif()
     elseif(MSVC)
-        target_link_libraries(${name} PRIVATE
-            /DYNAMICBASE
-            /HIGHENTROPYVA
-            /NXCOMPAT
-        )
+        set_target_properties(${name} PROPERTIES 
+            LINK_FLAGS "/DYNAMICBASE /HIGHENTROPYVA /NXCOMPAT")
     endif()
 endfunction()
 
 function(add_umf_target_exec_options name)
     if(MSVC)
-        target_link_options(${name} PRIVATE
-            /ALLOWISOLATION
-        )
+        set_target_properties(${name} PROPERTIES 
+            LINK_FLAGS "/ALLOWISOLATION")
     endif()
 endfunction()
 
