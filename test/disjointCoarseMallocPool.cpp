@@ -106,7 +106,7 @@ struct umf_memory_provider_ops_t UMF_MALLOC_MEMORY_PROVIDER_OPS = {
     mallocName,
 };
 
-TEST_F(test, disjointcoarseMallocPool_basic) {
+TEST_F(test, disjointCoarseMallocPool_basic) {
     umf_memory_provider_handle_t malloc_memory_provider;
     umfMemoryProviderCreate(&UMF_MALLOC_MEMORY_PROVIDER_OPS, NULL,
                             &malloc_memory_provider);
@@ -260,7 +260,7 @@ TEST_F(test, disjointcoarseMallocPool_basic) {
     umfMemoryProviderDestroy(malloc_memory_provider);
 }
 
-TEST_F(test, disjointcoarseMallocPool_simple1) {
+TEST_F(test, disjointCoarseMallocPool_simple1) {
     umf_memory_provider_handle_t malloc_memory_provider;
     umfMemoryProviderCreate(&UMF_MALLOC_MEMORY_PROVIDER_OPS, NULL,
                             &malloc_memory_provider);
@@ -349,7 +349,7 @@ TEST_F(test, disjointcoarseMallocPool_simple1) {
     umfMemoryProviderDestroy(malloc_memory_provider);
 }
 
-TEST_F(test, disjointcoarseMallocPool_simple2) {
+TEST_F(test, disjointCoarseMallocPool_simple2) {
 
     umf_memory_provider_handle_t malloc_memory_provider;
     umfMemoryProviderCreate(&UMF_MALLOC_MEMORY_PROVIDER_OPS, NULL,
@@ -406,7 +406,7 @@ TEST_F(test, disjointcoarseMallocPool_simple2) {
     umfMemoryProviderDestroy(malloc_memory_provider);
 }
 
-TEST_F(test, disjointcoarseMallocPool_random) {
+TEST_F(test, disjointCoarseMallocPool_random) {
 
     umf_memory_provider_handle_t malloc_memory_provider;
     umfMemoryProviderCreate(&UMF_MALLOC_MEMORY_PROVIDER_OPS, NULL,
