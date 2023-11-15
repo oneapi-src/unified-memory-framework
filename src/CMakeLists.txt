@@ -11,6 +11,7 @@ set(UMF_SOURCES
     pool/disjoint/pool_disjoint_impl.cpp
     provider/provider_tracking.c
     provider/provider_coarse.c
+    ravl/ravl.c
 )
 
 if(MSVC)
@@ -34,4 +35,4 @@ endif()
 
 add_library(${PROJECT_NAME}::unified_memory_framework ALIAS unified_memory_framework)
 
-target_include_directories(unified_memory_framework PUBLIC ../include ./common ./provider ./critnib)
+target_include_directories(unified_memory_framework PUBLIC ../include ./common ./provider ./critnib ./utils)
