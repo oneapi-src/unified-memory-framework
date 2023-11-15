@@ -32,6 +32,9 @@ struct umf_disjoint_pool_params {
 
     // Whether to print pool usage statistics
     int PoolTrace;
+
+    // Name used in traces
+    const char *Name;
 };
 
 extern struct umf_memory_pool_ops_t UMF_DISJOINT_POOL_OPS;
