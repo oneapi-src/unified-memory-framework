@@ -388,7 +388,7 @@ TEST_F(test, disjointcoarseMallocPool_simple2) {
     // test
     double sizes[] = {2, 4, 0.5, 1, 8, 0.25};
     for (int i = 0; i < 6; i++) {
-        size_t s = sizes[i] * MB;
+        size_t s = (size_t)(sizes[i] * MB);
         void *t[8] = {0};
         for (int j = 0; j < 8; j++) {
             t[j] = umfPoolMalloc(pool, s);
@@ -443,7 +443,7 @@ TEST_F(test, disjointcoarseMallocPool_random) {
     ASSERT_NE(pool, nullptr);
 
     // set constant seed so each test run will have the same scenario
-    size_t seed = 1234;
+    uint32_t seed = 1234;
     std::mt19937 mt(seed);
 
     // different sizes to alloc
@@ -451,11 +451,11 @@ TEST_F(test, disjointcoarseMallocPool_random) {
         15,       49,       588,       1025,     2 * KB,  5 * KB,
         160 * KB, 511 * KB, 1000 * KB, MB,       3 * MB,  7 * MB,
         19 * MB,  26 * MB,  99 * MB,   199 * MB, 211 * MB};
-    std::uniform_int_distribution<int> sizes_dist(0, sizes.size() - 1);
+    std::uniform_int_distribution<int> sizes_dist(0, (int)(sizes.size() - 1));
 
     // each alloc would be done few times
     std::vector<size_t> counts = {1, 3, 4, 8, 12, 21};
-    std::uniform_int_distribution<int> counts_dist(0, counts.size() - 1);
+    std::uniform_int_distribution<int> counts_dist(0, (int)(counts.size() - 1));
 
     // action to take will be random
     // alloc = <0, .5), free = <.5, 1)
@@ -486,8 +486,8 @@ TEST_F(test, disjointcoarseMallocPool_random) {
                     continue;
                 }
 
-                std::uniform_int_distribution<int> free_dist(0,
-                                                             allocs.size() - 1);
+                std::uniform_int_distribution<int> free_dist(
+                    0, (int)(allocs.size() - 1));
                 size_t free_id = free_dist(mt);
                 auto it = allocs.begin();
                 std::advance(it, free_id);
