@@ -53,7 +53,9 @@ TEST_F(test, freeErrorPropagation) {
         }
         enum umf_result_t free(void *ptr,
                                [[maybe_unused]] size_t size) noexcept {
-            ::free(ptr);
+            if (freeReturn == UMF_RESULT_SUCCESS) {
+                ::free(ptr);
+            }
             return freeReturn;
         }
     };
@@ -73,6 +75,7 @@ TEST_F(test, freeErrorPropagation) {
     enum umf_result_t retp =
         umfPoolCreate(&UMF_DISJOINT_POOL_OPS, provider_handle, &params, &pool);
     EXPECT_EQ(retp, UMF_RESULT_SUCCESS);
+    auto poolHandle = umf_test::wrapPoolUnique(pool);
 
     static constexpr size_t size = 1024;
     void *ptr = umfPoolMalloc(pool, size);
