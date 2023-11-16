@@ -76,6 +76,8 @@ struct umfMemTest
     int expectedRecycledPoolAllocs;
 };
 
+GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(umfMemTest);
+
 TEST_P(umfPoolTest, allocFree) {
     static constexpr size_t allocSize = 64;
     auto *ptr = umfPoolMalloc(pool.get(), allocSize);

@@ -12,35 +12,20 @@
 #include "pool/pool_disjoint.h"
 #include "umf.h"
 
-namespace usm {
-
-// Configuration for specific USM allocator instance
-class DisjointPoolConfig : public umf_disjoint_pool_params {
-  public:
-    DisjointPoolConfig();
-
-    std::string name = "";
-
-    struct SharedLimits {
-        SharedLimits() : TotalSize(0) {}
-
-        // Maximum memory left unfreed
-        size_t MaxSize = 16 * 1024 * 1024;
-
-        // Total size of pooled memory
-        std::atomic<size_t> TotalSize;
-    };
-
-    std::shared_ptr<SharedLimits> limits;
+struct umf_disjoint_pool_shared_limits {
+    size_t MaxSize;
+    std::atomic<size_t> TotalSize;
 };
+
+namespace usm {
 
 class DisjointPool {
   public:
     class AllocImpl;
-    using Config = DisjointPoolConfig;
+    using Config = umf_disjoint_pool_params;
 
     umf_result_t initialize(umf_memory_provider_handle_t provider,
-                            DisjointPoolConfig parameters);
+                            Config parameters);
     void *malloc(size_t size);
     void *calloc(size_t, size_t);
     void *realloc(void *, size_t);

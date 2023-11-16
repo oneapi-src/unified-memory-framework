@@ -75,9 +75,6 @@ struct MemoryProviderError {
     umf_result_t code;
 };
 
-DisjointPoolConfig::DisjointPoolConfig()
-    : limits(std::make_shared<DisjointPoolConfig::SharedLimits>()) {}
-
 class Bucket;
 
 // Represents the allocated memory block of size 'SlabMinSize'
@@ -278,13 +275,17 @@ class DisjointPool::AllocImpl {
     std::vector<std::unique_ptr<Bucket>> Buckets;
 
     // Configuration for this instance
-    DisjointPoolConfig params;
+    DisjointPool::Config params;
+
+    umf_disjoint_pool_shared_limits DefaultSharedLimits = {
+        (std::numeric_limits<size_t>::max)(), 0};
 
     // Coarse-grain allocation min alignment
     size_t ProviderMinPageSize;
 
   public:
-    AllocImpl(umf_memory_provider_handle_t hProvider, DisjointPoolConfig params)
+    AllocImpl(umf_memory_provider_handle_t hProvider,
+              DisjointPool::Config params)
         : MemHandle{hProvider}, params(params) {
 
         // Generate buckets sized such as: 64, 96, 128, 192, ..., CutOff.
@@ -321,7 +322,15 @@ class DisjointPool::AllocImpl {
 
     size_t SlabMinSize() { return params.SlabMinSize; };
 
-    DisjointPoolConfig &getParams() { return params; }
+    DisjointPool::Config &getParams() { return params; }
+
+    struct umf_disjoint_pool_shared_limits *getLimits() {
+        if (params.SharedLimits) {
+            return params.SharedLimits;
+        } else {
+            return &DefaultSharedLimits;
+        }
+    };
 
     void printStats(bool &TitlePrinted, size_t &HighBucketSize,
                     size_t &HighPeakSlabsInUse, const std::string &Label);
@@ -507,7 +516,7 @@ bool Slab::hasAvail() { return NumAllocated != getNumChunks(); }
 void Bucket::decrementPool(bool &FromPool) {
     FromPool = true;
     updateStats(1, -1);
-    OwnAllocCtx.getParams().limits->TotalSize -= SlabAllocSize();
+    OwnAllocCtx.getLimits()->TotalSize -= SlabAllocSize();
 }
 
 auto Bucket::getAvailFullSlab(bool &FromPool)
@@ -644,17 +653,16 @@ bool Bucket::CanPool(bool &ToPool) {
         NewFreeSlabsInBucket = AvailableSlabs.size() + 1;
     }
     if (Capacity() >= NewFreeSlabsInBucket) {
-        size_t PoolSize = OwnAllocCtx.getParams().limits->TotalSize;
+        size_t PoolSize = OwnAllocCtx.getLimits()->TotalSize;
         while (true) {
             size_t NewPoolSize = PoolSize + SlabAllocSize();
 
-            if (OwnAllocCtx.getParams().limits->MaxSize < NewPoolSize) {
+            if (OwnAllocCtx.getLimits()->MaxSize < NewPoolSize) {
                 break;
             }
 
-            if (OwnAllocCtx.getParams()
-                    .limits->TotalSize.compare_exchange_strong(PoolSize,
-                                                               NewPoolSize)) {
+            if (OwnAllocCtx.getLimits()->TotalSize.compare_exchange_strong(
+                    PoolSize, NewPoolSize)) {
                 if (chunkedBucket) {
                     ++chunkedSlabsInPool;
                 }
@@ -888,7 +896,7 @@ void DisjointPool::AllocImpl::printStats(bool &TitlePrinted,
 }
 
 umf_result_t DisjointPool::initialize(umf_memory_provider_handle_t provider,
-                                      DisjointPoolConfig parameters) {
+                                      DisjointPool::Config parameters) {
     if (!provider) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
@@ -909,7 +917,7 @@ void *DisjointPool::malloc(size_t size) { // For full-slab allocations indicates
     auto Ptr = impl->allocate(size, FromPool);
 
     if (impl->getParams().PoolTrace > 2) {
-        auto MT = impl->getParams().name;
+        auto MT = impl->getParams().Name;
         std::cout << "Allocated " << std::setw(8) << size << " " << MT
                   << " bytes from " << (FromPool ? "Pool" : "Provider") << " ->"
                   << Ptr << std::endl;
@@ -934,7 +942,7 @@ void *DisjointPool::aligned_malloc(size_t size, size_t alignment) {
     auto Ptr = impl->allocate(size, alignment, FromPool);
 
     if (impl->getParams().PoolTrace > 2) {
-        auto MT = impl->getParams().name;
+        auto MT = impl->getParams().Name;
         std::cout << "Allocated " << std::setw(8) << size << " " << MT
                   << " bytes aligned at " << alignment << " from "
                   << (FromPool ? "Pool" : "Provider") << " ->" << Ptr
@@ -953,11 +961,11 @@ enum umf_result_t DisjointPool::free(void *ptr) try {
     impl->deallocate(ptr, ToPool);
 
     if (impl->getParams().PoolTrace > 2) {
-        auto MT = impl->getParams().name;
+        auto MT = impl->getParams().Name;
         std::cout << "Freed " << MT << " " << ptr << " to "
                   << (ToPool ? "Pool" : "Provider")
                   << ", Current total pool size "
-                  << impl->getParams().limits->TotalSize.load()
+                  << impl->getLimits()->TotalSize.load()
                   << ", Current pool size for " << MT << " "
                   << impl->getParams().CurPoolSize << "\n";
     }
@@ -978,19 +986,17 @@ DisjointPool::~DisjointPool() {
     size_t HighBucketSize;
     size_t HighPeakSlabsInUse;
     if (impl->getParams().PoolTrace > 1) {
-        auto name = impl->getParams().name;
+        auto name = impl->getParams().Name;
         try { // cannot throw in destructor
             impl->printStats(TitlePrinted, HighBucketSize, HighPeakSlabsInUse,
-                             name.c_str());
+                             name);
             if (TitlePrinted) {
                 std::cout << "Current Pool Size "
-                          << impl->getParams().limits->TotalSize.load()
-                          << std::endl;
+                          << impl->getLimits()->TotalSize.load() << std::endl;
                 std::cout << "Suggested Setting=;"
                           << std::string(1, tolower(name[0]))
-                          << std::string(name.c_str() + 1) << ":"
-                          << HighBucketSize << "," << HighPeakSlabsInUse
-                          << ",64K" << std::endl;
+                          << std::string(name + 1) << ":" << HighBucketSize
+                          << "," << HighPeakSlabsInUse << ",64K" << std::endl;
             }
         } catch (...) { // ignore exceptions
         }

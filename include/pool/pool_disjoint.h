@@ -12,6 +12,15 @@ extern "C" {
 
 #define UMF_DISJOINT_POOL_MIN_BUCKET_DEFAULT_SIZE ((size_t)8)
 
+struct umf_disjoint_pool_shared_limits;
+
+/// \param MaxSize specifies hard limit for memory allocated from a provider
+struct umf_disjoint_pool_shared_limits *
+umfDisjointPoolSharedLimitsCreate(size_t MaxSize);
+
+void umfDisjointPoolSharedLimitsDestroy(
+    struct umf_disjoint_pool_shared_limits *);
+
 struct umf_disjoint_pool_params {
     // Minimum allocation size that will be requested from the system.
     // By default this is the minimum allocation size of each memory type.
@@ -32,6 +41,14 @@ struct umf_disjoint_pool_params {
 
     // Whether to print pool usage statistics
     int PoolTrace;
+
+    // Memory limits that can be shared between multitple pool instances,
+    // i.e. if multiple pools use the same SharedLimits sum of those pools'
+    // sizes cannot exceed MaxSize.
+    struct umf_disjoint_pool_shared_limits *SharedLimits;
+
+    // Name used in traces
+    const char *Name;
 };
 
 extern struct umf_memory_pool_ops_t UMF_DISJOINT_POOL_OPS;

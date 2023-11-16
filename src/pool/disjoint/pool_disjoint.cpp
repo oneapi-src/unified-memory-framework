@@ -12,6 +12,16 @@
 
 #include "pool_disjoint_impl.hpp"
 
+struct umf_disjoint_pool_shared_limits *
+umfDisjointPoolSharedLimitsCreate(size_t MaxSize) {
+    return new umf_disjoint_pool_shared_limits{MaxSize, 0};
+}
+
+void umfDisjointPoolSharedLimitsDestroy(
+    struct umf_disjoint_pool_shared_limits *limits) {
+    delete limits;
+}
+
 struct disjoint_memory_pool {
     usm::DisjointPool *disjoint_pool;
 };
@@ -19,19 +29,10 @@ struct disjoint_memory_pool {
 enum umf_result_t
 disjoint_pool_initialize(umf_memory_provider_handle_t provider, void *params,
                          void **pool) try {
-    struct umf_disjoint_pool_params *pub_params =
-        (struct umf_disjoint_pool_params *)params;
-    usm::DisjointPoolConfig config{};
-    config.SlabMinSize = pub_params->SlabMinSize;
-    config.MaxPoolableSize = pub_params->MaxPoolableSize;
-    config.Capacity = pub_params->Capacity;
-    config.MinBucketSize = pub_params->MinBucketSize;
-    config.CurPoolSize = pub_params->CurPoolSize;
-    config.PoolTrace = pub_params->PoolTrace;
-
     struct disjoint_memory_pool *pool_data = new struct disjoint_memory_pool;
     pool_data->disjoint_pool = new usm::DisjointPool();
-    pool_data->disjoint_pool->initialize(provider, config);
+    pool_data->disjoint_pool->initialize(
+        provider, *(struct umf_disjoint_pool_params *)params);
     *pool = (void *)pool_data;
     return UMF_RESULT_SUCCESS;
 } catch (std::bad_alloc &) {
