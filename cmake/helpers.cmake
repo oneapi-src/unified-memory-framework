@@ -55,7 +55,8 @@ endfunction()
 function(add_umf_target_link_options name)
     if(NOT MSVC)
         if (NOT APPLE)
-            target_compile_options(${name} PRIVATE "-z,relro,-z,now")
+            set_target_properties(${name} PROPERTIES 
+                LINK_FLAGS "-z,relro,-z,now")
         endif()
     elseif(MSVC)
         set_target_properties(${name} PROPERTIES 
