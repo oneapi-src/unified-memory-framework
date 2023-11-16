@@ -55,18 +55,16 @@ endfunction()
 function(add_umf_target_link_options name)
     if(NOT MSVC)
         if (NOT APPLE)
-            target_compile_options(${name} PRIVATE "-z,relro,-z,now")
+            set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,relro -Wl,-z,now")
         endif()
     elseif(MSVC)
-        set_target_properties(${name} PROPERTIES 
-            LINK_FLAGS "/DYNAMICBASE /HIGHENTROPYVA /NXCOMPAT")
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /DYNAMICBASE /HIGHENTROPYVA /NXCOMPAT")
     endif()
 endfunction()
 
 function(add_umf_target_exec_options name)
     if(MSVC)
-        set_target_properties(${name} PROPERTIES 
-            LINK_FLAGS "/ALLOWISOLATION")
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /ALLOWISOLATION")
     endif()
 endfunction()
 
