@@ -6,8 +6,6 @@
 # helpers.cmake -- helper functions for top-level CMakeLists.txt
 #
 
-include(FetchContent)
-
 # Sets ${ret} to version of program specified by ${name} in major.minor format
 function(get_program_version_major_minor name ret)
     execute_process(COMMAND ${name} --version
@@ -100,6 +98,8 @@ function(FetchContentCheckout_Declare SRC_DIR GIT_REPOSITORY GIT_BRANCH GIT_HASH
         WORKING_DIRECTORY ${external-content-dir})
     execute_process(COMMAND git reset --hard ${GIT_HASH}
         WORKING_DIRECTORY ${external-content-dir})
+        
+    include(FetchContent)
     FetchContent_Declare(
         ${name}
         GIT_REPOSITORY ${GIT_REPOSITORY}
