@@ -567,6 +567,8 @@ alloc_error:
 
 static enum umf_result_t coarse_memory_provider_free(void *provider, void *ptr,
                                                      size_t bytes) {
+    printf("aaa3\n");
+
     if (provider == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
@@ -575,15 +577,18 @@ static enum umf_result_t coarse_memory_provider_free(void *provider, void *ptr,
         (struct coarse_memory_provider_t *)provider;
     assert(debug_check(coarse_provider));
 
+    printf("aaa4\n");
     if (util_mutex_lock(coarse_provider->lock) != 0) {
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
 
+    printf("aaa5\n");
     block_t *block = coarse_provider->block_list;
     while (block && block->data != ptr) {
         block = block->next;
     }
 
+    printf("aaa6\n");
     if (block == NULL) {
         // the block was not found
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
@@ -593,6 +598,7 @@ static enum umf_result_t coarse_memory_provider_free(void *provider, void *ptr,
         assert(bytes == block->size);
     }
 
+    printf("aaa7\n");
     if (coarse_provider->trace) {
         printf("coarse_FREE (return_block_to_pool) %zu used %zu alloc %zu\n",
                block->size, coarse_provider->used_size - block->size,
@@ -602,6 +608,7 @@ static enum umf_result_t coarse_memory_provider_free(void *provider, void *ptr,
     assert(coarse_provider->used_size >= block->size);
     coarse_provider->used_size -= block->size;
 
+    printf("aaa8\n");
     block->used = false;
 
     // Merge with prev and/or next block if they are unused and have continuous
@@ -609,12 +616,14 @@ static enum umf_result_t coarse_memory_provider_free(void *provider, void *ptr,
     block = block_merge_with_prev(block);
     block_merge_with_next(block, &coarse_provider->block_list);
 
+    printf("aaa9\n");
     assert(debug_check(coarse_provider));
 
     if (util_mutex_unlock(coarse_provider->lock) != 0) {
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
 
+    printf("aaa10\n");
     return UMF_RESULT_SUCCESS;
 }
 

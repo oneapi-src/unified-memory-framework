@@ -130,11 +130,12 @@ TEST_F(test, disjointCoarseMallocPool_basic) {
                             &coarse_memory_provider);
     ASSERT_NE(coarse_memory_provider, nullptr);
 
-    umf_disjoint_pool_params disjoint_memory_pool_params;
+    umf_disjoint_pool_params disjoint_memory_pool_params = {};
     disjoint_memory_pool_params.SlabMinSize = 4096;
     disjoint_memory_pool_params.MaxPoolableSize = 4096;
     disjoint_memory_pool_params.Capacity = 4;
     disjoint_memory_pool_params.MinBucketSize = 64;
+    disjoint_memory_pool_params.PoolTrace = 0;
 
     umf_memory_pool_handle_t pool;
     umfPoolCreate(&UMF_DISJOINT_POOL_OPS, coarse_memory_provider,
@@ -284,11 +285,12 @@ TEST_F(test, disjointCoarseMallocPool_simple1) {
                             &coarse_memory_provider);
     ASSERT_NE(coarse_memory_provider, nullptr);
 
-    umf_disjoint_pool_params disjoint_memory_pool_params;
+    umf_disjoint_pool_params disjoint_memory_pool_params = {};
     disjoint_memory_pool_params.SlabMinSize = 4096;
     disjoint_memory_pool_params.MaxPoolableSize = 4096;
     disjoint_memory_pool_params.Capacity = 4;
     disjoint_memory_pool_params.MinBucketSize = 64;
+    disjoint_memory_pool_params.PoolTrace = 0;
 
     umf_memory_pool_handle_t pool;
     umfPoolCreate(&UMF_DISJOINT_POOL_OPS, coarse_memory_provider,
@@ -374,11 +376,12 @@ TEST_F(test, disjointCoarseMallocPool_simple2) {
                             &coarse_memory_provider);
     ASSERT_NE(coarse_memory_provider, nullptr);
 
-    umf_disjoint_pool_params disjoint_memory_pool_params;
+    umf_disjoint_pool_params disjoint_memory_pool_params = {};
     disjoint_memory_pool_params.SlabMinSize = 4096;
     disjoint_memory_pool_params.MaxPoolableSize = 4096;
     disjoint_memory_pool_params.Capacity = 4;
     disjoint_memory_pool_params.MinBucketSize = 64;
+    disjoint_memory_pool_params.PoolTrace = 0;
 
     umf_memory_pool_handle_t pool;
     umfPoolCreate(&UMF_DISJOINT_POOL_OPS, coarse_memory_provider,
@@ -431,11 +434,12 @@ TEST_F(test, disjointCoarseMallocPool_random) {
                             &coarse_memory_provider);
     ASSERT_NE(coarse_memory_provider, nullptr);
 
-    umf_disjoint_pool_params disjoint_memory_pool_params;
+    umf_disjoint_pool_params disjoint_memory_pool_params = {};
     disjoint_memory_pool_params.SlabMinSize = 1024;
     disjoint_memory_pool_params.MaxPoolableSize = 1024;
     disjoint_memory_pool_params.Capacity = 2;
     disjoint_memory_pool_params.MinBucketSize = 16;
+    disjoint_memory_pool_params.PoolTrace = 0;
 
     umf_memory_pool_handle_t pool;
     umfPoolCreate(&UMF_DISJOINT_POOL_OPS, coarse_memory_provider,
@@ -494,7 +498,9 @@ TEST_F(test, disjointCoarseMallocPool_random) {
                 void *ptr = (*it);
                 ASSERT_NE(ptr, nullptr);
 
+                std::cout << "aaa1" << std::endl;
                 umf_result_t ret = umfPoolFree(pool, ptr);
+                std::cout << "aaa1 x";
                 ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 
                 allocs.erase(ptr);

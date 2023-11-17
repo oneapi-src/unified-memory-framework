@@ -13,6 +13,7 @@
 #include <umf/memory_pool_ops.h>
 
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 void *umfPoolMalloc(umf_memory_pool_handle_t hPool, size_t size) {
@@ -37,7 +38,14 @@ size_t umfPoolMallocUsableSize(umf_memory_pool_handle_t hPool, void *ptr) {
 }
 
 enum umf_result_t umfPoolFree(umf_memory_pool_handle_t hPool, void *ptr) {
+    printf("aaa2\n");
+    printf("ptr %p\n", ptr);
+    printf("hPool %p\n", (void *)hPool);
+    printf("hPool->ops %p\n", (void *)&hPool->ops);
+    printf("hPool->ops.free %p\n", (void *)hPool->ops.free);
+    printf("hPool->pool_priv %p\n", (void *)hPool->pool_priv);
     return hPool->ops.free(hPool->pool_priv, ptr);
+    printf("aaa2 x\n");
 }
 
 enum umf_result_t
