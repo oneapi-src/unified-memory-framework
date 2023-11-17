@@ -416,20 +416,20 @@ static struct ravl_node *ravl_node_cessor(struct ravl_node *n,
 }
 
 /*
- * ravl_node_successor -- (internal) returns node's successor
+ * ravl_node_successor -- returns node's successor
  *
  * It's the first node larger than n.
  */
-static struct ravl_node *ravl_node_successor(struct ravl_node *n) {
+struct ravl_node *ravl_node_successor(struct ravl_node *n) {
     return ravl_node_cessor(n, RAVL_RIGHT);
 }
 
 /*
- * ravl_node_successor -- (internal) returns node's successor
+ * ravl_node_predecessor -- returns node's successor
  *
  * It's the first node smaller than n.
  */
-static struct ravl_node *ravl_node_predecessor(struct ravl_node *n) {
+struct ravl_node *ravl_node_predecessor(struct ravl_node *n) {
     return ravl_node_cessor(n, RAVL_LEFT);
 }
 
