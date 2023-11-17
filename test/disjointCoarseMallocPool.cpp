@@ -494,7 +494,9 @@ TEST_F(test, disjointCoarseMallocPool_random) {
                 void *ptr = (*it);
                 ASSERT_NE(ptr, nullptr);
 
+                std::cout << "aaa1" << std::endl;
                 umf_result_t ret = umfPoolFree(pool, ptr);
+                std::cout << "aaa1 x";
                 ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 
                 allocs.erase(ptr);
