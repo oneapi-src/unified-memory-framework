@@ -2,6 +2,8 @@
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
+include(../cmake/helpers.cmake)
+
 set(UMF_SOURCES
     memory_pool.c
     memory_provider.c
