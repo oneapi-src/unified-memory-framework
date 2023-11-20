@@ -8,8 +8,7 @@ set(UMF_SOURCES
     memory_pool.c
     memory_provider.c
     memory_provider_get_last_failed.c
-    pool/disjoint/pool_disjoint.cpp
-    pool/disjoint/pool_disjoint_impl.cpp
+    pool/pool_disjoint.cpp
     provider/provider_tracking.c
     critnib/critnib.c
 )
