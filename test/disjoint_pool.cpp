@@ -5,7 +5,6 @@
 #include "memoryPool.hpp"
 #include "pool.hpp"
 #include "pool/pool_disjoint.h"
-#include "pool_disjoint_impl.hpp"
 #include "provider.hpp"
 #include "provider_null.h"
 #include "provider_trace.h"
