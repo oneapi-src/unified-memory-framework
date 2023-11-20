@@ -25,7 +25,7 @@ class DisjointPool {
     using Config = umf_disjoint_pool_params;
 
     umf_result_t initialize(umf_memory_provider_handle_t provider,
-                            Config parameters);
+                            umf_disjoint_pool_params *parameters);
     void *malloc(size_t size);
     void *calloc(size_t, size_t);
     void *realloc(void *, size_t);

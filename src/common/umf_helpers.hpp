@@ -65,9 +65,23 @@ umf_result_t initialize(T *obj, ArgsTuple &&args) {
     }
 }
 
+template <typename T> umf_memory_pool_ops_t poolOpsBase() {
+    umf_memory_pool_ops_t ops;
+    ops.version = UMF_VERSION_CURRENT;
+    ops.finalize = [](void *obj) { delete reinterpret_cast<T *>(obj); };
+    UMF_ASSIGN_OP(ops, T, malloc, ((void *)nullptr));
+    UMF_ASSIGN_OP(ops, T, calloc, ((void *)nullptr));
+    UMF_ASSIGN_OP(ops, T, aligned_malloc, ((void *)nullptr));
+    UMF_ASSIGN_OP(ops, T, realloc, ((void *)nullptr));
+    UMF_ASSIGN_OP(ops, T, malloc_usable_size, ((size_t)0));
+    UMF_ASSIGN_OP(ops, T, free, UMF_RESULT_SUCCESS);
+    UMF_ASSIGN_OP(ops, T, get_last_allocation_error, UMF_RESULT_ERROR_UNKNOWN);
+    return ops;
+}
+
 template <typename T, typename ArgsTuple>
 umf_memory_pool_ops_t poolMakeUniqueOps() {
-    umf_memory_pool_ops_t ops;
+    umf_memory_pool_ops_t ops = poolOpsBase<T>();
 
     ops.version = UMF_VERSION_CURRENT;
     ops.initialize = [](umf_memory_provider_handle_t provider, void *params,
@@ -83,19 +97,32 @@ umf_memory_pool_ops_t poolMakeUniqueOps() {
             std::tuple_cat(std::make_tuple(provider),
                            *reinterpret_cast<ArgsTuple *>(params)));
     };
-    ops.finalize = [](void *obj) { delete reinterpret_cast<T *>(obj); };
-
-    UMF_ASSIGN_OP(ops, T, malloc, ((void *)nullptr));
-    UMF_ASSIGN_OP(ops, T, calloc, ((void *)nullptr));
-    UMF_ASSIGN_OP(ops, T, aligned_malloc, ((void *)nullptr));
-    UMF_ASSIGN_OP(ops, T, realloc, ((void *)nullptr));
-    UMF_ASSIGN_OP(ops, T, malloc_usable_size, ((size_t)0));
-    UMF_ASSIGN_OP(ops, T, free, UMF_RESULT_SUCCESS);
-    UMF_ASSIGN_OP(ops, T, get_last_allocation_error, UMF_RESULT_ERROR_UNKNOWN);
 
     return ops;
 }
 } // namespace detail
+
+// @brief creates UMF pool ops that can be exposed through
+// C API. 'params' from ops.initialize will be casted to 'ParamType*'
+// and passed to T::initalize() function.
+template <typename T, typename ParamType> umf_memory_pool_ops_t poolMakeCOps() {
+    umf_memory_pool_ops_t ops = detail::poolOpsBase<T>();
+
+    ops.initialize = [](umf_memory_provider_handle_t provider, void *params,
+                        void **obj) {
+        try {
+            *obj = new T;
+        } catch (...) {
+            return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+        }
+
+        return detail::initialize<T>(
+            reinterpret_cast<T *>(*obj),
+            std::make_tuple(provider, reinterpret_cast<ParamType *>(params)));
+    };
+
+    return ops;
+}
 
 /// @brief creates UMF memory provider based on given T type.
 /// T should implement all functions defined by

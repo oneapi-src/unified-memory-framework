@@ -60,7 +60,9 @@ static inline struct umf_disjoint_pool_params umfDisjointPoolParamsDefault() {
         0,                                         /* Capacity */
         UMF_DISJOINT_POOL_MIN_BUCKET_DEFAULT_SIZE, /* MinBucketSize */
         0,                                         /* CurPoolSize */
-        0                                          /* PoolTrace */
+        0,                                         /* PoolTrace */
+        NULL,                                      /* SharedLimits */
+        "disjoint_pool"                            /* Name */
     };
 
     return params;
