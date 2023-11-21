@@ -18,9 +18,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "providers/provider_coarse.h"
 #include "ravl.h"
 #include "utils.h"
-#include <provider/provider_coarse.h>
 
 #ifndef BYTE
 #define BYTE unsigned char

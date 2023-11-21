@@ -61,6 +61,7 @@ target_include_directories(unified_memory_framework PUBLIC
     ./common
     ./critnib
     ./provider
+    ./ravl 
     ./utils)
 
 # libumf_pool_jemalloc
