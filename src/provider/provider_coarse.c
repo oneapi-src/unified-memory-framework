@@ -18,7 +18,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <../utils/utils.h>
+#include "ravl.h"
+#include "utils.h"
 #include <provider/provider_coarse.h>
 
 #ifndef BYTE
@@ -37,25 +38,76 @@ typedef struct block_t {
     size_t size;
     BYTE *data;
 
-    // Origin is the element of the provider's alloc_list that contains the
+    // Origin is the element of the provider's upstream_alloc that contains the
     // beginning of data in current block. Note that data address could be
     // higher than the origin - this means, that the origin allocation
     // covers current block only partially.
     // If the size of the block is greater than the size of the allocation,
     // it means that there are multiple allocations.
-    // Note that provider's alloc_list doesn't use "origin" and "used" fields.
+    // Note that provider's upstream_alloc doesn't use "origin" and "used" fields.
     struct block_t *origin;
     bool used;
 
     struct block_t *next;
     struct block_t *prev;
+
+    // Node in the list of free blocks of the same size pointing to this block.
+    // The list is located in the (coarse_provider->free_blocks) RAVL tree.
+    struct ravl_free_blocks_elem_t *free_list_ptr;
 } block_t;
 
-static block_t *block_list_add(block_t **head, BYTE *data, size_t size) {
-    assert(head);
+// A general node in a RAVL tree.
+// 1) coarse_provider->all_blocks RAVL tree (tree of all blocks - sorted by an address of data):
+//    key   - pointer (block_t->data) to the beginning of the block data
+//    value - pointer (block_t) to the block of the allocation
+// 2) coarse_provider->free_blocks RAVL tree (tree of free blocks - sorted by a size of data):
+//    key   - size of the allocation (block_t->size)
+//    value - pointer (ravl_free_blocks_head_t) to the head of the list of free blocks of the same size
+typedef struct ravl_data_t {
+    uintptr_t key;
+    void *value;
+} ravl_data_t;
+
+// The head of the list of free blocks of the same size,
+// so there is a separate mutex for each size.
+typedef struct ravl_free_blocks_head_t {
+    struct ravl_free_blocks_elem_t *head;
+    struct os_mutex_t *mutex;
+} ravl_free_blocks_head_t;
+
+// The node of the list of free blocks of the same size
+typedef struct ravl_free_blocks_elem_t {
+    struct block_t *block;
+    struct ravl_free_blocks_elem_t *next;
+    struct ravl_free_blocks_elem_t *prev;
+} ravl_free_blocks_elem_t;
+
+// The compare function of a RAVL tree
+static int ravl_comp(const void *lhs, const void *rhs) {
+    ravl_data_t *lhs_ravl = (ravl_data_t *)lhs;
+    ravl_data_t *rhs_ravl = (ravl_data_t *)rhs;
+
+    if (lhs_ravl->key < rhs_ravl->key) {
+        return -1;
+    } else if (lhs_ravl->key == rhs_ravl->key) {
+        return 0;
+    } else {
+        return 1;
+    }
+}
+
+// The functions "ravl_tree_*" handle lists of blocks:
+// - coarse_provider->all_blocks and coarse_provider->upstream_alloc
+// sorted by a pointer (block_t->data) to the beginning of the block data.
+//
+// ravl_tree_add_new - allocate and add a new block to the tree
+// and link this block to the next and the previous one.
+static block_t *ravl_tree_add_new(struct ravl *rtree, BYTE *data, size_t size) {
+    assert(rtree);
     assert(data);
     assert(size);
 
+    // TODO this malloc can be optimized
     block_t *block = (block_t *)malloc(sizeof(block_t));
     if (block == NULL) {
         return NULL;
@@ -63,46 +115,365 @@ static block_t *block_list_add(block_t **head, BYTE *data, size_t size) {
 
     block->data = data;
     block->size = size;
+    block->next = NULL;
+    block->prev = NULL;
+    block->free_list_ptr = NULL;
 
-    if (*head == NULL) {
-        // handle case, where the list is empty
-        block->prev = NULL;
-        block->next = NULL;
-        *head = block;
-        return block;
-    } else if (data < (*head)->data) {
-        // case where we have to insert our element in front of the list
-        block->prev = NULL;
-        block->next = *head;
-        (*head)->prev = block;
-        *head = block;
-        return block;
+    ravl_data_t rdata = {(uintptr_t)block->data, block};
+    assert(NULL == ravl_find(rtree, &data, RAVL_PREDICATE_EQUAL));
+    int ret = ravl_emplace_copy(rtree, &rdata);
+    if (ret) {
+        free(block);
+        return NULL;
     }
 
-    // linear search for the suitable place to add new alloc
-    // TODO optimize :)
-    block_t *curr = *head;
-    block_t *prev = NULL;
-    while (curr && (curr->data < data)) {
-        prev = curr;
-        curr = curr->next;
+    struct ravl_node *ravl_node =
+        ravl_find(rtree, &rdata, RAVL_PREDICATE_EQUAL);
+
+    assert(ravl_node != NULL);
+
+    struct ravl_node *ravl_next = ravl_node_successor(ravl_node);
+    if (ravl_next) {
+        ravl_data_t *node_data = ravl_data(ravl_next);
+        assert(node_data);
+        block->next = node_data->value;
+        assert(block->next);
     }
 
-    // else we have to add new alloc between two existing elements or at the
-    // end of the list
-    assert(prev && prev->data < data);
-    block->prev = prev;
-    block->next = curr;
-    prev->next = block;
-    if (curr != NULL) {
-        assert(data < curr->data);
-        curr->prev = block;
+    struct ravl_node *ravl_prev = ravl_node_predecessor(ravl_node);
+    if (ravl_prev) {
+        ravl_data_t *node_data = ravl_data(ravl_prev);
+        assert(node_data);
+        block->prev = node_data->value;
+        assert(block->prev);
+    }
+
+    if (block->next) {
+        assert(block->next->prev == block->prev);
+        block->next->prev = block;
+    }
+
+    if (block->prev) {
+        assert(block->prev->next == block->next);
+        block->prev->next = block;
     }
 
     return block;
 }
 
-// Find the alloc that contains data with given offset.
+// ravl_tree_find - find the block in the tree
+static block_t *ravl_tree_find(struct ravl *rtree, void *ptr) {
+    ravl_data_t data = {(uintptr_t)ptr, NULL};
+    struct ravl_node *node;
+    node = ravl_find(rtree, &data, RAVL_PREDICATE_EQUAL);
+    if (node) {
+        ravl_data_t *node_data = ravl_data(node);
+        assert(node_data);
+        return (block_t *)node_data->value;
+    }
+    return NULL;
+}
+
+// ravl_tree_find - remove the block from the tree
+static block_t *ravl_tree_rm(struct ravl *rtree, void *ptr) {
+    ravl_data_t data = {(uintptr_t)ptr, NULL};
+    struct ravl_node *node;
+    node = ravl_find(rtree, &data, RAVL_PREDICATE_EQUAL);
+    if (node) {
+        ravl_data_t *node_data = ravl_data(node);
+        assert(node_data);
+        block_t *block = node_data->value;
+        assert(block);
+        ravl_remove(rtree, node);
+        assert(NULL == ravl_find(rtree, &data, RAVL_PREDICATE_EQUAL));
+        return block;
+    }
+    return NULL;
+}
+
+// The functions "node_list_*" handle lists of free block of the same size.
+// The heads (ravl_free_blocks_head_t) of those lists are stored in nodes of
+// the coarse_provider->free_blocks RAVL tree.
+//
+// node_list_add - add a free block to the list of free blocks of the same size
+static ravl_free_blocks_elem_t *
+node_list_add(ravl_free_blocks_head_t *head_node, struct block_t *block) {
+    assert(head_node);
+    assert(block);
+
+    // TODO this malloc can be optimized
+    ravl_free_blocks_elem_t *node =
+        (ravl_free_blocks_elem_t *)malloc(sizeof(ravl_free_blocks_elem_t));
+    if (node == NULL) {
+        return NULL;
+    }
+
+    util_mutex_lock(head_node->mutex);
+
+    if (head_node->head) {
+        head_node->head->prev = node;
+    }
+
+    node->block = block;
+    node->next = head_node->head;
+    node->prev = NULL;
+    head_node->head = node;
+
+    util_mutex_unlock(head_node->mutex);
+
+    return node;
+}
+
+// node_list_rm_first - remove the first free block from the list of free blocks of the same size
+static block_t *node_list_rm_first(ravl_free_blocks_head_t *head_node) {
+    assert(head_node);
+
+    util_mutex_lock(head_node->mutex);
+
+    if (!head_node->head) {
+        util_mutex_unlock(head_node->mutex);
+        return NULL;
+    }
+
+    ravl_free_blocks_elem_t *node = head_node->head;
+    assert(node->prev == NULL);
+    if (node->next) {
+        node->next->prev = NULL;
+    }
+
+    head_node->head = node->next;
+    util_mutex_unlock(head_node->mutex);
+
+    struct block_t *block = node->block;
+    block->free_list_ptr = NULL;
+    free(node);
+
+    return block;
+}
+
+// node_list_rm - remove the given free block from the list of free blocks of the same size
+static block_t *node_list_rm(ravl_free_blocks_head_t *head_node,
+                             ravl_free_blocks_elem_t *node) {
+    assert(head_node);
+    assert(node);
+
+    util_mutex_lock(head_node->mutex);
+
+    if (!head_node->head) {
+        util_mutex_unlock(head_node->mutex);
+        return NULL;
+    }
+
+    if (node == head_node->head) {
+        assert(node->prev == NULL);
+        head_node->head = node->next;
+    }
+
+    ravl_free_blocks_elem_t *node_next = node->next;
+    ravl_free_blocks_elem_t *node_prev = node->prev;
+    if (node_next) {
+        node_next->prev = node_prev;
+    }
+
+    if (node_prev) {
+        node_prev->next = node_next;
+    }
+
+    util_mutex_unlock(head_node->mutex);
+    struct block_t *block = node->block;
+    block->free_list_ptr = NULL;
+    free(node);
+
+    return block;
+}
+
+// The functions "free_blocks_*" handle the coarse_provider->free_blocks RAVL tree
+// sorted by a size of the allocation (block_t->size).
+// This is a tree of heads (ravl_free_blocks_head_t) of lists of free block of the same size.
+//
+// free_blocks_add - add a free block to the list of free blocks of the same size
+static int free_blocks_add(struct ravl *free_blocks, block_t *block) {
+    ravl_free_blocks_head_t *head_node = NULL;
+    int rv;
+
+    ravl_data_t data = {(uintptr_t)block->size, NULL};
+    struct ravl_node *node;
+    node = ravl_find(free_blocks, &data, RAVL_PREDICATE_EQUAL);
+    if (node) {
+        ravl_data_t *node_data = ravl_data(node);
+        assert(node_data);
+        head_node = node_data->value;
+        assert(head_node);
+    }
+
+    if (!head_node) {
+        // TODO this malloc can be optimized
+        head_node = malloc(sizeof(ravl_free_blocks_head_t));
+        if (!head_node) {
+            return -1;
+        }
+
+        head_node->head = NULL;
+        head_node->mutex = util_mutex_create();
+        if (head_node->mutex == NULL) {
+            free(head_node);
+            return -1;
+        }
+
+        ravl_data_t data = {(uintptr_t)block->size, head_node};
+        assert(NULL == ravl_find(free_blocks, &data, RAVL_PREDICATE_EQUAL));
+        rv = ravl_emplace_copy(free_blocks, &data);
+        if (rv) {
+            util_mutex_destroy(head_node->mutex);
+            free(head_node);
+            return -1;
+        }
+    }
+
+    block->free_list_ptr = node_list_add(head_node, block);
+    if (!block->free_list_ptr) {
+        return -1;
+    }
+
+    assert(block->free_list_ptr->block->size == block->size);
+
+    return 0;
+}
+
+// free_blocks_rm_ge - remove the first free block of a size greater or equal to the given size.
+// If it was the last block, the head node is freed and removed from the tree.
+// It is used during memory allocation (looking for a free block).
+static block_t *free_blocks_rm_ge(struct ravl *free_blocks, size_t size) {
+    ravl_data_t data = {(uintptr_t)size, NULL};
+    struct ravl_node *node;
+    node = ravl_find(free_blocks, &data, RAVL_PREDICATE_GREATER_EQUAL);
+    if (!node) {
+        return NULL;
+    }
+
+    ravl_data_t *node_data = ravl_data(node);
+    assert(node_data);
+    assert(node_data->key >= size);
+
+    ravl_free_blocks_head_t *head_node = node_data->value;
+    assert(head_node);
+
+    block_t *block = node_list_rm_first(head_node);
+
+    if (head_node->head == NULL) {
+        util_mutex_destroy(head_node->mutex);
+        free(head_node);
+        ravl_remove(free_blocks, node);
+    }
+
+    return block;
+}
+
+// free_blocks_rm_node - remove the free block pointed by the given node.
+// If it was the last block, the head node is freed and removed from the tree.
+// It is used during merging free blocks and destroying the coarse_provider->free_blocks tree.
+static block_t *free_blocks_rm_node(struct ravl *free_blocks,
+                                    ravl_free_blocks_elem_t *node) {
+    assert(free_blocks);
+    assert(node);
+    size_t size = node->block->size;
+    ravl_data_t data = {(uintptr_t)size, NULL};
+    struct ravl_node *ravl_node;
+    ravl_node = ravl_find(free_blocks, &data, RAVL_PREDICATE_EQUAL);
+    assert(ravl_node);
+
+    ravl_data_t *node_data = ravl_data(ravl_node);
+    assert(node_data);
+    assert(node_data->key == size);
+
+    ravl_free_blocks_head_t *head_node = node_data->value;
+    assert(head_node);
+
+    block_t *block = node_list_rm(head_node, node);
+
+    if (head_node->head == NULL) {
+        util_mutex_destroy(head_node->mutex);
+        free(head_node);
+        ravl_remove(free_blocks, ravl_node);
+    }
+
+    return block;
+}
+
+// free_block_merge_with_prev - merge the given free block
+// with the previous one if both are unused and have continuous data.
+// Remove the merged block from the tree of free blocks.
+static block_t *free_block_merge_with_prev(struct ravl *all_blocks,
+                                           struct ravl *free_blocks,
+                                           block_t *block) {
+    assert(block);
+
+    if (block->prev && block->prev->used == false &&
+        (block->prev->data + block->prev->size == block->data)) {
+
+        block_t *to_free = block;
+
+        if (block->prev->free_list_ptr) {
+            free_blocks_rm_node(free_blocks, block->prev->free_list_ptr);
+            block->prev->free_list_ptr = NULL;
+        }
+
+        // set neighbors
+        block->prev->next = block->next;
+        block->prev->size += block->size;
+
+        if (block->next) {
+            block->next->prev = block->prev;
+        }
+
+        block = block->prev;
+        block_t *block_rm = ravl_tree_rm(all_blocks, to_free->data);
+        assert(block_rm == to_free);
+        free(to_free);
+    }
+
+    return block;
+}
+
+// free_block_merge_with_next - merge the given free block
+// with the next one if both are unused and have continuous data.
+// Remove the merged block from the tree of free blocks.
+static block_t *free_block_merge_with_next(struct ravl *all_blocks,
+                                           struct ravl *free_blocks,
+                                           block_t *block) {
+    assert(free_blocks);
+    assert(block);
+
+    if (block->next && block->next->used == false &&
+        (block->data + block->size == block->next->data)) {
+
+        block_t *to_free = block->next;
+
+        if (block->next->free_list_ptr) {
+            free_blocks_rm_node(free_blocks, block->next->free_list_ptr);
+            block->next->free_list_ptr = NULL;
+        }
+
+        assert(block->data < block->next->data);
+        assert((block->data + block->size) == block->next->data);
+
+        if (block->next->next) {
+            block->next->next->prev = block;
+        }
+
+        // set neighbors
+        block->size += block->next->size;
+        block->next = block->next->next;
+
+        block_t *block_rm = ravl_tree_rm(all_blocks, to_free->data);
+        assert(block_rm == to_free);
+        free(to_free);
+    }
+
+    return block;
+}
+
+// alloc_find_origin - find the upstream allocation that contains data with given offset.
 static block_t *alloc_find_origin(block_t *alloc, size_t offset) {
     assert(alloc);
 
@@ -115,66 +486,22 @@ static block_t *alloc_find_origin(block_t *alloc, size_t offset) {
     return alloc;
 }
 
-// Merge with prev block if both are unused and have continuous data.
-static block_t *block_merge_with_prev(block_t *block) {
-    assert(block);
-
-    if (block->prev && block->prev->used == false &&
-        (block->prev->data + block->prev->size == block->data)) {
-        // set neighbors
-        block->prev->next = block->next;
-        block->prev->size += block->size;
-
-        if (block->next) {
-            block->next->prev = block->prev;
-        }
-
-        block_t *to_free = block;
-        block = block->prev;
-        free(to_free);
-    }
-
-    return block;
-}
-
-// Merge with next block if both are unused and have continuous data.
-static block_t *block_merge_with_next(block_t *block, block_t **head) {
-    assert(block);
-    assert(head);
-
-    if (block->next && block->next->used == false &&
-        (block->data + block->size == block->next->data)) {
-        // set neighbors
-        block->next->prev = block->prev;
-        block->next->size += block->size;
-
-        assert(block->data < block->next->data);
-        assert((block->data + block->size) == block->next->data);
-        block->next->data = block->data;
-        block->next->origin = block->origin;
-
-        if (block->prev) {
-            block->prev->next = block->next;
-        } else {
-            *head = block->next;
-        }
-
-        block_t *to_free = block;
-        block = block->next;
-        free(to_free);
-    }
-
-    return block;
-}
-
 typedef struct coarse_memory_provider_t {
     umf_memory_provider_handle_t upstream_memory_provider;
 
     size_t used_size;
     size_t alloc_size;
 
-    block_t *block_list;
-    block_t *alloc_list;
+    // upstream_alloc - tree of all blocks allocated from the upstream provider
+    struct ravl *upstream_alloc;
+
+    // all_blocks - tree of all blocks - sorted by an address of data
+    struct ravl *all_blocks;
+
+    // free_blocks - tree of free blocks - sorted by a size of data,
+    // each node contains a pointer (ravl_free_blocks_head_t)
+    // to the head of the list of free blocks of the same size
+    struct ravl *free_blocks;
 
     struct os_mutex_t *lock;
 
@@ -182,18 +509,76 @@ typedef struct coarse_memory_provider_t {
 } coarse_memory_provider_t;
 
 #ifndef NDEBUG
+// ravl_tree_get_head_block() - find the head (head->prev == NULL) of the all_blocks list.
+// It is not used in the critical path.
+static block_t *ravl_tree_get_head_block(struct ravl *rtree) {
+    // find head of blocks (head->prev == NULL)
+    block_t *block = NULL;
+    struct ravl_node *rnode = ravl_first(rtree);
+    if (!rnode) {
+        return NULL;
+    }
+
+    ravl_data_t *rdata = ravl_data(rnode);
+    assert(rdata);
+    block = rdata->value;
+    assert(block);
+    // make sure it is really the head
+    assert(block->prev == NULL);
+    return block;
+}
+
 static bool debug_check(coarse_memory_provider_t *provider) {
     assert(provider);
 
     size_t sum_used = 0;
-    size_t sum_allocs_size = 0;
     size_t sum_blocks_size = 0;
+    size_t sum_allocs_size = 0;
 
-    if (provider->block_list && provider->alloc_list) {
-        assert(provider->block_list->data == provider->alloc_list->data);
+    coarse_memory_provider_stats_t stats =
+        umfCoarseMemoryProviderGetStats(provider);
+
+    // find the head (head->prev == NULL) of the all_blocks list
+    block_t *head = ravl_tree_get_head_block(provider->all_blocks);
+    if (stats.blocks_num == 0) {
+        assert(head == NULL);
+    } else {
+        assert(head != NULL);
     }
 
-    block_t *block = provider->block_list;
+    // tail of blocks (tail->next == NULL)
+    block_t *tail = NULL;
+
+    // count blocks by next
+    size_t count_next = 0;
+    size_t count_free_next = 0;
+    block_t *block = head;
+    while (block) {
+        count_next++;
+        if (!block->used) {
+            count_free_next++;
+        }
+        tail = block;
+        block = block->next;
+    }
+    assert(count_next == stats.blocks_num);
+    assert(count_free_next == stats.free_blocks_num);
+
+    // count blocks by prev
+    size_t count_prev = 0;
+    size_t count_free_prev = 0;
+    block = tail;
+    while (block) {
+        count_prev++;
+        if (!block->used) {
+            count_free_prev++;
+        }
+        block = block->prev;
+    }
+    assert(count_prev == stats.blocks_num);
+    assert(count_free_prev == stats.free_blocks_num);
+
+    block = head;
     while (block) {
         assert(block->data);
         assert(block->size > 0);
@@ -203,7 +588,7 @@ static bool debug_check(coarse_memory_provider_t *provider) {
         assert(block->data < (block->origin->data + block->origin->size));
 
         // only the HEAD could have an empty prev
-        if (block != provider->block_list) {
+        if (block != head) {
             assert(block->prev);
         }
 
@@ -266,13 +651,17 @@ static bool debug_check(coarse_memory_provider_t *provider) {
     assert(sum_blocks_size == provider->alloc_size);
     assert(provider->alloc_size >= provider->used_size);
 
-    block_t *alloc = provider->alloc_list;
+    count_next = 0;
+
+    // find head of blocks (head->prev == NULL)
+    head = ravl_tree_get_head_block(provider->upstream_alloc);
+    block_t *alloc = head;
     while (alloc) {
         assert(alloc->data);
         assert(alloc->size > 0);
 
         // only the HEAD could have an empty prev
-        if (alloc != provider->alloc_list) {
+        if (alloc != head) {
             assert(alloc->prev);
         }
 
@@ -300,11 +689,13 @@ static bool debug_check(coarse_memory_provider_t *provider) {
         }
 
         sum_allocs_size += alloc->size;
+        count_next++;
 
         alloc = alloc->next;
     }
 
     assert(sum_allocs_size == provider->alloc_size);
+    assert(count_next == stats.upstream_blocks_num);
 
     return true;
 }
@@ -338,15 +729,28 @@ static enum umf_result_t coarse_memory_provider_initialize(void *params,
 
     coarse_provider->lock = util_mutex_create();
     if (coarse_provider->lock == NULL) {
-        free(coarse_provider);
-        return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
+        goto err_free_coarse_provider;
     }
 
     coarse_provider->trace = coarse_params->trace;
     coarse_provider->upstream_memory_provider =
         coarse_params->upstream_memory_provider;
-    coarse_provider->block_list = NULL;
-    coarse_provider->alloc_list = NULL;
+    coarse_provider->upstream_alloc =
+        ravl_new_sized(ravl_comp, sizeof(ravl_data_t));
+    if (coarse_provider->upstream_alloc == NULL) {
+        goto err_util_mutex_destroy;
+    }
+    coarse_provider->free_blocks =
+        ravl_new_sized(ravl_comp, sizeof(ravl_data_t));
+    if (coarse_provider->free_blocks == NULL) {
+        goto err_delete_ravl_upstream_alloc;
+    }
+    coarse_provider->all_blocks =
+        ravl_new_sized(ravl_comp, sizeof(ravl_data_t));
+    if (coarse_provider->all_blocks == NULL) {
+        goto err_delete_ravl_free_blocks;
+    }
+
     coarse_provider->alloc_size = 0;
     coarse_provider->used_size = 0;
 
@@ -355,9 +759,7 @@ static enum umf_result_t coarse_memory_provider_initialize(void *params,
             coarse_provider, coarse_params->init_buffer_size, 0, &init_buffer);
 
         if (init_buffer == NULL) {
-            util_mutex_destroy(coarse_provider->lock);
-            free(coarse_provider);
-            return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
+            goto err_delete_ravl_all_blocks;
         }
 
         coarse_memory_provider_free(coarse_provider, init_buffer,
@@ -365,7 +767,6 @@ static enum umf_result_t coarse_memory_provider_initialize(void *params,
 
         // since we use alloc and free functions, we have set the block as unused
         assert(coarse_provider->used_size == 0);
-        assert(coarse_provider->block_list->used == false);
         assert(coarse_provider->alloc_size == coarse_params->init_buffer_size);
     }
 
@@ -374,6 +775,64 @@ static enum umf_result_t coarse_memory_provider_initialize(void *params,
     assert(debug_check(coarse_provider));
 
     return UMF_RESULT_SUCCESS;
+
+err_delete_ravl_all_blocks:
+    ravl_delete(coarse_provider->all_blocks);
+err_delete_ravl_free_blocks:
+    ravl_delete(coarse_provider->free_blocks);
+err_delete_ravl_upstream_alloc:
+    ravl_delete(coarse_provider->upstream_alloc);
+err_util_mutex_destroy:
+    util_mutex_destroy(coarse_provider->lock);
+err_free_coarse_provider:
+    free(coarse_provider);
+    return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
+}
+
+static void ravl_cb_rm_upstream_alloc_node(void *data, void *arg) {
+    assert(data);
+    assert(arg);
+
+    coarse_memory_provider_t *coarse_provider =
+        (struct coarse_memory_provider_t *)arg;
+    ravl_data_t *node_data = data;
+    block_t *alloc = node_data->value;
+    assert(alloc);
+
+    enum umf_result_t ret = umfMemoryProviderFree(
+        coarse_provider->upstream_memory_provider, alloc->data, alloc->size);
+
+    // We would continue to deallocate alloc blocks even if the upstream
+    // provider doesn't return success.
+    assert(ret == UMF_RESULT_SUCCESS);
+    (void)ret;
+
+    assert(coarse_provider->alloc_size >= alloc->size);
+    coarse_provider->alloc_size -= alloc->size;
+
+    free(alloc);
+}
+
+static void ravl_cb_rm_all_blocks_node(void *data, void *arg) {
+    assert(data);
+    assert(arg);
+
+    coarse_memory_provider_t *coarse_provider =
+        (struct coarse_memory_provider_t *)arg;
+    ravl_data_t *node_data = data;
+    block_t *block = node_data->value;
+    assert(block);
+
+    if (block->used) {
+        assert(coarse_provider->used_size >= block->size);
+        coarse_provider->used_size -= block->size;
+    }
+
+    if (block->free_list_ptr) {
+        free_blocks_rm_node(coarse_provider->free_blocks, block->free_list_ptr);
+    }
+
+    free(block);
 }
 
 static void coarse_memory_provider_finalize(void *provider) {
@@ -385,32 +844,17 @@ static void coarse_memory_provider_finalize(void *provider) {
     coarse_memory_provider_t *coarse_provider =
         (struct coarse_memory_provider_t *)provider;
 
-    block_t *alloc = coarse_provider->alloc_list;
-    while (alloc) {
-        enum umf_result_t ret =
-            umfMemoryProviderFree(coarse_provider->upstream_memory_provider,
-                                  alloc->data, alloc->size);
-
-        // We would continue to deallocate alloc blocks even if the upstream
-        // provider doesn't return success.
-        assert(ret == UMF_RESULT_SUCCESS);
-        (void)ret;
-
-        assert(coarse_provider->alloc_size >= alloc->size);
-        coarse_provider->alloc_size -= alloc->size;
-
-        block_t *to_free = alloc;
-        alloc = alloc->next;
-        free(to_free);
-    }
+    ravl_foreach(coarse_provider->upstream_alloc,
+                 ravl_cb_rm_upstream_alloc_node, coarse_provider);
     assert(coarse_provider->alloc_size == 0);
 
-    block_t *block = coarse_provider->block_list;
-    while (block) {
-        block_t *to_free = block;
-        block = block->next;
-        free(to_free);
-    }
+    ravl_foreach(coarse_provider->all_blocks, ravl_cb_rm_all_blocks_node,
+                 coarse_provider);
+    assert(coarse_provider->used_size == 0);
+
+    ravl_delete(coarse_provider->upstream_alloc);
+    ravl_delete(coarse_provider->all_blocks);
+    ravl_delete(coarse_provider->free_blocks);
 
     util_mutex_destroy(coarse_provider->lock);
     free(coarse_provider);
@@ -421,6 +865,7 @@ static enum umf_result_t coarse_memory_provider_alloc(void *provider,
                                                       size_t alignment,
                                                       void **resultPtr) {
     enum umf_result_t ret = UMF_RESULT_SUCCESS;
+    int rv;
 
     if (provider == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
@@ -438,100 +883,96 @@ static enum umf_result_t coarse_memory_provider_alloc(void *provider,
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
 
-    // Try to reuse existing blocks first.
-    // If the block that we want to reuse is has greater size, split it.
+    // Find first blocks with greater or equal size.
+    // If the block that we want to reuse has greater size, split it.
     // Try to merge split part with the successor if it is not used.
-    block_t *curr = coarse_provider->block_list;
-    while (curr) {
-        if (!curr->used && (curr->size > size)) {
-            // Split the existing block and put the new block after the existing.
-            // Find the origin of the new block.
-            size_t curr_offset = curr->data - curr->origin->data;
-            block_t *origin =
-                alloc_find_origin(curr->origin, curr_offset + size);
-            assert(origin);
-            void *data = curr->data + size;
+    block_t *curr = free_blocks_rm_ge(coarse_provider->free_blocks, size);
+    if (curr && curr->size > size) {
+        assert(curr->used == false);
+        // Split the existing block and put the new block after the existing.
+        // Find the origin of the new block.
+        size_t curr_offset = curr->data - curr->origin->data;
+        block_t *origin = alloc_find_origin(curr->origin, curr_offset + size);
+        assert(origin);
+        void *data = curr->data + size;
 
-            block_t *new_block = block_list_add(&coarse_provider->block_list,
-                                                data, curr->size - size);
-            if (new_block == NULL) {
-                if (util_mutex_unlock(coarse_provider->lock) != 0) {
-                    return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
-                }
-
-                return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-            }
-
-            new_block->origin = origin;
-            new_block->used = false;
-
-            curr->used = true;
-            curr->size = size;
-
-            *resultPtr = curr->data;
-            coarse_provider->used_size += size;
-
-            if (coarse_provider->trace) {
-                printf("coarse_ALLOC (split_block) %zu used %zu alloc %zu\n",
-                       size, coarse_provider->used_size,
-                       coarse_provider->alloc_size);
-            }
-
-            // Try to merge new empty block with the next one.
-            block_merge_with_next(new_block, &coarse_provider->block_list);
-
+        block_t *new_block = ravl_tree_add_new(coarse_provider->all_blocks,
+                                               data, curr->size - size);
+        if (new_block == NULL) {
             if (util_mutex_unlock(coarse_provider->lock) != 0) {
                 return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
             }
 
-            assert(debug_check(coarse_provider));
-            return UMF_RESULT_SUCCESS;
-        } else if (!curr->used && (curr->size == size)) {
-            curr->used = true;
-            *resultPtr = curr->data;
-            coarse_provider->used_size += size;
-
-            if (coarse_provider->trace) {
-                printf("coarse_ALLOC (same_block) %zu used %zu alloc %zu\n",
-                       size, coarse_provider->used_size,
-                       coarse_provider->alloc_size);
-            }
-
-            if (util_mutex_unlock(coarse_provider->lock) != 0) {
-                return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
-            }
-
-            assert(debug_check(coarse_provider));
-            return UMF_RESULT_SUCCESS;
+            return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
         }
 
-        curr = curr->next;
-    }
+        new_block->origin = origin;
+        new_block->used = false;
 
-    // TODO - reuse last block if it is empty
+        curr->used = true;
+        curr->size = size;
+
+        *resultPtr = curr->data;
+        coarse_provider->used_size += size;
+
+        // Try to merge new empty block with the next one.
+        new_block =
+            free_block_merge_with_next(coarse_provider->all_blocks,
+                                       coarse_provider->free_blocks, new_block);
+        rv = free_blocks_add(coarse_provider->free_blocks, new_block);
+        if (rv) {
+            return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+        }
+
+        if (coarse_provider->trace) {
+            printf("coarse_ALLOC (split_block) %zu used %zu alloc %zu\n", size,
+                   coarse_provider->used_size, coarse_provider->alloc_size);
+        }
+
+        if (util_mutex_unlock(coarse_provider->lock) != 0) {
+            return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
+        }
+
+        assert(debug_check(coarse_provider));
+        return UMF_RESULT_SUCCESS;
+
+    } else if (curr && curr->size == size) {
+        assert(curr->used == false);
+        curr->used = true;
+        *resultPtr = curr->data;
+        coarse_provider->used_size += size;
+
+        if (coarse_provider->trace) {
+            printf("coarse_ALLOC (same_block) %zu used %zu alloc %zu\n", size,
+                   coarse_provider->used_size, coarse_provider->alloc_size);
+        }
+
+        if (util_mutex_unlock(coarse_provider->lock) != 0) {
+            return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
+        }
+
+        assert(debug_check(coarse_provider));
+        return UMF_RESULT_SUCCESS;
+    }
 
     // no suitable block - try to get more memory from the upstream provider
     assert(coarse_provider->upstream_memory_provider);
 
     umfMemoryProviderAlloc(coarse_provider->upstream_memory_provider, size,
                            alignment, resultPtr);
-
     if (*resultPtr == NULL) {
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
 
     block_t *alloc =
-        block_list_add(&coarse_provider->alloc_list, *resultPtr, size);
-
+        ravl_tree_add_new(coarse_provider->upstream_alloc, *resultPtr, size);
     if (alloc == NULL) {
         ret = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
         goto alloc_error;
     }
 
-    // create new block and add it to the list
     block_t *new_block =
-        block_list_add(&coarse_provider->block_list, *resultPtr, size);
-
+        ravl_tree_add_new(coarse_provider->all_blocks, *resultPtr, size);
     if (new_block == NULL) {
         assert(0);
         ret = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
@@ -550,14 +991,19 @@ static enum umf_result_t coarse_memory_provider_alloc(void *provider,
     }
 
     if (util_mutex_unlock(coarse_provider->lock) != 0) {
-        return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
+        assert(0);
+        ret = UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
+        goto unlock_error;
     }
 
     assert(debug_check(coarse_provider));
     return UMF_RESULT_SUCCESS;
 
+unlock_error:
+    ravl_tree_rm(coarse_provider->all_blocks, *resultPtr);
+
 block_error:
-    free(alloc);
+    ravl_tree_rm(coarse_provider->upstream_alloc, *resultPtr);
 
 alloc_error:
     umfMemoryProviderFree(coarse_provider->upstream_memory_provider, *resultPtr,
@@ -579,11 +1025,7 @@ static enum umf_result_t coarse_memory_provider_free(void *provider, void *ptr,
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
 
-    block_t *block = coarse_provider->block_list;
-    while (block && block->data != ptr) {
-        block = block->next;
-    }
-
+    block_t *block = ravl_tree_find(coarse_provider->all_blocks, ptr);
     if (block == NULL) {
         // the block was not found
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
@@ -604,10 +1046,16 @@ static enum umf_result_t coarse_memory_provider_free(void *provider, void *ptr,
 
     block->used = false;
 
-    // Merge with prev and/or next block if they are unused and have continuous
-    // data.
-    block = block_merge_with_prev(block);
-    block_merge_with_next(block, &coarse_provider->block_list);
+    // Merge with prev and/or next block if they are unused and have continuous data.
+    block = free_block_merge_with_prev(coarse_provider->all_blocks,
+                                       coarse_provider->free_blocks, block);
+    block = free_block_merge_with_next(coarse_provider->all_blocks,
+                                       coarse_provider->free_blocks, block);
+
+    int rv = free_blocks_add(coarse_provider->free_blocks, block);
+    if (rv) {
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
 
     assert(debug_check(coarse_provider));
 
@@ -683,6 +1131,32 @@ struct umf_memory_provider_ops_t UMF_COARSE_MEMORY_PROVIDER_OPS = {
     .get_name = coarse_memory_provider_get_name,
 };
 
+static void ravl_cb_count(void *data, void *arg) {
+    assert(arg);
+    (void)data; /* unused */
+
+    size_t *blocks_num = arg;
+    (*blocks_num)++;
+}
+
+static void ravl_cb_count_free(void *data, void *arg) {
+    assert(data);
+    assert(arg);
+
+    ravl_data_t *node_data = data;
+    assert(node_data);
+    ravl_free_blocks_head_t *head_node = node_data->value;
+    assert(head_node);
+    struct ravl_free_blocks_elem_t *free_block = head_node->head;
+    assert(free_block);
+
+    size_t *blocks_num = arg;
+    while (free_block) {
+        (*blocks_num)++;
+        free_block = free_block->next;
+    }
+}
+
 coarse_memory_provider_stats_t umfCoarseMemoryProviderGetStats(void *provider) {
     assert(provider);
 
@@ -690,17 +1164,23 @@ coarse_memory_provider_stats_t umfCoarseMemoryProviderGetStats(void *provider) {
         (struct coarse_memory_provider_t *)provider;
 
     // count blocks
+    size_t upstream_blocks_num = 0;
+    ravl_foreach(coarse_provider->upstream_alloc, ravl_cb_count,
+                 &upstream_blocks_num);
+
     size_t blocks_num = 0;
-    block_t *block = coarse_provider->block_list;
-    while (block) {
-        blocks_num++;
-        block = block->next;
-    }
+    ravl_foreach(coarse_provider->all_blocks, ravl_cb_count, &blocks_num);
+
+    size_t free_blocks_num = 0;
+    ravl_foreach(coarse_provider->free_blocks, ravl_cb_count_free,
+                 &free_blocks_num);
 
     coarse_memory_provider_stats_t stats;
     stats.alloc_size = coarse_provider->alloc_size;
     stats.used_size = coarse_provider->used_size;
+    stats.upstream_blocks_num = upstream_blocks_num;
     stats.blocks_num = blocks_num;
+    stats.free_blocks_num = free_blocks_num;
 
     return stats;
 }
