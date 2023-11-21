@@ -296,9 +296,9 @@ static int free_blocks_add(struct ravl *free_blocks, block_t *block) {
     ravl_free_blocks_head_t *head_node = NULL;
     int rv;
 
-    ravl_data_t data = {(uintptr_t)block->size, NULL};
+    ravl_data_t head_node_data = {(uintptr_t)block->size, NULL};
     struct ravl_node *node;
-    node = ravl_find(free_blocks, &data, RAVL_PREDICATE_EQUAL);
+    node = ravl_find(free_blocks, &head_node_data, RAVL_PREDICATE_EQUAL);
     if (node) {
         ravl_data_t *node_data = ravl_data(node);
         assert(node_data);
