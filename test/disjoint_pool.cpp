@@ -4,10 +4,10 @@
 
 #include "memoryPool.hpp"
 #include "pool.hpp"
-#include "pool/pool_disjoint.h"
 #include "provider.hpp"
 #include "provider_null.h"
 #include "provider_trace.h"
+#include "umf/pools/pool_disjoint.h"
 
 umf_disjoint_pool_params poolConfig() {
     umf_disjoint_pool_params config{};

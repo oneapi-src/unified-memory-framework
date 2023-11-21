@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <bitset>
 #include <cassert>
 #include <cctype>
@@ -21,10 +22,46 @@
 // TODO: replace with logger?
 #include <iostream>
 
-#include "pool_disjoint_impl.hpp"
+#include "umf.h"
+#include "umf/pools/pool_disjoint.h"
 #include "umf_helpers.hpp"
 
-namespace usm {
+struct umf_disjoint_pool_shared_limits {
+    size_t MaxSize;
+    std::atomic<size_t> TotalSize;
+};
+
+class DisjointPool {
+  public:
+    class AllocImpl;
+    using Config = umf_disjoint_pool_params;
+
+    umf_result_t initialize(umf_memory_provider_handle_t provider,
+                            umf_disjoint_pool_params *parameters);
+    void *malloc(size_t size);
+    void *calloc(size_t, size_t);
+    void *realloc(void *, size_t);
+    void *aligned_malloc(size_t size, size_t alignment);
+    size_t malloc_usable_size(void *);
+    enum umf_result_t free(void *ptr);
+    enum umf_result_t get_last_allocation_error();
+
+    DisjointPool();
+    ~DisjointPool();
+
+  private:
+    std::unique_ptr<AllocImpl> impl;
+};
+
+struct umf_disjoint_pool_shared_limits *
+umfDisjointPoolSharedLimitsCreate(size_t MaxSize) {
+    return new umf_disjoint_pool_shared_limits{MaxSize, 0};
+}
+
+void umfDisjointPoolSharedLimitsDestroy(
+    struct umf_disjoint_pool_shared_limits *limits) {
+    delete limits;
+}
 
 // Allocations are a minimum of 4KB/64KB/2MB even when a smaller size is
 // requested. The implementation distinguishes between allocations of size
@@ -1003,4 +1040,5 @@ DisjointPool::~DisjointPool() {
     }
 }
 
-} // namespace usm
+struct umf_memory_pool_ops_t UMF_DISJOINT_POOL_OPS =
+    umf::poolMakeCOps<DisjointPool, umf_disjoint_pool_params>();
