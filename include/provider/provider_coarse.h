@@ -21,7 +21,9 @@ typedef struct coarse_memory_provider_params_t {
 typedef struct coarse_memory_provider_stats_t {
     size_t alloc_size;
     size_t used_size;
+    size_t upstream_blocks_num;
     size_t blocks_num;
+    size_t free_blocks_num;
 } coarse_memory_provider_stats_t;
 
 extern struct umf_memory_provider_ops_t UMF_COARSE_MEMORY_PROVIDER_OPS;
