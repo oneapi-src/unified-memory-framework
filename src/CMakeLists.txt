@@ -36,4 +36,11 @@ endif()
 
 add_library(${PROJECT_NAME}::unified_memory_framework ALIAS unified_memory_framework)
 
-target_include_directories(unified_memory_framework PUBLIC ../include ./common ./provider ./critnib ./ravl ./utils)
+target_include_directories(unified_memory_framework PUBLIC 
+    ../include 
+    ../include/umf
+    ./common 
+    ./providers 
+    ./critnib
+    ./ravl 
+    ./utils)
