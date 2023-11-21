@@ -12,8 +12,8 @@
 #include "provider.hpp"
 #include "test_helpers.h"
 
-#include <pool/pool_disjoint.h>
 #include <provider/provider_coarse.h>
+#include <umf/pools/pool_disjoint.h>
 
 using umf_test::test;
 
