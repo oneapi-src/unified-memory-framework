@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../src/memory_provider_internal.h"
 #include "providers/provider_coarse.h"
 #include "ravl.h"
 #include "utils.h"
@@ -33,6 +34,13 @@ static enum umf_result_t coarse_memory_provider_alloc(void *provider,
 
 static enum umf_result_t coarse_memory_provider_free(void *provider, void *ptr,
                                                      size_t bytes);
+
+static enum umf_result_t
+coarse_memory_provider_get_stats(void *provider,
+                                 coarse_memory_provider_stats_t *stats);
+
+static void ravl_cb_count(void *data, void *arg);
+static void ravl_cb_count_free(void *data, void *arg);
 
 typedef struct block_t {
     size_t size;
@@ -537,8 +545,8 @@ static bool debug_check(coarse_memory_provider_t *provider) {
     size_t sum_blocks_size = 0;
     size_t sum_allocs_size = 0;
 
-    coarse_memory_provider_stats_t stats =
-        umfCoarseMemoryProviderGetStats(provider);
+    coarse_memory_provider_stats_t stats = {0};
+    coarse_memory_provider_get_stats(provider, &stats);
 
     // find the head (head->prev == NULL) of the all_blocks list
     block_t *head = ravl_tree_get_head_block(provider->all_blocks);
@@ -1120,6 +1128,41 @@ static const char *coarse_memory_provider_get_name(void *provider) {
     return "coarse";
 }
 
+static enum umf_result_t
+coarse_memory_provider_get_stats(void *provider,
+                                 coarse_memory_provider_stats_t *stats) {
+    if (provider == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (stats == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    coarse_memory_provider_t *coarse_provider =
+        (struct coarse_memory_provider_t *)provider;
+
+    // count blocks
+    size_t upstream_blocks_num = 0;
+    ravl_foreach(coarse_provider->upstream_alloc, ravl_cb_count,
+                 &upstream_blocks_num);
+
+    size_t blocks_num = 0;
+    ravl_foreach(coarse_provider->all_blocks, ravl_cb_count, &blocks_num);
+
+    size_t free_blocks_num = 0;
+    ravl_foreach(coarse_provider->free_blocks, ravl_cb_count_free,
+                 &free_blocks_num);
+
+    stats->alloc_size = coarse_provider->alloc_size;
+    stats->used_size = coarse_provider->used_size;
+    stats->upstream_blocks_num = upstream_blocks_num;
+    stats->blocks_num = blocks_num;
+    stats->free_blocks_num = free_blocks_num;
+
+    return UMF_RESULT_SUCCESS;
+}
+
 struct umf_memory_provider_ops_t UMF_COARSE_MEMORY_PROVIDER_OPS = {
     .version = UMF_VERSION_CURRENT,
     .initialize = coarse_memory_provider_initialize,
@@ -1159,39 +1202,23 @@ static void ravl_cb_count_free(void *data, void *arg) {
     }
 }
 
-coarse_memory_provider_stats_t umfCoarseMemoryProviderGetStats(void *provider) {
+coarse_memory_provider_stats_t
+umfCoarseMemoryProviderGetStats(umf_memory_provider_handle_t provider) {
     assert(provider);
+    void *priv = umfMemoryProviderGetPriv(provider);
 
-    coarse_memory_provider_t *coarse_provider =
-        (struct coarse_memory_provider_t *)provider;
-
-    // count blocks
-    size_t upstream_blocks_num = 0;
-    ravl_foreach(coarse_provider->upstream_alloc, ravl_cb_count,
-                 &upstream_blocks_num);
-
-    size_t blocks_num = 0;
-    ravl_foreach(coarse_provider->all_blocks, ravl_cb_count, &blocks_num);
-
-    size_t free_blocks_num = 0;
-    ravl_foreach(coarse_provider->free_blocks, ravl_cb_count_free,
-                 &free_blocks_num);
-
-    coarse_memory_provider_stats_t stats;
-    stats.alloc_size = coarse_provider->alloc_size;
-    stats.used_size = coarse_provider->used_size;
-    stats.upstream_blocks_num = upstream_blocks_num;
-    stats.blocks_num = blocks_num;
-    stats.free_blocks_num = free_blocks_num;
+    coarse_memory_provider_stats_t stats = {0};
+    coarse_memory_provider_get_stats(priv, &stats);
 
     return stats;
 }
 
-umf_memory_provider_handle_t
-umfCoarseMemoryProviderGetUpstreamProvider(void *provider) {
+umf_memory_provider_handle_t umfCoarseMemoryProviderGetUpstreamProvider(
+    umf_memory_provider_handle_t provider) {
     assert(provider);
 
     coarse_memory_provider_t *coarse_provider =
-        (struct coarse_memory_provider_t *)provider;
+        (struct coarse_memory_provider_t *)umfMemoryProviderGetPriv(provider);
+
     return coarse_provider->upstream_memory_provider;
 }
