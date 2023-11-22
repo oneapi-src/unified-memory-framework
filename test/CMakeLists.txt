@@ -103,3 +103,6 @@ if(UMF_BUILD_OS_MEMORY_PROVIDER AND LINUX) # OS-specific functions are implement
                  SRCS provider_os_memory.cpp
                  LIBS umf_utils)
 endif()
+if (UMF_ENABLE_POOL_TRACKING)
+    add_umf_test(NAME ipc SRCS ipcAPI.cpp)
+endif()

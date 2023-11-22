@@ -90,6 +90,11 @@ template <typename T> umf_memory_provider_ops_t providerOpsBase() {
     UMF_ASSIGN_OP(ops, T, get_min_page_size, UMF_RESULT_ERROR_UNKNOWN);
     UMF_ASSIGN_OP(ops, T, purge_lazy, UMF_RESULT_ERROR_UNKNOWN);
     UMF_ASSIGN_OP(ops, T, purge_force, UMF_RESULT_ERROR_UNKNOWN);
+    UMF_ASSIGN_OP(ops, T, get_ipc_handle_size, UMF_RESULT_ERROR_UNKNOWN);
+    UMF_ASSIGN_OP(ops, T, get_ipc_handle, UMF_RESULT_ERROR_UNKNOWN);
+    UMF_ASSIGN_OP(ops, T, put_ipc_handle, UMF_RESULT_ERROR_UNKNOWN);
+    UMF_ASSIGN_OP(ops, T, open_ipc_handle, UMF_RESULT_ERROR_UNKNOWN);
+    UMF_ASSIGN_OP(ops, T, close_ipc_handle, UMF_RESULT_ERROR_UNKNOWN);
     UMF_ASSIGN_OP(ops, T, get_name, "");
     return ops;
 }
