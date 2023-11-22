@@ -1186,3 +1186,12 @@ coarse_memory_provider_stats_t umfCoarseMemoryProviderGetStats(void *provider) {
 
     return stats;
 }
+
+umf_memory_provider_handle_t
+umfCoarseMemoryProviderGetUpstreamProvider(void *provider) {
+    assert(provider);
+
+    coarse_memory_provider_t *coarse_provider =
+        (struct coarse_memory_provider_t *)provider;
+    return coarse_provider->upstream_memory_provider;
+}
