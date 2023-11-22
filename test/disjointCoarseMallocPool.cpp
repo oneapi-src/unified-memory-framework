@@ -147,20 +147,20 @@ TEST_F(test, disjointCoarseMallocPool_basic) {
     umf_memory_provider_handle_t prov = NULL;
     umfPoolGetMemoryProvider(pool, &prov);
     ASSERT_NE(prov, nullptr);
-    void *pp = umfMemoryProviderGetPriv(prov);
-    ASSERT_NE(pp, nullptr);
 
     // alloc 2x 2MB
     void *p1 = umfPoolMalloc(pool, 2 * MB);
 
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).used_size, 2 * MB);
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).blocks_num, 2);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).used_size, 2 * MB);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).alloc_size,
+              init_buffer_size);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).blocks_num, 2);
 
     void *p2 = umfPoolMalloc(pool, 2 * MB);
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).used_size, 4 * MB);
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).blocks_num, 3);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).used_size, 4 * MB);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).alloc_size,
+              init_buffer_size);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).blocks_num, 3);
     ASSERT_NE(p1, p2);
 
     // swap pointers to get p1 < p2
@@ -174,14 +174,16 @@ TEST_F(test, disjointCoarseMallocPool_basic) {
     // there should be no block merging between used and not-used blocks
     umf_result_t res = umfPoolFree(pool, p1);
     ASSERT_EQ(res, UMF_RESULT_SUCCESS);
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).used_size, 2 * MB);
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).blocks_num, 3);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).used_size, 2 * MB);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).alloc_size,
+              init_buffer_size);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).blocks_num, 3);
 
     p1 = umfPoolMalloc(pool, 2 * MB);
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).used_size, 4 * MB);
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).blocks_num, 3);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).used_size, 4 * MB);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).alloc_size,
+              init_buffer_size);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).blocks_num, 3);
 
     // free all allocs
     // overall alloc size shouldn't change
@@ -189,34 +191,39 @@ TEST_F(test, disjointCoarseMallocPool_basic) {
     // and the remaining init block
     res = umfPoolFree(pool, p1);
     ASSERT_EQ(res, UMF_RESULT_SUCCESS);
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).blocks_num, 3);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).blocks_num, 3);
     res = umfPoolFree(pool, p2);
     ASSERT_EQ(res, UMF_RESULT_SUCCESS);
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).used_size, 0 * MB);
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).blocks_num, 1);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).used_size, 0 * MB);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).alloc_size,
+              init_buffer_size);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).blocks_num, 1);
 
     // alloc whole buffer
     // after this, there should be one single block
     p1 = umfPoolMalloc(pool, init_buffer_size);
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).used_size, init_buffer_size);
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).blocks_num, 1);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).used_size,
+              init_buffer_size);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).alloc_size,
+              init_buffer_size);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).blocks_num, 1);
 
     // free all memory
     // alloc 2 MB block - the init block should be splitted
     res = umfPoolFree(pool, p1);
     p1 = umfPoolMalloc(pool, 2 * MB);
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).used_size, 2 * MB);
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).blocks_num, 2);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).used_size, 2 * MB);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).alloc_size,
+              init_buffer_size);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).blocks_num, 2);
 
     // alloc additional 2 MB
     // the non-used block should be used
     p2 = umfPoolMalloc(pool, 2 * MB);
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).used_size, 4 * MB);
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).blocks_num, 3);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).used_size, 4 * MB);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).alloc_size,
+              init_buffer_size);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).blocks_num, 3);
     ASSERT_NE(p1, p2);
 
     // make sure that p1 < p2
@@ -229,22 +236,24 @@ TEST_F(test, disjointCoarseMallocPool_basic) {
     // swap pointers to get p1 < p2
     umfPoolFree(pool, p2);
     umfPoolFree(pool, p1);
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).used_size, 0 * MB);
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).blocks_num, 1);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).used_size, 0 * MB);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).alloc_size,
+              init_buffer_size);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).blocks_num, 1);
 
     // alloc 10x 2 MB - this should occupy all allocated memory
     constexpr int allocs_size = 10;
     void *allocs[allocs_size] = {0};
     for (int i = 0; i < allocs_size; i++) {
-        ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).used_size, i * 2 * MB);
+        ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).used_size, i * 2 * MB);
         allocs[i] = umfPoolMalloc(pool, 2 * MB);
         ASSERT_NE(allocs[i], nullptr);
     }
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).used_size, 20 * MB);
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).used_size, 20 * MB);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).alloc_size,
+              init_buffer_size);
     // there should be no block with the free memory
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).blocks_num, allocs_size);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).blocks_num, allocs_size);
 
     // free all memory
     for (int i = 0; i < allocs_size; i++) {
@@ -252,9 +261,10 @@ TEST_F(test, disjointCoarseMallocPool_basic) {
         ASSERT_EQ(res, UMF_RESULT_SUCCESS);
     }
 
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).blocks_num, 1);
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).used_size, 0 * MB);
-    ASSERT_EQ(umfCoarseMemoryProviderGetStats(pp).alloc_size, init_buffer_size);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).blocks_num, 1);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).used_size, 0 * MB);
+    ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).alloc_size,
+              init_buffer_size);
 
     umfPoolDestroy(pool);
     umfMemoryProviderDestroy(coarse_memory_provider);
@@ -300,8 +310,6 @@ TEST_F(test, disjointCoarseMallocPool_simple1) {
     umf_memory_provider_handle_t prov = NULL;
     umfPoolGetMemoryProvider(pool, &prov);
     ASSERT_NE(prov, nullptr);
-    void *pp = umfMemoryProviderGetPriv(prov);
-    ASSERT_NE(pp, nullptr);
 
     // test 1
 
@@ -319,7 +327,7 @@ TEST_F(test, disjointCoarseMallocPool_simple1) {
         }
 
         if (max_alloc_size == 0) {
-            max_alloc_size = umfCoarseMemoryProviderGetStats(pp).alloc_size;
+            max_alloc_size = umfCoarseMemoryProviderGetStats(prov).alloc_size;
         }
 
         for (int i = 0; i < 6; i++) {
@@ -337,7 +345,7 @@ TEST_F(test, disjointCoarseMallocPool_simple1) {
         }
 
         // all s2 should fit into single block leaved after freeing s1
-        ASSERT_LE(umfCoarseMemoryProviderGetStats(pp).alloc_size,
+        ASSERT_LE(umfCoarseMemoryProviderGetStats(prov).alloc_size,
                   max_alloc_size);
 
         for (int i = 0; i < 6; i++) {

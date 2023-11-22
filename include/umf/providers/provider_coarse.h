@@ -29,10 +29,10 @@ typedef struct coarse_memory_provider_stats_t {
 extern struct umf_memory_provider_ops_t UMF_COARSE_MEMORY_PROVIDER_OPS;
 
 coarse_memory_provider_stats_t
-umfCoarseMemoryProviderGetStats(void *provider_priv);
+umfCoarseMemoryProviderGetStats(umf_memory_provider_handle_t provider);
 
-umf_memory_provider_handle_t
-umfCoarseMemoryProviderGetUpstreamProvider(void *provider_priv);
+umf_memory_provider_handle_t umfCoarseMemoryProviderGetUpstreamProvider(
+    umf_memory_provider_handle_t provider);
 
 #ifdef __cplusplus
 }
