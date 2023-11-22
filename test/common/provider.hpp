@@ -73,6 +73,26 @@ typedef struct provider_base_t {
                                   [[maybe_unused]] size_t firstSize) {
         return UMF_RESULT_ERROR_UNKNOWN;
     }
+    umf_result_t get_ipc_handle_size([[maybe_unused]] size_t *size) noexcept {
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
+    umf_result_t
+    get_ipc_handle([[maybe_unused]] const void *ptr,
+                   [[maybe_unused]] size_t size,
+                   [[maybe_unused]] void *providerIpcData) noexcept {
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
+    umf_result_t
+    put_ipc_handle([[maybe_unused]] void *providerIpcData) noexcept {
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
+    umf_result_t open_ipc_handle([[maybe_unused]] void *providerIpcData,
+                                 [[maybe_unused]] void **ptr) noexcept {
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
+    umf_result_t close_ipc_handle([[maybe_unused]] void *ptr) noexcept {
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
 } provider_base_t;
 
 umf_memory_provider_ops_t BASE_PROVIDER_OPS =
