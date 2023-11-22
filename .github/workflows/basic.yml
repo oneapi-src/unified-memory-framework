@@ -102,8 +102,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install prerequisites
-        run: python3 -m pip install clang-format==15.0.7
+      - name: Install Python requirements
+        run: python3 -m pip install -r third_party/requirements.txt
 
       - name: Configure build
         run: >
