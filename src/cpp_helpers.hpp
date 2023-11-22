@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023 Intel Corporation
+ * Copyright (C) 2023-2024 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -93,6 +93,11 @@ template <typename T> umf_memory_provider_ops_t providerOpsBase() {
     UMF_ASSIGN_OP(ops.ext, T, purge_force, UMF_RESULT_ERROR_UNKNOWN);
     UMF_ASSIGN_OP(ops.ext, T, allocation_merge, UMF_RESULT_ERROR_UNKNOWN);
     UMF_ASSIGN_OP(ops.ext, T, allocation_split, UMF_RESULT_ERROR_UNKNOWN);
+    UMF_ASSIGN_OP(ops.ipc, T, get_ipc_handle_size, UMF_RESULT_ERROR_UNKNOWN);
+    UMF_ASSIGN_OP(ops.ipc, T, get_ipc_handle, UMF_RESULT_ERROR_UNKNOWN);
+    UMF_ASSIGN_OP(ops.ipc, T, put_ipc_handle, UMF_RESULT_ERROR_UNKNOWN);
+    UMF_ASSIGN_OP(ops.ipc, T, open_ipc_handle, UMF_RESULT_ERROR_UNKNOWN);
+    UMF_ASSIGN_OP(ops.ipc, T, close_ipc_handle, UMF_RESULT_ERROR_UNKNOWN);
     return ops;
 }
 } // namespace detail
