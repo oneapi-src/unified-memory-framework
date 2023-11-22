@@ -429,6 +429,7 @@ static block_t *free_block_merge_with_prev(struct ravl *all_blocks,
         block = block->prev;
         block_t *block_rm = ravl_tree_rm(all_blocks, to_free->data);
         assert(block_rm == to_free);
+        (void)block_rm; // WA for unused variable error
         free(to_free);
     }
 
@@ -467,6 +468,7 @@ static block_t *free_block_merge_with_next(struct ravl *all_blocks,
 
         block_t *block_rm = ravl_tree_rm(all_blocks, to_free->data);
         assert(block_rm == to_free);
+        (void)block_rm; // WA for unused variable error
         free(to_free);
     }
 
