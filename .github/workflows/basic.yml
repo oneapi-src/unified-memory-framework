@@ -4,79 +4,120 @@ on: [push, pull_request]
 
 jobs:
   ubuntu-build:
-    name: Build - ubuntu
-    runs-on: ubuntu-22.04
-
+    name: Build - Ubuntu
+    
     strategy:
       matrix:
+        os: ['ubuntu-20.04', 'ubuntu-22.04']
         build_type: [Debug, Release]
+        compiler: [{c: gcc, cxx: g++}]
         pool_tracking: ['-DUMF_ENABLE_POOL_TRACKING=ON', '-DUMF_ENABLE_POOL_TRACKING=OFF']
+        include:
+          - os: 'ubuntu-20.04'
+            build_type: Release
+            compiler: {c: gcc-7, cxx: g++-7}
+          - os: 'ubuntu-22.04'
+            build_type: Release
+            compiler: {c: clang, cxx: clang++}
+    runs-on: ${{matrix.os}}
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
+        uses: actions/checkout@v4
+        
       - name: Install apt packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang git cmake python3-pip
-
-      - name: Install pip packages
+          sudo apt-get install -y clang cmake
+      
+      - name: Install g++-7
+        if: matrix.compiler.cxx == 'g++-7'
         run: |
-          pip3 install clang-format==15.0.7
+          sudo apt-get install -y ${{matrix.compiler.cxx}}
 
-      - name: Prepare build and run CMake
+      - name: Configure build
+        run: >
+          cmake
+          -B ${{github.workspace}}/build
+          -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+          -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
+          -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
+          -DUMF_FORMAT_CODE_STYLE=OFF
+          -DUMF_DEVELOPER_MODE=ON
+          ${{matrix.pool_tracking}}
+
+      - name: Build UMF
         run: |
-          mkdir build
-          cd build
-          cmake .. -DUMF_FORMAT_CODE_STYLE=ON -DCMAKE_BUILD_TYPE=${{matrix.build_type}} ${{matrix.pool_tracking}}
-
-      - name: Run code-style check     
+          cmake --build ${{github.workspace}}/build -j $(nproc)
+          
+      - name: Run tests
         working-directory: ${{github.workspace}}/build
         run: |
-          make clang-format-check
-
-      - name: Build UMF and run tests
-        working-directory: ${{github.workspace}}/build
-        run: |
-          make -j$(nproc)
           ctest --output-on-failure
 
   windows-build:
     name: Build - Windows
     strategy:
       matrix:
-        os: ['windows-2019']
+        os: ['windows-2019', 'windows-2022']
         build_type: [Debug, Release]
-        compiler: [{c: cl.exe, cxx: cl.exe}]
+        compiler: [{c: cl, cxx: cl}]
+        pool_tracking: ['-DUMF_ENABLE_POOL_TRACKING=ON', '-DUMF_ENABLE_POOL_TRACKING=OFF']
+        include:
+          - os: 'windows-2022'
+            build_type: Release
+            compiler: {c: clang-cl, cxx: clang-cl}
+            pool_tracking: -DUMF_ENABLE_POOL_TRACKING=ON
+            toolset: "-T ClangCL"
     runs-on: ${{matrix.os}}
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-    - uses: actions/setup-python@v4
-      with:
-        python-version: 3.9
+      - name: Configure build
+        run: >
+          cmake
+          -B ${{github.workspace}}/build
+          ${{matrix.toolset}}
+          -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
+          -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
+          -DUMF_FORMAT_CODE_STYLE=OFF
+          -DUMF_DEVELOPER_MODE=ON
+          ${{matrix.pool_tracking}}
 
-    - name: Install prerequisites
-      run: python3 -m pip install clang-format==15.0.7
+      - name: Build UMF
+        run: cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} -j $Env:NUMBER_OF_PROCESSORS
 
-    - name: Configure CMake
-      run: >
-        cmake
-        -B${{github.workspace}}/build
-        -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
-        -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
-        -DCMAKE_POLICY_DEFAULT_CMP0094=NEW
-        -DUMF_ENABLE_POOL_TRACKING=ON
-        -DUMF_DEVELOPER_MODE=ON
-        -DUMF_FORMAT_CODE_STYLE=ON
+      - name: Test
+        working-directory: ${{github.workspace}}/build
+        run: ctest -C ${{matrix.build_type}} --output-on-failure
 
-    - name: Build all
-      run: cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} -j 2
+  macos-build:
+    name: Build - MacOS
+    strategy:
+        matrix:
+          os: ['macos-12']
+    runs-on: ${{matrix.os}}
 
-    - name: Test
-      working-directory: ${{github.workspace}}/build
-      run: ctest -C ${{matrix.build_type}} --output-on-failure
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Python requirements
+        run: python3 -m pip install -r third_party/requirements.txt
+
+      - name: Configure build
+        run: >
+          cmake
+          -B ${{github.workspace}}/build
+          -DCMAKE_BUILD_TYPE=Release
+          -DUMF_FORMAT_CODE_STYLE=ON
+          -DUMF_DEVELOPER_MODE=ON
+          -DUMF_ENABLE_POOL_TRACKING=ON
+
+      - name: Run code-style check     
+        run: |
+          cmake --build ${{github.workspace}}/build --target clang-format-check
+
+      - name: Build UMF
+        run: |
+          cmake --build ${{github.workspace}}/build -j $(sysctl -n hw.logicalcpu)
