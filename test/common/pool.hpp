@@ -55,7 +55,7 @@ auto makePoolWithOOMProvider(int allocNum, umf_memory_pool_ops_t *ops,
 
 bool isReallocSupported(umf_memory_pool_handle_t hPool) {
     static constexpr size_t allocSize = 8;
-    bool supported;
+    bool supported = false;
     auto *ptr = umfPoolMalloc(hPool, allocSize);
     auto *new_ptr = umfPoolRealloc(hPool, ptr, allocSize * 2);
 
@@ -77,7 +77,7 @@ bool isReallocSupported(umf_memory_pool_handle_t hPool) {
 bool isCallocSupported(umf_memory_pool_handle_t hPool) {
     static constexpr size_t num = 8;
     static constexpr size_t size = sizeof(int);
-    bool supported;
+    bool supported = false;
     auto *ptr = umfPoolCalloc(hPool, num, size);
 
     if (ptr) {
@@ -147,7 +147,7 @@ struct proxy_pool : public pool_base {
     }
     void *malloc(size_t size) noexcept { return aligned_malloc(size, 0); }
     void *calloc(size_t num, size_t size) noexcept {
-        void *ptr;
+        void *ptr = nullptr;
         auto ret = umfMemoryProviderAlloc(provider, num * size, 0, &ptr);
         umf::getPoolLastStatusRef<proxy_pool>() = ret;
 
@@ -166,7 +166,7 @@ struct proxy_pool : public pool_base {
         return nullptr;
     }
     void *aligned_malloc(size_t size, size_t alignment) noexcept {
-        void *ptr;
+        void *ptr = nullptr;
         auto ret = umfMemoryProviderAlloc(provider, size, alignment, &ptr);
         umf::getPoolLastStatusRef<proxy_pool>() = ret;
         return ptr;
