@@ -53,7 +53,8 @@ struct umf_disjoint_pool_params {
 
 extern struct umf_memory_pool_ops_t UMF_DISJOINT_POOL_OPS;
 
-static inline struct umf_disjoint_pool_params umfDisjointPoolParamsDefault() {
+static inline struct umf_disjoint_pool_params
+umfDisjointPoolParamsDefault(void) {
     struct umf_disjoint_pool_params params = {
         0,                                         /* SlabMinSize */
         0,                                         /* MaxPoolableSize */

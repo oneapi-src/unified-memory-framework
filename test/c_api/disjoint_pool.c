@@ -8,7 +8,7 @@
 #include "test_helpers.h"
 #include "umf/pools/pool_disjoint.h"
 
-void test_disjoint_pool_default_params() {
+void test_disjoint_pool_default_params(void) {
     umf_memory_provider_handle_t provider = nullProviderCreate();
     enum umf_result_t retp;
     umf_memory_pool_handle_t pool = NULL;
@@ -24,7 +24,7 @@ void test_disjoint_pool_default_params() {
     umfMemoryProviderDestroy(provider);
 }
 
-void test_disjoint_pool_shared_limits() {
+void test_disjoint_pool_shared_limits(void) {
     umf_memory_provider_handle_t provider = nullProviderCreate();
     enum umf_result_t retp;
     umf_memory_pool_handle_t pool = NULL;
@@ -46,7 +46,7 @@ void test_disjoint_pool_shared_limits() {
     umfDisjointPoolSharedLimitsDestroy(limits);
 }
 
-int main() {
+int main(void) {
     test_disjoint_pool_default_params();
     return 0;
 }
