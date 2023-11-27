@@ -10,7 +10,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 
-#include "utils.h"
+#include "utils_concurrency.h"
 
 struct os_mutex_t *util_mutex_create(void) {
     pthread_mutex_t *mutex = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));

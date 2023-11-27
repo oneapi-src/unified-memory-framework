@@ -22,6 +22,7 @@
 // TODO: replace with logger?
 #include <iostream>
 
+#include "../utils/utils_math.h"
 #include "umf.h"
 #include "umf/pools/pool_disjoint.h"
 #include "umf_helpers.hpp"
@@ -317,6 +318,9 @@ class DisjointPool::AllocImpl {
     umf_disjoint_pool_shared_limits DefaultSharedLimits = {
         (std::numeric_limits<size_t>::max)(), 0};
 
+    // Used in algorithm for finding buckets
+    std::size_t MinBucketSizeExp;
+
     // Coarse-grain allocation min alignment
     size_t ProviderMinPageSize;
 
@@ -328,8 +332,12 @@ class DisjointPool::AllocImpl {
         // Generate buckets sized such as: 64, 96, 128, 192, ..., CutOff.
         // Powers of 2 and the value halfway between the powers of 2.
         auto Size1 = this->params.MinBucketSize;
+        // MinBucketSize cannot be larger than CutOff.
+        Size1 = std::min(Size1, CutOff);
         // Buckets sized smaller than the bucket default size- 8 aren't needed.
         Size1 = std::max(Size1, UMF_DISJOINT_POOL_MIN_BUCKET_DEFAULT_SIZE);
+        // Calculate the exponent for MinBucketSize used for finding buckets.
+        MinBucketSizeExp = (size_t)log2Utils(Size1);
         auto Size2 = Size1 + Size1 / 2;
         for (; Size2 < CutOff; Size1 *= 2, Size2 *= 2) {
             Buckets.push_back(std::make_unique<Bucket>(Size1, *this));
@@ -374,6 +382,7 @@ class DisjointPool::AllocImpl {
 
   private:
     Bucket &findBucket(size_t Size);
+    std::size_t sizeToIdx(size_t Size);
 };
 
 static void *memoryProviderAlloc(umf_memory_provider_handle_t hProvider,
@@ -860,16 +869,36 @@ void *DisjointPool::AllocImpl::allocate(size_t Size, size_t Alignment,
     return nullptr;
 }
 
-Bucket &DisjointPool::AllocImpl::findBucket(size_t Size) {
+std::size_t DisjointPool::AllocImpl::sizeToIdx(size_t Size) {
     assert(Size <= CutOff && "Unexpected size");
+    assert(Size > 0 && "Unexpected size");
 
-    auto It = std::find_if(
-        Buckets.begin(), Buckets.end(),
-        [Size](const auto &BucketPtr) { return BucketPtr->getSize() >= Size; });
+    size_t MinBucketSize = (size_t)1 << MinBucketSizeExp;
+    if (Size < MinBucketSize) {
+        return 0;
+    }
 
-    assert((It != Buckets.end()) && "Bucket should always exist");
+    // Get the position of the leftmost set bit.
+    size_t position = getLeftmostSetBitPos(Size);
 
-    return *(*It);
+    auto isPowerOf2 = 0 == (Size & (Size - 1));
+    auto largerThanHalfwayBetweenPowersOf2 =
+        !isPowerOf2 & bool((Size - 1) & (uint64_t(1) << (position - 1)));
+    auto index = (position - MinBucketSizeExp) * 2 + !isPowerOf2 +
+                 largerThanHalfwayBetweenPowersOf2;
+
+    return index;
+}
+
+Bucket &DisjointPool::AllocImpl::findBucket(size_t Size) {
+    auto calculatedIdx = sizeToIdx(Size);
+    assert(calculatedIdx >= 0);
+    assert((*(Buckets[calculatedIdx])).getSize() >= Size);
+    if (calculatedIdx > 0) {
+        assert((*(Buckets[calculatedIdx - 1])).getSize() < Size);
+    }
+
+    return *(Buckets[calculatedIdx]);
 }
 
 void DisjointPool::AllocImpl::deallocate(void *Ptr, bool &ToPool) {

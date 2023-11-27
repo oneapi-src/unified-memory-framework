@@ -7,7 +7,7 @@
  *
  */
 
-#include "utils.h"
+#include "utils_concurrency.h"
 
 typedef struct {
     CRITICAL_SECTION lock;
