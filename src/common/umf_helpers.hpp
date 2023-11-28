@@ -104,7 +104,7 @@ umf_memory_pool_ops_t poolMakeUniqueOps() {
 
 // @brief creates UMF pool ops that can be exposed through
 // C API. 'params' from ops.initialize will be casted to 'ParamType*'
-// and passed to T::initalize() function.
+// and passed to T::initialize() function.
 template <typename T, typename ParamType> umf_memory_pool_ops_t poolMakeCOps() {
     umf_memory_pool_ops_t ops = detail::poolOpsBase<T>();
 
