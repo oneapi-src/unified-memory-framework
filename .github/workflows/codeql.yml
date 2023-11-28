@@ -1,0 +1,51 @@
+name: "CodeQL"
+
+on: [push, pull_request]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze
+    permissions:
+        security-events: write
+    strategy:
+        fail-fast: false
+        matrix:
+            os: [ubuntu-latest, windows-latest]
+            include:
+                - os: ubuntu-latest
+                  nproc: $(nproc)
+                - os: windows-latest
+                  nproc: $Env:NUMBER_OF_PROCESSORS
+    runs-on: ${{matrix.os}}
+            
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: cpp
+
+    - name: Install pip packages
+      run: python3 -m pip install -r third_party/requirements.txt
+
+    - name: Configure CMake
+      run: >
+        cmake
+        -B ${{github.workspace}}/build
+        -DCMAKE_BUILD_TYPE=Release
+        -DUMF_FORMAT_CODE_STYLE=ON
+        -DUMF_DEVELOPER_MODE=ON
+        -DUMF_ENABLE_POOL_TRACKING=ON
+
+    - name: Build
+      run: >
+        cmake --build ${{github.workspace}}/build --config Release -j ${{matrix.nproc}}
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
