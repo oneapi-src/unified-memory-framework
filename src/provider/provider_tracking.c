@@ -70,9 +70,9 @@ umfMemoryTrackerRemove(umf_memory_tracker_handle_t hTracker, const void *ptr,
                        size_t size) {
     assert(ptr);
 
-    // TODO: there is no support for removing partial ranges (or multipe entires
+    // TODO: there is no support for removing partial ranges (or multiple entries
     // in a single remove call) yet.
-    // Every umfMemoryTrackerAdd(..., ptr, ...) should have a corresponsding
+    // Every umfMemoryTrackerAdd(..., ptr, ...) should have a corresponding
     // umfMemoryTrackerRemove call with the same ptr value.
     (void)size;
 
