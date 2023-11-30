@@ -12,6 +12,12 @@ Pool allocator can leverage existing allocators (e.g. jemalloc or tbbmalloc) or 
 
 UMF comes with predefined pool allocators (see include/pool) and providers (see include/provider). UMF can also work with user-defined pools and providers that implement a specific interface (see include/umf/memory_pool_ops.h and include/umf/memory_provider_ops.h)
 
+## Memory providers
+
+### OS memory provider (Linux-only yet)
+
+A memory provider that provides memory from an operating system.
+
 ## Building
 
 ### Requirements
@@ -19,6 +25,7 @@ UMF comes with predefined pool allocators (see include/pool) and providers (see 
 Required packages:
 - C++ compiler with C++17 support
 - [CMake](https://cmake.org/) >= 3.14.0
+- Linux only: libnuma-dev
 
 For development and contributions:
 - clang-format-15.0 (can be installed with `python -m pip install clang-format==15.0.7`)
