@@ -150,14 +150,14 @@ os_copy_and_translate_params(umf_os_memory_provider_params_t *in_params,
         return ret;
     }
 
-    out_config->visibility = os_get_mem_visibility(in_params->visibility);
+    out_config->visibility = os_translate_mem_visibility(in_params->visibility);
     if (out_config->visibility < 0) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
     // NUMA config
     out_config->maxnode = in_params->maxnode;
-    out_config->numa_mode = os_get_numa_mode(in_params->numa_mode);
+    out_config->numa_mode = os_translate_numa_mode(in_params->numa_mode);
     if (out_config->numa_mode < 0) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
