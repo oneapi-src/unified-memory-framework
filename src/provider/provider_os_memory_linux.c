@@ -32,7 +32,7 @@ int os_translate_mem_protection_flags(unsigned protection) {
     return -1;
 }
 
-int os_get_mem_visibility(enum umf_mem_visibility visibility) {
+int os_translate_mem_visibility(enum umf_mem_visibility visibility) {
     switch (visibility) {
     case UMF_VISIBILITY_SHARED:
         return MAP_SHARED;
@@ -43,7 +43,7 @@ int os_get_mem_visibility(enum umf_mem_visibility visibility) {
     return -1;
 }
 
-int os_get_numa_mode(enum umf_numa_mode mode) {
+int os_translate_numa_mode(enum umf_numa_mode mode) {
     switch (mode) {
     case UMF_NUMA_MODE_DEFAULT:
         return MPOL_DEFAULT;
