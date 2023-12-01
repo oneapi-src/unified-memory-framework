@@ -9,14 +9,34 @@ set(UMF_SOURCES
     memory_provider.c
     memory_provider_get_last_failed.c
     pool/pool_disjoint.cpp
+    provider/provider_os_memory.c
     provider/provider_tracking.c
     critnib/critnib.c
 )
 
-if(MSVC)
-    set(UMF_SOURCES ${UMF_SOURCES} utils/utils_windows_concurrency.c provider/provider_tracking_windows.cpp utils/utils_windows_math.c)
-else()
-    set(UMF_SOURCES ${UMF_SOURCES} utils/utils_posix_concurrency.c utils/utils_posix_math.c)
+set(UMF_SOURCES_LINUX
+    provider/provider_os_memory_linux.c
+    utils/utils_posix_concurrency.c
+    utils/utils_posix_math.c
+)
+
+set(UMF_SOURCES_WINDOWS
+    provider/provider_tracking_windows.cpp
+    utils/utils_windows_concurrency.c
+    utils/utils_windows_math.c
+)
+
+set(UMF_SOURCES_MACOSX
+    utils/utils_posix_concurrency.c
+    utils/utils_posix_math.c
+)
+
+if(LINUX)
+    set(UMF_SOURCES ${UMF_SOURCES} ${UMF_SOURCES_LINUX})
+elseif(WINDOWS)
+    set(UMF_SOURCES ${UMF_SOURCES} ${UMF_SOURCES_WINDOWS})
+elseif(MACOSX)
+    set(UMF_SOURCES ${UMF_SOURCES} ${UMF_SOURCES_MACOSX})
 endif()
 
 if(UMF_BUILD_SHARED_LIBRARY)

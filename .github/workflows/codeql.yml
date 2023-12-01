@@ -31,6 +31,12 @@ jobs:
       with:
         languages: cpp
 
+    - name: Install apt packages
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake clang libnuma-dev
+
     - name: Install pip packages
       run: python3 -m pip install -r third_party/requirements.txt
 
