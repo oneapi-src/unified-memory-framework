@@ -33,7 +33,7 @@ static enum umf_result_t mallocAlloc(void *provider, size_t size,
                                      size_t alignment, void **ptr) {
     (void)provider;
     (void)alignment;
-    *ptr = malloc(size);
+    *ptr = calloc(1, size);
     return UMF_RESULT_SUCCESS;
 }
 
@@ -417,6 +417,18 @@ TEST_F(test, disjointCoarseMallocPool_simple2) {
     umfMemoryProviderDestroy(malloc_memory_provider);
 }
 
+struct alloc_ptr_size {
+    void *ptr;
+    size_t size;
+
+    bool operator<(const alloc_ptr_size &other) const {
+        if (ptr == other.ptr) {
+            return size < other.size;
+        }
+        return ptr < other.ptr;
+    }
+};
+
 TEST_F(test, disjointCoarseMallocPool_random) {
 
     umf_memory_provider_handle_t malloc_memory_provider;
@@ -428,6 +440,8 @@ TEST_F(test, disjointCoarseMallocPool_random) {
     const size_t MB = 1024 * KB;
 
     const size_t init_buffer_size = 20 * MB;
+
+    const unsigned char alloc_check_val = 11;
 
     coarse_memory_provider_params_t coarse_memory_provider_params = {
         malloc_memory_provider, // upstream_memory_provider
@@ -473,25 +487,32 @@ TEST_F(test, disjointCoarseMallocPool_random) {
     // alloc = <0, .5), free = <.5, 1)
     std::uniform_real_distribution<float> actions_dist(0, 1);
 
-    std::set<void *> allocs;
+    std::set<alloc_ptr_size> allocs;
     for (size_t i = 0; i < 100; i++) {
-        size_t size = sizes[sizes_dist(mt)];
         size_t count = counts[counts_dist(mt)];
         float action = actions_dist(mt);
 
-        std::cout << "size: " << size << " count: " << count
-                  << " action: " << ((action < 0.5) ? "alloc" : "free")
-                  << std::endl;
-
         if (action < 0.5) {
+            size_t size = sizes[sizes_dist(mt)];
+            std::cout << "size: " << size << " count: " << count
+                      << " action: alloc" << std::endl;
+
             // alloc
             for (size_t j = 0; j < count; j++) {
                 void *ptr = umfPoolMalloc(pool, size);
                 ASSERT_NE(ptr, nullptr);
 
-                allocs.insert(ptr);
+                // check if first and last bytes are empty and fill them with control data
+                ASSERT_EQ(((unsigned char *)ptr)[0], 0);
+                ASSERT_EQ(((unsigned char *)ptr)[size - 1], 0);
+                ((unsigned char *)ptr)[0] = alloc_check_val;
+                ((unsigned char *)ptr)[size - 1] = alloc_check_val;
+
+                allocs.insert({ptr, size});
             }
         } else {
+            std::cout << "count: " << count << " action: free" << std::endl;
+
             // free random allocs
             for (size_t j = 0; j < count; j++) {
                 if (allocs.size() == 0) {
@@ -503,13 +524,20 @@ TEST_F(test, disjointCoarseMallocPool_random) {
                 size_t free_id = free_dist(mt);
                 auto it = allocs.begin();
                 std::advance(it, free_id);
-                void *ptr = (*it);
+                auto [ptr, size] = (*it);
                 ASSERT_NE(ptr, nullptr);
+
+                // check if control bytes are set and clean them
+
+                ASSERT_EQ(((unsigned char *)ptr)[0], alloc_check_val);
+                ASSERT_EQ(((unsigned char *)ptr)[size - 1], alloc_check_val);
+                ((unsigned char *)ptr)[0] = 0;
+                ((unsigned char *)ptr)[size - 1] = 0;
 
                 umf_result_t ret = umfPoolFree(pool, ptr);
                 ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 
-                allocs.erase(ptr);
+                allocs.erase((*it));
             }
         }
     }
@@ -517,7 +545,7 @@ TEST_F(test, disjointCoarseMallocPool_random) {
     std::cout << "cleanup" << std::endl;
 
     while (allocs.size()) {
-        umf_result_t ret = umfPoolFree(pool, *allocs.begin());
+        umf_result_t ret = umfPoolFree(pool, (*allocs.begin()).ptr);
         ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
         allocs.erase(allocs.begin());
     }
