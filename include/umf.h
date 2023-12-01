@@ -12,5 +12,7 @@
 
 #include <umf/memory_pool.h>
 #include <umf/memory_provider.h>
+#include <umf/memspace.h>
+#include <umf/memspace_policy.h>
 
 #endif /* UMF_UNIFIED_MEMORY_FRAMEWORK_H */

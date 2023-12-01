@@ -12,6 +12,8 @@ set(UMF_SOURCES
     memory_pool.c
     memory_provider.c
     memory_provider_get_last_failed.c
+    memory_target.c
+    memspace.c
     provider/provider_tracking.c
     critnib/critnib.c
 )
@@ -22,7 +24,9 @@ set(UMF_SOURCES_WINDOWS
 
 if(UMF_BUILD_OS_MEMORY_PROVIDER)
     set(UMF_SOURCES ${UMF_SOURCES} provider/provider_os_memory.c)
-    set(UMF_SOURCES_LINUX ${UMF_SOURCES_LINUX} provider/provider_os_memory_linux.c)
+    set(UMF_SOURCES_LINUX ${UMF_SOURCES_LINUX}
+        provider/provider_os_memory_linux.c
+        memory_targets/memory_target_numa.c)
     set(UMF_SOURCES_WINDOWS ${UMF_SOURCES_WINDOWS} provider/provider_os_memory_windows.c)
     if(LINUX)
         set(UMF_LIBS ${UMF_LIBS} numa)
