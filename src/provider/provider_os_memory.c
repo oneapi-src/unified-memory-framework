@@ -20,12 +20,12 @@
 
 typedef struct umf_os_memory_provider_config_s {
     unsigned protection; // combination of OS-specific protection flags
-    int visibility;
+    unsigned visibility;
 
     // NUMA config
     unsigned long *nodemask;
     unsigned long maxnode;
-    int numa_mode;
+    unsigned numa_mode;
     unsigned numa_flags; // combination of OS-specific NUMA flags
 
     // others
@@ -112,62 +112,60 @@ static enum umf_result_t os_copy_nodemask(const unsigned long *nodemask,
     return UMF_RESULT_SUCCESS;
 }
 
-static enum umf_result_t os_translate_flags(unsigned in_flags,
-                                            unsigned *out_flags, unsigned max,
-                                            int (*translate_flag)(unsigned)) {
-    *out_flags = 0;
+int os_translate_flags(unsigned in_flags, unsigned max,
+                       int (*translate_flag)(unsigned)) {
+    unsigned out_flags = 0;
     for (unsigned n = 1; n < max; n <<= 1) {
         if (in_flags & n) {
             int f = translate_flag(n);
             if (f < 0) {
-                return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+                return -1;
             }
-            *out_flags |= (unsigned)f;
+            out_flags |= (unsigned)f;
             in_flags &= ~n; // clear this bit
         }
     }
 
     if (in_flags != 0) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        return -1;
     }
 
-    return UMF_RESULT_SUCCESS;
+    return out_flags;
 }
 
 static enum umf_result_t
 os_copy_and_translate_params(umf_os_memory_provider_params_t *in_params,
                              umf_os_memory_provider_config_t *out_config) {
-    enum umf_result_t ret;
+    int ret;
 
     // log level of debug traces
     out_config->traces = in_params->traces;
 
-    // translate protection - combination of 'enum umf_mem_protection_flags' flags
-    ret = os_translate_flags(in_params->protection, &out_config->protection,
-                             UMF_PROTECTION_MAX,
-                             os_translate_mem_protection_flags);
-    if (ret) {
-        return ret;
-    }
-
-    out_config->visibility = os_translate_mem_visibility(in_params->visibility);
-    if (out_config->visibility < 0) {
+    ret = os_translate_mem_protection_flags(in_params->protection);
+    if (ret < 0) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
+    out_config->protection = ret;
+
+    ret = os_translate_mem_visibility(in_params->visibility);
+    if (ret < 0) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    out_config->visibility = ret;
 
     // NUMA config
     out_config->maxnode = in_params->maxnode;
-    out_config->numa_mode = os_translate_numa_mode(in_params->numa_mode);
-    if (out_config->numa_mode < 0) {
+    ret = os_translate_numa_mode(in_params->numa_mode);
+    if (ret < 0) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
+    out_config->numa_mode = ret;
 
-    // translate numa_flags - combination of 'enum umf_numa_flags' flags
-    ret = os_translate_flags(in_params->numa_flags, &out_config->numa_flags,
-                             UMF_NUMA_FLAGS_MAX, os_translate_numa_flags);
-    if (ret) {
-        return ret;
+    ret = os_translate_numa_flags(in_params->numa_flags);
+    if (ret < 0) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
+    out_config->numa_flags = ret;
 
     return os_copy_nodemask(in_params->nodemask, in_params->maxnode,
                             &out_config->nodemask);

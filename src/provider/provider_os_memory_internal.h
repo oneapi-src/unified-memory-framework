@@ -20,6 +20,9 @@ extern "C" {
 #define __TLS __thread
 #endif
 
+int os_translate_flags(unsigned in_flags, unsigned max,
+                       int (*translate_flag)(unsigned));
+
 int os_translate_mem_protection_flags(unsigned protection);
 
 int os_translate_mem_visibility(enum umf_mem_visibility visibility);
