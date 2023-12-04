@@ -5,19 +5,20 @@
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 */
 
-#include <umf/providers/provider_os_memory.h>
-
 #include <assert.h>
 #include <numaif.h>
 #include <string.h>
 #include <sys/mman.h>
 #include <unistd.h>
 
+#include "provider_os_memory_internal.h"
+#include <umf/providers/provider_os_memory.h>
+
 #ifndef MPOL_LOCAL
 #define MPOL_LOCAL 4
 #endif
 
-int os_translate_mem_protection_flags(unsigned protection) {
+static int os_translate_mem_protection_one_flag(unsigned protection) {
     switch (protection) {
     case UMF_PROTECTION_NONE:
         return PROT_NONE;
@@ -30,6 +31,12 @@ int os_translate_mem_protection_flags(unsigned protection) {
     }
     assert(0);
     return -1;
+}
+
+int os_translate_mem_protection_flags(unsigned protection_flags) {
+    // translate protection - combination of 'enum umf_mem_protection_flags' flags
+    return os_translate_flags(protection_flags, UMF_PROTECTION_MAX,
+                              os_translate_mem_protection_one_flag);
 }
 
 int os_translate_mem_visibility(enum umf_mem_visibility visibility) {
@@ -68,7 +75,7 @@ int os_translate_numa_mode(enum umf_numa_mode mode) {
     return -1;
 }
 
-int os_translate_numa_flags(unsigned numa_flag) {
+static int os_translate_one_numa_flag(unsigned numa_flag) {
     switch (numa_flag) {
     case UMF_NUMA_FLAGS_STRICT:
         return MPOL_MF_STRICT;
@@ -79,6 +86,12 @@ int os_translate_numa_flags(unsigned numa_flag) {
     }
     assert(0);
     return -1;
+}
+
+int os_translate_numa_flags(unsigned numa_flags) {
+    // translate numa_flags - combination of 'enum umf_numa_flags' flags
+    return os_translate_flags(numa_flags, UMF_NUMA_FLAGS_MAX,
+                              os_translate_one_numa_flag);
 }
 
 static int os_translate_purge_advise(enum umf_purge_advise advise) {
