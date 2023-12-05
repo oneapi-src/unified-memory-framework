@@ -143,12 +143,20 @@ os_copy_and_translate_params(umf_os_memory_provider_params_t *in_params,
 
     ret = os_translate_mem_protection_flags(in_params->protection);
     if (ret < 0) {
+        if (in_params->traces) {
+            fprintf(stderr, "error: incorrect memory protection flags: %u\n",
+                    in_params->protection);
+        }
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
     out_config->protection = ret;
 
     ret = os_translate_mem_visibility(in_params->visibility);
     if (ret < 0) {
+        if (in_params->traces) {
+            fprintf(stderr, "error: incorrect memory visibility mode: %u\n",
+                    in_params->visibility);
+        }
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
     out_config->visibility = ret;
@@ -157,12 +165,20 @@ os_copy_and_translate_params(umf_os_memory_provider_params_t *in_params,
     out_config->maxnode = in_params->maxnode;
     ret = os_translate_numa_mode(in_params->numa_mode);
     if (ret < 0) {
+        if (in_params->traces) {
+            fprintf(stderr, "error: incorrect NUMA mode: %u\n",
+                    in_params->numa_mode);
+        }
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
     out_config->numa_mode = ret;
 
     ret = os_translate_numa_flags(in_params->numa_flags);
     if (ret < 0) {
+        if (in_params->traces) {
+            fprintf(stderr, "error: incorrect NUMA flags: %u\n",
+                    in_params->numa_flags);
+        }
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
     out_config->numa_flags = ret;
