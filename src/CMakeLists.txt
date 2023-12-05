@@ -12,6 +12,7 @@ set(UMF_SOURCES
     provider/provider_os_memory.c
     provider/provider_tracking.c
     critnib/critnib.c
+    memory_resource.cpp # TOOD: make this a static lib or get rid of it and implement everything in the headers
 )
 
 set(UMF_SOURCES_LINUX
