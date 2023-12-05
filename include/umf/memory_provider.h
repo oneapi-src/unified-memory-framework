@@ -32,7 +32,7 @@ umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
 
 ///
 /// \brief Destroys memory provider.
-/// \param hPool handle to the memory provider
+/// \param hProvider handle to the memory provider
 ///
 void umfMemoryProviderDestroy(umf_memory_provider_handle_t hProvider);
 
@@ -133,7 +133,7 @@ umf_result_t umfMemoryProviderPurgeForce(umf_memory_provider_handle_t hProvider,
 ///
 /// \brief Retrieve name of a given memory provider.
 /// \param hProvider handle to the memory provider
-/// \param ppName [out] pointer to a string containing name of the provider
+/// \return pointer to a string containing the name of the provider
 const char *umfMemoryProviderGetName(umf_memory_provider_handle_t hProvider);
 
 /// \brief Retrieve handle to the last memory provider that returned status other

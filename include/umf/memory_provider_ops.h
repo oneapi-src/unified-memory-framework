@@ -21,7 +21,7 @@ extern "C" {
 /// initialize all function pointers.
 typedef struct umf_memory_provider_ops_t {
     /// Version of the ops structure.
-    /// Should be initialized using UMF_VERSION_CURRENT
+    /// Should be initialized using UMF_VERSION_CURRENT.
     uint32_t version;
 
     ///
