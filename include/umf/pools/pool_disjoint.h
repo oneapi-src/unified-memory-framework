@@ -12,16 +12,24 @@ extern "C" {
 
 #define UMF_DISJOINT_POOL_MIN_BUCKET_DEFAULT_SIZE ((size_t)8)
 
+/// @brief Memory limits that can be shared between multiple pool instances,
+///        i.e. if multiple pools use the same shared limits, sum of those pools'
+///        sizes cannot exceed MaxSize.
 typedef struct umf_disjoint_pool_shared_limits_t
     umf_disjoint_pool_shared_limits_t;
 
-/// \param MaxSize specifies hard limit for memory allocated from a provider
+/// @brief Create a pool limits struct
+/// @param MaxSize specifies hard limit for memory allocated from a provider
+/// @return pointer to created pool limits struct
 umf_disjoint_pool_shared_limits_t *
 umfDisjointPoolSharedLimitsCreate(size_t MaxSize);
 
-void umfDisjointPoolSharedLimitsDestroy(umf_disjoint_pool_shared_limits_t *);
+/// @brief Destroy previously created pool limits struct
+/// @param PoolLimits pointer to a pool limits struct
+void umfDisjointPoolSharedLimitsDestroy(
+    umf_disjoint_pool_shared_limits_t *PoolLimits);
 
-// TODO: Add documentation comments formatted for doxygen
+/// Configuration of Disjoint Pool
 typedef struct umf_disjoint_pool_params_t {
     /// Minimum allocation size that will be requested from the system.
     /// By default this is the minimum allocation size of each memory type.
@@ -54,6 +62,7 @@ typedef struct umf_disjoint_pool_params_t {
 
 extern umf_memory_pool_ops_t UMF_DISJOINT_POOL_OPS;
 
+/// @brief Create default params struct for disjoint pool
 static inline umf_disjoint_pool_params_t umfDisjointPoolParamsDefault(void) {
     umf_disjoint_pool_params_t params = {
         0,                                         /* SlabMinSize */
