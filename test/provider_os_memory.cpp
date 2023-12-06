@@ -4,7 +4,7 @@
 
 #include "base.hpp"
 
-#include "provider_os_memory_internal.h"
+#include "../src/provider/provider_os_memory_internal.h"
 #include "umf/providers/provider_os_memory.h"
 #include <umf/memory_provider.h>
 
