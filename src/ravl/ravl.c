@@ -12,13 +12,14 @@
  * https://sidsen.azurewebsites.net//papers/ravl-trees-journal.pdf
  */
 
-#include "ravl.h"
-#include "assert.h"
-#include "utils.h"
+#include <assert.h>
 #include <errno.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "ravl.h"
+#include "utils_concurrency.h"
 
 #define RAVL_DEFAULT_DATA_SIZE (sizeof(void *))
 

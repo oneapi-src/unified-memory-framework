@@ -21,7 +21,7 @@
 #include "../src/memory_provider_internal.h"
 #include "providers/provider_coarse.h"
 #include "ravl.h"
-#include "utils.h"
+#include "utils_concurrency.h"
 
 #ifndef BYTE
 #define BYTE unsigned char
