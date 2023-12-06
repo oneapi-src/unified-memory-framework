@@ -209,7 +209,7 @@ TEST_F(test, disjointCoarseMallocPool_basic) {
     ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).blocks_num, 1);
 
     // free all memory
-    // alloc 2 MB block - the init block should be splitted
+    // alloc 2 MB block - the init block should be split
     res = umfPoolFree(pool, p1);
     p1 = umfPoolMalloc(pool, 2 * MB);
     ASSERT_EQ(umfCoarseMemoryProviderGetStats(prov).used_size, 2 * MB);
