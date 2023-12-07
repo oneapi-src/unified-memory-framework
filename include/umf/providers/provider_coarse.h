@@ -5,6 +5,7 @@
 #ifndef UMF_COARSE_PROVIDER_H
 #define UMF_COARSE_PROVIDER_H
 
+#include <stdbool.h>
 #include <umf/memory_provider.h>
 
 #if defined(__cplusplus)
