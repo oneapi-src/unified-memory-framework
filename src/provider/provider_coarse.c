@@ -411,14 +411,26 @@ static block_t *free_blocks_rm_node(struct ravl *free_blocks,
 // free_block_merge_with_prev - merge the given free block
 // with the previous one if both are unused and have continuous data.
 // Remove the merged block from the tree of free blocks.
-static block_t *free_block_merge_with_prev(struct ravl *all_blocks,
-                                           struct ravl *free_blocks,
-                                           block_t *block) {
-    assert(block);
+static block_t *free_block_merge_with_prev(
+    umf_memory_provider_handle_t upstream_memory_provider,
+    struct ravl *all_blocks, struct ravl *free_blocks, block_t *block) {
 
+    assert(all_blocks);
+    assert(free_blocks);
+    assert(block);
+    assert(block->used == false);
+
+    // check if blocks could be merged by the upstream provider
+    enum umf_result_t merge_success = UMF_RESULT_ERROR_UNKNOWN;
     if (block->prev && block->prev->used == false &&
         (block->prev->data + block->prev->size == block->data)) {
+        merge_success = umfMemoryProviderAllocMerge(
+            upstream_memory_provider, block->prev->origin->data,
+            block->prev->origin->size, block->origin->data,
+            block->origin->size);
+    }
 
+    if (merge_success == UMF_RESULT_SUCCESS) {
         block_t *to_free = block;
 
         if (block->prev->free_list_ptr) {
@@ -447,15 +459,25 @@ static block_t *free_block_merge_with_prev(struct ravl *all_blocks,
 // free_block_merge_with_next - merge the given free block
 // with the next one if both are unused and have continuous data.
 // Remove the merged block from the tree of free blocks.
-static block_t *free_block_merge_with_next(struct ravl *all_blocks,
-                                           struct ravl *free_blocks,
-                                           block_t *block) {
+static block_t *free_block_merge_with_next(
+    umf_memory_provider_handle_t upstream_memory_provider,
+    struct ravl *all_blocks, struct ravl *free_blocks, block_t *block) {
+
+    assert(all_blocks);
     assert(free_blocks);
     assert(block);
+    assert(block->used == false);
 
+    // check if blocks could be merged by the upstream provider
+    enum umf_result_t merge_success = UMF_RESULT_ERROR_UNKNOWN;
     if (block->next && block->next->used == false &&
         (block->data + block->size == block->next->data)) {
+        merge_success = umfMemoryProviderAllocMerge(
+            upstream_memory_provider, block->origin->data, block->origin->size,
+            block->next->origin->data, block->next->origin->size);
+    }
 
+    if (merge_success == UMF_RESULT_SUCCESS) {
         block_t *to_free = block->next;
 
         if (block->next->free_list_ptr) {
@@ -612,15 +634,24 @@ static bool debug_check(coarse_memory_provider_t *provider) {
         }
 
         // there shouldn't be two adjacent not-used blocks
-        // if they allocs are continuous
-        if (block->prev && block->used == false &&
+        // if they allocs are continuous and could be merged
+        if (block->prev && block->prev->used == false && block->used == false &&
             (block->prev->data + block->prev->size == block->data)) {
-            assert(block->prev->used == true);
+            enum umf_result_t merge_success = umfMemoryProviderAllocMerge(
+                provider->upstream_memory_provider, block->prev->origin->data,
+                block->prev->origin->size, block->origin->data,
+                block->origin->size);
+            assert(merge_success != UMF_RESULT_SUCCESS);
         }
 
-        if (block->next && block->used == false &&
+        if (block->next && block->next->used == false && block->used == false &&
             (block->data + block->size == block->next->data)) {
-            assert(block->next->used == true);
+
+            enum umf_result_t merge_success = umfMemoryProviderAllocMerge(
+                provider->upstream_memory_provider, block->origin->data,
+                block->origin->size, block->next->origin->data,
+                block->next->origin->size);
+            assert(merge_success != UMF_RESULT_SUCCESS);
         }
 
         // data addresses in the list are in ascending order
@@ -926,9 +957,10 @@ static enum umf_result_t coarse_memory_provider_alloc(void *provider,
         coarse_provider->used_size += size;
 
         // Try to merge new empty block with the next one.
-        new_block =
-            free_block_merge_with_next(coarse_provider->all_blocks,
-                                       coarse_provider->free_blocks, new_block);
+        new_block = free_block_merge_with_next(
+            coarse_provider->upstream_memory_provider,
+            coarse_provider->all_blocks, coarse_provider->free_blocks,
+            new_block);
         rv = free_blocks_add(coarse_provider->free_blocks, new_block);
         if (rv) {
             return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
@@ -1057,10 +1089,12 @@ static enum umf_result_t coarse_memory_provider_free(void *provider, void *ptr,
     block->used = false;
 
     // Merge with prev and/or next block if they are unused and have continuous data.
-    block = free_block_merge_with_prev(coarse_provider->all_blocks,
-                                       coarse_provider->free_blocks, block);
-    block = free_block_merge_with_next(coarse_provider->all_blocks,
-                                       coarse_provider->free_blocks, block);
+    block = free_block_merge_with_prev(
+        coarse_provider->upstream_memory_provider, coarse_provider->all_blocks,
+        coarse_provider->free_blocks, block);
+    block = free_block_merge_with_next(
+        coarse_provider->upstream_memory_provider, coarse_provider->all_blocks,
+        coarse_provider->free_blocks, block);
 
     int rv = free_blocks_add(coarse_provider->free_blocks, block);
     if (rv) {

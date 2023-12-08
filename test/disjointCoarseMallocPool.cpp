@@ -87,6 +87,28 @@ static enum umf_result_t mallocPurgeForce(void *provider, void *ptr,
     return UMF_RESULT_SUCCESS;
 }
 
+static enum umf_result_t mallocAllocSplit(void *provider, void *ptr,
+                                          size_t size1, size_t size2) {
+    (void)provider;
+    (void)ptr;
+    (void)size1;
+    (void)size2;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+static enum umf_result_t mallocAllocMerge(void *provider, void *ptr1,
+                                          size_t size1, void *ptr2,
+                                          size_t size2) {
+    (void)provider;
+    (void)ptr1;
+    (void)size1;
+    (void)ptr2;
+    (void)size2;
+
+    return UMF_RESULT_SUCCESS;
+}
+
 static const char *mallocName(void *provider) {
     (void)provider;
     return "malloc";
@@ -103,6 +125,8 @@ struct umf_memory_provider_ops_t UMF_MALLOC_MEMORY_PROVIDER_OPS = {
     mallocGetPageSize,
     mallocPurgeLazy,
     mallocPurgeForce,
+    mallocAllocSplit,
+    mallocAllocMerge,
     mallocName,
 };
 

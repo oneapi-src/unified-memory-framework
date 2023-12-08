@@ -48,6 +48,10 @@ struct umf_memory_provider_ops_t {
                                            size_t *pageSize);
     enum umf_result_t (*purge_lazy)(void *provider, void *ptr, size_t size);
     enum umf_result_t (*purge_force)(void *provider, void *ptr, size_t size);
+    enum umf_result_t (*alloc_split)(void *provider, void *ptr, size_t size1,
+                                     size_t size2);
+    enum umf_result_t (*alloc_merge)(void *provider, void *ptr1, size_t size1,
+                                     void *ptr2, size_t size2);
     const char *(*get_name)(void *provider);
 };
 
