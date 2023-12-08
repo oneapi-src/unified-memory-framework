@@ -26,7 +26,7 @@ def _clear_docs_dir(docs_path: Path) -> None:
         try:
             rmtree(docs_path)
         except:
-            print(f"Failed to remove docs directory {docs_path.resolve()}")
+            print(f"Failed to remove docs directory {docs_path.resolve()}", flush=True)
 
 
 def _create_docs_dir(docs_path: Path) -> None:
@@ -39,12 +39,12 @@ def _prepare_docs_dir(docs_path: Path) -> None:
 
 
 def _generate_xml(config_path: Path, docs_path: Path) -> None:
-    print("Generating XML files with doxygen...")
+    print("Generating XML files with doxygen...", flush=True)
     try:
         subprocess.run(
             ["doxygen", Path(config_path, "Doxyfile")], text=True
         ).check_returncode()
-        print(f"All XML files generated in {docs_path}")
+        print(f"All XML files generated in {docs_path}", flush=True)
     except subprocess.CalledProcessError as ex:
         print("Generating XML files failed!")
         print(ex)
@@ -52,12 +52,12 @@ def _generate_xml(config_path: Path, docs_path: Path) -> None:
 
 
 def _generate_html(config_path: Path, docs_path: Path) -> None:
-    print("Generating HTML pages with sphinx...")
+    print("Generating HTML pages with sphinx...", flush=True)
     try:
         subprocess.run(
             ["sphinx-build", config_path, Path(docs_path, "html")], text=True
         ).check_returncode()
-        print(f"All HTML files generated in {docs_path}")
+        print(f"All HTML files generated in {docs_path}", flush=True)
     except subprocess.CalledProcessError as ex:
         print("Generating HTML pages failed!")
         print(ex)
@@ -72,7 +72,7 @@ def main() -> None:
     _prepare_docs_dir(docs_path)
     _generate_xml(config_path, docs_path)
     _generate_html(config_path, docs_path)
-    print(f"Pages generated in {time.time() - start:.1f} seconds")
+    print(f"Pages generated in {time.time() - start:.1f} seconds", flush=True)
 
 
 if __name__ == "__main__":
