@@ -14,11 +14,7 @@
 
 #include "memory_target.h"
 #include "memory_target_ops.h"
-
-struct umf_memspace_t {
-    size_t size;
-    umf_memory_target_handle_t *nodes;
-};
+#include "memspace_internal.h"
 
 #ifndef NDEBUG
 static umf_result_t verifyMemTargetsTypes(umf_memspace_handle_t memspace) {
