@@ -11,12 +11,12 @@
 extern "C" {
 #endif
 
-struct umf_pool_trace_params {
+typedef struct umf_pool_trace_params {
     umf_memory_pool_handle_t hUpstreamPool;
     void (*trace)(const char *);
-};
+} umf_pool_trace_params_t;
 
-extern struct umf_memory_pool_ops_t UMF_TRACE_POOL_OPS;
+extern umf_memory_pool_ops_t UMF_TRACE_POOL_OPS;
 
 #if defined(__cplusplus)
 }

@@ -16,21 +16,21 @@ extern "C" {
 
 #define UMF_OS_RESULTS_START_FROM 1000
 
-enum umf_mem_protection_flags {
+typedef enum umf_mem_protection_flags_t {
     UMF_PROTECTION_NONE = (1 << 0),
     UMF_PROTECTION_READ = (1 << 1),
     UMF_PROTECTION_WRITE = (1 << 2),
     UMF_PROTECTION_EXEC = (1 << 3),
 
     UMF_PROTECTION_MAX // must be the last one
-};
+} umf_mem_protection_flags_t;
 
-enum umf_mem_visibility {
+typedef enum umf_mem_visibility_t {
     UMF_VISIBILITY_SHARED,
     UMF_VISIBILITY_PRIVATE,
-};
+} umf_mem_visibility_t;
 
-enum umf_numa_mode {
+typedef enum umf_numa_mode_t {
     UMF_NUMA_MODE_DEFAULT,
     UMF_NUMA_MODE_BIND,
     UMF_NUMA_MODE_INTERLEAVE,
@@ -38,36 +38,36 @@ enum umf_numa_mode {
     UMF_NUMA_MODE_LOCAL,
     UMF_NUMA_MODE_STATIC_NODES,
     UMF_NUMA_MODE_RELATIVE_NODES,
-};
+} umf_numa_mode_t;
 
-enum umf_numa_flags {
+typedef enum umf_numa_flags_t {
     UMF_NUMA_FLAGS_STRICT = (1 << 0),
     UMF_NUMA_FLAGS_MOVE = (1 << 1),
     UMF_NUMA_FLAGS_MOVE_ALL = (1 << 2),
 
     UMF_NUMA_FLAGS_MAX // must be the last one
-};
+} umf_numa_flags_t;
 
-enum umf_purge_advise {
+typedef enum umf_purge_advise_t {
     UMF_PURGE_LAZY,
     UMF_PURGE_FORCE,
-};
+} umf_purge_advise_t;
 
-typedef struct umf_os_memory_provider_params_s {
-    unsigned protection; // combination of 'enum umf_mem_protection_flags' flags
-    enum umf_mem_visibility visibility;
+typedef struct umf_os_memory_provider_params_t {
+    unsigned protection; // combination of 'umf_mem_protection_flags_t' flags
+    umf_mem_visibility_t visibility;
 
     // NUMA config
     unsigned long *nodemask;
     unsigned long maxnode;
-    enum umf_numa_mode numa_mode;
-    unsigned numa_flags; // combination of 'enum umf_numa_flags' flags
+    umf_numa_mode_t numa_mode;
+    unsigned numa_flags; // combination of 'umf_numa_flags_t' flags
 
     // others
     int traces; // log level of debug traces
 } umf_os_memory_provider_params_t;
 
-enum umf_os_memory_provider_native_error {
+typedef enum umf_os_memory_provider_native_error {
     UMF_OS_RESULT_SUCCESS = UMF_OS_RESULTS_START_FROM,
     UMF_OS_RESULT_ERROR_WRONG_ALIGNMENT,
     UMF_OS_RESULT_ERROR_ALLOC_FAILED,
@@ -76,9 +76,9 @@ enum umf_os_memory_provider_native_error {
     UMF_OS_RESULT_ERROR_FREE_FAILED,
     UMF_OS_RESULT_ERROR_PURGE_LAZY_FAILED,
     UMF_OS_RESULT_ERROR_PURGE_FORCE_FAILED,
-};
+} umf_os_memory_provider_native_error_t;
 
-extern struct umf_memory_provider_ops_t UMF_OS_MEMORY_PROVIDER_OPS;
+extern umf_memory_provider_ops_t UMF_OS_MEMORY_PROVIDER_OPS;
 
 #ifdef __cplusplus
 }

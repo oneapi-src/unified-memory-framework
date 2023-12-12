@@ -9,8 +9,8 @@
 #include "provider_trace.h"
 #include "umf/pools/pool_disjoint.h"
 
-umf_disjoint_pool_params poolConfig() {
-    umf_disjoint_pool_params config{};
+umf_disjoint_pool_params_t poolConfig() {
+    umf_disjoint_pool_params_t config{};
     config.SlabMinSize = 4096;
     config.MaxPoolableSize = 4096;
     config.Capacity = 4;
@@ -33,8 +33,8 @@ static auto makePool() {
     };
 
     umf_memory_pool_handle_t pool = NULL;
-    struct umf_disjoint_pool_params params = poolConfig();
-    enum umf_result_t retp =
+    umf_disjoint_pool_params_t params = poolConfig();
+    umf_result_t retp =
         umfPoolCreate(&UMF_DISJOINT_POOL_OPS, provider_handle, &params, &pool);
     EXPECT_EQ(retp, UMF_RESULT_SUCCESS);
 
@@ -44,14 +44,13 @@ static auto makePool() {
 using umf_test::test;
 
 TEST_F(test, freeErrorPropagation) {
-    static enum umf_result_t freeReturn = UMF_RESULT_SUCCESS;
-    struct memory_provider : public umf_test::provider_base {
-        enum umf_result_t alloc(size_t size, size_t, void **ptr) noexcept {
+    static umf_result_t freeReturn = UMF_RESULT_SUCCESS;
+    struct memory_provider : public umf_test::provider_base_t {
+        umf_result_t alloc(size_t size, size_t, void **ptr) noexcept {
             *ptr = malloc(size);
             return UMF_RESULT_SUCCESS;
         }
-        enum umf_result_t free(void *ptr,
-                               [[maybe_unused]] size_t size) noexcept {
+        umf_result_t free(void *ptr, [[maybe_unused]] size_t size) noexcept {
             if (freeReturn == UMF_RESULT_SUCCESS) {
                 ::free(ptr);
             }
@@ -67,11 +66,11 @@ TEST_F(test, freeErrorPropagation) {
     provider_handle = providerUnique.get();
 
     // force all allocations to go to memory provider
-    struct umf_disjoint_pool_params params = poolConfig();
+    umf_disjoint_pool_params_t params = poolConfig();
     params.MaxPoolableSize = 0;
 
     umf_memory_pool_handle_t pool = NULL;
-    enum umf_result_t retp =
+    umf_result_t retp =
         umfPoolCreate(&UMF_DISJOINT_POOL_OPS, provider_handle, &params, &pool);
     EXPECT_EQ(retp, UMF_RESULT_SUCCESS);
     auto poolHandle = umf_test::wrapPoolUnique(pool);
@@ -93,14 +92,13 @@ TEST_F(test, sharedLimits) {
     static size_t numAllocs = 0;
     static size_t numFrees = 0;
 
-    struct memory_provider : public umf_test::provider_base {
-        enum umf_result_t alloc(size_t size, size_t, void **ptr) noexcept {
+    struct memory_provider : public umf_test::provider_base_t {
+        umf_result_t alloc(size_t size, size_t, void **ptr) noexcept {
             *ptr = malloc(size);
             numAllocs++;
             return UMF_RESULT_SUCCESS;
         }
-        enum umf_result_t free(void *ptr,
-                               [[maybe_unused]] size_t size) noexcept {
+        umf_result_t free(void *ptr, [[maybe_unused]] size_t size) noexcept {
             ::free(ptr);
             numFrees++;
             return UMF_RESULT_SUCCESS;
@@ -114,7 +112,7 @@ TEST_F(test, sharedLimits) {
     config.SlabMinSize = SlabMinSize;
 
     auto limits =
-        std::unique_ptr<umf_disjoint_pool_shared_limits,
+        std::unique_ptr<umf_disjoint_pool_shared_limits_t,
                         decltype(&umfDisjointPoolSharedLimitsDestroy)>(
             umfDisjointPoolSharedLimitsCreate(MaxSize),
             &umfDisjointPoolSharedLimitsDestroy);

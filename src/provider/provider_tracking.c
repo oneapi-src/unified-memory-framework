@@ -32,19 +32,17 @@ umf_memory_tracker_handle_t umfMemoryTrackerGet(void) {
 }
 #endif
 
-struct tracker_value_t {
+typedef struct tracker_value_t {
     umf_memory_pool_handle_t pool;
     size_t size;
-};
+} tracker_value_t;
 
-static enum umf_result_t
-umfMemoryTrackerAdd(umf_memory_tracker_handle_t hTracker,
-                    umf_memory_pool_handle_t pool, const void *ptr,
-                    size_t size) {
+static umf_result_t umfMemoryTrackerAdd(umf_memory_tracker_handle_t hTracker,
+                                        umf_memory_pool_handle_t pool,
+                                        const void *ptr, size_t size) {
     assert(ptr);
 
-    struct tracker_value_t *value =
-        (struct tracker_value_t *)malloc(sizeof(struct tracker_value_t));
+    tracker_value_t *value = (tracker_value_t *)malloc(sizeof(tracker_value_t));
     value->pool = pool;
     value->size = size;
 
@@ -65,9 +63,8 @@ umfMemoryTrackerAdd(umf_memory_tracker_handle_t hTracker,
     return UMF_RESULT_ERROR_UNKNOWN;
 }
 
-static enum umf_result_t
-umfMemoryTrackerRemove(umf_memory_tracker_handle_t hTracker, const void *ptr,
-                       size_t size) {
+static umf_result_t umfMemoryTrackerRemove(umf_memory_tracker_handle_t hTracker,
+                                           const void *ptr, size_t size) {
     assert(ptr);
 
     // TODO: there is no support for removing partial ranges (or multiple entries
@@ -93,7 +90,7 @@ umfMemoryTrackerGetPool(umf_memory_tracker_handle_t hTracker, const void *ptr) {
     assert(ptr);
 
     uintptr_t rkey;
-    struct tracker_value_t *rvalue;
+    tracker_value_t *rvalue;
     int found = critnib_find((critnib *)hTracker, (uintptr_t)ptr, FIND_LE,
                              (void *)&rkey, (void **)&rvalue);
     if (!found) {
@@ -103,19 +100,19 @@ umfMemoryTrackerGetPool(umf_memory_tracker_handle_t hTracker, const void *ptr) {
     return (rkey + rvalue->size >= (uintptr_t)ptr) ? rvalue->pool : NULL;
 }
 
-struct umf_tracking_memory_provider_t {
+typedef struct umf_tracking_memory_provider_t {
     umf_memory_provider_handle_t hUpstream;
     umf_memory_tracker_handle_t hTracker;
     umf_memory_pool_handle_t pool;
-};
+} umf_tracking_memory_provider_t;
 
 typedef struct umf_tracking_memory_provider_t umf_tracking_memory_provider_t;
 
-static enum umf_result_t trackingAlloc(void *hProvider, size_t size,
-                                       size_t alignment, void **ptr) {
+static umf_result_t trackingAlloc(void *hProvider, size_t size,
+                                  size_t alignment, void **ptr) {
     umf_tracking_memory_provider_t *p =
         (umf_tracking_memory_provider_t *)hProvider;
-    enum umf_result_t ret = UMF_RESULT_SUCCESS;
+    umf_result_t ret = UMF_RESULT_SUCCESS;
 
     if (!p->hUpstream) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
@@ -136,8 +133,8 @@ static enum umf_result_t trackingAlloc(void *hProvider, size_t size,
     return ret;
 }
 
-static enum umf_result_t trackingFree(void *hProvider, void *ptr, size_t size) {
-    enum umf_result_t ret;
+static umf_result_t trackingFree(void *hProvider, void *ptr, size_t size) {
+    umf_result_t ret;
     umf_tracking_memory_provider_t *p =
         (umf_tracking_memory_provider_t *)hProvider;
 
@@ -164,7 +161,7 @@ static enum umf_result_t trackingFree(void *hProvider, void *ptr, size_t size) {
     return ret;
 }
 
-static enum umf_result_t trackingInitialize(void *params, void **ret) {
+static umf_result_t trackingInitialize(void *params, void **ret) {
     umf_tracking_memory_provider_t *provider =
         (umf_tracking_memory_provider_t *)malloc(
             sizeof(umf_tracking_memory_provider_t));
@@ -186,30 +183,28 @@ static void trackingGetLastError(void *provider, const char **msg,
     umfMemoryProviderGetLastNativeError(p->hUpstream, msg, pError);
 }
 
-static enum umf_result_t
-trackingGetRecommendedPageSize(void *provider, size_t size, size_t *pageSize) {
+static umf_result_t trackingGetRecommendedPageSize(void *provider, size_t size,
+                                                   size_t *pageSize) {
     umf_tracking_memory_provider_t *p =
         (umf_tracking_memory_provider_t *)provider;
     return umfMemoryProviderGetRecommendedPageSize(p->hUpstream, size,
                                                    pageSize);
 }
 
-static enum umf_result_t trackingGetMinPageSize(void *provider, void *ptr,
-                                                size_t *pageSize) {
+static umf_result_t trackingGetMinPageSize(void *provider, void *ptr,
+                                           size_t *pageSize) {
     umf_tracking_memory_provider_t *p =
         (umf_tracking_memory_provider_t *)provider;
     return umfMemoryProviderGetMinPageSize(p->hUpstream, ptr, pageSize);
 }
 
-static enum umf_result_t trackingPurgeLazy(void *provider, void *ptr,
-                                           size_t size) {
+static umf_result_t trackingPurgeLazy(void *provider, void *ptr, size_t size) {
     umf_tracking_memory_provider_t *p =
         (umf_tracking_memory_provider_t *)provider;
     return umfMemoryProviderPurgeLazy(p->hUpstream, ptr, size);
 }
 
-static enum umf_result_t trackingPurgeForce(void *provider, void *ptr,
-                                            size_t size) {
+static umf_result_t trackingPurgeForce(void *provider, void *ptr, size_t size) {
     umf_tracking_memory_provider_t *p =
         (umf_tracking_memory_provider_t *)provider;
     return umfMemoryProviderPurgeForce(p->hUpstream, ptr, size);
@@ -221,7 +216,7 @@ static const char *trackingName(void *provider) {
     return umfMemoryProviderGetName(p->hUpstream);
 }
 
-struct umf_memory_provider_ops_t UMF_TRACKING_MEMORY_PROVIDER_OPS = {
+umf_memory_provider_ops_t UMF_TRACKING_MEMORY_PROVIDER_OPS = {
     .version = UMF_VERSION_CURRENT,
     .initialize = trackingInitialize,
     .finalize = trackingFinalize,
@@ -235,7 +230,7 @@ struct umf_memory_provider_ops_t UMF_TRACKING_MEMORY_PROVIDER_OPS = {
     .get_name = trackingName,
 };
 
-enum umf_result_t umfTrackingMemoryProviderCreate(
+umf_result_t umfTrackingMemoryProviderCreate(
     umf_memory_provider_handle_t hUpstream, umf_memory_pool_handle_t hPool,
     umf_memory_provider_handle_t *hTrackingProvider) {
     umf_tracking_memory_provider_t params;

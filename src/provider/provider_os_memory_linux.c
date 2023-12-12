@@ -34,12 +34,12 @@ static int os_translate_mem_protection_one_flag(unsigned protection) {
 }
 
 int os_translate_mem_protection_flags(unsigned protection_flags) {
-    // translate protection - combination of 'enum umf_mem_protection_flags' flags
+    // translate protection - combination of 'umf_mem_protection_flags_t' flags
     return os_translate_flags(protection_flags, UMF_PROTECTION_MAX,
                               os_translate_mem_protection_one_flag);
 }
 
-int os_translate_mem_visibility(enum umf_mem_visibility visibility) {
+int os_translate_mem_visibility(umf_mem_visibility_t visibility) {
     switch (visibility) {
     case UMF_VISIBILITY_SHARED:
         return MAP_SHARED;
@@ -50,7 +50,7 @@ int os_translate_mem_visibility(enum umf_mem_visibility visibility) {
     return -1;
 }
 
-int os_translate_numa_mode(enum umf_numa_mode mode) {
+int os_translate_numa_mode(umf_numa_mode_t mode) {
     switch (mode) {
     case UMF_NUMA_MODE_DEFAULT:
         return MPOL_DEFAULT;
@@ -89,12 +89,12 @@ static int os_translate_one_numa_flag(unsigned numa_flag) {
 }
 
 int os_translate_numa_flags(unsigned numa_flags) {
-    // translate numa_flags - combination of 'enum umf_numa_flags' flags
+    // translate numa_flags - combination of 'umf_numa_flags_t' flags
     return os_translate_flags(numa_flags, UMF_NUMA_FLAGS_MAX,
                               os_translate_one_numa_flag);
 }
 
-static int os_translate_purge_advise(enum umf_purge_advise advise) {
+static int os_translate_purge_advise(umf_purge_advise_t advise) {
     switch (advise) {
     case UMF_PURGE_LAZY:
         return MADV_FREE;

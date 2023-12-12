@@ -13,16 +13,16 @@
 #include <assert.h>
 #include <stdlib.h>
 
-struct umf_memory_provider_t {
-    struct umf_memory_provider_ops_t ops;
+typedef struct umf_memory_provider_t {
+    umf_memory_provider_ops_t ops;
     void *provider_priv;
-};
+} umf_memory_provider_t;
 
-enum umf_result_t
-umfMemoryProviderCreate(const struct umf_memory_provider_ops_t *ops,
-                        void *params, umf_memory_provider_handle_t *hProvider) {
+umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
+                                     void *params,
+                                     umf_memory_provider_handle_t *hProvider) {
     umf_memory_provider_handle_t provider =
-        malloc(sizeof(struct umf_memory_provider_t));
+        malloc(sizeof(umf_memory_provider_t));
     if (!provider) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
@@ -32,7 +32,7 @@ umfMemoryProviderCreate(const struct umf_memory_provider_ops_t *ops,
     provider->ops = *ops;
 
     void *provider_priv;
-    enum umf_result_t ret = ops->initialize(params, &provider_priv);
+    umf_result_t ret = ops->initialize(params, &provider_priv);
     if (ret != UMF_RESULT_SUCCESS) {
         free(provider);
         return ret;
@@ -51,26 +51,24 @@ void umfMemoryProviderDestroy(umf_memory_provider_handle_t hProvider) {
 }
 
 static void
-checkErrorAndSetLastProvider(enum umf_result_t result,
+checkErrorAndSetLastProvider(umf_result_t result,
                              umf_memory_provider_handle_t hProvider) {
     if (result != UMF_RESULT_SUCCESS) {
         *umfGetLastFailedMemoryProviderPtr() = hProvider;
     }
 }
 
-enum umf_result_t umfMemoryProviderAlloc(umf_memory_provider_handle_t hProvider,
-                                         size_t size, size_t alignment,
-                                         void **ptr) {
-    enum umf_result_t res =
+umf_result_t umfMemoryProviderAlloc(umf_memory_provider_handle_t hProvider,
+                                    size_t size, size_t alignment, void **ptr) {
+    umf_result_t res =
         hProvider->ops.alloc(hProvider->provider_priv, size, alignment, ptr);
     checkErrorAndSetLastProvider(res, hProvider);
     return res;
 }
 
-enum umf_result_t umfMemoryProviderFree(umf_memory_provider_handle_t hProvider,
-                                        void *ptr, size_t size) {
-    enum umf_result_t res =
-        hProvider->ops.free(hProvider->provider_priv, ptr, size);
+umf_result_t umfMemoryProviderFree(umf_memory_provider_handle_t hProvider,
+                                   void *ptr, size_t size) {
+    umf_result_t res = hProvider->ops.free(hProvider->provider_priv, ptr, size);
     checkErrorAndSetLastProvider(res, hProvider);
     return res;
 }
@@ -86,37 +84,35 @@ void *umfMemoryProviderGetPriv(umf_memory_provider_handle_t hProvider) {
     return hProvider->provider_priv;
 }
 
-enum umf_result_t
+umf_result_t
 umfMemoryProviderGetRecommendedPageSize(umf_memory_provider_handle_t hProvider,
                                         size_t size, size_t *pageSize) {
-    enum umf_result_t res = hProvider->ops.get_recommended_page_size(
+    umf_result_t res = hProvider->ops.get_recommended_page_size(
         hProvider->provider_priv, size, pageSize);
     checkErrorAndSetLastProvider(res, hProvider);
     return res;
 }
 
-enum umf_result_t
+umf_result_t
 umfMemoryProviderGetMinPageSize(umf_memory_provider_handle_t hProvider,
                                 void *ptr, size_t *pageSize) {
-    enum umf_result_t res = hProvider->ops.get_min_page_size(
+    umf_result_t res = hProvider->ops.get_min_page_size(
         hProvider->provider_priv, ptr, pageSize);
     checkErrorAndSetLastProvider(res, hProvider);
     return res;
 }
 
-enum umf_result_t
-umfMemoryProviderPurgeLazy(umf_memory_provider_handle_t hProvider, void *ptr,
-                           size_t size) {
-    enum umf_result_t res =
+umf_result_t umfMemoryProviderPurgeLazy(umf_memory_provider_handle_t hProvider,
+                                        void *ptr, size_t size) {
+    umf_result_t res =
         hProvider->ops.purge_lazy(hProvider->provider_priv, ptr, size);
     checkErrorAndSetLastProvider(res, hProvider);
     return res;
 }
 
-enum umf_result_t
-umfMemoryProviderPurgeForce(umf_memory_provider_handle_t hProvider, void *ptr,
-                            size_t size) {
-    enum umf_result_t res =
+umf_result_t umfMemoryProviderPurgeForce(umf_memory_provider_handle_t hProvider,
+                                         void *ptr, size_t size) {
+    umf_result_t res =
         hProvider->ops.purge_force(hProvider->provider_priv, ptr, size);
     checkErrorAndSetLastProvider(res, hProvider);
     return res;

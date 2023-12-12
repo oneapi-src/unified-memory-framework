@@ -25,9 +25,9 @@ int os_translate_flags(unsigned in_flags, unsigned max,
 
 int os_translate_mem_protection_flags(unsigned protection);
 
-int os_translate_mem_visibility(enum umf_mem_visibility visibility);
+int os_translate_mem_visibility(umf_mem_visibility_t visibility);
 
-int os_translate_numa_mode(enum umf_numa_mode mode);
+int os_translate_numa_mode(umf_numa_mode_t mode);
 
 int os_translate_numa_flags(unsigned numa_flag);
 

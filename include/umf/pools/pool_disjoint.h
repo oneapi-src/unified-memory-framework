@@ -12,16 +12,16 @@ extern "C" {
 
 #define UMF_DISJOINT_POOL_MIN_BUCKET_DEFAULT_SIZE ((size_t)8)
 
-struct umf_disjoint_pool_shared_limits;
+typedef struct umf_disjoint_pool_shared_limits_t
+    umf_disjoint_pool_shared_limits_t;
 
 /// \param MaxSize specifies hard limit for memory allocated from a provider
-struct umf_disjoint_pool_shared_limits *
+umf_disjoint_pool_shared_limits_t *
 umfDisjointPoolSharedLimitsCreate(size_t MaxSize);
 
-void umfDisjointPoolSharedLimitsDestroy(
-    struct umf_disjoint_pool_shared_limits *);
+void umfDisjointPoolSharedLimitsDestroy(umf_disjoint_pool_shared_limits_t *);
 
-struct umf_disjoint_pool_params {
+typedef struct umf_disjoint_pool_params_t {
     // Minimum allocation size that will be requested from the system.
     // By default this is the minimum allocation size of each memory type.
     size_t SlabMinSize;
@@ -45,17 +45,16 @@ struct umf_disjoint_pool_params {
     // Memory limits that can be shared between multitple pool instances,
     // i.e. if multiple pools use the same SharedLimits sum of those pools'
     // sizes cannot exceed MaxSize.
-    struct umf_disjoint_pool_shared_limits *SharedLimits;
+    umf_disjoint_pool_shared_limits_t *SharedLimits;
 
     // Name used in traces
     const char *Name;
-};
+} umf_disjoint_pool_params_t;
 
-extern struct umf_memory_pool_ops_t UMF_DISJOINT_POOL_OPS;
+extern umf_memory_pool_ops_t UMF_DISJOINT_POOL_OPS;
 
-static inline struct umf_disjoint_pool_params
-umfDisjointPoolParamsDefault(void) {
-    struct umf_disjoint_pool_params params = {
+static inline umf_disjoint_pool_params_t umfDisjointPoolParamsDefault(void) {
+    umf_disjoint_pool_params_t params = {
         0,                                         /* SlabMinSize */
         0,                                         /* MaxPoolableSize */
         0,                                         /* Capacity */

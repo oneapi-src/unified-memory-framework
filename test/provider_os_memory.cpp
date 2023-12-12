@@ -44,7 +44,7 @@ static int compare_native_error_str(const char *message, int error) {
 }
 
 TEST_F(test, provider_os_memory_create_destroy) {
-    enum umf_result_t umf_result;
+    umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = nullptr;
     umf_os_memory_provider_params_t os_memory_provider_params =
         UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
@@ -59,7 +59,7 @@ TEST_F(test, provider_os_memory_create_destroy) {
 }
 
 TEST_F(test, provider_os_memory_create_UMF_NUMA_MODE_NOT_SUPPORTED) {
-    enum umf_result_t umf_result;
+    umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = nullptr;
     umf_os_memory_provider_params_t os_memory_provider_params =
         UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
@@ -76,7 +76,7 @@ TEST_F(test, provider_os_memory_create_UMF_NUMA_MODE_NOT_SUPPORTED) {
 }
 
 TEST_F(test, provider_os_memory_create_MBIND_FAILED) {
-    enum umf_result_t umf_result;
+    umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = nullptr;
     umf_os_memory_provider_params_t os_memory_provider_params =
         UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
@@ -92,7 +92,7 @@ TEST_F(test, provider_os_memory_create_MBIND_FAILED) {
 }
 
 TEST_F(test, provider_os_memory_alloc_free) {
-    enum umf_result_t umf_result;
+    umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = nullptr;
     umf_os_memory_provider_params_t os_memory_provider_params =
         UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
@@ -120,7 +120,7 @@ TEST_F(test, provider_os_memory_alloc_free) {
 }
 
 TEST_F(test, provider_os_memory_alloc_WRONG_ALIGNMENT) {
-    enum umf_result_t umf_result;
+    umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = nullptr;
     umf_os_memory_provider_params_t os_memory_provider_params =
         UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
@@ -149,7 +149,7 @@ TEST_F(test, provider_os_memory_alloc_WRONG_ALIGNMENT) {
 }
 
 TEST_F(test, provider_os_memory_alloc_MMAP_FAILED) {
-    enum umf_result_t umf_result;
+    umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = nullptr;
     umf_os_memory_provider_params_t os_memory_provider_params =
         UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
@@ -178,7 +178,7 @@ TEST_F(test, provider_os_memory_alloc_MMAP_FAILED) {
 }
 
 TEST_F(test, provider_os_memory_alloc_MMAP_ADDR_NOT_ALIGNED) {
-    enum umf_result_t umf_result;
+    umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = nullptr;
     umf_os_memory_provider_params_t os_memory_provider_params =
         UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
@@ -207,7 +207,7 @@ TEST_F(test, provider_os_memory_alloc_MMAP_ADDR_NOT_ALIGNED) {
 }
 
 TEST_F(test, provider_os_memory_free_MUNMAP_FAILED) {
-    enum umf_result_t umf_result;
+    umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = nullptr;
     umf_os_memory_provider_params_t os_memory_provider_params =
         UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
@@ -231,7 +231,7 @@ TEST_F(test, provider_os_memory_free_MUNMAP_FAILED) {
 }
 
 TEST_F(test, provider_os_memory_get_min_page_size) {
-    enum umf_result_t umf_result;
+    umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = nullptr;
     umf_os_memory_provider_params_t os_memory_provider_params =
         UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
@@ -252,7 +252,7 @@ TEST_F(test, provider_os_memory_get_min_page_size) {
 }
 
 TEST_F(test, provider_os_memory_get_recommended_page_size) {
-    enum umf_result_t umf_result;
+    umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = nullptr;
     umf_os_memory_provider_params_t os_memory_provider_params =
         UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
@@ -279,7 +279,7 @@ TEST_F(test, provider_os_memory_get_recommended_page_size) {
 }
 
 TEST_F(test, provider_os_memory_purge_lazy) {
-    enum umf_result_t umf_result;
+    umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = nullptr;
     umf_os_memory_provider_params_t os_memory_provider_params =
         UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
@@ -310,7 +310,7 @@ TEST_F(test, provider_os_memory_purge_lazy) {
 }
 
 TEST_F(test, provider_os_memory_purge_lazy_MADVISE_FREE_FAILED) {
-    enum umf_result_t umf_result;
+    umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = nullptr;
     umf_os_memory_provider_params_t os_memory_provider_params =
         UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
@@ -335,7 +335,7 @@ TEST_F(test, provider_os_memory_purge_lazy_MADVISE_FREE_FAILED) {
 }
 
 TEST_F(test, provider_os_memory_purge_force) {
-    enum umf_result_t umf_result;
+    umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = nullptr;
     umf_os_memory_provider_params_t os_memory_provider_params =
         UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
@@ -366,7 +366,7 @@ TEST_F(test, provider_os_memory_purge_force) {
 }
 
 TEST_F(test, provider_os_memory_purge_force_MADVISE_DONTNEED_FAILED) {
-    enum umf_result_t umf_result;
+    umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = nullptr;
     umf_os_memory_provider_params_t os_memory_provider_params =
         UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
@@ -391,7 +391,7 @@ TEST_F(test, provider_os_memory_purge_force_MADVISE_DONTNEED_FAILED) {
 }
 
 TEST_F(test, provider_os_memory_get_name) {
-    enum umf_result_t umf_result;
+    umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = nullptr;
     umf_os_memory_provider_params_t os_memory_provider_params =
         UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;

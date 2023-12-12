@@ -8,7 +8,7 @@
 #include "provider_null.h"
 #include <umf/memory_provider_ops.h>
 
-static enum umf_result_t nullInitialize(void *params, void **pool) {
+static umf_result_t nullInitialize(void *params, void **pool) {
     (void)params;
     *pool = NULL;
     return UMF_RESULT_SUCCESS;
@@ -16,8 +16,8 @@ static enum umf_result_t nullInitialize(void *params, void **pool) {
 
 static void nullFinalize(void *pool) { (void)pool; }
 
-static enum umf_result_t nullAlloc(void *provider, size_t size,
-                                   size_t alignment, void **ptr) {
+static umf_result_t nullAlloc(void *provider, size_t size, size_t alignment,
+                              void **ptr) {
     (void)provider;
     (void)size;
     (void)alignment;
@@ -25,7 +25,7 @@ static enum umf_result_t nullAlloc(void *provider, size_t size,
     return UMF_RESULT_SUCCESS;
 }
 
-static enum umf_result_t nullFree(void *provider, void *ptr, size_t size) {
+static umf_result_t nullFree(void *provider, void *ptr, size_t size) {
     (void)provider;
     (void)ptr;
     (void)size;
@@ -39,32 +39,31 @@ static void nullGetLastError(void *provider, const char **ppMsg,
     (void)pError;
 }
 
-static enum umf_result_t nullGetRecommendedPageSize(void *provider, size_t size,
-                                                    size_t *pageSize) {
+static umf_result_t nullGetRecommendedPageSize(void *provider, size_t size,
+                                               size_t *pageSize) {
     (void)provider;
     (void)size;
     (void)pageSize;
     return UMF_RESULT_SUCCESS;
 }
 
-static enum umf_result_t nullGetPageSize(void *provider, void *ptr,
+static umf_result_t nullGetPageSize(void *provider, void *ptr,
 
-                                         size_t *pageSize) {
+                                    size_t *pageSize) {
     (void)provider;
     (void)ptr;
     (void)pageSize;
     return UMF_RESULT_SUCCESS;
 }
 
-static enum umf_result_t nullPurgeLazy(void *provider, void *ptr, size_t size) {
+static umf_result_t nullPurgeLazy(void *provider, void *ptr, size_t size) {
     (void)provider;
     (void)ptr;
     (void)size;
     return UMF_RESULT_SUCCESS;
 }
 
-static enum umf_result_t nullPurgeForce(void *provider, void *ptr,
-                                        size_t size) {
+static umf_result_t nullPurgeForce(void *provider, void *ptr, size_t size) {
     (void)provider;
     (void)ptr;
     (void)size;
@@ -76,7 +75,7 @@ static const char *nullName(void *provider) {
     return "null";
 }
 
-struct umf_memory_provider_ops_t UMF_NULL_PROVIDER_OPS = {
+umf_memory_provider_ops_t UMF_NULL_PROVIDER_OPS = {
     .version = UMF_VERSION_CURRENT,
     .initialize = nullInitialize,
     .finalize = nullFinalize,

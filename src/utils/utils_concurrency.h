@@ -22,10 +22,12 @@ extern "C" {
 
 struct os_mutex_t;
 
-struct os_mutex_t *util_mutex_create(void);
-void util_mutex_destroy(struct os_mutex_t *mutex);
-int util_mutex_lock(struct os_mutex_t *mutex);
-int util_mutex_unlock(struct os_mutex_t *mutex);
+typedef struct os_mutex_t os_mutex_t;
+
+os_mutex_t *util_mutex_create(void);
+void util_mutex_destroy(os_mutex_t *mutex);
+int util_mutex_lock(os_mutex_t *mutex);
+int util_mutex_unlock(os_mutex_t *mutex);
 
 #if defined(_WIN32)
 static __inline unsigned char util_lssb_index(long long value) {

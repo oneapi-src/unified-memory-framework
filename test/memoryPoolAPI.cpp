@@ -89,7 +89,7 @@ TEST_F(test, memoryPoolTrace) {
 TEST_F(test, memoryPoolWithCustomProvider) {
     umf_memory_provider_handle_t provider = nullProviderCreate();
 
-    struct pool : public umf_test::pool_base {
+    struct pool : public umf_test::pool_base_t {
         umf_result_t
         initialize(umf_memory_provider_handle_t provider) noexcept {
             EXPECT_NE_NOEXCEPT(provider, nullptr);
@@ -143,7 +143,7 @@ INSTANTIATE_TEST_SUITE_P(
 ////////////////// Negative test cases /////////////////
 
 TEST_F(test, memoryPoolInvalidProvidersNullptr) {
-    auto ret = umf::poolMakeUnique<umf_test::pool_base>(nullptr);
+    auto ret = umf::poolMakeUnique<umf_test::pool_base_t>(nullptr);
     ASSERT_EQ(ret.first, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 }
 
@@ -161,7 +161,7 @@ TEST_P(poolInitializeTest, errorPropagation) {
     auto nullProvider = umf_test::wrapProviderUnique(nullProviderCreate());
     umf_memory_provider_handle_t provider = nullProvider.get();
 
-    struct pool : public umf_test::pool_base {
+    struct pool : public umf_test::pool_base_t {
         umf_result_t
         initialize([[maybe_unused]] umf_memory_provider_handle_t provider,
                    umf_result_t errorToReturn) noexcept {
@@ -187,13 +187,13 @@ TEST_F(test, getLastFailedMemoryProvider) {
     static constexpr size_t allocSize = 8;
     static umf_result_t allocResult = UMF_RESULT_SUCCESS;
 
-    struct memory_provider : public umf_test::provider_base {
+    struct memory_provider : public umf_test::provider_base_t {
         umf_result_t initialize(const char *name) {
             this->name = name;
             return UMF_RESULT_SUCCESS;
         }
 
-        enum umf_result_t alloc(size_t size, size_t, void **ptr) noexcept {
+        umf_result_t alloc(size_t size, size_t, void **ptr) noexcept {
             if (allocResult == UMF_RESULT_SUCCESS) {
                 *ptr = malloc(size);
             } else {
@@ -203,8 +203,7 @@ TEST_F(test, getLastFailedMemoryProvider) {
             return allocResult;
         }
 
-        enum umf_result_t free(void *ptr,
-                               [[maybe_unused]] size_t size) noexcept {
+        umf_result_t free(void *ptr, [[maybe_unused]] size_t size) noexcept {
             ::free(ptr);
             return UMF_RESULT_SUCCESS;
         }

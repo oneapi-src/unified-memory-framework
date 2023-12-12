@@ -22,11 +22,11 @@ BOOL APIENTRY DllMain(HINSTANCE, DWORD fdwReason, LPVOID lpvReserved) {
     return TRUE;
 }
 #else
-struct tracker_t {
+typedef struct tracker_t {
     tracker_t() { map = critnib_new(); }
     ~tracker_t() { critnib_delete(map); }
     critnib *map;
-};
+} tracker_t;
 tracker_t TRACKER_INSTANCE;
 critnib *TRACKER = TRACKER_INSTANCE.map;
 #endif

@@ -18,13 +18,13 @@
 extern "C" {
 #endif
 
-struct umf_memory_pool_t {
+typedef struct umf_memory_pool_t {
     void *pool_priv;
-    struct umf_memory_pool_ops_t ops;
+    umf_memory_pool_ops_t ops;
 
     // Memory provider used by the pool.
     umf_memory_provider_handle_t provider;
-};
+} umf_memory_pool_t;
 
 #ifdef __cplusplus
 }

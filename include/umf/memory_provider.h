@@ -26,9 +26,9 @@ typedef struct umf_memory_provider_t *umf_memory_provider_handle_t;
 /// \param hProvider [out] pointer to the newly created memory provider
 /// \return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 ///
-enum umf_result_t
-umfMemoryProviderCreate(const struct umf_memory_provider_ops_t *ops,
-                        void *params, umf_memory_provider_handle_t *hProvider);
+umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
+                                     void *params,
+                                     umf_memory_provider_handle_t *hProvider);
 
 ///
 /// \brief Destroys memory provider.
@@ -45,9 +45,8 @@ void umfMemoryProviderDestroy(umf_memory_provider_handle_t hProvider);
 /// \param ptr [out] pointer to the allocated memory
 /// \return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 ///
-enum umf_result_t umfMemoryProviderAlloc(umf_memory_provider_handle_t hProvider,
-                                         size_t size, size_t alignment,
-                                         void **ptr);
+umf_result_t umfMemoryProviderAlloc(umf_memory_provider_handle_t hProvider,
+                                    size_t size, size_t alignment, void **ptr);
 
 ///
 /// \brief Frees the memory space pointed by ptr from the memory provider.
@@ -56,8 +55,8 @@ enum umf_result_t umfMemoryProviderAlloc(umf_memory_provider_handle_t hProvider,
 /// \param size size of the allocation
 /// \return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 ///
-enum umf_result_t umfMemoryProviderFree(umf_memory_provider_handle_t hProvider,
-                                        void *ptr, size_t size);
+umf_result_t umfMemoryProviderFree(umf_memory_provider_handle_t hProvider,
+                                   void *ptr, size_t size);
 
 ///
 /// \brief Retrieve string representation of the underlying provider specific
@@ -92,7 +91,7 @@ void umfMemoryProviderGetLastNativeError(umf_memory_provider_handle_t hProvider,
 /// \param size allocation size
 /// \param pageSize [out] will be updated with recommended page size
 /// \return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
-enum umf_result_t
+umf_result_t
 umfMemoryProviderGetRecommendedPageSize(umf_memory_provider_handle_t hProvider,
                                         size_t size, size_t *pageSize);
 
@@ -103,7 +102,7 @@ umfMemoryProviderGetRecommendedPageSize(umf_memory_provider_handle_t hProvider,
 /// \param ptr [optional] pointer to memory allocated by this memory provider
 /// \param pageSize [out] will be updated with page size value.
 /// \return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
-enum umf_result_t
+umf_result_t
 umfMemoryProviderGetMinPageSize(umf_memory_provider_handle_t hProvider,
                                 void *ptr, size_t *pageSize);
 
@@ -116,9 +115,8 @@ umfMemoryProviderGetMinPageSize(umf_memory_provider_handle_t hProvider,
 /// \return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 ///         UMF_RESULT_ERROR_INVALID_ALIGNMENT if ptr or size is not page-aligned.
 ///         UMF_RESULT_ERROR_NOT_SUPPORTED if operation is not supported by this provider.
-enum umf_result_t
-umfMemoryProviderPurgeLazy(umf_memory_provider_handle_t hProvider, void *ptr,
-                           size_t size);
+umf_result_t umfMemoryProviderPurgeLazy(umf_memory_provider_handle_t hProvider,
+                                        void *ptr, size_t size);
 
 ///
 /// \brief Discard physical pages within the virtual memory mapping associated at given addr and size.
@@ -129,9 +127,8 @@ umfMemoryProviderPurgeLazy(umf_memory_provider_handle_t hProvider, void *ptr,
 /// \return UMF_RESULT_SUCCESS on success or appropriate error code on failure
 ///         UMF_RESULT_ERROR_INVALID_ALIGNMENT if ptr or size is not page-aligned.
 ///         UMF_RESULT_ERROR_NOT_SUPPORTED if operation is not supported by this provider.
-enum umf_result_t
-umfMemoryProviderPurgeForce(umf_memory_provider_handle_t hProvider, void *ptr,
-                            size_t size);
+umf_result_t umfMemoryProviderPurgeForce(umf_memory_provider_handle_t hProvider,
+                                         void *ptr, size_t size);
 
 ///
 /// \brief Retrieve name of a given memory provider.
