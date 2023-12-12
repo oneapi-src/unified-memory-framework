@@ -11,12 +11,12 @@
 extern "C" {
 #endif
 
-struct umf_provider_trace_params {
+typedef struct umf_provider_trace_params {
     umf_memory_provider_handle_t hUpstreamProvider;
     void (*trace)(const char *);
-};
+} umf_provider_trace_params_t;
 
-extern struct umf_memory_provider_ops_t UMF_TRACE_PROVIDER_OPS;
+extern umf_memory_provider_ops_t UMF_TRACE_PROVIDER_OPS;
 
 #if defined(__cplusplus)
 }

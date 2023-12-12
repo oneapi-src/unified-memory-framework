@@ -20,7 +20,7 @@ extern "C" {
 /// \brief This structure comprises function pointers used by corresponding umfPool*
 /// calls. Each memory pool implementation should initialize all function
 /// pointers.
-struct umf_memory_pool_ops_t {
+typedef struct umf_memory_pool_ops_t {
     /// Version of the ops structure.
     /// Should be initialized using UMF_VERSION_CURRENT
     uint32_t version;
@@ -33,8 +33,8 @@ struct umf_memory_pool_ops_t {
     /// \param params pool-specific params
     /// \param pool [out] returns pointer to the pool
     /// \return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
-    enum umf_result_t (*initialize)(umf_memory_provider_handle_t provider,
-                                    void *params, void **pool);
+    umf_result_t (*initialize)(umf_memory_provider_handle_t provider,
+                               void *params, void **pool);
 
     ///
     /// \brief Finalizes memory pool
@@ -47,9 +47,9 @@ struct umf_memory_pool_ops_t {
     void *(*realloc)(void *pool, void *ptr, size_t size);
     void *(*aligned_malloc)(void *pool, size_t size, size_t alignment);
     size_t (*malloc_usable_size)(void *pool, void *ptr);
-    enum umf_result_t (*free)(void *pool, void *);
-    enum umf_result_t (*get_last_allocation_error)(void *pool);
-};
+    umf_result_t (*free)(void *pool, void *);
+    umf_result_t (*get_last_allocation_error)(void *pool);
+} umf_memory_pool_ops_t;
 
 #ifdef __cplusplus
 }

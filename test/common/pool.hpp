@@ -94,7 +94,7 @@ bool isCallocSupported(umf_memory_pool_handle_t hPool) {
     return supported;
 }
 
-struct pool_base {
+typedef struct pool_base_t {
     umf_result_t initialize(umf_memory_provider_handle_t) noexcept {
         return UMF_RESULT_SUCCESS;
     };
@@ -103,13 +103,13 @@ struct pool_base {
     void *realloc(void *, size_t) noexcept { return nullptr; }
     void *aligned_malloc(size_t, size_t) noexcept { return nullptr; }
     size_t malloc_usable_size(void *) noexcept { return 0; }
-    enum umf_result_t free(void *) noexcept { return UMF_RESULT_SUCCESS; }
-    enum umf_result_t get_last_allocation_error() noexcept {
+    umf_result_t free(void *) noexcept { return UMF_RESULT_SUCCESS; }
+    umf_result_t get_last_allocation_error() noexcept {
         return UMF_RESULT_SUCCESS;
     }
-};
+} pool_base_t;
 
-struct malloc_pool : public pool_base {
+struct malloc_pool : public pool_base_t {
     void *malloc(size_t size) noexcept { return ::malloc(size); }
     void *calloc(size_t num, size_t size) noexcept {
         return ::calloc(num, size);
@@ -134,13 +134,13 @@ struct malloc_pool : public pool_base {
         return ::malloc_usable_size(ptr);
 #endif
     }
-    enum umf_result_t free(void *ptr) noexcept {
+    umf_result_t free(void *ptr) noexcept {
         ::free(ptr);
         return UMF_RESULT_SUCCESS;
     }
 };
 
-struct proxy_pool : public pool_base {
+struct proxy_pool : public pool_base_t {
     umf_result_t initialize(umf_memory_provider_handle_t provider) noexcept {
         this->provider = provider;
         return UMF_RESULT_SUCCESS;
@@ -175,11 +175,11 @@ struct proxy_pool : public pool_base {
         // TODO: not supported
         return 0;
     }
-    enum umf_result_t free(void *ptr) noexcept {
+    umf_result_t free(void *ptr) noexcept {
         auto ret = umfMemoryProviderFree(provider, ptr, 0);
         return ret;
     }
-    enum umf_result_t get_last_allocation_error() {
+    umf_result_t get_last_allocation_error() {
         return umf::getPoolLastStatusRef<proxy_pool>();
     }
     umf_memory_provider_handle_t provider;

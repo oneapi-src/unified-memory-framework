@@ -27,25 +27,25 @@
 #include "umf/pools/pool_disjoint.h"
 #include "umf_helpers.hpp"
 
-struct umf_disjoint_pool_shared_limits {
+typedef struct umf_disjoint_pool_shared_limits_t {
     size_t MaxSize;
     std::atomic<size_t> TotalSize;
-};
+} umf_disjoint_pool_shared_limits_t;
 
 class DisjointPool {
   public:
     class AllocImpl;
-    using Config = umf_disjoint_pool_params;
+    using Config = umf_disjoint_pool_params_t;
 
     umf_result_t initialize(umf_memory_provider_handle_t provider,
-                            umf_disjoint_pool_params *parameters);
+                            umf_disjoint_pool_params_t *parameters);
     void *malloc(size_t size);
     void *calloc(size_t, size_t);
     void *realloc(void *, size_t);
     void *aligned_malloc(size_t size, size_t alignment);
     size_t malloc_usable_size(void *);
-    enum umf_result_t free(void *ptr);
-    enum umf_result_t get_last_allocation_error();
+    umf_result_t free(void *ptr);
+    umf_result_t get_last_allocation_error();
 
     DisjointPool();
     ~DisjointPool();
@@ -54,13 +54,13 @@ class DisjointPool {
     std::unique_ptr<AllocImpl> impl;
 };
 
-struct umf_disjoint_pool_shared_limits *
+umf_disjoint_pool_shared_limits_t *
 umfDisjointPoolSharedLimitsCreate(size_t MaxSize) {
-    return new umf_disjoint_pool_shared_limits{MaxSize, 0};
+    return new umf_disjoint_pool_shared_limits_t{MaxSize, 0};
 }
 
 void umfDisjointPoolSharedLimitsDestroy(
-    struct umf_disjoint_pool_shared_limits *limits) {
+    umf_disjoint_pool_shared_limits_t *limits) {
     delete limits;
 }
 
@@ -109,9 +109,9 @@ static size_t AlignUp(size_t Val, size_t Alignment) {
     return (Val + Alignment - 1) & (~(Alignment - 1));
 }
 
-struct MemoryProviderError {
+typedef struct MemoryProviderError {
     umf_result_t code;
-};
+} MemoryProviderError_t;
 
 class Bucket;
 
@@ -313,9 +313,9 @@ class DisjointPool::AllocImpl {
     std::vector<std::unique_ptr<Bucket>> Buckets;
 
     // Configuration for this instance
-    umf_disjoint_pool_params params;
+    umf_disjoint_pool_params_t params;
 
-    umf_disjoint_pool_shared_limits DefaultSharedLimits = {
+    umf_disjoint_pool_shared_limits_t DefaultSharedLimits = {
         (std::numeric_limits<size_t>::max)(), 0};
 
     // Used in algorithm for finding buckets
@@ -326,7 +326,7 @@ class DisjointPool::AllocImpl {
 
   public:
     AllocImpl(umf_memory_provider_handle_t hProvider,
-              umf_disjoint_pool_params *params)
+              umf_disjoint_pool_params_t *params)
         : MemHandle{hProvider}, params(*params) {
 
         // Generate buckets sized such as: 64, 96, 128, 192, ..., CutOff.
@@ -367,9 +367,9 @@ class DisjointPool::AllocImpl {
 
     size_t SlabMinSize() { return params.SlabMinSize; };
 
-    umf_disjoint_pool_params &getParams() { return params; }
+    umf_disjoint_pool_params_t &getParams() { return params; }
 
-    struct umf_disjoint_pool_shared_limits *getLimits() {
+    umf_disjoint_pool_shared_limits_t *getLimits() {
         if (params.SharedLimits) {
             return params.SharedLimits;
         } else {
@@ -962,7 +962,7 @@ void DisjointPool::AllocImpl::printStats(bool &TitlePrinted,
 }
 
 umf_result_t DisjointPool::initialize(umf_memory_provider_handle_t provider,
-                                      umf_disjoint_pool_params *parameters) {
+                                      umf_disjoint_pool_params_t *parameters) {
     if (!provider) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
@@ -1022,7 +1022,7 @@ size_t DisjointPool::malloc_usable_size(void *) {
     return 0;
 }
 
-enum umf_result_t DisjointPool::free(void *ptr) try {
+umf_result_t DisjointPool::free(void *ptr) try {
     bool ToPool;
     impl->deallocate(ptr, ToPool);
 
@@ -1040,7 +1040,7 @@ enum umf_result_t DisjointPool::free(void *ptr) try {
     return e.code;
 }
 
-enum umf_result_t DisjointPool::get_last_allocation_error() {
+umf_result_t DisjointPool::get_last_allocation_error() {
     return umf::getPoolLastStatusRef<DisjointPool>();
 }
 
@@ -1069,5 +1069,5 @@ DisjointPool::~DisjointPool() {
     }
 }
 
-struct umf_memory_pool_ops_t UMF_DISJOINT_POOL_OPS =
-    umf::poolMakeCOps<DisjointPool, umf_disjoint_pool_params>();
+umf_memory_pool_ops_t UMF_DISJOINT_POOL_OPS =
+    umf::poolMakeCOps<DisjointPool, umf_disjoint_pool_params_t>();

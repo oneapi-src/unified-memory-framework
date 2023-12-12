@@ -10,7 +10,7 @@
 #ifndef UMF_TEST_MEMORY_PROVIDER_OPS_HPP
 #define UMF_TEST_MEMORY_PROVIDER_OPS_HPP
 
-struct umfProviderTest
+typedef struct umfProviderTest
     : umf_test::test,
       ::testing::WithParamInterface<std::function<
           std::pair<umf_result_t, umf::provider_unique_handle_t>()>> {
@@ -24,6 +24,6 @@ struct umfProviderTest
     }
     void TearDown() override { test::TearDown(); }
     umf::provider_unique_handle_t provider;
-};
+} umfProviderTest_t;
 
 #endif /* UMF_TEST_MEMORY_PROVIDER_OPS_HPP */

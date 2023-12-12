@@ -81,9 +81,9 @@ static void os_store_last_native_error(int32_t native_error, int errno_value) {
     TLS_last_native_error.errno_value = errno_value;
 }
 
-static enum umf_result_t os_copy_nodemask(const unsigned long *nodemask,
-                                          unsigned long maxnode,
-                                          unsigned long **out_nodemask) {
+static umf_result_t os_copy_nodemask(const unsigned long *nodemask,
+                                     unsigned long maxnode,
+                                     unsigned long **out_nodemask) {
     if (out_nodemask == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
@@ -133,7 +133,7 @@ int os_translate_flags(unsigned in_flags, unsigned max,
     return out_flags;
 }
 
-static enum umf_result_t
+static umf_result_t
 os_copy_and_translate_params(umf_os_memory_provider_params_t *in_params,
                              umf_os_memory_provider_config_t *out_config) {
     int ret;
@@ -187,8 +187,8 @@ os_copy_and_translate_params(umf_os_memory_provider_params_t *in_params,
                             &out_config->nodemask);
 }
 
-enum umf_result_t os_initialize(void *params, void **provider) {
-    enum umf_result_t ret;
+umf_result_t os_initialize(void *params, void **provider) {
+    umf_result_t ret;
 
     if (provider == NULL || params == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
@@ -237,8 +237,8 @@ void os_finalize(void *provider) {
     free(os_provider);
 }
 
-static enum umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
-                                  void **resultPtr) {
+static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
+                             void **resultPtr) {
     int ret;
 
     if (provider == NULL || resultPtr == NULL) {
@@ -319,7 +319,7 @@ err_unmap:
     return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
 }
 
-static enum umf_result_t os_free(void *provider, void *ptr, size_t size) {
+static umf_result_t os_free(void *provider, void *ptr, size_t size) {
     if (provider == NULL || ptr == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
@@ -375,8 +375,8 @@ void os_get_last_native_error(void *provider, const char **ppMessage,
     *ppMessage = TLS_last_native_error.msg_buff;
 }
 
-enum umf_result_t os_get_recommended_page_size(void *provider, size_t size,
-                                               size_t *page_size) {
+umf_result_t os_get_recommended_page_size(void *provider, size_t size,
+                                          size_t *page_size) {
     (void)size; // unused
 
     if (provider == NULL || page_size == NULL) {
@@ -388,14 +388,14 @@ enum umf_result_t os_get_recommended_page_size(void *provider, size_t size,
     return UMF_RESULT_SUCCESS;
 }
 
-enum umf_result_t os_get_min_page_size(void *provider, void *ptr,
-                                       size_t *page_size) {
+umf_result_t os_get_min_page_size(void *provider, void *ptr,
+                                  size_t *page_size) {
     (void)ptr; // unused
 
     return os_get_recommended_page_size(provider, 0, page_size);
 }
 
-enum umf_result_t os_purge_lazy(void *provider, void *ptr, size_t size) {
+umf_result_t os_purge_lazy(void *provider, void *ptr, size_t size) {
     if (provider == NULL || ptr == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
@@ -415,7 +415,7 @@ enum umf_result_t os_purge_lazy(void *provider, void *ptr, size_t size) {
     return UMF_RESULT_SUCCESS;
 }
 
-enum umf_result_t os_purge_force(void *provider, void *ptr, size_t size) {
+umf_result_t os_purge_force(void *provider, void *ptr, size_t size) {
     if (provider == NULL || ptr == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
@@ -440,7 +440,7 @@ const char *os_get_name(void *provider) {
     return "OS";
 }
 
-struct umf_memory_provider_ops_t UMF_OS_MEMORY_PROVIDER_OPS = {
+umf_memory_provider_ops_t UMF_OS_MEMORY_PROVIDER_OPS = {
     .version = UMF_VERSION_CURRENT,
     .initialize = os_initialize,
     .finalize = os_finalize,

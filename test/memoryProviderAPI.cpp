@@ -79,7 +79,7 @@ INSTANTIATE_TEST_SUITE_P(
                       UMF_RESULT_ERROR_UNKNOWN));
 
 TEST_P(providerInitializeTest, errorPropagation) {
-    struct provider : public umf_test::provider_base {
+    struct provider : public umf_test::provider_base_t {
         umf_result_t initialize(umf_result_t errorToReturn) noexcept {
             return errorToReturn;
         }

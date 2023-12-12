@@ -36,11 +36,10 @@ size_t umfPoolMallocUsableSize(umf_memory_pool_handle_t hPool, void *ptr) {
     return hPool->ops.malloc_usable_size(hPool->pool_priv, ptr);
 }
 
-enum umf_result_t umfPoolFree(umf_memory_pool_handle_t hPool, void *ptr) {
+umf_result_t umfPoolFree(umf_memory_pool_handle_t hPool, void *ptr) {
     return hPool->ops.free(hPool->pool_priv, ptr);
 }
 
-enum umf_result_t
-umfPoolGetLastAllocationError(umf_memory_pool_handle_t hPool) {
+umf_result_t umfPoolGetLastAllocationError(umf_memory_pool_handle_t hPool) {
     return hPool->ops.get_last_allocation_error(hPool->pool_priv);
 }

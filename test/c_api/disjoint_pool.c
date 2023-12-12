@@ -10,9 +10,9 @@
 
 void test_disjoint_pool_default_params(void) {
     umf_memory_provider_handle_t provider = nullProviderCreate();
-    enum umf_result_t retp;
+    umf_result_t retp;
     umf_memory_pool_handle_t pool = NULL;
-    struct umf_disjoint_pool_params params = umfDisjointPoolParamsDefault();
+    umf_disjoint_pool_params_t params = umfDisjointPoolParamsDefault();
     retp = umfPoolCreate(&UMF_DISJOINT_POOL_OPS, provider, &params, &pool);
 
     // TODO: use asserts
@@ -26,11 +26,11 @@ void test_disjoint_pool_default_params(void) {
 
 void test_disjoint_pool_shared_limits(void) {
     umf_memory_provider_handle_t provider = nullProviderCreate();
-    enum umf_result_t retp;
+    umf_result_t retp;
     umf_memory_pool_handle_t pool = NULL;
-    struct umf_disjoint_pool_params params = umfDisjointPoolParamsDefault();
+    umf_disjoint_pool_params_t params = umfDisjointPoolParamsDefault();
 
-    struct umf_disjoint_pool_shared_limits *limits =
+    umf_disjoint_pool_shared_limits_t *limits =
         umfDisjointPoolSharedLimitsCreate(1024);
     params.SharedLimits = limits;
 

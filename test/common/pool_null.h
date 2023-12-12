@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-extern struct umf_memory_pool_ops_t UMF_NULL_POOL_OPS;
+extern umf_memory_pool_ops_t UMF_NULL_POOL_OPS;
 
 #if defined(__cplusplus)
 }

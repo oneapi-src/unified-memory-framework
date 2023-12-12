@@ -20,6 +20,7 @@ extern "C" {
 typedef struct umf_memory_pool_t *umf_memory_pool_handle_t;
 
 struct umf_memory_pool_ops_t;
+typedef struct umf_memory_pool_ops_t umf_memory_pool_ops_t;
 
 ///
 /// \brief Creates new memory pool.
@@ -29,9 +30,9 @@ struct umf_memory_pool_ops_t;
 /// \param hPool [out] handle to the newly created memory pool
 /// \return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 ///
-enum umf_result_t umfPoolCreate(const struct umf_memory_pool_ops_t *ops,
-                                umf_memory_provider_handle_t provider,
-                                void *params, umf_memory_pool_handle_t *hPool);
+umf_result_t umfPoolCreate(const umf_memory_pool_ops_t *ops,
+                           umf_memory_provider_handle_t provider, void *params,
+                           umf_memory_pool_handle_t *hPool);
 
 ///
 /// \brief Destroys memory pool.
@@ -94,7 +95,7 @@ size_t umfPoolMallocUsableSize(umf_memory_pool_handle_t hPool, void *ptr);
 ///         Whether any status other than UMF_RESULT_SUCCESS can be returned
 ///         depends on the memory provider used by the pool.
 ///
-enum umf_result_t umfPoolFree(umf_memory_pool_handle_t hPool, void *ptr);
+umf_result_t umfPoolFree(umf_memory_pool_handle_t hPool, void *ptr);
 
 ///
 /// \brief Frees the memory space pointed by ptr if it belongs to UMF pool, does nothing otherwise.
@@ -103,7 +104,7 @@ enum umf_result_t umfPoolFree(umf_memory_pool_handle_t hPool, void *ptr);
 ///         Whether any status other than UMF_RESULT_SUCCESS can be returned
 ///         depends on the memory provider used by the pool.
 ///
-enum umf_result_t umfFree(void *ptr);
+umf_result_t umfFree(void *ptr);
 
 ///
 /// \brief Retrieve umf_result_t representing the error of the last failed allocation
@@ -122,7 +123,7 @@ enum umf_result_t umfFree(void *ptr);
 /// \param hPool specified memory hPool
 /// \return Error code desciribng the failure of the last failed allocation operation.
 ///         The value is undefined if the previous allocation was successful.
-enum umf_result_t umfPoolGetLastAllocationError(umf_memory_pool_handle_t hPool);
+umf_result_t umfPoolGetLastAllocationError(umf_memory_pool_handle_t hPool);
 
 ///
 /// \brief Retrieve memory pool associated with a given ptr. Only memory allocated
@@ -137,9 +138,8 @@ umf_memory_pool_handle_t umfPoolByPtr(const void *ptr);
 /// \param hProvider [out] memory providers handle.
 /// \return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 ///         UMF_RESULT_ERROR_INVALID_ARGUMENT if hProvider is NULL
-enum umf_result_t
-umfPoolGetMemoryProvider(umf_memory_pool_handle_t hPool,
-                         umf_memory_provider_handle_t *hProvider);
+umf_result_t umfPoolGetMemoryProvider(umf_memory_pool_handle_t hPool,
+                                      umf_memory_provider_handle_t *hProvider);
 
 #ifdef __cplusplus
 }

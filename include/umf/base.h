@@ -31,7 +31,7 @@ extern "C" {
 #define UMF_VERSION_CURRENT UMF_MAKE_VERSION(0, 9)
 
 /// \brief Operation results
-enum umf_result_t {
+typedef enum umf_result_t {
     UMF_RESULT_SUCCESS = 0, ///< Success
     UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY =
         1, ///< Insufficient host memory to satisfy call,
@@ -44,7 +44,7 @@ enum umf_result_t {
     UMF_RESULT_ERROR_NOT_SUPPORTED = 5,     /// Operation not supported
 
     UMF_RESULT_ERROR_UNKNOWN = 0x7ffffffe ///< Unknown or internal error
-};
+} umf_result_t;
 
 #ifdef __cplusplus
 }
