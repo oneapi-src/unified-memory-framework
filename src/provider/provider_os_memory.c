@@ -18,7 +18,7 @@
 #include <umf/memory_provider_ops.h>
 #include <umf/providers/provider_os_memory.h>
 
-typedef struct umf_os_memory_provider_config_s {
+typedef struct umf_os_memory_provider_config_t {
     unsigned protection; // combination of OS-specific protection flags
     unsigned visibility;
 
@@ -32,13 +32,13 @@ typedef struct umf_os_memory_provider_config_s {
     int traces; // log level of debug traces
 } umf_os_memory_provider_config_t;
 
-typedef struct os_memory_provider_s {
+typedef struct os_memory_provider_t {
     umf_os_memory_provider_config_t config;
 } os_memory_provider_t;
 
 #define TLS_MSG_BUF_LEN 1024
 
-typedef struct os_last_native_error_s {
+typedef struct os_last_native_error_t {
     int32_t native_error;
     int errno_value;
     char msg_buff[TLS_MSG_BUF_LEN];
