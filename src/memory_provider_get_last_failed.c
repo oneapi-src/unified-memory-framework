@@ -7,13 +7,8 @@
  *
  */
 
+#include "common.h"
 #include "memory_provider_internal.h"
-
-#ifdef _WIN32
-#define __TLS __declspec(thread)
-#else
-#define __TLS __thread
-#endif
 
 static __TLS umf_memory_provider_handle_t lastFailedProvider = NULL;
 
