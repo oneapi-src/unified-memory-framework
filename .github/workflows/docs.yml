@@ -1,0 +1,53 @@
+name: Deploy documentation to GitHub Pages
+
+on:
+  push:
+    branches: ["main"]
+
+# Cancel previous in-progress workflow, only the latest run is relevant
+concurrency:
+  group: "docs"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install doxygen
+        run: >
+          sudo apt-get update &&
+          sudo apt-get install -y doxygen
+
+      - name: Install pip requirements
+        run: python3 -m pip install -r third_party/requirements.txt
+
+      - name: Build the documentation
+        working-directory: scripts
+        run: python3 generate_docs.py
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: docs/html
+
+  deploy:
+    needs: build
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy the documentation to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v3

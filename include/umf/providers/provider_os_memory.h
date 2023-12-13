@@ -53,18 +53,27 @@ typedef enum umf_purge_advise_t {
     UMF_PURGE_FORCE,
 } umf_purge_advise_t;
 
+/// @brief Memory provider settings struct
 typedef struct umf_os_memory_provider_params_t {
-    unsigned protection; // combination of 'umf_mem_protection_flags_t' flags
+    /// combination of 'umf_mem_protection_flags_t' flags
+    unsigned protection;
+    /// shared or private visibility of memory mapped by a provider
+    /// sets MAP_SHARED and MAP_PRIVATE flags respectively on internal mmap() calls
     umf_mem_visibility_t visibility;
 
     // NUMA config
+    /// nodemask used in internal mbind() calls
     unsigned long *nodemask;
+    /// maximum number of nodes in \p nodemask
     unsigned long maxnode;
+    /// flag that relates to one of the MPOL_* flags used in internal mbind() calls
     umf_numa_mode_t numa_mode;
-    unsigned numa_flags; // combination of 'umf_numa_flags_t' flags
+    /// combination of 'umf_numa_flags_t' flags
+    unsigned numa_flags;
 
     // others
-    int traces; // log level of debug traces
+    /// log level of debug traces
+    int traces;
 } umf_os_memory_provider_params_t;
 
 typedef enum umf_os_memory_provider_native_error {
