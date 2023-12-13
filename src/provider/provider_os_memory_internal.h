@@ -8,16 +8,11 @@
 #ifndef UMF_OS_MEMORY_PROVIDER_INTERNAL_H
 #define UMF_OS_MEMORY_PROVIDER_INTERNAL_H
 
+#include "common.h"
 #include <umf/providers/provider_os_memory.h>
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#ifdef _WIN32
-#define __TLS __declspec(thread)
-#else
-#define __TLS __thread
 #endif
 
 int os_translate_flags(unsigned in_flags, unsigned max,
