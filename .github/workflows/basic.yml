@@ -28,7 +28,7 @@ jobs:
       - name: Install apt packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake libnuma-dev
+          sudo apt-get install -y clang cmake libnuma-dev libjemalloc-dev
       
       - name: Install g++-7
         if: matrix.compiler.cxx == 'g++-7'
@@ -44,6 +44,7 @@ jobs:
           -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
           -DUMF_FORMAT_CODE_STYLE=OFF
           -DUMF_DEVELOPER_MODE=ON
+          -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
           ${{matrix.pool_tracking}}
 
       - name: Build UMF

@@ -16,6 +16,7 @@ include(helpers)
 
 # Build Options
 option(UMF_BUILD_SHARED_LIBRARY "Build UMF as shared library" OFF)
+option(UMF_BUILD_LIBUMF_POOL_JEMALLOC "Build the libumf_pool_jemalloc static library" OFF)
 option(UMF_BUILD_TESTS "Build UMF tests" ON)
 option(UMF_ENABLE_POOL_TRACKING "Build UMF with pool tracking" ON)
 option(UMF_DEVELOPER_MODE "Enable developer checks, treats warnings as errors" OFF)

@@ -18,6 +18,19 @@ UMF comes with predefined pool allocators (see include/pool) and providers (see 
 
 A memory provider that provides memory from an operating system.
 
+## Memory pool managers
+
+### libumf_pool_jemalloc (Linux-only)
+
+libumf_pool_jemalloc is a [jemalloc](https://github.com/jemalloc/jemalloc)-based memory pool manager built as a separate static library.
+The `UMF_BUILD_LIBUMF_POOL_JEMALLOC` option has to be turned `ON` to build this library.
+
+#### Requirements
+
+1) The `UMF_BUILD_LIBUMF_POOL_JEMALLOC` option turned `ON`
+2) Required packages:
+- libjemalloc-dev
+
 ## Building
 
 ### Requirements
@@ -74,6 +87,7 @@ List of options provided by CMake:
 | Name | Description | Values | Default |
 | - | - | - | - |
 | UMF_BUILD_SHARED_LIBRARY | Build UMF as shared library | ON/OFF | OFF |
+| UMF_BUILD_LIBUMF_POOL_JEMALLOC | Build the libumf_pool_jemalloc static library | ON/OFF | OFF |
 | UMF_BUILD_TESTS | Build UMF tests | ON/OFF | ON |
 | UMF_ENABLE_POOL_TRACKING | Build UMF with pool tracking | ON/OFF | ON |
 | UMF_DEVELOPER_MODE | Treat warnings as errors and enables additional checks | ON/OFF | OFF |
