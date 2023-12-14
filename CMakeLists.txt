@@ -71,6 +71,9 @@ add_subdirectory(src)
 if(UMF_BUILD_TESTS)
     add_subdirectory(test)
 endif()
+if(LINUX)
+    add_subdirectory(benchmark)
+endif()
 
 # Check if clang-format (in correct version) is available for code formatting.
 if(UMF_FORMAT_CODE_STYLE)
@@ -90,7 +93,7 @@ if(UMF_FORMAT_CODE_STYLE)
     
     # Obtain files for clang-format check
     set(format_glob)
-    foreach(DIR IN ITEMS include src test) 
+    foreach(DIR IN ITEMS include src test benchmark)
         list(APPEND format_glob
             "${DIR}/*.h"
             "${DIR}/*.hpp"
