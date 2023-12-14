@@ -59,6 +59,7 @@ add_umf_test(NAME memoryPool SRCS memoryPoolAPI.cpp)
 add_umf_test(NAME memoryProvider SRCS memoryProviderAPI.cpp)
 add_umf_test(NAME disjointPool SRCS disjoint_pool.cpp)
 add_umf_test(NAME c_api_disjoint_pool SRCS c_api/disjoint_pool.c)
+add_umf_test(NAME memory_pool_internal SRCS memory_pool_internal.cpp)
 
 if(LINUX) # OS-specific functions are implemented only for Linux now
     add_umf_test(NAME provider_os_memory SRCS provider_os_memory.cpp LIBS numa)
