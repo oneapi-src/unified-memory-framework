@@ -80,11 +80,15 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST_P(providerInitializeTest, errorPropagation) {
     struct provider : public umf_test::provider_base_t {
-        umf_result_t initialize(umf_result_t errorToReturn) noexcept {
-            return errorToReturn;
+        umf_result_t initialize(umf_result_t *errorToReturn) noexcept {
+            return *errorToReturn;
         }
     };
-    auto ret = umf::memoryProviderMakeUnique<provider>(this->GetParam());
-    ASSERT_EQ(ret.first, this->GetParam());
-    ASSERT_EQ(ret.second, nullptr);
+    umf_memory_provider_ops_t provider_ops =
+        umf::providerMakeCOps<provider, umf_result_t>();
+
+    umf_memory_provider_handle_t hProvider;
+    auto ret = umfMemoryProviderCreate(&provider_ops, (void *)&this->GetParam(),
+                                       &hProvider);
+    ASSERT_EQ(ret, this->GetParam());
 }

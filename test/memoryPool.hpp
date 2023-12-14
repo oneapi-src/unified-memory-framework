@@ -15,64 +15,75 @@
 #ifndef UMF_TEST_MEMORY_POOL_OPS_HPP
 #define UMF_TEST_MEMORY_POOL_OPS_HPP
 
+using poolCreateExtParams = std::tuple<umf_memory_pool_ops_t *, void *,
+                                       umf_memory_provider_ops_t *, void *>;
+
+umf::pool_unique_handle_t poolCreateExt(poolCreateExtParams params) {
+    umf_memory_provider_handle_t hProvider;
+    umf_memory_pool_handle_t hPool;
+    auto [pool_ops, pool_params, provider_ops, provider_params] = params;
+
+    auto ret =
+        umfMemoryProviderCreate(provider_ops, provider_params, &hProvider);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfPoolCreate(pool_ops, hProvider, pool_params, &hPool);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    // capture provider and destroy it after the pool is destroyed
+    auto poolDestructor = [hProvider](umf_memory_pool_handle_t pool) {
+        umfPoolDestroy(pool);
+        umfMemoryProviderDestroy(hProvider);
+    };
+
+    return umf::pool_unique_handle_t(hPool, std::move(poolDestructor));
+}
+
 struct umfPoolTest : umf_test::test,
-                     ::testing::WithParamInterface<
-                         std::function<umf::pool_unique_handle_t(void)>> {
-    umfPoolTest() : pool(nullptr, nullptr) {}
+                     ::testing::WithParamInterface<poolCreateExtParams> {
     void SetUp() override {
         test::SetUp();
-        this->pool = makePool();
+        pool = poolCreateExt(this->GetParam());
     }
 
     void TearDown() override { test::TearDown(); }
 
-    umf::pool_unique_handle_t makePool() {
-        auto pool = this->GetParam()();
-        EXPECT_NE(pool, nullptr);
-        return pool;
-    }
-
     umf::pool_unique_handle_t pool;
+
     static constexpr int NTHREADS = 5;
     static constexpr std::array<int, 7> nonAlignedAllocSizes = {5,  7,   23, 55,
                                                                 80, 119, 247};
 };
 
-struct umfMultiPoolTest : umfPoolTest {
+struct umfMultiPoolTest : umf_test::test,
+                          ::testing::WithParamInterface<poolCreateExtParams> {
     static constexpr auto numPools = 16;
 
     void SetUp() override {
-        umfPoolTest::SetUp();
-
-        pools.emplace_back(std::move(pool));
-        for (size_t i = 1; i < numPools; i++) {
-            pools.emplace_back(makePool());
+        test::SetUp();
+        for (size_t i = 0; i < numPools; i++) {
+            pools.emplace_back(poolCreateExt(this->GetParam()));
         }
     }
 
-    void TearDown() override { umfPoolTest::TearDown(); }
+    void TearDown() override { test::TearDown(); }
 
     std::vector<umf::pool_unique_handle_t> pools;
 };
 
 struct umfMemTest
     : umf_test::test,
-      ::testing::WithParamInterface<
-          std::tuple<std::function<umf::pool_unique_handle_t(void)>, int>> {
+      ::testing::WithParamInterface<std::tuple<poolCreateExtParams, int>> {
     umfMemTest() : pool(nullptr, nullptr), expectedRecycledPoolAllocs(0) {}
     void SetUp() override {
         test::SetUp();
-        initialize();
+
+        auto [params, expectedRecycledPoolAllocs] = this->GetParam();
+        pool = poolCreateExt(params);
+        this->expectedRecycledPoolAllocs = expectedRecycledPoolAllocs;
     }
 
     void TearDown() override { test::TearDown(); }
-
-    void initialize() {
-        auto [pool_fun, expectedRecycledPoolAllocs] = this->GetParam();
-        EXPECT_NE(pool_fun(), nullptr);
-        this->pool = pool_fun();
-        this->expectedRecycledPoolAllocs = expectedRecycledPoolAllocs;
-    }
 
     umf::pool_unique_handle_t pool;
     int expectedRecycledPoolAllocs;

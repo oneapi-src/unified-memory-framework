@@ -18,30 +18,8 @@ umf_disjoint_pool_params_t poolConfig() {
     return config;
 }
 
-static auto makePool() {
-    auto [ret, provider] =
-        umf::memoryProviderMakeUnique<umf_test::provider_malloc>();
-    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
-
-    umf_memory_provider_handle_t provider_handle;
-    provider_handle = provider.release();
-
-    // capture provider and destroy it after the pool is destroyed
-    auto poolDestructor = [provider_handle](umf_memory_pool_handle_t pool) {
-        umfPoolDestroy(pool);
-        umfMemoryProviderDestroy(provider_handle);
-    };
-
-    umf_memory_pool_handle_t pool = NULL;
-    umf_disjoint_pool_params_t params = poolConfig();
-    umf_result_t retp =
-        umfPoolCreate(&UMF_DISJOINT_POOL_OPS, provider_handle, &params, &pool);
-    EXPECT_EQ(retp, UMF_RESULT_SUCCESS);
-
-    return umf::pool_unique_handle_t(pool, std::move(poolDestructor));
-}
-
 using umf_test::test;
+using namespace umf_test;
 
 TEST_F(test, freeErrorPropagation) {
     static umf_result_t freeReturn = UMF_RESULT_SUCCESS;
@@ -57,10 +35,11 @@ TEST_F(test, freeErrorPropagation) {
             return freeReturn;
         }
     };
+    umf_memory_provider_ops_t provider_ops =
+        umf::providerMakeCOps<memory_provider, void>();
 
-    auto [ret, providerUnique] =
-        umf::memoryProviderMakeUnique<memory_provider>();
-    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    auto providerUnique =
+        wrapProviderUnique(createProviderChecked(&provider_ops, nullptr));
 
     umf_memory_provider_handle_t provider_handle;
     provider_handle = providerUnique.get();
@@ -104,6 +83,8 @@ TEST_F(test, sharedLimits) {
             return UMF_RESULT_SUCCESS;
         }
     };
+    umf_memory_provider_ops_t provider_ops =
+        umf::providerMakeCOps<memory_provider, void>();
 
     static constexpr size_t SlabMinSize = 1024;
     static constexpr size_t MaxSize = 4 * SlabMinSize;
@@ -119,13 +100,13 @@ TEST_F(test, sharedLimits) {
 
     config.SharedLimits = limits.get();
 
-    auto [ret, provider] = umf::memoryProviderMakeUnique<memory_provider>();
-    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+    auto provider =
+        wrapProviderUnique(createProviderChecked(&provider_ops, nullptr));
 
     umf_memory_pool_handle_t pool1 = NULL;
     umf_memory_pool_handle_t pool2 = NULL;
-    ret = umfPoolCreate(&UMF_DISJOINT_POOL_OPS, provider.get(), (void *)&config,
-                        &pool1);
+    auto ret = umfPoolCreate(&UMF_DISJOINT_POOL_OPS, provider.get(),
+                             (void *)&config, &pool1);
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
     auto poolHandle1 = umf_test::wrapPoolUnique(pool1);
 
@@ -160,18 +141,22 @@ TEST_F(test, sharedLimits) {
     EXPECT_EQ(MaxSize / SlabMinSize * 2, numFrees);
 }
 
+auto defaultPoolConfig = poolConfig();
 INSTANTIATE_TEST_SUITE_P(disjointPoolTests, umfPoolTest,
-                         ::testing::Values(makePool));
+                         ::testing::Values(poolCreateExtParams{
+                             &UMF_DISJOINT_POOL_OPS, (void *)&defaultPoolConfig,
+                             &MALLOC_PROVIDER_OPS, nullptr}));
 
-INSTANTIATE_TEST_SUITE_P(disjointPoolTests, umfMemTest,
-                         ::testing::Values(std::make_tuple(
-                             [] {
-                                 return umf_test::makePoolWithOOMProvider(
-                                     static_cast<int>(poolConfig().Capacity),
-                                     &UMF_DISJOINT_POOL_OPS, poolConfig());
-                             },
-                             static_cast<int>(poolConfig().Capacity) / 2)));
+INSTANTIATE_TEST_SUITE_P(
+    disjointPoolTests, umfMemTest,
+    ::testing::Values(std::make_tuple(
+        poolCreateExtParams{&UMF_DISJOINT_POOL_OPS, (void *)&defaultPoolConfig,
+                            &MOCK_OUT_OF_MEM_PROVIDER_OPS,
+                            (void *)&defaultPoolConfig.Capacity},
+        static_cast<int>(defaultPoolConfig.Capacity) / 2)));
 
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(umfMultiPoolTest);
 INSTANTIATE_TEST_SUITE_P(disjointMultiPoolTests, umfMultiPoolTest,
-                         ::testing::Values(makePool));
+                         ::testing::Values(poolCreateExtParams{
+                             &UMF_DISJOINT_POOL_OPS, (void *)&defaultPoolConfig,
+                             &MALLOC_PROVIDER_OPS, nullptr}));

@@ -27,30 +27,17 @@
 
 namespace umf_test {
 
-auto wrapPoolUnique(umf_memory_pool_handle_t hPool) {
-    return umf::pool_unique_handle_t(hPool, &umfPoolDestroy);
+umf_memory_pool_handle_t
+createPoolChecked(umf_memory_pool_ops_t *ops,
+                  umf_memory_provider_handle_t hProvider, void *params) {
+    umf_memory_pool_handle_t hPool;
+    auto ret = umfPoolCreate(ops, hProvider, params, &hPool);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+    return hPool;
 }
 
-template <typename Param>
-auto makePoolWithOOMProvider(int allocNum, umf_memory_pool_ops_t *ops,
-                             Param &&params) {
-    auto [ret, provider] =
-        umf::memoryProviderMakeUnique<provider_mock_out_of_mem>(allocNum);
-    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
-
-    umf_memory_pool_handle_t pool;
-    ret = umfPoolCreate(ops, provider.get(), (void *)&params, &pool);
-
-    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
-
-    // capture provider and destroy it after the pool is destroyed
-    auto poolDestructor =
-        [provider_handle = provider.release()](umf_memory_pool_handle_t pool) {
-            umfPoolDestroy(pool);
-            umfMemoryProviderDestroy(provider_handle);
-        };
-
-    return umf::pool_unique_handle_t(pool, std::move(poolDestructor));
+auto wrapPoolUnique(umf_memory_pool_handle_t hPool) {
+    return umf::pool_unique_handle_t(hPool, &umfPoolDestroy);
 }
 
 bool isReallocSupported(umf_memory_pool_handle_t hPool) {
@@ -140,6 +127,9 @@ struct malloc_pool : public pool_base_t {
     }
 };
 
+umf_memory_pool_ops_t MALLOC_POOL_OPS =
+    umf::poolMakeCOps<umf_test::malloc_pool, void>();
+
 struct proxy_pool : public pool_base_t {
     umf_result_t initialize(umf_memory_provider_handle_t provider) noexcept {
         this->provider = provider;
@@ -184,6 +174,9 @@ struct proxy_pool : public pool_base_t {
     }
     umf_memory_provider_handle_t provider;
 };
+
+umf_memory_pool_ops_t PROXY_POOL_OPS =
+    umf::poolMakeCOps<umf_test::proxy_pool, void>();
 
 } // namespace umf_test
 
