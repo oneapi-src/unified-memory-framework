@@ -22,8 +22,8 @@
 // TODO: replace with logger?
 #include <iostream>
 
+#include "pool_disjoint.h"
 #include "umf.h"
-#include "umf/pools/pool_disjoint.h"
 #include "umf_helpers.hpp"
 #include "utils_math.h"
 

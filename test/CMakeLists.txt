@@ -39,9 +39,8 @@ function(add_umf_test)
     add_umf_executable(NAME ${TEST_TARGET_NAME} SRCS ${ARG_SRCS} LIBS ${TEST_LIBS})
 
     target_include_directories(${TEST_TARGET_NAME} PRIVATE
-        ${UMF_TEST_DIR}/common
         ${UMF_CMAKE_SOURCE_DIR}/src
-        ${UMF_CMAKE_SOURCE_DIR}/src/pool/disjoint)
+        ${UMF_TEST_DIR}/common)
 
     add_test(NAME ${TEST_NAME}
         COMMAND ${TEST_TARGET_NAME}
@@ -59,13 +58,25 @@ endfunction()
 
 add_subdirectory(common)
 
-add_umf_test(NAME base SRCS base.cpp)
-add_umf_test(NAME memoryPool SRCS memoryPoolAPI.cpp malloc_compliance_tests.cpp)
-add_umf_test(NAME memoryProvider SRCS memoryProviderAPI.cpp)
-add_umf_test(NAME disjointPool SRCS disjoint_pool.cpp malloc_compliance_tests.cpp)
-add_umf_test(NAME c_api_disjoint_pool SRCS c_api/disjoint_pool.c)
-add_umf_test(NAME memory_pool_internal SRCS memory_pool_internal.cpp)
+add_umf_test(NAME base 
+             SRCS base.cpp)
+add_umf_test(NAME memoryPool
+             SRCS memoryPoolAPI.cpp malloc_compliance_tests.cpp)
+add_umf_test(NAME memoryProvider
+             SRCS memoryProviderAPI.cpp)
+add_umf_test(NAME memory_pool_internal
+             SRCS memory_pool_internal.cpp)
+
+if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
+    add_umf_test(NAME disjointPool
+                SRCS disjoint_pool.cpp malloc_compliance_tests.cpp
+                LIBS ${PROJECT_NAME}::disjoint_pool)
+    add_umf_test(NAME c_api_disjoint_pool
+                SRCS c_api/disjoint_pool.c
+                LIBS ${PROJECT_NAME}::disjoint_pool)
+endif()
 
 if(LINUX) # OS-specific functions are implemented only for Linux now
-    add_umf_test(NAME provider_os_memory SRCS provider_os_memory.cpp)
+    add_umf_test(NAME provider_os_memory
+                 SRCS provider_os_memory.cpp)
 endif()

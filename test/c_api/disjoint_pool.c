@@ -4,9 +4,9 @@
 
 #include <stdlib.h>
 
+#include "pool_disjoint.h"
 #include "provider_null.h"
 #include "test_helpers.h"
-#include "umf/pools/pool_disjoint.h"
 
 void test_disjoint_pool_default_params(void) {
     umf_memory_provider_handle_t provider = nullProviderCreate();

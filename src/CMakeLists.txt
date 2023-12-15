@@ -8,7 +8,6 @@ set(UMF_SOURCES
     memory_pool.c
     memory_provider.c
     memory_provider_get_last_failed.c
-    pool/pool_disjoint.cpp
     provider/provider_os_memory.c
     provider/provider_tracking.c
     critnib/critnib.c
@@ -60,18 +59,20 @@ endif()
 
 add_library(${PROJECT_NAME}::unified_memory_framework ALIAS unified_memory_framework)
 
-target_include_directories(unified_memory_framework PUBLIC
-    ${UMF_CMAKE_SOURCE_DIR}/include
-    ./common
-    ./critnib
-    ./provider
-    ./utils)
+target_include_directories(unified_memory_framework PUBLIC 
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/common>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/critnib>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/provider>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/utils>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
 
-# libumf_pool_jemalloc
-if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
-    if(LINUX)
-        add_umf_library(NAME pool_jemalloc TYPE STATIC SRCS pool/pool_jemalloc.c LIBS jemalloc)
-    else()
-        message(FATAL_ERROR "libumf_pool_jemalloc is supported on Linux only")
-    endif()
-endif()
+install(TARGETS unified_memory_framework
+    EXPORT ${PROJECT_NAME}-targets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+add_subdirectory(pool)
