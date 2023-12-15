@@ -55,3 +55,12 @@ endif()
 add_library(${PROJECT_NAME}::unified_memory_framework ALIAS unified_memory_framework)
 
 target_include_directories(unified_memory_framework PUBLIC ../include ./common ./provider ./critnib)
+
+# libumf_pool_jemalloc
+if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
+    if(LINUX)
+        add_umf_library(pool_jemalloc STATIC pool/pool_jemalloc.c)
+    else()
+        message(FATAL_ERROR "libumf_pool_jemalloc is supported on Linux only")
+    endif()
+endif()

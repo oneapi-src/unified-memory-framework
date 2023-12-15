@@ -81,7 +81,9 @@ endfunction()
 
 function(add_umf_library name)
     add_library(${name} ${ARGN})
-    target_include_directories(${name} PRIVATE ${CMAKE_SOURCE_DIR}/include)
+    target_include_directories(${name} PRIVATE
+        ${CMAKE_SOURCE_DIR}/include
+        ${CMAKE_SOURCE_DIR}/src/common)
     add_umf_target_compile_options(${name})
     add_umf_target_link_options(${name})
 endfunction()
