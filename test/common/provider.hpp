@@ -20,6 +20,14 @@
 
 namespace umf_test {
 
+umf_memory_provider_handle_t
+createProviderChecked(umf_memory_provider_ops_t *ops, void *params) {
+    umf_memory_provider_handle_t hProvider;
+    auto ret = umfMemoryProviderCreate(ops, params, &hProvider);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+    return hProvider;
+}
+
 auto wrapProviderUnique(umf_memory_provider_handle_t hProvider) {
     return umf::provider_unique_handle_t(hProvider, &umfMemoryProviderDestroy);
 }
@@ -80,11 +88,14 @@ struct provider_malloc : public provider_base_t {
     const char *get_name() noexcept { return "malloc"; }
 };
 
+umf_memory_provider_ops_t MALLOC_PROVIDER_OPS =
+    umf::providerMakeCOps<provider_malloc, void>();
+
 struct provider_mock_out_of_mem : public provider_base_t {
     provider_malloc helper_prov;
     int allocNum = 0;
-    umf_result_t initialize(int allocNum) noexcept {
-        this->allocNum = allocNum;
+    umf_result_t initialize(int *allocNum) noexcept {
+        this->allocNum = *allocNum;
         return UMF_RESULT_SUCCESS;
     }
     umf_result_t alloc(size_t size, size_t align, void **ptr) noexcept {
@@ -101,6 +112,9 @@ struct provider_mock_out_of_mem : public provider_base_t {
     }
     const char *get_name() noexcept { return "mock_out_of_mem"; }
 };
+
+umf_memory_provider_ops_t MOCK_OUT_OF_MEM_PROVIDER_OPS =
+    umf::providerMakeCOps<provider_mock_out_of_mem, int>();
 
 } // namespace umf_test
 
