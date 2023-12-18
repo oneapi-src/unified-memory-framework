@@ -127,7 +127,6 @@ INSTANTIATE_TEST_SUITE_P(
                       poolCreateExtParams{&PROXY_POOL_OPS, nullptr,
                                           &MALLOC_PROVIDER_OPS, nullptr}));
 
-GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(umfMultiPoolTest);
 INSTANTIATE_TEST_SUITE_P(mallocMultiPoolTest, umfMultiPoolTest,
                          ::testing::Values(poolCreateExtParams{
                              &PROXY_POOL_OPS, nullptr, &MALLOC_PROVIDER_OPS,

@@ -155,7 +155,6 @@ INSTANTIATE_TEST_SUITE_P(
                             (void *)&defaultPoolConfig.Capacity},
         static_cast<int>(defaultPoolConfig.Capacity) / 2)));
 
-GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(umfMultiPoolTest);
 INSTANTIATE_TEST_SUITE_P(disjointMultiPoolTests, umfMultiPoolTest,
                          ::testing::Values(poolCreateExtParams{
                              &UMF_DISJOINT_POOL_OPS, (void *)&defaultPoolConfig,

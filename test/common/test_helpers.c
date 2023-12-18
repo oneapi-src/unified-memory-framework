@@ -4,6 +4,9 @@
 // This file contains tests for UMF pool API
 
 #include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "pool_null.h"
 #include "pool_trace.h"
@@ -11,6 +14,23 @@
 #include "provider_trace.h"
 #include "umf/memory_pool.h"
 #include "umf/memory_provider.h"
+
+#include "test_helpers.h"
+
+// Check if the memory is filled with the given character
+int is_filled_with_char(void *ptr, size_t size, char c) {
+    char *mem = (char *)ptr;
+    return (*mem == c) && memcmp(mem, mem + 1, size - 1) == 0;
+}
+
+// Check if two memory regions has the same content
+int is_same_content(void *first, void *second, size_t size) {
+    return memcmp(first, second, size) == 0;
+}
+
+int is_aligned(void *ptr, size_t alignment) {
+    return ((uintptr_t)ptr & (alignment - 1)) == 0;
+}
 
 umf_memory_provider_handle_t nullProviderCreate(void) {
     umf_memory_provider_handle_t hProvider;
