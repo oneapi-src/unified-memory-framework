@@ -117,22 +117,48 @@ long os_get_mempolicy(int *mode, unsigned long *nodemask, unsigned long maxnode,
                          MPOL_F_NODE | MPOL_F_ADDR);
 }
 
-int os_mmap(void *addr, size_t length, int prot, int flags, int fd, long offset,
-            void **out_addr) {
-    if (out_addr == NULL) {
-        assert(0);
-        return -1;
+int os_mmap_aligned(void *hint_addr, size_t length, size_t alignment, int prot,
+                    int flags, int fd, long offset, void **out_addr) {
+    assert(out_addr);
+
+    size_t extended_length = length;
+    size_t page_size = os_get_page_size();
+
+    if (alignment > page_size) {
+        // We have to increase length by alignment to be able to "cut out"
+        // the correctly aligned part of the memory from the mapped region
+        // by unmapping the rest: unaligned beginning and unaligned end
+        // of this region.
+        extended_length += alignment;
     }
 
     // MAP_ANONYMOUS - the mapping is not backed by any file
-    void *mmap_addr =
-        mmap(addr, length, prot, MAP_ANONYMOUS | flags, fd, offset);
-    if (mmap_addr == MAP_FAILED) {
+    void *ptr = mmap(hint_addr, extended_length, prot, MAP_ANONYMOUS | flags,
+                     fd, offset);
+    if (ptr == MAP_FAILED) {
         return -1;
     }
 
-    *out_addr = mmap_addr;
+    if (alignment > page_size) {
+        uintptr_t addr = (uintptr_t)ptr;
+        uintptr_t aligned_addr = (addr + alignment) & ~(alignment - 1);
 
+        size_t head_len = aligned_addr - addr;
+        if (head_len > 0) {
+            munmap(ptr, head_len);
+        }
+
+        uintptr_t tail = aligned_addr + length;
+        size_t tail_len = (addr + extended_length) - (aligned_addr + length);
+        if (tail_len > 0) {
+            munmap((void *)tail, tail_len);
+        }
+
+        *out_addr = (void *)aligned_addr;
+        return 0;
+    }
+
+    *out_addr = ptr;
     return 0;
 }
 
