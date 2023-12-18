@@ -62,7 +62,7 @@ void malloc_compliance_test(umf_memory_pool_handle_t hPool) {
         // For compatibility, on 64-bit systems malloc should align to 16 bytes
         size_t alignment =
             (sizeof(intptr_t) > 4 && alloc_ptr_size[i] > 8) ? 16 : 8;
-        ASSERT_NE(is_aligned(alloc_ptr[i], alignment), 0)
+        ASSERT_NE(addressIsAligned(alloc_ptr[i], alignment), 0)
             << "Malloc should return pointer that is suitably aligned so that "
                "it may be assigned to a pointer to any type of object";
 #endif
@@ -74,7 +74,8 @@ void malloc_compliance_test(umf_memory_pool_handle_t hPool) {
     }
     for (int i = 0; i < ITERATIONS; i++) {
         ASSERT_NE(
-            is_filled_with_char(alloc_ptr[i], alloc_ptr_size[i], i % 0xFF), 0)
+            bufferIsFilledWithChar(alloc_ptr[i], alloc_ptr_size[i], i % 0xFF),
+            0)
             << "Object returned by malloc is not disjoined from others";
         memset(alloc_ptr[i], 1, alloc_ptr_size[i]);
     }
@@ -93,7 +94,7 @@ void calloc_compliance_test(umf_memory_pool_handle_t hPool) {
 
         ASSERT_NE(alloc_ptr[i], nullptr)
             << "calloc returned NULL, couldn't allocate much memory";
-        ASSERT_NE(is_filled_with_char(alloc_ptr[i], alloc_size, 0), 0)
+        ASSERT_NE(bufferIsFilledWithChar(alloc_ptr[i], alloc_size, 0), 0)
             << "Memory returned by calloc was not zeroed";
     }
     free_memory(hPool, alloc_ptr);
@@ -131,7 +132,8 @@ void realloc_compliance_test(umf_memory_pool_handle_t hPool) {
 
         // Reallocate with 100 byte size increasing
         realloc_ptr[i] = umfPoolRealloc(hPool, malloc_obj, alloc_size + 100);
-        ASSERT_NE(is_same_content(realloc_ptr[i], saved_obj, alloc_size), 0)
+        ASSERT_NE(buffersHaveSameContent(realloc_ptr[i], saved_obj, alloc_size),
+                  0)
             << "Content after realloc should remain the same";
 
         // Delete saved memory

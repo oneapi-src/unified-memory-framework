@@ -18,17 +18,17 @@
 #include "test_helpers.h"
 
 // Check if the memory is filled with the given character
-int is_filled_with_char(void *ptr, size_t size, char c) {
+int bufferIsFilledWithChar(void *ptr, size_t size, char c) {
     char *mem = (char *)ptr;
     return (*mem == c) && memcmp(mem, mem + 1, size - 1) == 0;
 }
 
 // Check if two memory regions has the same content
-int is_same_content(void *first, void *second, size_t size) {
+int buffersHaveSameContent(void *first, void *second, size_t size) {
     return memcmp(first, second, size) == 0;
 }
 
-int is_aligned(void *ptr, size_t alignment) {
+int addressIsAligned(void *ptr, size_t alignment) {
     return ((uintptr_t)ptr & (alignment - 1)) == 0;
 }
 
