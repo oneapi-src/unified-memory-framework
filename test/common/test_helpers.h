@@ -14,6 +14,12 @@
 extern "C" {
 #endif
 
+int is_filled_with_char(void *ptr, size_t size, char c);
+
+int is_same_content(void *first, void *second, size_t size);
+
+int is_aligned(void *ptr, size_t alignment);
+
 umf_memory_provider_handle_t nullProviderCreate(void);
 umf_memory_provider_handle_t
 traceProviderCreate(umf_memory_provider_handle_t hUpstreamProvider,

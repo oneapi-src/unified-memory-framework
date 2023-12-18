@@ -2,6 +2,9 @@
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
+#ifndef UMF_TEST_MEMORY_POOL_OPS_HPP
+#define UMF_TEST_MEMORY_POOL_OPS_HPP
+
 #include "pool.hpp"
 #include "provider.hpp"
 
@@ -12,8 +15,7 @@
 #include <string>
 #include <thread>
 
-#ifndef UMF_TEST_MEMORY_POOL_OPS_HPP
-#define UMF_TEST_MEMORY_POOL_OPS_HPP
+#include "malloc_compliance_tests.hpp"
 
 using poolCreateExtParams = std::tuple<umf_memory_pool_ops_t *, void *,
                                        umf_memory_provider_ops_t *, void *>;
@@ -90,6 +92,8 @@ struct umfMemTest
 };
 
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(umfMemTest);
+GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(umfPoolTest);
+GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(umfMultiPoolTest);
 
 TEST_P(umfPoolTest, allocFree) {
     static constexpr size_t allocSize = 64;
@@ -376,5 +380,27 @@ TEST_P(umfMultiPoolTest, memoryTracking) {
     }
 }
 #endif /* UMF_ENABLE_POOL_TRACKING_TESTS */
+
+/* malloc compliance tests */
+
+TEST_P(umfPoolTest, malloc_compliance) { malloc_compliance_test(pool.get()); }
+
+TEST_P(umfPoolTest, calloc_compliance) {
+    if (!umf_test::isCallocSupported(pool.get())) {
+        GTEST_SKIP();
+    }
+
+    calloc_compliance_test(pool.get());
+}
+
+TEST_P(umfPoolTest, realloc_compliance) {
+    if (!umf_test::isReallocSupported(pool.get())) {
+        GTEST_SKIP();
+    }
+
+    realloc_compliance_test(pool.get());
+}
+
+TEST_P(umfPoolTest, free_compliance) { free_compliance_test(pool.get()); }
 
 #endif /* UMF_TEST_MEMORY_POOL_OPS_HPP */

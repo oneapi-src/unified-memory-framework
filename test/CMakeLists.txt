@@ -55,9 +55,9 @@ endfunction()
 add_subdirectory(common)
 
 add_umf_test(NAME base SRCS base.cpp)
-add_umf_test(NAME memoryPool SRCS memoryPoolAPI.cpp)
+add_umf_test(NAME memoryPool SRCS memoryPoolAPI.cpp malloc_compliance_tests.cpp)
 add_umf_test(NAME memoryProvider SRCS memoryProviderAPI.cpp)
-add_umf_test(NAME disjointPool SRCS disjoint_pool.cpp)
+add_umf_test(NAME disjointPool SRCS disjoint_pool.cpp malloc_compliance_tests.cpp)
 add_umf_test(NAME c_api_disjoint_pool SRCS c_api/disjoint_pool.c)
 
 if(LINUX) # OS-specific functions are implemented only for Linux now
