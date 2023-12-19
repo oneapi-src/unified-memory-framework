@@ -427,13 +427,13 @@ Slab::~Slab() {
     try {
         unregSlab(*this);
     } catch (std::exception &e) {
-        std::cout << "DisjointPool: unexpected error: " << e.what() << "\n";
+        std::cerr << "DisjointPool: unexpected error: " << e.what() << "\n";
     }
 
     try {
         memoryProviderFree(bucket.getMemHandle(), MemPtr);
     } catch (MemoryProviderError &e) {
-        std::cout << "DisjointPool: error from memory provider: " << e.code
+        std::cerr << "DisjointPool: error from memory provider: " << e.code
                   << "\n";
         if (e.code == UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC) {
             const char *message = "";
@@ -441,7 +441,7 @@ Slab::~Slab() {
 
             umfMemoryProviderGetLastNativeError(
                 umfGetLastFailedMemoryProvider(), &message, &error);
-            std::cout << "Native error msg: " << message
+            std::cerr << "Native error msg: " << message
                       << ", native error code: " << error << std::endl;
         }
     }
