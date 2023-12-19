@@ -15,6 +15,37 @@
 #include <assert.h>
 #include <stdlib.h>
 
+umf_result_t umfPoolCreateEx(const umf_memory_pool_ops_t *pool_ops,
+                             void *pool_params,
+                             const umf_memory_provider_ops_t *provider_ops,
+                             void *provider_params,
+                             umf_memory_pool_handle_t *hPool) {
+    if (!pool_ops || !provider_ops || !hPool) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    umf_memory_provider_handle_t provider = NULL;
+    umf_result_t ret =
+        umfMemoryProviderCreate(provider_ops, provider_params, &provider);
+    if (ret != UMF_RESULT_SUCCESS) {
+        return ret;
+    }
+    assert(provider != NULL);
+
+    umf_memory_pool_handle_t pool = NULL;
+    ret = umfPoolCreate(pool_ops, provider, pool_params, &pool);
+    if (ret != UMF_RESULT_SUCCESS) {
+        umfMemoryProviderDestroy(provider);
+        return ret;
+    }
+    assert(pool != NULL);
+
+    pool->own_provider = true;
+    *hPool = pool;
+
+    return UMF_RESULT_SUCCESS;
+}
+
 void *umfPoolMalloc(umf_memory_pool_handle_t hPool, size_t size) {
     return hPool->ops.malloc(hPool->pool_priv, size);
 }

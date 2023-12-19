@@ -36,6 +36,7 @@ umf_result_t umfPoolCreate(const umf_memory_pool_ops_t *ops,
     if (ret != UMF_RESULT_SUCCESS) {
         goto err_provider_create;
     }
+    pool->own_provider = false;
 
     pool->ops = *ops;
     ret = ops->initialize(pool->provider, params, &pool->pool_priv);
@@ -56,6 +57,13 @@ err_provider_create:
 
 void umfPoolDestroy(umf_memory_pool_handle_t hPool) {
     hPool->ops.finalize(hPool->pool_priv);
+    if (hPool->own_provider) {
+        // Destroy associated memory provider.
+        umf_memory_provider_handle_t hProvider = NULL;
+        umfPoolGetMemoryProvider(hPool, &hProvider);
+        umfMemoryProviderDestroy(hProvider);
+    }
+    // Destroy tracking provider.
     umfMemoryProviderDestroy(hPool->provider);
     free(hPool);
 }

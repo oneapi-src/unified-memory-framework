@@ -11,8 +11,11 @@
 #define UMF_MEMORY_POOL_INTERNAL_H 1
 
 #include <umf/base.h>
+#include <umf/memory_pool.h>
 #include <umf/memory_pool_ops.h>
 #include <umf/memory_provider.h>
+
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,7 +27,15 @@ typedef struct umf_memory_pool_t {
 
     // Memory provider used by the pool.
     umf_memory_provider_handle_t provider;
+    // Tells whether memory provider is owned by the pool.
+    bool own_provider;
 } umf_memory_pool_t;
+
+umf_result_t umfPoolCreateEx(const umf_memory_pool_ops_t *pool_ops,
+                             void *pool_params,
+                             const umf_memory_provider_ops_t *provider_ops,
+                             void *provider_params,
+                             umf_memory_pool_handle_t *hPool);
 
 #ifdef __cplusplus
 }
