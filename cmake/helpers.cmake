@@ -23,8 +23,8 @@ function(add_umf_target_compile_options name)
             -Wpedantic
             -Wempty-body
             -Wunused-parameter
-            $<$<CXX_COMPILER_ID:GNU>:-fdiagnostics-color=always>
-            $<$<CXX_COMPILER_ID:Clang,AppleClang>:-fcolor-diagnostics>
+            #$<$<CXX_COMPILER_ID:GNU>:-fdiagnostics-color=always>
+            #$<$<CXX_COMPILER_ID:Clang,AppleClang>:-fcolor-diagnostics>
         )
         if (CMAKE_BUILD_TYPE STREQUAL "Release")
             target_compile_definitions(${name} PRIVATE -D_FORTIFY_SOURCE=2)
@@ -53,22 +53,16 @@ endfunction()
 function(add_umf_target_link_options name)
     if(NOT MSVC)
         if (NOT APPLE)
-            target_link_options(${name} PRIVATE "LINKER:-z,relro,-z,now")
+            set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,relro -Wl,-z,now")
         endif()
     elseif(MSVC)
-        target_link_options(${name} PRIVATE
-            /DYNAMICBASE
-            /HIGHENTROPYVA
-            /NXCOMPAT
-        )
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /DYNAMICBASE /HIGHENTROPYVA /NXCOMPAT")
     endif()
 endfunction()
 
 function(add_umf_target_exec_options name)
     if(MSVC)
-        target_link_options(${name} PRIVATE
-            /ALLOWISOLATION
-        )
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /ALLOWISOLATION")
     endif()
 endfunction()
 
@@ -86,4 +80,29 @@ function(add_umf_library name)
         ${UMF_CMAKE_SOURCE_DIR}/src/common)
     add_umf_target_compile_options(${name})
     add_umf_target_link_options(${name})
+endfunction()
+
+# A wrapper around FetchContent_Declare that supports git checkout
+function(FetchContentCheckout_Declare SRC_DIR GIT_REPOSITORY GIT_BRANCH GIT_HASH)
+    set(external-content-dir ${SRC_DIR})
+    message(STATUS "Fetching all content from ${GIT_REPOSITORY}/${GIT_BRANCH} commit hash ${GIT_HASH}")
+    if(NOT EXISTS ${external-content-dir}/.git)
+        execute_process(COMMAND git init -b ${GIT_BRANCH}
+            WORKING_DIRECTORY ${external-content-dir})
+        execute_process(COMMAND git remote add origin ${GIT_REPOSITORY}
+            WORKING_DIRECTORY ${external-content-dir})
+    endif()
+    execute_process(COMMAND git fetch origin ${GIT_BRANCH}
+        WORKING_DIRECTORY ${external-content-dir})
+    execute_process(COMMAND git config advice.detachedHead false
+        WORKING_DIRECTORY ${external-content-dir})
+    execute_process(COMMAND git reset --hard ${GIT_HASH}
+        WORKING_DIRECTORY ${external-content-dir})
+        
+    include(FetchContent)
+    FetchContent_Declare(
+        ${name}
+        GIT_REPOSITORY ${GIT_REPOSITORY}
+        GIT_TAG        ${GIT_HASH}
+        SOURCE_DIR     ${external-content-dir}/)
 endfunction()

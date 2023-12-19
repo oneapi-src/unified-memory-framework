@@ -118,6 +118,24 @@ umf_result_t umfMemoryProviderPurgeForce(umf_memory_provider_handle_t hProvider,
     return res;
 }
 
+enum umf_result_t
+umfMemoryProviderAllocSplit(umf_memory_provider_handle_t hProvider, void *ptr,
+                            size_t size1, size_t size2) {
+    enum umf_result_t res =
+        hProvider->ops.alloc_split(hProvider->provider_priv, ptr, size1, size2);
+    checkErrorAndSetLastProvider(res, hProvider);
+    return res;
+}
+
+enum umf_result_t
+umfMemoryProviderAllocMerge(umf_memory_provider_handle_t hProvider, void *ptr1,
+                            size_t size1, void *ptr2, size_t size2) {
+    enum umf_result_t res = hProvider->ops.alloc_merge(
+        hProvider->provider_priv, ptr1, size1, ptr2, size2);
+    checkErrorAndSetLastProvider(res, hProvider);
+    return res;
+}
+
 const char *umfMemoryProviderGetName(umf_memory_provider_handle_t hProvider) {
     return hProvider->ops.get_name(hProvider->provider_priv);
 }

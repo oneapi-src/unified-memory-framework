@@ -136,6 +136,15 @@ umf_result_t umfMemoryProviderPurgeLazy(umf_memory_provider_handle_t hProvider,
 umf_result_t umfMemoryProviderPurgeForce(umf_memory_provider_handle_t hProvider,
                                          void *ptr, size_t size);
 
+// TODO documentation
+enum umf_result_t
+umfMemoryProviderAllocSplit(umf_memory_provider_handle_t hProvider, void *ptr,
+                            size_t size1, size_t size2);
+
+// TODO documentation
+enum umf_result_t
+umfMemoryProviderAllocMerge(umf_memory_provider_handle_t hProvider, void *ptr1,
+                            size_t size1, void *ptr2, size_t size2);
 ///
 /// @brief Retrieve name of a given memory \p hProvider.
 /// @param hProvider handle to the memory provider

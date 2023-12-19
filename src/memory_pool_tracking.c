@@ -9,9 +9,8 @@
 
 #include "memory_pool_internal.h"
 #include "memory_provider_internal.h"
-#include "provider_tracking.h"
-
-#include <umf/memory_pool.h>
+#include "provider/provider_tracking.h"
+#include "umf/memory_pool.h"
 
 #include <assert.h>
 #include <stdlib.h>
