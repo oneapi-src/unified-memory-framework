@@ -57,8 +57,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include "../utils/utils_concurrency.h"
 #include "critnib.h"
+#include "utils_concurrency.h"
 
 /*
  * A node that has been deleted is left untouched for this many delete
