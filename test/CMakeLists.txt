@@ -39,7 +39,8 @@ function(add_umf_test)
 
     target_include_directories(${TEST_TARGET_NAME} PRIVATE
         ${UMF_TEST_DIR}/common
-        ${CMAKE_SOURCE_DIR}/src/pool/disjoint)
+        ${UMF_CMAKE_SOURCE_DIR}/src
+        ${UMF_CMAKE_SOURCE_DIR}/src/pool/disjoint)
 
     add_test(NAME ${TEST_NAME}
         COMMAND ${TEST_TARGET_NAME}

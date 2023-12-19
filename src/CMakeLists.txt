@@ -2,7 +2,7 @@
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-include(../cmake/helpers.cmake)
+include(${UMF_CMAKE_SOURCE_DIR}/cmake/helpers.cmake)
 
 set(UMF_SOURCES
     memory_pool.c
@@ -54,7 +54,12 @@ endif()
 
 add_library(${PROJECT_NAME}::unified_memory_framework ALIAS unified_memory_framework)
 
-target_include_directories(unified_memory_framework PUBLIC ../include ./common ./provider ./critnib)
+target_include_directories(unified_memory_framework PUBLIC
+    ${UMF_CMAKE_SOURCE_DIR}/include
+    ./common
+    ./critnib
+    ./provider
+    ./utils)
 
 # libumf_pool_jemalloc
 if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)

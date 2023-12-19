@@ -22,10 +22,10 @@
 // TODO: replace with logger?
 #include <iostream>
 
-#include "../utils/utils_math.h"
 #include "umf.h"
 #include "umf/pools/pool_disjoint.h"
 #include "umf_helpers.hpp"
+#include "utils_math.h"
 
 typedef struct umf_disjoint_pool_shared_limits_t {
     size_t MaxSize;
