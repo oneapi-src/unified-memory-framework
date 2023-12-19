@@ -14,6 +14,7 @@
 
 #include <umf/pools/pool_disjoint.h>
 #include <umf/providers/provider_coarse.h>
+#include <umf/providers/provider_os_memory.h>
 
 using umf_test::test;
 
@@ -154,7 +155,7 @@ TEST_F(test, disjointCoarseMallocPool_basic) {
                             &coarse_memory_provider);
     ASSERT_NE(coarse_memory_provider, nullptr);
 
-    umf_disjoint_pool_params disjoint_memory_pool_params = {};
+    umf_disjoint_pool_params_t disjoint_memory_pool_params = {};
     disjoint_memory_pool_params.SlabMinSize = 4096;
     disjoint_memory_pool_params.MaxPoolableSize = 4096;
     disjoint_memory_pool_params.Capacity = 4;
@@ -319,7 +320,7 @@ TEST_F(test, disjointCoarseMallocPool_simple1) {
                             &coarse_memory_provider);
     ASSERT_NE(coarse_memory_provider, nullptr);
 
-    umf_disjoint_pool_params disjoint_memory_pool_params = {};
+    umf_disjoint_pool_params_t disjoint_memory_pool_params = {};
     disjoint_memory_pool_params.SlabMinSize = 4096;
     disjoint_memory_pool_params.MaxPoolableSize = 4096;
     disjoint_memory_pool_params.Capacity = 4;
@@ -408,7 +409,7 @@ TEST_F(test, disjointCoarseMallocPool_simple2) {
                             &coarse_memory_provider);
     ASSERT_NE(coarse_memory_provider, nullptr);
 
-    umf_disjoint_pool_params disjoint_memory_pool_params = {};
+    umf_disjoint_pool_params_t disjoint_memory_pool_params = {};
     disjoint_memory_pool_params.SlabMinSize = 4096;
     disjoint_memory_pool_params.MaxPoolableSize = 4096;
     disjoint_memory_pool_params.Capacity = 4;
@@ -480,7 +481,7 @@ TEST_F(test, disjointCoarseMallocPool_random) {
                             &coarse_memory_provider);
     ASSERT_NE(coarse_memory_provider, nullptr);
 
-    umf_disjoint_pool_params disjoint_memory_pool_params = {};
+    umf_disjoint_pool_params_t disjoint_memory_pool_params = {};
     disjoint_memory_pool_params.SlabMinSize = 1024;
     disjoint_memory_pool_params.MaxPoolableSize = 1024;
     disjoint_memory_pool_params.Capacity = 2;

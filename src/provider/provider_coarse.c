@@ -19,8 +19,8 @@
 #include <string.h>
 
 #include "../src/memory_provider_internal.h"
-#include "providers/provider_coarse.h"
 #include "ravl.h"
+#include "umf/providers/provider_coarse.h"
 #include "utils_concurrency.h"
 
 #ifndef BYTE
