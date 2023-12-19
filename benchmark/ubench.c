@@ -8,6 +8,7 @@
  */
 
 #include <umf/pools/pool_disjoint.h>
+#include <umf/providers/provider_coarse.h>
 #include <umf/providers/provider_os_memory.h>
 
 #include <stdbool.h>
@@ -21,6 +22,10 @@
 
 // OS MEMORY PROVIDER CONFIG
 #define OS_MEMORY_PROVIDER_TRACE (0)
+
+// COARSE MEMORY PROVIDER CONFIG
+#define COARSE_MEMORY_PROVIDER_INIT_BUFFER_SIZE (2 * N_ITERATIONS * ALLOC_SIZE)
+#define COARSE_MEMORY_PROVIDER_TRACE (0)
 
 // DISJOINT POOL CONFIG
 #define DISJOINT_POOL_SLAB_MIN_SIZE (ALLOC_SIZE)
@@ -141,6 +146,48 @@ UBENCH_EX(simple, os_memory_provider) {
                      w_umfMemoryProviderFree, os_memory_provider);
     }
 
+    umfMemoryProviderDestroy(os_memory_provider);
+    free(array);
+}
+
+////////////////// COARSE WITH OS MEMORY PROVIDER
+
+UBENCH_EX(simple, coarse_with_os_memory_provider) {
+    alloc_t *array = alloc_array(N_ITERATIONS);
+
+    enum umf_result_t umf_result;
+    umf_memory_provider_handle_t os_memory_provider = NULL;
+    umf_result = umfMemoryProviderCreate(&UMF_OS_MEMORY_PROVIDER_OPS,
+                                         &UMF_OS_MEMORY_PROVIDER_PARAMS,
+                                         &os_memory_provider);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        exit(-1);
+    }
+
+    coarse_memory_provider_params_t coarse_memory_provider_params = {
+        os_memory_provider, // upstream_memory_provider
+        COARSE_MEMORY_PROVIDER_INIT_BUFFER_SIZE,
+        true,                         // immediate_init
+        COARSE_MEMORY_PROVIDER_TRACE, // trace
+    };
+
+    umf_memory_provider_handle_t coarse_memory_provider;
+    umfMemoryProviderCreate(&UMF_COARSE_MEMORY_PROVIDER_OPS,
+                            &coarse_memory_provider_params,
+                            &coarse_memory_provider);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        exit(-1);
+    }
+
+    do_benchmark(array, N_ITERATIONS, w_umfMemoryProviderAlloc,
+                 w_umfMemoryProviderFree, coarse_memory_provider); // WARMUP
+
+    UBENCH_DO_BENCHMARK() {
+        do_benchmark(array, N_ITERATIONS, w_umfMemoryProviderAlloc,
+                     w_umfMemoryProviderFree, coarse_memory_provider);
+    }
+
+    umfMemoryProviderDestroy(coarse_memory_provider);
     umfMemoryProviderDestroy(os_memory_provider);
     free(array);
 }

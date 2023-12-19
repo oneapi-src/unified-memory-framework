@@ -437,6 +437,27 @@ umf_result_t os_purge_force(void *provider, void *ptr, size_t size) {
     return UMF_RESULT_SUCCESS;
 }
 
+umf_result_t os_alloc_split(void *provider, void *ptr, size_t size1,
+                            size_t size2) {
+    (void)provider; // unused
+    (void)ptr;      // unused
+    (void)size1;    // unused
+    (void)size2;    // unused
+
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+umf_result_t os_alloc_merge(void *provider, void *ptr1, size_t size1,
+                            void *ptr2, size_t size2) {
+    (void)provider; // unused
+    (void)ptr1;     // unused
+    (void)size1;    // unused
+    (void)ptr2;     // unused
+    (void)size2;    // unused
+
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
 const char *os_get_name(void *provider) {
     (void)provider; // unused
     return "OS";
@@ -453,5 +474,7 @@ umf_memory_provider_ops_t UMF_OS_MEMORY_PROVIDER_OPS = {
     .get_min_page_size = os_get_min_page_size,
     .purge_lazy = os_purge_lazy,
     .purge_force = os_purge_force,
+    .alloc_split = os_alloc_split,
+    .alloc_merge = os_alloc_merge,
     .get_name = os_get_name,
 };
