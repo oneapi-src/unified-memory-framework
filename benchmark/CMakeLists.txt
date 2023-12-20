@@ -11,5 +11,5 @@ add_dependencies(ubench unified_memory_framework)
 target_include_directories(ubench PRIVATE ${UMF_CMAKE_SOURCE_DIR}/include/)
 target_link_libraries(ubench
 	unified_memory_framework
-	numa
-	pthread)
+	${LIBS_UMF_STATIC}
+	m)

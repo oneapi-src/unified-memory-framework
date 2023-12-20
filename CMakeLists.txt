@@ -35,6 +35,12 @@ else()
     message(FATAL_ERROR "Unknown OS type")
 endif()
 
+if(LINUX)
+    if(NOT UMF_BUILD_SHARED_LIBRARY)
+        set(LIBS_UMF_STATIC numa)
+    endif()
+endif()
+
 # needed when UMF is used as an external project
 set(UMF_CMAKE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 

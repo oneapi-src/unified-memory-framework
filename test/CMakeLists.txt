@@ -59,16 +59,16 @@ endfunction()
 add_subdirectory(common)
 
 if (UMF_BUILD_LIBUMF_POOL_JEMALLOC)
-    set(LIBS_JEMALLOC pool_jemalloc jemalloc numa)
+    set(LIBS_JEMALLOC pool_jemalloc jemalloc)
 endif()
 
 add_umf_test(NAME base SRCS base.cpp)
-add_umf_test(NAME memoryPool SRCS memoryPoolAPI.cpp malloc_compliance_tests.cpp LIBS ${LIBS_JEMALLOC})
+add_umf_test(NAME memoryPool SRCS memoryPoolAPI.cpp malloc_compliance_tests.cpp LIBS ${LIBS_UMF_STATIC} ${LIBS_JEMALLOC})
 add_umf_test(NAME memoryProvider SRCS memoryProviderAPI.cpp)
 add_umf_test(NAME disjointPool SRCS disjoint_pool.cpp malloc_compliance_tests.cpp)
 add_umf_test(NAME c_api_disjoint_pool SRCS c_api/disjoint_pool.c)
 add_umf_test(NAME memory_pool_internal SRCS memory_pool_internal.cpp)
 
 if(LINUX) # OS-specific functions are implemented only for Linux now
-    add_umf_test(NAME provider_os_memory SRCS provider_os_memory.cpp LIBS numa)
+    add_umf_test(NAME provider_os_memory SRCS provider_os_memory.cpp LIBS ${LIBS_UMF_STATIC})
 endif()
