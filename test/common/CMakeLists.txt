@@ -10,6 +10,6 @@ set(COMMON_SOURCES
     provider_trace.c
 )
 
-add_umf_library(test_common STATIC ${COMMON_SOURCES})
+add_umf_library(NAME test_common TYPE STATIC SRCS ${COMMON_SOURCES})
 
 target_include_directories(test_common PRIVATE ${UMF_CMAKE_SOURCE_DIR}/include)

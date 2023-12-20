@@ -72,18 +72,35 @@ function(add_umf_target_exec_options name)
     endif()
 endfunction()
 
-function(add_umf_executable name)
-    add_executable(${name} ${ARGN})
-    add_umf_target_compile_options(${name})
-    add_umf_target_exec_options(${name})
-    add_umf_target_link_options(${name})
+function(add_umf_executable)
+    # NAME - a name of the executable
+    # SRCS - source files
+    # LIBS - libraries to be linked with
+    set(oneValueArgs NAME)
+    set(multiValueArgs SRCS LIBS)
+    cmake_parse_arguments(ARG "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    add_executable(${ARG_NAME} ${ARG_SRCS})
+    target_link_libraries(${ARG_NAME} PRIVATE ${ARG_LIBS})
+    add_umf_target_compile_options(${ARG_NAME})
+    add_umf_target_exec_options(${ARG_NAME})
+    add_umf_target_link_options(${ARG_NAME})
 endfunction()
 
-function(add_umf_library name)
-    add_library(${name} ${ARGN})
-    target_include_directories(${name} PRIVATE
+function(add_umf_library)
+    # NAME - a name of the executable
+    # TYPE - type of the library (shared or static)
+    # SRCS - source files
+    # LIBS - libraries to be linked with
+    set(oneValueArgs NAME TYPE)
+    set(multiValueArgs SRCS LIBS)
+    cmake_parse_arguments(ARG "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    add_library(${ARG_NAME} ${ARG_TYPE} ${ARG_SRCS})
+    target_link_libraries(${ARG_NAME} PRIVATE ${ARG_LIBS})
+    target_include_directories(${ARG_NAME} PRIVATE
         ${UMF_CMAKE_SOURCE_DIR}/include
         ${UMF_CMAKE_SOURCE_DIR}/src/common)
-    add_umf_target_compile_options(${name})
-    add_umf_target_link_options(${name})
+    add_umf_target_compile_options(${ARG_NAME})
+    add_umf_target_link_options(${ARG_NAME})
 endfunction()

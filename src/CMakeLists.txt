@@ -32,6 +32,12 @@ set(UMF_SOURCES_MACOSX
 )
 
 if(LINUX)
+    set(UMF_LIBS numa)
+else()
+    set(UMF_LIBS)
+endif()
+
+if(LINUX)
     set(UMF_SOURCES ${UMF_SOURCES} ${UMF_SOURCES_LINUX})
 elseif(WINDOWS)
     set(UMF_SOURCES ${UMF_SOURCES} ${UMF_SOURCES_WINDOWS})
@@ -40,10 +46,10 @@ elseif(MACOSX)
 endif()
 
 if(UMF_BUILD_SHARED_LIBRARY)
-    add_umf_library(unified_memory_framework SHARED ${UMF_SOURCES})
+    add_umf_library(NAME unified_memory_framework TYPE SHARED SRCS ${UMF_SOURCES} LIBS ${UMF_LIBS})
     target_compile_definitions(unified_memory_framework PUBLIC UMF_SHARED_LIBRARY)
 else()
-    add_umf_library(unified_memory_framework STATIC ${UMF_SOURCES})
+    add_umf_library(NAME unified_memory_framework TYPE STATIC SRCS ${UMF_SOURCES} LIBS ${UMF_LIBS})
 endif()
 
 if (UMF_ENABLE_POOL_TRACKING)
@@ -64,7 +70,7 @@ target_include_directories(unified_memory_framework PUBLIC
 # libumf_pool_jemalloc
 if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
     if(LINUX)
-        add_umf_library(pool_jemalloc STATIC pool/pool_jemalloc.c)
+        add_umf_library(NAME pool_jemalloc TYPE STATIC SRCS pool/pool_jemalloc.c LIBS jemalloc)
     else()
         message(FATAL_ERROR "libumf_pool_jemalloc is supported on Linux only")
     endif()
