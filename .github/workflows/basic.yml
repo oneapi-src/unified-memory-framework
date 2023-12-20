@@ -12,13 +12,18 @@ jobs:
         build_type: [Debug, Release]
         compiler: [{c: gcc, cxx: g++}]
         pool_tracking: ['ON', 'OFF']
+        shared_library: ['OFF']
         include:
           - os: 'ubuntu-20.04'
             build_type: Release
             compiler: {c: gcc-7, cxx: g++-7}
           - os: 'ubuntu-22.04'
             build_type: Release
-            compiler: {c: clang, cxx: clang++}
+            compiler: {c: clang, cxx: clang++}            
+          - os: 'ubuntu-22.04'
+            build_type: Release
+            compiler: {c: gcc, cxx: g++}
+            shared_library: 'ON'
     runs-on: ${{matrix.os}}
 
     steps:
@@ -40,6 +45,7 @@ jobs:
           cmake
           -B ${{github.workspace}}/build
           -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+          -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
           -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
           -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
           -DUMF_ENABLE_POOL_TRACKING=${{matrix.pool_tracking}}
@@ -66,12 +72,18 @@ jobs:
         build_type: [Debug, Release]
         compiler: [{c: cl, cxx: cl}]
         pool_tracking: ['ON', 'OFF']
+        shared_library: ['OFF']
         include:
           - os: 'windows-2022'
             build_type: Release
             compiler: {c: clang-cl, cxx: clang-cl}
             pool_tracking: 'ON'
             toolset: "-T ClangCL"
+          - os: 'windows-2022'
+            build_type: Release
+            compiler: {c: cl, cxx: cl}
+            pool_tracking: 'ON'
+            shared_library: 'ON'
     runs-on: ${{matrix.os}}
 
     steps:
@@ -84,6 +96,7 @@ jobs:
           ${{matrix.toolset}}
           -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
           -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
+          -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
           -DUMF_ENABLE_POOL_TRACKING=${{matrix.pool_tracking}}
           -DUMF_FORMAT_CODE_STYLE=OFF
           -DUMF_DEVELOPER_MODE=ON
