@@ -11,7 +11,7 @@ jobs:
         os: ['ubuntu-20.04', 'ubuntu-22.04']
         build_type: [Debug, Release]
         compiler: [{c: gcc, cxx: g++}]
-        pool_tracking: ['-DUMF_ENABLE_POOL_TRACKING=ON', '-DUMF_ENABLE_POOL_TRACKING=OFF']
+        pool_tracking: ['ON', 'OFF']
         include:
           - os: 'ubuntu-20.04'
             build_type: Release
@@ -42,10 +42,10 @@ jobs:
           -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
           -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
           -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
+          -DUMF_ENABLE_POOL_TRACKING=${{matrix.pool_tracking}}
           -DUMF_FORMAT_CODE_STYLE=OFF
           -DUMF_DEVELOPER_MODE=ON
           -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
-          ${{matrix.pool_tracking}}
 
       - name: Build UMF
         run: |
@@ -63,12 +63,12 @@ jobs:
         os: ['windows-2019', 'windows-2022']
         build_type: [Debug, Release]
         compiler: [{c: cl, cxx: cl}]
-        pool_tracking: ['-DUMF_ENABLE_POOL_TRACKING=ON', '-DUMF_ENABLE_POOL_TRACKING=OFF']
+        pool_tracking: ['ON', 'OFF']
         include:
           - os: 'windows-2022'
             build_type: Release
             compiler: {c: clang-cl, cxx: clang-cl}
-            pool_tracking: -DUMF_ENABLE_POOL_TRACKING=ON
+            pool_tracking: 'ON'
             toolset: "-T ClangCL"
     runs-on: ${{matrix.os}}
 
@@ -82,9 +82,9 @@ jobs:
           ${{matrix.toolset}}
           -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
           -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
+          -DUMF_ENABLE_POOL_TRACKING=${{matrix.pool_tracking}}
           -DUMF_FORMAT_CODE_STYLE=OFF
           -DUMF_DEVELOPER_MODE=ON
-          ${{matrix.pool_tracking}}
 
       - name: Build UMF
         run: cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} -j $Env:NUMBER_OF_PROCESSORS
