@@ -51,6 +51,8 @@ if(UMF_BUILD_SHARED_LIBRARY)
                     SRCS ${UMF_SOURCES}
                     LIBS ${UMF_LIBS})
     target_compile_definitions(umf PUBLIC UMF_SHARED_LIBRARY)
+    set_target_properties(umf PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_UMF_OUTPUT_DIRECTORY})
 else()
     add_umf_library(NAME umf
                     TYPE STATIC 
