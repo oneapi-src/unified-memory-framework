@@ -29,13 +29,14 @@ function(add_umf_test)
     set(TEST_NAME umf-${ARG_NAME})
     set(TEST_TARGET_NAME umf_test-${ARG_NAME})
 
-    add_umf_executable(${TEST_TARGET_NAME} ${ARG_SRCS})
-
-    target_link_libraries(${TEST_TARGET_NAME} PRIVATE
-        test_common
+    set(TEST_LIBS test_common
         ${PROJECT_NAME}::unified_memory_framework
         GTest::gtest_main
         ${ARG_LIBS})
+    if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
+        set(TEST_LIBS ${TEST_LIBS} pool_jemalloc)
+    endif()
+    add_umf_executable(NAME ${TEST_TARGET_NAME} SRCS ${ARG_SRCS} LIBS ${TEST_LIBS})
 
     target_include_directories(${TEST_TARGET_NAME} PRIVATE
         ${UMF_TEST_DIR}/common
@@ -58,17 +59,13 @@ endfunction()
 
 add_subdirectory(common)
 
-if (UMF_BUILD_LIBUMF_POOL_JEMALLOC)
-    set(LIBS_JEMALLOC pool_jemalloc jemalloc numa)
-endif()
-
 add_umf_test(NAME base SRCS base.cpp)
-add_umf_test(NAME memoryPool SRCS memoryPoolAPI.cpp malloc_compliance_tests.cpp LIBS ${LIBS_JEMALLOC})
+add_umf_test(NAME memoryPool SRCS memoryPoolAPI.cpp malloc_compliance_tests.cpp)
 add_umf_test(NAME memoryProvider SRCS memoryProviderAPI.cpp)
 add_umf_test(NAME disjointPool SRCS disjoint_pool.cpp malloc_compliance_tests.cpp)
 add_umf_test(NAME c_api_disjoint_pool SRCS c_api/disjoint_pool.c)
 add_umf_test(NAME memory_pool_internal SRCS memory_pool_internal.cpp)
 
 if(LINUX) # OS-specific functions are implemented only for Linux now
-    add_umf_test(NAME provider_os_memory SRCS provider_os_memory.cpp LIBS numa)
+    add_umf_test(NAME provider_os_memory SRCS provider_os_memory.cpp)
 endif()
