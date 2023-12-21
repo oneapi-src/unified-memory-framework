@@ -27,9 +27,8 @@ static umf_os_memory_provider_params_t UMF_OS_MEMORY_PROVIDER_PARAMS_TEST = {
 };
 
 static const char *Native_error_str[] = {
-    "success",                            // UMF_OS_RESULT_SUCCESS
-    "wrong alignment (not a power of 2)", // UMF_OS_RESULT_ERROR_WRONG_ALIGNMENT
-    "memory allocation failed",           // UMF_OS_RESULT_ERROR_ALLOC_FAILED
+    "success",                          // UMF_OS_RESULT_SUCCESS
+    "memory allocation failed",         // UMF_OS_RESULT_ERROR_ALLOC_FAILED
     "allocated address is not aligned", // UMF_OS_RESULT_ERROR_ADDRESS_NOT_ALIGNED
     "binding memory to NUMA node failed", // UMF_OS_RESULT_ERROR_BIND_FAILED
     "memory deallocation failed",         // UMF_OS_RESULT_ERROR_FREE_FAILED
@@ -192,14 +191,8 @@ TEST_F(test, provider_os_memory_alloc_WRONG_ALIGNMENT) {
     size_t alignment = SIZE_4K - 1; // wrong alignment
     umf_result =
         umfMemoryProviderAlloc(os_memory_provider, size, alignment, &ptr);
-    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
     ASSERT_EQ(ptr, nullptr);
-
-    const char *message;
-    int32_t error;
-    umfMemoryProviderGetLastNativeError(os_memory_provider, &message, &error);
-    ASSERT_EQ(error, UMF_OS_RESULT_ERROR_WRONG_ALIGNMENT);
-    ASSERT_EQ(compare_native_error_str(message, error), 0);
 
     umfMemoryProviderDestroy(os_memory_provider);
 }
