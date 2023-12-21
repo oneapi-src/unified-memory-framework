@@ -20,6 +20,7 @@ set(UMF_SOURCES_LINUX
 )
 
 set(UMF_SOURCES_WINDOWS
+    provider/provider_os_memory_windows.c
     provider/provider_tracking_windows.cpp
     utils/utils_windows_concurrency.c
     utils/utils_windows_math.c
