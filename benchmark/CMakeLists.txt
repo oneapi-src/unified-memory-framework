@@ -8,11 +8,11 @@ endif()
 
 add_executable(ubench ubench.c)
 add_dependencies(ubench
-	unified_memory_framework
+	umf
 	disjoint_pool)
 target_include_directories(ubench PRIVATE ${UMF_CMAKE_SOURCE_DIR}/include/)
 target_link_libraries(ubench
-	unified_memory_framework
+	umf
 	disjoint_pool
 	pthread
 	m)

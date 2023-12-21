@@ -45,21 +45,27 @@ elseif(MACOSX)
 endif()
 
 if(UMF_BUILD_SHARED_LIBRARY)
-    add_umf_library(NAME unified_memory_framework TYPE SHARED SRCS ${UMF_SOURCES} LIBS ${UMF_LIBS})
-    target_compile_definitions(unified_memory_framework PUBLIC UMF_SHARED_LIBRARY)
+    add_umf_library(NAME umf
+                    TYPE SHARED
+                    SRCS ${UMF_SOURCES}
+                    LIBS ${UMF_LIBS})
+    target_compile_definitions(umf PUBLIC UMF_SHARED_LIBRARY)
 else()
-    add_umf_library(NAME unified_memory_framework TYPE STATIC SRCS ${UMF_SOURCES} LIBS ${UMF_LIBS})
+    add_umf_library(NAME umf
+                    TYPE STATIC 
+                    SRCS ${UMF_SOURCES} 
+                    LIBS ${UMF_LIBS})
 endif()
 
 if (UMF_ENABLE_POOL_TRACKING)
-    target_sources(unified_memory_framework PRIVATE memory_pool_tracking.c)
+    target_sources(umf PRIVATE memory_pool_tracking.c)
 else()
-    target_sources(unified_memory_framework PRIVATE memory_pool_default.c)
+    target_sources(umf PRIVATE memory_pool_default.c)
 endif()
 
-add_library(${PROJECT_NAME}::unified_memory_framework ALIAS unified_memory_framework)
+add_library(${PROJECT_NAME}::umf ALIAS umf)
 
-target_include_directories(unified_memory_framework PUBLIC 
+target_include_directories(umf PUBLIC 
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/common>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/critnib>
@@ -68,11 +74,8 @@ target_include_directories(unified_memory_framework PUBLIC
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
-install(TARGETS unified_memory_framework
+install(TARGETS umf
     EXPORT ${PROJECT_NAME}-targets
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
 add_subdirectory(pool)

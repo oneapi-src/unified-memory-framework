@@ -68,7 +68,7 @@ target_include_directories(umf_headers INTERFACE
 # Add the include directory and the headers target to the install.
 install(
     DIRECTORY "${PROJECT_SOURCE_DIR}/include/"
-    DESTINATION include COMPONENT umf_headers)
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 install(
     TARGETS umf_headers
@@ -136,6 +136,10 @@ if(UMF_FORMAT_CODE_STYLE)
         COMMENT "Format files using clang-format")        
 endif()
 
+# Add license to the installation path
+install(FILES ${CMAKE_SOURCE_DIR}/LICENSE.TXT
+        DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/doc/${PROJECT_NAME}/")
+
 # Add the list of installed targets to the install. This includes the namespace
 # which all installed targets will be prefixed with, e.g. for the headers
 # target users will depend on ${PROJECT_NAME}::headers.
@@ -143,7 +147,7 @@ install(
     EXPORT ${PROJECT_NAME}-targets
     FILE ${PROJECT_NAME}-targets.cmake
     NAMESPACE ${PROJECT_NAME}::
-    DESTINATION lib/cmake/${PROJECT_NAME})
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
 
 # Configure the package versions file for use in find_package when installed.
 write_basic_package_version_file(
@@ -155,11 +159,11 @@ write_basic_package_version_file(
 configure_package_config_file(
     ${PROJECT_SOURCE_DIR}/cmake/${PROJECT_NAME}-config.cmake.in
     ${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}-config.cmake
-    INSTALL_DESTINATION lib/cmake/${PROJECT_NAME})
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
 
 # Add the package files to the install.
 install(
     FILES
         ${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}-config.cmake
         ${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}-config-version.cmake
-    DESTINATION lib/cmake/${PROJECT_NAME})
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})

@@ -13,6 +13,7 @@ FetchContent_Declare(
 )
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 enable_testing()
 
@@ -30,11 +31,11 @@ function(add_umf_test)
     set(TEST_TARGET_NAME umf_test-${ARG_NAME})
 
     set(TEST_LIBS test_common
-        ${PROJECT_NAME}::unified_memory_framework
+        umf
         GTest::gtest_main
         ${ARG_LIBS})
     if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
-        set(TEST_LIBS ${TEST_LIBS} pool_jemalloc)
+        set(TEST_LIBS ${TEST_LIBS} jemalloc_pool)
     endif()
     add_umf_executable(NAME ${TEST_TARGET_NAME} SRCS ${ARG_SRCS} LIBS ${TEST_LIBS})
 
@@ -69,11 +70,11 @@ add_umf_test(NAME memory_pool_internal
 
 if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
     add_umf_test(NAME disjointPool
-                SRCS disjoint_pool.cpp malloc_compliance_tests.cpp
-                LIBS ${PROJECT_NAME}::disjoint_pool)
+                 SRCS disjoint_pool.cpp malloc_compliance_tests.cpp
+                 LIBS disjoint_pool)
     add_umf_test(NAME c_api_disjoint_pool
-                SRCS c_api/disjoint_pool.c
-                LIBS ${PROJECT_NAME}::disjoint_pool)
+                 SRCS c_api/disjoint_pool.c
+                 LIBS disjoint_pool)
 endif()
 
 if(LINUX) # OS-specific functions are implemented only for Linux now
