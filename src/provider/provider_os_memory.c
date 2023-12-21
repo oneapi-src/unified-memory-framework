@@ -48,8 +48,6 @@ static __TLS os_last_native_error_t TLS_last_native_error;
 
 // helper values used only in the Native_error_str array
 #define _UMF_OS_RESULT_SUCCESS (UMF_OS_RESULT_SUCCESS - UMF_OS_RESULT_SUCCESS)
-#define _UMF_OS_RESULT_ERROR_WRONG_ALIGNMENT                                   \
-    (UMF_OS_RESULT_ERROR_WRONG_ALIGNMENT - UMF_OS_RESULT_SUCCESS)
 #define _UMF_OS_RESULT_ERROR_ALLOC_FAILED                                      \
     (UMF_OS_RESULT_ERROR_ALLOC_FAILED - UMF_OS_RESULT_SUCCESS)
 #define _UMF_OS_RESULT_ERROR_ADDRESS_NOT_ALIGNED                               \
@@ -65,8 +63,6 @@ static __TLS os_last_native_error_t TLS_last_native_error;
 
 static const char *Native_error_str[] = {
     [_UMF_OS_RESULT_SUCCESS] = "success",
-    [_UMF_OS_RESULT_ERROR_WRONG_ALIGNMENT] =
-        "wrong alignment (not a power of 2)",
     [_UMF_OS_RESULT_ERROR_ALLOC_FAILED] = "memory allocation failed",
     [_UMF_OS_RESULT_ERROR_ADDRESS_NOT_ALIGNED] =
         "allocated address is not aligned",
@@ -237,6 +233,9 @@ static void os_finalize(void *provider) {
     free(os_provider);
 }
 
+static umf_result_t os_get_min_page_size(void *provider, void *ptr,
+                                         size_t *page_size);
+
 static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
                              void **resultPtr) {
     int ret;
@@ -248,13 +247,20 @@ static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
     os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
     umf_os_memory_provider_config_t *os_config = &os_provider->config;
 
-    if (alignment && (alignment & (alignment - 1))) {
-        os_store_last_native_error(UMF_OS_RESULT_ERROR_WRONG_ALIGNMENT, 0);
+    size_t page_size;
+    umf_result_t result = os_get_min_page_size(provider, NULL, &page_size);
+    if (result != UMF_RESULT_SUCCESS) {
+        return result;
+    }
+
+    if (alignment && (alignment % page_size) && (page_size % alignment)) {
         if (os_config->traces) {
-            fprintf(stderr, "wrong alignment (not a power of 2): %zu\n",
-                    alignment);
+            fprintf(stderr,
+                    "wrong alignment: %zu (not a multiple or a divider of the "
+                    "minimum page size (%zu))\n",
+                    alignment, page_size);
         }
-        return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
     int flags = os_config->visibility;
@@ -272,8 +278,8 @@ static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
 
-    // sanity check - the address should be aligned here
-    if ((alignment > 0) && ((uintptr_t)addr & (alignment - 1))) {
+    // verify the alignment
+    if ((alignment > 0) && ((uintptr_t)addr % alignment)) {
         if (os_config->traces) {
             os_store_last_native_error(UMF_OS_RESULT_ERROR_ADDRESS_NOT_ALIGNED,
                                        0);

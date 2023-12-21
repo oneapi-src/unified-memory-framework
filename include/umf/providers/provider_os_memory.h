@@ -78,7 +78,6 @@ typedef struct umf_os_memory_provider_params_t {
 
 typedef enum umf_os_memory_provider_native_error {
     UMF_OS_RESULT_SUCCESS = UMF_OS_RESULTS_START_FROM,
-    UMF_OS_RESULT_ERROR_WRONG_ALIGNMENT,
     UMF_OS_RESULT_ERROR_ALLOC_FAILED,
     UMF_OS_RESULT_ERROR_ADDRESS_NOT_ALIGNED,
     UMF_OS_RESULT_ERROR_BIND_FAILED,
