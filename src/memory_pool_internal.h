@@ -31,11 +31,10 @@ typedef struct umf_memory_pool_t {
     bool own_provider;
 } umf_memory_pool_t;
 
-umf_result_t umfPoolCreateEx(const umf_memory_pool_ops_t *pool_ops,
-                             void *pool_params,
-                             const umf_memory_provider_ops_t *provider_ops,
-                             void *provider_params,
-                             umf_memory_pool_handle_t *hPool);
+UMF_EXPORT umf_result_t
+umfPoolCreateEx(const umf_memory_pool_ops_t *pool_ops, void *pool_params,
+                const umf_memory_provider_ops_t *provider_ops,
+                void *provider_params, umf_memory_pool_handle_t *hPool);
 
 #ifdef __cplusplus
 }

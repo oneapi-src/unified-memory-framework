@@ -38,15 +38,16 @@ typedef struct umf_memory_pool_ops_t umf_memory_pool_ops_t;
 /// @param hPool [out] handle to the newly created memory pool
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 ///
-umf_result_t umfPoolCreate(const umf_memory_pool_ops_t *ops,
-                           umf_memory_provider_handle_t provider, void *params,
-                           umf_memory_pool_handle_t *hPool);
+UMF_EXPORT umf_result_t umfPoolCreate(const umf_memory_pool_ops_t *ops,
+                                      umf_memory_provider_handle_t provider,
+                                      void *params,
+                                      umf_memory_pool_handle_t *hPool);
 
 ///
 /// @brief Destroys memory pool.
 /// @param hPool handle to the pool
 ///
-void umfPoolDestroy(umf_memory_pool_handle_t hPool);
+UMF_EXPORT void umfPoolDestroy(umf_memory_pool_handle_t hPool);
 
 ///
 /// @brief Allocates \p size bytes of uninitialized storage from \p hPool
@@ -54,7 +55,7 @@ void umfPoolDestroy(umf_memory_pool_handle_t hPool);
 /// @param size number of bytes to allocate
 /// @return Pointer to the allocated memory.
 ///
-void *umfPoolMalloc(umf_memory_pool_handle_t hPool, size_t size);
+UMF_EXPORT void *umfPoolMalloc(umf_memory_pool_handle_t hPool, size_t size);
 
 ///
 /// @brief Allocates \p size bytes of uninitialized storage from the specified \p hPool
@@ -64,8 +65,8 @@ void *umfPoolMalloc(umf_memory_pool_handle_t hPool, size_t size);
 /// @param alignment alignment of the allocation in bytes
 /// @return Pointer to the allocated memory
 ///
-void *umfPoolAlignedMalloc(umf_memory_pool_handle_t hPool, size_t size,
-                           size_t alignment);
+UMF_EXPORT void *umfPoolAlignedMalloc(umf_memory_pool_handle_t hPool,
+                                      size_t size, size_t alignment);
 
 ///
 /// @brief Allocates memory from \p hPool for an array of \p num elements
@@ -76,7 +77,8 @@ void *umfPoolAlignedMalloc(umf_memory_pool_handle_t hPool, size_t size,
 /// @param size number of bytes to allocate for each object
 /// @return Pointer to the allocated memory
 ///
-void *umfPoolCalloc(umf_memory_pool_handle_t hPool, size_t num, size_t size);
+UMF_EXPORT void *umfPoolCalloc(umf_memory_pool_handle_t hPool, size_t num,
+                               size_t size);
 
 ///
 /// @brief Reallocates memory from \p hPool
@@ -85,7 +87,8 @@ void *umfPoolCalloc(umf_memory_pool_handle_t hPool, size_t num, size_t size);
 /// @param size new size for the memory block in bytes
 /// @return Pointer to the allocated memory
 ///
-void *umfPoolRealloc(umf_memory_pool_handle_t hPool, void *ptr, size_t size);
+UMF_EXPORT void *umfPoolRealloc(umf_memory_pool_handle_t hPool, void *ptr,
+                                size_t size);
 
 ///
 /// @brief Obtains size of block of memory allocated from the \p hPool for a given \p ptr
@@ -93,7 +96,8 @@ void *umfPoolRealloc(umf_memory_pool_handle_t hPool, void *ptr, size_t size);
 /// @param ptr pointer to the allocated memory
 /// @return size of the memory block allocated from the \p hPool
 ///
-size_t umfPoolMallocUsableSize(umf_memory_pool_handle_t hPool, void *ptr);
+UMF_EXPORT size_t umfPoolMallocUsableSize(umf_memory_pool_handle_t hPool,
+                                          void *ptr);
 
 ///
 /// @brief Frees the memory space of the specified \p hPool pointed by \p ptr
@@ -103,7 +107,7 @@ size_t umfPoolMallocUsableSize(umf_memory_pool_handle_t hPool, void *ptr);
 ///         Whether any status other than UMF_RESULT_SUCCESS can be returned
 ///         depends on the memory provider used by the \p hPool.
 ///
-umf_result_t umfPoolFree(umf_memory_pool_handle_t hPool, void *ptr);
+UMF_EXPORT umf_result_t umfPoolFree(umf_memory_pool_handle_t hPool, void *ptr);
 
 ///
 /// @brief Frees the memory space pointed by ptr if it belongs to UMF pool, does nothing otherwise.
@@ -112,7 +116,7 @@ umf_result_t umfPoolFree(umf_memory_pool_handle_t hPool, void *ptr);
 ///         Whether any status other than UMF_RESULT_SUCCESS can be returned
 ///         depends on the memory provider used by the pool.
 ///
-umf_result_t umfFree(void *ptr);
+UMF_EXPORT umf_result_t umfFree(void *ptr);
 
 ///
 /// @brief Retrieve \p umf_result_t representing the error of the last failed allocation
@@ -132,7 +136,8 @@ umf_result_t umfFree(void *ptr);
 /// @return Error code desciribng the failure of the last failed allocation operation.
 ///         The value is undefined if the previous allocation was successful.
 ///
-umf_result_t umfPoolGetLastAllocationError(umf_memory_pool_handle_t hPool);
+UMF_EXPORT umf_result_t
+umfPoolGetLastAllocationError(umf_memory_pool_handle_t hPool);
 
 ///
 /// @brief Retrieve memory pool associated with a given ptr. Only memory allocated
@@ -140,7 +145,7 @@ umf_result_t umfPoolGetLastAllocationError(umf_memory_pool_handle_t hPool);
 /// @param ptr pointer to memory belonging to a memory pool
 /// @return Handle to a memory pool that contains ptr or NULL if pointer does not belong to any UMF pool.
 ///
-umf_memory_pool_handle_t umfPoolByPtr(const void *ptr);
+UMF_EXPORT umf_memory_pool_handle_t umfPoolByPtr(const void *ptr);
 
 ///
 /// @brief Retrieve memory provider associated with a given pool.
@@ -149,8 +154,8 @@ umf_memory_pool_handle_t umfPoolByPtr(const void *ptr);
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 ///         UMF_RESULT_ERROR_INVALID_ARGUMENT if hProvider is NULL
 ///
-umf_result_t umfPoolGetMemoryProvider(umf_memory_pool_handle_t hPool,
-                                      umf_memory_provider_handle_t *hProvider);
+UMF_EXPORT umf_result_t umfPoolGetMemoryProvider(
+    umf_memory_pool_handle_t hPool, umf_memory_provider_handle_t *hProvider);
 
 #ifdef __cplusplus
 }
