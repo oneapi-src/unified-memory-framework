@@ -12,6 +12,9 @@ using umf_test::test;
 
 #define SIZE_4K (4096)
 
+#define ASSERT_IS_ALIGNED(ptr, alignment)                                      \
+    ASSERT_EQ(((uintptr_t)ptr % alignment), 0)
+
 static umf_os_memory_provider_params_t UMF_OS_MEMORY_PROVIDER_PARAMS_TEST = {
     /* .protection = */ UMF_PROTECTION_READ | UMF_PROTECTION_WRITE,
     /* .visibility = */ UMF_VISIBILITY_PRIVATE,
@@ -137,6 +140,7 @@ TEST_F(test, provider_os_memory_alloc_free_2k_alignment_2k) {
         umfMemoryProviderAlloc(os_memory_provider, size, alignment, &ptr);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(ptr, nullptr);
+    ASSERT_IS_ALIGNED(ptr, alignment);
 
     memset(ptr, 0xFF, size);
 
@@ -165,6 +169,7 @@ TEST_F(test, provider_os_memory_alloc_free_8k_alignment_8k) {
         umfMemoryProviderAlloc(os_memory_provider, size, alignment, &ptr);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(ptr, nullptr);
+    ASSERT_IS_ALIGNED(ptr, alignment);
 
     memset(ptr, 0xFF, size);
 
