@@ -42,7 +42,7 @@ void umfMemoryProviderDestroy(umf_memory_provider_handle_t hProvider);
 ///        with the specified \p alignment
 /// @param hProvider handle to the memory provider
 /// @param size number of bytes to allocate
-/// @param alignment alignment of the allocation in bytes
+/// @param alignment alignment of the allocation in bytes, it has to be a multiple or a divider of the minimum page size
 /// @param ptr [out] pointer to the allocated memory
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure
 ///
