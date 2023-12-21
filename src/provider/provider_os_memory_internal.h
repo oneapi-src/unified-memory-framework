@@ -32,8 +32,9 @@ long os_mbind(void *addr, size_t len, int mode, const unsigned long *nodemask,
 long os_get_mempolicy(int *mode, unsigned long *nodemask, unsigned long maxnode,
                       void *addr);
 
-int os_mmap_aligned(void *hint_addr, size_t length, size_t alignment, int prot,
-                    int flags, int fd, long offset, void **out_addr);
+int os_mmap_aligned(void *hint_addr, size_t length, size_t alignment,
+                    size_t page_size, int prot, int flags, int fd, long offset,
+                    void **out_addr);
 
 int os_munmap(void *addr, size_t length);
 
