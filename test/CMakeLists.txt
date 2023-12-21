@@ -43,6 +43,7 @@ function(add_umf_test)
     add_umf_executable(NAME ${TEST_TARGET_NAME} SRCS ${ARG_SRCS} LIBS ${TEST_LIBS})
 
     target_include_directories(${TEST_TARGET_NAME} PRIVATE
+        ${UMF_CMAKE_SOURCE_DIR}/include
         ${UMF_CMAKE_SOURCE_DIR}/src
         ${UMF_TEST_DIR}/common)
 
