@@ -187,7 +187,7 @@ os_copy_and_translate_params(umf_os_memory_provider_params_t *in_params,
                             &out_config->nodemask);
 }
 
-umf_result_t os_initialize(void *params, void **provider) {
+static umf_result_t os_initialize(void *params, void **provider) {
     umf_result_t ret;
 
     if (provider == NULL || params == NULL) {
@@ -226,7 +226,7 @@ umf_result_t os_initialize(void *params, void **provider) {
     return UMF_RESULT_SUCCESS;
 }
 
-void os_finalize(void *provider) {
+static void os_finalize(void *provider) {
     if (provider == NULL) {
         assert(0);
         return;
@@ -342,8 +342,8 @@ static umf_result_t os_free(void *provider, void *ptr, size_t size) {
     return UMF_RESULT_SUCCESS;
 }
 
-void os_get_last_native_error(void *provider, const char **ppMessage,
-                              int32_t *pError) {
+static void os_get_last_native_error(void *provider, const char **ppMessage,
+                                     int32_t *pError) {
     (void)provider; // unused
 
     if (ppMessage == NULL || pError == NULL) {
@@ -377,8 +377,8 @@ void os_get_last_native_error(void *provider, const char **ppMessage,
     *ppMessage = TLS_last_native_error.msg_buff;
 }
 
-umf_result_t os_get_recommended_page_size(void *provider, size_t size,
-                                          size_t *page_size) {
+static umf_result_t os_get_recommended_page_size(void *provider, size_t size,
+                                                 size_t *page_size) {
     (void)size; // unused
 
     if (provider == NULL || page_size == NULL) {
@@ -390,14 +390,14 @@ umf_result_t os_get_recommended_page_size(void *provider, size_t size,
     return UMF_RESULT_SUCCESS;
 }
 
-umf_result_t os_get_min_page_size(void *provider, void *ptr,
-                                  size_t *page_size) {
+static umf_result_t os_get_min_page_size(void *provider, void *ptr,
+                                         size_t *page_size) {
     (void)ptr; // unused
 
     return os_get_recommended_page_size(provider, 0, page_size);
 }
 
-umf_result_t os_purge_lazy(void *provider, void *ptr, size_t size) {
+static umf_result_t os_purge_lazy(void *provider, void *ptr, size_t size) {
     if (provider == NULL || ptr == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
@@ -417,7 +417,7 @@ umf_result_t os_purge_lazy(void *provider, void *ptr, size_t size) {
     return UMF_RESULT_SUCCESS;
 }
 
-umf_result_t os_purge_force(void *provider, void *ptr, size_t size) {
+static umf_result_t os_purge_force(void *provider, void *ptr, size_t size) {
     if (provider == NULL || ptr == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
@@ -437,7 +437,7 @@ umf_result_t os_purge_force(void *provider, void *ptr, size_t size) {
     return UMF_RESULT_SUCCESS;
 }
 
-const char *os_get_name(void *provider) {
+static const char *os_get_name(void *provider) {
     (void)provider; // unused
     return "OS";
 }
