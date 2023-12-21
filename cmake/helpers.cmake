@@ -88,7 +88,7 @@ function(add_umf_executable)
 endfunction()
 
 function(add_umf_library)
-    # NAME - a name of the executable
+    # NAME - a name of the library
     # TYPE - type of the library (shared or static)
     # SRCS - source files
     # LIBS - libraries to be linked with

@@ -20,6 +20,14 @@ A memory provider that provides memory from an operating system.
 
 ## Memory pool managers
 
+### libumf_pool_disjoint
+
+TODO: Add a description
+
+#### Requirements
+
+To enable this feature, the `UMF_BUILD_LIBUMF_POOL_DISJOINT` option needs to be turned `ON`.
+
 ### libumf_pool_jemalloc (Linux-only)
 
 libumf_pool_jemalloc is a [jemalloc](https://github.com/jemalloc/jemalloc)-based memory pool manager built as a separate static library.
@@ -42,6 +50,11 @@ Required packages:
 
 For development and contributions:
 - clang-format-15.0 (can be installed with `python -m pip install clang-format==15.0.7`)
+
+### Benchmark
+
+Disjoint Pool is a required dependency of the micro benchmark.
+In order to build the benchmark, the `UMF_BUILD_LIBUMF_POOL_DISJOINT` CMake configuration flag has to be turned `ON`.
 
 ### Windows
 
@@ -87,6 +100,7 @@ List of options provided by CMake:
 | Name | Description | Values | Default |
 | - | - | - | - |
 | UMF_BUILD_SHARED_LIBRARY | Build UMF as shared library | ON/OFF | OFF |
+| UMF_BUILD_LIBUMF_POOL_DISJOINT | Build the libumf_pool_disjoint static library | ON/OFF | OFF |
 | UMF_BUILD_LIBUMF_POOL_JEMALLOC | Build the libumf_pool_jemalloc static library | ON/OFF | OFF |
 | UMF_BUILD_TESTS | Build UMF tests | ON/OFF | ON |
 | UMF_BUILD_BENCHMARKS | Build UMF benchmarks | ON/OFF | OFF |

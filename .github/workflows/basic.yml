@@ -46,6 +46,7 @@ jobs:
           -DUMF_FORMAT_CODE_STYLE=OFF
           -DUMF_DEVELOPER_MODE=ON
           -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
+          -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
 
       - name: Build UMF
         run: |

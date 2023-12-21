@@ -10,12 +10,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED YES)
 
 include(CTest)
 include(CMakePackageConfigHelpers)
+include(GNUInstallDirs)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(helpers)
 
 # Build Options
 option(UMF_BUILD_SHARED_LIBRARY "Build UMF as shared library" OFF)
+option(UMF_BUILD_LIBUMF_POOL_DISJOINT "Build the libumf_pool_disjoint static library" OFF)
 option(UMF_BUILD_LIBUMF_POOL_JEMALLOC "Build the libumf_pool_jemalloc static library" OFF)
 option(UMF_BUILD_TESTS "Build UMF tests" ON)
 option(UMF_BUILD_BENCHMARKS "Build UMF benchmarks" OFF)
@@ -76,7 +78,7 @@ add_subdirectory(src)
 if(UMF_BUILD_TESTS)
     add_subdirectory(test)
 endif()
-if(UMF_BUILD_BENCHMARKS)
+if(UMF_BUILD_BENCHMARKS AND UMF_BUILD_LIBUMF_POOL_DISJOINT)
     if(LINUX)
         add_subdirectory(benchmark)
     else()
