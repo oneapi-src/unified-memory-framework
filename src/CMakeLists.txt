@@ -1,4 +1,4 @@
-# Copyright (C) 2023 Intel Corporation
+# Copyright (C) 2023-2024 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -16,8 +16,16 @@ set(UMF_SOURCES
     critnib/critnib.c
 )
 
+set(UMF_SOURCES_LINUX
+    provider/provider_tracking_linux.c
+)
+
 set(UMF_SOURCES_WINDOWS
-    provider/provider_tracking_windows.cpp
+    provider/provider_tracking_windows.c
+)
+
+set(UMF_SOURCES_MACOSX
+    provider/provider_tracking_linux.c
 )
 
 if(UMF_BUILD_OS_MEMORY_PROVIDER)
@@ -33,6 +41,8 @@ if(LINUX)
     set(UMF_SOURCES ${UMF_SOURCES} ${UMF_SOURCES_LINUX})
 elseif(WINDOWS)
     set(UMF_SOURCES ${UMF_SOURCES} ${UMF_SOURCES_WINDOWS})
+elseif(MACOSX)
+    set(UMF_SOURCES ${UMF_SOURCES} ${UMF_SOURCES_MACOSX})
 endif()
 
 if(UMF_BUILD_SHARED_LIBRARY)
