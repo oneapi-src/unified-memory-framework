@@ -268,8 +268,8 @@ static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
 
     void *addr = NULL;
     errno = 0;
-    ret =
-        os_mmap_aligned(NULL, size, alignment, protection, flags, -1, 0, &addr);
+    ret = os_mmap_aligned(NULL, size, alignment, page_size, protection, flags,
+                          -1, 0, &addr);
     if (ret) {
         os_store_last_native_error(UMF_OS_RESULT_ERROR_ALLOC_FAILED, errno);
         if (os_config->traces) {
