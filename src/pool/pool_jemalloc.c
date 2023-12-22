@@ -344,15 +344,30 @@ static void *je_aligned_alloc(void *pool, size_t size, size_t alignment) {
     return ptr;
 }
 
+/* from jemalloc internals */
+struct arena_config_s {
+    /* extent hooks to be used for the arena */
+    extent_hooks_t *extent_hooks;
+
+    /*
+     * Use extent hooks for metadata (base) allocations when true.
+     */
+    bool metadata_use_hooks;
+};
+
+typedef struct arena_config_s arena_config_t;
+
 static umf_result_t je_initialize(umf_memory_provider_handle_t provider,
                                   void *params, void **out_pool) {
     assert(provider);
     assert(out_pool);
-    (void)params; // unused
 
-    extent_hooks_t *pHooks = &arena_extent_hooks;
+    umf_jemalloc_pool_params_t *poolParams =
+        (umf_jemalloc_pool_params_t *)params;
+
     size_t unsigned_size = sizeof(unsigned);
     int err;
+    unsigned arena_index;
 
     jemalloc_memory_pool_t *pool = malloc(sizeof(jemalloc_memory_pool_t));
     if (!pool) {
@@ -361,24 +376,45 @@ static umf_result_t je_initialize(umf_memory_provider_handle_t provider,
 
     pool->provider = provider;
 
-    unsigned arena_index;
-    err =
-        mallctl("arenas.create", (void *)&arena_index, &unsigned_size, NULL, 0);
-    if (err) {
-        fprintf(stderr, "Could not create arena.\n");
-        goto err_free_pool;
-    }
+    const char *versionStr = "unknown";
+    size_t ptrSize = sizeof(versionStr);
+    mallctl("version", &versionStr, &ptrSize, NULL, 0);
 
-    // setup extent_hooks for newly created arena
-    char cmd[64];
-    snprintf(cmd, sizeof(cmd), "arena.%u.extent_hooks", arena_index);
-    err = mallctl(cmd, NULL, NULL, (void *)&pHooks, sizeof(void *));
-    if (err) {
-        snprintf(cmd, sizeof(cmd), "arena.%u.destroy", arena_index);
-        mallctl(cmd, NULL, 0, NULL, 0);
-        fprintf(stderr,
-                "Could not setup extent_hooks for newly created arena.\n");
-        goto err_free_pool;
+    if (poolParams && !poolParams->metadata_use_provider) {
+        arena_config_t config;
+        config.extent_hooks = &arena_extent_hooks;
+        config.metadata_use_hooks = false;
+
+        err = mallctl("experimental.arenas_create_ext", (void *)&arena_index,
+                      &unsigned_size, &config, sizeof(arena_config_t));
+        if (err) {
+            fprintf(stderr, "Could not create arena. Jemalloc version: %s\n",
+                    versionStr);
+            goto err_free_pool;
+        }
+    } else {
+        extent_hooks_t *pHooks = &arena_extent_hooks;
+        err = mallctl("arenas.create", (void *)&arena_index, &unsigned_size,
+                      NULL, 0);
+        if (err) {
+            fprintf(stderr, "Could not create arena. Jemalloc version: %s\n",
+                    versionStr);
+            goto err_free_pool;
+        }
+
+        // setup extent_hooks for newly created arena
+        char cmd[64];
+        snprintf(cmd, sizeof(cmd), "arena.%u.extent_hooks", arena_index);
+        err = mallctl(cmd, NULL, NULL, (void *)&pHooks, sizeof(void *));
+        if (err) {
+            snprintf(cmd, sizeof(cmd), "arena.%u.destroy", arena_index);
+            mallctl(cmd, NULL, 0, NULL, 0);
+            fprintf(stderr,
+                    "Could not setup extent_hooks for newly created arena. "
+                    "Jemalloc version: %s\n",
+                    versionStr);
+            goto err_free_pool;
+        }
     }
 
     pool->arena_index = arena_index;

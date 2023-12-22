@@ -10,11 +10,19 @@
 #ifndef UMF_JEMALLOC_MEMORY_POOL_H
 #define UMF_JEMALLOC_MEMORY_POOL_H 1
 
+#include <stdbool.h>
+
+#include <umf/memory_pool_ops.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <umf/memory_pool_ops.h>
+/// Configuration of Jemalloc pool
+typedef struct umf_jemalloc_pool_params_t {
+    /// Use memory provider for metadata allocations when true
+    bool metadata_use_provider;
+} umf_jemalloc_pool_params_t;
 
 extern umf_memory_pool_ops_t UMF_JEMALLOC_POOL_OPS;
 
