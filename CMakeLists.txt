@@ -75,10 +75,12 @@ install(
     EXPORT ${PROJECT_NAME}-targets)
 
 add_subdirectory(src)
+
 if(UMF_BUILD_TESTS)
     add_subdirectory(test)
 endif()
-if(UMF_BUILD_BENCHMARKS AND UMF_BUILD_LIBUMF_POOL_DISJOINT)
+
+if(UMF_BUILD_BENCHMARKS)
     if(LINUX)
         add_subdirectory(benchmark)
     else()

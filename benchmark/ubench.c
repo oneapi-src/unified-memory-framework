@@ -7,8 +7,11 @@
  *
  */
 
-#include <umf/pools/pool_disjoint.h>
 #include <umf/providers/provider_os_memory.h>
+
+#ifdef UMF_BUILD_LIBUMF_POOL_DISJOINT
+#include <umf/pools/pool_disjoint.h>
+#endif
 
 #include <stdbool.h>
 #include <unistd.h>
@@ -145,6 +148,7 @@ UBENCH_EX(simple, os_memory_provider) {
     free(array);
 }
 
+#ifdef UMF_BUILD_LIBUMF_POOL_DISJOINT
 ////////////////// DISJOINT POOL WITH OS MEMORY PROVIDER
 
 static void *w_umfPoolMalloc(void *provider, size_t size, size_t alignment) {
@@ -200,5 +204,6 @@ UBENCH_EX(simple, disjoint_pool_with_os_memory_provider) {
     umfMemoryProviderDestroy(os_memory_provider);
     free(array);
 }
+#endif /* UMF_BUILD_LIBUMF_POOL_DISJOINT */
 
 UBENCH_MAIN();
