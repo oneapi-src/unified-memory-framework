@@ -53,8 +53,8 @@ For development and contributions:
 
 ### Benchmark
 
-Disjoint Pool is a required dependency of the micro benchmark.
-In order to build the benchmark, the `UMF_BUILD_LIBUMF_POOL_DISJOINT` CMake configuration flag has to be turned `ON`.
+A simple micro benchmark based on [ubench](https://github.com/sheredom/ubench.h).
+In order to build the benchmark, the `UMF_BUILD_BENCHMARKS` CMake configuration flag has to be turned `ON`.
 
 ### Windows
 
