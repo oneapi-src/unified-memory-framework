@@ -20,6 +20,20 @@
 using poolCreateExtParams = std::tuple<umf_memory_pool_ops_t *, void *,
                                        umf_memory_provider_ops_t *, void *>;
 
+enum class ErrorReportingStrategyType { Exception, Assert };
+
+template <ErrorReportingStrategyType ErrorReportingStrategy>
+void checkStatus(umf_result_t status, umf_result_t expected) {
+    if constexpr (ErrorReportingStrategy ==
+                  ErrorReportingStrategyType::Assert) {
+        EXPECT_EQ(status, expected);
+    } else if (status != expected) {
+        throw status;
+    }
+}
+
+template <ErrorReportingStrategyType ErrorReportingStrategy =
+              ErrorReportingStrategyType::Exception>
 umf::pool_unique_handle_t poolCreateExt(poolCreateExtParams params) {
     umf_memory_provider_handle_t hProvider;
     umf_memory_pool_handle_t hPool;
@@ -27,10 +41,10 @@ umf::pool_unique_handle_t poolCreateExt(poolCreateExtParams params) {
 
     auto ret =
         umfMemoryProviderCreate(provider_ops, provider_params, &hProvider);
-    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+    checkStatus<ErrorReportingStrategy>(ret, UMF_RESULT_SUCCESS);
 
     ret = umfPoolCreate(pool_ops, hProvider, pool_params, &hPool);
-    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+    checkStatus<ErrorReportingStrategy>(ret, UMF_RESULT_SUCCESS);
 
     // capture provider and destroy it after the pool is destroyed
     auto poolDestructor = [hProvider](umf_memory_pool_handle_t pool) {
