@@ -44,12 +44,6 @@ umfMemoryProviderCreateFromMemspace(umf_memspace_handle_t hMemspace,
                                     umf_memspace_policy_handle_t hPolicy,
                                     umf_memory_provider_handle_t *hProvider);
 
-///
-/// \brief Destroys memspace
-/// \param hMemspace handle to memspace
-///
-void umfMemspaceDestroy(umf_memspace_handle_t hMemspace);
-
 #ifdef __cplusplus
 }
 #endif

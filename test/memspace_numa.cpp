@@ -4,8 +4,9 @@
 
 #include "base.hpp"
 
-#include <umf/memspace.h>
-#include <umf/memspaces/memspace_numa.h>
+#include "memspace_internal.h"
+#include "memspaces/memspace_numa.h"
+
 #include <umf/providers/provider_os_memory.h>
 
 #include <numa.h>

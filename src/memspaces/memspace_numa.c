@@ -11,7 +11,7 @@
 
 #include "../memory_targets/memory_target_numa.h"
 #include "../memspace_internal.h"
-#include <umf/memspaces/memspace_numa.h>
+#include "memspace_numa.h"
 
 enum umf_result_t
 umfMemspaceCreateFromNumaArray(size_t *nodeIds, size_t numIds,
