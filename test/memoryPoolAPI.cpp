@@ -4,25 +4,12 @@
 // This file contains tests for UMF pool API
 
 #include "pool.hpp"
+#include "poolFixtures.hpp"
 #include "provider.hpp"
 #include "provider_null.h"
 #include "test_helpers.h"
 
-#include "memoryPool.hpp"
 #include "umf/memory_provider.h"
-
-#if (defined UMF_BUILD_LIBUMF_POOL_JEMALLOC) ||                                \
-    (defined UMF_BUILD_LIBUMF_POOL_SCALABLE)
-#include "umf/providers/provider_os_memory.h"
-#endif
-
-#ifdef UMF_BUILD_LIBUMF_POOL_JEMALLOC
-#include "umf/pools/pool_jemalloc.h"
-#endif
-
-#ifdef UMF_BUILD_LIBUMF_POOL_SCALABLE
-#include "umf/pools/pool_scalable.h"
-#endif
 
 #include <array>
 #include <string>
@@ -139,39 +126,6 @@ INSTANTIATE_TEST_SUITE_P(
                                           &UMF_NULL_PROVIDER_OPS, nullptr},
                       poolCreateExtParams{&PROXY_POOL_OPS, nullptr,
                                           &MALLOC_PROVIDER_OPS, nullptr}));
-
-#if (defined UMF_BUILD_LIBUMF_POOL_JEMALLOC) ||                                \
-    (defined UMF_BUILD_LIBUMF_POOL_SCALABLE)
-static umf_os_memory_provider_params_t UMF_OS_MEMORY_PROVIDER_PARAMS = {
-    /* .protection = */ UMF_PROTECTION_READ | UMF_PROTECTION_WRITE,
-    /* .visibility = */ UMF_VISIBILITY_PRIVATE,
-
-    // NUMA config
-    /* .nodemask = */ NULL,
-    /* .maxnode = */ 0,
-    /* .numa_mode = */ UMF_NUMA_MODE_DEFAULT,
-    /* .numa_flags = */ 0,
-
-    // others
-    /* .traces = */ 0,
-};
-#endif
-
-#ifdef UMF_BUILD_LIBUMF_POOL_JEMALLOC
-INSTANTIATE_TEST_SUITE_P(jemallocPoolTest, umfPoolTest,
-                         ::testing::Values(poolCreateExtParams{
-                             &UMF_JEMALLOC_POOL_OPS, nullptr,
-                             &UMF_OS_MEMORY_PROVIDER_OPS,
-                             &UMF_OS_MEMORY_PROVIDER_PARAMS}));
-#endif
-
-#ifdef UMF_BUILD_LIBUMF_POOL_SCALABLE
-INSTANTIATE_TEST_SUITE_P(tbbPoolTest, umfPoolTest,
-                         ::testing::Values(poolCreateExtParams{
-                             &UMF_SCALABLE_POOL_OPS, nullptr,
-                             &UMF_OS_MEMORY_PROVIDER_OPS,
-                             &UMF_OS_MEMORY_PROVIDER_PARAMS}));
-#endif
 
 INSTANTIATE_TEST_SUITE_P(mallocMultiPoolTest, umfMultiPoolTest,
                          ::testing::Values(poolCreateExtParams{

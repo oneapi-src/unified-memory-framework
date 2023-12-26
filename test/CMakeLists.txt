@@ -34,18 +34,13 @@ function(add_umf_test)
         umf
         GTest::gtest_main
         ${ARG_LIBS})
-    if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
-        set(TEST_LIBS ${TEST_LIBS} jemalloc_pool)
-    endif()
-    if(UMF_BUILD_LIBUMF_POOL_SCALABLE)
-        set(TEST_LIBS ${TEST_LIBS} scalable_pool)
-    endif()
     add_umf_executable(NAME ${TEST_TARGET_NAME} SRCS ${ARG_SRCS} LIBS ${TEST_LIBS})
 
     target_include_directories(${TEST_TARGET_NAME} PRIVATE
         ${UMF_CMAKE_SOURCE_DIR}/include
         ${UMF_CMAKE_SOURCE_DIR}/src
-        ${UMF_TEST_DIR}/common)
+        ${UMF_TEST_DIR}/common
+        ${UMF_TEST_DIR})
 
     add_test(NAME ${TEST_NAME}
         COMMAND ${TEST_TARGET_NAME}
@@ -60,12 +55,6 @@ function(add_umf_test)
 
     if (UMF_ENABLE_POOL_TRACKING)
         target_compile_definitions(${TEST_TARGET_NAME} PRIVATE UMF_ENABLE_POOL_TRACKING_TESTS=1)
-    endif()
-    if (UMF_BUILD_LIBUMF_POOL_JEMALLOC)
-        target_compile_definitions(${TEST_TARGET_NAME} PRIVATE UMF_BUILD_LIBUMF_POOL_JEMALLOC=1)
-    endif()
-    if (UMF_BUILD_LIBUMF_POOL_SCALABLE)
-        target_compile_definitions(${TEST_TARGET_NAME} PRIVATE UMF_BUILD_LIBUMF_POOL_SCALABLE=1)
     endif()
 endfunction()
 
@@ -82,11 +71,23 @@ add_umf_test(NAME memory_pool_internal
 
 if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
     add_umf_test(NAME disjointPool
-                 SRCS disjoint_pool.cpp malloc_compliance_tests.cpp
+                 SRCS pools/disjoint_pool.cpp malloc_compliance_tests.cpp
                  LIBS disjoint_pool)
     add_umf_test(NAME c_api_disjoint_pool
                  SRCS c_api/disjoint_pool.c
                  LIBS disjoint_pool)
+endif()
+
+if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
+    add_umf_test(NAME jemalloc_pool
+                 SRCS pools/jemalloc_pool.cpp malloc_compliance_tests.cpp
+                 LIBS jemalloc_pool)
+endif()
+
+if(UMF_BUILD_LIBUMF_POOL_SCALABLE)
+    add_umf_test(NAME scalable_pool
+                 SRCS pools/scalable_pool.cpp malloc_compliance_tests.cpp
+                 LIBS scalable_pool)
 endif()
 
 if(LINUX) # OS-specific functions are implemented only for Linux now
