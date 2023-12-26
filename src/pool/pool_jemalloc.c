@@ -19,6 +19,7 @@
 #include <umf/pools/pool_jemalloc.h>
 
 #define MALLOCX_ARENA_MAX (MALLCTL_ARENAS_ALL - 1)
+#define JEMALLOC_METADATA_HOOKS_VERSION "5.3.0"
 
 typedef struct jemalloc_memory_pool_t {
     umf_memory_provider_handle_t provider;
@@ -362,6 +363,8 @@ static umf_result_t je_initialize(umf_memory_provider_handle_t provider,
     assert(provider);
     assert(out_pool);
 
+    umf_result_t error = UMF_RESULT_ERROR_UNKNOWN;
+
     umf_jemalloc_pool_params_t *poolParams =
         (umf_jemalloc_pool_params_t *)params;
 
@@ -390,6 +393,14 @@ static umf_result_t je_initialize(umf_memory_provider_handle_t provider,
         if (err) {
             fprintf(stderr, "Could not create arena. Jemalloc version: %s\n",
                     versionStr);
+            if (versionStr &&
+                strcmp(versionStr, JEMALLOC_METADATA_HOOKS_VERSION) < 0) {
+                error = UMF_RESULT_ERROR_NOT_SUPPORTED;
+                fprintf(stderr,
+                        "metadata_use_provider supported from jemalloc "
+                        "version: %s\n",
+                        JEMALLOC_METADATA_HOOKS_VERSION);
+            }
             goto err_free_pool;
         }
     } else {
@@ -426,7 +437,7 @@ static umf_result_t je_initialize(umf_memory_provider_handle_t provider,
 
 err_free_pool:
     free(pool);
-    return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
+    return error;
 }
 
 static void je_finalize(void *pool) {
