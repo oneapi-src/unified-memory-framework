@@ -7,10 +7,15 @@
  *
  */
 
+#include <umf/memory_pool.h>
 #include <umf/providers/provider_os_memory.h>
 
 #ifdef UMF_BUILD_LIBUMF_POOL_DISJOINT
 #include <umf/pools/pool_disjoint.h>
+#endif
+
+#ifdef UMF_BUILD_LIBUMF_POOL_JEMALLOC
+#include <umf/pools/pool_jemalloc.h>
 #endif
 
 #include <stdbool.h>
@@ -148,8 +153,8 @@ UBENCH_EX(simple, os_memory_provider) {
     free(array);
 }
 
-#ifdef UMF_BUILD_LIBUMF_POOL_DISJOINT
-////////////////// DISJOINT POOL WITH OS MEMORY PROVIDER
+#if (defined UMF_BUILD_LIBUMF_POOL_DISJOINT) ||                                \
+    (defined UMF_BUILD_LIBUMF_POOL_JEMALLOC)
 
 static void *w_umfPoolMalloc(void *provider, size_t size, size_t alignment) {
     umf_memory_pool_handle_t hPool = (umf_memory_pool_handle_t)provider;
@@ -164,6 +169,10 @@ static void w_umfPoolFree(void *provider, void *ptr, size_t size) {
         exit(-1);
     }
 }
+#endif /* (defined UMF_BUILD_LIBUMF_POOL_TBB) || (defined UMF_BUILD_LIBUMF_POOL_JEMALLOC) */
+
+#ifdef UMF_BUILD_LIBUMF_POOL_DISJOINT
+////////////////// DISJOINT POOL WITH OS MEMORY PROVIDER
 
 UBENCH_EX(simple, disjoint_pool_with_os_memory_provider) {
     alloc_t *array = alloc_array(N_ITERATIONS);
@@ -205,5 +214,41 @@ UBENCH_EX(simple, disjoint_pool_with_os_memory_provider) {
     free(array);
 }
 #endif /* UMF_BUILD_LIBUMF_POOL_DISJOINT */
+
+#ifdef UMF_BUILD_LIBUMF_POOL_JEMALLOC
+////////////////// JEMALLOC POOL WITH OS MEMORY PROVIDER
+
+UBENCH_EX(simple, jemalloc_pool_with_os_memory_provider) {
+    alloc_t *array = alloc_array(N_ITERATIONS);
+
+    enum umf_result_t umf_result;
+    umf_memory_provider_handle_t os_memory_provider = NULL;
+    umf_result = umfMemoryProviderCreate(&UMF_OS_MEMORY_PROVIDER_OPS,
+                                         &UMF_OS_MEMORY_PROVIDER_PARAMS,
+                                         &os_memory_provider);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        exit(-1);
+    }
+
+    umf_memory_pool_handle_t jemalloc_pool;
+    umf_result = umfPoolCreate(&UMF_JEMALLOC_POOL_OPS, os_memory_provider, NULL,
+                               &jemalloc_pool);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        exit(-1);
+    }
+
+    do_benchmark(array, N_ITERATIONS, w_umfPoolMalloc, w_umfPoolFree,
+                 jemalloc_pool); // WARMUP
+
+    UBENCH_DO_BENCHMARK() {
+        do_benchmark(array, N_ITERATIONS, w_umfPoolMalloc, w_umfPoolFree,
+                     jemalloc_pool);
+    }
+
+    umfPoolDestroy(jemalloc_pool);
+    umfMemoryProviderDestroy(os_memory_provider);
+    free(array);
+}
+#endif /* UMF_BUILD_LIBUMF_POOL_JEMALLOC */
 
 UBENCH_MAIN();

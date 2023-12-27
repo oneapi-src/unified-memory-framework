@@ -20,7 +20,7 @@ jobs:
       - name: Install apt packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake libnuma-dev
+          sudo apt-get install -y cmake libnuma-dev libjemalloc-dev
 
       - name: Configure build
         run: >
@@ -33,7 +33,7 @@ jobs:
           -DUMF_BUILD_TESTS=OFF
           -DUMF_FORMAT_CODE_STYLE=OFF
           -DUMF_DEVELOPER_MODE=OFF
-          -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=OFF
+          -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
           -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
           -DUMF_ENABLE_POOL_TRACKING=OFF
 

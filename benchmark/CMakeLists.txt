@@ -10,6 +10,10 @@ if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
 	set(LIBS_OPTIONAL ${LIBS_OPTIONAL} disjoint_pool)
 endif()
 
+if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
+	set(LIBS_OPTIONAL ${LIBS_OPTIONAL} jemalloc_pool)
+endif()
+
 add_executable(ubench ubench.c)
 
 add_dependencies(ubench
@@ -26,4 +30,8 @@ target_link_libraries(ubench
 
 if (UMF_BUILD_LIBUMF_POOL_DISJOINT)
 	target_compile_definitions(ubench PRIVATE UMF_BUILD_LIBUMF_POOL_DISJOINT=1)
+endif()
+
+if (UMF_BUILD_LIBUMF_POOL_JEMALLOC)
+	target_compile_definitions(ubench PRIVATE UMF_BUILD_LIBUMF_POOL_JEMALLOC=1)
 endif()
