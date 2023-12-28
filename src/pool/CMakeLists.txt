@@ -41,3 +41,19 @@ if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
         message(FATAL_ERROR "libumf_pool_jemalloc is supported on Linux only")
     endif()
 endif()
+
+# libumf_pool_scalable
+if(UMF_BUILD_LIBUMF_POOL_SCALABLE)
+    if(LINUX)
+        add_umf_library(NAME scalable_pool
+                        TYPE STATIC
+                        SRCS pool_scalable.c
+                        LIBS dl)
+        add_library(${PROJECT_NAME}::scalable_pool ALIAS scalable_pool)
+        install(TARGETS scalable_pool
+            EXPORT ${PROJECT_NAME}-targets
+        )
+    else()
+        message(FATAL_ERROR "libumf_pool_scalable is supported on Linux only")
+    endif()
+endif()

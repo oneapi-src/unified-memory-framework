@@ -39,6 +39,17 @@ The `UMF_BUILD_LIBUMF_POOL_JEMALLOC` option has to be turned `ON` to build this 
 2) Required packages:
 - libjemalloc-dev
 
+### libumf_pool_scalable (Linux-only)
+
+libumf_pool_scalable is a [oneTBB](https://github.com/oneapi-src/oneTBB)-based memory pool manager built as a separate static library.
+The `UMF_BUILD_LIBUMF_POOL_SCALABLE` option has to be turned `ON` to build this library.
+
+#### Requirements
+
+1) The `UMF_BUILD_LIBUMF_POOL_SCALABLE` option turned `ON`
+2) Required packages:
+- libtbb-dev (libraries: libtbbmalloc.so.2)
+
 ## Building
 
 ### Requirements
@@ -102,6 +113,7 @@ List of options provided by CMake:
 | UMF_BUILD_SHARED_LIBRARY | Build UMF as shared library | ON/OFF | OFF |
 | UMF_BUILD_LIBUMF_POOL_DISJOINT | Build the libumf_pool_disjoint static library | ON/OFF | OFF |
 | UMF_BUILD_LIBUMF_POOL_JEMALLOC | Build the libumf_pool_jemalloc static library | ON/OFF | OFF |
+| UMF_BUILD_LIBUMF_POOL_SCALABLE | Build the libumf_pool_scalable static library | ON/OFF | OFF |
 | UMF_BUILD_TESTS | Build UMF tests | ON/OFF | ON |
 | UMF_BUILD_BENCHMARKS | Build UMF benchmarks | ON/OFF | OFF |
 | UMF_ENABLE_POOL_TRACKING | Build UMF with pool tracking | ON/OFF | ON |
