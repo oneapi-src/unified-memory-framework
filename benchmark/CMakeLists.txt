@@ -14,6 +14,10 @@ if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
 	set(LIBS_OPTIONAL ${LIBS_OPTIONAL} jemalloc_pool)
 endif()
 
+if(UMF_BUILD_LIBUMF_POOL_SCALABLE)
+	set(LIBS_OPTIONAL ${LIBS_OPTIONAL} scalable_pool)
+endif()
+
 add_executable(ubench ubench.c)
 
 add_dependencies(ubench
@@ -34,4 +38,8 @@ endif()
 
 if (UMF_BUILD_LIBUMF_POOL_JEMALLOC)
 	target_compile_definitions(ubench PRIVATE UMF_BUILD_LIBUMF_POOL_JEMALLOC=1)
+endif()
+
+if (UMF_BUILD_LIBUMF_POOL_SCALABLE)
+	target_compile_definitions(ubench PRIVATE UMF_BUILD_LIBUMF_POOL_SCALABLE=1)
 endif()
