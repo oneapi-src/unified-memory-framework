@@ -18,8 +18,10 @@ jobs:
             include:
                 - os: ubuntu-latest
                   nproc: $(nproc)
+                  pool_scalable: 'ON'
                 - os: windows-latest
                   nproc: $Env:NUMBER_OF_PROCESSORS
+                  pool_scalable: 'OFF'
     runs-on: ${{matrix.os}}
             
     steps:
@@ -35,7 +37,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake clang libnuma-dev libjemalloc-dev
+        sudo apt-get install -y cmake clang libnuma-dev libjemalloc-dev libtbb-dev
 
     - name: Install pip packages
       run: python3 -m pip install -r third_party/requirements.txt
@@ -48,6 +50,7 @@ jobs:
         -DUMF_FORMAT_CODE_STYLE=ON
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_ENABLE_POOL_TRACKING=ON
+        -DUMF_BUILD_LIBUMF_POOL_SCALABLE=${{matrix.pool_scalable}}
 
     - name: Build
       run: >

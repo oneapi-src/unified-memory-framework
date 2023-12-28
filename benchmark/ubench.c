@@ -169,7 +169,7 @@ static void w_umfPoolFree(void *provider, void *ptr, size_t size) {
         exit(-1);
     }
 }
-#endif /* (defined UMF_BUILD_LIBUMF_POOL_TBB) || (defined UMF_BUILD_LIBUMF_POOL_JEMALLOC) */
+#endif /* (defined UMF_BUILD_LIBUMF_POOL_DISJOINT) || (defined UMF_BUILD_LIBUMF_POOL_JEMALLOC) */
 
 #ifdef UMF_BUILD_LIBUMF_POOL_DISJOINT
 ////////////////// DISJOINT POOL WITH OS MEMORY PROVIDER
