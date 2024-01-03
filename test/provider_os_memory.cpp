@@ -6,14 +6,21 @@
 
 #include "provider_os_memory_internal.h"
 #include "umf/providers/provider_os_memory.h"
+#include "umf_helpers.hpp"
 #include <umf/memory_provider.h>
 
 using umf_test::test;
 
-#define SIZE_4K (4096)
+#define INVALID_PTR ((void *)0x01)
 
 #define ASSERT_IS_ALIGNED(ptr, alignment)                                      \
     ASSERT_EQ(((uintptr_t)ptr % alignment), 0)
+
+typedef enum purge_t {
+    PURGE_NONE = 0,
+    PURGE_LAZY = 1,
+    PURGE_FORCE = 2,
+} purge_t;
 
 static umf_os_memory_provider_params_t UMF_OS_MEMORY_PROVIDER_PARAMS_TEST = {
     /* .protection = */ UMF_PROTECTION_READ | UMF_PROTECTION_WRITE,
@@ -39,28 +46,101 @@ static const char *Native_error_str[] = {
     "force purging failed", // UMF_OS_RESULT_ERROR_PURGE_FORCE_FAILED
 };
 
+// test helpers
+
 static int compare_native_error_str(const char *message, int error) {
     const char *error_str = Native_error_str[error - UMF_OS_RESULT_SUCCESS];
     size_t len = strlen(error_str);
     return strncmp(message, error_str, len);
 }
 
-TEST_F(test, provider_os_memory_create_destroy) {
-    umf_result_t umf_result;
-    umf_memory_provider_handle_t os_memory_provider = nullptr;
-    umf_os_memory_provider_params_t os_memory_provider_params =
-        UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
+using providerCreateExtParams = std::tuple<umf_memory_provider_ops_t *, void *>;
 
-    umf_result = umfMemoryProviderCreate(&UMF_OS_MEMORY_PROVIDER_OPS,
-                                         &os_memory_provider_params,
-                                         &os_memory_provider);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(os_memory_provider, nullptr);
+umf::provider_unique_handle_t
+providerCreateExt(providerCreateExtParams params) {
+    umf_memory_provider_handle_t hProvider;
+    auto [provider_ops, provider_params] = params;
 
-    umfMemoryProviderDestroy(os_memory_provider);
+    auto ret =
+        umfMemoryProviderCreate(provider_ops, provider_params, &hProvider);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+    EXPECT_NE(hProvider, nullptr);
+
+    return umf::provider_unique_handle_t(hProvider, &umfMemoryProviderDestroy);
 }
 
-TEST_F(test, provider_os_memory_create_UMF_NUMA_MODE_NOT_SUPPORTED) {
+struct umfProviderTest
+    : umf_test::test,
+      ::testing::WithParamInterface<providerCreateExtParams> {
+    void SetUp() override {
+        test::SetUp();
+        provider = providerCreateExt(this->GetParam());
+        umf_result_t umf_result =
+            umfMemoryProviderGetMinPageSize(provider.get(), NULL, &page_size);
+        EXPECT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+        page_plus_64 = page_size + 64;
+    }
+
+    void TearDown() override { test::TearDown(); }
+
+    umf::provider_unique_handle_t provider;
+    size_t page_size;
+    size_t page_plus_64;
+};
+
+static void test_alloc_free_success(umf_memory_provider_handle_t provider,
+                                    size_t size, size_t alignment,
+                                    purge_t purge) {
+    void *ptr = nullptr;
+
+    umf_result_t umf_result =
+        umfMemoryProviderAlloc(provider, size, alignment, &ptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(ptr, nullptr);
+
+    memset(ptr, 0xFF, size);
+
+    if (purge == PURGE_LAZY) {
+        umf_result = umfMemoryProviderPurgeLazy(provider, ptr, size);
+        ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    } else if (purge == PURGE_FORCE) {
+        umf_result = umfMemoryProviderPurgeForce(provider, ptr, size);
+        ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    }
+
+    umf_result = umfMemoryProviderFree(provider, ptr, size);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+}
+
+static void verify_last_native_error(umf_memory_provider_handle_t provider,
+                                     int32_t err) {
+    const char *message;
+    int32_t error;
+    umfMemoryProviderGetLastNativeError(provider, &message, &error);
+    ASSERT_EQ(error, err);
+    ASSERT_EQ(compare_native_error_str(message, error), 0);
+}
+
+static void test_alloc_failure(umf_memory_provider_handle_t provider,
+                               size_t size, size_t alignment,
+                               umf_result_t result, int32_t err) {
+    void *ptr = nullptr;
+    umf_result_t umf_result =
+        umfMemoryProviderAlloc(provider, size, alignment, &ptr);
+    ASSERT_EQ(umf_result, result);
+    ASSERT_EQ(ptr, nullptr);
+
+    if (umf_result == UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC) {
+        verify_last_native_error(provider, err);
+    }
+}
+
+// TESTS
+
+// negative tests for umfMemoryProviderCreate()
+
+TEST_F(test, create_WRONG_NUMA_MODE) {
     umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = nullptr;
     umf_os_memory_provider_params_t os_memory_provider_params =
@@ -77,7 +157,7 @@ TEST_F(test, provider_os_memory_create_UMF_NUMA_MODE_NOT_SUPPORTED) {
     ASSERT_EQ(os_memory_provider, nullptr);
 }
 
-TEST_F(test, provider_os_memory_create_MBIND_FAILED) {
+TEST_F(test, create_WRONG_NUMA_FLAGS) {
     umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = nullptr;
     umf_os_memory_provider_params_t os_memory_provider_params =
@@ -93,342 +173,114 @@ TEST_F(test, provider_os_memory_create_MBIND_FAILED) {
     ASSERT_EQ(os_memory_provider, nullptr);
 }
 
-TEST_F(test, provider_os_memory_alloc_free_4k_alignment_0) {
-    umf_result_t umf_result;
-    umf_memory_provider_handle_t os_memory_provider = nullptr;
-    umf_os_memory_provider_params_t os_memory_provider_params =
-        UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
+// positive tests using test_alloc_free_success
 
-    umf_result = umfMemoryProviderCreate(&UMF_OS_MEMORY_PROVIDER_OPS,
-                                         &os_memory_provider_params,
-                                         &os_memory_provider);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(os_memory_provider, nullptr);
+INSTANTIATE_TEST_SUITE_P(osProviderTest, umfProviderTest,
+                         ::testing::Values(providerCreateExtParams{
+                             &UMF_OS_MEMORY_PROVIDER_OPS,
+                             &UMF_OS_MEMORY_PROVIDER_PARAMS_TEST}));
 
-    void *ptr = nullptr;
-    size_t size = SIZE_4K;
-    size_t alignment = 0;
-    umf_result =
-        umfMemoryProviderAlloc(os_memory_provider, size, alignment, &ptr);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(ptr, nullptr);
+TEST_P(umfProviderTest, create_destroy) {}
 
-    memset(ptr, 0xFF, size);
-
-    umf_result = umfMemoryProviderFree(os_memory_provider, ptr, size);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-
-    umfMemoryProviderDestroy(os_memory_provider);
+TEST_P(umfProviderTest, alloc_page64_align_0) {
+    test_alloc_free_success(provider.get(), page_plus_64, 0, PURGE_NONE);
 }
 
-TEST_F(test, provider_os_memory_alloc_free_2k_alignment_2k) {
-    umf_result_t umf_result;
-    umf_memory_provider_handle_t os_memory_provider = nullptr;
-    umf_os_memory_provider_params_t os_memory_provider_params =
-        UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
-
-    umf_result = umfMemoryProviderCreate(&UMF_OS_MEMORY_PROVIDER_OPS,
-                                         &os_memory_provider_params,
-                                         &os_memory_provider);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(os_memory_provider, nullptr);
-
-    void *ptr = nullptr;
-    size_t size = SIZE_4K / 2;
-    size_t alignment = SIZE_4K / 2;
-    umf_result =
-        umfMemoryProviderAlloc(os_memory_provider, size, alignment, &ptr);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(ptr, nullptr);
-    ASSERT_IS_ALIGNED(ptr, alignment);
-
-    memset(ptr, 0xFF, size);
-
-    umf_result = umfMemoryProviderFree(os_memory_provider, ptr, size);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-
-    umfMemoryProviderDestroy(os_memory_provider);
+TEST_P(umfProviderTest, alloc_page64_align_page_div_2) {
+    test_alloc_free_success(provider.get(), page_plus_64, page_size / 2,
+                            PURGE_NONE);
 }
 
-TEST_F(test, provider_os_memory_alloc_free_8k_alignment_8k) {
-    umf_result_t umf_result;
-    umf_memory_provider_handle_t os_memory_provider = nullptr;
-    umf_os_memory_provider_params_t os_memory_provider_params =
-        UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
-
-    umf_result = umfMemoryProviderCreate(&UMF_OS_MEMORY_PROVIDER_OPS,
-                                         &os_memory_provider_params,
-                                         &os_memory_provider);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(os_memory_provider, nullptr);
-
-    void *ptr = nullptr;
-    size_t size = 2 * SIZE_4K;
-    size_t alignment = 2 * SIZE_4K;
-    umf_result =
-        umfMemoryProviderAlloc(os_memory_provider, size, alignment, &ptr);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(ptr, nullptr);
-    ASSERT_IS_ALIGNED(ptr, alignment);
-
-    memset(ptr, 0xFF, size);
-
-    umf_result = umfMemoryProviderFree(os_memory_provider, ptr, size);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-
-    umfMemoryProviderDestroy(os_memory_provider);
+TEST_P(umfProviderTest, alloc_page64_align_3_pages) {
+    test_alloc_free_success(provider.get(), page_plus_64, 3 * page_size,
+                            PURGE_NONE);
 }
 
-TEST_F(test, provider_os_memory_alloc_WRONG_ALIGNMENT) {
-    umf_result_t umf_result;
-    umf_memory_provider_handle_t os_memory_provider = nullptr;
-    umf_os_memory_provider_params_t os_memory_provider_params =
-        UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
-
-    umf_result = umfMemoryProviderCreate(&UMF_OS_MEMORY_PROVIDER_OPS,
-                                         &os_memory_provider_params,
-                                         &os_memory_provider);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(os_memory_provider, nullptr);
-
-    void *ptr = nullptr;
-    size_t size = SIZE_4K;
-    size_t alignment = SIZE_4K - 1; // wrong alignment
-    umf_result =
-        umfMemoryProviderAlloc(os_memory_provider, size, alignment, &ptr);
-    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
-    ASSERT_EQ(ptr, nullptr);
-
-    umfMemoryProviderDestroy(os_memory_provider);
+TEST_P(umfProviderTest, alloc_3pages_align_3pages) {
+    test_alloc_free_success(provider.get(), 3 * page_size, 3 * page_size,
+                            PURGE_NONE);
 }
 
-TEST_F(test, provider_os_memory_alloc_MMAP_FAILED) {
-    umf_result_t umf_result;
-    umf_memory_provider_handle_t os_memory_provider = nullptr;
-    umf_os_memory_provider_params_t os_memory_provider_params =
-        UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
-
-    umf_result = umfMemoryProviderCreate(&UMF_OS_MEMORY_PROVIDER_OPS,
-                                         &os_memory_provider_params,
-                                         &os_memory_provider);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(os_memory_provider, nullptr);
-
-    void *ptr = nullptr;
-    size_t size = -1; // wrong size
-    size_t alignment = 0;
-    umf_result =
-        umfMemoryProviderAlloc(os_memory_provider, size, alignment, &ptr);
-    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC);
-    ASSERT_EQ(ptr, nullptr);
-
-    const char *message;
-    int32_t error;
-    umfMemoryProviderGetLastNativeError(os_memory_provider, &message, &error);
-    ASSERT_EQ(error, UMF_OS_RESULT_ERROR_ALLOC_FAILED);
-    ASSERT_EQ(compare_native_error_str(message, error), 0);
-
-    umfMemoryProviderDestroy(os_memory_provider);
+TEST_P(umfProviderTest, purge_lazy) {
+    test_alloc_free_success(provider.get(), page_plus_64, 0, PURGE_LAZY);
 }
 
-TEST_F(test, provider_os_memory_free_MUNMAP_FAILED) {
-    umf_result_t umf_result;
-    umf_memory_provider_handle_t os_memory_provider = nullptr;
-    umf_os_memory_provider_params_t os_memory_provider_params =
-        UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
-
-    umf_result = umfMemoryProviderCreate(&UMF_OS_MEMORY_PROVIDER_OPS,
-                                         &os_memory_provider_params,
-                                         &os_memory_provider);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(os_memory_provider, nullptr);
-
-    umf_result = umfMemoryProviderFree(os_memory_provider, (void *)0x01, 0);
-    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC);
-
-    const char *message;
-    int32_t error;
-    umfMemoryProviderGetLastNativeError(os_memory_provider, &message, &error);
-    ASSERT_EQ(error, UMF_OS_RESULT_ERROR_FREE_FAILED);
-    ASSERT_EQ(compare_native_error_str(message, error), 0);
-
-    umfMemoryProviderDestroy(os_memory_provider);
+TEST_P(umfProviderTest, purge_force) {
+    test_alloc_free_success(provider.get(), page_plus_64, 0, PURGE_FORCE);
 }
 
-TEST_F(test, provider_os_memory_get_min_page_size) {
-    umf_result_t umf_result;
-    umf_memory_provider_handle_t os_memory_provider = nullptr;
-    umf_os_memory_provider_params_t os_memory_provider_params =
-        UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
+// negative tests using test_alloc_failure
 
-    umf_result = umfMemoryProviderCreate(&UMF_OS_MEMORY_PROVIDER_OPS,
-                                         &os_memory_provider_params,
-                                         &os_memory_provider);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(os_memory_provider, nullptr);
+TEST_P(umfProviderTest, alloc_page64_align_page_minus_1_WRONG_ALIGNMENT_1) {
+    test_alloc_failure(provider.get(), page_plus_64, page_size - 1,
+                       UMF_RESULT_ERROR_INVALID_ARGUMENT, 0);
+}
 
+TEST_P(umfProviderTest, alloc_page64_align_one_half_pages_WRONG_ALIGNMENT_2) {
+    test_alloc_failure(provider.get(), page_plus_64,
+                       page_size + (page_size / 2),
+                       UMF_RESULT_ERROR_INVALID_ARGUMENT, 0);
+}
+
+TEST_P(umfProviderTest, alloc_WRONG_SIZE) {
+    test_alloc_failure(provider.get(), -1, 0,
+                       UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC,
+                       UMF_OS_RESULT_ERROR_ALLOC_FAILED);
+}
+
+// other positive tests
+
+TEST_P(umfProviderTest, get_min_page_size) {
     size_t min_page_size;
-    umf_result = umfMemoryProviderGetMinPageSize(os_memory_provider, nullptr,
-                                                 &min_page_size);
+    umf_result_t umf_result = umfMemoryProviderGetMinPageSize(
+        provider.get(), nullptr, &min_page_size);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_LE(min_page_size, SIZE_4K);
-
-    umfMemoryProviderDestroy(os_memory_provider);
+    ASSERT_LE(min_page_size, page_plus_64);
 }
 
-TEST_F(test, provider_os_memory_get_recommended_page_size) {
-    umf_result_t umf_result;
-    umf_memory_provider_handle_t os_memory_provider = nullptr;
-    umf_os_memory_provider_params_t os_memory_provider_params =
-        UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
-
-    umf_result = umfMemoryProviderCreate(&UMF_OS_MEMORY_PROVIDER_OPS,
-                                         &os_memory_provider_params,
-                                         &os_memory_provider);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(os_memory_provider, nullptr);
-
+TEST_P(umfProviderTest, get_recommended_page_size) {
     size_t min_page_size;
-    umf_result = umfMemoryProviderGetMinPageSize(os_memory_provider, nullptr,
-                                                 &min_page_size);
+    umf_result_t umf_result = umfMemoryProviderGetMinPageSize(
+        provider.get(), nullptr, &min_page_size);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_LE(min_page_size, SIZE_4K);
+    ASSERT_LE(min_page_size, page_plus_64);
 
     size_t recommended_page_size;
     umf_result = umfMemoryProviderGetRecommendedPageSize(
-        os_memory_provider, 0, &recommended_page_size);
+        provider.get(), 0, &recommended_page_size);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_GE(recommended_page_size, min_page_size);
-
-    umfMemoryProviderDestroy(os_memory_provider);
 }
 
-TEST_F(test, provider_os_memory_purge_lazy) {
-    umf_result_t umf_result;
-    umf_memory_provider_handle_t os_memory_provider = nullptr;
-    umf_os_memory_provider_params_t os_memory_provider_params =
-        UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
-
-    umf_result = umfMemoryProviderCreate(&UMF_OS_MEMORY_PROVIDER_OPS,
-                                         &os_memory_provider_params,
-                                         &os_memory_provider);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(os_memory_provider, nullptr);
-
-    void *ptr = nullptr;
-    size_t size = SIZE_4K;
-    size_t alignment = 0;
-    umf_result =
-        umfMemoryProviderAlloc(os_memory_provider, size, alignment, &ptr);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(ptr, nullptr);
-
-    memset(ptr, 0xFF, size);
-
-    umf_result = umfMemoryProviderPurgeLazy(os_memory_provider, ptr, size);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-
-    umf_result = umfMemoryProviderFree(os_memory_provider, ptr, size);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-
-    umfMemoryProviderDestroy(os_memory_provider);
-}
-
-TEST_F(test, provider_os_memory_purge_lazy_MADVISE_FREE_FAILED) {
-    umf_result_t umf_result;
-    umf_memory_provider_handle_t os_memory_provider = nullptr;
-    umf_os_memory_provider_params_t os_memory_provider_params =
-        UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
-
-    umf_result = umfMemoryProviderCreate(&UMF_OS_MEMORY_PROVIDER_OPS,
-                                         &os_memory_provider_params,
-                                         &os_memory_provider);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(os_memory_provider, nullptr);
-
-    umf_result =
-        umfMemoryProviderPurgeLazy(os_memory_provider, (void *)0x01, 1);
-    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC);
-
-    const char *message;
-    int32_t error;
-    umfMemoryProviderGetLastNativeError(os_memory_provider, &message, &error);
-    ASSERT_EQ(error, UMF_OS_RESULT_ERROR_PURGE_LAZY_FAILED);
-    ASSERT_EQ(compare_native_error_str(message, error), 0);
-
-    umfMemoryProviderDestroy(os_memory_provider);
-}
-
-TEST_F(test, provider_os_memory_purge_force) {
-    umf_result_t umf_result;
-    umf_memory_provider_handle_t os_memory_provider = nullptr;
-    umf_os_memory_provider_params_t os_memory_provider_params =
-        UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
-
-    umf_result = umfMemoryProviderCreate(&UMF_OS_MEMORY_PROVIDER_OPS,
-                                         &os_memory_provider_params,
-                                         &os_memory_provider);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(os_memory_provider, nullptr);
-
-    void *ptr = nullptr;
-    size_t size = SIZE_4K;
-    size_t alignment = 0;
-    umf_result =
-        umfMemoryProviderAlloc(os_memory_provider, size, alignment, &ptr);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(ptr, nullptr);
-
-    memset(ptr, 0xFF, size);
-
-    umf_result = umfMemoryProviderPurgeForce(os_memory_provider, ptr, size);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-
-    umf_result = umfMemoryProviderFree(os_memory_provider, ptr, size);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-
-    umfMemoryProviderDestroy(os_memory_provider);
-}
-
-TEST_F(test, provider_os_memory_purge_force_MADVISE_DONTNEED_FAILED) {
-    umf_result_t umf_result;
-    umf_memory_provider_handle_t os_memory_provider = nullptr;
-    umf_os_memory_provider_params_t os_memory_provider_params =
-        UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
-
-    umf_result = umfMemoryProviderCreate(&UMF_OS_MEMORY_PROVIDER_OPS,
-                                         &os_memory_provider_params,
-                                         &os_memory_provider);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(os_memory_provider, nullptr);
-
-    umf_result =
-        umfMemoryProviderPurgeForce(os_memory_provider, (void *)0x01, 1);
-    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC);
-
-    const char *message;
-    int32_t error;
-    umfMemoryProviderGetLastNativeError(os_memory_provider, &message, &error);
-    ASSERT_EQ(error, UMF_OS_RESULT_ERROR_PURGE_FORCE_FAILED);
-    ASSERT_EQ(compare_native_error_str(message, error), 0);
-
-    umfMemoryProviderDestroy(os_memory_provider);
-}
-
-TEST_F(test, provider_os_memory_get_name) {
-    umf_result_t umf_result;
-    umf_memory_provider_handle_t os_memory_provider = nullptr;
-    umf_os_memory_provider_params_t os_memory_provider_params =
-        UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
-
-    umf_result = umfMemoryProviderCreate(&UMF_OS_MEMORY_PROVIDER_OPS,
-                                         &os_memory_provider_params,
-                                         &os_memory_provider);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(os_memory_provider, nullptr);
-
-    const char *name = umfMemoryProviderGetName(os_memory_provider);
+TEST_P(umfProviderTest, get_name) {
+    const char *name = umfMemoryProviderGetName(provider.get());
     ASSERT_STREQ(name, "OS");
+}
 
-    umfMemoryProviderDestroy(os_memory_provider);
+// other negative tests
+
+TEST_P(umfProviderTest, free_INVALID_POINTER) {
+    umf_result_t umf_result =
+        umfMemoryProviderFree(provider.get(), INVALID_PTR, 0);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC);
+
+    verify_last_native_error(provider.get(), UMF_OS_RESULT_ERROR_FREE_FAILED);
+}
+
+TEST_P(umfProviderTest, purge_lazy_INVALID_POINTER) {
+    umf_result_t umf_result =
+        umfMemoryProviderPurgeLazy(provider.get(), INVALID_PTR, 1);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC);
+
+    verify_last_native_error(provider.get(),
+                             UMF_OS_RESULT_ERROR_PURGE_LAZY_FAILED);
+}
+
+TEST_P(umfProviderTest, purge_force_INVALID_POINTER) {
+    umf_result_t umf_result =
+        umfMemoryProviderPurgeForce(provider.get(), INVALID_PTR, 1);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC);
+
+    verify_last_native_error(provider.get(),
+                             UMF_OS_RESULT_ERROR_PURGE_FORCE_FAILED);
 }
