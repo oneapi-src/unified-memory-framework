@@ -51,8 +51,8 @@ TEST_F(test, freeErrorPropagation) {
     params.MaxPoolableSize = 0;
 
     umf_memory_pool_handle_t pool = NULL;
-    umf_result_t retp =
-        umfPoolCreate(&UMF_DISJOINT_POOL_OPS, provider_handle, &params, &pool);
+    umf_result_t retp = umfPoolCreate(&UMF_DISJOINT_POOL_OPS, provider_handle,
+                                      &params, 0, &pool);
     EXPECT_EQ(retp, UMF_RESULT_SUCCESS);
     auto poolHandle = umf_test::wrapPoolUnique(pool);
 
@@ -113,12 +113,12 @@ TEST_F(test, sharedLimits) {
     umf_memory_pool_handle_t pool1 = NULL;
     umf_memory_pool_handle_t pool2 = NULL;
     auto ret = umfPoolCreate(&UMF_DISJOINT_POOL_OPS, provider.get(),
-                             (void *)&config, &pool1);
+                             (void *)&config, 0, &pool1);
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
     auto poolHandle1 = umf_test::wrapPoolUnique(pool1);
 
     ret = umfPoolCreate(&UMF_DISJOINT_POOL_OPS, provider.get(), (void *)&config,
-                        &pool2);
+                        0, &pool2);
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
     auto poolHandle2 = umf_test::wrapPoolUnique(pool2);
 

@@ -31,7 +31,7 @@ umf_memory_pool_handle_t
 createPoolChecked(umf_memory_pool_ops_t *ops,
                   umf_memory_provider_handle_t hProvider, void *params) {
     umf_memory_pool_handle_t hPool;
-    auto ret = umfPoolCreate(ops, hProvider, params, &hPool);
+    auto ret = umfPoolCreate(ops, hProvider, params, 0, &hPool);
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
     return hPool;
 }

@@ -66,7 +66,7 @@ tracePoolCreate(umf_memory_pool_handle_t hUpstreamPool,
 
     umf_memory_pool_handle_t hPool;
     umf_result_t ret =
-        umfPoolCreate(&UMF_TRACE_POOL_OPS, providerDesc, &params, &hPool);
+        umfPoolCreate(&UMF_TRACE_POOL_OPS, providerDesc, &params, 0, &hPool);
 
     (void)ret; /* silence unused variable warning */
     assert(ret == UMF_RESULT_SUCCESS);
