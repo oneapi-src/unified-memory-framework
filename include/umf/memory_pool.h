@@ -44,6 +44,23 @@ UMF_EXPORT umf_result_t umfPoolCreate(const umf_memory_pool_ops_t *ops,
                                       umf_memory_pool_handle_t *hPool);
 
 ///
+/// @brief Creates new memory pool with new memory provider.
+///        Memory provider is created from specified provider_ops and provider_params
+///        and passed to pool_ops::initialize. The provider is owned by the pool and
+///        destroyed in umfPoolDestroy.
+/// @param pool_ops instance of umf_memory_pool_ops_t
+/// @param pool_params pointer to pool-specific parameters
+/// @param provider_ops instance of umf_memory_provider_ops_t
+/// @param provider_params pointer to provider-specific parameters
+/// @param hPool [out] handle to the newly created memory pool
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+///
+UMF_EXPORT umf_result_t
+umfPoolCreateEx(const umf_memory_pool_ops_t *pool_ops, void *pool_params,
+                const umf_memory_provider_ops_t *provider_ops,
+                void *provider_params, umf_memory_pool_handle_t *hPool);
+
+///
 /// @brief Destroys memory pool.
 /// @param hPool handle to the pool
 ///
