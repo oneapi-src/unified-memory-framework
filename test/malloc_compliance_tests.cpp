@@ -57,15 +57,21 @@ void malloc_compliance_test(umf_memory_pool_handle_t hPool) {
         alloc_ptr_size[i] = rand_alloc_size(MAX_ALLOC_SIZE);
         alloc_ptr[i] = umfPoolMalloc(hPool, alloc_ptr_size[i]);
 
-#ifndef _WIN32 // TODO: explain why it fails on some Windows systems
         // Supported under USE_WEAK_ALIGNMENT_RULES macro
         // For compatibility, on 64-bit systems malloc should align to 16 bytes
-        size_t alignment =
-            (sizeof(intptr_t) > 4 && alloc_ptr_size[i] > 8) ? 16 : 8;
+        // However it is not true in case of Windows OS in the Release build
+#if (_WIN32 || _WIN64) && (!DEBUG)
+// Windows OS Release build
+#define ALIGNMENT_X64_GT_8B 8
+#else
+#define ALIGNMENT_X64_GT_8B 16
+#endif
+        size_t alignment = (sizeof(intptr_t) > 4 && alloc_ptr_size[i] > 8)
+                               ? ALIGNMENT_X64_GT_8B
+                               : 8;
         ASSERT_NE(addressIsAligned(alloc_ptr[i], alignment), 0)
             << "Malloc should return pointer that is suitably aligned so that "
                "it may be assigned to a pointer to any type of object";
-#endif
 
         // Fill memory with a pattern ((id of the allocation) % 256)
         ASSERT_NE(alloc_ptr[i], nullptr)
