@@ -91,5 +91,6 @@ endif()
 
 if(LINUX) # OS-specific functions are implemented only for Linux now
     add_umf_test(NAME provider_os_memory
-                 SRCS provider_os_memory.cpp)
+                 SRCS provider_os_memory.cpp
+                 LIBS umf_utils)
 endif()

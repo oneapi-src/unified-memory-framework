@@ -4,6 +4,8 @@
 
 include(${UMF_CMAKE_SOURCE_DIR}/cmake/helpers.cmake)
 
+add_subdirectory(utils)
+
 set(UMF_SOURCES
     memory_pool.c
     memory_provider.c
@@ -15,34 +17,23 @@ set(UMF_SOURCES
 
 set(UMF_SOURCES_LINUX
     provider/provider_os_memory_linux.c
-    utils/utils_posix_concurrency.c
-    utils/utils_posix_math.c
 )
 
 set(UMF_SOURCES_WINDOWS
     provider/provider_os_memory_windows.c
     provider/provider_tracking_windows.cpp
-    utils/utils_windows_concurrency.c
-    utils/utils_windows_math.c
 )
-
-set(UMF_SOURCES_MACOSX
-    utils/utils_posix_concurrency.c
-    utils/utils_posix_math.c
-)
-
-if(LINUX)
-    set(UMF_LIBS numa)
-else()
-    set(UMF_LIBS)
-endif()
 
 if(LINUX)
     set(UMF_SOURCES ${UMF_SOURCES} ${UMF_SOURCES_LINUX})
 elseif(WINDOWS)
     set(UMF_SOURCES ${UMF_SOURCES} ${UMF_SOURCES_WINDOWS})
-elseif(MACOSX)
-    set(UMF_SOURCES ${UMF_SOURCES} ${UMF_SOURCES_MACOSX})
+endif()
+
+if(LINUX)
+    set(UMF_LIBS umf_utils numa)
+else()
+    set(UMF_LIBS umf_utils)
 endif()
 
 if(UMF_BUILD_SHARED_LIBRARY)
@@ -70,10 +61,8 @@ add_library(${PROJECT_NAME}::umf ALIAS umf)
 
 target_include_directories(umf PUBLIC 
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/common>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/critnib>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/provider>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/utils>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 

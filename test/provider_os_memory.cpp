@@ -4,9 +4,9 @@
 
 #include "base.hpp"
 
+#include "cpp_helpers.hpp"
 #include "provider_os_memory_internal.h"
 #include "umf/providers/provider_os_memory.h"
-#include "umf_helpers.hpp"
 #include <umf/memory_provider.h>
 
 using umf_test::test;

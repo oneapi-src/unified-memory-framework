@@ -23,7 +23,7 @@
 
 #include <tbb/scalable_allocator.h>
 
-#include "common.h"
+#include "utils_common.h"
 
 typedef void *(*raw_alloc_tbb_type)(intptr_t, size_t *);
 typedef void (*raw_free_tbb_type)(intptr_t, void *, size_t);

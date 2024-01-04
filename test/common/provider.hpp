@@ -16,7 +16,7 @@
 #include <gtest/gtest.h>
 
 #include "base.hpp"
-#include "umf_helpers.hpp"
+#include "cpp_helpers.hpp"
 
 namespace umf_test {
 

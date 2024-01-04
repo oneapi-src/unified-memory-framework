@@ -8,7 +8,7 @@
 #ifndef UMF_OS_MEMORY_PROVIDER_INTERNAL_H
 #define UMF_OS_MEMORY_PROVIDER_INTERNAL_H
 
-#include "common.h"
+#include "utils_common.h"
 #include <umf/providers/provider_os_memory.h>
 
 #ifdef __cplusplus
