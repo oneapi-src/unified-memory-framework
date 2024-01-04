@@ -105,9 +105,8 @@ static int os_translate_purge_advise(umf_purge_advise_t advise) {
     return -1;
 }
 
-long os_mbind(void *addr, unsigned long len, int mode,
-              const unsigned long *nodemask, unsigned long maxnode,
-              unsigned flags) {
+long os_mbind(void *addr, size_t len, int mode, const unsigned long *nodemask,
+              unsigned long maxnode, unsigned flags) {
     return mbind(addr, len, mode, nodemask, maxnode, flags);
 }
 

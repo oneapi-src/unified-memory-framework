@@ -43,6 +43,7 @@ function(add_umf_test)
     add_umf_executable(NAME ${TEST_TARGET_NAME} SRCS ${ARG_SRCS} LIBS ${TEST_LIBS})
 
     target_include_directories(${TEST_TARGET_NAME} PRIVATE
+        ${UMF_CMAKE_SOURCE_DIR}/include
         ${UMF_CMAKE_SOURCE_DIR}/src
         ${UMF_TEST_DIR}/common)
 
@@ -51,6 +52,11 @@ function(add_umf_test)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
     set_tests_properties(${TEST_NAME} PROPERTIES LABELS "umf")
+
+    if(WIN32)
+        set_property(TEST ${TEST_NAME} PROPERTY ENVIRONMENT_MODIFICATION 
+            "PATH=path_list_append:../bin/$<CONFIG>")
+    endif()
 
     if (UMF_ENABLE_POOL_TRACKING)
         target_compile_definitions(${TEST_TARGET_NAME} PRIVATE UMF_ENABLE_POOL_TRACKING_TESTS=1)

@@ -27,15 +27,16 @@ typedef struct umf_memory_provider_t *umf_memory_provider_handle_t;
 /// @param hProvider [out] pointer to the newly created memory provider
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 ///
-umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
-                                     void *params,
-                                     umf_memory_provider_handle_t *hProvider);
+UMF_EXPORT umf_result_t
+umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops, void *params,
+                        umf_memory_provider_handle_t *hProvider);
 
 ///
 /// @brief Destroys memory provider.
 /// @param hProvider handle to the memory provider
 ///
-void umfMemoryProviderDestroy(umf_memory_provider_handle_t hProvider);
+UMF_EXPORT void
+umfMemoryProviderDestroy(umf_memory_provider_handle_t hProvider);
 
 ///
 /// @brief Allocates \p size bytes of uninitialized storage from memory \p hProvider
@@ -46,8 +47,9 @@ void umfMemoryProviderDestroy(umf_memory_provider_handle_t hProvider);
 /// @param ptr [out] pointer to the allocated memory
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure
 ///
-umf_result_t umfMemoryProviderAlloc(umf_memory_provider_handle_t hProvider,
-                                    size_t size, size_t alignment, void **ptr);
+UMF_EXPORT umf_result_t
+umfMemoryProviderAlloc(umf_memory_provider_handle_t hProvider, size_t size,
+                       size_t alignment, void **ptr);
 
 ///
 /// @brief Frees the memory space pointed by \p ptr from the memory \p hProvider
@@ -56,8 +58,8 @@ umf_result_t umfMemoryProviderAlloc(umf_memory_provider_handle_t hProvider,
 /// @param size size of the allocation
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure
 ///
-umf_result_t umfMemoryProviderFree(umf_memory_provider_handle_t hProvider,
-                                   void *ptr, size_t size);
+UMF_EXPORT umf_result_t umfMemoryProviderFree(
+    umf_memory_provider_handle_t hProvider, void *ptr, size_t size);
 
 ///
 /// @brief Retrieve string representation of the underlying provider specific
@@ -83,9 +85,9 @@ umf_result_t umfMemoryProviderFree(umf_memory_provider_handle_t hProvider,
 ///        result in string representation
 /// @param pError [out] pointer to an integer where the adapter specific error code will be stored
 ///
-void umfMemoryProviderGetLastNativeError(umf_memory_provider_handle_t hProvider,
-                                         const char **ppMessage,
-                                         int32_t *pError);
+UMF_EXPORT void
+umfMemoryProviderGetLastNativeError(umf_memory_provider_handle_t hProvider,
+                                    const char **ppMessage, int32_t *pError);
 
 ///
 /// @brief Retrieve recommended page size for a given allocation size.
@@ -94,9 +96,8 @@ void umfMemoryProviderGetLastNativeError(umf_memory_provider_handle_t hProvider,
 /// @param pageSize [out] pointer to the recommended page size
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 ///
-umf_result_t
-umfMemoryProviderGetRecommendedPageSize(umf_memory_provider_handle_t hProvider,
-                                        size_t size, size_t *pageSize);
+UMF_EXPORT umf_result_t umfMemoryProviderGetRecommendedPageSize(
+    umf_memory_provider_handle_t hProvider, size_t size, size_t *pageSize);
 
 ///
 /// @brief Retrieve minimum possible page size used by memory region referenced by a given \p ptr
@@ -106,9 +107,8 @@ umfMemoryProviderGetRecommendedPageSize(umf_memory_provider_handle_t hProvider,
 /// @param pageSize [out] pointer to the minimum possible page size
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 ///
-umf_result_t
-umfMemoryProviderGetMinPageSize(umf_memory_provider_handle_t hProvider,
-                                void *ptr, size_t *pageSize);
+UMF_EXPORT umf_result_t umfMemoryProviderGetMinPageSize(
+    umf_memory_provider_handle_t hProvider, void *ptr, size_t *pageSize);
 
 ///
 /// @brief Discard physical pages within the virtual memory mapping associated at the given addr
@@ -120,8 +120,8 @@ umfMemoryProviderGetMinPageSize(umf_memory_provider_handle_t hProvider,
 ///         UMF_RESULT_ERROR_INVALID_ALIGNMENT if ptr or size is not page-aligned.
 ///         UMF_RESULT_ERROR_NOT_SUPPORTED if operation is not supported by this provider.
 ///
-umf_result_t umfMemoryProviderPurgeLazy(umf_memory_provider_handle_t hProvider,
-                                        void *ptr, size_t size);
+UMF_EXPORT umf_result_t umfMemoryProviderPurgeLazy(
+    umf_memory_provider_handle_t hProvider, void *ptr, size_t size);
 
 ///
 /// @brief Discard physical pages within the virtual memory mapping associated at the given addr and \p size.
@@ -133,15 +133,16 @@ umf_result_t umfMemoryProviderPurgeLazy(umf_memory_provider_handle_t hProvider,
 ///         UMF_RESULT_ERROR_INVALID_ALIGNMENT if ptr or size is not page-aligned.
 ///         UMF_RESULT_ERROR_NOT_SUPPORTED if operation is not supported by this provider.
 ///
-umf_result_t umfMemoryProviderPurgeForce(umf_memory_provider_handle_t hProvider,
-                                         void *ptr, size_t size);
+UMF_EXPORT umf_result_t umfMemoryProviderPurgeForce(
+    umf_memory_provider_handle_t hProvider, void *ptr, size_t size);
 
 ///
 /// @brief Retrieve name of a given memory \p hProvider.
 /// @param hProvider handle to the memory provider
 /// @return pointer to a string containing the name of the \p hProvider
 ///
-const char *umfMemoryProviderGetName(umf_memory_provider_handle_t hProvider);
+UMF_EXPORT const char *
+umfMemoryProviderGetName(umf_memory_provider_handle_t hProvider);
 
 ///
 /// @brief Retrieve handle to the last memory provider that returned status other
@@ -153,7 +154,7 @@ const char *umfMemoryProviderGetName(umf_memory_provider_handle_t hProvider);
 ///
 /// @return Handle to the memory provider
 ///
-umf_memory_provider_handle_t umfGetLastFailedMemoryProvider(void);
+UMF_EXPORT umf_memory_provider_handle_t umfGetLastFailedMemoryProvider(void);
 
 #ifdef __cplusplus
 }

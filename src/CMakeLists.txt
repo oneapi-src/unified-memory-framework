@@ -20,6 +20,7 @@ set(UMF_SOURCES_LINUX
 )
 
 set(UMF_SOURCES_WINDOWS
+    provider/provider_os_memory_windows.c
     provider/provider_tracking_windows.cpp
     utils/utils_windows_concurrency.c
     utils/utils_windows_math.c
@@ -50,6 +51,8 @@ if(UMF_BUILD_SHARED_LIBRARY)
                     SRCS ${UMF_SOURCES}
                     LIBS ${UMF_LIBS})
     target_compile_definitions(umf PUBLIC UMF_SHARED_LIBRARY)
+    set_target_properties(umf PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_UMF_OUTPUT_DIRECTORY})
 else()
     add_umf_library(NAME umf
                     TYPE STATIC 
