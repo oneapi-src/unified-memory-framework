@@ -235,7 +235,7 @@ TEST_P(umfProviderTest, get_min_page_size) {
     umf_result_t umf_result = umfMemoryProviderGetMinPageSize(
         provider.get(), nullptr, &min_page_size);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_LE(min_page_size, page_plus_64);
+    ASSERT_LE(min_page_size, page_size);
 }
 
 TEST_P(umfProviderTest, get_recommended_page_size) {
@@ -243,7 +243,7 @@ TEST_P(umfProviderTest, get_recommended_page_size) {
     umf_result_t umf_result = umfMemoryProviderGetMinPageSize(
         provider.get(), nullptr, &min_page_size);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_LE(min_page_size, page_plus_64);
+    ASSERT_LE(min_page_size, page_size);
 
     size_t recommended_page_size;
     umf_result = umfMemoryProviderGetRecommendedPageSize(
