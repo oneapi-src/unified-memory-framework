@@ -8,10 +8,14 @@
  */
 
 #include "base.hpp"
-#include "provider_os_memory_internal.h"
+
+#include <umf/memory_provider.h>
+#include <umf/providers/provider_os_memory.h>
 
 #include <numa.h>
 #include <numaif.h>
+
+static constexpr size_t allocSize = 4096;
 
 struct providerConfigTest : testing::Test {
     umf_memory_provider_handle_t provider = nullptr;
@@ -56,8 +60,7 @@ struct providerConfigTest : testing::Test {
     }
 
     void allocate_memory() {
-        auto res =
-            umfMemoryProviderAlloc(provider, size, os_get_page_size(), &ptr);
+        auto res = umfMemoryProviderAlloc(provider, size, allocSize, &ptr);
         ASSERT_EQ(res, UMF_RESULT_SUCCESS);
         ASSERT_NE(ptr, nullptr);
     }
@@ -148,6 +151,13 @@ INSTANTIATE_TEST_SUITE_P(numa_modes, providerConfigTestNumaMode,
                                          UMF_NUMA_MODE_INTERLEAVE,
                                          UMF_NUMA_MODE_PREFERRED,
                                          UMF_NUMA_MODE_LOCAL));
+#ifndef MPOL_LOCAL
+#define MPOL_LOCAL 4
+#endif
+
+#ifndef MPOL_PREFERRED_MANY
+#define MPOL_PREFERRED_MANY 5
+#endif
 
 TEST_P(providerConfigTestNumaMode, numa_modes) {
     if (params.numa_mode != UMF_NUMA_MODE_DEFAULT &&
@@ -164,7 +174,27 @@ TEST_P(providerConfigTestNumaMode, numa_modes) {
     int actual_mode = -1;
     long ret = get_mempolicy(&actual_mode, nullptr, 0, ptr, MPOL_F_ADDR);
     ASSERT_EQ(ret, 0);
-    ASSERT_EQ(os_translate_numa_mode(params.numa_mode), actual_mode);
+
+    if (params.numa_mode == UMF_NUMA_MODE_DEFAULT) {
+        ASSERT_EQ(actual_mode, MPOL_DEFAULT);
+    } else if (params.numa_mode == UMF_NUMA_MODE_BIND) {
+        ASSERT_EQ(actual_mode, MPOL_BIND);
+    } else if (params.numa_mode == UMF_NUMA_MODE_INTERLEAVE) {
+        ASSERT_EQ(actual_mode, MPOL_INTERLEAVE);
+    } else if (params.numa_mode == UMF_NUMA_MODE_PREFERRED) {
+        // MPOL_PREFERRED_MANY is equivalent to MPOL_PREFERRED if a single node is set
+        if (actual_mode != MPOL_PREFERRED_MANY) {
+            ASSERT_EQ(actual_mode, MPOL_PREFERRED);
+        }
+    } else if (params.numa_mode == UMF_NUMA_MODE_LOCAL) {
+        // MPOL_PREFERRED_* is equivalent to MPOL_LOCAL if no node is set
+        if (actual_mode == MPOL_PREFERRED ||
+            actual_mode == MPOL_PREFERRED_MANY) {
+            ASSERT_EQ(params.maxnode, 0);
+        } else {
+            ASSERT_EQ(actual_mode, MPOL_LOCAL);
+        }
+    }
 }
 
 struct providerConfigTestVisibility

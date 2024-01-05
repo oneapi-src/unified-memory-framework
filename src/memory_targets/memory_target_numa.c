@@ -8,7 +8,7 @@
  */
 
 #include <assert.h>
-#include <numa.h>
+#include <hwloc.h>
 #include <stdlib.h>
 
 #include "../memory_pool_internal.h"
@@ -50,37 +50,52 @@ static const umf_os_memory_provider_params_t
         // NUMA config
         .nodemask = NULL,
         .maxnode = 0, // TODO: numa_max_node/GetNumaHighestNodeNumber
-        .numa_mode = UMF_NUMA_MODE_DEFAULT,
+        .numa_mode = UMF_NUMA_MODE_BIND,
         .numa_flags = UMF_NUMA_FLAGS_STRICT, // TODO: determine default behavior
 
         // Logging
         .traces = 0, // TODO: parse env variable for log level?
 };
 
-static size_t numa_targets_get_maxnode(struct numa_memory_target_t **targets,
-                                       size_t numTargets) {
-    size_t maxNode = 0;
-    for (size_t i = 0; i < numTargets; i++) {
-        maxNode = maxNode > targets[i]->id ? maxNode : targets[i]->id;
-    }
-    return maxNode;
-}
-
-static struct bitmask *
+static umf_result_t
 numa_targets_create_nodemask(struct numa_memory_target_t **targets,
-                             size_t numTargets) {
+                             size_t numTargets, unsigned long **mask,
+                             unsigned *maxnode) {
     assert(targets);
-    size_t maxNode = numa_targets_get_maxnode(targets, numTargets);
-    struct bitmask *mask = numa_bitmask_alloc(maxNode + 1);
-    if (!mask) {
-        return NULL;
+    assert(mask);
+    assert(maxnode);
+
+    hwloc_bitmap_t bitmap = hwloc_bitmap_alloc();
+    if (!bitmap) {
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
     for (size_t i = 0; i < numTargets; i++) {
-        numa_bitmask_setbit(mask, targets[i]->id);
+        if (hwloc_bitmap_set(bitmap, targets[i]->id)) {
+            hwloc_bitmap_free(bitmap);
+            return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+        }
     }
 
-    return mask;
+    int nrUlongs = hwloc_bitmap_nr_ulongs(bitmap);
+    if (nrUlongs == -1) {
+        hwloc_bitmap_free(bitmap);
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
+
+    unsigned long *nodemask = malloc(sizeof(unsigned long) * nrUlongs);
+    int ret = hwloc_bitmap_to_ulongs(bitmap, nrUlongs, nodemask);
+    hwloc_bitmap_free(bitmap);
+
+    if (ret) {
+        free(nodemask);
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
+
+    *mask = nodemask;
+    *maxnode = nrUlongs * sizeof(unsigned long) * 8;
+
+    return UMF_RESULT_SUCCESS;
 }
 
 static enum umf_result_t numa_memory_provider_create_from_memspace(
@@ -94,19 +109,24 @@ static enum umf_result_t numa_memory_provider_create_from_memspace(
     struct numa_memory_target_t **numaTargets =
         (struct numa_memory_target_t **)memTargets;
 
-    // Create node mask from IDs
-    struct bitmask *nodemask =
-        numa_targets_create_nodemask(numaTargets, numTargets);
+    unsigned long *nodemask;
+    unsigned maxnode;
+
+    umf_result_t ret = numa_targets_create_nodemask(numaTargets, numTargets,
+                                                    &nodemask, &maxnode);
+    if (ret != UMF_RESULT_SUCCESS) {
+        return ret;
+    }
 
     umf_os_memory_provider_params_t params =
         UMF_OS_MEMORY_PROVIDER_PARAMS_DEFAULT;
-    params.nodemask = nodemask->maskp;
-    params.maxnode = nodemask->size;
+    params.nodemask = nodemask;
+    params.maxnode = maxnode;
 
     umf_memory_provider_handle_t numaProvider = NULL;
-    enum umf_result_t ret = umfMemoryProviderCreate(&UMF_OS_MEMORY_PROVIDER_OPS,
-                                                    &params, &numaProvider);
-    numa_bitmask_free(nodemask);
+    ret = umfMemoryProviderCreate(&UMF_OS_MEMORY_PROVIDER_OPS, &params,
+                                  &numaProvider);
+    free(nodemask);
     if (ret) {
         return ret;
     }

@@ -37,7 +37,7 @@ if(UMF_BUILD_OS_MEMORY_PROVIDER)
         memory_targets/memory_target_numa.c
         memspaces/memspace_numa.c)
     if(LINUX)
-        set(UMF_LIBS ${UMF_LIBS} numa)
+        set(UMF_LIBS ${UMF_LIBS} hwloc)
     endif()
 endif()
 

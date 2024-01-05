@@ -34,6 +34,7 @@ typedef enum umf_numa_mode_t {
     UMF_NUMA_MODE_DEFAULT,
     UMF_NUMA_MODE_BIND,
     UMF_NUMA_MODE_INTERLEAVE,
+    /* TODO: consider removing UMF_NUMA_MODE_PREFERRED and rely only on combination of BIND mode and STRICT flag like hwloc */
     UMF_NUMA_MODE_PREFERRED,
     UMF_NUMA_MODE_LOCAL,
     UMF_NUMA_MODE_STATIC_NODES,
