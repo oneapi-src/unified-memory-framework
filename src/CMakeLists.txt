@@ -30,7 +30,7 @@ elseif(WINDOWS)
 endif()
 
 if(LINUX)
-    set(UMF_LIBS umf_utils numa)
+    set(UMF_LIBS umf_utils hwloc)
 else()
     set(UMF_LIBS umf_utils)
 endif()
