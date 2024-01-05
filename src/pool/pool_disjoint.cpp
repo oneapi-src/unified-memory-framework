@@ -22,9 +22,9 @@
 // TODO: replace with logger?
 #include <iostream>
 
+#include "../cpp_helpers.hpp"
 #include "pool_disjoint.h"
 #include "umf.h"
-#include "umf_helpers.hpp"
 #include "utils_math.h"
 
 typedef struct umf_disjoint_pool_shared_limits_t {

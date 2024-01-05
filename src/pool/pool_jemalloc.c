@@ -13,7 +13,7 @@
 
 #include <jemalloc/jemalloc.h>
 
-#include "common.h"
+#include "utils_common.h"
 #include <umf/memory_pool.h>
 #include <umf/memory_pool_ops.h>
 #include <umf/pools/pool_jemalloc.h>

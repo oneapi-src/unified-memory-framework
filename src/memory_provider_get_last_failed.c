@@ -7,8 +7,8 @@
  *
  */
 
-#include "common.h"
 #include "memory_provider_internal.h"
+#include "utils_common.h"
 
 static __TLS umf_memory_provider_handle_t lastFailedProvider = NULL;
 
