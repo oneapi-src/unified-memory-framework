@@ -31,12 +31,11 @@ set(UMF_SOURCES_MACOSX
 )
 
 if(UMF_BUILD_OS_MEMORY_PROVIDER)
-    set(UMF_SOURCES ${UMF_SOURCES} provider/provider_os_memory.c)
     set(UMF_SOURCES_LINUX ${UMF_SOURCES_LINUX}
+        provider/provider_os_memory.c
         provider/provider_os_memory_linux.c
         memory_targets/memory_target_numa.c
         memspaces/memspace_numa.c)
-    set(UMF_SOURCES_WINDOWS ${UMF_SOURCES_WINDOWS} provider/provider_os_memory_windows.c)
     if(LINUX)
         set(UMF_LIBS ${UMF_LIBS} numa)
     endif()
