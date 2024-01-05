@@ -337,7 +337,8 @@ static umf_result_t os_free(void *provider, void *ptr, size_t size) {
 
     errno = 0;
     int ret = os_munmap(ptr, size);
-    if (ret) {
+    // ignore error when size == 0
+    if (ret && (size > 0)) {
         os_store_last_native_error(UMF_OS_RESULT_ERROR_FREE_FAILED, errno);
         if (os_config->traces) {
             perror("memory deallocation failed");

@@ -257,11 +257,22 @@ TEST_P(umfProviderTest, get_name) {
     ASSERT_STREQ(name, "OS");
 }
 
-// other negative tests
-
-TEST_P(umfProviderTest, free_INVALID_POINTER) {
+TEST_P(umfProviderTest, free_size_0_ptr_not_null) {
     umf_result_t umf_result =
         umfMemoryProviderFree(provider.get(), INVALID_PTR, 0);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+}
+
+// other negative tests
+
+TEST_P(umfProviderTest, free_NULL) {
+    umf_result_t umf_result = umfMemoryProviderFree(provider.get(), nullptr, 0);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_P(umfProviderTest, free_INVALID_POINTER_SIZE_GT_0) {
+    umf_result_t umf_result =
+        umfMemoryProviderFree(provider.get(), INVALID_PTR, page_plus_64);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC);
 
     verify_last_native_error(provider.get(), UMF_OS_RESULT_ERROR_FREE_FAILED);
