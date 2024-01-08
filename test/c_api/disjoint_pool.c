@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2024 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -15,10 +15,7 @@ void test_disjoint_pool_default_params(void) {
     umf_disjoint_pool_params_t params = umfDisjointPoolParamsDefault();
     retp = umfPoolCreate(&UMF_DISJOINT_POOL_OPS, provider, &params, &pool);
 
-    // TODO: use asserts
-    if (retp != UMF_RESULT_SUCCESS) {
-        abort();
-    }
+    UT_ASSERTeq(retp, UMF_RESULT_SUCCESS);
 
     umfPoolDestroy(pool);
     umfMemoryProviderDestroy(provider);
@@ -36,10 +33,7 @@ void test_disjoint_pool_shared_limits(void) {
 
     retp = umfPoolCreate(&UMF_DISJOINT_POOL_OPS, provider, &params, &pool);
 
-    // TODO: use asserts
-    if (retp != UMF_RESULT_SUCCESS) {
-        abort();
-    }
+    UT_ASSERTeq(retp, UMF_RESULT_SUCCESS);
 
     umfPoolDestroy(pool);
     umfMemoryProviderDestroy(provider);
