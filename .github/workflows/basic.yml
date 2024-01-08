@@ -17,6 +17,7 @@ jobs:
         pool_tracking: ['ON', 'OFF']
         shared_library: ['OFF']
         os_provider: ['ON']
+        sanitizers: [{asan: 'OFF', ubsan: 'OFF', tsan: 'OFF'}]
         include:
           - os: 'ubuntu-20.04'
             build_type: Release
@@ -42,17 +43,34 @@ jobs:
             compiler: {c: gcc, cxx: g++}
             shared_library: 'OFF'
             os_provider: 'OFF'
+          # TODO: Enable sanitizer checks with pool tracking enabled. There's
+          # a leak reported by sanitizer in jemalloc pool implementation that
+          # points to a tracker_value_t not being free'd.
+          # TODO: Move jobs with sanitizer checks to a separate workflow file.
+          - os: 'ubuntu-22.04'
+            build_type: Debug
+            compiler: {c: clang, cxx: clang++}
+            pool_tracking: 'OFF'
+            shared_library: 'OFF'
+          # TSAN is mutually exclusive with other sanitizers
+            sanitizers: [{asan: 'ON', ubsan: 'ON', tsan: 'OFF'}, {asan: 'OFF', ubsan: 'OFF', tsan: 'ON'}]
+          - os: 'ubuntu-22.04'
+            build_type: Debug
+            compiler: {c: gcc, cxx: g++}
+            pool_tracking: 'OFF'
+            shared_library: 'OFF'
+            sanitizers: [{asan: 'ON', ubsan: 'ON', tsan: 'OFF'}, {asan: 'OFF', ubsan: 'OFF', tsan: 'ON'}]
     runs-on: ${{matrix.os}}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        
+
       - name: Install apt packages
         run: |
           sudo apt-get update
           sudo apt-get install -y clang cmake libnuma-dev libjemalloc-dev libtbb-dev
-      
+
       - name: Install g++-7
         if: matrix.compiler.cxx == 'g++-7'
         run: |
@@ -74,11 +92,14 @@ jobs:
           -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
           -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
           -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
+          -DUSE_ASAN=${{matrix.sanitizers.asan}}
+          -DUSE_UBSAN=${{matrix.sanitizers.ubsan}}
+          -DUSE_TSAN=${{matrix.sanitizers.tsan}}
 
       - name: Build UMF
         run: |
           cmake --build ${{env.BUILD_DIR}} -j $(nproc)
-          
+
       - name: Run tests
         working-directory: ${{env.BUILD_DIR}}
         run: |
@@ -102,6 +123,8 @@ jobs:
         compiler: [{c: cl, cxx: cl}]
         pool_tracking: ['ON', 'OFF']
         shared_library: ['OFF']
+        # ASAN is the only available sanitizer on Windows
+        sanitizers: [{asan: 'OFF'}]
         include:
           - os: 'windows-2022'
             build_type: Release
@@ -113,6 +136,19 @@ jobs:
             compiler: {c: cl, cxx: cl}
             pool_tracking: 'ON'
             shared_library: 'ON'
+          - os: 'windows-2022'
+            build_type: Debug
+            compiler: {c: clang-cl, cxx: clang-cl}
+            pool_tracking: 'OFF'
+            shared_library: 'OFF'
+            sanitizers: [{asan: 'ON'}]
+          - os: 'windows-2022'
+            build_type: Debug
+            compiler: {c: cl, cxx: cl}
+            pool_tracking: 'OFF'
+            shared_library: 'OFF'
+            sanitizers: [{asan: 'ON'}]
+
     runs-on: ${{matrix.os}}
 
     steps:
@@ -130,6 +166,7 @@ jobs:
           -DUMF_FORMAT_CODE_STYLE=OFF
           -DUMF_DEVELOPER_MODE=ON
           -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
+          -DUSE_ASAN=${{matrix.sanitizers.asan}}
 
       - name: Build UMF
         run: cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j $Env:NUMBER_OF_PROCESSORS
