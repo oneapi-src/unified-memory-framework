@@ -75,6 +75,10 @@ jobs:
         run: ${{github.workspace}}/test/test_make_install.sh \
               ${{github.workspace}} ${{env.BUILD_DIR}} ${{env.INSTL_DIR}} ${{matrix.build_type}} ${{matrix.shared_library}}
 
+      - name: Test make uninstall
+        working-directory: ${{env.BUILD_DIR}}
+        run: ${{github.workspace}}/test/test_make_uninstall.sh ${{github.workspace}} ${{env.BUILD_DIR}} ${{env.INSTL_DIR}}
+
   windows-build:
     name: Build - Windows
     strategy:
