@@ -26,6 +26,10 @@ option(UMF_BUILD_BENCHMARKS "Build UMF benchmarks" OFF)
 option(UMF_ENABLE_POOL_TRACKING "Build UMF with pool tracking" ON)
 option(UMF_DEVELOPER_MODE "Enable developer checks, treats warnings as errors" OFF)
 option(UMF_FORMAT_CODE_STYLE "Format UMF code with clang-format" OFF)
+option(USE_ASAN "Enable AddressSanitizer checks" OFF)
+option(USE_UBSAN "Enable UndefinedBehaviorSanitizer checks" OFF)
+option(USE_TSAN "Enable ThreadSanitizer checks" OFF)
+option(USE_MSAN "Enable MemorySanitizer checks" OFF)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     set(LINUX TRUE)
@@ -55,6 +59,21 @@ set(CUSTOM_COMMAND_BINARY_DIR ${CMAKE_UMF_OUTPUT_DIRECTORY})
 if(MSVC)
     # MSVC implicitly adds $<CONFIG> to the output path
     set(CUSTOM_COMMAND_BINARY_DIR ${CUSTOM_COMMAND_BINARY_DIR}/$<CONFIG>)
+endif()
+
+# Sanitizer flags
+if(USE_ASAN)
+    add_sanitizer_flag(address)
+endif()
+if(USE_UBSAN)
+    add_sanitizer_flag(undefined)
+endif()
+if(USE_TSAN)
+    add_sanitizer_flag(thread)
+endif()
+if(USE_MSAN)
+    message(WARNING "MemorySanitizer requires instrumented libraries to prevent reporting false-positives")
+    add_sanitizer_flag(memory)
 endif()
 
 # A header only library to specify include directories in transitive
@@ -94,7 +113,7 @@ endif()
 if(UMF_FORMAT_CODE_STYLE)
     find_program(CLANG_FORMAT NAMES clang-format-15 clang-format-15.0 clang-format)
 
-    if(CLANG_FORMAT)        
+    if(CLANG_FORMAT)
         get_program_version_major_minor(${CLANG_FORMAT} CLANG_FORMAT_VERSION)
         message(STATUS "Found clang-format: ${CLANG_FORMAT} (version: ${CLANG_FORMAT_VERSION})")
 
@@ -105,7 +124,7 @@ if(UMF_FORMAT_CODE_STYLE)
     else()
         message(FATAL_ERROR "UMF_FORMAT_CODE_STYLE=ON, but clang-format not found (required version: ${CLANG_FORMAT_REQUIRED})")
     endif()
-    
+
     # Obtain files for clang-format check
     set(format_glob)
     foreach(DIR IN ITEMS include src test benchmark)
@@ -123,11 +142,11 @@ if(UMF_FORMAT_CODE_STYLE)
     file(GLOB_RECURSE format_list ${format_glob})
 
     message(STATUS "Adding clang-format-check and clang-format-apply make targets")
-    
+
     add_custom_target(clang-format-check
         COMMAND ${CLANG_FORMAT}
-            --style=file            
-            --dry-run 
+            --style=file
+            --dry-run
             -Werror
             ${format_list}
         COMMENT "Check files formatting using clang-format")
@@ -137,7 +156,7 @@ if(UMF_FORMAT_CODE_STYLE)
             --style=file
             --i
             ${format_list}
-        COMMENT "Format files using clang-format")        
+        COMMENT "Format files using clang-format")
 endif()
 
 # Add license to the installation path
