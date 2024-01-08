@@ -20,32 +20,22 @@
 using poolCreateExtParams = std::tuple<umf_memory_pool_ops_t *, void *,
                                        umf_memory_provider_ops_t *, void *>;
 
-umf::pool_unique_handle_t poolCreateExt(poolCreateExtParams params) {
-    umf_memory_provider_handle_t hProvider;
+umf::pool_unique_handle_t poolCreateExtUnique(poolCreateExtParams params) {
     umf_memory_pool_handle_t hPool;
     auto [pool_ops, pool_params, provider_ops, provider_params] = params;
 
-    auto ret =
-        umfMemoryProviderCreate(provider_ops, provider_params, &hProvider);
+    auto ret = umfPoolCreateEx(pool_ops, pool_params, provider_ops,
+                               provider_params, &hPool);
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
 
-    ret = umfPoolCreate(pool_ops, hProvider, pool_params, &hPool);
-    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
-
-    // capture provider and destroy it after the pool is destroyed
-    auto poolDestructor = [hProvider](umf_memory_pool_handle_t pool) {
-        umfPoolDestroy(pool);
-        umfMemoryProviderDestroy(hProvider);
-    };
-
-    return umf::pool_unique_handle_t(hPool, std::move(poolDestructor));
+    return umf::pool_unique_handle_t(hPool, &umfPoolDestroy);
 }
 
 struct umfPoolTest : umf_test::test,
                      ::testing::WithParamInterface<poolCreateExtParams> {
     void SetUp() override {
         test::SetUp();
-        pool = poolCreateExt(this->GetParam());
+        pool = poolCreateExtUnique(this->GetParam());
     }
 
     void TearDown() override { test::TearDown(); }
@@ -64,7 +54,7 @@ struct umfMultiPoolTest : umf_test::test,
     void SetUp() override {
         test::SetUp();
         for (size_t i = 0; i < numPools; i++) {
-            pools.emplace_back(poolCreateExt(this->GetParam()));
+            pools.emplace_back(poolCreateExtUnique(this->GetParam()));
         }
     }
 
@@ -81,7 +71,7 @@ struct umfMemTest
         test::SetUp();
 
         auto [params, expectedRecycledPoolAllocs] = this->GetParam();
-        pool = poolCreateExt(params);
+        pool = poolCreateExtUnique(params);
         this->expectedRecycledPoolAllocs = expectedRecycledPoolAllocs;
     }
 
