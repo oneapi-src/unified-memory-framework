@@ -15,7 +15,7 @@
 #include <string>
 #include <thread>
 
-#include "malloc_compliance_tests.hpp"
+#include "../malloc_compliance_tests.hpp"
 
 using poolCreateExtParams = std::tuple<umf_memory_pool_ops_t *, void *,
                                        umf_memory_provider_ops_t *, void *>;
