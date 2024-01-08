@@ -69,6 +69,8 @@ static inline void UT_OUT(const char *format, ...) {
                       (unsigned long long)(rhs)),                              \
              0)))
 
+#define ALIGN_UP(size, align) (((size) + (align)-1) & ~((align)-1))
+
 int bufferIsFilledWithChar(void *ptr, size_t size, char c);
 
 int buffersHaveSameContent(void *first, void *second, size_t size);
