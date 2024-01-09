@@ -2,10 +2,13 @@ name: BasicBuilds
 
 on: [push, pull_request]
 
+env:
+  BUILD_DIR : "${{github.workspace}}/build/"
+  INSTL_DIR : "${{github.workspace}}/build/install-dir"
+
 jobs:
   ubuntu-build:
     name: Build - Ubuntu
-    
     strategy:
       matrix:
         os: ['ubuntu-20.04', 'ubuntu-22.04']
@@ -17,9 +20,11 @@ jobs:
           - os: 'ubuntu-20.04'
             build_type: Release
             compiler: {c: gcc-7, cxx: g++-7}
+            shared_library: 'OFF'
           - os: 'ubuntu-22.04'
             build_type: Release
             compiler: {c: clang, cxx: clang++}            
+            shared_library: 'OFF'
           - os: 'ubuntu-22.04'
             build_type: Release
             compiler: {c: gcc, cxx: g++}
@@ -43,7 +48,8 @@ jobs:
       - name: Configure build
         run: >
           cmake
-          -B ${{github.workspace}}/build
+          -B ${{env.BUILD_DIR}}
+          -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
           -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
           -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
           -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
@@ -57,12 +63,17 @@ jobs:
 
       - name: Build UMF
         run: |
-          cmake --build ${{github.workspace}}/build -j $(nproc)
+          cmake --build ${{env.BUILD_DIR}} -j $(nproc)
           
       - name: Run tests
-        working-directory: ${{github.workspace}}/build
+        working-directory: ${{env.BUILD_DIR}}
         run: |
           ctest --output-on-failure
+
+      - name: Test make install
+        working-directory: ${{env.BUILD_DIR}}
+        run: ${{github.workspace}}/test/test_make_install.sh \
+              ${{github.workspace}} ${{env.BUILD_DIR}} ${{env.INSTL_DIR}} ${{matrix.build_type}} ${{matrix.shared_library}}
 
   windows-build:
     name: Build - Windows
@@ -92,7 +103,7 @@ jobs:
       - name: Configure build
         run: >
           cmake
-          -B ${{github.workspace}}/build
+          -B ${{env.BUILD_DIR}}
           ${{matrix.toolset}}
           -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
           -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
@@ -103,10 +114,10 @@ jobs:
           -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
 
       - name: Build UMF
-        run: cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} -j $Env:NUMBER_OF_PROCESSORS
+        run: cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j $Env:NUMBER_OF_PROCESSORS
 
       - name: Test
-        working-directory: ${{github.workspace}}/build
+        working-directory: ${{env.BUILD_DIR}}
         run: ctest -C ${{matrix.build_type}} --output-on-failure
 
   macos-build:
@@ -125,7 +136,7 @@ jobs:
       - name: Configure build
         run: >
           cmake
-          -B ${{github.workspace}}/build
+          -B ${{env.BUILD_DIR}}
           -DCMAKE_BUILD_TYPE=Release
           -DUMF_FORMAT_CODE_STYLE=ON
           -DUMF_DEVELOPER_MODE=ON
@@ -133,8 +144,8 @@ jobs:
 
       - name: Run code-style check     
         run: |
-          cmake --build ${{github.workspace}}/build --target clang-format-check
+          cmake --build ${{env.BUILD_DIR}} --target clang-format-check
 
       - name: Build UMF
         run: |
-          cmake --build ${{github.workspace}}/build -j $(sysctl -n hw.logicalcpu)
+          cmake --build ${{env.BUILD_DIR}} -j $(sysctl -n hw.logicalcpu)
