@@ -9,6 +9,7 @@ add_subdirectory(utils)
 set(UMF_LIBS umf_utils)
 
 set(UMF_SOURCES
+    ipc.c
     memory_pool.c
     memory_provider.c
     memory_provider_get_last_failed.c

@@ -118,6 +118,38 @@ umf_result_t umfMemoryProviderPurgeForce(umf_memory_provider_handle_t hProvider,
     return res;
 }
 
+umf_result_t
+umfMemoryProviderGetIPCHandleSize(umf_memory_provider_handle_t hProvider,
+                                  size_t *size) {
+    return hProvider->ops.get_ipc_handle_size(hProvider->provider_priv, size);
+}
+
+umf_result_t
+umfMemoryProviderGetIPCHandle(umf_memory_provider_handle_t hProvider,
+                              const void *ptr, size_t size, void *ipcData) {
+    return hProvider->ops.get_ipc_handle(hProvider->provider_priv, ptr, size,
+                                         ipcData);
+}
+
+umf_result_t
+umfMemoryProviderPutIPCHandle(umf_memory_provider_handle_t hProvider,
+                              void *ipcData) {
+    return hProvider->ops.put_ipc_handle(hProvider->provider_priv, ipcData);
+}
+
+umf_result_t
+umfMemoryProviderOpenIPCHandle(umf_memory_provider_handle_t hProvider,
+                               void *ipcData, void **ptr) {
+    return hProvider->ops.open_ipc_handle(hProvider->provider_priv, ipcData,
+                                          ptr);
+}
+
+umf_result_t
+umfMemoryProviderCloseIPCHandle(umf_memory_provider_handle_t hProvider,
+                                void *ptr) {
+    return hProvider->ops.close_ipc_handle(hProvider->provider_priv, ptr);
+}
+
 const char *umfMemoryProviderGetName(umf_memory_provider_handle_t hProvider) {
     return hProvider->ops.get_name(hProvider->provider_priv);
 }
