@@ -22,6 +22,13 @@ UMF comes with predefined pool allocators (see include/pool) and providers (see 
 
 A memory provider that provides memory from an operating system.
 
+#### Requirements
+
+1) Linux OS
+2) The `UMF_BUILD_OS_MEMORY_PROVIDER` option turned `ON` (by default)
+3) Required packages:
+   - libnuma-dev
+
 ## Memory pool managers
 
 ### libumf_pool_disjoint
@@ -41,7 +48,7 @@ The `UMF_BUILD_LIBUMF_POOL_JEMALLOC` option has to be turned `ON` to build this 
 
 1) The `UMF_BUILD_LIBUMF_POOL_JEMALLOC` option turned `ON`
 2) Required packages:
-- libjemalloc-dev
+   - libjemalloc-dev
 
 ### libumf_pool_scalable (Linux-only)
 
@@ -52,7 +59,7 @@ The `UMF_BUILD_LIBUMF_POOL_SCALABLE` option has to be turned `ON` to build this 
 
 1) The `UMF_BUILD_LIBUMF_POOL_SCALABLE` option turned `ON`
 2) Required packages:
-- libtbb-dev (libraries: libtbbmalloc.so.2)
+   - libtbb-dev (libraries: libtbbmalloc.so.2)
 
 ## Building
 
@@ -61,7 +68,6 @@ The `UMF_BUILD_LIBUMF_POOL_SCALABLE` option has to be turned `ON` to build this 
 Required packages:
 - C++ compiler with C++17 support
 - [CMake](https://cmake.org/) >= 3.14.0
-- Linux only: libnuma-dev
 
 For development and contributions:
 - clang-format-15.0 (can be installed with `python -m pip install clang-format==15.0.7`)
@@ -115,6 +121,7 @@ List of options provided by CMake:
 | Name | Description | Values | Default |
 | - | - | - | - |
 | UMF_BUILD_SHARED_LIBRARY | Build UMF as shared library | ON/OFF | OFF |
+| UMF_BUILD_OS_MEMORY_PROVIDER | Build OS memory provider | ON/OFF | ON |
 | UMF_BUILD_LIBUMF_POOL_DISJOINT | Build the libumf_pool_disjoint static library | ON/OFF | OFF |
 | UMF_BUILD_LIBUMF_POOL_JEMALLOC | Build the libumf_pool_jemalloc static library | ON/OFF | OFF |
 | UMF_BUILD_LIBUMF_POOL_SCALABLE | Build the libumf_pool_scalable static library | ON/OFF | OFF |

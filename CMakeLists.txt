@@ -17,6 +17,7 @@ include(helpers)
 
 # Build Options
 option(UMF_BUILD_SHARED_LIBRARY "Build UMF as shared library" OFF)
+option(UMF_BUILD_OS_MEMORY_PROVIDER "Build OS memory provider" ON)
 option(UMF_BUILD_LIBUMF_POOL_DISJOINT "Build the libumf_pool_disjoint static library" OFF)
 option(UMF_BUILD_LIBUMF_POOL_JEMALLOC "Build the libumf_pool_jemalloc static library" OFF)
 option(UMF_BUILD_LIBUMF_POOL_SCALABLE "Build the libumf_pool_scalable static library" OFF)

@@ -32,6 +32,10 @@ target_link_libraries(ubench
 	pthread
 	m)
 
+if (UMF_BUILD_OS_MEMORY_PROVIDER)
+	target_compile_definitions(ubench PRIVATE UMF_BUILD_OS_MEMORY_PROVIDER=1)
+endif()
+
 if (UMF_BUILD_LIBUMF_POOL_DISJOINT)
 	target_compile_definitions(ubench PRIVATE UMF_BUILD_LIBUMF_POOL_DISJOINT=1)
 endif()
