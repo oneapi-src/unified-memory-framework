@@ -16,6 +16,7 @@ jobs:
         compiler: [{c: gcc, cxx: g++}]
         pool_tracking: ['ON', 'OFF']
         shared_library: ['OFF']
+        os_provider: ['ON']
         include:
           - os: 'ubuntu-20.04'
             build_type: Release
@@ -29,6 +30,18 @@ jobs:
             build_type: Release
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
+          # test os_provider='OFF' with shared_library='ON'
+          - os: 'ubuntu-22.04'
+            build_type: Release
+            compiler: {c: gcc, cxx: g++}
+            shared_library: 'ON'
+            os_provider: 'OFF'
+          # test os_provider='OFF' with shared_library='OFF'
+          - os: 'ubuntu-22.04'
+            build_type: Release
+            compiler: {c: gcc, cxx: g++}
+            shared_library: 'OFF'
+            os_provider: 'OFF'
     runs-on: ${{matrix.os}}
 
     steps:
@@ -54,6 +67,7 @@ jobs:
           -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
           -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
           -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
+          -DUMF_BUILD_OS_MEMORY_PROVIDER=${{matrix.os_provider}}
           -DUMF_ENABLE_POOL_TRACKING=${{matrix.pool_tracking}}
           -DUMF_FORMAT_CODE_STYLE=OFF
           -DUMF_DEVELOPER_MODE=ON

@@ -93,6 +93,7 @@ UBENCH_EX(simple, glibc_malloc) {
     free(array);
 }
 
+#ifdef UMF_BUILD_OS_MEMORY_PROVIDER
 ////////////////// OS MEMORY PROVIDER
 
 static umf_os_memory_provider_params_t UMF_OS_MEMORY_PROVIDER_PARAMS = {
@@ -156,10 +157,12 @@ UBENCH_EX(simple, os_memory_provider) {
     umfMemoryProviderDestroy(os_memory_provider);
     free(array);
 }
+#endif /* UMF_BUILD_OS_MEMORY_PROVIDER */
 
-#if (defined UMF_BUILD_LIBUMF_POOL_DISJOINT) ||                                \
-    (defined UMF_BUILD_LIBUMF_POOL_JEMALLOC) ||                                \
-    (defined UMF_BUILD_LIBUMF_POOL_SCALABLE)
+#if (defined UMF_BUILD_OS_MEMORY_PROVIDER) &&                                  \
+    ((defined UMF_BUILD_LIBUMF_POOL_DISJOINT) ||                               \
+     (defined UMF_BUILD_LIBUMF_POOL_JEMALLOC) ||                               \
+     (defined UMF_BUILD_LIBUMF_POOL_SCALABLE))
 
 static void *w_umfPoolMalloc(void *provider, size_t size, size_t alignment) {
     umf_memory_pool_handle_t hPool = (umf_memory_pool_handle_t)provider;
@@ -174,9 +177,10 @@ static void w_umfPoolFree(void *provider, void *ptr, size_t size) {
         exit(-1);
     }
 }
-#endif /* (defined UMF_BUILD_LIBUMF_POOL_DISJOINT) || (defined UMF_BUILD_LIBUMF_POOL_JEMALLOC) || (defined UMF_BUILD_LIBUMF_POOL_SCALABLE) */
+#endif /* (defined UMF_BUILD_OS_MEMORY_PROVIDER) && ((defined UMF_BUILD_LIBUMF_POOL_DISJOINT) || (defined UMF_BUILD_LIBUMF_POOL_JEMALLOC) || (defined UMF_BUILD_LIBUMF_POOL_SCALABLE)) */
 
-#ifdef UMF_BUILD_LIBUMF_POOL_DISJOINT
+#if (defined UMF_BUILD_LIBUMF_POOL_DISJOINT) &&                                \
+    (defined UMF_BUILD_OS_MEMORY_PROVIDER)
 ////////////////// DISJOINT POOL WITH OS MEMORY PROVIDER
 
 UBENCH_EX(simple, disjoint_pool_with_os_memory_provider) {
@@ -218,9 +222,10 @@ UBENCH_EX(simple, disjoint_pool_with_os_memory_provider) {
     umfMemoryProviderDestroy(os_memory_provider);
     free(array);
 }
-#endif /* UMF_BUILD_LIBUMF_POOL_DISJOINT */
+#endif /* (defined UMF_BUILD_LIBUMF_POOL_DISJOINT) && (defined UMF_BUILD_OS_MEMORY_PROVIDER) */
 
-#ifdef UMF_BUILD_LIBUMF_POOL_JEMALLOC
+#if (defined UMF_BUILD_LIBUMF_POOL_JEMALLOC) &&                                \
+    (defined UMF_BUILD_OS_MEMORY_PROVIDER)
 ////////////////// JEMALLOC POOL WITH OS MEMORY PROVIDER
 
 UBENCH_EX(simple, jemalloc_pool_with_os_memory_provider) {
@@ -254,9 +259,10 @@ UBENCH_EX(simple, jemalloc_pool_with_os_memory_provider) {
     umfMemoryProviderDestroy(os_memory_provider);
     free(array);
 }
-#endif /* UMF_BUILD_LIBUMF_POOL_JEMALLOC */
+#endif /* (defined UMF_BUILD_LIBUMF_POOL_JEMALLOC) && (defined UMF_BUILD_OS_MEMORY_PROVIDER) */
 
-#ifdef UMF_BUILD_LIBUMF_POOL_SCALABLE
+#if (defined UMF_BUILD_LIBUMF_POOL_SCALABLE) &&                                \
+    (defined UMF_BUILD_OS_MEMORY_PROVIDER)
 ////////////////// SCALABLE (TBB) POOL WITH OS MEMORY PROVIDER
 
 UBENCH_EX(simple, scalable_pool_with_os_memory_provider) {
@@ -290,6 +296,6 @@ UBENCH_EX(simple, scalable_pool_with_os_memory_provider) {
     umfMemoryProviderDestroy(os_memory_provider);
     free(array);
 }
-#endif /* UMF_BUILD_LIBUMF_POOL_SCALABLE */
+#endif /* (defined UMF_BUILD_LIBUMF_POOL_SCALABLE) && (defined UMF_BUILD_OS_MEMORY_PROVIDER) */
 
 UBENCH_MAIN();

@@ -6,34 +6,33 @@ include(${UMF_CMAKE_SOURCE_DIR}/cmake/helpers.cmake)
 
 add_subdirectory(utils)
 
+set(UMF_LIBS umf_utils)
+
 set(UMF_SOURCES
     memory_pool.c
     memory_provider.c
     memory_provider_get_last_failed.c
-    provider/provider_os_memory.c
     provider/provider_tracking.c
     critnib/critnib.c
 )
 
-set(UMF_SOURCES_LINUX
-    provider/provider_os_memory_linux.c
-)
-
 set(UMF_SOURCES_WINDOWS
-    provider/provider_os_memory_windows.c
     provider/provider_tracking_windows.cpp
 )
+
+if(UMF_BUILD_OS_MEMORY_PROVIDER)
+    set(UMF_SOURCES ${UMF_SOURCES} provider/provider_os_memory.c)
+    set(UMF_SOURCES_LINUX ${UMF_SOURCES_LINUX} provider/provider_os_memory_linux.c)
+    set(UMF_SOURCES_WINDOWS ${UMF_SOURCES_WINDOWS} provider/provider_os_memory_windows.c)
+    if(LINUX)
+        set(UMF_LIBS ${UMF_LIBS} numa)
+    endif()
+endif()
 
 if(LINUX)
     set(UMF_SOURCES ${UMF_SOURCES} ${UMF_SOURCES_LINUX})
 elseif(WINDOWS)
     set(UMF_SOURCES ${UMF_SOURCES} ${UMF_SOURCES_WINDOWS})
-endif()
-
-if(LINUX)
-    set(UMF_LIBS umf_utils numa)
-else()
-    set(UMF_LIBS umf_utils)
 endif()
 
 if(UMF_BUILD_SHARED_LIBRARY)

@@ -78,19 +78,27 @@ if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
                  LIBS disjoint_pool)
 endif()
 
-if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
-    add_umf_test(NAME jemalloc_pool
-                 SRCS pools/jemalloc_pool.cpp malloc_compliance_tests.cpp
-                 LIBS jemalloc_pool)
+if(UMF_BUILD_OS_MEMORY_PROVIDER)
+    if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
+        add_umf_test(NAME jemalloc_pool
+                    SRCS pools/jemalloc_pool.cpp malloc_compliance_tests.cpp
+                    LIBS jemalloc_pool)
+    endif()
+else()
+    message(STATUS "The jemalloc_pool test is DISABLED, because it uses OS_MEMORY_PROVIDER, while the UMF_BUILD_OS_MEMORY_PROVIDER option is set to OFF")
 endif()
 
-if(UMF_BUILD_LIBUMF_POOL_SCALABLE)
-    add_umf_test(NAME scalable_pool
-                 SRCS pools/scalable_pool.cpp malloc_compliance_tests.cpp
-                 LIBS scalable_pool)
+if(UMF_BUILD_OS_MEMORY_PROVIDER)
+    if(UMF_BUILD_LIBUMF_POOL_SCALABLE)
+        add_umf_test(NAME scalable_pool
+                    SRCS pools/scalable_pool.cpp malloc_compliance_tests.cpp
+                    LIBS scalable_pool)
+    endif()
+else()
+    message(STATUS "The scalable_pool test is DISABLED, because it uses OS_MEMORY_PROVIDER, while the UMF_BUILD_OS_MEMORY_PROVIDER option is set to OFF")
 endif()
 
-if(LINUX) # OS-specific functions are implemented only for Linux now
+if(UMF_BUILD_OS_MEMORY_PROVIDER AND LINUX) # OS-specific functions are implemented only for Linux now
     add_umf_test(NAME provider_os_memory
                  SRCS provider_os_memory.cpp
                  LIBS umf_utils)
