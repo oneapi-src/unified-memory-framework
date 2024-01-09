@@ -1,0 +1,15 @@
+name: Workflow starter
+
+on: [push, pull_request]
+
+jobs:
+    CodeQL:
+        uses: oneapi-src/unified-memory-framework/.github/workflows/codeql.yml@main
+    Spellcheck:
+        uses: oneapi-src/unified-memory-framework/.github/workflows/spellcheck.yml@main
+    Build:
+        needs: [CodeQL, Spellcheck]
+        uses: oneapi-src/unified-memory-framework/.github/workflows/build.yml@main
+    Benchmark:
+        needs: [Build]
+        uses: oneapi-src/unified-memory-framework/.github/workflows/benchmark.yml@main
