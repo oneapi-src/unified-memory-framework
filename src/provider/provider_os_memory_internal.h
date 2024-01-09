@@ -22,16 +22,6 @@ int os_translate_mem_protection_flags(unsigned protection);
 
 int os_translate_mem_visibility(umf_mem_visibility_t visibility);
 
-int os_translate_numa_mode(umf_numa_mode_t mode);
-
-int os_translate_numa_flags(unsigned numa_flag);
-
-long os_mbind(void *addr, size_t len, int mode, const unsigned long *nodemask,
-              unsigned long maxnode, unsigned flags);
-
-long os_get_mempolicy(int *mode, unsigned long *nodemask, unsigned long maxnode,
-                      void *addr);
-
 int os_mmap_aligned(void *hint_addr, size_t length, size_t alignment,
                     size_t page_size, int prot, int flags, int fd, long offset,
                     void **out_addr);

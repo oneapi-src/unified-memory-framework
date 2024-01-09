@@ -10,17 +10,16 @@ set(UMF_SOURCES
     memory_pool.c
     memory_provider.c
     memory_provider_get_last_failed.c
-    provider/provider_os_memory.c
     provider/provider_tracking.c
     critnib/critnib.c
 )
 
 set(UMF_SOURCES_LINUX
+    provider/provider_os_memory.c
     provider/provider_os_memory_linux.c
 )
 
 set(UMF_SOURCES_WINDOWS
-    provider/provider_os_memory_windows.c
     provider/provider_tracking_windows.cpp
 )
 
@@ -31,7 +30,7 @@ elseif(WINDOWS)
 endif()
 
 if(LINUX)
-    set(UMF_LIBS umf_utils numa)
+    set(UMF_LIBS umf_utils hwloc)
 else()
     set(UMF_LIBS umf_utils)
 endif()
