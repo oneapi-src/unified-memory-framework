@@ -7,4 +7,6 @@ Intel Unified Memory Framework documentation
 .. toctree::
    :maxdepth: 3
    
+   introduction.rst
    api.rst
+   glossary.rst
