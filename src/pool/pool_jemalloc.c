@@ -218,7 +218,7 @@ static bool arena_extent_split(extent_hooks_t *extent_hooks, void *addr,
     (void)arena_ind;    // unused
 
     // TODO: add this function to the provider API to support Windows and USM
-    return false; // false means success (split is a nop)
+    return true; // true means failure (unsupported)
 }
 
 // arena_extent_merge - an extent merge function conforms to the extent_merge_t type and optionally
@@ -239,7 +239,7 @@ static bool arena_extent_merge(extent_hooks_t *extent_hooks, void *addr_a,
     (void)arena_ind;    // unused
 
     // TODO: add this function to the provider API to support Windows and USM
-    return false; // false means success (merge is a nop)
+    return true; // true means failure (unsupported)
 }
 
 // The extent_hooks_t structure comprises function pointers which are described individually below.
