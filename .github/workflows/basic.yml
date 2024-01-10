@@ -93,6 +93,11 @@ jobs:
         working-directory: ${{env.BUILD_DIR}}
         run: ${{github.workspace}}/test/test_make_uninstall.sh ${{github.workspace}} ${{env.BUILD_DIR}} ${{env.INSTL_DIR}}
 
+      - name: Test make install with benchmark
+        working-directory: ${{env.BUILD_DIR}}
+        run: ${{github.workspace}}/test/test_make_install_with_bench.sh \
+              ${{github.workspace}} ${{env.BUILD_DIR}} ${{env.INSTL_DIR}} ${{matrix.build_type}}
+
   windows-build:
     name: Build - Windows
     strategy:
