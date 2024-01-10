@@ -136,7 +136,8 @@ static bool arena_extent_commit(extent_hooks_t *extent_hooks, void *addr,
     (void)length;       // unused
     (void)arena_ind;    // unused
 
-    return true; // true means failure (unsupported)
+    // TODO: add this function to the provider API to support Windows and USM
+    return false; // false means success (commit is a nop)
 }
 
 // arena_extent_decommit - an extent decommit function conforms to the extent_decommit_t type
@@ -156,6 +157,7 @@ static bool arena_extent_decommit(extent_hooks_t *extent_hooks, void *addr,
     (void)length;       // unused
     (void)arena_ind;    // unused
 
+    // TODO: add this function to the provider API to support Windows and USM
     return true; // true means failure (unsupported)
 }
 
@@ -215,7 +217,8 @@ static bool arena_extent_split(extent_hooks_t *extent_hooks, void *addr,
     (void)committed;    // unused
     (void)arena_ind;    // unused
 
-    return true; // true means failure (unsupported)
+    // TODO: add this function to the provider API to support Windows and USM
+    return false; // false means success (split is a nop)
 }
 
 // arena_extent_merge - an extent merge function conforms to the extent_merge_t type and optionally
@@ -235,7 +238,8 @@ static bool arena_extent_merge(extent_hooks_t *extent_hooks, void *addr_a,
     (void)committed;    // unused
     (void)arena_ind;    // unused
 
-    return true; // true means failure (unsupported)
+    // TODO: add this function to the provider API to support Windows and USM
+    return false; // false means success (merge is a nop)
 }
 
 // The extent_hooks_t structure comprises function pointers which are described individually below.
