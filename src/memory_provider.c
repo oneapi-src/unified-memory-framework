@@ -21,6 +21,10 @@ typedef struct umf_memory_provider_t {
 umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
                                      void *params,
                                      umf_memory_provider_handle_t *hProvider) {
+    if (!ops || !hProvider) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     umf_memory_provider_handle_t provider =
         malloc(sizeof(umf_memory_provider_t));
     if (!provider) {

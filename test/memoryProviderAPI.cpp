@@ -1,9 +1,10 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2024 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // This file contains tests for UMF provider API
 
 #include "provider.hpp"
+#include "provider_null.h"
 #include "test_helpers.h"
 
 #include <string>
@@ -65,8 +66,19 @@ TEST_F(test, memoryProviderTrace) {
     ASSERT_EQ(std::string(pName), std::string("null"));
 }
 
-//////////////////////////// Negative test cases
-///////////////////////////////////
+////////////////// Negative test cases /////////////////
+
+TEST_F(test, memoryProviderCreateNullOps) {
+    umf_memory_provider_handle_t hProvider;
+    auto ret = umfMemoryProviderCreate(nullptr, nullptr, &hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, memoryProviderNullPoolHandle) {
+    auto ret =
+        umfMemoryProviderCreate(&UMF_NULL_PROVIDER_OPS, nullptr, nullptr);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
 
 struct providerInitializeTest : umf_test::test,
                                 ::testing::WithParamInterface<umf_result_t> {};
