@@ -58,8 +58,13 @@ TEST_F(test, freeErrorPropagation) {
     void *ptr = umfPoolMalloc(pool, size);
 
     freeReturn = UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
+    // this umfPoolFree() will not free the memory
     auto freeRet = umfPoolFree(pool, ptr);
+    EXPECT_EQ(freeRet, freeReturn);
 
+    freeReturn = UMF_RESULT_SUCCESS;
+    // free the memory to avoid memory leak
+    freeRet = umfPoolFree(pool, ptr);
     EXPECT_EQ(freeRet, freeReturn);
 }
 
