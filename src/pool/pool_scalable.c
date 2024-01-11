@@ -167,6 +167,7 @@ static void tbb_pool_finalize(void *pool) {
     pthread_once(&tbb_is_initialized, load_tbb_symbols);
     struct tbb_memory_pool *pool_data = (struct tbb_memory_pool *)pool;
     g_tbb_ops.pool_destroy(pool_data->tbb_pool);
+    free(pool_data);
 }
 
 static void *tbb_malloc(void *pool, size_t size) {
