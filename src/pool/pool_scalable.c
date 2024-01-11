@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023 Intel Corporation
+ * Copyright (C) 2023-2024 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -24,6 +24,7 @@
 #include <tbb/scalable_allocator.h>
 
 #include "utils_common.h"
+#include "utils_sanitizers.h"
 
 typedef void *(*raw_alloc_tbb_type)(intptr_t, size_t *);
 typedef void (*raw_free_tbb_type)(intptr_t, void *, size_t);
@@ -179,6 +180,7 @@ static void *tbb_malloc(void *pool, size_t size) {
         }
         return NULL;
     }
+    utils_annotate_acquire(pool);
     return ptr;
 }
 
@@ -205,6 +207,7 @@ static void *tbb_realloc(void *pool, void *ptr, size_t size) {
         }
         return NULL;
     }
+    utils_annotate_acquire(pool);
     return new_ptr;
 }
 
@@ -219,6 +222,7 @@ static void *tbb_aligned_malloc(void *pool, size_t size, size_t alignment) {
         }
         return NULL;
     }
+    utils_annotate_acquire(pool);
     return ptr;
 }
 
@@ -228,6 +232,12 @@ static umf_result_t tbb_free(void *pool, void *ptr) {
     }
 
     TLS_last_free_error = UMF_RESULT_SUCCESS;
+
+    // Establishes happens-before order with tbb_*alloc functions.
+    // Makes sure that writes to the memory pointed to by 'ptr'
+    // are not reported as data races whenever 'ptr' reused by
+    // other threads.
+    utils_annotate_release(pool);
 
     struct tbb_memory_pool *pool_data = (struct tbb_memory_pool *)pool;
     if (g_tbb_ops.pool_free(pool_data->tbb_pool, ptr)) {
