@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023 Intel Corporation
+ * Copyright (C) 2023-2024 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -17,20 +17,6 @@
 #include <assert.h>
 #include <errno.h>
 #include <stdlib.h>
-
-#if !defined(_WIN32)
-critnib *TRACKER = NULL;
-void __attribute__((constructor)) createLibTracker(void) {
-    TRACKER = critnib_new();
-}
-void __attribute__((destructor)) deleteLibTracker(void) {
-    critnib_delete(TRACKER);
-}
-
-umf_memory_tracker_handle_t umfMemoryTrackerGet(void) {
-    return (umf_memory_tracker_handle_t)TRACKER;
-}
-#endif
 
 typedef struct tracker_value_t {
     umf_memory_pool_handle_t pool;
@@ -233,9 +219,14 @@ umf_memory_provider_ops_t UMF_TRACKING_MEMORY_PROVIDER_OPS = {
 umf_result_t umfTrackingMemoryProviderCreate(
     umf_memory_provider_handle_t hUpstream, umf_memory_pool_handle_t hPool,
     umf_memory_provider_handle_t *hTrackingProvider) {
+    umfTrackingMemoryProviderInit();
+
     umf_tracking_memory_provider_t params;
     params.hUpstream = hUpstream;
     params.hTracker = umfMemoryTrackerGet();
+    if (!params.hTracker) {
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
     params.pool = hPool;
 
     return umfMemoryProviderCreate(&UMF_TRACKING_MEMORY_PROVIDER_OPS, &params,

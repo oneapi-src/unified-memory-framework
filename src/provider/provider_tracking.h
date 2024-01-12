@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023 Intel Corporation
+ * Copyright (C) 2023-2024 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -31,6 +31,9 @@ umfMemoryTrackerGetPool(umf_memory_tracker_handle_t hTracker, const void *ptr);
 umf_result_t umfTrackingMemoryProviderCreate(
     umf_memory_provider_handle_t hUpstream, umf_memory_pool_handle_t hPool,
     umf_memory_provider_handle_t *hTrackingProvider);
+
+// Initialize critnib for a UMF static library build on Windows
+void umfTrackingMemoryProviderInit(void);
 
 void umfTrackingMemoryProviderGetUpstreamProvider(
     umf_memory_provider_handle_t hTrackingProvider,
