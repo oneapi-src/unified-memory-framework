@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023 Intel Corporation
+ * Copyright (C) 2023-2024 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -19,7 +19,7 @@
 umf_result_t umfPoolCreate(const umf_memory_pool_ops_t *ops,
                            umf_memory_provider_handle_t provider, void *params,
                            umf_memory_pool_handle_t *hPool) {
-    if (!provider) {
+    if (!ops || !provider || !hPool) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 

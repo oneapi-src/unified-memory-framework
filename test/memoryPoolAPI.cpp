@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2024 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // This file contains tests for UMF pool API
@@ -133,6 +133,23 @@ INSTANTIATE_TEST_SUITE_P(mallocMultiPoolTest, umfMultiPoolTest,
                              nullptr}));
 
 ////////////////// Negative test cases /////////////////
+
+TEST_F(test, poolCreateNullOps) {
+    auto nullProvider = umf_test::wrapProviderUnique(nullProviderCreate());
+    umf_memory_provider_handle_t hProvider = nullProvider.get();
+
+    umf_memory_pool_handle_t hPool;
+    auto ret = umfPoolCreate(nullptr, hProvider, nullptr, &hPool);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, poolCreateNullPoolHandle) {
+    auto nullProvider = umf_test::wrapProviderUnique(nullProviderCreate());
+    umf_memory_provider_handle_t hProvider = nullProvider.get();
+
+    auto ret = umfPoolCreate(&PROXY_POOL_OPS, hProvider, nullptr, nullptr);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
 
 TEST_F(test, memoryPoolInvalidProvidersNullptr) {
     umf_memory_pool_handle_t hPool;
