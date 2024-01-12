@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2024 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -22,17 +22,19 @@ using umf_test::test;
 using namespace umf_test;
 
 TEST_F(test, freeErrorPropagation) {
-    static umf_result_t freeReturn = UMF_RESULT_SUCCESS;
+    static umf_result_t expectedResult = UMF_RESULT_SUCCESS;
     struct memory_provider : public umf_test::provider_base_t {
         umf_result_t alloc(size_t size, size_t, void **ptr) noexcept {
             *ptr = malloc(size);
             return UMF_RESULT_SUCCESS;
         }
+
         umf_result_t free(void *ptr, [[maybe_unused]] size_t size) noexcept {
-            if (freeReturn == UMF_RESULT_SUCCESS) {
+            // do the actual free only when we expect the success
+            if (expectedResult == UMF_RESULT_SUCCESS) {
                 ::free(ptr);
             }
-            return freeReturn;
+            return expectedResult;
         }
     };
     umf_memory_provider_ops_t provider_ops =
@@ -57,15 +59,15 @@ TEST_F(test, freeErrorPropagation) {
     static constexpr size_t size = 1024;
     void *ptr = umfPoolMalloc(pool, size);
 
-    freeReturn = UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     // this umfPoolFree() will not free the memory
-    auto freeRet = umfPoolFree(pool, ptr);
-    EXPECT_EQ(freeRet, freeReturn);
+    expectedResult = UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
+    umf_result_t testResult = umfPoolFree(pool, ptr);
+    EXPECT_EQ(testResult, expectedResult);
+    expectedResult = UMF_RESULT_SUCCESS;
 
-    freeReturn = UMF_RESULT_SUCCESS;
     // free the memory to avoid memory leak
-    freeRet = umfPoolFree(pool, ptr);
-    EXPECT_EQ(freeRet, freeReturn);
+    testResult = umfPoolFree(pool, ptr);
+    EXPECT_EQ(testResult, expectedResult);
 }
 
 TEST_F(test, sharedLimits) {
