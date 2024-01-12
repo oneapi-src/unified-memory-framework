@@ -1,0 +1,61 @@
+name: PR/push
+
+on: [push, pull_request]
+
+concurrency:
+    group: ${{ github.head_ref }}-${{ github.workflow }}
+    cancel-in-progress: true
+
+jobs:
+    FastBuild:
+        name: Fast build
+        strategy:
+            matrix:
+                os: [ubuntu-latest, windows-latest]
+                include:
+                    - os: ubuntu-latest
+                      nproc: $(nproc)
+                      pool_scalable: 'ON'
+                      jemalloc: 'ON'
+                    - os: windows-latest
+                      nproc: $Env:NUMBER_OF_PROCESSORS
+                      pool_scalable: 'OFF'
+                      jemalloc: 'OFF'
+        runs-on: ${{matrix.os}}
+
+        steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4
+
+        - name: Install apt packages
+          if: matrix.os == 'ubuntu-latest'
+          run: |
+            sudo apt-get update
+            sudo apt-get install -y cmake libjemalloc-dev libnuma-dev libtbb-dev
+
+        - name: Configure CMake
+          run: >
+            cmake
+            -B ${{github.workspace}}/build
+            -DCMAKE_BUILD_TYPE=Release
+            -DUMF_FORMAT_CODE_STYLE=OFF
+            -DUMF_DEVELOPER_MODE=ON
+            -DUMF_ENABLE_POOL_TRACKING=ON
+            -DUMF_BUILD_LIBUMF_POOL_SCALABLE=${{matrix.pool_scalable}}
+            -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
+            -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=${{matrix.jemalloc}}
+
+        - name: Build
+          run: >
+            cmake --build ${{github.workspace}}/build --config Release -j ${{matrix.nproc}}
+    Spellcheck:
+        uses: oneapi-src/unified-memory-framework/.github/workflows/spellcheck.yml@main
+    Build:
+        needs: [Spellcheck, FastBuild]
+        uses: oneapi-src/unified-memory-framework/.github/workflows/basic.yml@main
+    Benchmark:
+        needs: [Build]
+        uses: oneapi-src/unified-memory-framework/.github/workflows/benchmarks.yml@main
+    CodeQL:
+        needs: [Build]
+        uses: oneapi-src/unified-memory-framework/.github/workflows/codeql.yml@main
