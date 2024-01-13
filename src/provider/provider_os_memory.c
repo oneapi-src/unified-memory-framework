@@ -449,6 +449,26 @@ static const char *os_get_name(void *provider) {
     return "OS";
 }
 
+static umf_result_t os_allocation_split(void *provider, void *ptr,
+                                        size_t totalSize, size_t leftSize) {
+    (void)provider;
+    (void)ptr;
+    (void)totalSize;
+    (void)leftSize;
+    // nop
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t os_allocation_merge(void *provider, void *leftPtr,
+                                        void *rightPtr, size_t totalSize) {
+    (void)provider;
+    (void)leftPtr;
+    (void)rightPtr;
+    (void)totalSize;
+    // nop
+    return UMF_RESULT_SUCCESS;
+}
+
 umf_memory_provider_ops_t UMF_OS_MEMORY_PROVIDER_OPS = {
     .version = UMF_VERSION_CURRENT,
     .initialize = os_initialize,
@@ -461,4 +481,5 @@ umf_memory_provider_ops_t UMF_OS_MEMORY_PROVIDER_OPS = {
     .purge_lazy = os_purge_lazy,
     .purge_force = os_purge_force,
     .get_name = os_get_name,
-};
+    .allocation_split = os_allocation_split,
+    .allocation_merge = os_allocation_merge};

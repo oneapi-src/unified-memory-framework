@@ -210,15 +210,14 @@ static bool arena_extent_split(extent_hooks_t *extent_hooks, void *addr,
                                size_t size, size_t size_a, size_t size_b,
                                bool committed, unsigned arena_ind) {
     (void)extent_hooks; // unused
-    (void)addr;         // unused
-    (void)size;         // unused
-    (void)size_a;       // unused
-    (void)size_b;       // unused
     (void)committed;    // unused
-    (void)arena_ind;    // unused
+    (void)size_b;
 
-    // TODO: add this function to the provider API to support Windows and USM
-    return true; // true means failure (unsupported)
+    assert(size_a + size_b == size);
+
+    jemalloc_memory_pool_t *pool = get_pool_by_arena_index(arena_ind);
+    return umfMemoryProviderAllocationSplit(pool->provider, addr, size,
+                                            size_a) != UMF_RESULT_SUCCESS;
 }
 
 // arena_extent_merge - an extent merge function conforms to the extent_merge_t type and optionally
@@ -231,15 +230,12 @@ static bool arena_extent_merge(extent_hooks_t *extent_hooks, void *addr_a,
                                size_t size_a, void *addr_b, size_t size_b,
                                bool committed, unsigned arena_ind) {
     (void)extent_hooks; // unused
-    (void)addr_a;       // unused
-    (void)addr_b;       // unused
-    (void)size_a;       // unused
-    (void)size_b;       // unused
     (void)committed;    // unused
-    (void)arena_ind;    // unused
 
-    // TODO: add this function to the provider API to support Windows and USM
-    return true; // true means failure (unsupported)
+    jemalloc_memory_pool_t *pool = get_pool_by_arena_index(arena_ind);
+    return umfMemoryProviderAllocationMerge(pool->provider, addr_a, addr_b,
+                                            size_a + size_b) !=
+           UMF_RESULT_SUCCESS;
 }
 
 // The extent_hooks_t structure comprises function pointers which are described individually below.

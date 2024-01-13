@@ -120,6 +120,134 @@ static umf_result_t trackingAlloc(void *hProvider, size_t size,
     return ret;
 }
 
+static umf_result_t trackingAllocationSplit(void *provider, void *ptr,
+                                            size_t totalSize, size_t leftSize) {
+    umf_tracking_memory_provider_t *p =
+        (umf_tracking_memory_provider_t *)provider;
+
+    tracker_value_t *splitValue =
+        (tracker_value_t *)malloc(sizeof(tracker_value_t));
+    splitValue->pool = p->pool;
+    splitValue->size = leftSize;
+
+    tracker_value_t *value =
+        (tracker_value_t *)critnib_get((critnib *)p->hTracker, (uintptr_t)ptr);
+    if (!value) {
+        free(splitValue);
+        fprintf(stderr, "tracking split: no such value\n");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    if (value->size != totalSize) {
+        free(splitValue);
+        fprintf(stderr, "tracking split: %zu != %zu\n", value->size, totalSize);
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    umf_result_t ret = umfMemoryProviderAllocationSplit(p->hUpstream, ptr,
+                                                        totalSize, leftSize);
+    if (ret != UMF_RESULT_SUCCESS) {
+        free(splitValue);
+        fprintf(stderr,
+                "tracking split: umfMemoryProviderAllocationSplit failed\n");
+        return ret;
+    }
+
+    void *rightPtr = (void *)(((uintptr_t)ptr) + leftSize);
+    size_t rightSize = totalSize - leftSize;
+
+    // We'll have duplicate entry for the range [rightPtr, rightValue->size] but this is fine,
+    // the value is the same anyway and we forbid splitting/removing that range concurrently
+    ret = umfMemoryTrackerAdd(p->hTracker, p->pool, rightPtr, rightSize);
+    if (ret != UMF_RESULT_SUCCESS) {
+        free(splitValue);
+        fprintf(stderr, "tracking split: umfMemoryTrackerAdd failed\n");
+        // TODO: what now? should we rollback the split? This is can only happen due to ENOMEM
+        // so it's unlikely but probably the best solution would be to try to preallocate everything
+        // (value and critnib nodes) before calling umfMemoryProviderAllocationSplit.
+        return ret;
+    }
+
+    int cret = critnib_insert((critnib *)p->hTracker, (uintptr_t)ptr,
+                              (void *)splitValue, 1 /* update */);
+    // this cannot fail since we know the element exists (nothing to allocate)
+    assert(cret == 0);
+    (void)cret;
+
+    // free the original value
+    free(value);
+
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t trackingAllocationMerge(void *provider, void *leftPtr,
+                                            void *rightPtr, size_t totalSize) {
+    umf_tracking_memory_provider_t *p =
+        (umf_tracking_memory_provider_t *)provider;
+
+    tracker_value_t *mergedValue =
+        (tracker_value_t *)malloc(sizeof(tracker_value_t));
+    mergedValue->pool = p->pool;
+    mergedValue->size = totalSize;
+
+    if (!mergedValue) {
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    tracker_value_t *leftValue = (tracker_value_t *)critnib_get(
+        (critnib *)p->hTracker, (uintptr_t)leftPtr);
+    if (!leftValue) {
+        free(mergedValue);
+        fprintf(stderr, "tracking merge: no left value\n");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    tracker_value_t *rightValue = (tracker_value_t *)critnib_get(
+        (critnib *)p->hTracker, (uintptr_t)rightPtr);
+    if (!rightValue) {
+        free(mergedValue);
+        fprintf(stderr, "tracking merge: no right value\n");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    if (leftValue->pool != rightValue->pool) {
+        free(mergedValue);
+        fprintf(stderr, "tracking merge: pool mismatch\n");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    if (leftValue->size + rightValue->size != totalSize) {
+        // TODO: should we allow leftValue->size + rightValue->size > totalSize?
+        fprintf(stderr, "tracking merge: leftValue->size + rightValue->size != "
+                        "totalSize\n");
+        free(mergedValue);
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    umf_result_t ret = umfMemoryProviderAllocationMerge(p->hUpstream, leftPtr,
+                                                        rightPtr, totalSize);
+    if (ret != UMF_RESULT_SUCCESS) {
+        free(mergedValue);
+        fprintf(stderr,
+                "tracking merge: umfMemoryProviderAllocationMerge failed\n");
+        return ret;
+    }
+
+    // We'll have duplicate entry for the range [rightPtr, rightValue->size] but this is fine,
+    // the value is the same anyway and we forbid splitting/removing that range concurrently
+    int cret = critnib_insert((critnib *)p->hTracker, (uintptr_t)leftPtr,
+                              (void *)mergedValue, 1 /* update */);
+    // this cannot fail since we know the element exists (nothing to allocate)
+    assert(cret == 0);
+    (void)cret;
+
+    // free old value that we just replaced with mergedValue
+    free(leftValue);
+
+    void *erasedRightValue =
+        critnib_remove((critnib *)p->hTracker, (uintptr_t)rightPtr);
+    assert(erasedRightValue == rightValue);
+    free(erasedRightValue);
+
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_result_t trackingFree(void *hProvider, void *ptr, size_t size) {
     umf_result_t ret;
     umf_tracking_memory_provider_t *p =
@@ -247,7 +375,8 @@ umf_memory_provider_ops_t UMF_TRACKING_MEMORY_PROVIDER_OPS = {
     .purge_force = trackingPurgeForce,
     .purge_lazy = trackingPurgeLazy,
     .get_name = trackingName,
-};
+    .allocation_split = trackingAllocationSplit,
+    .allocation_merge = trackingAllocationMerge};
 
 umf_result_t umfTrackingMemoryProviderCreate(
     umf_memory_provider_handle_t hUpstream, umf_memory_pool_handle_t hPool,

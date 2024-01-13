@@ -156,6 +156,13 @@ umfMemoryProviderGetName(umf_memory_provider_handle_t hProvider);
 ///
 UMF_EXPORT umf_memory_provider_handle_t umfGetLastFailedMemoryProvider(void);
 
+UMF_EXPORT umf_result_t
+umfMemoryProviderAllocationSplit(umf_memory_provider_handle_t hProvider,
+                                 void *ptr, size_t totalSize, size_t leftSize);
+UMF_EXPORT umf_result_t umfMemoryProviderAllocationMerge(
+    umf_memory_provider_handle_t hProvider, void *leftPtr, void *rightPtr,
+    size_t totalSize);
+
 #ifdef __cplusplus
 }
 #endif

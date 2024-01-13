@@ -11,6 +11,7 @@
 #include <umf/memory_provider.h>
 
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 typedef struct umf_memory_provider_t {
@@ -128,4 +129,47 @@ const char *umfMemoryProviderGetName(umf_memory_provider_handle_t hProvider) {
 
 umf_memory_provider_handle_t umfGetLastFailedMemoryProvider(void) {
     return *umfGetLastFailedMemoryProviderPtr();
+}
+
+umf_result_t
+umfMemoryProviderAllocationSplit(umf_memory_provider_handle_t hProvider,
+                                 void *ptr, size_t totalSize, size_t leftSize) {
+    if (leftSize >= totalSize) {
+        fprintf(stderr,
+                "umfMemoryProviderAllocationSplit failed. check failed: %zu >= "
+                "%zu\n",
+                leftSize, totalSize);
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    umf_result_t res = hProvider->ops.allocation_split(
+        hProvider->provider_priv, ptr, totalSize, leftSize);
+    checkErrorAndSetLastProvider(res, hProvider);
+    return res;
+}
+
+umf_result_t
+umfMemoryProviderAllocationMerge(umf_memory_provider_handle_t hProvider,
+                                 void *leftPtr, void *rightPtr,
+                                 size_t totalSize) {
+    if ((uintptr_t)leftPtr >= (uintptr_t)rightPtr) {
+        fprintf(
+            stderr,
+            "umfMemoryProviderAllocationMerge failed. check failed: %p >= %p\n",
+            leftPtr, rightPtr);
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if ((uintptr_t)rightPtr - (uintptr_t)leftPtr > totalSize) {
+        fprintf(stderr,
+                "umfMemoryProviderAllocationMerge failed. check failed: %p - "
+                "%p > %zu\n",
+                rightPtr, leftPtr, totalSize);
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    umf_result_t res = hProvider->ops.allocation_merge(
+        hProvider->provider_priv, leftPtr, rightPtr, totalSize);
+    checkErrorAndSetLastProvider(res, hProvider);
+    return res;
 }

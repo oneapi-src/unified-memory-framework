@@ -139,6 +139,11 @@ typedef struct umf_memory_provider_ops_t {
     /// @return pointer to a string containing the name of the \p provider
     ///
     const char *(*get_name)(void *provider);
+
+    umf_result_t (*allocation_split)(void *provider, void *ptr,
+                                     size_t totalSize, size_t leftSize);
+    umf_result_t (*allocation_merge)(void *provider, void *leftPtr,
+                                     void *rightPtr, size_t totalSize);
 } umf_memory_provider_ops_t;
 
 #ifdef __cplusplus
