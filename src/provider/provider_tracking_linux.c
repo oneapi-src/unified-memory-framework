@@ -7,18 +7,17 @@
  *
  */
 
-#include "critnib.h"
 #include "provider_tracking.h"
 
 #include <stddef.h>
 
-static critnib *TRACKER = NULL;
+static umf_memory_tracker_handle_t TRACKER;
 
 void __attribute__((constructor)) createLibTracker(void) {
-    TRACKER = critnib_new();
+    TRACKER = umfMemoryTrackerCreate();
 }
 void __attribute__((destructor)) deleteLibTracker(void) {
-    critnib_delete(TRACKER);
+    umfMemoryTrackerDestroy(TRACKER);
 }
 
 void umfTrackingMemoryProviderInit(void) {

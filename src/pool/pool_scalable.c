@@ -121,7 +121,7 @@ static void tbb_raw_free_wrapper(intptr_t pool_id, void *ptr, size_t bytes) {
         TLS_last_free_error = ret;
         fprintf(
             stderr,
-            "Memory provider failed to free memory, addr = %p, size = %lu\n",
+            "Memory provider failed to free memory, addr = %p, size = %zu\n",
             ptr, bytes);
     }
 }

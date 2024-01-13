@@ -156,6 +156,34 @@ umfMemoryProviderGetName(umf_memory_provider_handle_t hProvider);
 ///
 UMF_EXPORT umf_memory_provider_handle_t umfGetLastFailedMemoryProvider(void);
 
+///
+/// @brief Splits a coarse grain allocation into 2 adjacent allocations that
+///        can be managed (freed) separately.
+/// @param hProvider handle to the memory provider
+/// @param ptr pointer to the beginning of the allocation
+/// @param totalSize total size of the allocation to be split
+/// @param firstSize size of the first new allocation, second allocation
+//         has a size equal to totalSize - firstSize
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure
+///
+UMF_EXPORT umf_result_t
+umfMemoryProviderAllocationSplit(umf_memory_provider_handle_t hProvider,
+                                 void *ptr, size_t totalSize, size_t firstSize);
+
+///
+/// @brief Merges two coarse grain allocations into a single allocation that
+///        can be managed (freed) as a whole.
+/// @param hProvider handle to the memory provider
+/// @param lowPtr pointer to the first allocation
+/// @param highPtr pointer to the second allocation (should be > lowPtr)
+/// @param totalSize size of a new merged allocation. Should be equal
+///        to the sum of sizes of allocations beginning at lowPtr and highPtr
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure
+///
+UMF_EXPORT umf_result_t
+umfMemoryProviderAllocationMerge(umf_memory_provider_handle_t hProvider,
+                                 void *lowPtr, void *highPtr, size_t totalSize);
+
 #ifdef __cplusplus
 }
 #endif
