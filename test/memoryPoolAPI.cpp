@@ -105,6 +105,7 @@ TEST_F(test, memoryPoolWithCustomProvider) {
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
     ASSERT_NE(hPool, nullptr);
 
+    umfPoolDestroy(hPool);
     umfMemoryProviderDestroy(hProvider);
 }
 
