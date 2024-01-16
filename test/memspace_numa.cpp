@@ -37,17 +37,19 @@ struct numa_nodes_test : ::umf_test::test {
 struct numa_memspace_test : ::numa_nodes_test {
     void SetUp() override {
         ::numa_nodes_test::SetUp();
-
-        enum umf_result_t ret = umfMemspaceCreateFromNumaArray(
-            nodeIds.data(), nodeIds.size(), &memspace);
-        ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
-        ASSERT_NE(memspace, nullptr);
+        if (nodeIds.size()) {
+            enum umf_result_t ret = umfMemspaceCreateFromNumaArray(
+                nodeIds.data(), nodeIds.size(), &memspace);
+            ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+            ASSERT_NE(memspace, nullptr);
+        }
     }
 
     void TearDown() override {
         ::numa_nodes_test::TearDown();
-
-        umfMemspaceDestroy(memspace);
+        if (memspace) {
+            umfMemspaceDestroy(memspace);
+        }
     }
 
     umf_memspace_handle_t memspace = nullptr;
@@ -56,17 +58,19 @@ struct numa_memspace_test : ::numa_nodes_test {
 struct numa_memspace_provider_test : ::numa_memspace_test {
     void SetUp() override {
         ::numa_memspace_test::SetUp();
-
-        umf_result_t ret =
-            umfMemoryProviderCreateFromMemspace(memspace, nullptr, &provider);
-        ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
-        ASSERT_NE(provider, nullptr);
+        if (nodeIds.size()) {
+            umf_result_t ret = umfMemoryProviderCreateFromMemspace(
+                memspace, nullptr, &provider);
+            ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+            ASSERT_NE(provider, nullptr);
+        }
     }
 
     void TearDown() override {
         ::numa_memspace_test::TearDown();
-
-        umfMemoryProviderDestroy(provider);
+        if (provider) {
+            umfMemoryProviderDestroy(provider);
+        }
     }
 
     umf_memory_provider_handle_t provider = nullptr;
