@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023 Intel Corporation
+ * Copyright (C) 2023-2024 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -715,8 +715,8 @@ int critnib_find(struct critnib *c, uintptr_t key, enum find_dir_t dir,
                  uintptr_t *rkey, void **rvalue) {
     uint64_t wrs1, wrs2;
     struct critnib_leaf *k;
-    uintptr_t _rkey;
-    void **_rvalue;
+    uintptr_t _rkey = (uintptr_t)0x0;
+    void **_rvalue = NULL;
 
     /* <42 ≡ ≤41 */
     if (dir < -1) {

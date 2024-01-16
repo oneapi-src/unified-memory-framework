@@ -1,10 +1,14 @@
-# Copyright (C) 2023 Intel Corporation
+# Copyright (C) 2023-2024 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 #
 # helpers.cmake -- helper functions for top-level CMakeLists.txt
 #
+
+# CMake modules that check whether the C/C++ compiler supports a given flag
+include(CheckCCompilerFlag)
+include(CheckCXXCompilerFlag)
 
 # Sets ${ret} to version of program specified by ${name} in major.minor format
 function(get_program_version_major_minor name ret)
@@ -104,3 +108,48 @@ function(add_umf_library)
     add_umf_target_compile_options(${ARG_NAME})
     add_umf_target_link_options(${ARG_NAME})
 endfunction()
+
+# Add sanitizer ${flag}, if it is supported, for both C and C++ compiler
+macro(add_sanitizer_flag flag)
+    # Save current 'CMAKE_REQUIRED_LIBRARIES' state and temporarily extend it with
+    # '-fsanitize=${flag}'. It is required by CMake to check the compiler for
+    # availability of provided sanitizer ${flag}.
+    if(WINDOWS)
+        set(SANITIZER_FLAG "/fsanitize=${flag}")
+        set(SANITIZER_ARGS "")
+    else()
+        set(SANITIZER_FLAG "-fsanitize=${flag}")
+        set(SANITIZER_ARGS "-fno-sanitize-recover=all")
+    endif()
+
+    set(SAVED_CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES})
+    set(CMAKE_REQUIRED_LIBRARIES "${CMAKE_REQUIRED_LIBRARIES} ${SANITIZER_FLAG}")
+
+    if(${flag} STREQUAL "address")
+        set(check_name "HAS_ASAN")
+    elseif(${flag} STREQUAL "undefined")
+        set(check_name "HAS_UBSAN")
+    elseif(${flag} STREQUAL "thread")
+        set(check_name "HAS_TSAN")
+    elseif(${flag} STREQUAL "memory")
+        set(check_name "HAS_MSAN")
+    endif()
+
+    # Check C and CXX compilers for given sanitizer flag.
+    check_c_compiler_flag("${SANITIZER_FLAG}" "C_${check_name}")
+    check_cxx_compiler_flag("${SANITIZER_FLAG}" "CXX_${check_name}")
+    if (${C_${check_name}} OR ${CXX_${check_name}})
+        # Set appropriate linker flags for building executables.
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${SANITIZER_FLAG} ${SANITIZER_ARGS}")
+        if (${C_${check_name}})
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${SANITIZER_FLAG} ${SANITIZER_ARGS}")
+        endif()
+        if (${CXX_${check_name}})
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SANITIZER_FLAG} ${SANITIZER_ARGS}")
+        endif()
+    else()
+        message(FATAL_ERROR "${flag} sanitizer is not supported (neither by C nor CXX compiler)")
+    endif()
+
+    set(CMAKE_REQUIRED_LIBRARIES ${SAVED_CMAKE_REQUIRED_LIBRARIES})
+endmacro()

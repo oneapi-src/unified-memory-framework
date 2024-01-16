@@ -13,7 +13,7 @@ The Unified Memory Framework (UMF) is a library for constructing allocators and 
 
 A UMF memory pool is a combination of a pool allocator and a memory provider. A memory provider is responsible for coarse-grained memory allocations and management of memory pages, while the pool allocator controls memory pooling and handles fine-grained memory allocations.
 
-Pool allocator can leverage existing allocators (e.g. jemalloc or tbbmalloc) or be written from scratch. 
+Pool allocator can leverage existing allocators (e.g. jemalloc or tbbmalloc) or be written from scratch.
 
 UMF comes with predefined pool allocators (see include/pool) and providers (see include/provider). UMF can also work with user-defined pools and providers that implement a specific interface (see include/umf/memory_pool_ops.h and include/umf/memory_provider_ops.h)
 
@@ -98,6 +98,22 @@ $ cd build
 $ cmake {path_to_source_dir}
 $ make
 ```
+
+### Sanitizers
+
+List of sanitizers available on Linux:
+- AddressSanitizer
+- UndefinedBehaviorSanitizer
+- ThreadSanitizer
+   - Is mutually exclusive with other sanitizers.
+- MemorySanitizer
+   - Requires linking against MSan-instrumented libraries to prevent false positive reports. More information [here](https://github.com/google/sanitizers/wiki/MemorySanitizerLibcxxHowTo).
+
+List of sanitizers available on Windows:
+- AddressSanitizer
+
+Listed sanitizers can be enabled with appropriate [CMake options](#cmake-standard-options).
+
 ## Contributions
 
 All code has to be formatted using clang-format. To check the formatting do:
@@ -131,3 +147,7 @@ List of options provided by CMake:
 | UMF_ENABLE_POOL_TRACKING | Build UMF with pool tracking | ON/OFF | ON |
 | UMF_DEVELOPER_MODE | Treat warnings as errors and enables additional checks | ON/OFF | OFF |
 | UMF_FORMAT_CODE_STYLE | Add clang-format-check and clang-format-apply targets to make | ON/OFF | OFF |
+| USE_ASAN | Enable AddressSanitizer checks | ON/OFF | OFF |
+| USE_UBSAN | Enable UndefinedBehaviorSanitizer checks | ON/OFF | OFF |
+| USE_TSAN | Enable ThreadSanitizer checks | ON/OFF | OFF |
+| USE_MSAN | Enable MemorySanitizer checks | ON/OFF | OFF |

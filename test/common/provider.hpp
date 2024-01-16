@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023 Intel Corporation
+ * Copyright (C) 2023-2024 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -17,6 +17,7 @@
 
 #include "base.hpp"
 #include "cpp_helpers.hpp"
+#include "test_helpers.h"
 
 namespace umf_test {
 
@@ -68,10 +69,16 @@ struct provider_malloc : public provider_base_t {
             align = 8;
         }
 
+        // aligned_malloc returns a valid pointer despite not meeting the
+        // requirement of 'size' being multiple of 'align' even though the
+        // documentation says that it has to. AddressSanitizer returns an
+        // error because of this issue.
+        size_t aligned_size = ALIGN_UP(size, align);
+
 #ifdef _WIN32
-        *ptr = _aligned_malloc(size, align);
+        *ptr = _aligned_malloc(aligned_size, align);
 #else
-        *ptr = ::aligned_alloc(align, size);
+        *ptr = ::aligned_alloc(align, aligned_size);
 #endif
 
         return (*ptr) ? UMF_RESULT_SUCCESS
