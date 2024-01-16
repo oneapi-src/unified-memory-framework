@@ -109,11 +109,11 @@ static umf_result_t trackingAlloc(void *hProvider, size_t size,
         return ret;
     }
 
-    ret = umfMemoryTrackerAdd(p->hTracker, p->pool, *ptr, size);
-    if (ret != UMF_RESULT_SUCCESS && p->hUpstream) {
-        if (umfMemoryProviderFree(p->hUpstream, *ptr, size)) {
-            // TODO: LOG
-        }
+    umf_result_t ret2 = umfMemoryTrackerAdd(p->hTracker, p->pool, *ptr, size);
+    if (ret2 != UMF_RESULT_SUCCESS) {
+        // DO NOT call umfMemoryProviderFree() here, because the tracking provider
+        // cannot change behaviour of the upstream provider.
+        // TODO: LOG
     }
 
     return ret;
@@ -131,7 +131,9 @@ static umf_result_t trackingFree(void *hProvider, void *ptr, size_t size) {
     if (ptr) {
         ret = umfMemoryTrackerRemove(p->hTracker, ptr, size);
         if (ret != UMF_RESULT_SUCCESS) {
-            return ret;
+            // DO NOT return an error here, because the tracking provider
+            // cannot change behaviour of the upstream provider.
+            // TODO: LOG
         }
     }
 
