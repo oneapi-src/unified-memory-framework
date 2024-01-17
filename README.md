@@ -15,7 +15,9 @@ A UMF memory pool is a combination of a pool allocator and a memory provider. A 
 
 Pool allocator can leverage existing allocators (e.g. jemalloc or tbbmalloc) or be written from scratch.
 
-UMF comes with predefined pool allocators (see include/pool) and providers (see include/provider). UMF can also work with user-defined pools and providers that implement a specific interface (see include/umf/memory_pool_ops.h and include/umf/memory_provider_ops.h)
+UMF comes with predefined pool allocators (see include/pool) and providers (see include/provider). UMF can also work with user-defined pools and providers that implement a specific interface (see include/umf/memory_pool_ops.h and include/umf/memory_provider_ops.h).
+
+More detailed documentation is available here: https://oneapi-src.github.io/unified-memory-framework/
 
 ## Memory providers
 

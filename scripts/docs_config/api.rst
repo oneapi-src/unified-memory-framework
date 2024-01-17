@@ -1,5 +1,5 @@
 ==========================================
-Unified Memory Framework API Documentation
+API Documentation
 ==========================================
 
 Globals
