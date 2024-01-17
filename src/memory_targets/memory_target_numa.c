@@ -50,7 +50,9 @@ static const umf_os_memory_provider_params_t
         // NUMA config
         .nodemask = NULL,
         .maxnode = 0, // TODO: numa_max_node/GetNumaHighestNodeNumber
-        .numa_mode = UMF_NUMA_MODE_DEFAULT,
+        // use UMF_NUMA_MODE_BIND instead of UMF_NUMA_MODE_DEFAULT, because for UMF_NUMA_MODE_DEFAULT
+        // the nodemask and maxnode arguments would have to specify the empty set of nodes
+        .numa_mode = UMF_NUMA_MODE_BIND,
         .numa_flags = UMF_NUMA_FLAGS_STRICT, // TODO: determine default behavior
 
         // Logging

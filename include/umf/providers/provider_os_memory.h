@@ -31,7 +31,7 @@ typedef enum umf_mem_visibility_t {
 } umf_mem_visibility_t;
 
 typedef enum umf_numa_mode_t {
-    UMF_NUMA_MODE_DEFAULT,
+    UMF_NUMA_MODE_DEFAULT, // the nodemask and maxnode arguments must specify the empty set of nodes
     UMF_NUMA_MODE_BIND,
     UMF_NUMA_MODE_INTERLEAVE,
     UMF_NUMA_MODE_PREFERRED,
