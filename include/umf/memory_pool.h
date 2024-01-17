@@ -30,17 +30,32 @@ struct umf_memory_pool_ops_t;
 ///
 typedef struct umf_memory_pool_ops_t umf_memory_pool_ops_t;
 
+/// @brief Supported pool creation flags
+typedef uint32_t umf_pool_create_flags_t;
+typedef enum umf_pool_create_flag_t {
+    UMF_POOL_CREATE_FLAG_NONE = 0,
+    UMF_POOL_CREATE_FLAG_OWN_PROVIDER =
+        (1
+         << 0), ///< pool will own the specified provider and destroy it in umfPoolDestroy
+    /// @cond
+    UMF_POOL_CREATE_FLAG_FORCE_UINT32 = 0x7fffffff
+    /// @endcond
+
+} umf_pool_create_flag_t;
+
 ///
 /// @brief Creates new memory pool.
 /// @param ops instance of umf_memory_pool_ops_t
 /// @param provider memory provider that will be used for coarse-grain allocations.
 /// @param params pointer to pool-specific parameters
+/// @param flags a combination of umf_pool_create_flag_t
 /// @param hPool [out] handle to the newly created memory pool
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 ///
 UMF_EXPORT umf_result_t umfPoolCreate(const umf_memory_pool_ops_t *ops,
                                       umf_memory_provider_handle_t provider,
                                       void *params,
+                                      umf_pool_create_flags_t flags,
                                       umf_memory_pool_handle_t *hPool);
 
 ///

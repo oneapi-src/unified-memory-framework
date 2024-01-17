@@ -14,9 +14,10 @@
 #include <assert.h>
 #include <stdlib.h>
 
-umf_result_t umfPoolCreate(const umf_memory_pool_ops_t *ops,
-                           umf_memory_provider_handle_t provider, void *params,
-                           umf_memory_pool_handle_t *hPool) {
+umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
+                                   umf_memory_provider_handle_t provider,
+                                   void *params,
+                                   umf_memory_pool_handle_t *hPool) {
     if (!ops || !provider || !hPool) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }

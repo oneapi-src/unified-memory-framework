@@ -205,7 +205,7 @@ UBENCH_EX(simple, disjoint_pool_with_os_memory_provider) {
 
     umf_memory_pool_handle_t disjoint_pool;
     umf_result = umfPoolCreate(&UMF_DISJOINT_POOL_OPS, os_memory_provider,
-                               &disjoint_memory_pool_params, &disjoint_pool);
+                               &disjoint_memory_pool_params, 0, &disjoint_pool);
     if (umf_result != UMF_RESULT_SUCCESS) {
         exit(-1);
     }
@@ -242,7 +242,7 @@ UBENCH_EX(simple, jemalloc_pool_with_os_memory_provider) {
 
     umf_memory_pool_handle_t jemalloc_pool;
     umf_result = umfPoolCreate(&UMF_JEMALLOC_POOL_OPS, os_memory_provider, NULL,
-                               &jemalloc_pool);
+                               0, &jemalloc_pool);
     if (umf_result != UMF_RESULT_SUCCESS) {
         exit(-1);
     }
@@ -279,7 +279,7 @@ UBENCH_EX(simple, scalable_pool_with_os_memory_provider) {
 
     umf_memory_pool_handle_t scalable_pool;
     umf_result = umfPoolCreate(&UMF_SCALABLE_POOL_OPS, os_memory_provider, NULL,
-                               &scalable_pool);
+                               0, &scalable_pool);
     if (umf_result != UMF_RESULT_SUCCESS) {
         exit(-1);
     }

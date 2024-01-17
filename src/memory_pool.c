@@ -15,33 +15,16 @@
 #include <assert.h>
 #include <stdlib.h>
 
-umf_result_t umfPoolCreateEx(const umf_memory_pool_ops_t *pool_ops,
-                             void *pool_params,
-                             const umf_memory_provider_ops_t *provider_ops,
-                             void *provider_params,
-                             umf_memory_pool_handle_t *hPool) {
-    if (!pool_ops || !provider_ops || !hPool) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
-    umf_memory_provider_handle_t provider = NULL;
-    umf_result_t ret =
-        umfMemoryProviderCreate(provider_ops, provider_params, &provider);
+umf_result_t umfPoolCreate(const umf_memory_pool_ops_t *ops,
+                           umf_memory_provider_handle_t provider, void *params,
+                           umf_pool_create_flags_t flags,
+                           umf_memory_pool_handle_t *hPool) {
+    umf_result_t ret = umfPoolCreateInternal(ops, provider, params, hPool);
     if (ret != UMF_RESULT_SUCCESS) {
         return ret;
     }
-    assert(provider != NULL);
-
-    umf_memory_pool_handle_t pool = NULL;
-    ret = umfPoolCreate(pool_ops, provider, pool_params, &pool);
-    if (ret != UMF_RESULT_SUCCESS) {
-        umfMemoryProviderDestroy(provider);
-        return ret;
-    }
-    assert(pool != NULL);
-
-    pool->own_provider = true;
-    *hPool = pool;
+    assert(*hPool != NULL);
+    (*hPool)->own_provider = (flags & UMF_POOL_CREATE_FLAG_OWN_PROVIDER);
 
     return UMF_RESULT_SUCCESS;
 }
