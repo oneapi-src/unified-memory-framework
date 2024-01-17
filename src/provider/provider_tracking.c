@@ -16,6 +16,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 typedef struct tracker_value_t {
@@ -162,7 +163,37 @@ static umf_result_t trackingInitialize(void *params, void **ret) {
     return UMF_RESULT_SUCCESS;
 }
 
-static void trackingFinalize(void *provider) { free(provider); }
+static void trackingFinalize(void *provider) {
+#ifndef NDEBUG
+    umf_tracking_memory_provider_t *p =
+        (umf_tracking_memory_provider_t *)provider;
+
+    uintptr_t rkey;
+    void *rvalue;
+    size_t n_items = 0;
+    uintptr_t last_key = 0;
+
+    while (1 == critnib_find((critnib *)p->hTracker, last_key, FIND_G, &rkey,
+                             &rvalue)) {
+        tracker_value_t *value = (tracker_value_t *)rvalue;
+        if (value->pool == p->pool) {
+            n_items++;
+        }
+
+        last_key = rkey;
+    }
+
+    if (n_items) {
+        fprintf(stderr,
+                "ASSERT: tracking provider of pool %p is not empty! (%zu items "
+                "left)\n",
+                (void *)p->pool, n_items);
+        assert(n_items == 0);
+    }
+#endif /* NDEBUG */
+
+    free(provider);
+}
 
 static void trackingGetLastError(void *provider, const char **msg,
                                  int32_t *pError) {
@@ -242,4 +273,28 @@ void umfTrackingMemoryProviderGetUpstreamProvider(
     umf_tracking_memory_provider_t *p =
         (umf_tracking_memory_provider_t *)hTrackingProvider;
     *hUpstream = p->hUpstream;
+}
+
+void umfTrackingMemoryProviderFini(void *tracker) {
+#ifndef NDEBUG
+    uintptr_t rkey;
+    void *rvalue;
+    size_t n_items = 0;
+    uintptr_t last_key = 0;
+
+    while (1 ==
+           critnib_find((critnib *)tracker, last_key, FIND_G, &rkey, &rvalue)) {
+        n_items++;
+        last_key = rkey;
+    }
+
+    if (n_items) {
+        fprintf(stderr,
+                "ASSERT: tracking provider is not empty! (%zu items left)\n",
+                n_items);
+        assert(n_items == 0);
+    }
+#endif /* NDEBUG */
+
+    critnib_delete((critnib *)tracker);
 }

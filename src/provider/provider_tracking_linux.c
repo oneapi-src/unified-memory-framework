@@ -18,7 +18,7 @@ void __attribute__((constructor)) createLibTracker(void) {
     TRACKER = critnib_new();
 }
 void __attribute__((destructor)) deleteLibTracker(void) {
-    critnib_delete(TRACKER);
+    umfTrackingMemoryProviderFini(TRACKER);
 }
 
 void umfTrackingMemoryProviderInit(void) {
