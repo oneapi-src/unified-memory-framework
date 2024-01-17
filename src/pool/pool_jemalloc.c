@@ -111,12 +111,17 @@ static bool arena_extent_dalloc(extent_hooks_t *extent_hooks, void *addr,
                                 size_t size, bool committed,
                                 unsigned arena_ind) {
     (void)extent_hooks; // unused
-    (void)addr;         // unused
-    (void)size;         // unused
     (void)committed;    // unused
-    (void)arena_ind;    // unused
 
-    return true; // true means failure (unsupported)
+    jemalloc_memory_pool_t *pool = get_pool_by_arena_index(arena_ind);
+
+    umf_result_t ret;
+    ret = umfMemoryProviderFree(pool->provider, addr, size);
+    if (ret != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "umfMemoryProviderFree failed in dalloc \n");
+    }
+
+    return ret != UMF_RESULT_SUCCESS;
 }
 
 // arena_extent_commit - an extent commit function conforms to the extent_commit_t type and commits
