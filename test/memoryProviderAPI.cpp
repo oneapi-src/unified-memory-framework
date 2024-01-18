@@ -9,6 +9,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <variant>
 
 using umf_test::test;
 
@@ -104,3 +105,39 @@ TEST_P(providerInitializeTest, errorPropagation) {
                                        &hProvider);
     ASSERT_EQ(ret, this->GetParam());
 }
+
+// This fixture can be instantiated with any function that accepts void
+// and returns any of the results listed inside the variant type.
+struct providerHandleCheck
+    : umf_test::test,
+      ::testing::WithParamInterface<
+          std::function<std::variant<const char *, umf_result_t>(void)>> {};
+
+TEST_P(providerHandleCheck, providerHandleCheckAll) {
+    auto f = GetParam();
+    auto ret = f();
+
+    std::visit(
+        [&](auto arg) {
+            using T = decltype(arg);
+            if constexpr (std::is_same_v<T, umf_result_t>) {
+                ASSERT_EQ(arg, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+            } else {
+                ASSERT_EQ(arg, nullptr);
+            }
+        },
+        ret);
+}
+
+// Run poolHandleCheck for each function listed below. Each function
+// will be called with zero-initialized arguments.
+INSTANTIATE_TEST_SUITE_P(
+    providerHandleCheck, providerHandleCheck,
+    ::testing::Values(
+        umf_test::withGeneratedArgs(umfMemoryProviderAlloc),
+        umf_test::withGeneratedArgs(umfMemoryProviderFree),
+        umf_test::withGeneratedArgs(umfMemoryProviderGetRecommendedPageSize),
+        umf_test::withGeneratedArgs(umfMemoryProviderGetMinPageSize),
+        umf_test::withGeneratedArgs(umfMemoryProviderPurgeLazy),
+        umf_test::withGeneratedArgs(umfMemoryProviderPurgeForce),
+        umf_test::withGeneratedArgs(umfMemoryProviderGetName)));

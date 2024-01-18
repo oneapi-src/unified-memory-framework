@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // This file contains tests for UMF pool API
 
+#include "base.hpp"
 #include "pool.hpp"
 #include "poolFixtures.hpp"
 #include "provider.hpp"
@@ -14,7 +15,9 @@
 #include <array>
 #include <string>
 #include <thread>
+#include <type_traits>
 #include <unordered_map>
+#include <variant>
 
 using umf_test::test;
 using namespace umf_test;
@@ -282,3 +285,41 @@ TEST_F(test, getLastFailedMemoryProvider) {
                   umfMemoryProviderGetName(umfGetLastFailedMemoryProvider())),
               "provider2");
 }
+
+// This fixture can be instantiated with any function that accepts void
+// and returns any of the results listed inside the variant type.
+struct poolHandleCheck
+    : umf_test::test,
+      ::testing::WithParamInterface<
+          std::function<std::variant<void *, umf_result_t, size_t>(void)>> {};
+
+TEST_P(poolHandleCheck, poolHandleCheckAll) {
+    auto f = GetParam();
+    auto ret = f();
+
+    std::visit(
+        [&](auto arg) {
+            using T = decltype(arg);
+            if constexpr (std::is_same_v<T, umf_result_t>) {
+                ASSERT_EQ(arg, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+            } else if constexpr (std::is_same_v<T, size_t>) {
+                ASSERT_EQ(arg, 0U);
+            } else {
+                ASSERT_EQ(arg, nullptr);
+            }
+        },
+        ret);
+}
+
+// Run poolHandleCheck for each function listed below. Each function
+// will be called with zero-initialized arguments.
+INSTANTIATE_TEST_SUITE_P(
+    poolHandleCheck, poolHandleCheck,
+    ::testing::Values(
+        umf_test::withGeneratedArgs(umfPoolMalloc),
+        umf_test::withGeneratedArgs(umfPoolAlignedMalloc),
+        umf_test::withGeneratedArgs(umfPoolFree),
+        umf_test::withGeneratedArgs(umfPoolCalloc),
+        umf_test::withGeneratedArgs(umfPoolRealloc),
+        umf_test::withGeneratedArgs(umfPoolMallocUsableSize),
+        umf_test::withGeneratedArgs(umfPoolGetLastAllocationError)));

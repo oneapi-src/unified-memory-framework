@@ -8,6 +8,8 @@
  */
 
 #include "memory_provider_internal.h"
+#include "utils_common.h"
+
 #include <umf/memory_provider.h>
 
 #include <assert.h>
@@ -64,6 +66,7 @@ checkErrorAndSetLastProvider(umf_result_t result,
 
 umf_result_t umfMemoryProviderAlloc(umf_memory_provider_handle_t hProvider,
                                     size_t size, size_t alignment, void **ptr) {
+    UMF_CHECK((hProvider != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
     umf_result_t res =
         hProvider->ops.alloc(hProvider->provider_priv, size, alignment, ptr);
     checkErrorAndSetLastProvider(res, hProvider);
@@ -72,6 +75,7 @@ umf_result_t umfMemoryProviderAlloc(umf_memory_provider_handle_t hProvider,
 
 umf_result_t umfMemoryProviderFree(umf_memory_provider_handle_t hProvider,
                                    void *ptr, size_t size) {
+    UMF_CHECK((hProvider != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
     umf_result_t res = hProvider->ops.free(hProvider->provider_priv, ptr, size);
     checkErrorAndSetLastProvider(res, hProvider);
     return res;
@@ -80,17 +84,20 @@ umf_result_t umfMemoryProviderFree(umf_memory_provider_handle_t hProvider,
 void umfMemoryProviderGetLastNativeError(umf_memory_provider_handle_t hProvider,
                                          const char **ppMessage,
                                          int32_t *pError) {
+    ASSERT(hProvider != NULL);
     hProvider->ops.get_last_native_error(hProvider->provider_priv, ppMessage,
                                          pError);
 }
 
 void *umfMemoryProviderGetPriv(umf_memory_provider_handle_t hProvider) {
+    UMF_CHECK((hProvider != NULL), NULL);
     return hProvider->provider_priv;
 }
 
 umf_result_t
 umfMemoryProviderGetRecommendedPageSize(umf_memory_provider_handle_t hProvider,
                                         size_t size, size_t *pageSize) {
+    UMF_CHECK((hProvider != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
     umf_result_t res = hProvider->ops.get_recommended_page_size(
         hProvider->provider_priv, size, pageSize);
     checkErrorAndSetLastProvider(res, hProvider);
@@ -100,6 +107,7 @@ umfMemoryProviderGetRecommendedPageSize(umf_memory_provider_handle_t hProvider,
 umf_result_t
 umfMemoryProviderGetMinPageSize(umf_memory_provider_handle_t hProvider,
                                 void *ptr, size_t *pageSize) {
+    UMF_CHECK((hProvider != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
     umf_result_t res = hProvider->ops.get_min_page_size(
         hProvider->provider_priv, ptr, pageSize);
     checkErrorAndSetLastProvider(res, hProvider);
@@ -108,6 +116,7 @@ umfMemoryProviderGetMinPageSize(umf_memory_provider_handle_t hProvider,
 
 umf_result_t umfMemoryProviderPurgeLazy(umf_memory_provider_handle_t hProvider,
                                         void *ptr, size_t size) {
+    UMF_CHECK((hProvider != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
     umf_result_t res =
         hProvider->ops.purge_lazy(hProvider->provider_priv, ptr, size);
     checkErrorAndSetLastProvider(res, hProvider);
@@ -116,6 +125,7 @@ umf_result_t umfMemoryProviderPurgeLazy(umf_memory_provider_handle_t hProvider,
 
 umf_result_t umfMemoryProviderPurgeForce(umf_memory_provider_handle_t hProvider,
                                          void *ptr, size_t size) {
+    UMF_CHECK((hProvider != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
     umf_result_t res =
         hProvider->ops.purge_force(hProvider->provider_priv, ptr, size);
     checkErrorAndSetLastProvider(res, hProvider);
@@ -123,6 +133,7 @@ umf_result_t umfMemoryProviderPurgeForce(umf_memory_provider_handle_t hProvider,
 }
 
 const char *umfMemoryProviderGetName(umf_memory_provider_handle_t hProvider) {
+    UMF_CHECK((hProvider != NULL), NULL);
     return hProvider->ops.get_name(hProvider->provider_priv);
 }
 
