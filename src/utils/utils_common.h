@@ -10,6 +10,9 @@
 #ifndef UMF_COMMON_H
 #define UMF_COMMON_H 1
 
+#include <stdlib.h>
+#include <string.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -18,6 +21,50 @@ extern "C" {
 #define __TLS __declspec(thread)
 #else
 #define __TLS __thread
+#endif
+
+#define Malloc malloc
+#define Free free
+
+static inline void *Zalloc(size_t s) {
+    void *m = Malloc(s);
+    if (m) {
+        memset(m, 0, s);
+    }
+    return m;
+}
+
+#define NOFUNCTION                                                             \
+    do {                                                                       \
+    } while (0)
+#define VALGRIND_ANNOTATE_NEW_MEMORY(p, s) NOFUNCTION
+#define VALGRIND_HG_DRD_DISABLE_CHECKING(p, s) NOFUNCTION
+
+#ifdef NDEBUG
+#define ASSERT(x) NOFUNCTION
+#define ASSERTne(x, y) ASSERT(x != y)
+#else
+#define ASSERT(x)                                                              \
+    do {                                                                       \
+        if (!(x)) {                                                            \
+            fprintf(stderr,                                                    \
+                    "Assertion failed: " #x " at " __FILE__ " line %d.\n",     \
+                    __LINE__);                                                 \
+            abort();                                                           \
+        }                                                                      \
+    } while (0)
+#define ASSERTne(x, y)                                                         \
+    do {                                                                       \
+        long X = (x);                                                          \
+        long Y = (y);                                                          \
+        if (X == Y) {                                                          \
+            fprintf(stderr,                                                    \
+                    "Assertion failed: " #x " != " #y                          \
+                    ", both are %ld, at " __FILE__ " line %d.\n",              \
+                    X, __LINE__);                                              \
+            abort();                                                           \
+        }                                                                      \
+    } while (0)
 #endif
 
 #ifdef __cplusplus

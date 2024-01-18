@@ -58,6 +58,7 @@
 #include <stddef.h>
 
 #include "critnib.h"
+#include "utils_common.h"
 #include "utils_concurrency.h"
 
 /*

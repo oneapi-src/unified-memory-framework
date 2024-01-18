@@ -8,8 +8,6 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #if defined(_WIN32)
 #include <windows.h>
 #else
@@ -60,50 +58,6 @@ static __inline unsigned char util_mssb_index(long long value) {
     __atomic_store_n(object, desired, memory_order_release)
 #define util_atomic_increment(object)                                          \
     __atomic_add_fetch(object, 1, __ATOMIC_ACQ_REL)
-#endif
-
-#define Malloc malloc
-#define Free free
-
-static inline void *Zalloc(size_t s) {
-    void *m = Malloc(s);
-    if (m) {
-        memset(m, 0, s);
-    }
-    return m;
-}
-
-#define NOFUNCTION                                                             \
-    do {                                                                       \
-    } while (0)
-#define VALGRIND_ANNOTATE_NEW_MEMORY(p, s) NOFUNCTION
-#define VALGRIND_HG_DRD_DISABLE_CHECKING(p, s) NOFUNCTION
-
-#ifdef NDEBUG
-#define ASSERT(x) NOFUNCTION
-#define ASSERTne(x, y) ASSERT(x != y)
-#else
-#define ASSERT(x)                                                              \
-    do                                                                         \
-        if (!(x)) {                                                            \
-            fprintf(stderr,                                                    \
-                    "Assertion failed: " #x " at " __FILE__ " line %d.\n",     \
-                    __LINE__);                                                 \
-            abort();                                                           \
-        }                                                                      \
-    while (0)
-#define ASSERTne(x, y)                                                         \
-    do {                                                                       \
-        long X = (x);                                                          \
-        long Y = (y);                                                          \
-        if (X == Y) {                                                          \
-            fprintf(stderr,                                                    \
-                    "Assertion failed: " #x " != " #y                          \
-                    ", both are %ld, at " __FILE__ " line %d.\n",              \
-                    X, __LINE__);                                              \
-            abort();                                                           \
-        }                                                                      \
-    } while (0)
 #endif
 
 #ifdef __cplusplus
