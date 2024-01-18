@@ -10,6 +10,7 @@
 #ifndef UMF_COMMON_H
 #define UMF_COMMON_H 1
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -66,6 +67,15 @@ static inline void *Zalloc(size_t s) {
         }                                                                      \
     } while (0)
 #endif
+
+#define UMF_CHECK(condition, errorStatus)                                      \
+    do {                                                                       \
+        if (!(condition)) {                                                    \
+            fprintf(stderr, "UMF check failed: " #condition " in %s\n",        \
+                    __func__);                                                 \
+            return errorStatus;                                                \
+        }                                                                      \
+    } while (0)
 
 #ifdef __cplusplus
 }
