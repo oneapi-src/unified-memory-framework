@@ -73,13 +73,13 @@ jobs:
           cmake --build build --target clang-format-check  
 
     Spellcheck:
-        uses: oneapi-src/unified-memory-framework/.github/workflows/spellcheck.yml@main
+        uses: ./.github/workflows/spellcheck.yml
     Build:
         needs: [Spellcheck, FastBuild, CodeStyle]
-        uses: oneapi-src/unified-memory-framework/.github/workflows/basic.yml@main
+        uses: ./.github/workflows/basic.yml
     Benchmark:
         needs: [Build]
-        uses: oneapi-src/unified-memory-framework/.github/workflows/benchmarks.yml@main
+        uses: ./.github/workflows/benchmarks.yml
     CodeQL:
         needs: [Build]
-        uses: oneapi-src/unified-memory-framework/.github/workflows/codeql.yml@main
+        uses: ./.github/workflows/codeql.yml
