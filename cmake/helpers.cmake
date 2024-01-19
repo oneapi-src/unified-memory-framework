@@ -111,19 +111,17 @@ endfunction()
 
 # Add sanitizer ${flag}, if it is supported, for both C and C++ compiler
 macro(add_sanitizer_flag flag)
-    # Save current 'CMAKE_REQUIRED_LIBRARIES' state and temporarily extend it with
-    # '-fsanitize=${flag}'. It is required by CMake to check the compiler for
-    # availability of provided sanitizer ${flag}.
-    if(WINDOWS)
-        set(SANITIZER_FLAG "/fsanitize=${flag}")
-        set(SANITIZER_ARGS "")
-    else()
-        set(SANITIZER_FLAG "-fsanitize=${flag}")
+    set(SANITIZER_FLAG "-fsanitize=${flag}")
+    if (NOT MSVC)
+        # Not available on MSVC.
         set(SANITIZER_ARGS "-fno-sanitize-recover=all")
     endif()
 
-    set(SAVED_CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES})
-    set(CMAKE_REQUIRED_LIBRARIES "${CMAKE_REQUIRED_LIBRARIES} ${SANITIZER_FLAG}")
+    # Save current 'SAVED_CMAKE_REQUIRED_FLAGS' state and temporarily extend it
+    # with '-fsanitize=${flag}'. It is required by CMake to check the compiler
+    # for availability of provided sanitizer ${flag}.
+    set(SAVED_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
+    set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${SANITIZER_FLAG}")
 
     if(${flag} STREQUAL "address")
         set(check_name "HAS_ASAN")
@@ -138,18 +136,32 @@ macro(add_sanitizer_flag flag)
     # Check C and CXX compilers for given sanitizer flag.
     check_c_compiler_flag("${SANITIZER_FLAG}" "C_${check_name}")
     check_cxx_compiler_flag("${SANITIZER_FLAG}" "CXX_${check_name}")
-    if (${C_${check_name}} OR ${CXX_${check_name}})
-        # Set appropriate linker flags for building executables.
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${SANITIZER_FLAG} ${SANITIZER_ARGS}")
-        if (${C_${check_name}})
-            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${SANITIZER_FLAG} ${SANITIZER_ARGS}")
-        endif()
-        if (${CXX_${check_name}})
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SANITIZER_FLAG} ${SANITIZER_ARGS}")
-        endif()
-    else()
-        message(FATAL_ERROR "${flag} sanitizer is not supported (neither by C nor CXX compiler)")
+    if (NOT ${C_${check_name}} OR NOT ${CXX_${check_name}})
+        message(FATAL_ERROR "${flag} sanitizer is not supported (either by C or CXX compiler)")
     endif()
 
-    set(CMAKE_REQUIRED_LIBRARIES ${SAVED_CMAKE_REQUIRED_LIBRARIES})
+    # Check C and CXX compilers for sanitizer arguments.
+    if (${SANITIZER_ARGS})
+        check_c_compiler_flag("${SANITIZER_ARGS}" "C_HAS_SAN_ARGS")
+        check_cxx_compiler_flag("${SANITIZER_ARGS}" "CXX_HAS_SAN_ARGS")
+
+        if (NOT ${C_HAS_SAN_ARGS} OR NOT ${CXX_HAS_SAN_ARGS})
+            message(FATAL_ERROR "sanitizer argument ${SANITIZER_ARGS} is not supported (either by C or CXX compiler)")
+        endif()
+
+        set(SANITIZER_OPTION "${SANITIZER_FLAG} ${SANITIZER_ARGS}")
+    else()
+        # No sanitizer argument was set. For now, that's the case for MSVC.
+        set(SANITIZER_OPTION "${SANITIZER_FLAG}")
+    endif()
+
+    add_compile_options("${SANITIZER_OPTION}")
+
+    # Clang/gcc needs the flag added to the linker. The Microsoft LINK linker doesn't recognize
+    # sanitizer flags and will give a LNK4044 warning.
+    if (NOT MSVC)
+        add_link_options("${SANITIZER_OPTION}")
+    endif()
+
+    set(CMAKE_REQUIRED_FLAGS ${SAVED_CMAKE_REQUIRED_FLAGS})
 endmacro()
