@@ -36,6 +36,11 @@ function(add_umf_target_compile_options name)
         if(UMF_DEVELOPER_MODE)
             target_compile_options(${name} PRIVATE
                 -Werror
+                -Wextra
+                -Wshadow
+                -Wno-implicit-fallthrough
+                -Wformat
+                -Wformat-security
                 -fno-omit-frame-pointer
                 -fstack-protector-strong
             )
