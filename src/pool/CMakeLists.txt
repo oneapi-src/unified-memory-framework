@@ -30,10 +30,12 @@ endif()
 # libumf_pool_jemalloc
 if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
     if(LINUX)
+        # TODO: we link directly with libc to force using malloc from glibc
+        # This is a temporary fix for https://github.com/oneapi-src/unified-memory-framework/issues/161
         add_umf_library(NAME jemalloc_pool
                         TYPE STATIC
                         SRCS pool_jemalloc.c
-                        LIBS jemalloc umf_utils)
+                        LIBS c jemalloc umf_utils)
         add_library(${PROJECT_NAME}::jemalloc_pool ALIAS jemalloc_pool)
         install(TARGETS jemalloc_pool
             EXPORT ${PROJECT_NAME}-targets
