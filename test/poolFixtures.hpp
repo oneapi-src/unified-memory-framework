@@ -75,9 +75,9 @@ struct umfMemTest
     void SetUp() override {
         test::SetUp();
 
-        auto [params, expectedRecycledPoolAllocs] = this->GetParam();
+        auto [params, expRecycledPoolAllocs] = this->GetParam();
         pool = poolCreateExtUnique(params);
-        this->expectedRecycledPoolAllocs = expectedRecycledPoolAllocs;
+        expectedRecycledPoolAllocs = expRecycledPoolAllocs;
     }
 
     void TearDown() override { test::TearDown(); }

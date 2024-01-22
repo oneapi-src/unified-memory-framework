@@ -307,7 +307,7 @@ static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
 
     if (os_config->traces) {
         int numa_node = -1;
-        int ret = os_get_mempolicy(&numa_node, NULL, 0, (void *)addr);
+        ret = os_get_mempolicy(&numa_node, NULL, 0, (void *)addr);
         if (ret) {
             fprintf(stderr, "cannot print assigned NUMA node (errno = %i)\n",
                     errno);
