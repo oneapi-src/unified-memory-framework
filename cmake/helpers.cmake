@@ -135,7 +135,9 @@ macro(add_sanitizer_flag flag)
 
     # Check C and CXX compilers for given sanitizer flag.
     check_c_compiler_flag("${SANITIZER_FLAG}" "C_${check_name}")
-    check_cxx_compiler_flag("${SANITIZER_FLAG}" "CXX_${check_name}")
+    if (CMAKE_CXX_COMPILE_FEATURES)
+        check_cxx_compiler_flag("${SANITIZER_FLAG}" "CXX_${check_name}")
+    endif()
     if (NOT ${C_${check_name}} OR NOT ${CXX_${check_name}})
         message(FATAL_ERROR "${flag} sanitizer is not supported (either by C or CXX compiler)")
     endif()
@@ -143,8 +145,9 @@ macro(add_sanitizer_flag flag)
     # Check C and CXX compilers for sanitizer arguments.
     if (${SANITIZER_ARGS})
         check_c_compiler_flag("${SANITIZER_ARGS}" "C_HAS_SAN_ARGS")
-        check_cxx_compiler_flag("${SANITIZER_ARGS}" "CXX_HAS_SAN_ARGS")
-
+        if (CMAKE_CXX_COMPILE_FEATURES)
+            check_cxx_compiler_flag("${SANITIZER_ARGS}" "CXX_HAS_SAN_ARGS")
+        endif()
         if (NOT ${C_HAS_SAN_ARGS} OR NOT ${CXX_HAS_SAN_ARGS})
             message(FATAL_ERROR "sanitizer argument ${SANITIZER_ARGS} is not supported (either by C or CXX compiler)")
         endif()
