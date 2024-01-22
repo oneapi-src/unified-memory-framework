@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2023 Intel Corporation
+# Copyright (C) 2022-2024 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -105,4 +105,7 @@ if(UMF_BUILD_OS_MEMORY_PROVIDER AND LINUX) # OS-specific functions are implement
     add_umf_test(NAME memspace_numa
                  SRCS memspace_numa.cpp
                  LIBS numa)
+    add_umf_test(NAME provider_os_memory_config
+                 SRCS provider_os_memory_config.cpp
+                 LIBS umf_utils numa)
 endif()
