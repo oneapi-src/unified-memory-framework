@@ -1,11 +1,14 @@
 /*
  *
- * Copyright (C) 2023 Intel Corporation
+ * Copyright (C) 2023-2024 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
+
+#ifndef UMF_UTILS_CONCURRENCY_H
+#define UMF_UTILS_CONCURRENCY_H 1
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -109,3 +112,5 @@ static inline void *Zalloc(size_t s) {
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* UMF_UTILS_CONCURRENCY_H */

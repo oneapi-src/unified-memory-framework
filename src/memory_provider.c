@@ -11,6 +11,7 @@
 #include <umf/memory_provider.h>
 
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 typedef struct umf_memory_provider_t {
@@ -128,4 +129,47 @@ const char *umfMemoryProviderGetName(umf_memory_provider_handle_t hProvider) {
 
 umf_memory_provider_handle_t umfGetLastFailedMemoryProvider(void) {
     return *umfGetLastFailedMemoryProviderPtr();
+}
+
+umf_result_t
+umfMemoryProviderAllocationSplit(umf_memory_provider_handle_t hProvider,
+                                 void *ptr, size_t totalSize,
+                                 size_t firstSize) {
+    if (!ptr) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    if (firstSize == 0 || totalSize == 0) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    if (firstSize >= totalSize) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    umf_result_t res = hProvider->ops.allocation_split(
+        hProvider->provider_priv, ptr, totalSize, firstSize);
+    checkErrorAndSetLastProvider(res, hProvider);
+    return res;
+}
+
+umf_result_t
+umfMemoryProviderAllocationMerge(umf_memory_provider_handle_t hProvider,
+                                 void *lowPtr, void *highPtr,
+                                 size_t totalSize) {
+    if (!lowPtr || !highPtr) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    if (totalSize == 0) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    if ((uintptr_t)lowPtr >= (uintptr_t)highPtr) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    if ((uintptr_t)highPtr - (uintptr_t)lowPtr > totalSize) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    umf_result_t res = hProvider->ops.allocation_merge(
+        hProvider->provider_priv, lowPtr, highPtr, totalSize);
+    checkErrorAndSetLastProvider(res, hProvider);
+    return res;
 }

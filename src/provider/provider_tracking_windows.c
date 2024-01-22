@@ -7,19 +7,19 @@
  *
  */
 
-#include "critnib.h"
 #include "provider_tracking.h"
 
+#include <stdlib.h>
 #include <windows.h>
 
-static critnib *TRACKER = NULL;
+static umf_memory_tracker_handle_t TRACKER = NULL;
 
 #if defined(UMF_SHARED_LIBRARY)
 BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
     if (fdwReason == DLL_PROCESS_DETACH) {
-        critnib_delete(TRACKER);
+        umfMemoryTrackerDestroy(TRACKER);
     } else if (fdwReason == DLL_PROCESS_ATTACH) {
-        TRACKER = critnib_new();
+        TRACKER = umfMemoryTrackerCreate();
     }
     return TRUE;
 }
@@ -30,11 +30,11 @@ void umfTrackingMemoryProviderInit(void) {
 #else
 INIT_ONCE init_once_flag = INIT_ONCE_STATIC_INIT;
 
-static void providerFini(void) { critnib_delete(TRACKER); }
+static void providerFini(void) { umfMemoryTrackerDestroy(TRACKER); }
 
 BOOL CALLBACK providerInit(PINIT_ONCE InitOnce, PVOID Parameter,
                            PVOID *lpContext) {
-    TRACKER = critnib_new();
+    TRACKER = umfMemoryTrackerCreate();
     atexit(providerFini);
     return TRACKER ? TRUE : FALSE;
 }
