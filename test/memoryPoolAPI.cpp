@@ -292,8 +292,8 @@ TEST_F(test, getLastFailedMemoryProvider) {
     static umf_result_t allocResult = UMF_RESULT_SUCCESS;
 
     struct memory_provider : public umf_test::provider_base_t {
-        umf_result_t initialize(const char *name) {
-            this->name = name;
+        umf_result_t initialize(const char *providerName) {
+            name = providerName;
             return UMF_RESULT_SUCCESS;
         }
 
@@ -312,7 +312,7 @@ TEST_F(test, getLastFailedMemoryProvider) {
             return UMF_RESULT_SUCCESS;
         }
 
-        const char *get_name() noexcept { return this->name; }
+        const char *get_name() noexcept { return name; }
 
         const char *name;
     };

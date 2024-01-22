@@ -313,7 +313,7 @@ class DisjointPool::AllocImpl {
     std::vector<std::unique_ptr<Bucket>> Buckets;
 
     // Configuration for this instance
-    umf_disjoint_pool_params_t params;
+    umf_disjoint_pool_params_t Params;
 
     umf_disjoint_pool_shared_limits_t DefaultSharedLimits = {
         (std::numeric_limits<size_t>::max)(), 0};
@@ -327,11 +327,11 @@ class DisjointPool::AllocImpl {
   public:
     AllocImpl(umf_memory_provider_handle_t hProvider,
               umf_disjoint_pool_params_t *params)
-        : MemHandle{hProvider}, params(*params) {
+        : MemHandle{hProvider}, Params(*params) {
 
         // Generate buckets sized such as: 64, 96, 128, 192, ..., CutOff.
         // Powers of 2 and the value halfway between the powers of 2.
-        auto Size1 = this->params.MinBucketSize;
+        auto Size1 = Params.MinBucketSize;
         // MinBucketSize cannot be larger than CutOff.
         Size1 = std::min(Size1, CutOff);
         // Buckets sized smaller than the bucket default size- 8 aren't needed.
@@ -365,13 +365,13 @@ class DisjointPool::AllocImpl {
         return KnownSlabs;
     }
 
-    size_t SlabMinSize() { return params.SlabMinSize; };
+    size_t SlabMinSize() { return Params.SlabMinSize; };
 
-    umf_disjoint_pool_params_t &getParams() { return params; }
+    umf_disjoint_pool_params_t &getParams() { return Params; }
 
     umf_disjoint_pool_shared_limits_t *getLimits() {
-        if (params.SharedLimits) {
-            return params.SharedLimits;
+        if (Params.SharedLimits) {
+            return Params.SharedLimits;
         } else {
             return &DefaultSharedLimits;
         }
@@ -512,20 +512,20 @@ void Slab::unregSlabByAddr(void *Addr, Slab &Slab) {
     assert(false && "Slab is not found");
 }
 
-void Slab::regSlab(Slab &Slab) {
-    void *StartAddr = AlignPtrDown(Slab.getPtr(), bucket.SlabMinSize());
+void Slab::regSlab(Slab &slab) {
+    void *StartAddr = AlignPtrDown(slab.getPtr(), bucket.SlabMinSize());
     void *EndAddr = static_cast<char *>(StartAddr) + bucket.SlabMinSize();
 
-    regSlabByAddr(StartAddr, Slab);
-    regSlabByAddr(EndAddr, Slab);
+    regSlabByAddr(StartAddr, slab);
+    regSlabByAddr(EndAddr, slab);
 }
 
-void Slab::unregSlab(Slab &Slab) {
-    void *StartAddr = AlignPtrDown(Slab.getPtr(), bucket.SlabMinSize());
+void Slab::unregSlab(Slab &slab) {
+    void *StartAddr = AlignPtrDown(slab.getPtr(), bucket.SlabMinSize());
     void *EndAddr = static_cast<char *>(StartAddr) + bucket.SlabMinSize();
 
-    unregSlabByAddr(StartAddr, Slab);
-    unregSlabByAddr(EndAddr, Slab);
+    unregSlabByAddr(StartAddr, slab);
+    unregSlabByAddr(EndAddr, slab);
 }
 
 void Slab::freeChunk(void *Ptr) {

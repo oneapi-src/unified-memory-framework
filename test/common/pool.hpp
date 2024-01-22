@@ -131,8 +131,8 @@ umf_memory_pool_ops_t MALLOC_POOL_OPS =
     umf::poolMakeCOps<umf_test::malloc_pool, void>();
 
 struct proxy_pool : public pool_base_t {
-    umf_result_t initialize(umf_memory_provider_handle_t provider) noexcept {
-        this->provider = provider;
+    umf_result_t initialize(umf_memory_provider_handle_t hProvider) noexcept {
+        provider = hProvider;
         return UMF_RESULT_SUCCESS;
     }
     void *malloc(size_t size) noexcept { return aligned_malloc(size, 0); }
