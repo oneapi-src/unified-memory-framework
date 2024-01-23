@@ -135,6 +135,7 @@ jobs:
         compiler: [{c: cl, cxx: cl}]
         pool_tracking: ['ON', 'OFF']
         shared_library: ['OFF']
+        sanitizers: [{asan: OFF}]
         include:
           - os: 'windows-2022'
             build_type: Release
@@ -146,11 +147,35 @@ jobs:
             compiler: {c: cl, cxx: cl}
             pool_tracking: 'ON'
             shared_library: 'ON'
+          - os: 'windows-2022'
+            build_type: Debug
+            compiler: {c: cl, cxx: cl}
+            pool_tracking: 'OFF'
+            shared_library: 'OFF'
+            sanitizers: {asan: ON}
+          - os: 'windows-2022'
+            build_type: Debug
+            compiler: {c: clang-cl, cxx: clang-cl}
+            pool_tracking: 'OFF'
+            shared_library: 'OFF'
+            sanitizers: {asan: ON}
 
     runs-on: ${{matrix.os}}
 
     steps:
       - uses: actions/checkout@v4
+
+      # Use '14.38.33130' MSVC toolset when compiling UMF with ASan.
+      # Running binaries compiled with older toolsets results in a
+      # 'STATUS_DLL_INIT_FAILED' error despite being linked with ASan from
+      # the same toolset as the compiler being used.
+      # https://github.com/actions/runner-images/issues/8891
+      - name: Setup MSVC dev command prompt
+        if: matrix.os == 'windows-2022' && matrix.sanitizers.asan == 'ON'
+        uses: TheMrMilchmann/setup-msvc-dev@v3
+        with:
+          arch: x64
+          toolset: 14.38.33130
 
       - name: Configure build
         run: >
@@ -164,6 +189,7 @@ jobs:
           -DUMF_FORMAT_CODE_STYLE=OFF
           -DUMF_DEVELOPER_MODE=ON
           -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
+          -DUSE_ASAN=${{matrix.sanitizers.asan}}
 
       - name: Build UMF
         run: cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j $Env:NUMBER_OF_PROCESSORS
