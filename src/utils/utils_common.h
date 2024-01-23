@@ -77,6 +77,16 @@ static inline void *Zalloc(size_t s) {
         }                                                                      \
     } while (0)
 
+static inline size_t align_size(size_t size, size_t alignment) {
+    // align size to 'alignment' bytes
+    size_t rest = size & (alignment - 1);
+    if (rest) {
+        return (size - rest + alignment);
+    } else {
+        return size;
+    }
+}
+
 #ifdef __cplusplus
 }
 #endif
