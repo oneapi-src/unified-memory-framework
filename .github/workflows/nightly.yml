@@ -1,0 +1,45 @@
+name: Nightly
+
+# This job is run at 00:00 UTC every day or on demand.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron:  '0 0 * * *'
+
+jobs:
+    Valgrind:
+        name: Valgrind
+        strategy:
+            fail-fast: false
+            matrix:
+                tool: ['memcheck'] # TODO: enable 'drd' and 'helgrind' when all issues are fixed
+        runs-on: ubuntu-latest
+
+        steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4
+
+        - name: Install apt packages
+          run: |
+            sudo apt-get update
+            sudo apt-get install -y cmake libjemalloc-dev libnuma-dev libtbb-dev valgrind
+
+        - name: Configure CMake
+          run: >
+            cmake
+            -B ${{github.workspace}}/build
+            -DCMAKE_BUILD_TYPE=Debug
+            -DUMF_FORMAT_CODE_STYLE=OFF
+            -DUMF_DEVELOPER_MODE=ON
+            -DUMF_ENABLE_POOL_TRACKING=ON
+            -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
+            -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
+            -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
+
+        - name: Build
+          run: >
+            cmake --build ${{github.workspace}}/build --config Debug -j$(nproc)
+
+        - name: Run tests under valgrind
+          working-directory: ${{github.workspace}}/build
+          run: ../test/test_valgrind.sh ${{matrix.tool}}
