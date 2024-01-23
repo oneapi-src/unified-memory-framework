@@ -172,15 +172,15 @@ TEST_P(umfPoolTest, freeNullptr) {
 
 TEST_P(umfPoolTest, multiThreadedMallocFree) {
     static constexpr size_t allocSize = 64;
-    auto poolMalloc = [](size_t allocSize, umf_memory_pool_handle_t pool) {
+    auto poolMalloc = [](size_t size, umf_memory_pool_handle_t hPool) {
         std::vector<void *> allocations;
         for (size_t i = 0; i <= 10; ++i) {
-            allocations.emplace_back(umfPoolMalloc(pool, allocSize));
+            allocations.emplace_back(umfPoolMalloc(hPool, size));
             ASSERT_NE(allocations.back(), nullptr);
         }
 
         for (auto allocation : allocations) {
-            umfPoolFree(pool, allocation);
+            umfPoolFree(hPool, allocation);
         }
     };
 
@@ -201,8 +201,8 @@ TEST_P(umfPoolTest, multiThreadedpow2AlignedAlloc) {
     GTEST_SKIP();
 #endif
 
-    auto poolpow2AlignedAlloc = [](umf_memory_pool_handle_t pool) {
-        pow2AlignedAllocHelper(pool);
+    auto poolpow2AlignedAlloc = [](umf_memory_pool_handle_t hPool) {
+        pow2AlignedAllocHelper(hPool);
     };
 
     std::vector<std::thread> threads;
@@ -221,18 +221,17 @@ TEST_P(umfPoolTest, multiThreadedReallocFree) {
     }
     static constexpr size_t allocSize = 64;
     static constexpr size_t multiplier = 3;
-    auto poolRealloc = [](size_t allocSize, size_t multiplier,
-                          umf_memory_pool_handle_t pool) {
+    auto poolRealloc = [](size_t size, size_t mult,
+                          umf_memory_pool_handle_t hPool) {
         std::vector<void *> allocations;
         for (size_t i = 0; i <= 10; ++i) {
-            allocations.emplace_back(umfPoolMalloc(pool, allocSize));
+            allocations.emplace_back(umfPoolMalloc(hPool, size));
             ASSERT_NE(allocations.back(), nullptr);
         }
 
         for (auto allocation : allocations) {
-            auto *ptr =
-                umfPoolRealloc(pool, allocation, allocSize * multiplier);
-            umfPoolFree(pool, ptr);
+            auto *ptr = umfPoolRealloc(hPool, allocation, size * mult);
+            umfPoolFree(hPool, ptr);
         }
     };
 
@@ -251,16 +250,16 @@ TEST_P(umfPoolTest, multiThreadedCallocFree) {
         GTEST_SKIP();
     }
     static constexpr size_t num = 10;
-    auto poolCalloc = [](size_t num, size_t size,
-                         umf_memory_pool_handle_t pool) {
+    auto poolCalloc = [](size_t n, size_t size,
+                         umf_memory_pool_handle_t hPool) {
         std::vector<void *> allocations;
         for (size_t i = 0; i <= 10; ++i) {
-            allocations.emplace_back(umfPoolCalloc(pool, num, size));
+            allocations.emplace_back(umfPoolCalloc(hPool, n, size));
             ASSERT_NE(allocations.back(), nullptr);
         }
 
         for (auto allocation : allocations) {
-            umfPoolFree(pool, allocation);
+            umfPoolFree(hPool, allocation);
         }
     };
 
@@ -275,15 +274,15 @@ TEST_P(umfPoolTest, multiThreadedCallocFree) {
 }
 
 TEST_P(umfPoolTest, multiThreadedMallocFreeRandomSizes) {
-    auto poolMalloc = [](size_t allocSize, umf_memory_pool_handle_t pool) {
+    auto poolMalloc = [](size_t allocSize, umf_memory_pool_handle_t hPool) {
         std::vector<void *> allocations;
         for (size_t i = 0; i <= 10; ++i) {
-            allocations.emplace_back(umfPoolMalloc(pool, allocSize));
+            allocations.emplace_back(umfPoolMalloc(hPool, allocSize));
             ASSERT_NE(allocations.back(), nullptr);
         }
 
         for (auto allocation : allocations) {
-            umfPoolFree(pool, allocation);
+            umfPoolFree(hPool, allocation);
         }
     };
 
