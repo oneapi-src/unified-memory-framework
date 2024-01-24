@@ -78,6 +78,8 @@ umf_result_t umfTrackingMemoryProviderCreate(
 // Initialize critnib for a UMF static library build on Windows
 void umfTrackingMemoryProviderInit(void);
 
+void umfTrackingMemoryProviderFini(void *tracker);
+
 void umfTrackingMemoryProviderGetUpstreamProvider(
     umf_memory_provider_handle_t hTrackingProvider,
     umf_memory_provider_handle_t *hUpstream);

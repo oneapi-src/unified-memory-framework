@@ -14,10 +14,12 @@
 
 static umf_memory_tracker_handle_t TRACKER = NULL;
 
+static void providerFini(void) { umfTrackingMemoryProviderFini(TRACKER); }
+
 #if defined(UMF_SHARED_LIBRARY)
 BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
     if (fdwReason == DLL_PROCESS_DETACH) {
-        umfMemoryTrackerDestroy(TRACKER);
+        providerFini();
     } else if (fdwReason == DLL_PROCESS_ATTACH) {
         TRACKER = umfMemoryTrackerCreate();
     }
@@ -29,8 +31,6 @@ void umfTrackingMemoryProviderInit(void) {
 }
 #else
 INIT_ONCE init_once_flag = INIT_ONCE_STATIC_INIT;
-
-static void providerFini(void) { umfMemoryTrackerDestroy(TRACKER); }
 
 BOOL CALLBACK providerInit(PINIT_ONCE InitOnce, PVOID Parameter,
                            PVOID *lpContext) {

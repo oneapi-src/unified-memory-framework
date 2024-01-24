@@ -322,7 +322,50 @@ static umf_result_t trackingInitialize(void *params, void **ret) {
     return UMF_RESULT_SUCCESS;
 }
 
-static void trackingFinalize(void *provider) { free(provider); }
+#ifndef NDEBUG
+static void check_if_tracker_is_empty(umf_memory_tracker_handle_t hTracker,
+                                      umf_memory_pool_handle_t pool) {
+    uintptr_t rkey;
+    void *rvalue;
+    size_t n_items = 0;
+    uintptr_t last_key = 0;
+
+    while (1 == critnib_find((critnib *)hTracker->map, last_key, FIND_G, &rkey,
+                             &rvalue)) {
+        tracker_value_t *value = (tracker_value_t *)rvalue;
+        if (value->pool == pool || pool == NULL) {
+            n_items++;
+        }
+
+        last_key = rkey;
+    }
+
+    if (n_items) {
+        if (pool) {
+            fprintf(stderr,
+                    "ASSERT: tracking provider of pool %p is not empty! (%zu "
+                    "items left)\n",
+                    (void *)pool, n_items);
+        } else {
+            fprintf(
+                stderr,
+                "ASSERT: tracking provider is not empty! (%zu items left)\n",
+                n_items);
+        }
+        assert(n_items == 0);
+    }
+}
+#endif /* NDEBUG */
+
+static void trackingFinalize(void *provider) {
+#ifndef NDEBUG
+    umf_tracking_memory_provider_t *p =
+        (umf_tracking_memory_provider_t *)provider;
+    check_if_tracker_is_empty(p->hTracker, p->pool);
+#endif /* NDEBUG */
+
+    free(provider);
+}
 
 static void trackingGetLastError(void *provider, const char **msg,
                                  int32_t *pError) {
@@ -403,4 +446,13 @@ void umfTrackingMemoryProviderGetUpstreamProvider(
     umf_tracking_memory_provider_t *p =
         (umf_tracking_memory_provider_t *)hTrackingProvider;
     *hUpstream = p->hUpstream;
+}
+
+void umfTrackingMemoryProviderFini(void *tracker) {
+    umf_memory_tracker_handle_t hTracker = (umf_memory_tracker_handle_t)tracker;
+#ifndef NDEBUG
+    check_if_tracker_is_empty(hTracker, NULL);
+#endif /* NDEBUG */
+
+    umfMemoryTrackerDestroy(hTracker);
 }
