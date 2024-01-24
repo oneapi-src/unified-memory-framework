@@ -17,7 +17,7 @@ void __attribute__((constructor)) createLibTracker(void) {
     TRACKER = umfMemoryTrackerCreate();
 }
 void __attribute__((destructor)) deleteLibTracker(void) {
-    umfMemoryTrackerDestroy(TRACKER);
+    umfTrackingMemoryProviderFini(TRACKER);
 }
 
 void umfTrackingMemoryProviderInit(void) {
