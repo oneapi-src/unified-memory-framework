@@ -33,7 +33,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake clang libnuma-dev libjemalloc-dev libtbb-dev
+        sudo apt-get install -y cmake clang libhwloc-dev libnuma-dev libjemalloc-dev libtbb-dev
 
     - name: Install pip packages
       run: python3 -m pip install -r third_party/requirements.txt

@@ -7,6 +7,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <hwloc.h>
 #include <limits.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -33,7 +34,18 @@ typedef struct umf_os_memory_provider_config_t {
 } umf_os_memory_provider_config_t;
 
 typedef struct os_memory_provider_t {
-    umf_os_memory_provider_config_t config;
+    unsigned protection; // combination of OS-specific protection flags
+    unsigned visibility;
+
+    // NUMA config
+    hwloc_bitmap_t nodeset;
+    hwloc_membind_policy_t numa_policy;
+    int numa_flags; // combination of hwloc flags
+
+    // others
+    int traces; // log level of debug traces
+
+    hwloc_topology_t topo;
 } os_memory_provider_t;
 
 #define TLS_MSG_BUF_LEN 1024
@@ -77,33 +89,29 @@ static void os_store_last_native_error(int32_t native_error, int errno_value) {
     TLS_last_native_error.errno_value = errno_value;
 }
 
-static umf_result_t os_copy_nodemask(const unsigned long *nodemask,
-                                     unsigned long maxnode,
-                                     unsigned long **out_nodemask) {
-    if (out_nodemask == NULL) {
+static umf_result_t nodemask_to_hwloc_nodeset(const unsigned long *nodemask,
+                                              unsigned long maxnode,
+                                              hwloc_bitmap_t *out_nodeset) {
+    if (out_nodeset == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    if (maxnode == 0 || nodemask == NULL) {
-        *out_nodemask = NULL;
-        return UMF_RESULT_SUCCESS;
+    if (maxnode > UINT_MAX) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    size_t nodemask_bytes =
-        (maxnode / CHAR_BIT) + ((maxnode % CHAR_BIT) ? 1 : 0);
-    size_t ul_size = sizeof(unsigned long);
-
-    // round to the next multiple of sizeof(unsigned long)
-    if (nodemask_bytes % ul_size != 0 || nodemask_bytes == 0) {
-        nodemask_bytes += ul_size - nodemask_bytes % ul_size;
-    }
-
-    *out_nodemask = (unsigned long *)calloc(1, nodemask_bytes);
-    if (!*out_nodemask) {
+    *out_nodeset = hwloc_bitmap_alloc();
+    if (!*out_nodeset) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    memcpy(*out_nodemask, nodemask, nodemask_bytes);
+    if (maxnode == 0 || nodemask == NULL) {
+        return UMF_RESULT_SUCCESS;
+    }
+
+    unsigned bits_per_mask = sizeof(unsigned long) * 8;
+    hwloc_bitmap_from_ulongs(
+        *out_nodeset, (maxnode + bits_per_mask) / bits_per_mask, nodemask);
 
     return UMF_RESULT_SUCCESS;
 }
@@ -129,13 +137,67 @@ int os_translate_flags(unsigned in_flags, unsigned max,
     return out_flags;
 }
 
-static umf_result_t
-os_copy_and_translate_params(umf_os_memory_provider_params_t *in_params,
-                             umf_os_memory_provider_config_t *out_config) {
+static hwloc_membind_policy_t translate_numa_mode(umf_numa_mode_t mode,
+                                                  int nodemaskEmpty) {
+    switch (mode) {
+    case UMF_NUMA_MODE_DEFAULT:
+        if (!nodemaskEmpty) {
+            // nodeset must be empty
+            return -1;
+        }
+        return HWLOC_MEMBIND_DEFAULT;
+    case UMF_NUMA_MODE_BIND:
+        return HWLOC_MEMBIND_BIND;
+    case UMF_NUMA_MODE_INTERLEAVE:
+        return HWLOC_MEMBIND_INTERLEAVE;
+    case UMF_NUMA_MODE_PREFERRED:
+        return HWLOC_MEMBIND_BIND;
+    case UMF_NUMA_MODE_LOCAL:
+        if (!nodemaskEmpty) {
+            // nodeset must be empty
+            return -1;
+        }
+        return HWLOC_MEMBIND_BIND;
+    case UMF_NUMA_MODE_STATIC_NODES: // unsupported
+        // MPOL_F_STATIC_NODES is undefined
+        return -1;
+    case UMF_NUMA_MODE_RELATIVE_NODES: // unsupported
+        // MPOL_F_RELATIVE_NODES is undefined
+        return -1;
+    }
+    return -1;
+}
+
+static int translate_one_numa_flag(unsigned numa_flag) {
+    switch (numa_flag) {
+    case UMF_NUMA_FLAGS_STRICT:
+        return HWLOC_MEMBIND_STRICT;
+    case UMF_NUMA_FLAGS_MOVE:
+        return HWLOC_MEMBIND_MIGRATE;
+    case UMF_NUMA_FLAGS_MOVE_ALL:
+        return -1; /* unsupported */
+    }
+    return -1;
+}
+
+static int translate_numa_flags(unsigned numa_flags, umf_numa_mode_t mode) {
+    // translate numa_flags - combination of 'umf_numa_flags_t' flags
+    int flags = os_translate_flags(numa_flags, UMF_NUMA_FLAGS_MAX,
+                                   translate_one_numa_flag);
+    if (mode == UMF_NUMA_MODE_BIND) {
+        /* HWLOC uses MPOL_PREFERRED[_MANY] unless HWLOC_MEMBIND_STRICT is specified */
+        flags |= HWLOC_MEMBIND_STRICT;
+    }
+    /* UMF always operates on NUMA nodes */
+    return flags | HWLOC_MEMBIND_BYNODESET;
+}
+
+static umf_result_t translate_params(umf_os_memory_provider_params_t *in_params,
+                                     os_memory_provider_t *provider) {
     int ret;
 
     // log level of debug traces
-    out_config->traces = in_params->traces;
+    provider->traces = in_params->traces;
 
     ret = os_translate_mem_protection_flags(in_params->protection);
     if (ret < 0) {
@@ -145,7 +207,7 @@ os_copy_and_translate_params(umf_os_memory_provider_params_t *in_params,
         }
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
-    out_config->protection = ret;
+    provider->protection = ret;
 
     ret = os_translate_mem_visibility(in_params->visibility);
     if (ret < 0) {
@@ -155,11 +217,11 @@ os_copy_and_translate_params(umf_os_memory_provider_params_t *in_params,
         }
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
-    out_config->visibility = ret;
+    provider->visibility = ret;
 
     // NUMA config
-    out_config->maxnode = in_params->maxnode;
-    ret = os_translate_numa_mode(in_params->numa_mode);
+    int emptyNodeset = (!in_params->maxnode || !in_params->nodemask);
+    ret = translate_numa_mode(in_params->numa_mode, emptyNodeset);
     if (ret < 0) {
         if (in_params->traces) {
             fprintf(stderr, "error: incorrect NUMA mode: %u\n",
@@ -167,9 +229,9 @@ os_copy_and_translate_params(umf_os_memory_provider_params_t *in_params,
         }
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
-    out_config->numa_mode = ret;
+    provider->numa_policy = ret;
 
-    ret = os_translate_numa_flags(in_params->numa_flags);
+    ret = translate_numa_flags(in_params->numa_flags, in_params->numa_mode);
     if (ret < 0) {
         if (in_params->traces) {
             fprintf(stderr, "error: incorrect NUMA flags: %u\n",
@@ -177,10 +239,10 @@ os_copy_and_translate_params(umf_os_memory_provider_params_t *in_params,
         }
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
-    out_config->numa_flags = ret;
+    provider->numa_flags = ret;
 
-    return os_copy_nodemask(in_params->nodemask, in_params->maxnode,
-                            &out_config->nodemask);
+    return nodemask_to_hwloc_nodeset(in_params->nodemask, in_params->maxnode,
+                                     &provider->nodeset);
 }
 
 static umf_result_t os_initialize(void *params, void **provider) {
@@ -211,10 +273,39 @@ static umf_result_t os_initialize(void *params, void **provider) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    ret = os_copy_and_translate_params(in_params, &os_provider->config);
+    int r = hwloc_topology_init(&os_provider->topo);
+    if (r) {
+        if (os_provider->traces) {
+            fprintf(stderr, "HWLOC topology init failed\n");
+        }
+        free(os_provider);
+    }
+
+    r = hwloc_topology_load(os_provider->topo);
+    if (r) {
+        if (os_provider->traces) {
+            fprintf(stderr, "HWLOC topology discovery failed\n");
+        }
+        hwloc_topology_destroy(os_provider->topo);
+        free(os_provider);
+    }
+
+    ret = translate_params(in_params, os_provider);
     if (ret != UMF_RESULT_SUCCESS) {
+        hwloc_topology_destroy(os_provider->topo);
         free(os_provider);
         return ret;
+    }
+
+    if (os_provider->traces) {
+        char *strp = NULL;
+        hwloc_bitmap_list_asprintf(&strp, os_provider->nodeset);
+
+        if (strp) {
+            printf("OS provider initialized with NUMA nodes: %s\n", strp);
+        }
+
+        free(strp);
     }
 
     *provider = os_provider;
@@ -229,12 +320,44 @@ static void os_finalize(void *provider) {
     }
 
     os_memory_provider_t *os_provider = provider;
-    free(os_provider->config.nodemask);
+    hwloc_bitmap_free(os_provider->nodeset);
+    hwloc_topology_destroy(os_provider->topo);
     free(os_provider);
 }
 
 static umf_result_t os_get_min_page_size(void *provider, void *ptr,
                                          size_t *page_size);
+
+static void print_numa_nodes(os_memory_provider_t *os_provider, void *addr,
+                             size_t size) {
+    hwloc_bitmap_t nodeset = hwloc_bitmap_alloc();
+    if (!nodeset) {
+        fprintf(stderr,
+                "cannot print assigned NUMA node due to allocation failure\n");
+    } else {
+        int ret = hwloc_get_area_memlocation(os_provider->topo, addr, 1,
+                                             nodeset, HWLOC_MEMBIND_BYNODESET);
+        if (ret) {
+            fprintf(stderr, "cannot print assigned NUMA node (errno = %i)\n",
+                    errno);
+            perror("get_mempolicy()");
+        } else {
+            char *strp = NULL;
+            hwloc_bitmap_list_asprintf(&strp, nodeset);
+
+            if (!strp) {
+                fprintf(stderr, "cannot print assigned NUMA node due to "
+                                "allocation failure\n");
+            } else {
+                printf("alloc(%zu) = 0x%llx, allocate on NUMA nodes = %s\n",
+                       size, (unsigned long long)addr, strp);
+            }
+            free(strp);
+        }
+    }
+
+    hwloc_bitmap_free(nodeset);
+}
 
 static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
                              void **resultPtr) {
@@ -245,7 +368,6 @@ static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
     }
 
     os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
-    umf_os_memory_provider_config_t *os_config = &os_provider->config;
 
     size_t page_size;
     umf_result_t result = os_get_min_page_size(provider, NULL, &page_size);
@@ -254,7 +376,7 @@ static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
     }
 
     if (alignment && (alignment % page_size) && (page_size % alignment)) {
-        if (os_config->traces) {
+        if (os_provider->traces) {
             fprintf(stderr,
                     "wrong alignment: %zu (not a multiple or a divider of the "
                     "minimum page size (%zu))\n",
@@ -263,8 +385,8 @@ static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    int flags = os_config->visibility;
-    int protection = os_config->protection;
+    int flags = os_provider->visibility;
+    int protection = os_provider->protection;
 
     void *addr = NULL;
     errno = 0;
@@ -272,7 +394,7 @@ static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
                           -1, 0, &addr);
     if (ret) {
         os_store_last_native_error(UMF_OS_RESULT_ERROR_ALLOC_FAILED, errno);
-        if (os_config->traces) {
+        if (os_provider->traces) {
             perror("memory allocation failed");
         }
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
@@ -280,7 +402,7 @@ static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
 
     // verify the alignment
     if ((alignment > 0) && ((uintptr_t)addr % alignment)) {
-        if (os_config->traces) {
+        if (os_provider->traces) {
             os_store_last_native_error(UMF_OS_RESULT_ERROR_ADDRESS_NOT_ALIGNED,
                                        0);
             fprintf(stderr,
@@ -292,11 +414,24 @@ static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
     }
 
     errno = 0;
-    ret = os_mbind(addr, size, os_config->numa_mode, os_config->nodemask,
-                   os_config->maxnode, os_config->numa_flags);
+    if (hwloc_bitmap_iszero(os_provider->nodeset)) {
+        // Hwloc_set_area_membind fails if empty nodeset is passed so if no node is specified,
+        // just pass all available nodes. For modes where no node is needed, they will be
+        // ignored anyway.
+        hwloc_const_nodeset_t complete_nodeset =
+            hwloc_topology_get_complete_nodeset(os_provider->topo);
+        ret = hwloc_set_area_membind(os_provider->topo, addr, size,
+                                     complete_nodeset, os_provider->numa_policy,
+                                     os_provider->numa_flags);
+    } else {
+        ret = hwloc_set_area_membind(
+            os_provider->topo, addr, size, os_provider->nodeset,
+            os_provider->numa_policy, os_provider->numa_flags);
+    }
+
     if (ret) {
         os_store_last_native_error(UMF_OS_RESULT_ERROR_BIND_FAILED, errno);
-        if (os_config->traces) {
+        if (os_provider->traces) {
             perror("binding memory to NUMA node failed");
         }
         if (errno != ENOSYS) { // ENOSYS - Function not implemented
@@ -305,17 +440,10 @@ static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
         }
     }
 
-    if (os_config->traces) {
-        int numa_node = -1;
-        int ret = os_get_mempolicy(&numa_node, NULL, 0, (void *)addr);
-        if (ret) {
-            fprintf(stderr, "cannot print assigned NUMA node (errno = %i)\n",
-                    errno);
-            perror("get_mempolicy()");
-        } else {
-            printf("alloc(%zu) = 0x%llx, assigned NUMA node = %i\n", size,
-                   (unsigned long long)addr, numa_node);
-        }
+    if (os_provider->traces) {
+        // TODO: if we don't touch the page, we'll get EFAULT from move_pages.
+        // Should we add an option to touch pages after the allocation?
+        print_numa_nodes(os_provider, addr, size);
     }
 
     *resultPtr = addr;
@@ -333,14 +461,13 @@ static umf_result_t os_free(void *provider, void *ptr, size_t size) {
     }
 
     os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
-    umf_os_memory_provider_config_t *os_config = &os_provider->config;
 
     errno = 0;
     int ret = os_munmap(ptr, size);
     // ignore error when size == 0
     if (ret && (size > 0)) {
         os_store_last_native_error(UMF_OS_RESULT_ERROR_FREE_FAILED, errno);
-        if (os_config->traces) {
+        if (os_provider->traces) {
             perror("memory deallocation failed");
         }
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
@@ -410,13 +537,12 @@ static umf_result_t os_purge_lazy(void *provider, void *ptr, size_t size) {
     }
 
     os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
-    umf_os_memory_provider_config_t *os_config = &os_provider->config;
 
     errno = 0;
     if (os_purge(ptr, size, UMF_PURGE_LAZY)) {
         os_store_last_native_error(UMF_OS_RESULT_ERROR_PURGE_LAZY_FAILED,
                                    errno);
-        if (os_config->traces) {
+        if (os_provider->traces) {
             perror("lazy purging failed");
         }
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
@@ -430,13 +556,12 @@ static umf_result_t os_purge_force(void *provider, void *ptr, size_t size) {
     }
 
     os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
-    umf_os_memory_provider_config_t *os_config = &os_provider->config;
 
     errno = 0;
     if (os_purge(ptr, size, UMF_PURGE_FORCE)) {
         os_store_last_native_error(UMF_OS_RESULT_ERROR_PURGE_FORCE_FAILED,
                                    errno);
-        if (os_config->traces) {
+        if (os_provider->traces) {
             perror("force purging failed");
         }
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;

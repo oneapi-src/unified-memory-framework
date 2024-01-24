@@ -6,17 +6,12 @@
 */
 
 #include <assert.h>
-#include <numaif.h>
 #include <string.h>
 #include <sys/mman.h>
 #include <unistd.h>
 
 #include "provider_os_memory_internal.h"
 #include <umf/providers/provider_os_memory.h>
-
-#ifndef MPOL_LOCAL
-#define MPOL_LOCAL 4
-#endif
 
 static int os_translate_mem_protection_one_flag(unsigned protection) {
     switch (protection) {
@@ -50,50 +45,6 @@ int os_translate_mem_visibility(umf_mem_visibility_t visibility) {
     return -1;
 }
 
-int os_translate_numa_mode(umf_numa_mode_t mode) {
-    switch (mode) {
-    case UMF_NUMA_MODE_DEFAULT:
-        return MPOL_DEFAULT;
-    case UMF_NUMA_MODE_BIND:
-        return MPOL_BIND;
-    case UMF_NUMA_MODE_INTERLEAVE:
-        return MPOL_INTERLEAVE;
-    case UMF_NUMA_MODE_PREFERRED:
-        return MPOL_PREFERRED;
-    case UMF_NUMA_MODE_LOCAL:
-        return MPOL_LOCAL;
-    case UMF_NUMA_MODE_STATIC_NODES: // unsupported
-        // MPOL_F_STATIC_NODES is undefined
-        assert(0);
-        return -1;
-    case UMF_NUMA_MODE_RELATIVE_NODES: // unsupported
-        // MPOL_F_RELATIVE_NODES is undefined
-        assert(0);
-        return -1;
-    }
-    assert(0);
-    return -1;
-}
-
-static int os_translate_one_numa_flag(unsigned numa_flag) {
-    switch (numa_flag) {
-    case UMF_NUMA_FLAGS_STRICT:
-        return MPOL_MF_STRICT;
-    case UMF_NUMA_FLAGS_MOVE:
-        return MPOL_MF_MOVE;
-    case UMF_NUMA_FLAGS_MOVE_ALL:
-        return MPOL_MF_MOVE_ALL;
-    }
-    assert(0);
-    return -1;
-}
-
-int os_translate_numa_flags(unsigned numa_flags) {
-    // translate numa_flags - combination of 'umf_numa_flags_t' flags
-    return os_translate_flags(numa_flags, UMF_NUMA_FLAGS_MAX,
-                              os_translate_one_numa_flag);
-}
-
 static int os_translate_purge_advise(umf_purge_advise_t advise) {
     switch (advise) {
     case UMF_PURGE_LAZY:
@@ -103,17 +54,6 @@ static int os_translate_purge_advise(umf_purge_advise_t advise) {
     }
     assert(0);
     return -1;
-}
-
-long os_mbind(void *addr, size_t len, int mode, const unsigned long *nodemask,
-              unsigned long maxnode, unsigned flags) {
-    return mbind(addr, len, mode, nodemask, maxnode, flags);
-}
-
-long os_get_mempolicy(int *mode, unsigned long *nodemask, unsigned long maxnode,
-                      void *addr) {
-    return get_mempolicy(mode, nodemask, maxnode, addr,
-                         MPOL_F_NODE | MPOL_F_ADDR);
 }
 
 static inline void assert_is_page_aligned(uintptr_t ptr, size_t page_size) {

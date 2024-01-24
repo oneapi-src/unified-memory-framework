@@ -31,6 +31,8 @@ A memory provider that provides memory from an operating system.
 1) Linux OS
 2) The `UMF_BUILD_OS_MEMORY_PROVIDER` option turned `ON` (by default)
 3) Required packages:
+   - libhwloc-dev
+4) Required packages for tests:
    - libnuma-dev
 
 ## Memory pool managers
