@@ -19,22 +19,10 @@ static constexpr size_t allocSize = 4096;
 
 struct providerConfigTest : testing::Test {
     umf_memory_provider_handle_t provider = nullptr;
-    umf_os_memory_provider_params_t params = {
-        /* .protection = */ UMF_PROTECTION_READ | UMF_PROTECTION_WRITE,
-        /* .visibility = */ UMF_VISIBILITY_PRIVATE,
-
-        // NUMA config
-        /* .nodemask = */ NULL,
-        /* .maxnode = */ 0,
-        /* .numa_mode = */ UMF_NUMA_MODE_DEFAULT,
-        /* .numa_flags = */ 0,
-
-        // others
-        /* .traces = */ 1,
-    };
     const size_t size = 128;
     void *ptr = nullptr;
     std::string dest = "destination";
+    umf_os_memory_provider_params_t params = umfOsMemoryProviderParamsDefault();
 
     void SetUp() override {
         int ret = numa_available();
@@ -81,6 +69,7 @@ struct providerConfigTest : testing::Test {
 TEST_F(providerConfigTest, protection_flag_none) {
     // pages may not be accessed - PROT_NONE
     params.protection = UMF_PROTECTION_NONE;
+
     create_provider(&params);
     allocate_memory();
 
@@ -94,6 +83,7 @@ TEST_F(providerConfigTest, protection_flag_none) {
 TEST_F(providerConfigTest, protection_flag_read) {
     // pages may be read - PROT_READ
     params.protection = UMF_PROTECTION_READ;
+
     create_provider(&params);
     allocate_memory();
 
@@ -107,6 +97,7 @@ TEST_F(providerConfigTest, protection_flag_read) {
 TEST_F(providerConfigTest, protection_flag_write) {
     // pages may be written to - PROT_WRITE
     params.protection = UMF_PROTECTION_WRITE;
+
     create_provider(&params);
     allocate_memory();
 
@@ -117,6 +108,7 @@ TEST_F(providerConfigTest, protection_flag_write) {
 TEST_F(providerConfigTest, protection_flag_read_write) {
     // pages may be read and written to - PROT_READ | PROT_WRITE
     params.protection = UMF_PROTECTION_READ | UMF_PROTECTION_WRITE;
+
     create_provider(&params);
     allocate_memory();
 
@@ -131,6 +123,7 @@ struct providerConfigTestNumaMode
     : providerConfigTest,
       testing::WithParamInterface<umf_numa_mode_t> {
     struct bitmask *allowed_nodes = nullptr;
+    umf_os_memory_provider_params_t params = umfOsMemoryProviderParamsDefault();
 
     void SetUp() override {
         providerConfigTest::SetUp();
@@ -203,6 +196,7 @@ struct providerConfigTestVisibility
     std::string primary_str = "primary";
     std::string new_str = "new";
     std::string expected_str;
+    umf_os_memory_provider_params_t params = umfOsMemoryProviderParamsDefault();
 
     void SetUp() override {
         providerConfigTest::SetUp();

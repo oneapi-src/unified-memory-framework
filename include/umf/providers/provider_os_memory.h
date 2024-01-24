@@ -89,6 +89,22 @@ typedef enum umf_os_memory_provider_native_error {
 
 extern umf_memory_provider_ops_t UMF_OS_MEMORY_PROVIDER_OPS;
 
+/// @brief Create default params for os memory provider
+static inline umf_os_memory_provider_params_t
+umfOsMemoryProviderParamsDefault(void) {
+    umf_os_memory_provider_params_t params = {
+        UMF_PROTECTION_READ | UMF_PROTECTION_WRITE, /* protection */
+        UMF_VISIBILITY_PRIVATE,                     /* visibility */
+        NULL,                                       /* nodemask */
+        0,                                          /* maxnode */
+        UMF_NUMA_MODE_DEFAULT,                      /* numa_mode */
+        0,                                          /* numa_flags */
+        0                                           /* traces */
+    };
+
+    return params;
+}
+
 #ifdef __cplusplus
 }
 #endif
