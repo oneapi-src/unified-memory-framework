@@ -11,6 +11,7 @@
 #define UMF_MEMORY_TRACKER_INTERNAL_H 1
 
 #include <assert.h>
+#include <stdlib.h>
 
 #include <umf/base.h>
 #include <umf/memory_pool.h>
