@@ -8,6 +8,7 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <umf/base.h>
 #include <umf/memory_pool.h>
 #include <umf/memory_provider_ops.h>

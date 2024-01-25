@@ -13,16 +13,25 @@ typedef struct {
     CRITICAL_SECTION lock;
 } internal_os_mutex_t;
 
-os_mutex_t *util_mutex_create(void) {
-    internal_os_mutex_t *mutex_internal =
-        (internal_os_mutex_t *)calloc(1, sizeof(internal_os_mutex_t));
+size_t util_mutex_get_size(void) { return sizeof(internal_os_mutex_t); }
+
+os_mutex_t *util_mutex_init(void *ptr) {
+    internal_os_mutex_t *mutex_internal = (internal_os_mutex_t *)ptr;
     InitializeCriticalSection(&mutex_internal->lock);
     return (os_mutex_t *)mutex_internal;
 }
 
-void util_mutex_destroy(os_mutex_t *mutex) {
+os_mutex_t *util_mutex_create(void) {
+    return util_mutex_init(calloc(1, util_mutex_get_size()));
+}
+
+void util_mutex_destroy_not_free(os_mutex_t *mutex) {
     internal_os_mutex_t *mutex_internal = (internal_os_mutex_t *)mutex;
     DeleteCriticalSection(&mutex_internal->lock);
+}
+
+void util_mutex_destroy(os_mutex_t *mutex) {
+    util_mutex_destroy_not_free(mutex);
 }
 
 int util_mutex_lock(os_mutex_t *mutex) {

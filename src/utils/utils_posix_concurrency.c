@@ -12,16 +12,26 @@
 
 #include "utils_concurrency.h"
 
-os_mutex_t *util_mutex_create(void) {
-    pthread_mutex_t *mutex = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
+size_t util_mutex_get_size(void) { return sizeof(pthread_mutex_t); }
+
+os_mutex_t *util_mutex_init(void *ptr) {
+    pthread_mutex_t *mutex = (pthread_mutex_t *)ptr;
     int ret = pthread_mutex_init(mutex, NULL);
     return ret == 0 ? ((os_mutex_t *)mutex) : NULL;
 }
 
-void util_mutex_destroy(os_mutex_t *m) {
+os_mutex_t *util_mutex_create(void) {
+    return util_mutex_init(malloc(util_mutex_get_size()));
+}
+
+void util_mutex_destroy_not_free(os_mutex_t *m) {
     pthread_mutex_t *mutex = (pthread_mutex_t *)m;
     int ret = pthread_mutex_destroy(mutex);
     (void)ret; // TODO: add logging
+}
+
+void util_mutex_destroy(os_mutex_t *m) {
+    util_mutex_destroy_not_free(m);
     free(m);
 }
 
