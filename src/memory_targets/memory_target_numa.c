@@ -71,11 +71,10 @@ numa_targets_create_nodemask(struct numa_memory_target_t **targets,
 
     *maxnode = lastBit + 1;
 
-    int nrUlongs = hwloc_bitmap_nr_ulongs(bitmap);
-    if (nrUlongs == -1) {
-        hwloc_bitmap_free(bitmap);
-        return UMF_RESULT_ERROR_UNKNOWN;
-    }
+    // Do not use hwloc_bitmap_nr_ulongs due to:
+    // https://github.com/open-mpi/hwloc/issues/429
+    unsigned bits_per_long = sizeof(unsigned long) * 8;
+    int nrUlongs = (lastBit + bits_per_long) / bits_per_long;
 
     unsigned long *nodemask = malloc(sizeof(unsigned long) * nrUlongs);
     if (!nodemask) {
