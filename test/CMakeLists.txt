@@ -39,6 +39,7 @@ function(add_umf_test)
     target_include_directories(${TEST_TARGET_NAME} PRIVATE
         ${UMF_CMAKE_SOURCE_DIR}/include
         ${UMF_CMAKE_SOURCE_DIR}/src
+        ${UMF_CMAKE_SOURCE_DIR}/src/base_alloc
         ${UMF_TEST_DIR}/common
         ${UMF_TEST_DIR})
 
@@ -108,4 +109,12 @@ if(UMF_BUILD_OS_MEMORY_PROVIDER AND LINUX) # OS-specific functions are implement
     add_umf_test(NAME provider_os_memory_config
                  SRCS provider_os_memory_config.cpp
                  LIBS umf_utils numa)
+endif()
+
+# TODO: add Windows tests
+if(LINUX)
+    # the base_alloc test uses linux pthreads
+    add_umf_test(NAME base_alloc
+                SRCS test_base_alloc.c
+                LIBS umf_utils)
 endif()

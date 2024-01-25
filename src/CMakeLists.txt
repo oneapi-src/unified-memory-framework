@@ -9,6 +9,7 @@ add_subdirectory(utils)
 set(UMF_LIBS umf_utils)
 
 set(UMF_SOURCES
+    base_alloc/base_alloc.c
     memory_pool.c
     memory_provider.c
     memory_provider_get_last_failed.c
@@ -19,14 +20,17 @@ set(UMF_SOURCES
 )
 
 set(UMF_SOURCES_LINUX
+    base_alloc/base_alloc_linux.c
     provider/provider_tracking_linux.c
 )
 
 set(UMF_SOURCES_WINDOWS
+    base_alloc/base_alloc_windows.c
     provider/provider_tracking_windows.c
 )
 
 set(UMF_SOURCES_MACOSX
+    base_alloc/base_alloc_linux.c
     provider/provider_tracking_linux.c
 )
 
