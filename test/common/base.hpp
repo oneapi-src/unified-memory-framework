@@ -31,6 +31,22 @@ struct test : ::testing::Test {
     void SetUp() override { ::testing::Test::SetUp(); }
     void TearDown() override { ::testing::Test::TearDown(); }
 };
+
+template <typename T> T generateArg() { return T{}; }
+
+// returns Ret (*f)(void) that calls the original function
+// with all arguments created by calling generateArg()
+template <typename Ret, typename... Args>
+std::function<Ret(void)> withGeneratedArgs(Ret (*f)(Args...)) {
+    std::tuple<Args...> tuple = {};
+    auto args = std::apply(
+        [](auto... x) {
+            return std::make_tuple(generateArg<decltype(x)>()...);
+        },
+        tuple);
+    return [=]() { return std::apply(f, args); };
+}
+
 } // namespace umf_test
 
 #endif /* UMF_TEST_BASE_HPP */
