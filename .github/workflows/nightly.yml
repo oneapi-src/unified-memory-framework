@@ -22,7 +22,7 @@ jobs:
         - name: Install apt packages
           run: |
             sudo apt-get update
-            sudo apt-get install -y cmake libhwloc-dev libjemalloc-dev libnuma-dev libtbb-dev valgrind
+            sudo apt-get install -y cmake hwloc libhwloc-dev libjemalloc-dev libnuma-dev libtbb-dev valgrind
 
         - name: Configure CMake
           run: >
