@@ -8,8 +8,35 @@
 #include "pool.hpp"
 #include "poolFixtures.hpp"
 
+using umf_test::test;
+using namespace umf_test;
+
 auto defaultParams = umfOsMemoryProviderParamsDefault();
 INSTANTIATE_TEST_SUITE_P(jemallocPoolTest, umfPoolTest,
                          ::testing::Values(poolCreateExtParams{
                              &UMF_JEMALLOC_POOL_OPS, nullptr,
                              &UMF_OS_MEMORY_PROVIDER_OPS, &defaultParams}));
+
+// this test makes sure that jemalloc does not use
+// memory provider to allocate metadata (and hence
+// is suitable for cases where memory is not accessible
+// on the host)
+TEST_F(test, metadataNotAllocatedUsingProvider) {
+    static constexpr size_t allocSize = 1024;
+    static constexpr size_t numAllocs = 1024;
+
+    // set coarse grain allocations to PROT_NONE so that we can be sure
+    // jemalloc does not touch any of the allocated memory
+    auto params = umfOsMemoryProviderParamsDefault();
+    params.protection = UMF_PROTECTION_NONE;
+
+    auto pool = poolCreateExtUnique({&UMF_JEMALLOC_POOL_OPS, nullptr,
+                                     &UMF_OS_MEMORY_PROVIDER_OPS, &params});
+
+    std::vector<std::shared_ptr<void>> allocs;
+    for (size_t i = 0; i < numAllocs; i++) {
+        allocs.emplace_back(
+            umfPoolMalloc(pool.get(), allocSize),
+            [pool = pool.get()](void *ptr) { umfPoolFree(pool, ptr); });
+    }
+}
