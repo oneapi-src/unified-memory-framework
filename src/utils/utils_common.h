@@ -10,6 +10,7 @@
 #ifndef UMF_COMMON_H
 #define UMF_COMMON_H 1
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -76,6 +77,25 @@ static inline void *Zalloc(size_t s) {
             return errorStatus;                                                \
         }                                                                      \
     } while (0)
+
+// align a pointer and a size
+static inline void align_ptr_size(void **ptr, size_t *size, size_t alignment) {
+    uintptr_t p = (uintptr_t)*ptr;
+    size_t s = *size;
+
+    // align pointer to 'alignment' bytes and adjust the size
+    size_t rest = p & (alignment - 1);
+    if (rest) {
+        p += alignment - rest;
+        s -= alignment - rest;
+    }
+
+    ASSERT((p & (alignment - 1)) == 0);
+    ASSERT((s & (alignment - 1)) == 0);
+
+    *ptr = (void *)p;
+    *size = s;
+}
 
 static inline size_t align_size(size_t size, size_t alignment) {
     // align size to 'alignment' bytes
