@@ -43,33 +43,30 @@ jobs:
             compiler: {c: gcc, cxx: g++}
             shared_library: 'OFF'
             os_provider: 'OFF'
-          # TODO: Enable sanitizer checks with pool tracking enabled. There's
-          # a leak reported by sanitizer in jemalloc pool implementation that
-          # points to a tracker_value_t not being free'd.
           # TODO: Move jobs with sanitizer checks to a separate workflow file.
           - os: 'ubuntu-22.04'
             build_type: Debug
             compiler: {c: clang, cxx: clang++}
-            pool_tracking: 'OFF'
+            pool_tracking: 'ON'
             shared_library: 'OFF'
           # TSAN is mutually exclusive with other sanitizers
             sanitizers: {asan: ON, ubsan: ON, tsan: OFF}
           - os: 'ubuntu-22.04'
             build_type: Debug
             compiler: {c: clang, cxx: clang++}
-            pool_tracking: 'OFF'
+            pool_tracking: 'ON'
             shared_library: 'OFF'
             sanitizers: {asan: OFF, ubsan: OFF, tsan: ON}
           - os: 'ubuntu-22.04'
             build_type: Debug
             compiler: {c: gcc, cxx: g++}
-            pool_tracking: 'OFF'
+            pool_tracking: 'ON'
             shared_library: 'OFF'
             sanitizers: {asan: ON, ubsan: ON, tsan: OFF}
           - os: 'ubuntu-22.04'
             build_type: Debug
             compiler: {c: gcc, cxx: g++}
-            pool_tracking: 'OFF'
+            pool_tracking: 'ON'
             shared_library: 'OFF'
             sanitizers: {asan: OFF, ubsan: OFF, tsan: ON}
     runs-on: ${{matrix.os}}
