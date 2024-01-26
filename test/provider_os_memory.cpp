@@ -22,20 +22,6 @@ typedef enum purge_t {
     PURGE_FORCE = 2,
 } purge_t;
 
-static umf_os_memory_provider_params_t UMF_OS_MEMORY_PROVIDER_PARAMS_TEST = {
-    /* .protection = */ UMF_PROTECTION_READ | UMF_PROTECTION_WRITE,
-    /* .visibility = */ UMF_VISIBILITY_PRIVATE,
-
-    // NUMA config
-    /* .nodemask = */ NULL,
-    /* .maxnode = */ 0,
-    /* .numa_mode = */ UMF_NUMA_MODE_DEFAULT,
-    /* .numa_flags = */ 0,
-
-    // others
-    /* .traces = */ 1,
-};
-
 static const char *Native_error_str[] = {
     "success",                          // UMF_OS_RESULT_SUCCESS
     "memory allocation failed",         // UMF_OS_RESULT_ERROR_ALLOC_FAILED
@@ -144,7 +130,7 @@ TEST_F(test, create_WRONG_NUMA_MODE) {
     umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = nullptr;
     umf_os_memory_provider_params_t os_memory_provider_params =
-        UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
+        umfOsMemoryProviderParamsDefault();
 
     // NUMA binding mode not supported for UMF_VISIBILITY_SHARED
     os_memory_provider_params.visibility = UMF_VISIBILITY_SHARED;
@@ -161,7 +147,7 @@ TEST_F(test, create_WRONG_NUMA_FLAGS) {
     umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = nullptr;
     umf_os_memory_provider_params_t os_memory_provider_params =
-        UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
+        umfOsMemoryProviderParamsDefault();
 
     // wrong NUMA flags
     os_memory_provider_params.numa_flags = (unsigned int)-1;
@@ -175,10 +161,10 @@ TEST_F(test, create_WRONG_NUMA_FLAGS) {
 
 // positive tests using test_alloc_free_success
 
+auto defaultParams = umfOsMemoryProviderParamsDefault();
 INSTANTIATE_TEST_SUITE_P(osProviderTest, umfProviderTest,
                          ::testing::Values(providerCreateExtParams{
-                             &UMF_OS_MEMORY_PROVIDER_OPS,
-                             &UMF_OS_MEMORY_PROVIDER_PARAMS_TEST}));
+                             &UMF_OS_MEMORY_PROVIDER_OPS, &defaultParams}));
 
 TEST_P(umfProviderTest, create_destroy) {}
 

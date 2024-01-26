@@ -41,22 +41,6 @@ static umf_result_t numa_initialize(void *params, void **memTarget) {
 
 static void numa_finalize(void *memTarget) { free(memTarget); }
 
-static const umf_os_memory_provider_params_t
-    UMF_OS_MEMORY_PROVIDER_PARAMS_DEFAULT = {
-        // Visibility & protection
-        .protection = UMF_PROTECTION_READ | UMF_PROTECTION_WRITE,
-        .visibility = UMF_VISIBILITY_PRIVATE,
-
-        // NUMA config
-        .nodemask = NULL,
-        .maxnode = 0, // TODO: numa_max_node/GetNumaHighestNodeNumber
-        .numa_mode = UMF_NUMA_MODE_BIND,
-        .numa_flags = UMF_NUMA_FLAGS_STRICT, // TODO: determine default behavior
-
-        // Logging
-        .traces = 0, // TODO: parse env variable for log level?
-};
-
 static umf_result_t
 numa_targets_create_nodemask(struct numa_memory_target_t **targets,
                              size_t numTargets, unsigned long **mask,
@@ -118,10 +102,11 @@ static enum umf_result_t numa_memory_provider_create_from_memspace(
         return ret;
     }
 
-    umf_os_memory_provider_params_t params =
-        UMF_OS_MEMORY_PROVIDER_PARAMS_DEFAULT;
+    umf_os_memory_provider_params_t params = umfOsMemoryProviderParamsDefault();
     params.nodemask = nodemask;
     params.maxnode = maxnode;
+    params.numa_mode = UMF_NUMA_MODE_BIND;
+    params.numa_flags = UMF_NUMA_FLAGS_STRICT;
 
     umf_memory_provider_handle_t numaProvider = NULL;
     ret = umfMemoryProviderCreate(&UMF_OS_MEMORY_PROVIDER_OPS, &params,
