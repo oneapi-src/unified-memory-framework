@@ -14,6 +14,7 @@
 #if defined(_WIN32)
 #include <windows.h>
 #else
+#include <pthread.h>
 #include <stdatomic.h>
 #endif
 
@@ -21,9 +22,13 @@
 extern "C" {
 #endif
 
-struct os_mutex_t;
-
-typedef struct os_mutex_t os_mutex_t;
+typedef struct os_mutex_t {
+#ifdef _WIN32
+    CRITICAL_SECTION lock;
+#else
+    pthread_mutex_t lock;
+#endif
+} os_mutex_t;
 
 size_t util_mutex_get_size(void);
 os_mutex_t *util_mutex_init(void *ptr);

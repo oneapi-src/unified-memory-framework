@@ -9,14 +9,10 @@
 
 #include "utils_concurrency.h"
 
-typedef struct {
-    CRITICAL_SECTION lock;
-} internal_os_mutex_t;
-
-size_t util_mutex_get_size(void) { return sizeof(internal_os_mutex_t); }
+size_t util_mutex_get_size(void) { return sizeof(os_mutex_t); }
 
 os_mutex_t *util_mutex_init(void *ptr) {
-    internal_os_mutex_t *mutex_internal = (internal_os_mutex_t *)ptr;
+    os_mutex_t *mutex_internal = (os_mutex_t *)ptr;
     InitializeCriticalSection(&mutex_internal->lock);
     return (os_mutex_t *)mutex_internal;
 }
@@ -26,7 +22,7 @@ os_mutex_t *util_mutex_create(void) {
 }
 
 void util_mutex_destroy_not_free(os_mutex_t *mutex) {
-    internal_os_mutex_t *mutex_internal = (internal_os_mutex_t *)mutex;
+    os_mutex_t *mutex_internal = (os_mutex_t *)mutex;
     DeleteCriticalSection(&mutex_internal->lock);
 }
 
@@ -35,7 +31,7 @@ void util_mutex_destroy(os_mutex_t *mutex) {
 }
 
 int util_mutex_lock(os_mutex_t *mutex) {
-    internal_os_mutex_t *mutex_internal = (internal_os_mutex_t *)mutex;
+    os_mutex_t *mutex_internal = (os_mutex_t *)mutex;
     EnterCriticalSection(&mutex_internal->lock);
 
     if (mutex_internal->lock.RecursionCount > 1) {
@@ -47,7 +43,7 @@ int util_mutex_lock(os_mutex_t *mutex) {
 }
 
 int util_mutex_unlock(os_mutex_t *mutex) {
-    internal_os_mutex_t *mutex_internal = (internal_os_mutex_t *)mutex;
+    os_mutex_t *mutex_internal = (os_mutex_t *)mutex;
     LeaveCriticalSection(&mutex_internal->lock);
     return 0;
 }
