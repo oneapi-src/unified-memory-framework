@@ -19,7 +19,7 @@
 #define MINIMUM_CHUNK_COUNT (128)
 
 // alignment of the base allocator
-#define MEMORY_ALIGNMENT (8)
+#define MEMORY_ALIGNMENT (sizeof(uintptr_t))
 
 typedef struct umf_ba_chunk_t umf_ba_chunk_t;
 typedef struct umf_ba_next_pool_t umf_ba_next_pool_t;
@@ -34,7 +34,7 @@ struct umf_ba_chunk_t {
 struct umf_ba_main_pool_meta_t {
     size_t pool_size; // size of each pool (argument of each ba_os_alloc() call)
     size_t chunk_size;         // size of all memory chunks in this pool
-    os_mutex_t *free_lock;     // lock of free_list
+    os_mutex_t free_lock;      // lock of free_list
     umf_ba_chunk_t *free_list; // list of free chunks
 #ifndef NDEBUG
     size_t n_pools;
@@ -146,15 +146,12 @@ umf_ba_pool_t *umf_ba_create(size_t size) {
 
     align_ptr_size((void **)&data_ptr, &size_left, MEMORY_ALIGNMENT);
 
-    // allocate and init free_lock
-    pool->metadata.free_lock = util_mutex_init(data_ptr);
-    if (!pool->metadata.free_lock) {
+    // init free_lock
+    os_mutex_t *mutex = util_mutex_init(&pool->metadata.free_lock);
+    if (!mutex) {
         ba_os_free(pool, pool_size);
         return NULL;
     }
-
-    data_ptr += mutex_size;  // free_lock is here
-    size_left -= mutex_size; // for free_lock
 
     pool->metadata.free_list = NULL;
     ba_divide_memory_into_chunks(pool, data_ptr, size_left);
@@ -163,12 +160,12 @@ umf_ba_pool_t *umf_ba_create(size_t size) {
 }
 
 void *umf_ba_alloc(umf_ba_pool_t *pool) {
-    util_mutex_lock(pool->metadata.free_lock);
+    util_mutex_lock(&pool->metadata.free_lock);
     if (pool->metadata.free_list == NULL) {
         umf_ba_next_pool_t *new_pool =
             (umf_ba_next_pool_t *)ba_os_alloc(pool->metadata.pool_size);
         if (!new_pool) {
-            util_mutex_unlock(pool->metadata.free_lock);
+            util_mutex_unlock(&pool->metadata.free_lock);
             return NULL;
         }
 
@@ -194,7 +191,7 @@ void *umf_ba_alloc(umf_ba_pool_t *pool) {
     pool->metadata.n_allocs++;
     ba_debug_checks(pool);
 #endif /* NDEBUG */
-    util_mutex_unlock(pool->metadata.free_lock);
+    util_mutex_unlock(&pool->metadata.free_lock);
 
     return chunk;
 }
@@ -206,14 +203,14 @@ void umf_ba_free(umf_ba_pool_t *pool, void *ptr) {
 
     umf_ba_chunk_t *chunk = (umf_ba_chunk_t *)ptr;
 
-    util_mutex_lock(pool->metadata.free_lock);
+    util_mutex_lock(&pool->metadata.free_lock);
     chunk->next = pool->metadata.free_list;
     pool->metadata.free_list = chunk;
 #ifndef NDEBUG
     pool->metadata.n_allocs--;
     ba_debug_checks(pool);
 #endif /* NDEBUG */
-    util_mutex_unlock(pool->metadata.free_lock);
+    util_mutex_unlock(&pool->metadata.free_lock);
 }
 
 void umf_ba_destroy(umf_ba_pool_t *pool) {
@@ -230,6 +227,6 @@ void umf_ba_destroy(umf_ba_pool_t *pool) {
         ba_os_free(current_pool, size);
     }
 
-    util_mutex_destroy_not_free(pool->metadata.free_lock);
+    util_mutex_destroy_not_free(&pool->metadata.free_lock);
     ba_os_free(pool, size);
 }
