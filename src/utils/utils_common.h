@@ -25,17 +25,6 @@ extern "C" {
 #define __TLS __thread
 #endif
 
-#define Malloc malloc
-#define Free free
-
-static inline void *Zalloc(size_t s) {
-    void *m = Malloc(s);
-    if (m) {
-        memset(m, 0, s);
-    }
-    return m;
-}
-
 #define NOFUNCTION                                                             \
     do {                                                                       \
     } while (0)
