@@ -10,6 +10,7 @@ set(UMF_LIBS umf_utils)
 
 set(UMF_SOURCES
     base_alloc/base_alloc.c
+    base_alloc/base_alloc_linear.c
     memory_pool.c
     memory_provider.c
     memory_provider_get_last_failed.c
