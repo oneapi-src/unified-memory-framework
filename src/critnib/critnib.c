@@ -57,6 +57,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include "base_alloc.h"
+#include "base_alloc_linear.h"
 #include "critnib.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
@@ -126,7 +128,11 @@ struct critnib {
 
     uint64_t remove_count;
 
-    struct os_mutex_t *mutex; /* writes/removes */
+    struct os_mutex_t mutex; /* writes/removes */
+
+    umf_ba_linear_pool_t *pool_linear;
+    umf_ba_pool_t *pool_nodes;
+    umf_ba_pool_t *pool_leaves;
 };
 
 /*
@@ -176,37 +182,63 @@ static inline unsigned slice_index(word key, sh_t shift) {
  * critnib_new -- allocates a new critnib structure
  */
 struct critnib *critnib_new(void) {
-    struct critnib *c = Zalloc(sizeof(struct critnib));
-    if (!c) {
+    umf_ba_linear_pool_t *pool_linear =
+        umf_ba_linear_create(0 /* minimal pool size */);
+    if (!pool_linear) {
         return NULL;
     }
 
-    c->mutex = util_mutex_create();
-    if (!c->mutex) {
-        free(c);
-        return NULL;
+    struct critnib *c =
+        umf_ba_linear_alloc(pool_linear, sizeof(struct critnib));
+    if (!c) {
+        goto err_destroy_pool_linear;
+    }
+
+    c->pool_linear = pool_linear;
+
+    void *mutex_ptr = util_mutex_init(&c->mutex);
+    if (!mutex_ptr) {
+        goto err_destroy_pool_linear;
+    }
+
+    c->pool_nodes = umf_ba_create(sizeof(struct critnib_node));
+    if (!c->pool_nodes) {
+        goto err_util_mutex_destroy;
+    }
+
+    c->pool_leaves = umf_ba_create(sizeof(struct critnib_leaf));
+    if (!c->pool_leaves) {
+        goto err_destroy_pool_nodes;
     }
 
     VALGRIND_HG_DRD_DISABLE_CHECKING(&c->root, sizeof(c->root));
     VALGRIND_HG_DRD_DISABLE_CHECKING(&c->remove_count, sizeof(c->remove_count));
 
     return c;
+
+err_destroy_pool_nodes:
+    umf_ba_destroy(c->pool_nodes);
+err_util_mutex_destroy:
+    util_mutex_destroy_not_free(&c->mutex);
+err_destroy_pool_linear:
+    umf_ba_linear_destroy(pool_linear); // free all its allocations and destroy
+    return NULL;
 }
 
 /*
  * internal: delete_node -- recursively free (to malloc) a subtree
  */
-static void delete_node(struct critnib_node *__restrict n) {
+static void delete_node(struct critnib *c, struct critnib_node *__restrict n) {
     if (is_leaf(n)) {
-        Free(to_leaf(n));
+        umf_ba_free(c->pool_leaves, to_leaf(n));
     } else {
         for (int i = 0; i < SLNODES; i++) {
             if (n->child[i]) {
-                delete_node(n->child[i]);
+                delete_node(c, n->child[i]);
             }
         }
 
-        Free(n);
+        umf_ba_free(c->pool_nodes, n);
     }
 }
 
@@ -215,29 +247,35 @@ static void delete_node(struct critnib_node *__restrict n) {
  */
 void critnib_delete(struct critnib *c) {
     if (c->root) {
-        delete_node(c->root);
+        delete_node(c, c->root);
     }
 
-    util_mutex_destroy(c->mutex);
+    // mutex is freed in umf_ba_linear_destroy(c->pool_linear) at the end
+    util_mutex_destroy_not_free(&c->mutex);
 
     for (struct critnib_node *m = c->deleted_node; m;) {
         struct critnib_node *mm = m->child[0];
-        Free(m);
+        umf_ba_free(c->pool_nodes, m);
         m = mm;
     }
 
     for (struct critnib_leaf *k = c->deleted_leaf; k;) {
         struct critnib_leaf *kk = k->value;
-        Free(k);
+        umf_ba_free(c->pool_leaves, k);
         k = kk;
     }
 
     for (int i = 0; i < DELETED_LIFE; i++) {
-        Free(c->pending_del_nodes[i]);
-        Free(c->pending_del_leaves[i]);
+        umf_ba_free(c->pool_nodes, c->pending_del_nodes[i]);
+        umf_ba_free(c->pool_leaves, c->pending_del_leaves[i]);
     }
 
-    Free(c);
+    umf_ba_destroy(c->pool_nodes);
+    umf_ba_destroy(c->pool_leaves);
+    umf_ba_linear_destroy(
+        c->pool_linear); // free all its allocations and destroy
+
+    // 'c' was freed in umf_ba_linear_destroy(c->pool_linear)
 }
 
 /*
@@ -264,7 +302,7 @@ static void free_node(struct critnib *__restrict c,
  */
 static struct critnib_node *alloc_node(struct critnib *__restrict c) {
     if (!c->deleted_node) {
-        return Malloc(sizeof(struct critnib_node));
+        return umf_ba_alloc(c->pool_nodes);
     }
 
     struct critnib_node *n = c->deleted_node;
@@ -295,7 +333,7 @@ static void free_leaf(struct critnib *__restrict c,
  */
 static struct critnib_leaf *alloc_leaf(struct critnib *__restrict c) {
     if (!c->deleted_leaf) {
-        return Malloc(sizeof(struct critnib_leaf));
+        return umf_ba_alloc(c->pool_leaves);
     }
 
     struct critnib_leaf *k = c->deleted_leaf;
@@ -317,11 +355,11 @@ static struct critnib_leaf *alloc_leaf(struct critnib *__restrict c) {
  * Takes a global write lock but doesn't stall any readers.
  */
 int critnib_insert(struct critnib *c, word key, void *value, int update) {
-    util_mutex_lock(c->mutex);
+    util_mutex_lock(&c->mutex);
 
     struct critnib_leaf *k = alloc_leaf(c);
     if (!k) {
-        util_mutex_unlock(c->mutex);
+        util_mutex_unlock(&c->mutex);
 
         return ENOMEM;
     }
@@ -337,7 +375,7 @@ int critnib_insert(struct critnib *c, word key, void *value, int update) {
     if (!n) {
         c->root = kn;
 
-        util_mutex_unlock(c->mutex);
+        util_mutex_unlock(&c->mutex);
 
         return 0;
     }
@@ -355,7 +393,7 @@ int critnib_insert(struct critnib *c, word key, void *value, int update) {
         n = prev;
         store(&n->child[slice_index(key, n->shift)], kn);
 
-        util_mutex_unlock(c->mutex);
+        util_mutex_unlock(&c->mutex);
 
         return 0;
     }
@@ -369,10 +407,10 @@ int critnib_insert(struct critnib *c, word key, void *value, int update) {
 
         if (update) {
             to_leaf(n)->value = value;
-            util_mutex_unlock(c->mutex);
+            util_mutex_unlock(&c->mutex);
             return 0;
         } else {
-            util_mutex_unlock(c->mutex);
+            util_mutex_unlock(&c->mutex);
             return EEXIST;
         }
     }
@@ -384,7 +422,7 @@ int critnib_insert(struct critnib *c, word key, void *value, int update) {
     if (!m) {
         free_leaf(c, to_leaf(kn));
 
-        util_mutex_unlock(c->mutex);
+        util_mutex_unlock(&c->mutex);
 
         return ENOMEM;
     }
@@ -400,7 +438,7 @@ int critnib_insert(struct critnib *c, word key, void *value, int update) {
     m->path = key & path_mask(sh);
     store(parent, m);
 
-    util_mutex_unlock(c->mutex);
+    util_mutex_unlock(&c->mutex);
 
     return 0;
 }
@@ -412,7 +450,7 @@ void *critnib_remove(struct critnib *c, word key) {
     struct critnib_leaf *k;
     void *value = NULL;
 
-    util_mutex_lock(c->mutex);
+    util_mutex_lock(&c->mutex);
 
     struct critnib_node *n = c->root;
     if (!n) {
@@ -482,7 +520,7 @@ del_leaf:
     c->pending_del_leaves[del] = k;
 
 not_found:
-    util_mutex_unlock(c->mutex);
+    util_mutex_unlock(&c->mutex);
     return value;
 }
 
@@ -805,9 +843,9 @@ static int iter(struct critnib_node *__restrict n, word min, word max,
 void critnib_iter(critnib *c, uintptr_t min, uintptr_t max,
                   int (*func)(uintptr_t key, void *value, void *privdata),
                   void *privdata) {
-    util_mutex_lock(c->mutex);
+    util_mutex_lock(&c->mutex);
     if (c->root) {
         iter(c->root, min, max, func, privdata);
     }
-    util_mutex_unlock(c->mutex);
+    util_mutex_unlock(&c->mutex);
 }

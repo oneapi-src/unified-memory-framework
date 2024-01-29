@@ -104,7 +104,7 @@ function(add_umf_library)
     target_link_libraries(${ARG_NAME} PRIVATE ${ARG_LIBS})
     target_include_directories(${ARG_NAME} PRIVATE
         ${UMF_CMAKE_SOURCE_DIR}/include
-        ${UMF_CMAKE_SOURCE_DIR}/src/common)
+        ${UMF_CMAKE_SOURCE_DIR}/src/base_alloc)
     add_umf_target_compile_options(${ARG_NAME})
     add_umf_target_link_options(${ARG_NAME})
 endfunction()
