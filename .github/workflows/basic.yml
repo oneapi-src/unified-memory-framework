@@ -87,14 +87,17 @@ jobs:
             build_type: Release
             compiler: {c: gcc-7, cxx: g++-7}
             shared_library: 'OFF'
+            os_provider: 'ON'
           - os: 'ubuntu-22.04'
             build_type: Release
             compiler: {c: clang, cxx: clang++}
             shared_library: 'OFF'
+            os_provider: 'ON'
           - os: 'ubuntu-22.04'
             build_type: Release
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
+            os_provider: 'ON'
           # test os_provider='OFF' with shared_library='ON'
           - os: 'ubuntu-22.04'
             build_type: Release
@@ -113,6 +116,7 @@ jobs:
             compiler: {c: clang, cxx: clang++}
             pool_tracking: 'ON'
             shared_library: 'OFF'
+            os_provider: 'ON'
           # TSAN is mutually exclusive with other sanitizers
             sanitizers: {asan: ON, ubsan: ON, tsan: OFF}
           - os: 'ubuntu-22.04'
@@ -120,18 +124,21 @@ jobs:
             compiler: {c: clang, cxx: clang++}
             pool_tracking: 'ON'
             shared_library: 'OFF'
+            # os_provider: 'ON' # TODO: fix TSAN issues and enable os_provider here
             sanitizers: {asan: OFF, ubsan: OFF, tsan: ON}
           - os: 'ubuntu-22.04'
             build_type: Debug
             compiler: {c: gcc, cxx: g++}
             pool_tracking: 'ON'
             shared_library: 'OFF'
+            os_provider: 'ON'
             sanitizers: {asan: ON, ubsan: ON, tsan: OFF}
           - os: 'ubuntu-22.04'
             build_type: Debug
             compiler: {c: gcc, cxx: g++}
             pool_tracking: 'ON'
             shared_library: 'OFF'
+            # os_provider: 'ON' # TODO: fix TSAN issues and enable os_provider here
             sanitizers: {asan: OFF, ubsan: OFF, tsan: ON}
     runs-on: ${{matrix.os}}
 
