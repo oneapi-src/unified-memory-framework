@@ -50,7 +50,7 @@ static void *start_routine(void *arg) {
     return NULL;
 }
 
-int main() {
+int main(void) {
     pthread_t thread[NTHREADS];
     umf_ba_linear_pool_t *pool = umf_ba_linear_create(MAX_ALLOCATION_SIZE);
 
