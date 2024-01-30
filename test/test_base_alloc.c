@@ -46,7 +46,7 @@ static void *start_routine(void *arg) {
     return NULL;
 }
 
-int main() {
+int main(void) {
     pthread_t thread[NTHREADS];
     umf_ba_pool_t *pool = umf_ba_create(ALLOCATION_SIZE);
 

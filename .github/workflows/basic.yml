@@ -7,6 +7,70 @@ env:
   INSTL_DIR : "${{github.workspace}}/build/install-dir"
 
 jobs:
+  icx-build:
+    name: Build - Intel C++ Compiler
+    strategy:
+      matrix:
+        build_type: [Debug, Release]
+        compiler: [{c: icx, cxx: icpx}]
+        pool_tracking: ['ON', 'OFF']
+        shared_library: ['OFF']
+        os_provider: ['ON']
+        sanitizers: [{asan: OFF, ubsan: OFF, tsan: OFF}]
+    runs-on: ubuntu-22.04
+    container:
+      image: intel/oneapi:latest
+      volumes:
+        - ${{github.workspace}}:${{github.workspace}}
+      options: "--privileged"
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install apt packages
+      run: |
+        apt-get update
+        apt-get install -y libnuma-dev libjemalloc-dev libtbb-dev libhwloc-dev
+
+    - name: Configure build
+      run: >
+        cmake
+        -B build
+        -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
+        -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+        -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
+        -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
+        -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
+        -DUMF_BUILD_OS_MEMORY_PROVIDER=${{matrix.os_provider}}
+        -DUMF_ENABLE_POOL_TRACKING=${{matrix.pool_tracking}}
+        -DUMF_FORMAT_CODE_STYLE=OFF
+        -DUMF_DEVELOPER_MODE=ON
+        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
+        -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
+        -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
+        -DUSE_ASAN=${{matrix.sanitizers.asan}}
+        -DUSE_UBSAN=${{matrix.sanitizers.ubsan}}
+        -DUSE_TSAN=${{matrix.sanitizers.tsan}}
+
+    - name: Build UMF
+      run: |
+        cmake --build build -j $(nproc)
+
+    - name: Run tests
+      working-directory: ${{github.workspace}}/build
+      run: |
+        ctest --output-on-failure
+
+    - name: Test make install
+      working-directory: ${{env.BUILD_DIR}}
+      run: ${{github.workspace}}/test/test_make_install.sh \
+            ${{github.workspace}} ${{env.BUILD_DIR}} ${{env.INSTL_DIR}} ${{matrix.build_type}} ${{matrix.shared_library}}
+
+    - name: Test make uninstall
+      working-directory: ${{env.BUILD_DIR}}
+      run: ${{github.workspace}}/test/test_make_uninstall.sh ${{github.workspace}} ${{env.BUILD_DIR}} ${{env.INSTL_DIR}}
+
   ubuntu-build:
     name: Build - Ubuntu
     strategy:
