@@ -1,13 +1,19 @@
 Glossary
 ==========================================================
 
+.. _glossary-homogeneous-memory-system:
+
 Homogeneous Memory System  
   A system that operates on a single type of memory implemented using a single 
   technology.
 
+.. _glossary-heterogeneous-memory-system:
+
 Heterogeneous Memory System 
   A system that operates on multiple types of memories, possibly implemented 
   using different technologies, often managed by different entities.
+
+.. _glossary-memory-tiering:
 
 Memory Tiering
   An organization of different types of memory storage within a system, each 
@@ -16,10 +22,14 @@ Memory Tiering
   expensive memory located closer to the processor and slower, less expensive 
   memory located further away.
 
+.. _glossary-memory-access-initiator:
+
 Memory Access Initiator 
   A component in a computer system that initiates or requests access to the 
   computer's memory subsystem. This could be a CPU, GPU, or other I/O and cache 
   devices.
+
+.. _glossary-memory-target:
 
 Memory Target 
   Any part of the memory subsystem that can handle memory access requests. This 
@@ -27,19 +37,27 @@ Memory Target
   the graphics cards, memory caches, storage, external memory devices connected 
   using CXL.mem protocol, etc.
 
+.. _glossary-memory-page:
+
 Memory Page 
   A fixed-length contiguous block of virtual memory, described by a single 
   entry in the page table. It is the smallest unit of data for memory 
   management in a virtual memory operating system.
 
+.. _glossary-enlightened-application:
+
 Enlightened Application 
   An application that explicitly manages data allocation distribution among 
   different types of memory and handles data migration between them. 
+
+.. _glossary-unenlightened-application:
 
 Unenlightened Application 
   An application that relies on the underlying infrastructure (OS, frameworks, 
   libraries) that offers various memory tiering and migration solutions without 
   any code modifications.
+
+.. _glossary-memory-pool:
 
 Memory Pool 
   A memory management technique used in computer programming and software 
@@ -51,9 +69,13 @@ Memory Pool
   so they are used to optimize memory allocation and deallocation in scenarios 
   where efficiency and performance are critical.
 
+.. _glossary-pool-allocator:
+
 Pool Allocator 
   A memory allocator type used to efficiently manage memory pools. Among the 
   existing ones are jemalloc or oneTBB's Scalable Memory Allocator.
+
+.. _glossary-memory-provider:
 
 Memory Provider 
   A software component responsible for supplying memory or managing memory 
@@ -62,10 +84,14 @@ Memory Provider
   sources like file-backed or user-provided memory. Memory providers are 
   responsible for coarse-grain allocations and management of memory pages.
 
+.. _glossary-hbm:
+
 High Bandwidth Memory (HBM)
   A high-speed computer memory. It is used in conjunction with high-performance 
   graphics accelerators, network devices, and high-performance data centers, as 
   on-package cache in CPUs, FPGAs, supercomputers, etc.
+
+.. _glossary-cxl:
 
 Compute Express Link (`CXL`_)
   An open standard for high-speed, high-capacity central processing unit 
@@ -75,10 +101,14 @@ Compute Express Link (`CXL`_)
   (CXL.io), cache-coherent protocols for accessing system memory (CXL.cache), 
   and device memory (CXL.mem).
 
+.. _glossary-tbb:
+
 oneAPI Threading Building Blocks (`oneTBB`_)
   A C++ template library developed by Intel for parallel programming on 
   multi-core processors. TBB broke down the computation into tasks that can run 
   in parallel. The library manages and schedules threads to execute these tasks.
+
+.. _glossary-jemalloc:
 
 jemalloc 
   A general-purpose malloc implementation that emphasizes fragmentation 
@@ -87,6 +117,8 @@ jemalloc
   pools (“arenas”) for each CPU which avoids lock contention problems in 
   multithreading applications and makes them scale linearly with the number of 
   threads.
+
+.. _glossary-usm:
 
 Unified Shared Memory (USM) 
   A programming model which provides a single memory address space that is 

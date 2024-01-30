@@ -22,7 +22,7 @@ copyright = "2023, Intel"
 author = "Intel"
 
 # The full version, including alpha/beta/rc tags
-release = "0.9"
+release = "0.1.0"
 
 
 # -- General configuration ---------------------------------------------------
@@ -37,6 +37,7 @@ extensions = ["breathe"]
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
+primary_domain = "c"
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -52,3 +53,4 @@ breathe_projects = {project: "../../docs/xml"}
 breathe_default_project = project
 breathe_show_include = False
 breathe_default_members = ("members", "undoc-members")
+breathe_domain_by_extension = {"h": "c"}

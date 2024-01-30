@@ -55,6 +55,7 @@ jobs:
         -DUSE_ASAN=${{matrix.sanitizers.asan}}
         -DUSE_UBSAN=${{matrix.sanitizers.ubsan}}
         -DUSE_TSAN=${{matrix.sanitizers.tsan}}
+        -DUMF_BUILD_EXAMPLES=ON
 
     - name: Build UMF
       run: |
@@ -63,14 +64,18 @@ jobs:
     - name: Run tests
       working-directory: ${{github.workspace}}/build
       run: |
-        ctest --output-on-failure
+        ctest --output-on-failure --test-dir test
 
     - name: Test make install
+      # Run only when the example is built
+      if: matrix.os_provider == 'ON' && matrix.pool_tracking == 'ON'
       working-directory: ${{env.BUILD_DIR}}
       run: ${{github.workspace}}/test/test_make_install.sh \
             ${{github.workspace}} ${{env.BUILD_DIR}} ${{env.INSTL_DIR}} ${{matrix.build_type}} ${{matrix.shared_library}}
 
     - name: Test make uninstall
+      # Run only when the example is built
+      if: matrix.os_provider == 'ON' && matrix.pool_tracking == 'ON'
       working-directory: ${{env.BUILD_DIR}}
       run: ${{github.workspace}}/test/test_make_uninstall.sh ${{github.workspace}} ${{env.BUILD_DIR}} ${{env.INSTL_DIR}}
 
@@ -194,11 +199,17 @@ jobs:
           ctest --output-on-failure
 
       - name: Test make install
+        # Run only when the example is built
+        # TODO: Modify installation test to accept output varying with build options
+        if: matrix.os_provider == 'ON' && matrix.pool_tracking == 'ON'
         working-directory: ${{env.BUILD_DIR}}
         run: ${{github.workspace}}/test/test_make_install.sh \
               ${{github.workspace}} ${{env.BUILD_DIR}} ${{env.INSTL_DIR}} ${{matrix.build_type}} ${{matrix.shared_library}}
 
       - name: Test make uninstall
+        # Run only when the example is built
+        # TODO: Modify installation test to accept output varying with build options
+        if: matrix.os_provider == 'ON' && matrix.pool_tracking == 'ON'
         working-directory: ${{env.BUILD_DIR}}
         run: ${{github.workspace}}/test/test_make_uninstall.sh ${{github.workspace}} ${{env.BUILD_DIR}} ${{env.INSTL_DIR}}
 
