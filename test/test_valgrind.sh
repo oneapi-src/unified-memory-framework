@@ -49,13 +49,18 @@ esac
 
 FAIL=0
 
+mkdir -p cpuid
+
+echo "Gathering data for hwloc so it can be run under valgrind:"
+hwloc-gather-cpuid ./cpuid
+
 echo "Running: \"valgrind $OPTION\" for the following tests:"
 
 for tf in $(ls -1 ./test/umf_test-*); do
 	[ ! -x $tf ] && continue
 	echo -n "$tf "
 	LOG=${tf}.log
-	valgrind $OPTION $tf >$LOG 2>&1 || echo -n "(valgrind failed) "
+	HWLOC_CPUID_PATH=./cpuid valgrind $OPTION $tf >$LOG 2>&1 || echo -n "(valgrind failed) "
 	if grep -q -e "ERROR SUMMARY: 0 errors from 0 contexts" $LOG; then
 		echo "- OK"
 		rm $LOG

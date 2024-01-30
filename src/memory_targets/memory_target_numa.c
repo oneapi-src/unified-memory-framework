@@ -41,6 +41,7 @@ static umf_result_t numa_initialize(void *params, void **memTarget) {
 
 static void numa_finalize(void *memTarget) { free(memTarget); }
 
+// sets maxnode and allocates and initializes mask based on provided memory targets
 static umf_result_t
 numa_targets_create_nodemask(struct numa_memory_target_t **targets,
                              size_t numTargets, unsigned long **mask,
@@ -61,13 +62,26 @@ numa_targets_create_nodemask(struct numa_memory_target_t **targets,
         }
     }
 
-    int nrUlongs = hwloc_bitmap_nr_ulongs(bitmap);
-    if (nrUlongs == -1) {
+    int lastBit = hwloc_bitmap_last(bitmap);
+    if (lastBit == -1) {
+        // no node is set
         hwloc_bitmap_free(bitmap);
-        return UMF_RESULT_ERROR_UNKNOWN;
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
+    *maxnode = lastBit + 1;
+
+    // Do not use hwloc_bitmap_nr_ulongs due to:
+    // https://github.com/open-mpi/hwloc/issues/429
+    unsigned bits_per_long = sizeof(unsigned long) * 8;
+    int nrUlongs = (lastBit + bits_per_long) / bits_per_long;
+
     unsigned long *nodemask = malloc(sizeof(unsigned long) * nrUlongs);
+    if (!nodemask) {
+        hwloc_bitmap_free(bitmap);
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
     int ret = hwloc_bitmap_to_ulongs(bitmap, nrUlongs, nodemask);
     hwloc_bitmap_free(bitmap);
 
@@ -77,7 +91,6 @@ numa_targets_create_nodemask(struct numa_memory_target_t **targets,
     }
 
     *mask = nodemask;
-    *maxnode = nrUlongs * sizeof(unsigned long) * 8;
 
     return UMF_RESULT_SUCCESS;
 }
