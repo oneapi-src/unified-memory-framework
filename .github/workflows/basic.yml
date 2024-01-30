@@ -124,7 +124,7 @@ jobs:
             compiler: {c: clang, cxx: clang++}
             pool_tracking: 'ON'
             shared_library: 'OFF'
-            # os_provider: 'ON' # TODO: fix TSAN issues and enable os_provider here
+            os_provider: 'ON'
             sanitizers: {asan: OFF, ubsan: OFF, tsan: ON}
           - os: 'ubuntu-22.04'
             build_type: Debug
@@ -138,7 +138,7 @@ jobs:
             compiler: {c: gcc, cxx: g++}
             pool_tracking: 'ON'
             shared_library: 'OFF'
-            # os_provider: 'ON' # TODO: fix TSAN issues and enable os_provider here
+            os_provider: 'ON'
             sanitizers: {asan: OFF, ubsan: OFF, tsan: ON}
     runs-on: ${{matrix.os}}
 
