@@ -72,6 +72,10 @@ void *umf_ba_linear_alloc(umf_ba_linear_pool_t *pool, size_t size) {
 
     util_mutex_lock(&pool->metadata.lock);
     if (pool->metadata.size_left < aligned_size) {
+        fprintf(stderr,
+                "error: umf_ba_linear_alloc() failed (requested size: %zu > "
+                "space left: %zu)\n",
+                aligned_size, pool->metadata.size_left);
         util_mutex_unlock(&pool->metadata.lock);
         return NULL; // out of memory
     }
