@@ -51,8 +51,8 @@ TEST_F(test, freeErrorPropagation) {
     params.MaxPoolableSize = 0;
 
     umf_memory_pool_handle_t pool = NULL;
-    umf_result_t retp = umfPoolCreate(&UMF_DISJOINT_POOL_OPS, provider_handle,
-                                      &params, 0, &pool);
+    umf_result_t retp =
+        umfPoolCreate(umfDisjointPoolOps(), provider_handle, &params, 0, &pool);
     EXPECT_EQ(retp, UMF_RESULT_SUCCESS);
     auto poolHandle = umf_test::wrapPoolUnique(pool);
 
@@ -112,12 +112,12 @@ TEST_F(test, sharedLimits) {
 
     umf_memory_pool_handle_t pool1 = NULL;
     umf_memory_pool_handle_t pool2 = NULL;
-    auto ret = umfPoolCreate(&UMF_DISJOINT_POOL_OPS, provider.get(),
+    auto ret = umfPoolCreate(umfDisjointPoolOps(), provider.get(),
                              (void *)&config, 0, &pool1);
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
     auto poolHandle1 = umf_test::wrapPoolUnique(pool1);
 
-    ret = umfPoolCreate(&UMF_DISJOINT_POOL_OPS, provider.get(), (void *)&config,
+    ret = umfPoolCreate(umfDisjointPoolOps(), provider.get(), (void *)&config,
                         0, &pool2);
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
     auto poolHandle2 = umf_test::wrapPoolUnique(pool2);
@@ -151,18 +151,18 @@ TEST_F(test, sharedLimits) {
 auto defaultPoolConfig = poolConfig();
 INSTANTIATE_TEST_SUITE_P(disjointPoolTests, umfPoolTest,
                          ::testing::Values(poolCreateExtParams{
-                             &UMF_DISJOINT_POOL_OPS, (void *)&defaultPoolConfig,
+                             umfDisjointPoolOps(), (void *)&defaultPoolConfig,
                              &MALLOC_PROVIDER_OPS, nullptr}));
 
 INSTANTIATE_TEST_SUITE_P(
     disjointPoolTests, umfMemTest,
     ::testing::Values(std::make_tuple(
-        poolCreateExtParams{&UMF_DISJOINT_POOL_OPS, (void *)&defaultPoolConfig,
+        poolCreateExtParams{umfDisjointPoolOps(), (void *)&defaultPoolConfig,
                             &MOCK_OUT_OF_MEM_PROVIDER_OPS,
                             (void *)&defaultPoolConfig.Capacity},
         static_cast<int>(defaultPoolConfig.Capacity) / 2)));
 
 INSTANTIATE_TEST_SUITE_P(disjointMultiPoolTests, umfMultiPoolTest,
                          ::testing::Values(poolCreateExtParams{
-                             &UMF_DISJOINT_POOL_OPS, (void *)&defaultPoolConfig,
+                             umfDisjointPoolOps(), (void *)&defaultPoolConfig,
                              &MALLOC_PROVIDER_OPS, nullptr}));

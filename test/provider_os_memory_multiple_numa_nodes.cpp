@@ -45,7 +45,7 @@ struct testNumaNodes : public testing::TestWithParam<int> {
     void
     initOsProvider(umf_os_memory_provider_params_t os_memory_provider_params) {
         umf_result_t umf_result;
-        umf_result = umfMemoryProviderCreate(&UMF_OS_MEMORY_PROVIDER_OPS,
+        umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(),
                                              &os_memory_provider_params,
                                              &os_memory_provider);
         ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);

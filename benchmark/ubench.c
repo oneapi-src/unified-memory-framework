@@ -139,7 +139,7 @@ UBENCH_EX(simple, os_memory_provider) {
 
     enum umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = NULL;
-    umf_result = umfMemoryProviderCreate(&UMF_OS_MEMORY_PROVIDER_OPS,
+    umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(),
                                          &UMF_OS_MEMORY_PROVIDER_PARAMS,
                                          &os_memory_provider);
     if (umf_result != UMF_RESULT_SUCCESS) {
@@ -188,7 +188,7 @@ UBENCH_EX(simple, disjoint_pool_with_os_memory_provider) {
 
     enum umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = NULL;
-    umf_result = umfMemoryProviderCreate(&UMF_OS_MEMORY_PROVIDER_OPS,
+    umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(),
                                          &UMF_OS_MEMORY_PROVIDER_PARAMS,
                                          &os_memory_provider);
     if (umf_result != UMF_RESULT_SUCCESS) {
@@ -204,7 +204,7 @@ UBENCH_EX(simple, disjoint_pool_with_os_memory_provider) {
     disjoint_memory_pool_params.PoolTrace = DISJOINT_POOL_TRACE;
 
     umf_memory_pool_handle_t disjoint_pool;
-    umf_result = umfPoolCreate(&UMF_DISJOINT_POOL_OPS, os_memory_provider,
+    umf_result = umfPoolCreate(umfDisjointPoolOps(), os_memory_provider,
                                &disjoint_memory_pool_params, 0, &disjoint_pool);
     if (umf_result != UMF_RESULT_SUCCESS) {
         exit(-1);
@@ -233,7 +233,7 @@ UBENCH_EX(simple, jemalloc_pool_with_os_memory_provider) {
 
     enum umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = NULL;
-    umf_result = umfMemoryProviderCreate(&UMF_OS_MEMORY_PROVIDER_OPS,
+    umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(),
                                          &UMF_OS_MEMORY_PROVIDER_PARAMS,
                                          &os_memory_provider);
     if (umf_result != UMF_RESULT_SUCCESS) {
@@ -241,7 +241,7 @@ UBENCH_EX(simple, jemalloc_pool_with_os_memory_provider) {
     }
 
     umf_memory_pool_handle_t jemalloc_pool;
-    umf_result = umfPoolCreate(&UMF_JEMALLOC_POOL_OPS, os_memory_provider, NULL,
+    umf_result = umfPoolCreate(umfJemallocPoolOps(), os_memory_provider, NULL,
                                0, &jemalloc_pool);
     if (umf_result != UMF_RESULT_SUCCESS) {
         exit(-1);
@@ -270,7 +270,7 @@ UBENCH_EX(simple, scalable_pool_with_os_memory_provider) {
 
     enum umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = NULL;
-    umf_result = umfMemoryProviderCreate(&UMF_OS_MEMORY_PROVIDER_OPS,
+    umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(),
                                          &UMF_OS_MEMORY_PROVIDER_PARAMS,
                                          &os_memory_provider);
     if (umf_result != UMF_RESULT_SUCCESS) {
@@ -278,7 +278,7 @@ UBENCH_EX(simple, scalable_pool_with_os_memory_provider) {
     }
 
     umf_memory_pool_handle_t scalable_pool;
-    umf_result = umfPoolCreate(&UMF_SCALABLE_POOL_OPS, os_memory_provider, NULL,
+    umf_result = umfPoolCreate(umfScalablePoolOps(), os_memory_provider, NULL,
                                0, &scalable_pool);
     if (umf_result != UMF_RESULT_SUCCESS) {
         exit(-1);

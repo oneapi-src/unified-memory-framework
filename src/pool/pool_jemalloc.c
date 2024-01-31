@@ -416,7 +416,7 @@ static umf_result_t je_get_last_allocation_error(void *pool) {
     return TLS_last_allocation_error;
 }
 
-umf_memory_pool_ops_t UMF_JEMALLOC_POOL_OPS = {
+static umf_memory_pool_ops_t UMF_JEMALLOC_POOL_OPS = {
     .version = UMF_VERSION_CURRENT,
     .initialize = je_initialize,
     .finalize = je_finalize,
@@ -428,3 +428,7 @@ umf_memory_pool_ops_t UMF_JEMALLOC_POOL_OPS = {
     .free = je_free,
     .get_last_allocation_error = je_get_last_allocation_error,
 };
+
+umf_memory_pool_ops_t *umfJemallocPoolOps(void) {
+    return &UMF_JEMALLOC_POOL_OPS;
+}

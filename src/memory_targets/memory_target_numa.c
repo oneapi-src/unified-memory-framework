@@ -122,7 +122,7 @@ static enum umf_result_t numa_memory_provider_create_from_memspace(
     params.numa_flags = UMF_NUMA_FLAGS_STRICT;
 
     umf_memory_provider_handle_t numaProvider = NULL;
-    ret = umfMemoryProviderCreate(&UMF_OS_MEMORY_PROVIDER_OPS, &params,
+    ret = umfMemoryProviderCreate(umfOsMemoryProviderOps(), &params,
                                   &numaProvider);
     free(nodemask);
     if (ret) {
