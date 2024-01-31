@@ -66,7 +66,7 @@ struct providerConfigTest : testing::Test {
     }
 };
 
-TEST_F(providerConfigTest, protection_flag_none) {
+TEST_F(providerConfigTest, protection_flag_none_read) {
     // pages may not be accessed - PROT_NONE
     params.protection = UMF_PROTECTION_NONE;
 
@@ -75,6 +75,14 @@ TEST_F(providerConfigTest, protection_flag_none) {
 
     // read failure
     EXPECT_DEATH(read_memory(), "");
+}
+
+TEST_F(providerConfigTest, protection_flag_none_write) {
+    // pages may not be accessed - PROT_NONE
+    params.protection = UMF_PROTECTION_NONE;
+
+    create_provider(&params);
+    allocate_memory();
 
     // write failure
     EXPECT_DEATH(write_memory("write string"), "");
