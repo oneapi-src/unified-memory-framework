@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-UMF_EXPORT umf_memory_pool_ops_t *umfProxyPoolOps(void);
+umf_memory_pool_ops_t *umfProxyPoolOps(void);
 
 #ifdef __cplusplus
 }

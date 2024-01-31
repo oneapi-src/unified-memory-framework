@@ -94,14 +94,33 @@ endfunction()
 function(add_umf_library)
     # NAME - a name of the library
     # TYPE - type of the library (shared or static)
+    #        if shared library, LINUX_MAP_FILE and WINDOWS_DEF_FILE must also be specified
     # SRCS - source files
     # LIBS - libraries to be linked with
-    set(oneValueArgs NAME TYPE)
+    # LINUX_MAP_FILE - path to linux linker map (.map) file
+    # WINDOWS_DEF_FILE - path to windows module-definition (DEF) file
+
+    set(oneValueArgs NAME TYPE LINUX_MAP_FILE WINDOWS_DEF_FILE)
     set(multiValueArgs SRCS LIBS)
     cmake_parse_arguments(ARG "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     add_library(${ARG_NAME} ${ARG_TYPE} ${ARG_SRCS})
+
+    string(TOUPPER "${ARG_TYPE}" ARG_TYPE)
+    if(ARG_TYPE STREQUAL "SHARED")
+        if(NOT ARG_LINUX_MAP_FILE OR NOT ARG_WINDOWS_DEF_FILE)
+            message(FATAL_ERROR "LINUX_MAP_FILE or WINDOWS_DEF_FILE not specified")
+        endif()
+
+        if (WINDOWS)
+            target_link_options(${ARG_NAME} PRIVATE /DEF:${ARG_WINDOWS_DEF_FILE})
+        else()
+            target_link_options(${ARG_NAME} PRIVATE "-Wl,--version-script=${ARG_LINUX_MAP_FILE}")
+        endif()
+    endif()
+
     target_link_libraries(${ARG_NAME} PRIVATE ${ARG_LIBS})
+
     target_include_directories(${ARG_NAME} PRIVATE
         ${UMF_CMAKE_SOURCE_DIR}/include
         ${UMF_CMAKE_SOURCE_DIR}/src/base_alloc)

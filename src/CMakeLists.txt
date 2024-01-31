@@ -70,7 +70,9 @@ if(UMF_BUILD_SHARED_LIBRARY)
     add_umf_library(NAME umf
                     TYPE SHARED
                     SRCS ${UMF_SOURCES}
-                    LIBS ${UMF_LIBS})
+                    LIBS ${UMF_LIBS}
+                    LINUX_MAP_FILE ${CMAKE_CURRENT_SOURCE_DIR}/libumf.map
+                    WINDOWS_DEF_FILE ${CMAKE_CURRENT_SOURCE_DIR}/libumf.def)
     target_compile_definitions(umf PUBLIC UMF_SHARED_LIBRARY)
     set_target_properties(umf PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_UMF_OUTPUT_DIRECTORY})
