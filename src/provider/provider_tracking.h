@@ -17,6 +17,8 @@
 #include <umf/memory_pool.h>
 #include <umf/memory_provider.h>
 
+#include "base_alloc.h"
+#include "base_alloc_linear.h"
 #include "critnib.h"
 #include "utils_concurrency.h"
 
@@ -25,8 +27,10 @@ extern "C" {
 #endif
 
 struct umf_memory_tracker_t {
+    umf_ba_linear_pool_t *pool_linear;
+    umf_ba_pool_t *tracker_allocator;
     critnib *map;
-    os_mutex_t *splitMergeMutex;
+    os_mutex_t splitMergeMutex;
 };
 
 typedef struct umf_memory_tracker_t *umf_memory_tracker_handle_t;
