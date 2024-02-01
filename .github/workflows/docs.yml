@@ -31,7 +31,7 @@ jobs:
         run: python3 generate_docs.py
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@0252fc4ba7626f0298f0cf00902a25c6afc77fa8 # v3.0.0
         with:
           path: docs/html
 
@@ -51,4 +51,4 @@ jobs:
     steps:
       - name: Deploy the documentation to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v3
+        uses: actions/deploy-pages@87c3283f01cd6fe19a0ab93a23b2f6fcba5a8e42 # v4.0.3
