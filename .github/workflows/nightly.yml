@@ -41,5 +41,4 @@ jobs:
             cmake --build ${{github.workspace}}/build --config Debug -j$(nproc)
 
         - name: Run tests under valgrind
-          working-directory: ${{github.workspace}}/build
-          run: ../test/test_valgrind.sh ${{matrix.tool}}
+          run: ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{github.workspace}}/build ${{matrix.tool}}

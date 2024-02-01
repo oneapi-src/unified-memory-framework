@@ -5,12 +5,14 @@
 
 set -e
 
-TOOL=$1
+WORKSPACE=$1
+BUILD_DIR=$2
+TOOL=$3
 
 function print_usage() {
-	echo "$(basename $0) - run UMF tests under valgrind tools (memcheck, drd or helgrind)"
-	echo "This script must be run in the UMF build directory. It looks for './test/umf_test-*' test executables."
-	echo "Usage: $(basename $0) <memcheck|drd|helgrind>"
+	echo "$(basename $0) - run all UMF tests under a valgrind tool (memcheck, drd or helgrind)"
+	echo "This script looks for './test/umf_test-*' test executables in the UMF build directory."
+	echo "Usage: $(basename $0) <workspace_dir> <build_dir> <memcheck|drd|helgrind>"
 }
 
 if ! valgrind --version > /dev/null; then
@@ -18,14 +20,20 @@ if ! valgrind --version > /dev/null; then
 	exit 1
 fi
 
-if [ $(ls -1 ./test/umf_test-* 2>/dev/null | wc -l) -eq 0 ]; then
-	echo "error: UMF tests ./test/umf_test-* not found (perhaps wrong directory)"
+if [ "$3" == "" ]; then
+	echo -e "error: too few arguments\n"
 	print_usage
 	exit 1
 fi
 
-if [ "$TOOL" == "" ]; then
-	echo "error: valgrind tool is missing"
+if [ ! -f $WORKSPACE/README.md ]; then
+	echo -e "error: incorrect <workspace_dir>: $WORKSPACE\n"
+	print_usage
+	exit 1
+fi
+
+if [ $(ls -1 ${BUILD_DIR}/test/umf_test-* 2>/dev/null | wc -l) -eq 0 ]; then
+	echo -e "error: UMF tests ./test/umf_test-* not found in the build directory: ${BUILD_DIR}\n"
 	print_usage
 	exit 1
 fi
@@ -41,31 +49,45 @@ helgrind)
 	OPTION="--tool=helgrind"
 	;;
 *)
-	echo "error: unknown tool: $TOOL"
+	echo -e "error: unknown valgrind tool: $TOOL\n"
 	print_usage
 	exit 1
 	;;
 esac
 
-FAIL=0
+WORKSPACE=$(realpath $WORKSPACE)
+BUILD_DIR=$(realpath $BUILD_DIR)
 
+cd ${BUILD_DIR}/test/
 mkdir -p cpuid
 
 echo "Gathering data for hwloc so it can be run under valgrind:"
 hwloc-gather-cpuid ./cpuid
 
+echo
+echo "Working directory: $(pwd)"
 echo "Running: \"valgrind $OPTION\" for the following tests:"
 
-for tf in $(ls -1 ./test/umf_test-*); do
-	[ ! -x $tf ] && continue
-	echo -n "$tf "
-	LOG=${tf}.log
-	HWLOC_CPUID_PATH=./cpuid valgrind $OPTION $tf >$LOG 2>&1 || echo -n "(valgrind failed) "
-	if grep -q -e "ERROR SUMMARY: 0 errors from 0 contexts" $LOG; then
+FAIL=0
+rm -f umf_test-*.log umf_test-*.err
+
+for test in $(ls -1 ./umf_test-*); do
+	[ ! -x $test ] && continue
+	echo -n "$test "
+	LOG=${test}.log
+	ERR=${test}.err
+	SUP="${WORKSPACE}/test/supp/${test}.supp"
+	OPT_SUP=""
+	[ -f ${SUP} ] && OPT_SUP="--suppressions=${SUP}"
+	HWLOC_CPUID_PATH=./cpuid valgrind $OPTION $OPT_SUP --gen-suppressions=all $test >$LOG 2>&1 || echo -n "(valgrind failed) "
+	# grep for "ERROR SUMMARY" with errors (there can be many lines with "ERROR SUMMARY")
+	grep -e "ERROR SUMMARY:" $LOG | grep -v -e "ERROR SUMMARY: 0 errors from 0 contexts" > $ERR || true
+	if [ $(cat $ERR | wc -l) -eq 0 ]; then
 		echo "- OK"
-		rm $LOG
+		rm -f $LOG $ERR
 	else
-		echo "- FAILED! : $(grep -e "ERROR SUMMARY:" $LOG | cut -d' ' -f2-)"
+		echo "- FAILED!"
+		cat $ERR | cut -d' ' -f2-
 		FAIL=1
 	fi || true
 done
@@ -76,7 +98,7 @@ echo
 echo "======================================================================"
 echo
 
-for log in $(ls -1 ./test/umf_test-*.log); do
+for log in $(ls -1 umf_test-*.log); do
 	echo ">>>>>>> LOG $log"
 	cat $log
 	echo
