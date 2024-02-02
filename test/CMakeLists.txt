@@ -103,6 +103,9 @@ if(UMF_BUILD_OS_MEMORY_PROVIDER AND LINUX) # OS-specific functions are implement
     add_umf_test(NAME provider_os_memory
                  SRCS provider_os_memory.cpp
                  LIBS umf_utils)
+    add_umf_test(NAME provider_os_memory_multiple_numa_nodes
+                 SRCS provider_os_memory_multiple_numa_nodes.cpp
+                 LIBS umf_utils numa)
     add_umf_test(NAME memspace_numa
                  SRCS memspace_numa.cpp
                  LIBS numa)
