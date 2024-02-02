@@ -78,7 +78,7 @@ umf_result_t umfFree(void *ptr) {
 }
 
 umf_memory_pool_handle_t umfPoolByPtr(const void *ptr) {
-    return umfMemoryTrackerGetPool(umfMemoryTrackerGet(), ptr);
+    return umfMemoryTrackerGetPool(ptr);
 }
 
 umf_result_t umfPoolGetMemoryProvider(umf_memory_pool_handle_t hPool,

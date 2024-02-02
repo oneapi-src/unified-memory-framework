@@ -73,13 +73,12 @@ static umf_result_t umfMemoryTrackerRemove(umf_memory_tracker_handle_t hTracker,
     return UMF_RESULT_SUCCESS;
 }
 
-umf_memory_pool_handle_t
-umfMemoryTrackerGetPool(umf_memory_tracker_handle_t hTracker, const void *ptr) {
+umf_memory_pool_handle_t umfMemoryTrackerGetPool(const void *ptr) {
     assert(ptr);
 
     uintptr_t rkey;
     tracker_value_t *rvalue;
-    int found = critnib_find(hTracker->map, (uintptr_t)ptr, FIND_LE,
+    int found = critnib_find(TRACKER->map, (uintptr_t)ptr, FIND_LE,
                              (void *)&rkey, (void **)&rvalue);
     if (!found) {
         return NULL;
@@ -425,11 +424,10 @@ umf_memory_provider_ops_t UMF_TRACKING_MEMORY_PROVIDER_OPS = {
 umf_result_t umfTrackingMemoryProviderCreate(
     umf_memory_provider_handle_t hUpstream, umf_memory_pool_handle_t hPool,
     umf_memory_provider_handle_t *hTrackingProvider) {
-    umfTrackingMemoryProviderInit();
 
     umf_tracking_memory_provider_t params;
     params.hUpstream = hUpstream;
-    params.hTracker = umfMemoryTrackerGet();
+    params.hTracker = TRACKER;
     if (!params.hTracker) {
         return UMF_RESULT_ERROR_UNKNOWN;
     }
@@ -448,11 +446,39 @@ void umfTrackingMemoryProviderGetUpstreamProvider(
     *hUpstream = p->hUpstream;
 }
 
-void umfTrackingMemoryProviderFini(void *tracker) {
-    umf_memory_tracker_handle_t hTracker = (umf_memory_tracker_handle_t)tracker;
+umf_memory_tracker_handle_t umfMemoryTrackerCreate(void) {
+    umf_memory_tracker_handle_t handle = (umf_memory_tracker_handle_t)malloc(
+        sizeof(struct umf_memory_tracker_t));
+    if (!handle) {
+        return NULL;
+    }
+
+    handle->map = critnib_new();
+    if (!handle->map) {
+        free(handle);
+        return NULL;
+    }
+
+    handle->splitMergeMutex = util_mutex_create();
+    if (!handle->splitMergeMutex) {
+        critnib_delete(handle->map);
+        free(handle);
+        return NULL;
+    }
+
+    return handle;
+}
+
+void umfMemoryTrackerDestroy(umf_memory_tracker_handle_t handle) {
+    if (!handle) {
+        return;
+    }
+
 #ifndef NDEBUG
-    check_if_tracker_is_empty(hTracker, NULL);
+    check_if_tracker_is_empty(handle, NULL);
 #endif /* NDEBUG */
 
-    umfMemoryTrackerDestroy(hTracker);
+    critnib_delete(handle->map);
+    util_mutex_destroy(handle->splitMergeMutex);
+    free(handle);
 }

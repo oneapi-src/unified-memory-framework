@@ -10,12 +10,14 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include "libumf.h"
 #include "memory_target.h"
 #include "memory_target_ops.h"
 
 umf_result_t umfMemoryTargetCreate(const umf_memory_target_ops_t *ops,
                                    void *params,
                                    umf_memory_target_handle_t *memoryTarget) {
+    libumfInit();
     if (!ops || !memoryTarget) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
