@@ -23,9 +23,9 @@ extern "C" {
 
 typedef struct umf_ba_linear_pool umf_ba_linear_pool_t;
 
-umf_ba_linear_pool_t *umf_ba_linear_create(size_t pool_size);
-void *umf_ba_linear_alloc(umf_ba_linear_pool_t *pool, size_t size);
-void umf_ba_linear_destroy(umf_ba_linear_pool_t *pool);
+umf_ba_linear_pool_t *umfBaLinearCreate(size_t pool_size);
+void *umfBaLinearAlloc(umf_ba_linear_pool_t *pool, size_t size);
+void umfBaLinearDestroy(umf_ba_linear_pool_t *pool);
 
 #ifdef __cplusplus
 }

@@ -37,8 +37,8 @@ static umf_result_t verifyMemTargetsTypes(umf_memspace_handle_t memspace) {
 static umf_result_t memoryTargetHandlesToPriv(umf_memspace_handle_t memspace,
                                               void ***pPrivs) {
     assert(memspace);
-    void **privs = umf_ba_linear_alloc(memspace->linear_allocator,
-                                       sizeof(void *) * memspace->size);
+    void **privs = umfBaLinearAlloc(memspace->linear_allocator,
+                                    sizeof(void *) * memspace->size);
     if (privs == NULL) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
@@ -104,6 +104,6 @@ void umfMemspaceDestroy(umf_memspace_handle_t memspace) {
         umfMemoryTargetDestroy(memspace->nodes[i]);
     }
 
-    umf_ba_linear_destroy(memspace->linear_allocator);
-    umf_ba_free(memspace->base_allocator, memspace);
+    umfBaLinearDestroy(memspace->linear_allocator);
+    umfBaAllocClassFree(memspace->base_allocator, memspace);
 }

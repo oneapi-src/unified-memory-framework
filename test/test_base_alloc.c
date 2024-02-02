@@ -21,12 +21,12 @@
 
 static void *start_routine(void *arg) {
     unsigned char *ptrs[ITERATIONS];
-    umf_ba_pool_t *pool = (umf_ba_pool_t *)arg;
+    umf_ba_alloc_class_t *pool = (umf_ba_alloc_class_t *)arg;
 
     long TID = syscall(SYS_gettid);
 
     for (int i = 0; i < ITERATIONS; i++) {
-        ptrs[i] = umf_ba_alloc(pool);
+        ptrs[i] = umfBaAllocClassAllocate(pool);
         memset(ptrs[i], (i + TID) & 0xFF, ALLOCATION_SIZE);
     }
 
@@ -40,7 +40,7 @@ static void *start_routine(void *arg) {
             }
             UT_ASSERTeq(*(ptrs[i] + k), ((i + TID) & 0xFF));
         }
-        umf_ba_free(pool, ptrs[i]);
+        umfBaAllocClassFree(pool, ptrs[i]);
     }
 
     return NULL;
@@ -48,7 +48,7 @@ static void *start_routine(void *arg) {
 
 int main(void) {
     pthread_t thread[NTHREADS];
-    umf_ba_pool_t *pool = umf_ba_create(ALLOCATION_SIZE);
+    umf_ba_alloc_class_t *pool = umfBaAllocClassCreate(ALLOCATION_SIZE);
 
     for (int i = 0; i < NTHREADS; i++) {
         int ret = pthread_create(&thread[i], NULL, start_routine, pool);
@@ -67,7 +67,7 @@ int main(void) {
         }
     }
 
-    umf_ba_destroy(pool);
+    umfBaAllocClassDestroy(pool);
 
     return 0;
 }

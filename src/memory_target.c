@@ -24,14 +24,14 @@ umf_result_t umfMemoryTargetCreate(const umf_memory_target_ops_t *ops,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    umf_ba_pool_t *base_allocator =
-        umf_ba_get_pool(sizeof(umf_memory_target_t));
+    umf_ba_alloc_class_t *base_allocator =
+        umfBaGetAllocClass(sizeof(umf_memory_target_t));
     if (!base_allocator) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
     umf_memory_target_handle_t target =
-        (umf_memory_target_t *)umf_ba_alloc(base_allocator);
+        (umf_memory_target_t *)umfBaAllocClassAllocate(base_allocator);
     if (!target) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
@@ -44,7 +44,7 @@ umf_result_t umfMemoryTargetCreate(const umf_memory_target_ops_t *ops,
     void *target_priv;
     umf_result_t ret = ops->initialize(params, &target_priv);
     if (ret != UMF_RESULT_SUCCESS) {
-        umf_ba_free(base_allocator, target);
+        umfBaAllocClassFree(base_allocator, target);
         return ret;
     }
 
@@ -58,5 +58,5 @@ umf_result_t umfMemoryTargetCreate(const umf_memory_target_ops_t *ops,
 void umfMemoryTargetDestroy(umf_memory_target_handle_t memoryTarget) {
     assert(memoryTarget);
     memoryTarget->ops->finalize(memoryTarget->priv);
-    umf_ba_free(memoryTarget->base_allocator, memoryTarget);
+    umfBaAllocClassFree(memoryTarget->base_allocator, memoryTarget);
 }

@@ -14,9 +14,9 @@
 extern "C" {
 #endif
 
-int umf_ba_create_global(void);
-void umf_ba_destroy_global(void);
-umf_ba_pool_t *umf_ba_get_pool(size_t size);
+int umfBaAllocClassCreateGlobal(void);
+void umfBaAcDestroyGlobal(void);
+umf_ba_alloc_class_t *umfBaGetAllocClass(size_t size);
 
 #ifdef __cplusplus
 }

@@ -13,15 +13,15 @@
 
 #include "base_alloc.h"
 
-void *ba_os_alloc(size_t size) {
+void *baOsAlloc(size_t size) {
     return mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS,
                 -1, 0);
 }
 
-void ba_os_free(void *ptr, size_t size) {
+void baOsFree(void *ptr, size_t size) {
     int ret = munmap(ptr, size);
     assert(ret == 0);
     (void)ret; // unused
 }
 
-size_t ba_os_get_page_size(void) { return sysconf(_SC_PAGE_SIZE); }
+size_t baOsGetPageSize(void) { return sysconf(_SC_PAGE_SIZE); }

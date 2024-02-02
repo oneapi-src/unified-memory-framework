@@ -24,7 +24,7 @@ typedef struct umf_memory_provider_t {
     void *provider_priv;
 
     // saved pointer to the global base allocator
-    umf_ba_pool_t *base_allocator;
+    umf_ba_alloc_class_t *base_allocator;
 } umf_memory_provider_t;
 
 umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
@@ -35,13 +35,14 @@ umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    umf_ba_pool_t *base_allocator =
-        umf_ba_get_pool(sizeof(umf_memory_provider_t));
+    umf_ba_alloc_class_t *base_allocator =
+        umfBaGetAllocClass(sizeof(umf_memory_provider_t));
     if (!base_allocator) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    umf_memory_provider_handle_t provider = umf_ba_alloc(base_allocator);
+    umf_memory_provider_handle_t provider =
+        umfBaAllocClassAllocate(base_allocator);
     if (!provider) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
@@ -54,7 +55,7 @@ umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
     void *provider_priv;
     umf_result_t ret = ops->initialize(params, &provider_priv);
     if (ret != UMF_RESULT_SUCCESS) {
-        umf_ba_free(base_allocator, provider);
+        umfBaAllocClassFree(base_allocator, provider);
         return ret;
     }
 
@@ -67,7 +68,7 @@ umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
 
 void umfMemoryProviderDestroy(umf_memory_provider_handle_t hProvider) {
     hProvider->ops.finalize(hProvider->provider_priv);
-    umf_ba_free(hProvider->base_allocator, hProvider);
+    umfBaAllocClassFree(hProvider->base_allocator, hProvider);
 }
 
 static void

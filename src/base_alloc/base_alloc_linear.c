@@ -14,7 +14,7 @@
 #include "utils_concurrency.h"
 
 // minimum size of a single pool of the linear base allocator
-#define MINIMUM_LINEAR_POOL_SIZE (ba_os_get_page_size())
+#define MINIMUM_LINEAR_POOL_SIZE (baOsGetPageSize())
 
 // alignment of the linear base allocator
 #define MEMORY_ALIGNMENT (sizeof(uintptr_t))
@@ -33,7 +33,7 @@ struct umf_ba_linear_pool {
     char data[]; // data area starts here
 };
 
-umf_ba_linear_pool_t *umf_ba_linear_create(size_t pool_size) {
+umf_ba_linear_pool_t *umfBaLinearCreate(size_t pool_size) {
     size_t mutex_size = align_size(util_mutex_get_size(), MEMORY_ALIGNMENT);
     size_t metadata_size = sizeof(umf_ba_main_linear_pool_meta_t);
     pool_size = pool_size + metadata_size + mutex_size;
@@ -41,9 +41,9 @@ umf_ba_linear_pool_t *umf_ba_linear_create(size_t pool_size) {
         pool_size = MINIMUM_LINEAR_POOL_SIZE;
     }
 
-    pool_size = align_size(pool_size, ba_os_get_page_size());
+    pool_size = align_size(pool_size, baOsGetPageSize());
 
-    umf_ba_linear_pool_t *pool = (umf_ba_linear_pool_t *)ba_os_alloc(pool_size);
+    umf_ba_linear_pool_t *pool = (umf_ba_linear_pool_t *)baOsAlloc(pool_size);
     if (!pool) {
         return NULL;
     }
@@ -60,20 +60,20 @@ umf_ba_linear_pool_t *umf_ba_linear_create(size_t pool_size) {
     // init lock
     os_mutex_t *lock = util_mutex_init(&pool->metadata.lock);
     if (!lock) {
-        ba_os_free(pool, pool_size);
+        baOsFree(pool, pool_size);
         return NULL;
     }
 
     return pool;
 }
 
-void *umf_ba_linear_alloc(umf_ba_linear_pool_t *pool, size_t size) {
+void *umfBaLinearAlloc(umf_ba_linear_pool_t *pool, size_t size) {
     size_t aligned_size = align_size(size, MEMORY_ALIGNMENT);
 
     util_mutex_lock(&pool->metadata.lock);
     if (pool->metadata.size_left < aligned_size) {
         fprintf(stderr,
-                "error: umf_ba_linear_alloc() failed (requested size: %zu > "
+                "error: umfBaLinearAlloc() failed (requested size: %zu > "
                 "space left: %zu)\n",
                 aligned_size, pool->metadata.size_left);
         util_mutex_unlock(&pool->metadata.lock);
@@ -89,7 +89,7 @@ void *umf_ba_linear_alloc(umf_ba_linear_pool_t *pool, size_t size) {
     return ptr;
 }
 
-void umf_ba_linear_destroy(umf_ba_linear_pool_t *pool) {
+void umfBaLinearDestroy(umf_ba_linear_pool_t *pool) {
     util_mutex_destroy_not_free(&pool->metadata.lock);
-    ba_os_free(pool, pool->metadata.pool_size);
+    baOsFree(pool, pool->metadata.pool_size);
 }

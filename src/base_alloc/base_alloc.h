@@ -5,26 +5,18 @@
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 */
 
-/* A MT-safe fixed-size-pool base allocator */
+/* A MT-safe fixed-size-allocation-class base allocator */
 
-#ifndef UMF_BASE_ALLOC_H
-#define UMF_BASE_ALLOC_H 1
+#ifndef UMF_BASE_ALLOC_AC_H
+#define UMF_BASE_ALLOC_AC_H 1
 
 #include <stddef.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+typedef struct umf_ba_alloc_class_t umf_ba_alloc_class_t;
 
-typedef struct umf_ba_pool_t umf_ba_pool_t;
+umf_ba_alloc_class_t *umfBaAllocClassCreate(size_t size);
+void *umfBaAllocClassAllocate(umf_ba_alloc_class_t *ac);
+void umfBaAllocClassFree(umf_ba_alloc_class_t *ac, void *ptr);
+void umfBaAllocClassDestroy(umf_ba_alloc_class_t *ac);
 
-umf_ba_pool_t *umf_ba_create(size_t size);
-void *umf_ba_alloc(umf_ba_pool_t *pool);
-void umf_ba_free(umf_ba_pool_t *pool, void *ptr);
-void umf_ba_destroy(umf_ba_pool_t *pool);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* UMF_BASE_ALLOC_H */
+#endif /* UMF_BASE_ALLOC_AC_H */

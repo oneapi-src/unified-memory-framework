@@ -25,12 +25,13 @@ umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
     }
 
     umf_result_t ret = UMF_RESULT_SUCCESS;
-    umf_ba_pool_t *base_allocator = umf_ba_get_pool(sizeof(umf_memory_pool_t));
+    umf_ba_alloc_class_t *base_allocator =
+        umfBaGetAllocClass(sizeof(umf_memory_pool_t));
     if (!base_allocator) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    umf_memory_pool_handle_t pool = umf_ba_alloc(base_allocator);
+    umf_memory_pool_handle_t pool = umfBaAllocClassAllocate(base_allocator);
     if (!pool) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
@@ -44,7 +45,7 @@ umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
     pool->ops = *ops;
     ret = ops->initialize(pool->provider, params, &pool->pool_priv);
     if (ret != UMF_RESULT_SUCCESS) {
-        umf_ba_free(base_allocator, pool);
+        umfBaAllocClassFree(base_allocator, pool);
         return ret;
     }
 
@@ -61,7 +62,7 @@ void umfPoolDestroy(umf_memory_pool_handle_t hPool) {
         umfMemoryProviderDestroy(hProvider);
     }
     // TODO: this free keeps memory in base allocator, so it can lead to OOM in some scenarios (it should be optimized)
-    umf_ba_free(hPool->base_allocator, hPool);
+    umfBaAllocClassFree(hPool->base_allocator, hPool);
 }
 
 umf_result_t umfFree(void *ptr) {

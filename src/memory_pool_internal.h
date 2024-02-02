@@ -33,7 +33,7 @@ typedef struct umf_memory_pool_t {
     bool own_provider;
 
     // saved pointer to the global base allocator
-    umf_ba_pool_t *base_allocator;
+    umf_ba_alloc_class_t *base_allocator;
 } umf_memory_pool_t;
 
 umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
