@@ -13,6 +13,7 @@ option(UMF_BUILD_LIBUMF_POOL_JEMALLOC "Build the libumf_pool_jemalloc static lib
 option(UMF_BUILD_LIBUMF_POOL_SCALABLE "Build the libumf_pool_scalable static library" OFF)
 option(UMF_BUILD_TESTS "Build UMF tests" ON)
 option(UMF_BUILD_BENCHMARKS "Build UMF benchmarks" OFF)
+option(UMF_BUILD_BENCHMARKS_MT "Build UMF multithreaded benchmarks" OFF)
 option(UMF_ENABLE_POOL_TRACKING "Build UMF with pool tracking" ON)
 option(UMF_DEVELOPER_MODE "Enable developer checks, treats warnings as errors" OFF)
 option(UMF_FORMAT_CODE_STYLE "Format UMF code with clang-format" OFF)
@@ -26,7 +27,8 @@ option(USE_MSAN "Enable MemorySanitizer checks" OFF)
 # CMake will set up a strict C build, without C++ support.
 set(OPTIONS_REQUIRING_CXX
     "UMF_BUILD_TESTS"
-    "UMF_BUILD_LIBUMF_POOL_DISJOINT")
+    "UMF_BUILD_LIBUMF_POOL_DISJOINT"
+    "UMF_BUILD_BENCHMARKS_MT")
 foreach(option_name ${OPTIONS_REQUIRING_CXX})
     if(${option_name})
         enable_language(CXX)
