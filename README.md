@@ -86,8 +86,9 @@ For building tests, multithreaded benchmarks and Disjoint Pool:
 UMF comes with a single-threaded micro benchmark based on [ubench](https://github.com/sheredom/ubench.h).
 In order to build the benchmark, the `UMF_BUILD_BENCHMARKS` CMake configuration flag has to be turned `ON`.
 
-UMF also provides multithreaded benchmarks that can be enabled bysetting the `UMF_BUILD_BENCHMARKS_MT` CMake
-configuration flag to `ON`. Multithreaded benchmarks require a C++ support.
+UMF also provides multithreaded benchmarks that can be enabled by setting both
+`UMF_BUILD_BENCHMARKS` and `UMF_BUILD_BENCHMARKS_MT` CMake
+configuration flags to `ON`. Multithreaded benchmarks require a C++ support.
 
 ### Windows
 
