@@ -37,7 +37,8 @@ static umf_result_t verifyMemTargetsTypes(umf_memspace_handle_t memspace) {
 static umf_result_t memoryTargetHandlesToPriv(umf_memspace_handle_t memspace,
                                               void ***pPrivs) {
     assert(memspace);
-    void **privs = malloc(sizeof(void *) * memspace->size);
+    void **privs = umf_ba_linear_alloc(memspace->linear_allocator,
+                                       sizeof(void *) * memspace->size);
     if (privs == NULL) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
@@ -68,7 +69,7 @@ umf_result_t umfPoolCreateFromMemspace(umf_memspace_handle_t memspace,
     assert(verifyMemTargetsTypes(memspace) == UMF_RESULT_SUCCESS);
     ret = memspace->nodes[0]->ops->pool_create_from_memspace(
         memspace, privs, memspace->size, policy, pool);
-    free(privs);
+    // privs is freed during destroying memspace->linear_allocator
 
     return ret;
 }
@@ -92,7 +93,7 @@ umfMemoryProviderCreateFromMemspace(umf_memspace_handle_t memspace,
     assert(verifyMemTargetsTypes(memspace) == UMF_RESULT_SUCCESS);
     ret = memspace->nodes[0]->ops->memory_provider_create_from_memspace(
         memspace, privs, memspace->size, policy, provider);
-    free(privs);
+    // privs is freed during destroying memspace->linear_allocator
 
     return ret;
 }
@@ -102,6 +103,7 @@ void umfMemspaceDestroy(umf_memspace_handle_t memspace) {
     for (size_t i = 0; i < memspace->size; i++) {
         umfMemoryTargetDestroy(memspace->nodes[i]);
     }
-    free(memspace->nodes);
-    free(memspace);
+
+    umf_ba_linear_destroy(memspace->linear_allocator);
+    umf_ba_free(memspace->base_allocator, memspace);
 }

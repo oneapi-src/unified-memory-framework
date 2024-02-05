@@ -7,14 +7,15 @@
  *
  */
 
-#include "memory_pool_internal.h"
-#include "memory_provider_internal.h"
-#include "provider_tracking.h"
+#include <assert.h>
+#include <stdlib.h>
 
 #include <umf/memory_pool.h>
 
-#include <assert.h>
-#include <stdlib.h>
+#include "base_alloc_global.h"
+#include "memory_pool_internal.h"
+#include "memory_provider_internal.h"
+#include "provider_tracking.h"
 
 umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
                                    umf_memory_provider_handle_t provider,
@@ -25,7 +26,12 @@ umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
     }
 
     umf_result_t ret = UMF_RESULT_SUCCESS;
-    umf_memory_pool_handle_t pool = malloc(sizeof(umf_memory_pool_t));
+    umf_ba_pool_t *base_allocator = umf_ba_get_pool(sizeof(umf_memory_pool_t));
+    if (!base_allocator) {
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    umf_memory_pool_handle_t pool = umf_ba_alloc(base_allocator);
     if (!pool) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
@@ -37,6 +43,8 @@ umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
     if (ret != UMF_RESULT_SUCCESS) {
         goto err_provider_create;
     }
+
+    pool->base_allocator = base_allocator;
     pool->own_provider = false;
 
     pool->ops = *ops;
@@ -51,8 +59,7 @@ umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
 err_pool_init:
     umfMemoryProviderDestroy(pool->provider);
 err_provider_create:
-    free(pool);
-
+    umf_ba_free(base_allocator, pool);
     return ret;
 }
 
@@ -66,7 +73,8 @@ void umfPoolDestroy(umf_memory_pool_handle_t hPool) {
     }
     // Destroy tracking provider.
     umfMemoryProviderDestroy(hPool->provider);
-    free(hPool);
+    // TODO: this free keeps memory in base allocator, so it can lead to OOM in some scenarios (it should be optimized)
+    umf_ba_free(hPool->base_allocator, hPool);
 }
 
 umf_result_t umfFree(void *ptr) {

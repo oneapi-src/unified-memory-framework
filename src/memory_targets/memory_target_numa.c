@@ -11,13 +11,20 @@
 #include <hwloc.h>
 #include <stdlib.h>
 
-#include "../memory_pool_internal.h"
-#include "memory_target_numa.h"
 #include <umf/pools/pool_disjoint.h>
 #include <umf/providers/provider_os_memory.h>
 
+#include "../memory_pool_internal.h"
+#include "base_alloc.h"
+#include "base_alloc_global.h"
+#include "base_alloc_linear.h"
+#include "memory_target_numa.h"
+
 struct numa_memory_target_t {
     size_t id;
+
+    // saved pointer to the global base allocator
+    umf_ba_pool_t *base_allocator;
 };
 
 static umf_result_t numa_initialize(void *params, void **memTarget) {
@@ -28,24 +35,35 @@ static umf_result_t numa_initialize(void *params, void **memTarget) {
     struct umf_numa_memory_target_config_t *config =
         (struct umf_numa_memory_target_config_t *)params;
 
-    struct numa_memory_target_t *numaTarget =
-        malloc(sizeof(struct numa_memory_target_t));
+    umf_ba_pool_t *base_allocator =
+        umf_ba_get_pool(sizeof(struct numa_memory_target_t));
+    if (!base_allocator) {
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    struct numa_memory_target_t *numaTarget = umf_ba_alloc(base_allocator);
     if (!numaTarget) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
+    numaTarget->base_allocator = base_allocator;
     numaTarget->id = config->id;
     *memTarget = numaTarget;
     return UMF_RESULT_SUCCESS;
 }
 
-static void numa_finalize(void *memTarget) { free(memTarget); }
+static void numa_finalize(void *memTarget) {
+    struct numa_memory_target_t *numaTarget =
+        (struct numa_memory_target_t *)memTarget;
+    umf_ba_free(numaTarget->base_allocator, memTarget);
+}
 
 // sets maxnode and allocates and initializes mask based on provided memory targets
 static umf_result_t
 numa_targets_create_nodemask(struct numa_memory_target_t **targets,
                              size_t numTargets, unsigned long **mask,
-                             unsigned *maxnode) {
+                             unsigned *maxnode,
+                             umf_ba_linear_pool_t *linear_allocator) {
     assert(targets);
     assert(mask);
     assert(maxnode);
@@ -76,7 +94,8 @@ numa_targets_create_nodemask(struct numa_memory_target_t **targets,
     unsigned bits_per_long = sizeof(unsigned long) * 8;
     int nrUlongs = (lastBit + bits_per_long) / bits_per_long;
 
-    unsigned long *nodemask = malloc(sizeof(unsigned long) * nrUlongs);
+    unsigned long *nodemask = umf_ba_linear_alloc(
+        linear_allocator, (sizeof(unsigned long) * nrUlongs));
     if (!nodemask) {
         hwloc_bitmap_free(bitmap);
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
@@ -86,7 +105,7 @@ numa_targets_create_nodemask(struct numa_memory_target_t **targets,
     hwloc_bitmap_free(bitmap);
 
     if (ret) {
-        free(nodemask);
+        // nodemask is freed during destroying linear_allocator
         return UMF_RESULT_ERROR_UNKNOWN;
     }
 
@@ -109,8 +128,14 @@ static enum umf_result_t numa_memory_provider_create_from_memspace(
     unsigned long *nodemask;
     unsigned maxnode;
 
-    umf_result_t ret = numa_targets_create_nodemask(numaTargets, numTargets,
-                                                    &nodemask, &maxnode);
+    umf_ba_linear_pool_t *linear_allocator =
+        umf_ba_linear_create(0 /* minimal pool size */);
+    if (!linear_allocator) {
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    umf_result_t ret = numa_targets_create_nodemask(
+        numaTargets, numTargets, &nodemask, &maxnode, linear_allocator);
     if (ret != UMF_RESULT_SUCCESS) {
         return ret;
     }
@@ -124,8 +149,9 @@ static enum umf_result_t numa_memory_provider_create_from_memspace(
     umf_memory_provider_handle_t numaProvider = NULL;
     ret = umfMemoryProviderCreate(umfOsMemoryProviderOps(), &params,
                                   &numaProvider);
-    free(nodemask);
+    umf_ba_linear_destroy(linear_allocator); // nodemask is freed here
     if (ret) {
+
         return ret;
     }
 
