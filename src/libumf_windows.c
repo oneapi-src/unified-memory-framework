@@ -12,9 +12,9 @@
 #include <stdlib.h>
 #include <windows.h>
 
-static umf_memory_tracker_handle_t TRACKER = NULL;
+umf_memory_tracker_handle_t TRACKER = NULL;
 
-static void providerFini(void) { umfTrackingMemoryProviderFini(TRACKER); }
+static void providerFini(void) { umfMemoryTrackerDestroy(TRACKER); }
 
 #if defined(UMF_SHARED_LIBRARY)
 BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
@@ -26,24 +26,20 @@ BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
     return TRUE;
 }
 
-void umfTrackingMemoryProviderInit(void) {
+void libumfInit(void) {
     // do nothing, additional initialization not needed
 }
 #else
 INIT_ONCE init_once_flag = INIT_ONCE_STATIC_INIT;
 
-BOOL CALLBACK providerInit(PINIT_ONCE InitOnce, PVOID Parameter,
-                           PVOID *lpContext) {
+BOOL CALLBACK initOnceCb(PINIT_ONCE InitOnce, PVOID Parameter,
+                         PVOID *lpContext) {
     TRACKER = umfMemoryTrackerCreate();
     atexit(providerFini);
     return TRACKER ? TRUE : FALSE;
 }
 
-void umfTrackingMemoryProviderInit(void) {
-    InitOnceExecuteOnce(&init_once_flag, providerInit, NULL, NULL);
+void libumfInit(void) {
+    InitOnceExecuteOnce(&init_once_flag, initOnceCb, NULL, NULL);
 }
 #endif
-
-umf_memory_tracker_handle_t umfMemoryTrackerGet(void) {
-    return (umf_memory_tracker_handle_t)TRACKER;
-}

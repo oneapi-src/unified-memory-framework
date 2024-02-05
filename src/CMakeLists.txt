@@ -22,17 +22,17 @@ set(UMF_SOURCES
 
 set(UMF_SOURCES_LINUX
     base_alloc/base_alloc_linux.c
-    provider/provider_tracking_linux.c
+    libumf_linux.c
 )
 
 set(UMF_SOURCES_WINDOWS
     base_alloc/base_alloc_windows.c
-    provider/provider_tracking_windows.c
+    libumf_windows.c
 )
 
 set(UMF_SOURCES_MACOSX
     base_alloc/base_alloc_linux.c
-    provider/provider_tracking_linux.c
+    libumf_linux.c
 )
 
 if(UMF_BUILD_OS_MEMORY_PROVIDER)

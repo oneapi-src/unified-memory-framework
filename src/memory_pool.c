@@ -7,6 +7,7 @@
  *
  */
 
+#include "libumf.h"
 #include "memory_pool_internal.h"
 #include "utils_common.h"
 
@@ -20,6 +21,7 @@ umf_result_t umfPoolCreate(const umf_memory_pool_ops_t *ops,
                            umf_memory_provider_handle_t provider, void *params,
                            umf_pool_create_flags_t flags,
                            umf_memory_pool_handle_t *hPool) {
+    libumfInit();
     umf_result_t ret = umfPoolCreateInternal(ops, provider, params, hPool);
     if (ret != UMF_RESULT_SUCCESS) {
         return ret;
