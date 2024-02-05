@@ -157,12 +157,6 @@ static hwloc_membind_policy_t translate_numa_mode(umf_numa_mode_t mode,
             return -1;
         }
         return HWLOC_MEMBIND_BIND;
-    case UMF_NUMA_MODE_STATIC_NODES: // unsupported
-        // MPOL_F_STATIC_NODES is undefined
-        return -1;
-    case UMF_NUMA_MODE_RELATIVE_NODES: // unsupported
-        // MPOL_F_RELATIVE_NODES is undefined
-        return -1;
     }
     return -1;
 }

@@ -36,8 +36,6 @@ typedef enum umf_numa_mode_t {
     UMF_NUMA_MODE_INTERLEAVE,
     UMF_NUMA_MODE_PREFERRED,
     UMF_NUMA_MODE_LOCAL,
-    UMF_NUMA_MODE_STATIC_NODES,
-    UMF_NUMA_MODE_RELATIVE_NODES,
 } umf_numa_mode_t;
 
 typedef enum umf_purge_advise_t {
