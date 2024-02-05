@@ -11,5 +11,5 @@
 auto defaultParams = umfOsMemoryProviderParamsDefault();
 INSTANTIATE_TEST_SUITE_P(scalablePoolTest, umfPoolTest,
                          ::testing::Values(poolCreateExtParams{
-                             &UMF_SCALABLE_POOL_OPS, nullptr,
-                             &UMF_OS_MEMORY_PROVIDER_OPS, &defaultParams}));
+                             umfScalablePoolOps(), nullptr,
+                             umfOsMemoryProviderOps(), &defaultParams}));

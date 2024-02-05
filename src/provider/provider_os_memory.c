@@ -594,7 +594,7 @@ static umf_result_t os_allocation_merge(void *provider, void *lowPtr,
     return UMF_RESULT_SUCCESS;
 }
 
-umf_memory_provider_ops_t UMF_OS_MEMORY_PROVIDER_OPS = {
+static umf_memory_provider_ops_t UMF_OS_MEMORY_PROVIDER_OPS = {
     .version = UMF_VERSION_CURRENT,
     .initialize = os_initialize,
     .finalize = os_finalize,
@@ -608,3 +608,7 @@ umf_memory_provider_ops_t UMF_OS_MEMORY_PROVIDER_OPS = {
     .get_name = os_get_name,
     .allocation_split = os_allocation_split,
     .allocation_merge = os_allocation_merge};
+
+umf_memory_provider_ops_t *umfOsMemoryProviderOps(void) {
+    return &UMF_OS_MEMORY_PROVIDER_OPS;
+}

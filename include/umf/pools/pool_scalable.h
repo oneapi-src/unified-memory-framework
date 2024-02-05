@@ -17,7 +17,7 @@ extern "C" {
 #include <umf/memory_pool.h>
 #include <umf/memory_provider.h>
 
-extern umf_memory_pool_ops_t UMF_SCALABLE_POOL_OPS;
+umf_memory_pool_ops_t *umfScalablePoolOps(void);
 
 #ifdef __cplusplus
 }

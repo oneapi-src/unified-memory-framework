@@ -136,7 +136,7 @@ TEST_F(test, create_WRONG_NUMA_MODE) {
     os_memory_provider_params.visibility = UMF_VISIBILITY_SHARED;
     os_memory_provider_params.numa_mode = UMF_NUMA_MODE_BIND;
 
-    umf_result = umfMemoryProviderCreate(&UMF_OS_MEMORY_PROVIDER_OPS,
+    umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(),
                                          &os_memory_provider_params,
                                          &os_memory_provider);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
@@ -152,7 +152,7 @@ TEST_F(test, create_WRONG_NUMA_FLAGS) {
     // wrong NUMA flags
     os_memory_provider_params.numa_flags = (unsigned int)-1;
 
-    umf_result = umfMemoryProviderCreate(&UMF_OS_MEMORY_PROVIDER_OPS,
+    umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(),
                                          &os_memory_provider_params,
                                          &os_memory_provider);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
@@ -164,7 +164,7 @@ TEST_F(test, create_WRONG_NUMA_FLAGS) {
 auto defaultParams = umfOsMemoryProviderParamsDefault();
 INSTANTIATE_TEST_SUITE_P(osProviderTest, umfProviderTest,
                          ::testing::Values(providerCreateExtParams{
-                             &UMF_OS_MEMORY_PROVIDER_OPS, &defaultParams}));
+                             umfOsMemoryProviderOps(), &defaultParams}));
 
 TEST_P(umfProviderTest, create_destroy) {}
 

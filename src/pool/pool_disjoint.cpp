@@ -1069,5 +1069,9 @@ DisjointPool::~DisjointPool() {
     }
 }
 
-umf_memory_pool_ops_t UMF_DISJOINT_POOL_OPS =
+static umf_memory_pool_ops_t UMF_DISJOINT_POOL_OPS =
     umf::poolMakeCOps<DisjointPool, umf_disjoint_pool_params_t>();
+
+umf_memory_pool_ops_t *umfDisjointPoolOps(void) {
+    return &UMF_DISJOINT_POOL_OPS;
+}
