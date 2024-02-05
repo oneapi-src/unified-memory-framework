@@ -29,7 +29,8 @@ static void *start_routine(void *arg) {
     long TID = syscall(SYS_gettid);
 
     for (int i = 0; i < ITERATIONS; i++) {
-        buffer[i].size = (rand() * MAX_ALLOCATION_SIZE) / RAND_MAX;
+        buffer[i].size =
+            (size_t)((rand() / (double)RAND_MAX) * MAX_ALLOCATION_SIZE);
         buffer[i].ptr = umf_ba_linear_alloc(pool, buffer[i].size);
         UT_ASSERTne(buffer[i].ptr, NULL);
         memset(buffer[i].ptr, (i + TID) & 0xFF, buffer[i].size);

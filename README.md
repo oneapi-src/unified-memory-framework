@@ -72,11 +72,14 @@ The `UMF_BUILD_LIBUMF_POOL_SCALABLE` option has to be turned `ON` to build this 
 ### Requirements
 
 Required packages:
-- C++ compiler with C++17 support
+- C compiler
 - [CMake](https://cmake.org/) >= 3.14.0
 
 For development and contributions:
 - clang-format-15.0 (can be installed with `python -m pip install clang-format==15.0.7`)
+
+For building tests and Disjoint Pool:
+- C++ compiler with C++17 support
 
 ### Benchmark
 

@@ -11,15 +11,16 @@ jobs:
         name: Fast build
         strategy:
             matrix:
-                os: [ubuntu-latest, windows-latest]
+                os: [ubuntu-latest]
+                nproc: ['$(nproc)']
+                pool_scalable: ['ON']
+                disjoint: ['ON', 'OFF']
+                jemalloc: ['ON']
                 include:
-                    - os: ubuntu-latest
-                      nproc: $(nproc)
-                      pool_scalable: 'ON'
-                      jemalloc: 'ON'
                     - os: windows-latest
                       nproc: $Env:NUMBER_OF_PROCESSORS
                       pool_scalable: 'OFF'
+                      disjoint: 'OFF'
                       jemalloc: 'OFF'
         runs-on: ${{matrix.os}}
 
@@ -42,8 +43,9 @@ jobs:
             -DUMF_DEVELOPER_MODE=ON
             -DUMF_ENABLE_POOL_TRACKING=ON
             -DUMF_BUILD_LIBUMF_POOL_SCALABLE=${{matrix.pool_scalable}}
-            -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
+            -DUMF_BUILD_LIBUMF_POOL_DISJOINT=${{matrix.disjoint}}
             -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=${{matrix.jemalloc}}
+            -DUMF_BUILD_TESTS=OFF
 
         - name: Build
           run: >

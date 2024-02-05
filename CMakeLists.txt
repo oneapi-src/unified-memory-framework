@@ -3,17 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 cmake_minimum_required(VERSION 3.14.0 FATAL_ERROR)
-project(unified-memory-framework VERSION 0.1.0)
-
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED YES)
-
-include(CTest)
-include(CMakePackageConfigHelpers)
-include(GNUInstallDirs)
-
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-include(helpers)
+project(unified-memory-framework VERSION 0.1.0 LANGUAGES C)
 
 # Build Options
 option(UMF_BUILD_SHARED_LIBRARY "Build UMF as shared library" OFF)
@@ -30,6 +20,28 @@ option(USE_ASAN "Enable AddressSanitizer checks" OFF)
 option(USE_UBSAN "Enable UndefinedBehaviorSanitizer checks" OFF)
 option(USE_TSAN "Enable ThreadSanitizer checks" OFF)
 option(USE_MSAN "Enable MemorySanitizer checks" OFF)
+
+# For using the options listed in the OPTIONS_REQUIRING_CXX variable
+# a C++17 compiler is required. Moreover, if these options are not set,
+# CMake will set up a strict C build, without C++ support.
+set(OPTIONS_REQUIRING_CXX
+    "UMF_BUILD_TESTS"
+    "UMF_BUILD_LIBUMF_POOL_DISJOINT")
+foreach(option_name ${OPTIONS_REQUIRING_CXX})
+    if(${option_name})
+        enable_language(CXX)
+        set(CMAKE_CXX_STANDARD 17)
+        set(CMAKE_CXX_STANDARD_REQUIRED YES)
+        break()
+    endif()
+endforeach()
+
+include(CTest)
+include(CMakePackageConfigHelpers)
+include(GNUInstallDirs)
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+include(helpers)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     set(LINUX TRUE)
