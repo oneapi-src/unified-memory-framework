@@ -11,6 +11,8 @@
 
 #include "../memory_targets/memory_target_numa.h"
 #include "../memspace_internal.h"
+#include "base_alloc_global.h"
+#include "base_alloc_linear.h"
 #include "memspace_numa.h"
 
 enum umf_result_t
@@ -21,16 +23,32 @@ umfMemspaceCreateFromNumaArray(size_t *nodeIds, size_t numIds,
     }
 
     enum umf_result_t ret = UMF_RESULT_SUCCESS;
-    umf_memspace_handle_t memspace =
-        (struct umf_memspace_t *)malloc(sizeof(struct umf_memspace_t));
-    if (!memspace) {
-        ret = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-        goto err_memspace_alloc;
+
+    umf_ba_pool_t *base_allocator =
+        umf_ba_get_pool(sizeof(struct umf_memspace_t));
+    if (!base_allocator) {
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
+    umf_memspace_handle_t memspace =
+        (struct umf_memspace_t *)umf_ba_alloc(base_allocator);
+    if (!memspace) {
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    umf_ba_linear_pool_t *linear_allocator =
+        umf_ba_linear_create(0 /* minimal pool size */);
+    if (!linear_allocator) {
+        ret = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+        goto err_umf_ba_linear_create;
+    }
+
+    memspace->base_allocator = base_allocator;
+    memspace->linear_allocator = linear_allocator;
+
     memspace->size = numIds;
-    memspace->nodes = (umf_memory_target_handle_t *)calloc(
-        numIds, sizeof(umf_memory_target_handle_t));
+    memspace->nodes = (umf_memory_target_handle_t *)umf_ba_linear_alloc(
+        linear_allocator, numIds * sizeof(umf_memory_target_handle_t));
     if (!memspace->nodes) {
         ret = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
         goto err_nodes_alloc;
@@ -54,9 +72,9 @@ err_target_create:
     for (size_t i = 0; i < nodeIdx; i++) {
         umfMemoryTargetDestroy(memspace->nodes[i]);
     }
-    free(memspace->nodes);
 err_nodes_alloc:
-    free(memspace);
-err_memspace_alloc:
+    umf_ba_linear_destroy(linear_allocator);
+err_umf_ba_linear_create:
+    umf_ba_free(base_allocator, memspace);
     return ret;
 }

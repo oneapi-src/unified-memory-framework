@@ -21,6 +21,8 @@
 extern "C" {
 #endif
 
+#include "base_alloc.h"
+
 typedef struct umf_memory_pool_t {
     void *pool_priv;
     umf_memory_pool_ops_t ops;
@@ -29,6 +31,9 @@ typedef struct umf_memory_pool_t {
     umf_memory_provider_handle_t provider;
     // Tells whether memory provider is owned by the pool.
     bool own_provider;
+
+    // saved pointer to the global base allocator
+    umf_ba_pool_t *base_allocator;
 } umf_memory_pool_t;
 
 umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,

@@ -77,6 +77,7 @@ void *umf_ba_linear_alloc(umf_ba_linear_pool_t *pool, size_t size) {
                 "space left: %zu)\n",
                 aligned_size, pool->metadata.size_left);
         util_mutex_unlock(&pool->metadata.lock);
+        assert(pool->metadata.size_left >= aligned_size);
         return NULL; // out of memory
     }
 

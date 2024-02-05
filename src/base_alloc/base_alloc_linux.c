@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 */
 
+#include <assert.h>
 #include <stdio.h>
 #include <sys/mman.h>
 #include <sys/syscall.h>
@@ -17,6 +18,10 @@ void *ba_os_alloc(size_t size) {
                 -1, 0);
 }
 
-void ba_os_free(void *ptr, size_t size) { munmap(ptr, size); }
+void ba_os_free(void *ptr, size_t size) {
+    int ret = munmap(ptr, size);
+    assert(ret == 0);
+    (void)ret; // unused
+}
 
 size_t ba_os_get_page_size(void) { return sysconf(_SC_PAGE_SIZE); }

@@ -15,6 +15,7 @@
 
 #include "../memory_target.h"
 #include "../memory_target_ops.h"
+#include "base_alloc_linear.h"
 
 #ifdef __cplusplus
 extern "C" {

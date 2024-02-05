@@ -17,10 +17,18 @@
 
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct umf_ba_linear_pool umf_ba_linear_pool_t;
 
 umf_ba_linear_pool_t *umf_ba_linear_create(size_t pool_size);
 void *umf_ba_linear_alloc(umf_ba_linear_pool_t *pool, size_t size);
 void umf_ba_linear_destroy(umf_ba_linear_pool_t *pool);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* UMF_BASE_ALLOC_LINEAR_H */

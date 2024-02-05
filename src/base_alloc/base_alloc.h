@@ -12,11 +12,19 @@
 
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct umf_ba_pool_t umf_ba_pool_t;
 
 umf_ba_pool_t *umf_ba_create(size_t size);
 void *umf_ba_alloc(umf_ba_pool_t *pool);
 void umf_ba_free(umf_ba_pool_t *pool, void *ptr);
 void umf_ba_destroy(umf_ba_pool_t *pool);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* UMF_BASE_ALLOC_H */
