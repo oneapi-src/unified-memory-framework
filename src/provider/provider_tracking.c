@@ -30,7 +30,12 @@ static umf_result_t umfMemoryTrackerAdd(umf_memory_tracker_handle_t hTracker,
                                         const void *ptr, size_t size) {
     assert(ptr);
 
-    tracker_value_t *value = (tracker_value_t *)malloc(sizeof(tracker_value_t));
+    tracker_value_t *value =
+        (tracker_value_t *)umf_ba_alloc(hTracker->tracker_allocator);
+    if (value == NULL) {
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
     value->pool = pool;
     value->size = size;
 
@@ -40,7 +45,7 @@ static umf_result_t umfMemoryTrackerAdd(umf_memory_tracker_handle_t hTracker,
         return UMF_RESULT_SUCCESS;
     }
 
-    free(value);
+    umf_ba_free(hTracker->tracker_allocator, value);
 
     if (ret == ENOMEM) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
@@ -68,7 +73,7 @@ static umf_result_t umfMemoryTrackerRemove(umf_memory_tracker_handle_t hTracker,
         return UMF_RESULT_ERROR_UNKNOWN;
     }
 
-    free(value);
+    umf_ba_free(hTracker->tracker_allocator, value);
 
     return UMF_RESULT_SUCCESS;
 }
@@ -128,7 +133,7 @@ static umf_result_t trackingAllocationSplit(void *hProvider, void *ptr,
         (umf_tracking_memory_provider_t *)hProvider;
 
     tracker_value_t *splitValue =
-        (tracker_value_t *)malloc(sizeof(tracker_value_t));
+        (tracker_value_t *)umf_ba_alloc(provider->hTracker->tracker_allocator);
     if (!splitValue) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
@@ -136,7 +141,7 @@ static umf_result_t trackingAllocationSplit(void *hProvider, void *ptr,
     splitValue->pool = provider->pool;
     splitValue->size = firstSize;
 
-    int r = util_mutex_lock(provider->hTracker->splitMergeMutex);
+    int r = util_mutex_lock(&provider->hTracker->splitMergeMutex);
     if (r) {
         goto err_lock;
     }
@@ -184,15 +189,15 @@ static umf_result_t trackingAllocationSplit(void *hProvider, void *ptr,
     (void)cret;
 
     // free the original value
-    free(value);
-    util_mutex_unlock(provider->hTracker->splitMergeMutex);
+    umf_ba_free(provider->hTracker->tracker_allocator, value);
+    util_mutex_unlock(&provider->hTracker->splitMergeMutex);
 
     return UMF_RESULT_SUCCESS;
 
 err:
-    util_mutex_unlock(provider->hTracker->splitMergeMutex);
+    util_mutex_unlock(&provider->hTracker->splitMergeMutex);
 err_lock:
-    free(splitValue);
+    umf_ba_free(provider->hTracker->tracker_allocator, splitValue);
     return ret;
 }
 
@@ -203,7 +208,8 @@ static umf_result_t trackingAllocationMerge(void *hProvider, void *lowPtr,
         (umf_tracking_memory_provider_t *)hProvider;
 
     tracker_value_t *mergedValue =
-        (tracker_value_t *)malloc(sizeof(tracker_value_t));
+        (tracker_value_t *)umf_ba_alloc(provider->hTracker->tracker_allocator);
+
     if (!mergedValue) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
@@ -211,7 +217,7 @@ static umf_result_t trackingAllocationMerge(void *hProvider, void *lowPtr,
     mergedValue->pool = provider->pool;
     mergedValue->size = totalSize;
 
-    int r = util_mutex_lock(provider->hTracker->splitMergeMutex);
+    int r = util_mutex_lock(&provider->hTracker->splitMergeMutex);
     if (r) {
         goto err_lock;
     }
@@ -259,22 +265,22 @@ static umf_result_t trackingAllocationMerge(void *hProvider, void *lowPtr,
     (void)cret;
 
     // free old value that we just replaced with mergedValue
-    free(lowValue);
+    umf_ba_free(provider->hTracker->tracker_allocator, lowValue);
 
     void *erasedhighValue =
         critnib_remove(provider->hTracker->map, (uintptr_t)highPtr);
     assert(erasedhighValue == highValue);
 
-    free(erasedhighValue);
+    umf_ba_free(provider->hTracker->tracker_allocator, erasedhighValue);
 
-    util_mutex_unlock(provider->hTracker->splitMergeMutex);
+    util_mutex_unlock(&provider->hTracker->splitMergeMutex);
 
     return UMF_RESULT_SUCCESS;
 
 err:
-    util_mutex_unlock(provider->hTracker->splitMergeMutex);
+    util_mutex_unlock(&provider->hTracker->splitMergeMutex);
 err_lock:
-    free(mergedValue);
+    umf_ba_free(provider->hTracker->tracker_allocator, mergedValue);
     return ret;
 }
 
@@ -309,9 +315,11 @@ static umf_result_t trackingFree(void *hProvider, void *ptr, size_t size) {
 }
 
 static umf_result_t trackingInitialize(void *params, void **ret) {
+    umf_tracking_memory_provider_t *p =
+        (umf_tracking_memory_provider_t *)params;
     umf_tracking_memory_provider_t *provider =
-        (umf_tracking_memory_provider_t *)malloc(
-            sizeof(umf_tracking_memory_provider_t));
+        (umf_tracking_memory_provider_t *)umf_ba_linear_alloc(
+            p->hTracker->pool_linear, sizeof(umf_tracking_memory_provider_t));
     if (!provider) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
@@ -363,7 +371,10 @@ static void trackingFinalize(void *provider) {
     check_if_tracker_is_empty(p->hTracker, p->pool);
 #endif /* NDEBUG */
 
-    free(provider);
+    (void)provider; // unused in Release build
+    // provider was allocated from the linear allocator,
+    // so it will be freed, when the linear allocator is destroyed
+    // in umfMemoryTrackerDestroy()
 }
 
 static void trackingGetLastError(void *provider, const char **msg,
@@ -447,26 +458,47 @@ void umfTrackingMemoryProviderGetUpstreamProvider(
 }
 
 umf_memory_tracker_handle_t umfMemoryTrackerCreate(void) {
-    umf_memory_tracker_handle_t handle = (umf_memory_tracker_handle_t)malloc(
-        sizeof(struct umf_memory_tracker_t));
-    if (!handle) {
+    umf_ba_linear_pool_t *pool_linear =
+        umf_ba_linear_create(0 /* minimum pool size */);
+    if (!pool_linear) {
         return NULL;
+    }
+
+    umf_ba_pool_t *tracker_allocator =
+        umf_ba_create(sizeof(struct tracker_value_t));
+    if (!tracker_allocator) {
+        goto err_destroy_pool_linear;
+    }
+
+    umf_memory_tracker_handle_t handle =
+        (umf_memory_tracker_handle_t)umf_ba_linear_alloc(
+            pool_linear, sizeof(struct umf_memory_tracker_t));
+    if (!handle) {
+        goto err_destroy_tracker_allocator;
+    }
+
+    handle->pool_linear = pool_linear;
+    handle->tracker_allocator = tracker_allocator;
+
+    void *mutex_ptr = util_mutex_init(&handle->splitMergeMutex);
+    if (!mutex_ptr) {
+        goto err_destroy_tracker_allocator;
     }
 
     handle->map = critnib_new();
     if (!handle->map) {
-        free(handle);
-        return NULL;
-    }
-
-    handle->splitMergeMutex = util_mutex_create();
-    if (!handle->splitMergeMutex) {
-        critnib_delete(handle->map);
-        free(handle);
-        return NULL;
+        goto err_destroy_mutex;
     }
 
     return handle;
+
+err_destroy_mutex:
+    util_mutex_destroy_not_free(&handle->splitMergeMutex);
+err_destroy_tracker_allocator:
+    umf_ba_destroy(tracker_allocator);
+err_destroy_pool_linear:
+    umf_ba_linear_destroy(pool_linear);
+    return NULL;
 }
 
 void umfMemoryTrackerDestroy(umf_memory_tracker_handle_t handle) {
@@ -479,6 +511,7 @@ void umfMemoryTrackerDestroy(umf_memory_tracker_handle_t handle) {
 #endif /* NDEBUG */
 
     critnib_delete(handle->map);
-    util_mutex_destroy(handle->splitMergeMutex);
-    free(handle);
+    util_mutex_destroy_not_free(&handle->splitMergeMutex);
+    umf_ba_destroy(handle->tracker_allocator);
+    umf_ba_linear_destroy(handle->pool_linear);
 }

@@ -17,17 +17,9 @@ os_mutex_t *util_mutex_init(void *ptr) {
     return (os_mutex_t *)mutex_internal;
 }
 
-os_mutex_t *util_mutex_create(void) {
-    return util_mutex_init(calloc(1, util_mutex_get_size()));
-}
-
 void util_mutex_destroy_not_free(os_mutex_t *mutex) {
     os_mutex_t *mutex_internal = (os_mutex_t *)mutex;
     DeleteCriticalSection(&mutex_internal->lock);
-}
-
-void util_mutex_destroy(os_mutex_t *mutex) {
-    util_mutex_destroy_not_free(mutex);
 }
 
 int util_mutex_lock(os_mutex_t *mutex) {
