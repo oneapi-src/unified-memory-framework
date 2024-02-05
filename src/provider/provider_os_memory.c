@@ -172,9 +172,7 @@ static int translate_one_numa_flag(unsigned numa_flag) {
     switch (numa_flag) {
     case UMF_NUMA_FLAGS_STRICT:
         return HWLOC_MEMBIND_STRICT;
-    case UMF_NUMA_FLAGS_MOVE:
-        return HWLOC_MEMBIND_MIGRATE;
-    case UMF_NUMA_FLAGS_MOVE_ALL:
+    default:
         return -1; /* unsupported */
     }
     return -1;

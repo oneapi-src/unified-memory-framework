@@ -43,8 +43,6 @@ typedef enum umf_numa_mode_t {
 
 typedef enum umf_numa_flags_t {
     UMF_NUMA_FLAGS_STRICT = (1 << 0),
-    UMF_NUMA_FLAGS_MOVE = (1 << 1),
-    UMF_NUMA_FLAGS_MOVE_ALL = (1 << 2),
 
     UMF_NUMA_FLAGS_MAX // must be the last one
 } umf_numa_flags_t;
