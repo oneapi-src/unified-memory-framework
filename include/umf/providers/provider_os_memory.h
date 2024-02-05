@@ -34,18 +34,11 @@ typedef enum umf_numa_mode_t {
     UMF_NUMA_MODE_DEFAULT,
     UMF_NUMA_MODE_BIND,
     UMF_NUMA_MODE_INTERLEAVE,
-    /* TODO: consider removing UMF_NUMA_MODE_PREFERRED and rely only on combination of BIND mode and STRICT flag like hwloc */
     UMF_NUMA_MODE_PREFERRED,
     UMF_NUMA_MODE_LOCAL,
     UMF_NUMA_MODE_STATIC_NODES,
     UMF_NUMA_MODE_RELATIVE_NODES,
 } umf_numa_mode_t;
-
-typedef enum umf_numa_flags_t {
-    UMF_NUMA_FLAGS_STRICT = (1 << 0),
-
-    UMF_NUMA_FLAGS_MAX // must be the last one
-} umf_numa_flags_t;
 
 typedef enum umf_purge_advise_t {
     UMF_PURGE_LAZY,
@@ -67,8 +60,6 @@ typedef struct umf_os_memory_provider_params_t {
     unsigned long maxnode;
     /// flag that relates to one of the MPOL_* flags used in internal mbind() calls
     umf_numa_mode_t numa_mode;
-    /// combination of 'umf_numa_flags_t' flags
-    unsigned numa_flags;
 
     // others
     /// log level of debug traces
@@ -96,7 +87,6 @@ umfOsMemoryProviderParamsDefault(void) {
         NULL,                                       /* nodemask */
         0,                                          /* maxnode */
         UMF_NUMA_MODE_DEFAULT,                      /* numa_mode */
-        0,                                          /* numa_flags */
         0                                           /* traces */
     };
 

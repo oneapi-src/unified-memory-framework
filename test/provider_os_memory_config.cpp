@@ -142,7 +142,6 @@ INSTANTIATE_TEST_SUITE_P(numa_modes, providerConfigTestNumaMode,
                          testing::Values(UMF_NUMA_MODE_DEFAULT,
                                          UMF_NUMA_MODE_BIND,
                                          UMF_NUMA_MODE_INTERLEAVE,
-                                         UMF_NUMA_MODE_PREFERRED,
                                          UMF_NUMA_MODE_LOCAL));
 #ifndef MPOL_LOCAL
 #define MPOL_LOCAL 4

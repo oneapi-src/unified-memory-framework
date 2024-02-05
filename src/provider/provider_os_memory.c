@@ -27,7 +27,6 @@ typedef struct umf_os_memory_provider_config_t {
     unsigned long *nodemask;
     unsigned long maxnode;
     unsigned numa_mode;
-    unsigned numa_flags; // combination of OS-specific NUMA flags
 
     // others
     int traces; // log level of debug traces
@@ -168,26 +167,14 @@ static hwloc_membind_policy_t translate_numa_mode(umf_numa_mode_t mode,
     return -1;
 }
 
-static int translate_one_numa_flag(unsigned numa_flag) {
-    switch (numa_flag) {
-    case UMF_NUMA_FLAGS_STRICT:
-        return HWLOC_MEMBIND_STRICT;
-    default:
-        return -1; /* unsupported */
-    }
-    return -1;
-}
-
-static int translate_numa_flags(unsigned numa_flags, umf_numa_mode_t mode) {
-    // translate numa_flags - combination of 'umf_numa_flags_t' flags
-    int flags = os_translate_flags(numa_flags, UMF_NUMA_FLAGS_MAX,
-                                   translate_one_numa_flag);
+static int getHwlocMembindFlags(umf_numa_mode_t mode) {
+    /* UMF always operates on NUMA nodes */
+    int flags = HWLOC_MEMBIND_BYNODESET;
     if (mode == UMF_NUMA_MODE_BIND) {
         /* HWLOC uses MPOL_PREFERRED[_MANY] unless HWLOC_MEMBIND_STRICT is specified */
         flags |= HWLOC_MEMBIND_STRICT;
     }
-    /* UMF always operates on NUMA nodes */
-    return flags | HWLOC_MEMBIND_BYNODESET;
+    return flags;
 }
 
 static umf_result_t translate_params(umf_os_memory_provider_params_t *in_params,
@@ -228,16 +215,7 @@ static umf_result_t translate_params(umf_os_memory_provider_params_t *in_params,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
     provider->numa_policy = ret;
-
-    ret = translate_numa_flags(in_params->numa_flags, in_params->numa_mode);
-    if (ret < 0) {
-        if (in_params->traces) {
-            fprintf(stderr, "error: incorrect NUMA flags: %u\n",
-                    in_params->numa_flags);
-        }
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-    provider->numa_flags = ret;
+    provider->numa_flags = getHwlocMembindFlags(in_params->numa_mode);
 
     return nodemask_to_hwloc_nodeset(in_params->nodemask, in_params->maxnode,
                                      &provider->nodeset);

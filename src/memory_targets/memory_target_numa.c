@@ -144,7 +144,6 @@ static enum umf_result_t numa_memory_provider_create_from_memspace(
     params.nodemask = nodemask;
     params.maxnode = maxnode;
     params.numa_mode = UMF_NUMA_MODE_BIND;
-    params.numa_flags = UMF_NUMA_FLAGS_STRICT;
 
     umf_memory_provider_handle_t numaProvider = NULL;
     ret = umfMemoryProviderCreate(umfOsMemoryProviderOps(), &params,
