@@ -118,9 +118,9 @@ endif()
 if(LINUX)
     # the base_alloc test uses linux pthreads
     add_umf_test(NAME base_alloc
-                SRCS test_base_alloc.c
+                SRCS ${BA_SOURCES} test_base_alloc.c
                 LIBS umf_utils)
     add_umf_test(NAME base_alloc_linear
-                SRCS test_base_alloc_linear.c
+                SRCS ${BA_SOURCES} test_base_alloc_linear.c
                 LIBS umf_utils)
 endif()

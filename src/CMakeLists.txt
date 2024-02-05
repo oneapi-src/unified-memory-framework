@@ -8,10 +8,23 @@ add_subdirectory(utils)
 
 set(UMF_LIBS umf_utils)
 
+set(BA_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/base_alloc/base_alloc.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/base_alloc/base_alloc_linear.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/base_alloc/base_alloc_global.c)
+
+if (LINUX)
+    set(BA_SOURCES ${BA_SOURCES} ${CMAKE_CURRENT_SOURCE_DIR}/base_alloc/base_alloc_linux.c)
+elseif(WINDOWS)
+    set(BA_SOURCES ${BA_SOURCES} ${CMAKE_CURRENT_SOURCE_DIR}/base_alloc/base_alloc_windows.c)
+elseif(MACOSX)
+    set(BA_SOURCES ${BA_SOURCES} ${CMAKE_CURRENT_SOURCE_DIR}/base_alloc/base_alloc_linux.c)
+endif()
+
+set(BA_SOURCES ${BA_SOURCES} PARENT_SCOPE)
+
 set(UMF_SOURCES
-    base_alloc/base_alloc.c
-    base_alloc/base_alloc_linear.c
-    base_alloc/base_alloc_global.c
+    ${BA_SOURCES}
     memory_pool.c
     memory_provider.c
     memory_provider_get_last_failed.c
@@ -22,17 +35,14 @@ set(UMF_SOURCES
 )
 
 set(UMF_SOURCES_LINUX
-    base_alloc/base_alloc_linux.c
     libumf_linux.c
 )
 
 set(UMF_SOURCES_WINDOWS
-    base_alloc/base_alloc_windows.c
     libumf_windows.c
 )
 
 set(UMF_SOURCES_MACOSX
-    base_alloc/base_alloc_linux.c
     libumf_linux.c
 )
 
