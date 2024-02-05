@@ -31,10 +31,12 @@ static void *start_routine(void *arg) {
     for (int i = 0; i < ITERATIONS; i++) {
         buffer[i].size = (rand() * MAX_ALLOCATION_SIZE) / RAND_MAX;
         buffer[i].ptr = umf_ba_linear_alloc(pool, buffer[i].size);
+        UT_ASSERTne(buffer[i].ptr, NULL);
         memset(buffer[i].ptr, (i + TID) & 0xFF, buffer[i].size);
     }
 
     for (int i = 0; i < ITERATIONS; i++) {
+        UT_ASSERTne(buffer[i].ptr, NULL);
         for (int k = 0; k < buffer[i].size; k++) {
             if (*(buffer[i].ptr + k) != ((i + TID) & 0xFF)) {
                 fprintf(
@@ -52,7 +54,8 @@ static void *start_routine(void *arg) {
 
 int main(void) {
     pthread_t thread[NTHREADS];
-    umf_ba_linear_pool_t *pool = umf_ba_linear_create(MAX_ALLOCATION_SIZE);
+    umf_ba_linear_pool_t *pool =
+        umf_ba_linear_create(NTHREADS * ITERATIONS * MAX_ALLOCATION_SIZE);
 
     for (int i = 0; i < NTHREADS; i++) {
         int ret = pthread_create(&thread[i], NULL, start_routine, pool);
