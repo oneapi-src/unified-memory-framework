@@ -32,9 +32,7 @@ typedef struct os_mutex_t {
 
 size_t util_mutex_get_size(void);
 os_mutex_t *util_mutex_init(void *ptr);
-os_mutex_t *util_mutex_create(void);
 void util_mutex_destroy_not_free(os_mutex_t *m);
-void util_mutex_destroy(os_mutex_t *mutex);
 int util_mutex_lock(os_mutex_t *mutex);
 int util_mutex_unlock(os_mutex_t *mutex);
 

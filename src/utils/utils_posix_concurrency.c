@@ -20,19 +20,10 @@ os_mutex_t *util_mutex_init(void *ptr) {
     return ret == 0 ? ((os_mutex_t *)mutex) : NULL;
 }
 
-os_mutex_t *util_mutex_create(void) {
-    return util_mutex_init(malloc(util_mutex_get_size()));
-}
-
 void util_mutex_destroy_not_free(os_mutex_t *m) {
     pthread_mutex_t *mutex = (pthread_mutex_t *)m;
     int ret = pthread_mutex_destroy(mutex);
     (void)ret; // TODO: add logging
-}
-
-void util_mutex_destroy(os_mutex_t *m) {
-    util_mutex_destroy_not_free(m);
-    free(m);
 }
 
 int util_mutex_lock(os_mutex_t *m) {
