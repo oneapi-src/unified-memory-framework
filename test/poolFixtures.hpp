@@ -136,6 +136,9 @@ TEST_P(umfPoolTest, callocFree) {
 }
 
 void pow2AlignedAllocHelper(umf_memory_pool_handle_t pool) {
+    if (!umf_test::isAlignedAllocSupported(pool)) {
+        GTEST_SKIP();
+    }
     static constexpr size_t maxAlignment = (1u << 22);
     static constexpr size_t numAllocs = 4;
     for (size_t alignment = 1; alignment <= maxAlignment; alignment <<= 1) {

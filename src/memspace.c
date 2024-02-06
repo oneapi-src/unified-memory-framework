@@ -12,6 +12,7 @@
 
 #include <umf/memspace.h>
 
+#include "base_alloc_global.h"
 #include "memory_target.h"
 #include "memory_target_ops.h"
 #include "memspace_internal.h"
@@ -105,5 +106,5 @@ void umfMemspaceDestroy(umf_memspace_handle_t memspace) {
     }
 
     umf_ba_linear_destroy(memspace->linear_allocator);
-    umf_ba_free(memspace->base_allocator, memspace);
+    umf_ba_global_free(memspace, sizeof(struct umf_memspace_t));
 }

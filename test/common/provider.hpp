@@ -63,6 +63,9 @@ typedef struct provider_base_t {
     const char *get_name() noexcept { return "base"; }
 } provider_base_t;
 
+umf_memory_provider_ops_t BASE_PROVIDER_OPS =
+    umf::providerMakeCOps<provider_base_t, void>();
+
 struct provider_malloc : public provider_base_t {
     umf_result_t alloc(size_t size, size_t align, void **ptr) noexcept {
         if (!align) {

@@ -82,6 +82,22 @@ bool isCallocSupported(umf_memory_pool_handle_t hPool) {
     return supported;
 }
 
+bool isAlignedAllocSupported(umf_memory_pool_handle_t hPool) {
+    static constexpr size_t allocSize = 8;
+    static constexpr size_t alignment = 8;
+    auto *ptr = umfPoolAlignedMalloc(hPool, allocSize, alignment);
+
+    if (ptr) {
+        umfPoolFree(hPool, ptr);
+        return true;
+    } else if (umfPoolGetLastAllocationError(hPool) ==
+               UMF_RESULT_ERROR_NOT_SUPPORTED) {
+        return false;
+    } else {
+        throw std::runtime_error("AlignedMalloc failed with unexpected error");
+    }
+}
+
 typedef struct pool_base_t {
     umf_result_t initialize(umf_memory_provider_handle_t) noexcept {
         return UMF_RESULT_SUCCESS;

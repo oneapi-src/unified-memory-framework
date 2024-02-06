@@ -23,15 +23,9 @@ umfMemspaceCreateFromNumaArray(size_t *nodeIds, size_t numIds,
     }
 
     enum umf_result_t ret = UMF_RESULT_SUCCESS;
-
-    umf_ba_pool_t *base_allocator =
-        umf_ba_get_pool(sizeof(struct umf_memspace_t));
-    if (!base_allocator) {
-        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-    }
-
     umf_memspace_handle_t memspace =
-        (struct umf_memspace_t *)umf_ba_alloc(base_allocator);
+        (struct umf_memspace_t *)umf_ba_global_alloc(
+            sizeof(struct umf_memspace_t));
     if (!memspace) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
@@ -43,7 +37,6 @@ umfMemspaceCreateFromNumaArray(size_t *nodeIds, size_t numIds,
         goto err_umf_ba_linear_create;
     }
 
-    memspace->base_allocator = base_allocator;
     memspace->linear_allocator = linear_allocator;
 
     memspace->size = numIds;
@@ -75,6 +68,6 @@ err_target_create:
 err_nodes_alloc:
     umf_ba_linear_destroy(linear_allocator);
 err_umf_ba_linear_create:
-    umf_ba_free(base_allocator, memspace);
+    umf_ba_global_free(memspace, sizeof(struct umf_memspace_t));
     return ret;
 }

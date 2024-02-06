@@ -44,9 +44,6 @@ typedef struct os_memory_provider_t {
     int traces; // log level of debug traces
 
     hwloc_topology_t topo;
-
-    // saved pointer to the global base allocator
-    umf_ba_pool_t *base_allocator;
 } os_memory_provider_t;
 
 #define TLS_MSG_BUF_LEN 1024
@@ -229,20 +226,14 @@ static umf_result_t os_initialize(void *params, void **provider) {
     umf_os_memory_provider_params_t *in_params =
         (umf_os_memory_provider_params_t *)params;
 
-    umf_ba_pool_t *base_allocator =
-        umf_ba_get_pool(sizeof(os_memory_provider_t));
-    if (!base_allocator) {
-        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-    }
-
     os_memory_provider_t *os_provider =
-        (os_memory_provider_t *)umf_ba_alloc(base_allocator);
+        (os_memory_provider_t *)umf_ba_global_alloc(
+            sizeof(os_memory_provider_t));
     if (!os_provider) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
     memset(os_provider, 0, sizeof(*os_provider));
-    os_provider->base_allocator = base_allocator;
 
     int r = hwloc_topology_init(&os_provider->topo);
     if (r) {
@@ -287,7 +278,7 @@ static umf_result_t os_initialize(void *params, void **provider) {
 err_destroy_hwloc_topology:
     hwloc_topology_destroy(os_provider->topo);
 err_free_os_provider:
-    umf_ba_free(base_allocator, os_provider);
+    umf_ba_global_free(os_provider, sizeof(os_memory_provider_t));
     return ret;
 }
 
@@ -300,7 +291,7 @@ static void os_finalize(void *provider) {
     os_memory_provider_t *os_provider = provider;
     hwloc_bitmap_free(os_provider->nodeset);
     hwloc_topology_destroy(os_provider->topo);
-    umf_ba_free(os_provider->base_allocator, os_provider);
+    umf_ba_global_free(os_provider, sizeof(os_memory_provider_t));
 }
 
 static umf_result_t os_get_min_page_size(void *provider, void *ptr,

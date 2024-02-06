@@ -24,9 +24,6 @@ typedef struct umf_memory_target_ops_t umf_memory_target_ops_t;
 typedef struct umf_memory_target_t {
     const umf_memory_target_ops_t *ops;
     void *priv;
-
-    // saved pointer to the global base allocator
-    umf_ba_pool_t *base_allocator;
 } umf_memory_target_t;
 
 typedef umf_memory_target_t *umf_memory_target_handle_t;
