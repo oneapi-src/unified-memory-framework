@@ -114,13 +114,14 @@ if(UMF_BUILD_OS_MEMORY_PROVIDER AND LINUX) # OS-specific functions are implement
                  LIBS umf_utils numa)
 endif()
 
-# TODO: add Windows tests
-if(LINUX)
-    # the base_alloc test uses linux pthreads
-    add_umf_test(NAME base_alloc
-                SRCS ${BA_SOURCES} test_base_alloc.c
-                LIBS umf_utils)
-    add_umf_test(NAME base_alloc_linear
-                SRCS ${BA_SOURCES} test_base_alloc_linear.c
-                LIBS umf_utils)
+if(UMF_BUILD_SHARED_LIBRARY)
+    # if build as shared library, ba symbols won't be visible in tests
+    set(BA_SOURCES_FOR_TEST ${BA_SOURCES})
 endif()
+
+add_umf_test(NAME base_alloc
+            SRCS ${BA_SOURCES_FOR_TEST} test_base_alloc.cpp
+            LIBS umf_utils)
+add_umf_test(NAME base_alloc_linear
+            SRCS ${BA_SOURCES_FOR_TEST} test_base_alloc_linear.cpp
+            LIBS umf_utils)
