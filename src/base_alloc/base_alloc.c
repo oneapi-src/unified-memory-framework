@@ -196,6 +196,29 @@ void *umf_ba_alloc(umf_ba_pool_t *pool) {
     return chunk;
 }
 
+#ifndef NDEBUG
+// Checks if given pointer belongs to the pool. Should be called
+// under the lock
+static int pool_contains_pointer(umf_ba_pool_t *pool, void *ptr) {
+    char *cptr = (char *)ptr;
+    if (cptr >= pool->data &&
+        cptr < ((char *)(pool)) + pool->metadata.pool_size) {
+        return 1;
+    }
+
+    umf_ba_next_pool_t *next_pool = pool->next_pool;
+    while (next_pool) {
+        if (cptr >= next_pool->data &&
+            cptr < ((char *)(next_pool)) + pool->metadata.pool_size) {
+            return 1;
+        }
+        next_pool = next_pool->next_pool;
+    }
+
+    return 0;
+}
+#endif
+
 void umf_ba_free(umf_ba_pool_t *pool, void *ptr) {
     if (ptr == NULL) {
         return;
@@ -204,6 +227,7 @@ void umf_ba_free(umf_ba_pool_t *pool, void *ptr) {
     umf_ba_chunk_t *chunk = (umf_ba_chunk_t *)ptr;
 
     util_mutex_lock(&pool->metadata.free_lock);
+    assert(pool_contains_pointer(pool, ptr));
     chunk->next = pool->metadata.free_list;
     pool->metadata.free_list = chunk;
 #ifndef NDEBUG
