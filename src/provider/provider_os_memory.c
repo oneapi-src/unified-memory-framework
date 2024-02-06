@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "base_alloc_global.h"
 #include "provider_os_memory_internal.h"
 #include <umf.h>
 #include <umf/memory_provider_ops.h>
@@ -46,6 +47,9 @@ typedef struct os_memory_provider_t {
     int traces; // log level of debug traces
 
     hwloc_topology_t topo;
+
+    // saved pointer to the global base allocator
+    umf_ba_pool_t *base_allocator;
 } os_memory_provider_t;
 
 #define TLS_MSG_BUF_LEN 1024
@@ -267,18 +271,27 @@ static umf_result_t os_initialize(void *params, void **provider) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
+    umf_ba_pool_t *base_allocator =
+        umf_ba_get_pool(sizeof(os_memory_provider_t));
+    if (!base_allocator) {
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
     os_memory_provider_t *os_provider =
-        (os_memory_provider_t *)calloc(1, sizeof(os_memory_provider_t));
+        (os_memory_provider_t *)umf_ba_alloc(base_allocator);
     if (!os_provider) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
+
+    memset(os_provider, 0, sizeof(*os_provider));
+    os_provider->base_allocator = base_allocator;
 
     int r = hwloc_topology_init(&os_provider->topo);
     if (r) {
         if (os_provider->traces) {
             fprintf(stderr, "HWLOC topology init failed\n");
         }
-        free(os_provider);
+        umf_ba_free(base_allocator, os_provider);
     }
 
     r = hwloc_topology_load(os_provider->topo);
@@ -287,13 +300,13 @@ static umf_result_t os_initialize(void *params, void **provider) {
             fprintf(stderr, "HWLOC topology discovery failed\n");
         }
         hwloc_topology_destroy(os_provider->topo);
-        free(os_provider);
+        umf_ba_free(base_allocator, os_provider);
     }
 
     ret = translate_params(in_params, os_provider);
     if (ret != UMF_RESULT_SUCCESS) {
         hwloc_topology_destroy(os_provider->topo);
-        free(os_provider);
+        umf_ba_free(base_allocator, os_provider);
         return ret;
     }
 
@@ -322,7 +335,7 @@ static void os_finalize(void *provider) {
     os_memory_provider_t *os_provider = provider;
     hwloc_bitmap_free(os_provider->nodeset);
     hwloc_topology_destroy(os_provider->topo);
-    free(os_provider);
+    umf_ba_free(os_provider->base_allocator, os_provider);
 }
 
 static umf_result_t os_get_min_page_size(void *provider, void *ptr,
