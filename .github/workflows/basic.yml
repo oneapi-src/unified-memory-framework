@@ -6,6 +6,9 @@ env:
   BUILD_DIR : "${{github.workspace}}/build/"
   INSTL_DIR : "${{github.workspace}}/build/install-dir"
 
+permissions:
+  contents: read
+
 jobs:
   icx-build:
     name: Build - Intel C++ Compiler
