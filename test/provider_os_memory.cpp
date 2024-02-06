@@ -28,8 +28,9 @@ static const char *Native_error_str[] = {
     "allocated address is not aligned", // UMF_OS_RESULT_ERROR_ADDRESS_NOT_ALIGNED
     "binding memory to NUMA node failed", // UMF_OS_RESULT_ERROR_BIND_FAILED
     "memory deallocation failed",         // UMF_OS_RESULT_ERROR_FREE_FAILED
-    "lazy purging failed",  // UMF_OS_RESULT_ERROR_PURGE_LAZY_FAILED
-    "force purging failed", // UMF_OS_RESULT_ERROR_PURGE_FORCE_FAILED
+    "lazy purging failed",             // UMF_OS_RESULT_ERROR_PURGE_LAZY_FAILED
+    "force purging failed",            // UMF_OS_RESULT_ERROR_PURGE_FORCE_FAILED
+    "HWLOC topology discovery failed", // UMF_OS_RESULT_ERROR_TOPO_DISCOVERY_FAILED
 };
 
 // test helpers
