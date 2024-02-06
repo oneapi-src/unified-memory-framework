@@ -23,6 +23,7 @@
 
 #include <tbb/scalable_allocator.h>
 
+#include "base_alloc_global.h"
 #include "utils_common.h"
 #include "utils_sanitizers.h"
 
@@ -54,6 +55,9 @@ struct tbb_callbacks {
 struct tbb_memory_pool {
     umf_memory_provider_handle_t mem_provider;
     void *tbb_pool;
+
+    // saved pointer to the global base allocator
+    umf_ba_pool_t *base_allocator;
 };
 
 static struct tbb_callbacks g_tbb_ops;
@@ -146,12 +150,19 @@ static umf_result_t tbb_pool_initialize(umf_memory_provider_handle_t provider,
         return UMF_RESULT_ERROR_UNKNOWN;
     }
 
-    struct tbb_memory_pool *pool_data = malloc(sizeof(struct tbb_memory_pool));
+    umf_ba_pool_t *base_allocator =
+        umf_ba_get_pool(sizeof(struct tbb_memory_pool));
+    if (!base_allocator) {
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    struct tbb_memory_pool *pool_data = umf_ba_alloc(base_allocator);
     if (!pool_data) {
         fprintf(stderr, "cannot allocate memory for metadata\n");
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
+    pool_data->base_allocator = base_allocator;
     pool_data->mem_provider = provider;
     int ret = g_tbb_ops.pool_create_v1((intptr_t)pool_data, &policy,
                                        &(pool_data->tbb_pool));
@@ -168,7 +179,7 @@ static void tbb_pool_finalize(void *pool) {
     pthread_once(&tbb_is_initialized, load_tbb_symbols);
     struct tbb_memory_pool *pool_data = (struct tbb_memory_pool *)pool;
     g_tbb_ops.pool_destroy(pool_data->tbb_pool);
-    free(pool_data);
+    umf_ba_free(pool_data->base_allocator, pool_data);
 }
 
 static void *tbb_malloc(void *pool, size_t size) {
