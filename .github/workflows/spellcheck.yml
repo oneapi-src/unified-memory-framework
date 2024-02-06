@@ -2,15 +2,18 @@ name: SpellCheck
 
 on: workflow_call
 
+permissions:
+  contents: read
+
 jobs:
     build:
         name: Run spell check
         runs-on: ubuntu-latest
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
             - name: Run a spell check
-              uses: crate-ci/typos@v1.16.23
+              uses: crate-ci/typos@c97d621b6b01d8b0258538ca15abeca5c5764601 # v1.16.23
               with:
                 config: ./.github/workflows/.spellcheck-conf.toml
