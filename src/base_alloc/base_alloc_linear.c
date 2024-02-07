@@ -23,7 +23,7 @@ typedef struct umf_ba_next_linear_pool_t umf_ba_next_linear_pool_t;
 
 // metadata is set and used only in the main (the first) pool
 typedef struct umf_ba_main_linear_pool_meta_t {
-    size_t pool_size; // size of each pool (argument of each ba_os_alloc() call)
+    size_t pool_size; // size of this pool (argument of ba_os_alloc() call)
     os_mutex_t lock;
     char *data_ptr;
     size_t size_left;
@@ -52,6 +52,8 @@ struct umf_ba_next_linear_pool_t {
     // to be freed in umf_ba_linear_destroy())
     umf_ba_next_linear_pool_t *next_pool;
 
+    size_t pool_size; // size of this pool (argument of ba_os_alloc() call)
+
     // data area of all pools except of the main (the first one) starts here
     char data[];
 };
@@ -70,8 +72,8 @@ static void ba_debug_checks(umf_ba_linear_pool_t *pool) {
 #endif /* NDEBUG */
 
 umf_ba_linear_pool_t *umf_ba_linear_create(size_t pool_size) {
-    size_t metadata_size = sizeof(umf_ba_main_linear_pool_meta_t);
-    pool_size = pool_size + metadata_size;
+    pool_size += sizeof(umf_ba_next_linear_pool_t *) +
+                 sizeof(umf_ba_main_linear_pool_meta_t);
     if (pool_size < MINIMUM_LINEAR_POOL_SIZE) {
         pool_size = MINIMUM_LINEAR_POOL_SIZE;
     }
@@ -110,16 +112,29 @@ void *umf_ba_linear_alloc(umf_ba_linear_pool_t *pool, size_t size) {
     size_t aligned_size = align_size(size, MEMORY_ALIGNMENT);
     util_mutex_lock(&pool->metadata.lock);
     if (pool->metadata.size_left < aligned_size) {
+        size_t pool_size = pool->metadata.pool_size;
+        size_t usable_size =
+            pool_size - offsetof(umf_ba_next_linear_pool_t, data);
+        if (usable_size < aligned_size) {
+            pool_size += aligned_size - usable_size;
+            pool_size = align_size(pool_size, ba_os_get_page_size());
+        }
+
+        assert(pool_size - offsetof(umf_ba_next_linear_pool_t, data) >=
+               aligned_size);
+
         umf_ba_next_linear_pool_t *new_pool =
-            (umf_ba_next_linear_pool_t *)ba_os_alloc(pool->metadata.pool_size);
+            (umf_ba_next_linear_pool_t *)ba_os_alloc(pool_size);
         if (!new_pool) {
             util_mutex_unlock(&pool->metadata.lock);
             return NULL;
         }
 
+        new_pool->pool_size = pool_size;
+
         void *data_ptr = &new_pool->data;
-        size_t size_left = pool->metadata.pool_size -
-                           offsetof(umf_ba_next_linear_pool_t, data);
+        size_t size_left =
+            new_pool->pool_size - offsetof(umf_ba_next_linear_pool_t, data);
         align_ptr_size(&data_ptr, &size_left, MEMORY_ALIGNMENT);
 
         pool->metadata.data_ptr = data_ptr;
@@ -148,15 +163,14 @@ void umf_ba_linear_destroy(umf_ba_linear_pool_t *pool) {
 #ifndef NDEBUG
     ba_debug_checks(pool);
 #endif /* NDEBUG */
-    size_t size = pool->metadata.pool_size;
     umf_ba_next_linear_pool_t *current_pool;
     umf_ba_next_linear_pool_t *next_pool = pool->next_pool;
     while (next_pool) {
         current_pool = next_pool;
         next_pool = next_pool->next_pool;
-        ba_os_free(current_pool, size);
+        ba_os_free(current_pool, current_pool->pool_size);
     }
 
     util_mutex_destroy_not_free(&pool->metadata.lock);
-    ba_os_free(pool, size);
+    ba_os_free(pool, pool->metadata.pool_size);
 }
