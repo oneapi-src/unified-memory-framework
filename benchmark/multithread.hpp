@@ -101,6 +101,10 @@ typename TimeUnit::rep measure(F &&func) {
 /* Measure time of execution of run_workload(thread_id) function. */
 template <typename TimeUnit, typename F>
 auto measure(size_t iterations, size_t concurrency, F &&run_workload) {
+    if (iterations == 1) {
+        throw std::runtime_error("iterations must be > 1");
+    }
+
     using ResultsType = typename TimeUnit::rep;
     std::vector<ResultsType> results;
 
@@ -115,8 +119,12 @@ auto measure(size_t iterations, size_t concurrency, F &&run_workload) {
 
             syncthreads();
         });
-        results.insert(results.end(), iteration_results.begin(),
-                       iteration_results.end());
+
+        // skip the first 'warmup' iteration
+        if (i != 0) {
+            results.insert(results.end(), iteration_results.begin(),
+                           iteration_results.end());
+        }
     }
 
     return results;
