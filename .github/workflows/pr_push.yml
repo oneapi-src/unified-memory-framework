@@ -85,9 +85,3 @@ jobs:
     Benchmark:
         needs: [Build]
         uses: ./.github/workflows/benchmarks.yml
-    CodeQL:
-        permissions:
-          contents: read
-          security-events: write
-        needs: [Build]
-        uses: ./.github/workflows/codeql.yml
