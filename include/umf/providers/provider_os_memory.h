@@ -85,6 +85,7 @@ typedef enum umf_os_memory_provider_native_error {
     UMF_OS_RESULT_ERROR_FREE_FAILED,
     UMF_OS_RESULT_ERROR_PURGE_LAZY_FAILED,
     UMF_OS_RESULT_ERROR_PURGE_FORCE_FAILED,
+    UMF_OS_RESULT_ERROR_TOPO_DISCOVERY_FAILED,
 } umf_os_memory_provider_native_error_t;
 
 umf_memory_provider_ops_t *umfOsMemoryProviderOps(void);

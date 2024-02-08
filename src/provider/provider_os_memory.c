@@ -76,6 +76,8 @@ static __TLS os_last_native_error_t TLS_last_native_error;
     (UMF_OS_RESULT_ERROR_PURGE_LAZY_FAILED - UMF_OS_RESULT_SUCCESS)
 #define _UMF_OS_RESULT_ERROR_PURGE_FORCE_FAILED                                \
     (UMF_OS_RESULT_ERROR_PURGE_FORCE_FAILED - UMF_OS_RESULT_SUCCESS)
+#define _UMF_OS_RESULT_ERROR_TOPO_DISCOVERY_FAILED                             \
+    (UMF_OS_RESULT_ERROR_TOPO_DISCOVERY_FAILED - UMF_OS_RESULT_SUCCESS)
 
 static const char *Native_error_str[] = {
     [_UMF_OS_RESULT_SUCCESS] = "success",
@@ -86,6 +88,8 @@ static const char *Native_error_str[] = {
     [_UMF_OS_RESULT_ERROR_FREE_FAILED] = "memory deallocation failed",
     [_UMF_OS_RESULT_ERROR_PURGE_LAZY_FAILED] = "lazy purging failed",
     [_UMF_OS_RESULT_ERROR_PURGE_FORCE_FAILED] = "force purging failed",
+    [_UMF_OS_RESULT_ERROR_TOPO_DISCOVERY_FAILED] =
+        "HWLOC topology discovery failed",
 };
 
 static void os_store_last_native_error(int32_t native_error, int errno_value) {
@@ -291,23 +295,24 @@ static umf_result_t os_initialize(void *params, void **provider) {
         if (os_provider->traces) {
             fprintf(stderr, "HWLOC topology init failed\n");
         }
-        umf_ba_free(base_allocator, os_provider);
+        ret = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+        goto err_free_os_provider;
     }
 
     r = hwloc_topology_load(os_provider->topo);
     if (r) {
+        os_store_last_native_error(UMF_OS_RESULT_ERROR_TOPO_DISCOVERY_FAILED,
+                                   0);
         if (os_provider->traces) {
             fprintf(stderr, "HWLOC topology discovery failed\n");
         }
-        hwloc_topology_destroy(os_provider->topo);
-        umf_ba_free(base_allocator, os_provider);
+        ret = UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
+        goto err_destroy_hwloc_topology;
     }
 
     ret = translate_params(in_params, os_provider);
     if (ret != UMF_RESULT_SUCCESS) {
-        hwloc_topology_destroy(os_provider->topo);
-        umf_ba_free(base_allocator, os_provider);
-        return ret;
+        goto err_destroy_hwloc_topology;
     }
 
     if (os_provider->traces) {
@@ -324,6 +329,12 @@ static umf_result_t os_initialize(void *params, void **provider) {
     *provider = os_provider;
 
     return UMF_RESULT_SUCCESS;
+
+err_destroy_hwloc_topology:
+    hwloc_topology_destroy(os_provider->topo);
+err_free_os_provider:
+    umf_ba_free(base_allocator, os_provider);
+    return ret;
 }
 
 static void os_finalize(void *provider) {
