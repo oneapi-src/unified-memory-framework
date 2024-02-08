@@ -25,6 +25,7 @@
 
 #include "base_alloc_global.h"
 #include "utils_common.h"
+#include "utils_concurrency.h"
 #include "utils_sanitizers.h"
 
 typedef void *(*raw_alloc_tbb_type)(intptr_t, size_t *);
@@ -61,15 +62,15 @@ struct tbb_memory_pool {
 };
 
 static struct tbb_callbacks g_tbb_ops;
-static pthread_once_t tbb_is_initialized = PTHREAD_ONCE_INIT;
-static bool Load_tbb_symbols_failed;
+static UTIL_ONCE_FLAG tbb_is_initialized = UTIL_ONCE_FLAG_INIT;
+static bool Init_tbb_global_state_failed;
 
-static void load_tbb_symbols(void) {
+static void init_tbb_global_state(void) {
     const char so_name[] = "libtbbmalloc.so.2";
     void *tbb_handle = dlopen(so_name, RTLD_LAZY);
     if (!tbb_handle) {
         fprintf(stderr, "%s not found.\n", so_name);
-        Load_tbb_symbols_failed = true;
+        Init_tbb_global_state_failed = true;
         return;
     }
 
@@ -99,9 +100,14 @@ static void load_tbb_symbols(void) {
         !tbb_ops.pool_identify) {
         fprintf(stderr, "Could not find symbols in %s.\n", so_name);
         dlclose(tbb_handle);
-        Load_tbb_symbols_failed = true;
+        Init_tbb_global_state_failed = true;
         return;
     }
+
+#ifdef UMF_SHARED_LIBRARY
+    umf_ba_create_global();
+    atexit(umf_ba_destroy_global);
+#endif
 
     g_tbb_ops = tbb_ops;
 }
@@ -144,8 +150,8 @@ static umf_result_t tbb_pool_initialize(umf_memory_provider_handle_t provider,
                                        .keep_all_memory = false,
                                        .reserved = 0};
 
-    pthread_once(&tbb_is_initialized, load_tbb_symbols);
-    if (Load_tbb_symbols_failed) {
+    util_init_once(&tbb_is_initialized, init_tbb_global_state);
+    if (Init_tbb_global_state_failed) {
         fprintf(stderr, "loading TBB symbols failed\n");
         return UMF_RESULT_ERROR_UNKNOWN;
     }
@@ -176,7 +182,7 @@ static umf_result_t tbb_pool_initialize(umf_memory_provider_handle_t provider,
 }
 
 static void tbb_pool_finalize(void *pool) {
-    pthread_once(&tbb_is_initialized, load_tbb_symbols);
+    util_init_once(&tbb_is_initialized, init_tbb_global_state);
     struct tbb_memory_pool *pool_data = (struct tbb_memory_pool *)pool;
     g_tbb_ops.pool_destroy(pool_data->tbb_pool);
     umf_ba_free(pool_data->base_allocator, pool_data);

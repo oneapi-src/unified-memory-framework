@@ -39,3 +39,14 @@ int util_mutex_unlock(os_mutex_t *mutex) {
     LeaveCriticalSection(&mutex_internal->lock);
     return 0;
 }
+
+static BOOL CALLBACK initOnceCb(PINIT_ONCE InitOnce, PVOID Parameter,
+                                PVOID *lpContext) {
+    void (*onceCb)(void) = (void (*)(void))(Parameter);
+    onceCb();
+    return TRUE;
+}
+
+void util_init_once(UTIL_ONCE_FLAG *flag, void (*onceCb)(void)) {
+    InitOnceExecuteOnce(flag, initOnceCb, (void *)&onceCb, NULL);
+}

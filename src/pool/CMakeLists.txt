@@ -4,6 +4,7 @@
 
 if(UMF_BUILD_SHARED_LIBRARY)
     set(POOL_EXTRA_SRCS ${BA_SOURCES})
+    set(POOL_COMPILE_DEFINITIONS UMF_SHARED_LIBRARY)
 endif()
 
 # libumf_pool_disjoint
@@ -12,6 +13,7 @@ if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
                     TYPE STATIC
                     SRCS pool_disjoint.cpp ${POOL_EXTRA_SRCS}
                     LIBS umf_utils)
+    target_compile_definitions(disjoint_pool PUBLIC ${POOL_COMPILE_DEFINITIONS})
 
     add_library(${PROJECT_NAME}::disjoint_pool ALIAS disjoint_pool)
 
@@ -40,6 +42,7 @@ if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
                         TYPE STATIC
                         SRCS pool_jemalloc.c ${POOL_EXTRA_SRCS}
                         LIBS c jemalloc umf_utils)
+        target_compile_definitions(jemalloc_pool PUBLIC ${POOL_COMPILE_DEFINITIONS})
         add_library(${PROJECT_NAME}::jemalloc_pool ALIAS jemalloc_pool)
         install(TARGETS jemalloc_pool
             EXPORT ${PROJECT_NAME}-targets
@@ -56,6 +59,7 @@ if(UMF_BUILD_LIBUMF_POOL_SCALABLE)
                         TYPE STATIC
                         SRCS pool_scalable.c ${POOL_EXTRA_SRCS}
                         LIBS dl umf_utils)
+        target_compile_definitions(scalable_pool PUBLIC ${POOL_COMPILE_DEFINITIONS})
         add_library(${PROJECT_NAME}::scalable_pool ALIAS scalable_pool)
         install(TARGETS scalable_pool
             EXPORT ${PROJECT_NAME}-targets
