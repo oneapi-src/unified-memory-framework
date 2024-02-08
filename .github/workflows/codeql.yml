@@ -1,6 +1,10 @@
 name: CodeQL
 
-on: workflow_call
+# Due to lower score on Scorecard we're running this separately from
+# "PR/push" workflow. For some reason permissions weren't properly set
+# or recognized (by Scorecard). If Scorecard changes its behavior we can
+# go back to use 'workflow_call' trigger.
+on: [push, pull_request]
 
 permissions:
   contents: read
