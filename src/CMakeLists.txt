@@ -52,12 +52,17 @@ set(UMF_SOURCES_MACOSX
     libumf_linux.c
 )
 
+# Compile definitions for UMF library
+# TODO: Cleanup the compile definitions across all the Cmake files
+set(UMF_COMPILE_DEFINITIONS "")
+
 if(UMF_BUILD_OS_MEMORY_PROVIDER)
     set(UMF_SOURCES_LINUX ${UMF_SOURCES_LINUX}
         provider/provider_os_memory.c
         provider/provider_os_memory_linux.c
         memory_targets/memory_target_numa.c
-        memspaces/memspace_numa.c)
+        memspaces/memspace_numa.c
+        memspaces/memspace_host_all.c)
 
     if(LINUX)
         if(PkgConfig_FOUND)
@@ -67,6 +72,8 @@ if(UMF_BUILD_OS_MEMORY_PROVIDER)
             find_package(LIBHWLOC REQUIRED hwloc)
         endif()
         set(UMF_LIBS ${UMF_LIBS} ${LIBHWLOC_LIBRARIES})
+        # Currently, OS provider is only built for Linux
+        set(UMF_COMPILE_DEFINITIONS ${UMF_COMPILE_DEFINITIONS} "UMF_BUILD_OS_MEMORY_PROVIDER=1")
     endif()
 endif()
 
@@ -85,15 +92,17 @@ if(UMF_BUILD_SHARED_LIBRARY)
                     LIBS ${UMF_LIBS}
                     LINUX_MAP_FILE ${CMAKE_CURRENT_SOURCE_DIR}/libumf.map
                     WINDOWS_DEF_FILE ${CMAKE_CURRENT_SOURCE_DIR}/libumf.def)
-    target_compile_definitions(umf PUBLIC UMF_SHARED_LIBRARY)
+    set(UMF_COMPILE_DEFINITIONS ${UMF_COMPILE_DEFINITIONS} "UMF_SHARED_LIBRARY")
     set_target_properties(umf PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_UMF_OUTPUT_DIRECTORY})
 else()
     add_umf_library(NAME umf
-                    TYPE STATIC 
-                    SRCS ${UMF_SOURCES} 
+                    TYPE STATIC
+                    SRCS ${UMF_SOURCES}
                     LIBS ${UMF_LIBS})
 endif()
+
+target_compile_definitions(umf PUBLIC ${UMF_COMPILE_DEFINITIONS})
 
 if (UMF_ENABLE_POOL_TRACKING)
     target_sources(umf PRIVATE memory_pool_tracking.c)
@@ -103,10 +112,13 @@ endif()
 
 add_library(${PROJECT_NAME}::umf ALIAS umf)
 
-target_include_directories(umf PUBLIC 
+target_include_directories(umf PUBLIC
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/critnib>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/provider>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/memspaces>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/memory_targets>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
