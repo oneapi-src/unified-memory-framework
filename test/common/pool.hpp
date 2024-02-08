@@ -29,9 +29,10 @@ namespace umf_test {
 
 umf_memory_pool_handle_t
 createPoolChecked(umf_memory_pool_ops_t *ops,
-                  umf_memory_provider_handle_t hProvider, void *params) {
+                  umf_memory_provider_handle_t hProvider, void *params,
+                  umf_pool_create_flags_t flags = 0) {
     umf_memory_pool_handle_t hPool;
-    auto ret = umfPoolCreate(ops, hProvider, params, 0, &hPool);
+    auto ret = umfPoolCreate(ops, hProvider, params, flags, &hPool);
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
     return hPool;
 }
@@ -129,54 +130,6 @@ struct malloc_pool : public pool_base_t {
 
 umf_memory_pool_ops_t MALLOC_POOL_OPS =
     umf::poolMakeCOps<umf_test::malloc_pool, void>();
-
-struct proxy_pool : public pool_base_t {
-    umf_result_t initialize(umf_memory_provider_handle_t provider) noexcept {
-        this->provider = provider;
-        return UMF_RESULT_SUCCESS;
-    }
-    void *malloc(size_t size) noexcept { return aligned_malloc(size, 0); }
-    void *calloc(size_t num, size_t size) noexcept {
-        void *ptr = nullptr;
-        auto ret = umfMemoryProviderAlloc(provider, num * size, 0, &ptr);
-        umf::getPoolLastStatusRef<proxy_pool>() = ret;
-
-        if (!ptr) {
-            return ptr;
-        }
-
-        memset(ptr, 0, num * size);
-        return ptr;
-    }
-    void *realloc([[maybe_unused]] void *ptr,
-                  [[maybe_unused]] size_t size) noexcept {
-        // TODO: not supported
-        umf::getPoolLastStatusRef<proxy_pool>() =
-            UMF_RESULT_ERROR_NOT_SUPPORTED;
-        return nullptr;
-    }
-    void *aligned_malloc(size_t size, size_t alignment) noexcept {
-        void *ptr = nullptr;
-        auto ret = umfMemoryProviderAlloc(provider, size, alignment, &ptr);
-        umf::getPoolLastStatusRef<proxy_pool>() = ret;
-        return ptr;
-    }
-    size_t malloc_usable_size([[maybe_unused]] void *ptr) noexcept {
-        // TODO: not supported
-        return 0;
-    }
-    umf_result_t free(void *ptr) noexcept {
-        auto ret = umfMemoryProviderFree(provider, ptr, 0);
-        return ret;
-    }
-    umf_result_t get_last_allocation_error() {
-        return umf::getPoolLastStatusRef<proxy_pool>();
-    }
-    umf_memory_provider_handle_t provider;
-};
-
-umf_memory_pool_ops_t PROXY_POOL_OPS =
-    umf::poolMakeCOps<umf_test::proxy_pool, void>();
 
 } // namespace umf_test
 

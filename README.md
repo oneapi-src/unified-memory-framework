@@ -37,6 +37,12 @@ A memory provider that provides memory from an operating system.
 
 ## Memory pool managers
 
+### proxy_pool (part of libumf)
+
+This memory pool is distributed as part of libumf. It forwards all requests to the underlying
+memory provider. Currently umfPoolRealloc, umfPoolCalloc and umfPoolMallocUsableSize functions
+are not supported by the proxy pool.
+
 ### libumf_pool_disjoint
 
 TODO: Add a description
