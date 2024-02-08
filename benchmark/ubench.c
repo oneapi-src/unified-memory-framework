@@ -8,6 +8,7 @@
  */
 
 #include <umf/memory_pool.h>
+#include <umf/pools/pool_proxy.h>
 #include <umf/providers/provider_os_memory.h>
 
 #ifdef UMF_BUILD_LIBUMF_POOL_DISJOINT
@@ -157,12 +158,6 @@ UBENCH_EX(simple, os_memory_provider) {
     umfMemoryProviderDestroy(os_memory_provider);
     free(array);
 }
-#endif /* UMF_BUILD_OS_MEMORY_PROVIDER */
-
-#if (defined UMF_BUILD_OS_MEMORY_PROVIDER) &&                                  \
-    ((defined UMF_BUILD_LIBUMF_POOL_DISJOINT) ||                               \
-     (defined UMF_BUILD_LIBUMF_POOL_JEMALLOC) ||                               \
-     (defined UMF_BUILD_LIBUMF_POOL_SCALABLE))
 
 static void *w_umfPoolMalloc(void *provider, size_t size, size_t alignment) {
     umf_memory_pool_handle_t hPool = (umf_memory_pool_handle_t)provider;
@@ -177,7 +172,42 @@ static void w_umfPoolFree(void *provider, void *ptr, size_t size) {
         exit(-1);
     }
 }
-#endif /* (defined UMF_BUILD_OS_MEMORY_PROVIDER) && ((defined UMF_BUILD_LIBUMF_POOL_DISJOINT) || (defined UMF_BUILD_LIBUMF_POOL_JEMALLOC) || (defined UMF_BUILD_LIBUMF_POOL_SCALABLE)) */
+
+////////////////// PROXY POOL WITH OS MEMORY PROVIDER
+
+UBENCH_EX(simple, proxy_pool_with_os_memory_provider) {
+    alloc_t *array = alloc_array(N_ITERATIONS);
+
+    enum umf_result_t umf_result;
+    umf_memory_provider_handle_t os_memory_provider = NULL;
+    umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(),
+                                         &UMF_OS_MEMORY_PROVIDER_PARAMS,
+                                         &os_memory_provider);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        exit(-1);
+    }
+
+    umf_memory_pool_handle_t proxy_pool;
+    umf_result = umfPoolCreate(umfProxyPoolOps(), os_memory_provider, NULL, 0,
+                               &proxy_pool);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        exit(-1);
+    }
+
+    do_benchmark(array, N_ITERATIONS, w_umfPoolMalloc, w_umfPoolFree,
+                 proxy_pool); // WARMUP
+
+    UBENCH_DO_BENCHMARK() {
+        do_benchmark(array, N_ITERATIONS, w_umfPoolMalloc, w_umfPoolFree,
+                     proxy_pool);
+    }
+
+    umfPoolDestroy(proxy_pool);
+    umfMemoryProviderDestroy(os_memory_provider);
+    free(array);
+}
+
+#endif /* UMF_BUILD_OS_MEMORY_PROVIDER */
 
 #if (defined UMF_BUILD_LIBUMF_POOL_DISJOINT) &&                                \
     (defined UMF_BUILD_OS_MEMORY_PROVIDER)
