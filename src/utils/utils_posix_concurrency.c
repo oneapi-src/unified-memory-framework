@@ -33,3 +33,7 @@ int util_mutex_lock(os_mutex_t *m) {
 int util_mutex_unlock(os_mutex_t *m) {
     return pthread_mutex_unlock((pthread_mutex_t *)m);
 }
+
+void util_init_once(UTIL_ONCE_FLAG *flag, void (*oneCb)(void)) {
+    pthread_once(flag, oneCb);
+}

@@ -37,6 +37,16 @@ int util_mutex_lock(os_mutex_t *mutex);
 int util_mutex_unlock(os_mutex_t *mutex);
 
 #if defined(_WIN32)
+#define UTIL_ONCE_FLAG INIT_ONCE
+#define UTIL_ONCE_FLAG_INIT INIT_ONCE_STATIC_INIT
+#else
+#define UTIL_ONCE_FLAG pthread_once_t
+#define UTIL_ONCE_FLAG_INIT PTHREAD_ONCE_INIT
+#endif
+
+void util_init_once(UTIL_ONCE_FLAG *flag, void (*onceCb)(void));
+
+#if defined(_WIN32)
 static __inline unsigned char util_lssb_index(long long value) {
     unsigned long ret;
     _BitScanForward64(&ret, value);

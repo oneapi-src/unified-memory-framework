@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 include(${UMF_CMAKE_SOURCE_DIR}/cmake/helpers.cmake)
+include(FindThreads)
 
 set(UMF_UTILS_SOURCES_POSIX
     utils_posix_concurrency.c
@@ -22,7 +23,8 @@ endif()
 
 add_umf_library(NAME umf_utils
                 TYPE STATIC
-                SRCS ${UMF_UTILS_SOURCES})
+                SRCS ${UMF_UTILS_SOURCES}
+                LIBS ${CMAKE_THREAD_LIBS_INIT})
 
 add_library(${PROJECT_NAME}::utils ALIAS umf_utils)
 

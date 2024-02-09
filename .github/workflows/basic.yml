@@ -207,28 +207,39 @@ jobs:
         pool_tracking: ['ON', 'OFF']
         shared_library: ['OFF']
         sanitizers: [{asan: OFF}]
+        os_provider: ['ON']
         include:
           - os: 'windows-2022'
             build_type: Release
             compiler: {c: clang-cl, cxx: clang-cl}
             pool_tracking: 'ON'
+            os_provider: 'ON'
             toolset: "-T ClangCL"
           - os: 'windows-2022'
             build_type: Release
             compiler: {c: cl, cxx: cl}
             pool_tracking: 'ON'
             shared_library: 'ON'
+            os_provider: 'ON'
+          - os: 'windows-2022'
+            build_type: Release
+            compiler: {c: cl, cxx: cl}
+            pool_tracking: 'ON'
+            shared_library: 'ON'
+            os_provider: 'OFF'
           - os: 'windows-2022'
             build_type: Debug
             compiler: {c: cl, cxx: cl}
             pool_tracking: 'OFF'
             shared_library: 'OFF'
+            os_provider: 'ON'
             sanitizers: {asan: ON}
           - os: 'windows-2022'
             build_type: Debug
             compiler: {c: clang-cl, cxx: clang-cl}
             pool_tracking: 'OFF'
             shared_library: 'OFF'
+            os_provider: 'ON'
             sanitizers: {asan: ON}
 
     runs-on: ${{matrix.os}}
@@ -261,6 +272,7 @@ jobs:
           -DUMF_DEVELOPER_MODE=ON
           -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
           -DUSE_ASAN=${{matrix.sanitizers.asan}}
+          -DUMF_BUILD_OS_MEMORY_PROVIDER=${{matrix.os_provider}}
 
       - name: Build UMF
         run: cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j $Env:NUMBER_OF_PROCESSORS

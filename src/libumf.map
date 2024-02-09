@@ -1,0 +1,40 @@
+# Copyright (C) 2024 Intel Corporation
+# Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
+UMF_1.0 {
+    global:
+        umfFree;
+        umfGetLastFailedMemoryProvider;
+        umfMemoryProviderAlloc;
+        umfMemoryProviderAllocationMerge;
+        umfMemoryProviderAllocationSplit;
+        umfMemoryProviderCreate;
+        umfMemoryProviderDestroy;
+        umfMemoryProviderFree;
+        umfMemoryProviderGetLastNativeError;
+        umfMemoryProviderGetMinPageSize;
+        umfMemoryProviderGetName;
+        umfMemoryProviderGetRecommendedPageSize;
+        umfMemoryProviderPurgeForce;
+        umfMemoryProviderPurgeLazy;
+        umfPoolAlignedMalloc;
+        umfPoolByPtr;
+        umfPoolCalloc;
+        umfPoolCreate;
+        umfPoolDestroy;
+        umfPoolFree;
+        umfPoolGetLastAllocationError;
+        umfPoolGetMemoryProvider;
+        umfPoolMalloc;
+        umfPoolMallocUsableSize;
+        umfPoolRealloc;
+        umfOsMemoryProviderOps;
+        umfProxyPoolOps;
+        umfPoolCreateFromMemspace;
+        umfMemoryProviderCreateFromMemspace;
+        umfMemspaceCreateFromNumaArray;
+        umfMemspaceDestroy;
+    local:
+        *;
+};
