@@ -244,7 +244,9 @@ static void *tbb_aligned_malloc(void *pool, size_t size, size_t alignment) {
     return ptr;
 }
 
-static umf_result_t tbb_free(void *pool, void *ptr) {
+static umf_result_t tbb_free(void *pool, void *ptr, size_t size) {
+    (void)size;
+
     if (ptr == NULL) {
         return UMF_RESULT_SUCCESS;
     }

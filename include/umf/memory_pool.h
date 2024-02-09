@@ -112,6 +112,19 @@ size_t umfPoolMallocUsableSize(umf_memory_pool_handle_t hPool, void *ptr);
 
 ///
 /// @brief Frees the memory space of the specified \p hPool pointed by \p ptr
+///        This version of umfPoolFree requires allocation size to be specified.
+/// @param hPool specified memory hPool
+/// @param ptr pointer to the allocated memory to free
+/// @param size size of the allocation, has to match size passed to alloc function.
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+///         Whether any status other than UMF_RESULT_SUCCESS can be returned
+///         depends on the memory provider used by the \p hPool.
+///
+umf_result_t umfPoolFreeSized(umf_memory_pool_handle_t hPool, void *ptr,
+                              size_t size);
+
+///
+/// @brief Frees the memory space of the specified \p hPool pointed by \p ptr
 /// @param hPool specified memory hPool
 /// @param ptr pointer to the allocated memory to free
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.

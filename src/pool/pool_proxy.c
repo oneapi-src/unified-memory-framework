@@ -89,7 +89,9 @@ static void *proxy_realloc(void *pool, void *ptr, size_t size) {
     return NULL;
 }
 
-static umf_result_t proxy_free(void *pool, void *ptr) {
+static umf_result_t proxy_free(void *pool, void *ptr, size_t size) {
+    (void)size;
+
     assert(pool);
 
     struct proxy_memory_pool *hPool = (struct proxy_memory_pool *)pool;

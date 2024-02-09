@@ -52,9 +52,10 @@ static size_t nullMallocUsableSize(void *pool, void *ptr) {
     return 0;
 }
 
-static umf_result_t nullFree(void *pool, void *ptr) {
+static umf_result_t nullFree(void *pool, void *ptr, size_t size) {
     (void)pool;
     (void)ptr;
+    (void)size;
     return UMF_RESULT_SUCCESS;
 }
 

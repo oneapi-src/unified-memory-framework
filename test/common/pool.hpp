@@ -91,7 +91,7 @@ typedef struct pool_base_t {
     void *realloc(void *, size_t) noexcept { return nullptr; }
     void *aligned_malloc(size_t, size_t) noexcept { return nullptr; }
     size_t malloc_usable_size(void *) noexcept { return 0; }
-    umf_result_t free(void *) noexcept { return UMF_RESULT_SUCCESS; }
+    umf_result_t free(void *, size_t) noexcept { return UMF_RESULT_SUCCESS; }
     umf_result_t get_last_allocation_error() noexcept {
         return UMF_RESULT_SUCCESS;
     }
@@ -122,7 +122,7 @@ struct malloc_pool : public pool_base_t {
         return ::malloc_usable_size(ptr);
 #endif
     }
-    umf_result_t free(void *ptr) noexcept {
+    umf_result_t free(void *ptr, size_t) noexcept {
         ::free(ptr);
         return UMF_RESULT_SUCCESS;
     }

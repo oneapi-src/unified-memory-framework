@@ -44,7 +44,7 @@ class DisjointPool {
     void *realloc(void *, size_t);
     void *aligned_malloc(size_t size, size_t alignment);
     size_t malloc_usable_size(void *);
-    umf_result_t free(void *ptr);
+    umf_result_t free(void *ptr, size_t);
     umf_result_t get_last_allocation_error();
 
     DisjointPool();
@@ -1022,7 +1022,9 @@ size_t DisjointPool::malloc_usable_size(void *) {
     return 0;
 }
 
-umf_result_t DisjointPool::free(void *ptr) try {
+umf_result_t DisjointPool::free(void *ptr, size_t size) try {
+    (void)size;
+
     bool ToPool;
     impl->deallocate(ptr, ToPool);
 
