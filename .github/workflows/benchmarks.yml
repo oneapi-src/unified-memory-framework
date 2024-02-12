@@ -14,6 +14,7 @@ jobs:
         os: ['ubuntu-22.04']
         build_type: [Release]
         compiler: [{c: gcc, cxx: g++}]
+        shared_library: ['ON', 'OFF']
     runs-on: ${{matrix.os}}
 
     steps:
@@ -32,6 +33,7 @@ jobs:
           -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
           -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
           -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
+          -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
           -DUMF_BUILD_BENCHMARKS=ON
           -DUMF_BUILD_TESTS=OFF
           -DUMF_FORMAT_CODE_STYLE=OFF
