@@ -101,6 +101,11 @@ jobs:
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
             os_provider: 'ON'
+          - os: 'ubuntu-22.04'
+            build_type: Debug
+            compiler: {c: gcc, cxx: g++}
+            shared_library: 'ON'
+            os_provider: 'ON'
           # test os_provider='OFF' with shared_library='ON'
           - os: 'ubuntu-22.04'
             build_type: Release
