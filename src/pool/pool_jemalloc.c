@@ -22,14 +22,6 @@
 
 #define MALLOCX_ARENA_MAX (MALLCTL_ARENAS_ALL - 1)
 
-#ifdef UMF_SHARED_LIBRARY
-static UTIL_ONCE_FLAG jemalloc_is_initialized = UTIL_ONCE_FLAG_INIT;
-static void jemalloc_global_init(void) {
-    umf_ba_create_global();
-    atexit(umf_ba_destroy_global);
-}
-#endif
-
 typedef struct jemalloc_memory_pool_t {
     umf_memory_provider_handle_t provider;
     unsigned int arena_index; // index of jemalloc arena
@@ -362,10 +354,6 @@ static void *je_aligned_alloc(void *pool, size_t size, size_t alignment) {
 
 static umf_result_t je_initialize(umf_memory_provider_handle_t provider,
                                   void *params, void **out_pool) {
-#ifdef UMF_SHARED_LIBRARY
-    util_init_once(&jemalloc_is_initialized, jemalloc_global_init);
-#endif
-
     assert(provider);
     assert(out_pool);
     (void)params; // unused

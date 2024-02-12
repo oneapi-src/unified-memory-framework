@@ -104,11 +104,6 @@ static void init_tbb_global_state(void) {
         return;
     }
 
-#ifdef UMF_SHARED_LIBRARY
-    umf_ba_create_global();
-    atexit(umf_ba_destroy_global);
-#endif
-
     g_tbb_ops = tbb_ops;
 }
 
