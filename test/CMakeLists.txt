@@ -79,11 +79,12 @@ endif()
 
 if(UMF_BUILD_LIBUMF_POOL_DISJOINT
    AND UMF_BUILD_LIBUMF_POOL_JEMALLOC
+   AND UMF_BUILD_LIBUMF_POOL_SCALABLE
    AND UMF_BUILD_OS_MEMORY_PROVIDER
    AND UMF_ENABLE_POOL_TRACKING)
     add_umf_test(NAME c_api_multi_pool
                  SRCS c_api/multi_pool.c
-                 LIBS disjoint_pool jemalloc_pool)
+                 LIBS disjoint_pool jemalloc_pool scalable_pool)
 endif()
 
 if(UMF_BUILD_OS_MEMORY_PROVIDER)
