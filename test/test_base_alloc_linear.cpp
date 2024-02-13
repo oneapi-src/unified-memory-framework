@@ -16,6 +16,17 @@
 
 using umf_test::test;
 
+TEST_F(test, baseAllocLinearAllocMoreThanPoolSize) {
+    auto pool = std::shared_ptr<umf_ba_linear_pool_t>(
+        umf_ba_linear_create(0 /* minimal pool size (page size) */),
+        umf_ba_linear_destroy);
+
+    size_t new_size = 20 * 1024 * 1024; // = 20 MB
+    void *ptr = umf_ba_linear_alloc(pool.get(), new_size);
+    UT_ASSERTne(ptr, NULL);
+    memset(ptr, 0, new_size);
+}
+
 TEST_F(test, baseAllocLinearMultiThreadedAllocMemset) {
     static constexpr int NTHREADS = 10;
     static constexpr int ITERATIONS = 1000;
