@@ -16,11 +16,9 @@ umf_memory_tracker_handle_t TRACKER = NULL;
 
 void __attribute__((constructor)) umfCreate(void) {
     TRACKER = umfMemoryTrackerCreate();
-    umf_ba_create_global();
 }
 
 void __attribute__((destructor)) umfDestroy(void) {
-    umf_ba_destroy_global();
     umfMemoryTrackerDestroy(TRACKER);
 }
 

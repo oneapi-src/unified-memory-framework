@@ -48,5 +48,5 @@ static BOOL CALLBACK initOnceCb(PINIT_ONCE InitOnce, PVOID Parameter,
 }
 
 void util_init_once(UTIL_ONCE_FLAG *flag, void (*onceCb)(void)) {
-    InitOnceExecuteOnce(flag, initOnceCb, (void *)&onceCb, NULL);
+    InitOnceExecuteOnce(flag, initOnceCb, (void *)onceCb, NULL);
 }
