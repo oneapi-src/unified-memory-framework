@@ -105,7 +105,6 @@ static umf_os_memory_provider_params_t UMF_OS_MEMORY_PROVIDER_PARAMS = {
     /* .nodemask = */ NULL,
     /* .maxnode = */ 0,
     /* .numa_mode = */ UMF_NUMA_MODE_DEFAULT,
-    /* .numa_flags = */ 0,
 
     // others
     /* .traces = */ OS_MEMORY_PROVIDER_TRACE,

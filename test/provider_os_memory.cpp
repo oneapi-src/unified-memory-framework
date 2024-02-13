@@ -144,22 +144,6 @@ TEST_F(test, create_WRONG_NUMA_MODE) {
     ASSERT_EQ(os_memory_provider, nullptr);
 }
 
-TEST_F(test, create_WRONG_NUMA_FLAGS) {
-    umf_result_t umf_result;
-    umf_memory_provider_handle_t os_memory_provider = nullptr;
-    umf_os_memory_provider_params_t os_memory_provider_params =
-        umfOsMemoryProviderParamsDefault();
-
-    // wrong NUMA flags
-    os_memory_provider_params.numa_flags = (unsigned int)-1;
-
-    umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(),
-                                         &os_memory_provider_params,
-                                         &os_memory_provider);
-    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
-    ASSERT_EQ(os_memory_provider, nullptr);
-}
-
 // positive tests using test_alloc_free_success
 
 auto defaultParams = umfOsMemoryProviderParamsDefault();
