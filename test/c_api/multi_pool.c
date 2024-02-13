@@ -8,6 +8,7 @@
 #include <umf/pools/pool_disjoint.h>
 #include <umf/pools/pool_jemalloc.h>
 #include <umf/pools/pool_proxy.h>
+#include <umf/pools/pool_scalable.h>
 #include <umf/providers/provider_os_memory.h>
 
 #include "test_helpers.h"
@@ -40,6 +41,15 @@ createJemallocPool(umf_memory_provider_handle_t provider) {
     return pool;
 }
 
+umf_memory_pool_handle_t
+createScalablePool(umf_memory_provider_handle_t provider) {
+    umf_memory_pool_handle_t pool = NULL;
+    umf_result_t ret =
+        umfPoolCreate(umfScalablePoolOps(), provider, NULL, 0, &pool);
+    UT_ASSERTeq(ret, UMF_RESULT_SUCCESS);
+    return pool;
+}
+
 #define ALLOC_SIZE 64
 
 int main(void) {
@@ -50,29 +60,30 @@ int main(void) {
         umfMemoryProviderCreate(umfOsMemoryProviderOps(), &params, &hProvider);
     UT_ASSERTeq(ret, UMF_RESULT_SUCCESS);
 
-    umf_memory_pool_handle_t pools[3];
+    umf_memory_pool_handle_t pools[4];
 
     pools[0] = createDisjointPool(hProvider);
     pools[1] = createProxyPool(hProvider);
     pools[2] = createJemallocPool(hProvider);
+    pools[3] = createScalablePool(hProvider);
 
-    void *ptrs[3];
+    void *ptrs[4];
 
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 4; i++) {
         UT_ASSERTne(pools[i], NULL);
         ptrs[i] = umfPoolMalloc(pools[i], ALLOC_SIZE);
         UT_ASSERTne(ptrs[i], NULL);
     }
 
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 4; i++) {
         UT_ASSERTeq(umfPoolByPtr(ptrs[i]), pools[i]);
     }
 
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 4; i++) {
         umfFree(ptrs[i]);
     }
 
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 4; i++) {
         umfPoolDestroy(pools[i]);
     }
 
