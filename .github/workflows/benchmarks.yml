@@ -35,6 +35,7 @@ jobs:
           -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
           -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
           -DUMF_BUILD_BENCHMARKS=ON
+          -DUMF_BUILD_BENCHMARKS_MT=ON
           -DUMF_BUILD_TESTS=OFF
           -DUMF_FORMAT_CODE_STYLE=OFF
           -DUMF_DEVELOPER_MODE=OFF
@@ -62,3 +63,7 @@ jobs:
           fi
           cat $LOG
           echo "[  PASSED  ] The CI benchmark job PASSED."
+
+      - name: Run MT benchmarks
+        working-directory: ${{github.workspace}}/build
+        run: ./benchmark/multithread_bench

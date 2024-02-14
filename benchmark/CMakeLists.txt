@@ -5,7 +5,7 @@
 include(FindThreads)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-	message(WARNING "The ubench SHOULD NOT be run in the Debug build type!")
+	message(WARNING "The benchmarks SHOULD NOT be run in the Debug build type!")
 endif()
 
 if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
@@ -34,18 +34,44 @@ target_link_libraries(ubench
 	${CMAKE_THREAD_LIBS_INIT}
 	m)
 
+if (UMF_BUILD_BENCHMARKS_MT)
+	add_executable(multithread_bench multithread.cpp)
+	target_link_libraries(multithread_bench
+		umf
+		${LIBS_OPTIONAL}
+		pthread
+		m)
+	target_include_directories(multithread_bench PRIVATE ${UMF_CMAKE_SOURCE_DIR}/include/)
+endif()
+
 if (UMF_BUILD_OS_MEMORY_PROVIDER)
 	target_compile_definitions(ubench PRIVATE UMF_BUILD_OS_MEMORY_PROVIDER=1)
+
+	if (UMF_BUILD_BENCHMARKS_MT)
+		target_compile_definitions(multithread_bench PRIVATE UMF_BUILD_OS_MEMORY_PROVIDER=1)
+	endif()
 endif()
 
 if (UMF_BUILD_LIBUMF_POOL_DISJOINT)
 	target_compile_definitions(ubench PRIVATE UMF_BUILD_LIBUMF_POOL_DISJOINT=1)
+
+	if (UMF_BUILD_BENCHMARKS_MT)
+		target_compile_definitions(multithread_bench PRIVATE UMF_BUILD_LIBUMF_POOL_DISJOINT=1)
+	endif()
 endif()
 
 if (UMF_BUILD_LIBUMF_POOL_JEMALLOC)
 	target_compile_definitions(ubench PRIVATE UMF_BUILD_LIBUMF_POOL_JEMALLOC=1)
+
+	if (UMF_BUILD_BENCHMARKS_MT)
+		target_compile_definitions(multithread_bench PRIVATE UMF_BUILD_LIBUMF_POOL_JEMALLOC=1)
+	endif()
 endif()
 
 if (UMF_BUILD_LIBUMF_POOL_SCALABLE)
 	target_compile_definitions(ubench PRIVATE UMF_BUILD_LIBUMF_POOL_SCALABLE=1)
+
+	if (UMF_BUILD_BENCHMARKS_MT)
+		target_compile_definitions(multithread_bench PRIVATE UMF_BUILD_LIBUMF_POOL_SCALABLE=1)
+	endif()
 endif()
