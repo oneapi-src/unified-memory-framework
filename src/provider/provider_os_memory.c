@@ -22,7 +22,6 @@
 
 typedef struct umf_os_memory_provider_config_t {
     unsigned protection; // combination of OS-specific protection flags
-    unsigned visibility;
 
     // NUMA config
     unsigned long *nodemask;
@@ -35,7 +34,6 @@ typedef struct umf_os_memory_provider_config_t {
 
 typedef struct os_memory_provider_t {
     unsigned protection; // combination of OS-specific protection flags
-    unsigned visibility;
 
     // NUMA config
     hwloc_bitmap_t nodeset;
@@ -204,16 +202,6 @@ static umf_result_t translate_params(umf_os_memory_provider_params_t *in_params,
     }
     provider->protection = ret;
 
-    ret = os_translate_mem_visibility(in_params->visibility);
-    if (ret < 0) {
-        if (in_params->traces) {
-            fprintf(stderr, "error: incorrect memory visibility mode: %u\n",
-                    in_params->visibility);
-        }
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-    provider->visibility = ret;
-
     // NUMA config
     int emptyNodeset = (!in_params->maxnode || !in_params->nodemask);
     ret = translate_numa_mode(in_params->numa_mode, emptyNodeset);
@@ -240,18 +228,6 @@ static umf_result_t os_initialize(void *params, void **provider) {
 
     umf_os_memory_provider_params_t *in_params =
         (umf_os_memory_provider_params_t *)params;
-
-    if (in_params->visibility == UMF_VISIBILITY_SHARED &&
-        in_params->numa_mode != UMF_NUMA_MODE_DEFAULT) {
-        // TODO: add support for that
-        if (in_params->traces) {
-            fprintf(stderr,
-                    "NUMA binding mode (%i) not supported for "
-                    "UMF_VISIBILITY_SHARED\n",
-                    in_params->numa_mode);
-        }
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
 
     umf_ba_pool_t *base_allocator =
         umf_ba_get_pool(sizeof(os_memory_provider_t));
@@ -387,13 +363,12 @@ static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    int flags = os_provider->visibility;
     int protection = os_provider->protection;
 
     void *addr = NULL;
     errno = 0;
-    ret = os_mmap_aligned(NULL, size, alignment, page_size, protection, flags,
-                          -1, 0, &addr);
+    ret = os_mmap_aligned(NULL, size, alignment, page_size, protection, -1, 0,
+                          &addr);
     if (ret) {
         os_store_last_native_error(UMF_OS_RESULT_ERROR_ALLOC_FAILED, errno);
         if (os_provider->traces) {

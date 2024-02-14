@@ -25,10 +25,8 @@ int os_translate_flags(unsigned in_flags, unsigned max,
 
 int os_translate_mem_protection_flags(unsigned protection);
 
-int os_translate_mem_visibility(umf_mem_visibility_t visibility);
-
 int os_mmap_aligned(void *hint_addr, size_t length, size_t alignment,
-                    size_t page_size, int prot, int flags, int fd, long offset,
+                    size_t page_size, int prot, int fd, long offset,
                     void **out_addr);
 
 int os_munmap(void *addr, size_t length);
