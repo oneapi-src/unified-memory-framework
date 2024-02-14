@@ -17,7 +17,10 @@ umf_memory_tracker_handle_t TRACKER = NULL;
 
 static void umfCreate(void) { TRACKER = umfMemoryTrackerCreate(); }
 
-static void umfDestroy(void) { umfMemoryTrackerDestroy(TRACKER); }
+static void umfDestroy(void) {
+    umfMemoryTrackerDestroy(TRACKER);
+    umf_ba_destroy_global();
+}
 
 #if defined(UMF_SHARED_LIBRARY)
 BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {

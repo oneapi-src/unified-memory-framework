@@ -12,6 +12,15 @@
 #include <unistd.h>
 
 #include "base_alloc.h"
+#include "base_alloc_global.h"
+
+// The highest possible priority (101) is used, because the constructor should be called
+// as the first one and the destructor as the last one in order to avoid use-after-free.
+void __attribute__((constructor(101))) umf_ba_constructor(void) {}
+
+void __attribute__((destructor(101))) umf_ba_destructor(void) {
+    umf_ba_destroy_global();
+}
 
 void *ba_os_alloc(size_t size) {
     return mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS,
