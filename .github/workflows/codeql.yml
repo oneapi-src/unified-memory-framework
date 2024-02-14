@@ -59,6 +59,7 @@ jobs:
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_ENABLE_POOL_TRACKING=ON
         -DUMF_BUILD_LIBUMF_POOL_SCALABLE=${{matrix.pool_scalable}}
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config Release -j

@@ -77,6 +77,18 @@ if(UMF_BUILD_OS_MEMORY_PROVIDER)
     endif()
 endif()
 
+if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
+    # Currently, Level Zero provider is only built for Linux
+    # TODO add fetch content or PkgConfig/find_package for Level Zero
+    set(UMF_SOURCES_LINUX ${UMF_SOURCES_LINUX}
+        provider/provider_level_zero.c)
+
+    if(LINUX)
+        set(UMF_COMPILE_DEFINITIONS ${UMF_COMPILE_DEFINITIONS} 
+            "UMF_BUILD_LEVEL_ZERO_PROVIDER=1")
+    endif()
+endif()
+
 if(LINUX)
     set(UMF_SOURCES ${UMF_SOURCES} ${UMF_SOURCES_LINUX})
 elseif(WINDOWS)

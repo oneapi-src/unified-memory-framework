@@ -54,6 +54,7 @@ jobs:
         -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
         -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
         -DUMF_BUILD_EXAMPLES=ON
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
 
     - name: Build UMF
       run: cmake --build build -j $(nproc)
@@ -133,6 +134,7 @@ jobs:
       if: matrix.compiler.cxx == 'g++-7'
       run: sudo apt-get install -y ${{matrix.compiler.cxx}}
 
+    # TODO enable building Level Zero provider in all workflows
     - name: Configure build
       run: >
         cmake
@@ -149,6 +151,7 @@ jobs:
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
         -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
         -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
 
     - name: Build UMF
       run: cmake --build ${{env.BUILD_DIR}} -j $(nproc)
@@ -221,6 +224,7 @@ jobs:
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
         -DUMF_BUILD_OS_MEMORY_PROVIDER=${{matrix.os_provider}}
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
 
     - name: Build UMF
       run: cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j $Env:NUMBER_OF_PROCESSORS
@@ -250,7 +254,8 @@ jobs:
         -DCMAKE_BUILD_TYPE=Release
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
-        -DUMF_ENABLE_POOL_TRACKING=ON
+        -DUMF_ENABLE_POOL_TRACKING=ON        
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
 
     - name: Build UMF
       run: cmake --build ${{env.BUILD_DIR}} -j $(sysctl -n hw.logicalcpu)

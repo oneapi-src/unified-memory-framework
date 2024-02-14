@@ -11,6 +11,7 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/google/googletest.git
   GIT_TAG        release-1.12.1
 )
+
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
@@ -132,6 +133,22 @@ if(UMF_BUILD_OS_MEMORY_PROVIDER AND LINUX) # OS-specific functions are implement
     add_umf_test(NAME memspace_host_all
                  SRCS memspaces/memspace_host_all.cpp
                  LIBS ${LIBNUMA_LIBRARIES})
+endif()
+
+# TODO add support for Windows
+if(UMF_BUILD_LEVEL_ZERO_PROVIDER AND LINUX)
+    # we have two test binaries here that use the same sources, but differ in 
+    # the way they are linked to the Level Zero (statically or at runtime using 
+    # dlopen)
+    add_umf_test(NAME provider_level_zero
+                 SRCS providers/provider_level_zero.cpp
+                 LIBS umf_utils ze_loader)
+                
+    add_umf_test(NAME provider_level_zero_dlopen
+                 SRCS providers/provider_level_zero.cpp
+                 LIBS umf_utils)
+    target_compile_definitions(umf_test-provider_level_zero_dlopen 
+                 PUBLIC USE_DLOPEN=1)
 endif()
 
 if(UMF_BUILD_SHARED_LIBRARY)

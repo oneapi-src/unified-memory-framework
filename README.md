@@ -5,6 +5,7 @@
 [![SpellCheck](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/spellcheck.yml/badge.svg?branch=main)](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/spellcheck.yml)
 [![GitHubPages](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/docs.yml/badge.svg?branch=main)](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/docs.yml)
 [![Benchmarks](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/benchmarks.yml/badge.svg?branch=main)](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/benchmarks.yml)
+[![GPU](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/gpu.yml/badge.svg?branch=main)](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/gpu.yml)
 [![Nightly](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/nightly.yml/badge.svg?branch=main)](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/nightly.yml)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/oneapi-src/unified-memory-framework/badge)](https://securityscorecards.dev/viewer/?uri=github.com/oneapi-src/unified-memory-framework)
 
@@ -30,6 +31,10 @@ For development and contributions:
 
 For building tests, multithreaded benchmarks and Disjoint Pool:
 - C++ compiler with C++17 support
+
+For Level Zero memory provider and its tests:
+- Level Zero headers and libraries
+- compatible GPU with installed driver
 
 ### Linux
 
@@ -84,6 +89,7 @@ List of options provided by CMake:
 | - | - | - | - |
 | UMF_BUILD_SHARED_LIBRARY | Build UMF as shared library | ON/OFF | OFF |
 | UMF_BUILD_OS_MEMORY_PROVIDER | Build OS memory provider | ON/OFF | ON |
+| UMF_BUILD_LIBUMF_PROVIDER_LEVEL_ZERO | Build Level Zero memory provider | ON/OFF | OFF |
 | UMF_BUILD_LIBUMF_POOL_DISJOINT | Build the libumf_pool_disjoint static library | ON/OFF | OFF |
 | UMF_BUILD_LIBUMF_POOL_JEMALLOC | Build the libumf_pool_jemalloc static library | ON/OFF | OFF |
 | UMF_BUILD_LIBUMF_POOL_SCALABLE | Build the libumf_pool_scalable static library | ON/OFF | OFF |
@@ -122,6 +128,18 @@ A memory provider that provides memory from an operating system.
    - libhwloc-dev
 4) Required packages for tests:
    - libnuma-dev
+
+#### Level Zero memory provider (Linux-only yet)
+
+A memory provider that provides memory from L0 device.
+
+##### Requirements
+
+1) System with Level Zero compatible GPU
+2) Linux OS
+3) The `UMF_BUILD_LIBUMF_PROVIDER_LEVEL_ZERO` option turned `ON`
+4) Required packages:
+   - level-zero-dev (TODO: check this)
 
 ### Memory pool managers
 
