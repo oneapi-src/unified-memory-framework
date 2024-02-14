@@ -86,15 +86,8 @@ static inline void align_ptr_size(void **ptr, size_t *size, size_t alignment) {
     *size = s;
 }
 
-static inline size_t align_size(size_t size, size_t alignment) {
-    // align size to 'alignment' bytes
-    size_t rest = size & (alignment - 1);
-    if (rest) {
-        return (size - rest + alignment);
-    } else {
-        return size;
-    }
-}
+#define ALIGN_UP(value, align) (((value) + (align)-1) & ~((align)-1))
+#define ALIGN_DOWN(value, align) ((value) & ~((align)-1))
 
 #ifdef __cplusplus
 }
