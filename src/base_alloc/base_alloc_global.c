@@ -9,6 +9,7 @@
 #include <stdlib.h>
 
 #include "base_alloc.h"
+#include "base_alloc_global.h"
 #include "utils_concurrency.h"
 
 #define SIZE_BA_POOL_CHUNK 128
@@ -17,17 +18,20 @@
 static umf_ba_pool_t *BA_pool = NULL;
 static UTIL_ONCE_FLAG ba_is_initialized = UTIL_ONCE_FLAG_INIT;
 
-static void umf_ba_destroy_global(void) {
-    assert(BA_pool);
-    umf_ba_destroy(BA_pool);
-    BA_pool = NULL;
-}
-
 static void umf_ba_create_global(void) {
     assert(BA_pool == NULL);
     BA_pool = umf_ba_create(SIZE_BA_POOL_CHUNK);
+    assert(BA_pool);
+#if defined(_WIN32) && !defined(UMF_SHARED_LIBRARY)
+    atexit(umf_ba_destroy_global);
+#endif
+}
+
+void umf_ba_destroy_global(void) {
     if (BA_pool) {
-        atexit(umf_ba_destroy_global);
+        umf_ba_pool_t *pool = BA_pool;
+        BA_pool = NULL;
+        umf_ba_destroy(pool);
     }
 }
 
