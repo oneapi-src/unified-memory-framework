@@ -42,8 +42,9 @@ typedef enum umf_numa_mode_t {
     ///  On linux this corresponds to MPOL_DEFAULT. If this mode is specified,
     ///  nodemask must be NULL and maxnode must be 0.
     UMF_NUMA_MODE_BIND, ///< Restricts memory allocation to nodes specified in nodemask. Allocations
-                        ///  might come from any of the allowed nodes.
+    ///  might come from any of the allowed nodes. Nodemask must specify at least one node.
     UMF_NUMA_MODE_INTERLEAVE, ///< Interleaves memory allocations across the set of nodes specified in nodemask.
+                              /// Nodemask must specify at least one node.
     UMF_NUMA_MODE_PREFERRED, ///< Specifies preferred node for allocation. If allocation cannot be fulfilled,
     ///  memory will be allocated from other nodes.
     UMF_NUMA_MODE_LOCAL, ///< The memory is allocated on the node of the CPU that triggered the allocation.

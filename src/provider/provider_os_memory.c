@@ -146,8 +146,16 @@ static hwloc_membind_policy_t translate_numa_mode(umf_numa_mode_t mode,
         }
         return HWLOC_MEMBIND_DEFAULT;
     case UMF_NUMA_MODE_BIND:
+        if (nodemaskEmpty) {
+            // nodeset must not be empty
+            return -1;
+        }
         return HWLOC_MEMBIND_BIND;
     case UMF_NUMA_MODE_INTERLEAVE:
+        if (nodemaskEmpty) {
+            // nodeset must not be empty
+            return -1;
+        }
         return HWLOC_MEMBIND_INTERLEAVE;
     case UMF_NUMA_MODE_PREFERRED:
         return HWLOC_MEMBIND_BIND;
