@@ -3,10 +3,6 @@ name: BasicBuilds
 
 on: workflow_call
 
-env:
-  BUILD_DIR : "${{github.workspace}}/build/"
-  INSTL_DIR : "${{github.workspace}}/build/install-dir"
-
 permissions:
   contents: read
 
@@ -21,6 +17,10 @@ jobs:
         pool_tracking: ['ON', 'OFF']
         shared_library: ['OFF']
         os_provider: ['ON']
+    env:
+      BUILD_DIR : "${{github.workspace}}/build/"
+      INSTL_DIR : "${{github.workspace}}/../install-dir"
+
     runs-on: ubuntu-22.04
     container:
       image: intel/oneapi:latest
@@ -63,18 +63,20 @@ jobs:
       working-directory: ${{github.workspace}}/build
       run: ctest --output-on-failure --test-dir test
 
-    - name: Test make install
-      # Run only when the example is built
-      if: matrix.os_provider == 'ON' && matrix.pool_tracking == 'ON'
-      working-directory: ${{env.BUILD_DIR}}
-      run: ${{github.workspace}}/test/test_make_install.sh \
-            ${{github.workspace}} ${{env.BUILD_DIR}} ${{env.INSTL_DIR}} ${{matrix.build_type}} ${{matrix.shared_library}}
-
-    - name: Test make uninstall
-      # Run only when the example is built
-      if: matrix.os_provider == 'ON' && matrix.pool_tracking == 'ON'
-      working-directory: ${{env.BUILD_DIR}}
-      run: ${{github.workspace}}/test/test_make_uninstall.sh ${{github.workspace}} ${{env.BUILD_DIR}} ${{env.INSTL_DIR}}
+    - name: Test UMF installation and uninstallation
+      # The '--shared-library' parameter is added to the installation test when the UMF is built as a shared library
+      # OS provider, pool tracking and scalable pool (always ON in this job) has to be enabled for the basic example to be built
+      # The '--examples' parameter is added to the installation test when examples are built
+      run: >
+        python3 ${{github.workspace}}/test/test_installation.py
+        --build-dir ${{env.BUILD_DIR}}
+        --install-dir ${{env.INSTL_DIR}}
+        --build-type ${{matrix.build_type}}
+        --disjoint-pool
+        --jemalloc-pool
+        --scalable-pool
+        ${{ matrix.shared_library == 'ON' && '--shared-library' || ''}}
+        ${{ (matrix.os_provider == 'ON' && matrix.pool_tracking == 'ON') && '--examples' || '' }}
 
   ubuntu-build:
     name: Ubuntu
@@ -140,6 +142,9 @@ jobs:
             os_provider: 'ON'
             pool_tracking: 'ON'
             level_zero_provider: 'OFF'
+    env:
+      BUILD_DIR : "${{github.workspace}}/build/"
+      INSTL_DIR : "${{github.workspace}}/../install-dir"
     runs-on: ${{matrix.os}}
 
     steps:
@@ -180,25 +185,27 @@ jobs:
       working-directory: ${{env.BUILD_DIR}}
       run: ctest --output-on-failure --test-dir test
 
-    - name: Test make install
-      # Run only when the example is built
-      # TODO: Modify installation test to accept output varying with build options
-      if: matrix.os_provider == 'ON' && matrix.pool_tracking == 'ON'
-      working-directory: ${{env.BUILD_DIR}}
-      run: ${{github.workspace}}/test/test_make_install.sh \
-            ${{github.workspace}} ${{env.BUILD_DIR}} ${{env.INSTL_DIR}} ${{matrix.build_type}} ${{matrix.shared_library}}
-
-    - name: Test make uninstall
-      # Run only when the example is built
-      # TODO: Modify installation test to accept output varying with build options
-      if: matrix.os_provider == 'ON' && matrix.pool_tracking == 'ON'
-      working-directory: ${{env.BUILD_DIR}}
-      run: ${{github.workspace}}/test/test_make_uninstall.sh ${{github.workspace}} ${{env.BUILD_DIR}} ${{env.INSTL_DIR}}
+    - name: Test UMF installation and uninstallation
+      # The '--shared-library' parameter is added to the installation test when the UMF is built as a shared library
+      # OS provider, pool tracking and scalable pool (always ON in this job) has to be enabled for the basic example to be built
+      # The '--examples' parameter is added to the installation test when examples are built
+      run: >
+        python3 ${{github.workspace}}/test/test_installation.py
+        --build-dir ${{env.BUILD_DIR}}
+        --install-dir ${{env.INSTL_DIR}}
+        --build-type ${{matrix.build_type}}
+        --disjoint-pool
+        --jemalloc-pool
+        --scalable-pool
+        ${{ matrix.shared_library == 'ON' && '--shared-library' || '' }}
+        ${{ (matrix.os_provider == 'ON' && matrix.pool_tracking == 'ON') && '--examples' || '' }}
 
   windows-build:
     name: Windows
     env:
       VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
+      BUILD_DIR : "${{github.workspace}}/build/${{matrix.build_type}}"
+      INSTL_DIR : "${{github.workspace}}/../install-dir"
     strategy:
       matrix:
         os: ['windows-2019', 'windows-2022']
@@ -227,7 +234,6 @@ jobs:
             pool_tracking: 'ON'
             shared_library: 'ON'
             os_provider: 'OFF'
-
     runs-on: ${{matrix.os}}
 
     steps:
@@ -270,11 +276,30 @@ jobs:
       working-directory: ${{env.BUILD_DIR}}
       run: ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
 
+    - name: Test UMF installation and uninstallation
+      # The '--shared-library' parameter is added to the installation test when the UMF is built as a shared library
+      # OS provider, pool tracking and scalable pool (always ON in this job) has to be enabled for the basic example to be built
+      # The '--examples' parameter is added to the installation test when examples are built
+      run: >
+        python3 ${{github.workspace}}/test/test_installation.py
+        --build-dir ${{env.BUILD_DIR}}
+        --install-dir ${{env.INSTL_DIR}}
+        --build-type ${{matrix.build_type}}
+        --disjoint-pool
+        --jemalloc-pool
+        --scalable-pool
+        ${{ matrix.shared_library == 'ON' && '--shared-library' || ''}}
+        ${{ (matrix.os_provider == 'ON' && matrix.pool_tracking == 'ON') && '--examples' || '' }}
+
   macos-build:
     name: MacOS
     strategy:
       matrix:
         os: ['macos-12', 'macos-13']
+    env:
+      BUILD_DIR : "${{github.workspace}}/build/"
+      INSTL_DIR : "${{github.workspace}}/../install-dir"
+      BUILD_TYPE : "Release"
     runs-on: ${{matrix.os}}
 
     steps:
@@ -288,7 +313,7 @@ jobs:
       run: >
         cmake
         -B ${{env.BUILD_DIR}}
-        -DCMAKE_BUILD_TYPE=Release
+        -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_ENABLE_POOL_TRACKING=ON        
@@ -299,3 +324,10 @@ jobs:
 
     - name: Build UMF
       run: cmake --build ${{env.BUILD_DIR}} -j $(sysctl -n hw.logicalcpu)
+
+    - name: Test UMF installation and uninstallation
+      run: >
+        python3 ${{github.workspace}}/test/test_installation.py
+        --build-dir ${{env.BUILD_DIR}}
+        --install-dir ${{env.INSTL_DIR}}
+        --build-type ${{env.BUILD_TYPE}}
