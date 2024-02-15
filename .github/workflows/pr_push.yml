@@ -15,19 +15,36 @@ jobs:
     name: Fast build
     strategy:
       matrix:
-        os: [ubuntu-latest]
-        nproc: ['$(nproc)']
-        pool_scalable: ['ON']
-        disjoint: ['ON', 'OFF']
-        jemalloc: ['ON']
-        # Windows doesn't recognize 'CMAKE_BUILD_TYPE', it uses '--config' param in build command
-        extra_build_option: ['-DCMAKE_BUILD_TYPE=Release']
         include:
           - os: windows-latest
             nproc: $Env:NUMBER_OF_PROCESSORS
             pool_scalable: 'OFF'
             disjoint: 'OFF'
             jemalloc: 'OFF'
+          # pure C build (Windows)
+          - os: windows-latest
+            nproc: $Env:NUMBER_OF_PROCESSORS
+            pool_scalable: 'OFF'
+            disjoint: 'OFF'
+            jemalloc: 'OFF'
+            # Tests' building is off for a pure C build
+            extra_build_options: '-DUMF_BUILD_TESTS=OFF'
+          - os: ubuntu-latest
+            nproc: '$(nproc)'
+            pool_scalable: 'ON'
+            disjoint: 'ON'
+            jemalloc: 'ON'
+            # Windows doesn't recognize 'CMAKE_BUILD_TYPE', it uses '--config' param in build command
+            extra_build_options: '-DCMAKE_BUILD_TYPE=Release -DUMF_BUILD_BENCHMARKS=ON -DUMF_BUILD_BENCHMARKS_MT=ON'
+          # pure C build (Linux)
+          - os: ubuntu-latest
+            nproc: '$(nproc)'
+            pool_scalable: 'ON'
+            disjoint: 'OFF'
+            jemalloc: 'ON'
+            # Windows doesn't recognize 'CMAKE_BUILD_TYPE', it uses '--config' param in build command
+            # Tests' building is off for a pure C build
+            extra_build_options: '-DCMAKE_BUILD_TYPE=Release -DUMF_BUILD_BENCHMARKS=ON -DUMF_BUILD_TESTS=OFF'
     runs-on: ${{matrix.os}}
 
     steps:
@@ -44,15 +61,15 @@ jobs:
       run: >
         cmake
         -B ${{github.workspace}}/build
-        ${{matrix.extra_build_option}}
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_ENABLE_POOL_TRACKING=ON
         -DUMF_BUILD_LIBUMF_POOL_SCALABLE=${{matrix.pool_scalable}}
         -DUMF_BUILD_LIBUMF_POOL_DISJOINT=${{matrix.disjoint}}
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=${{matrix.jemalloc}}
-        -DUMF_BUILD_TESTS=OFF
+        -DUMF_BUILD_TESTS=ON
         -DUMF_BUILD_EXAMPLES=ON
+        ${{matrix.extra_build_options}}
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config Release -j ${{matrix.nproc}}
