@@ -1,98 +1,97 @@
+# Checks required for a PR to merge. This workflow mostly call other workflows.
 name: PR/push
 
 on: [push, pull_request]
 
 concurrency:
-    group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
-    cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
-    FastBuild:
-        name: Fast build
-        strategy:
-            matrix:
-                os: [ubuntu-latest]
-                nproc: ['$(nproc)']
-                pool_scalable: ['ON']
-                disjoint: ['ON', 'OFF']
-                jemalloc: ['ON']
-                include:
-                    - os: windows-latest
-                      nproc: $Env:NUMBER_OF_PROCESSORS
-                      pool_scalable: 'OFF'
-                      disjoint: 'OFF'
-                      jemalloc: 'OFF'
-        runs-on: ${{matrix.os}}
+  FastBuild:
+    name: Fast build
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        nproc: ['$(nproc)']
+        pool_scalable: ['ON']
+        disjoint: ['ON', 'OFF']
+        jemalloc: ['ON']
+        include:
+          - os: windows-latest
+            nproc: $Env:NUMBER_OF_PROCESSORS
+            pool_scalable: 'OFF'
+            disjoint: 'OFF'
+            jemalloc: 'OFF'
+    runs-on: ${{matrix.os}}
 
-        steps:
-        - name: Checkout repository
-          uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
-        - name: Install apt packages
-          if: matrix.os == 'ubuntu-latest'
-          run: |
-            sudo apt-get update
-            sudo apt-get install -y cmake libjemalloc-dev libhwloc-dev libnuma-dev libtbb-dev
+    - name: Install apt packages
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake libjemalloc-dev libhwloc-dev libnuma-dev libtbb-dev
 
-        - name: Configure CMake
-          run: >
-            cmake
-            -B ${{github.workspace}}/build
-            -DCMAKE_BUILD_TYPE=Release
-            -DUMF_FORMAT_CODE_STYLE=OFF
-            -DUMF_DEVELOPER_MODE=ON
-            -DUMF_ENABLE_POOL_TRACKING=ON
-            -DUMF_BUILD_LIBUMF_POOL_SCALABLE=${{matrix.pool_scalable}}
-            -DUMF_BUILD_LIBUMF_POOL_DISJOINT=${{matrix.disjoint}}
-            -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=${{matrix.jemalloc}}
-            -DUMF_BUILD_TESTS=OFF
-            -DUMF_BUILD_EXAMPLES=ON
+    - name: Configure CMake
+      run: >
+        cmake
+        -B ${{github.workspace}}/build
+        -DCMAKE_BUILD_TYPE=Release
+        -DUMF_FORMAT_CODE_STYLE=OFF
+        -DUMF_DEVELOPER_MODE=ON
+        -DUMF_ENABLE_POOL_TRACKING=ON
+        -DUMF_BUILD_LIBUMF_POOL_SCALABLE=${{matrix.pool_scalable}}
+        -DUMF_BUILD_LIBUMF_POOL_DISJOINT=${{matrix.disjoint}}
+        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=${{matrix.jemalloc}}
+        -DUMF_BUILD_TESTS=OFF
+        -DUMF_BUILD_EXAMPLES=ON
 
-        - name: Build
-          run: >
-            cmake --build ${{github.workspace}}/build --config Release -j ${{matrix.nproc}}
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build --config Release -j ${{matrix.nproc}}
 
-        - name: Run examples
-          working-directory: ${{github.workspace}}/build
-          run: |
-            ctest --output-on-failure --test-dir examples
+    - name: Run examples
+      working-directory: ${{github.workspace}}/build
+      run: ctest --output-on-failure --test-dir examples
 
-    CodeStyle:
-      name: Coding style
-      runs-on: ubuntu-latest
+  CodeStyle:
+    name: Coding style
+    runs-on: ubuntu-latest
 
-      steps:
-      - name: Checkout repository
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
-      - name: Install apt packages
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake clang-format-15
+    - name: Install apt packages
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake clang-format-15
 
-      - name: Configure CMake
-        run: >
-          cmake
-          -B ${{github.workspace}}/build
-          -DUMF_FORMAT_CODE_STYLE=ON
-          -DUMF_BUILD_OS_MEMORY_PROVIDER=OFF
-          -DUMF_BUILD_TESTS=OFF
+    - name: Configure CMake
+      run: >
+        cmake
+        -B ${{github.workspace}}/build
+        -DUMF_FORMAT_CODE_STYLE=ON
+        -DUMF_BUILD_OS_MEMORY_PROVIDER=OFF
+        -DUMF_BUILD_TESTS=OFF
 
-      - name: Build
-        run: >
-          cmake --build build --target clang-format-check  
+    - name: Check clang-format
+      run: cmake --build build --target clang-format-check
 
-    Spellcheck:
-        uses: ./.github/workflows/spellcheck.yml
-    Build:
-        needs: [Spellcheck, FastBuild, CodeStyle]
-        uses: ./.github/workflows/basic.yml
-    Benchmark:
-        needs: [Build]
-        uses: ./.github/workflows/benchmarks.yml
-    Proxy_lib:
-        needs: [Build]
-        uses: ./.github/workflows/proxy_lib.yml
+  Spellcheck:
+    uses: ./.github/workflows/spellcheck.yml
+  Build:
+    name: Basic builds
+    needs: [Spellcheck, FastBuild, CodeStyle]
+    uses: ./.github/workflows/basic.yml
+  Benchmarks:
+    needs: [Build]
+    uses: ./.github/workflows/benchmarks.yml
+  ProxyLib:
+    needs: [Build]
+    uses: ./.github/workflows/proxy_lib.yml

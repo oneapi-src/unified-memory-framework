@@ -1,3 +1,4 @@
+# Executes benchmarks implemented in this repository
 name: Benchmarks
 
 on: workflow_call
@@ -6,9 +7,8 @@ permissions:
   contents: read
 
 jobs:
-  ubuntu-build:
-    name: Build - Ubuntu
-
+  benchmarks-ubuntu:
+    name: Ubuntu
     strategy:
       matrix:
         os: ['ubuntu-22.04']
@@ -49,9 +49,9 @@ jobs:
 
       - name: Run benchmarks
         working-directory: ${{github.workspace}}/build
-        # The benchmark of TBB pool manager run on CI very often fails
-        # with the "confidence interval exceeds maximum permitted 2.5%" error,
-        # so do not treat that as an error, but succeed in this case.
+        # The benchmark of TBB pool manager fails very often with the
+        # "confidence interval exceeds maximum permitted 2.5%" error.
+        # Do not treat that as a failure in CI.
         run: |
           export LOG=/tmp/ubench.log
           if ! ./benchmark/ubench 2>/dev/null > $LOG; then \

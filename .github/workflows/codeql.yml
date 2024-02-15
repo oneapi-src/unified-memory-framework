@@ -1,3 +1,4 @@
+# CodeQL static analysis
 name: CodeQL
 
 # Due to lower score on Scorecard we're running this separately from
@@ -15,18 +16,18 @@ jobs:
     permissions:
       security-events: write
     strategy:
-        fail-fast: false
-        matrix:
-            os: [ubuntu-latest, windows-latest]
-            include:
-                - os: ubuntu-latest
-                  nproc: $(nproc)
-                  pool_scalable: 'ON'
-                - os: windows-latest
-                  nproc: $Env:NUMBER_OF_PROCESSORS
-                  pool_scalable: 'OFF'
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            nproc: $(nproc)
+            pool_scalable: 'ON'
+          - os: windows-latest
+            nproc: $Env:NUMBER_OF_PROCESSORS
+            pool_scalable: 'OFF'
     runs-on: ${{matrix.os}}
-            
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -50,14 +51,13 @@ jobs:
         cmake
         -B ${{github.workspace}}/build
         -DCMAKE_BUILD_TYPE=Release
-        -DUMF_FORMAT_CODE_STYLE=ON
+        -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_ENABLE_POOL_TRACKING=ON
         -DUMF_BUILD_LIBUMF_POOL_SCALABLE=${{matrix.pool_scalable}}
 
     - name: Build
-      run: >
-        cmake --build ${{github.workspace}}/build --config Release -j ${{matrix.nproc}}
+      run: cmake --build ${{github.workspace}}/build --config Release -j ${{matrix.nproc}}
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@b7bf0a3ed3ecfa44160715d7c442788f65f0f923 # v3.23.2
