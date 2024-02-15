@@ -175,3 +175,33 @@ void umf_ba_linear_destroy(umf_ba_linear_pool_t *pool) {
     util_mutex_destroy_not_free(&pool->metadata.lock);
     ba_os_free(pool, pool->metadata.pool_size);
 }
+
+// umf_ba_linear_pool_contains_pointer() returns:
+// - 0 if ptr does not belong to the pool or
+// - size (> 0) of the memory region from ptr
+//   to the end of the pool if ptr belongs to the pool
+size_t umf_ba_linear_pool_contains_pointer(umf_ba_linear_pool_t *pool,
+                                           void *ptr) {
+    util_mutex_lock(&pool->metadata.lock);
+    char *cptr = (char *)ptr;
+    if (cptr >= pool->data &&
+        cptr < ((char *)(pool)) + pool->metadata.pool_size) {
+        size_t size = ((char *)(pool)) + pool->metadata.pool_size - cptr;
+        util_mutex_unlock(&pool->metadata.lock);
+        return size;
+    }
+
+    umf_ba_next_linear_pool_t *next_pool = pool->next_pool;
+    while (next_pool) {
+        if (cptr >= next_pool->data &&
+            cptr < ((char *)(next_pool)) + next_pool->pool_size) {
+            size_t size = ((char *)(next_pool)) + next_pool->pool_size - cptr;
+            util_mutex_unlock(&pool->metadata.lock);
+            return size;
+        }
+        next_pool = next_pool->next_pool;
+    }
+
+    util_mutex_unlock(&pool->metadata.lock);
+    return 0;
+}
