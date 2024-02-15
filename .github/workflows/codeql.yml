@@ -27,6 +27,8 @@ jobs:
           - os: ubuntu-latest
             nproc: $(nproc)
             pool_scalable: 'ON'
+            # Windows doesn't recognize 'CMAKE_BUILD_TYPE', it uses '--config' param in build command
+            extra_build_option: ['-DCMAKE_BUILD_TYPE=Release']
           - os: windows-latest
             nproc: $Env:NUMBER_OF_PROCESSORS
             pool_scalable: 'OFF'
@@ -54,7 +56,7 @@ jobs:
       run: >
         cmake
         -B ${{github.workspace}}/build
-        -DCMAKE_BUILD_TYPE=Release
+        ${{matrix.extra_build_option}}
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_ENABLE_POOL_TRACKING=ON
