@@ -127,21 +127,55 @@ static void test_alloc_failure(umf_memory_provider_handle_t provider,
 
 // negative tests for umfMemoryProviderCreate()
 
-TEST_F(test, create_WRONG_NUMA_MODE) {
+static umf_result_t create_os_provider_with_mode(umf_numa_mode_t mode,
+                                                 unsigned long *nodemask,
+                                                 unsigned long maxnode) {
     umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = nullptr;
     umf_os_memory_provider_params_t os_memory_provider_params =
         umfOsMemoryProviderParamsDefault();
 
-    // NUMA binding mode not supported for UMF_VISIBILITY_SHARED
-    os_memory_provider_params.visibility = UMF_VISIBILITY_SHARED;
-    os_memory_provider_params.numa_mode = UMF_NUMA_MODE_BIND;
+    os_memory_provider_params.numa_mode = mode;
+    os_memory_provider_params.nodemask = nodemask;
+    os_memory_provider_params.maxnode = maxnode;
 
     umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(),
                                          &os_memory_provider_params,
                                          &os_memory_provider);
-    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
-    ASSERT_EQ(os_memory_provider, nullptr);
+    if (umf_result == UMF_RESULT_SUCCESS) {
+        EXPECT_NE(os_memory_provider, nullptr);
+        umfMemoryProviderDestroy(os_memory_provider);
+    } else {
+        EXPECT_EQ(os_memory_provider, nullptr);
+    }
+
+    return umf_result;
+}
+
+static unsigned long valid_nodemask = 0x1;
+static unsigned long valid_maxnode = 2;
+
+TEST_F(test, create_WRONG_NUMA_MODE_DEFAULT) {
+    auto ret = create_os_provider_with_mode(UMF_NUMA_MODE_DEFAULT,
+                                            &valid_nodemask, valid_maxnode);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, create_WRONG_NUMA_MODE_LOCAL) {
+    auto ret = create_os_provider_with_mode(UMF_NUMA_MODE_LOCAL,
+                                            &valid_nodemask, valid_maxnode);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, create_WRONG_NUMA_MODE_BIND) {
+    auto ret = create_os_provider_with_mode(UMF_NUMA_MODE_BIND, nullptr, 0);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, create_WRONG_NUMA_MODE_INTERLEAVE) {
+    auto ret =
+        create_os_provider_with_mode(UMF_NUMA_MODE_INTERLEAVE, nullptr, 0);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 }
 
 // positive tests using test_alloc_free_success

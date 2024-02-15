@@ -15,6 +15,11 @@
 extern "C" {
 #endif
 
+typedef enum umf_purge_advise_t {
+    UMF_PURGE_LAZY,
+    UMF_PURGE_FORCE,
+} umf_purge_advise_t;
+
 int os_translate_flags(unsigned in_flags, unsigned max,
                        int (*translate_flag)(unsigned));
 
