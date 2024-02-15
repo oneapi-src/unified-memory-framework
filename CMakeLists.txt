@@ -14,6 +14,7 @@ option(UMF_BUILD_LIBUMF_POOL_SCALABLE "Build the libumf_pool_scalable static lib
 option(UMF_BUILD_TESTS "Build UMF tests" ON)
 option(UMF_BUILD_BENCHMARKS "Build UMF benchmarks" OFF)
 option(UMF_BUILD_BENCHMARKS_MT "Build UMF multithreaded benchmarks" OFF)
+option(UMF_BUILD_EXAMPLES "Build UMF examples" ON)
 option(UMF_ENABLE_POOL_TRACKING "Build UMF with pool tracking" ON)
 option(UMF_DEVELOPER_MODE "Enable developer checks, treats warnings as errors" OFF)
 option(UMF_FORMAT_CODE_STYLE "Format UMF code with clang-format" OFF)
@@ -121,6 +122,10 @@ if(UMF_BUILD_BENCHMARKS)
     else()
         message(FATAL_ERROR "benchmarks are supported on Linux only")
     endif()
+endif()
+
+if(UMF_BUILD_EXAMPLES)
+    add_subdirectory(examples)
 endif()
 
 # Check if clang-format (in correct version) is available for code formatting.

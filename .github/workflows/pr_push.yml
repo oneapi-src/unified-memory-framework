@@ -49,10 +49,16 @@ jobs:
             -DUMF_BUILD_LIBUMF_POOL_DISJOINT=${{matrix.disjoint}}
             -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=${{matrix.jemalloc}}
             -DUMF_BUILD_TESTS=OFF
+            -DUMF_BUILD_EXAMPLES=ON
 
         - name: Build
           run: >
             cmake --build ${{github.workspace}}/build --config Release -j ${{matrix.nproc}}
+
+        - name: Run examples
+          working-directory: ${{github.workspace}}/build
+          run: |
+            ctest --output-on-failure --test-dir examples
 
     CodeStyle:
       name: Coding style

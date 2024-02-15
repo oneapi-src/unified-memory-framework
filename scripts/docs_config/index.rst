@@ -8,5 +8,6 @@ Intel Unified Memory Framework documentation
    :maxdepth: 3
    
    introduction.rst
+   example-usage.rst
    api.rst
    glossary.rst
