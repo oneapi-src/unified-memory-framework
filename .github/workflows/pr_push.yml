@@ -89,6 +89,9 @@ jobs:
     name: Basic builds
     needs: [Spellcheck, FastBuild, CodeStyle]
     uses: ./.github/workflows/basic.yml
+  Sanitizers:
+    needs: [Spellcheck, FastBuild, CodeStyle]
+    uses: ./.github/workflows/sanitizers.yml
   Benchmarks:
     needs: [Build]
     uses: ./.github/workflows/benchmarks.yml
