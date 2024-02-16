@@ -99,7 +99,6 @@ UBENCH_EX(simple, glibc_malloc) {
 
 static umf_os_memory_provider_params_t UMF_OS_MEMORY_PROVIDER_PARAMS = {
     /* .protection = */ UMF_PROTECTION_READ | UMF_PROTECTION_WRITE,
-    /* .visibility = */ UMF_VISIBILITY_PRIVATE,
 
     // NUMA config
     /* .nodemask = */ NULL,

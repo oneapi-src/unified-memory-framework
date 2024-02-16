@@ -34,17 +34,6 @@ int os_translate_mem_protection_flags(unsigned protection_flags) {
                               os_translate_mem_protection_one_flag);
 }
 
-int os_translate_mem_visibility(umf_mem_visibility_t visibility) {
-    switch (visibility) {
-    case UMF_VISIBILITY_SHARED:
-        return MAP_SHARED;
-    case UMF_VISIBILITY_PRIVATE:
-        return MAP_PRIVATE;
-    }
-    assert(0);
-    return -1;
-}
-
 static int os_translate_purge_advise(umf_purge_advise_t advise) {
     switch (advise) {
     case UMF_PURGE_LAZY:
@@ -63,7 +52,7 @@ static inline void assert_is_page_aligned(uintptr_t ptr, size_t page_size) {
 }
 
 int os_mmap_aligned(void *hint_addr, size_t length, size_t alignment,
-                    size_t page_size, int prot, int flags, int fd, long offset,
+                    size_t page_size, int prot, int fd, long offset,
                     void **out_addr) {
     assert(out_addr);
 
@@ -78,8 +67,8 @@ int os_mmap_aligned(void *hint_addr, size_t length, size_t alignment,
     }
 
     // MAP_ANONYMOUS - the mapping is not backed by any file
-    void *ptr = mmap(hint_addr, extended_length, prot, MAP_ANONYMOUS | flags,
-                     fd, offset);
+    void *ptr = mmap(hint_addr, extended_length, prot,
+                     MAP_ANONYMOUS | MAP_PRIVATE, fd, offset);
     if (ptr == MAP_FAILED) {
         return -1;
     }

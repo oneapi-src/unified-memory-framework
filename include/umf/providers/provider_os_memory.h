@@ -26,13 +26,6 @@ typedef enum umf_mem_protection_flags_t {
     UMF_PROTECTION_MAX // must be the last one
 } umf_mem_protection_flags_t;
 
-/// @brief Visibility of the memory allocations
-typedef enum umf_mem_visibility_t {
-    UMF_VISIBILITY_SHARED, ///< Updates to the memory allocated using OS provider are visible to other processes.
-    /// TODO: need to expose functionality to share open the mapping in other process and explicit sync?
-    UMF_VISIBILITY_PRIVATE, ///<  Updates to the memory allocated using OS provider are not visible to other processes.
-} umf_mem_visibility_t;
-
 /// @brief Memory binding mode
 ///
 /// Specifies how memory is bound to NUMA nodes on systems that support NUMA.
@@ -56,9 +49,6 @@ typedef enum umf_numa_mode_t {
 typedef struct umf_os_memory_provider_params_t {
     /// combination of 'umf_mem_protection_flags_t' flags
     unsigned protection;
-
-    /// shared or private visibility of memory mapped by a provider
-    umf_mem_visibility_t visibility;
 
     // NUMA config
     /// points to a bit mask of nodes containing up to maxnode bits, depending on
@@ -92,7 +82,6 @@ static inline umf_os_memory_provider_params_t
 umfOsMemoryProviderParamsDefault(void) {
     umf_os_memory_provider_params_t params = {
         UMF_PROTECTION_READ | UMF_PROTECTION_WRITE, /* protection */
-        UMF_VISIBILITY_PRIVATE,                     /* visibility */
         NULL,                                       /* nodemask */
         0,                                          /* maxnode */
         UMF_NUMA_MODE_DEFAULT,                      /* numa_mode */
