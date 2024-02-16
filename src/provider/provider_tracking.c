@@ -81,6 +81,16 @@ static umf_result_t umfMemoryTrackerRemove(umf_memory_tracker_handle_t hTracker,
 umf_memory_pool_handle_t umfMemoryTrackerGetPool(const void *ptr) {
     assert(ptr);
 
+    if (TRACKER == NULL) {
+        fprintf(stderr, "tracker is not created\n");
+        return NULL;
+    }
+
+    if (TRACKER->map == NULL) {
+        fprintf(stderr, "tracker's map is not created\n");
+        return NULL;
+    }
+
     uintptr_t rkey;
     tracker_value_t *rvalue;
     int found = critnib_find(TRACKER->map, (uintptr_t)ptr, FIND_LE,

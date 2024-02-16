@@ -19,7 +19,10 @@ void __attribute__((constructor)) umfCreate(void) {
 }
 
 void __attribute__((destructor)) umfDestroy(void) {
-    umfMemoryTrackerDestroy(TRACKER);
+    umf_memory_tracker_handle_t t = TRACKER;
+    // make sure TRACKER is not used after being destroyed
+    TRACKER = NULL;
+    umfMemoryTrackerDestroy(t);
 }
 
 void libumfInit(void) {
