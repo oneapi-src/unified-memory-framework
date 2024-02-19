@@ -25,9 +25,6 @@
 typedef struct jemalloc_memory_pool_t {
     umf_memory_provider_handle_t provider;
     unsigned int arena_index; // index of jemalloc arena
-
-    // saved pointer to the global base allocator
-    umf_ba_pool_t *base_allocator;
 } jemalloc_memory_pool_t;
 
 static __TLS umf_result_t TLS_last_allocation_error;
@@ -362,18 +359,12 @@ static umf_result_t je_initialize(umf_memory_provider_handle_t provider,
     size_t unsigned_size = sizeof(unsigned);
     int err;
 
-    umf_ba_pool_t *base_allocator =
-        umf_ba_get_pool(sizeof(jemalloc_memory_pool_t));
-    if (!base_allocator) {
-        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-    }
-
-    jemalloc_memory_pool_t *pool = umf_ba_alloc(base_allocator);
+    jemalloc_memory_pool_t *pool =
+        umf_ba_global_alloc(sizeof(jemalloc_memory_pool_t));
     if (!pool) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    pool->base_allocator = base_allocator;
     pool->provider = provider;
 
     unsigned arena_index;
@@ -404,7 +395,7 @@ static umf_result_t je_initialize(umf_memory_provider_handle_t provider,
     return UMF_RESULT_SUCCESS;
 
 err_free_pool:
-    umf_ba_free(base_allocator, pool);
+    umf_ba_global_free(pool, sizeof(jemalloc_memory_pool_t));
     return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
 }
 
@@ -415,7 +406,7 @@ static void je_finalize(void *pool) {
     snprintf(cmd, sizeof(cmd), "arena.%u.destroy", je_pool->arena_index);
     mallctl(cmd, NULL, 0, NULL, 0);
     pool_by_arena_index[je_pool->arena_index] = NULL;
-    umf_ba_free(je_pool->base_allocator, je_pool);
+    umf_ba_global_free(je_pool, sizeof(jemalloc_memory_pool_t));
 }
 
 static size_t je_malloc_usable_size(void *pool, void *ptr) {

@@ -24,9 +24,6 @@ struct umf_memspace_t {
     size_t size;
     umf_memory_target_handle_t *nodes;
 
-    // saved pointer to the global base allocator
-    umf_ba_pool_t *base_allocator;
-
     // own local linear base allocator
     umf_ba_linear_pool_t *linear_allocator;
 };

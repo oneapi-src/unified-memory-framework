@@ -22,9 +22,6 @@
 
 struct numa_memory_target_t {
     size_t id;
-
-    // saved pointer to the global base allocator
-    umf_ba_pool_t *base_allocator;
 };
 
 static umf_result_t numa_initialize(void *params, void **memTarget) {
@@ -35,27 +32,19 @@ static umf_result_t numa_initialize(void *params, void **memTarget) {
     struct umf_numa_memory_target_config_t *config =
         (struct umf_numa_memory_target_config_t *)params;
 
-    umf_ba_pool_t *base_allocator =
-        umf_ba_get_pool(sizeof(struct numa_memory_target_t));
-    if (!base_allocator) {
-        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-    }
-
-    struct numa_memory_target_t *numaTarget = umf_ba_alloc(base_allocator);
+    struct numa_memory_target_t *numaTarget =
+        umf_ba_global_alloc(sizeof(struct numa_memory_target_t));
     if (!numaTarget) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    numaTarget->base_allocator = base_allocator;
     numaTarget->id = config->id;
     *memTarget = numaTarget;
     return UMF_RESULT_SUCCESS;
 }
 
 static void numa_finalize(void *memTarget) {
-    struct numa_memory_target_t *numaTarget =
-        (struct numa_memory_target_t *)memTarget;
-    umf_ba_free(numaTarget->base_allocator, memTarget);
+    umf_ba_global_free(memTarget, sizeof(struct numa_memory_target_t));
 }
 
 // sets maxnode and allocates and initializes mask based on provided memory targets

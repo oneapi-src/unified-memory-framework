@@ -14,7 +14,8 @@
 extern "C" {
 #endif
 
-umf_ba_pool_t *umf_ba_get_pool(size_t size);
+void *umf_ba_global_alloc(size_t size);
+void umf_ba_global_free(void *ptr, size_t size);
 void umf_ba_destroy_global(void);
 
 #ifdef __cplusplus
