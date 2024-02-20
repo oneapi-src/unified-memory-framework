@@ -17,7 +17,6 @@
 #include "../memory_pool_internal.h"
 #include "base_alloc.h"
 #include "base_alloc_global.h"
-#include "base_alloc_linear.h"
 #include "memory_target_numa.h"
 
 struct numa_memory_target_t {
@@ -51,8 +50,7 @@ static void numa_finalize(void *memTarget) {
 static umf_result_t
 numa_targets_create_nodemask(struct numa_memory_target_t **targets,
                              size_t numTargets, unsigned long **mask,
-                             unsigned *maxnode,
-                             umf_ba_linear_pool_t *linear_allocator) {
+                             unsigned *maxnode, size_t *mask_size) {
     assert(targets);
     assert(mask);
     assert(maxnode);
@@ -83,8 +81,9 @@ numa_targets_create_nodemask(struct numa_memory_target_t **targets,
     unsigned bits_per_long = sizeof(unsigned long) * 8;
     int nrUlongs = (lastBit + bits_per_long) / bits_per_long;
 
-    unsigned long *nodemask = umf_ba_linear_alloc(
-        linear_allocator, (sizeof(unsigned long) * nrUlongs));
+    *mask_size = sizeof(unsigned long) * nrUlongs;
+
+    unsigned long *nodemask = umf_ba_global_alloc(*mask_size);
     if (!nodemask) {
         hwloc_bitmap_free(bitmap);
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
@@ -94,7 +93,7 @@ numa_targets_create_nodemask(struct numa_memory_target_t **targets,
     hwloc_bitmap_free(bitmap);
 
     if (ret) {
-        // nodemask is freed during destroying linear_allocator
+        umf_ba_global_free(nodemask, *mask_size);
         return UMF_RESULT_ERROR_UNKNOWN;
     }
 
@@ -116,15 +115,10 @@ static enum umf_result_t numa_memory_provider_create_from_memspace(
 
     unsigned long *nodemask;
     unsigned maxnode;
-
-    umf_ba_linear_pool_t *linear_allocator =
-        umf_ba_linear_create(0 /* minimal pool size */);
-    if (!linear_allocator) {
-        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-    }
+    size_t nodemask_size;
 
     umf_result_t ret = numa_targets_create_nodemask(
-        numaTargets, numTargets, &nodemask, &maxnode, linear_allocator);
+        numaTargets, numTargets, &nodemask, &maxnode, &nodemask_size);
     if (ret != UMF_RESULT_SUCCESS) {
         return ret;
     }
@@ -137,9 +131,8 @@ static enum umf_result_t numa_memory_provider_create_from_memspace(
     umf_memory_provider_handle_t numaProvider = NULL;
     ret = umfMemoryProviderCreate(umfOsMemoryProviderOps(), &params,
                                   &numaProvider);
-    umf_ba_linear_destroy(linear_allocator); // nodemask is freed here
+    umf_ba_global_free(nodemask, nodemask_size);
     if (ret) {
-
         return ret;
     }
 
