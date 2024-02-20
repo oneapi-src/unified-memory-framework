@@ -8,6 +8,7 @@
  */
 
 #include "provider_tracking.h"
+#include "base_alloc_global.h"
 #include "critnib.h"
 #include "utils_concurrency.h"
 
@@ -325,11 +326,9 @@ static umf_result_t trackingFree(void *hProvider, void *ptr, size_t size) {
 }
 
 static umf_result_t trackingInitialize(void *params, void **ret) {
-    umf_tracking_memory_provider_t *p =
-        (umf_tracking_memory_provider_t *)params;
     umf_tracking_memory_provider_t *provider =
-        (umf_tracking_memory_provider_t *)umf_ba_linear_alloc(
-            p->hTracker->pool_linear, sizeof(umf_tracking_memory_provider_t));
+        (umf_tracking_memory_provider_t *)umf_ba_global_alloc(
+            sizeof(umf_tracking_memory_provider_t));
     if (!provider) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
@@ -381,10 +380,7 @@ static void trackingFinalize(void *provider) {
     check_if_tracker_is_empty(p->hTracker, p->pool);
 #endif /* NDEBUG */
 
-    (void)provider; // unused in Release build
-    // provider was allocated from the linear allocator,
-    // so it will be freed, when the linear allocator is destroyed
-    // in umfMemoryTrackerDestroy()
+    umf_ba_global_free(provider, sizeof(umf_tracking_memory_provider_t));
 }
 
 static void trackingGetLastError(void *provider, const char **msg,
