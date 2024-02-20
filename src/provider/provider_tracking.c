@@ -464,26 +464,19 @@ void umfTrackingMemoryProviderGetUpstreamProvider(
 }
 
 umf_memory_tracker_handle_t umfMemoryTrackerCreate(void) {
-    umf_ba_linear_pool_t *pool_linear =
-        umf_ba_linear_create(0 /* minimum pool size */);
-    if (!pool_linear) {
+    umf_memory_tracker_handle_t handle =
+        (umf_memory_tracker_handle_t)umf_ba_global_alloc(
+            sizeof(struct umf_memory_tracker_t));
+    if (!handle) {
         return NULL;
     }
 
     umf_ba_pool_t *tracker_allocator =
         umf_ba_create(sizeof(struct tracker_value_t));
     if (!tracker_allocator) {
-        goto err_destroy_pool_linear;
+        goto err_free_handle;
     }
 
-    umf_memory_tracker_handle_t handle =
-        (umf_memory_tracker_handle_t)umf_ba_linear_alloc(
-            pool_linear, sizeof(struct umf_memory_tracker_t));
-    if (!handle) {
-        goto err_destroy_tracker_allocator;
-    }
-
-    handle->pool_linear = pool_linear;
     handle->tracker_allocator = tracker_allocator;
 
     void *mutex_ptr = util_mutex_init(&handle->splitMergeMutex);
@@ -502,8 +495,8 @@ err_destroy_mutex:
     util_mutex_destroy_not_free(&handle->splitMergeMutex);
 err_destroy_tracker_allocator:
     umf_ba_destroy(tracker_allocator);
-err_destroy_pool_linear:
-    umf_ba_linear_destroy(pool_linear);
+err_free_handle:
+    umf_ba_global_free(handle, sizeof(struct umf_memory_tracker_t));
     return NULL;
 }
 
@@ -519,5 +512,5 @@ void umfMemoryTrackerDestroy(umf_memory_tracker_handle_t handle) {
     critnib_delete(handle->map);
     util_mutex_destroy_not_free(&handle->splitMergeMutex);
     umf_ba_destroy(handle->tracker_allocator);
-    umf_ba_linear_destroy(handle->pool_linear);
+    umf_ba_global_free(handle, sizeof(struct umf_memory_tracker_t));
 }
