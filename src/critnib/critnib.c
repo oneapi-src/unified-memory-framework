@@ -58,7 +58,7 @@
 #include <stddef.h>
 
 #include "base_alloc.h"
-#include "base_alloc_linear.h"
+#include "base_alloc_global.h"
 #include "critnib.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
@@ -130,7 +130,6 @@ struct critnib {
 
     struct os_mutex_t mutex; /* writes/removes */
 
-    umf_ba_linear_pool_t *pool_linear;
     umf_ba_pool_t *pool_nodes;
     umf_ba_pool_t *pool_leaves;
 };
@@ -182,23 +181,14 @@ static inline unsigned slice_index(word key, sh_t shift) {
  * critnib_new -- allocates a new critnib structure
  */
 struct critnib *critnib_new(void) {
-    umf_ba_linear_pool_t *pool_linear =
-        umf_ba_linear_create(0 /* minimal pool size */);
-    if (!pool_linear) {
+    struct critnib *c = umf_ba_global_alloc(sizeof(struct critnib));
+    if (!c) {
         return NULL;
     }
 
-    struct critnib *c =
-        umf_ba_linear_alloc(pool_linear, sizeof(struct critnib));
-    if (!c) {
-        goto err_destroy_pool_linear;
-    }
-
-    c->pool_linear = pool_linear;
-
     void *mutex_ptr = util_mutex_init(&c->mutex);
     if (!mutex_ptr) {
-        goto err_destroy_pool_linear;
+        goto err_free_critnib;
     }
 
     c->pool_nodes = umf_ba_create(sizeof(struct critnib_node));
@@ -220,8 +210,8 @@ err_destroy_pool_nodes:
     umf_ba_destroy(c->pool_nodes);
 err_util_mutex_destroy:
     util_mutex_destroy_not_free(&c->mutex);
-err_destroy_pool_linear:
-    umf_ba_linear_destroy(pool_linear); // free all its allocations and destroy
+err_free_critnib:
+    umf_ba_global_free(c, sizeof(struct critnib));
     return NULL;
 }
 
@@ -250,7 +240,6 @@ void critnib_delete(struct critnib *c) {
         delete_node(c, c->root);
     }
 
-    // mutex is freed in umf_ba_linear_destroy(c->pool_linear) at the end
     util_mutex_destroy_not_free(&c->mutex);
 
     for (struct critnib_node *m = c->deleted_node; m;) {
@@ -272,10 +261,7 @@ void critnib_delete(struct critnib *c) {
 
     umf_ba_destroy(c->pool_nodes);
     umf_ba_destroy(c->pool_leaves);
-    umf_ba_linear_destroy(
-        c->pool_linear); // free all its allocations and destroy
-
-    // 'c' was freed in umf_ba_linear_destroy(c->pool_linear)
+    umf_ba_global_free(c, sizeof(struct critnib));
 }
 
 /*
