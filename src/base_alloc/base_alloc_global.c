@@ -86,9 +86,11 @@ void *umf_ba_global_alloc(size_t size) {
     util_init_once(&ba_is_initialized, umf_ba_create_global);
 
     if (size > BASE_ALLOC.ac_sizes[NUM_ALLOCATION_CLASSES - 1]) {
+#ifndef NDEBUG
         fprintf(stderr,
                 "base_alloc: allocation size larger than the biggest "
                 "allocation class. Falling back to OS memory allocation.\n");
+#endif
         return ba_os_alloc(size);
     }
 

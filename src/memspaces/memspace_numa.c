@@ -12,7 +12,6 @@
 #include "../memory_targets/memory_target_numa.h"
 #include "../memspace_internal.h"
 #include "base_alloc_global.h"
-#include "base_alloc_linear.h"
 #include "memspace_numa.h"
 
 enum umf_result_t
@@ -30,18 +29,9 @@ umfMemspaceCreateFromNumaArray(size_t *nodeIds, size_t numIds,
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    umf_ba_linear_pool_t *linear_allocator =
-        umf_ba_linear_create(0 /* minimal pool size */);
-    if (!linear_allocator) {
-        ret = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-        goto err_umf_ba_linear_create;
-    }
-
-    memspace->linear_allocator = linear_allocator;
-
     memspace->size = numIds;
-    memspace->nodes = (umf_memory_target_handle_t *)umf_ba_linear_alloc(
-        linear_allocator, numIds * sizeof(umf_memory_target_handle_t));
+    memspace->nodes = (umf_memory_target_handle_t *)umf_ba_global_alloc(
+        memspace->size * sizeof(umf_memory_target_handle_t));
     if (!memspace->nodes) {
         ret = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
         goto err_nodes_alloc;
@@ -62,12 +52,12 @@ umfMemspaceCreateFromNumaArray(size_t *nodeIds, size_t numIds,
     return UMF_RESULT_SUCCESS;
 
 err_target_create:
+    umf_ba_global_free(memspace->nodes,
+                       memspace->size * sizeof(umf_memory_target_handle_t));
     for (size_t i = 0; i < nodeIdx; i++) {
         umfMemoryTargetDestroy(memspace->nodes[i]);
     }
 err_nodes_alloc:
-    umf_ba_linear_destroy(linear_allocator);
-err_umf_ba_linear_create:
     umf_ba_global_free(memspace, sizeof(struct umf_memspace_t));
     return ret;
 }
