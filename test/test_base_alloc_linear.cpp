@@ -27,6 +27,24 @@ TEST_F(test, baseAllocLinearAllocMoreThanPoolSize) {
     memset(ptr, 0, new_size);
 }
 
+TEST_F(test, baseAllocLinearPoolContainsPointer) {
+    auto pool = std::shared_ptr<umf_ba_linear_pool_t>(
+        umf_ba_linear_create(0 /* minimal pool size (page size) */),
+        umf_ba_linear_destroy);
+
+    size_t size = 16;
+    void *ptr = umf_ba_linear_alloc(pool.get(), size);
+    UT_ASSERTne(ptr, NULL);
+    memset(ptr, 0, size);
+
+    // assert pool contains pointer ptr
+    UT_ASSERTne(umf_ba_linear_pool_contains_pointer(pool.get(), ptr), 0);
+
+    // assert pool does NOT contain pointer 0x0123
+    UT_ASSERTeq(umf_ba_linear_pool_contains_pointer(pool.get(), (void *)0x0123),
+                0);
+}
+
 TEST_F(test, baseAllocLinearMultiThreadedAllocMemset) {
     static constexpr int NTHREADS = 10;
     static constexpr int ITERATIONS = 1000;

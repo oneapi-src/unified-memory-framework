@@ -1,0 +1,62 @@
+name: Proxy library
+
+on: workflow_call
+
+permissions:
+  contents: read
+
+jobs:
+  ubuntu-build:
+    name: Build - Ubuntu
+
+    strategy:
+      matrix:
+        os: ['ubuntu-22.04']
+        build_type: [Release, Debug]
+        compiler: [{c: gcc, cxx: g++}]
+    runs-on: ${{matrix.os}}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Install apt packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake libhwloc-dev libjemalloc-dev libtbb-dev
+
+      - name: Configure build
+        run: >
+          cmake
+          -B ${{github.workspace}}/build
+          -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+          -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
+          -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
+          -DUMF_BUILD_SHARED_LIBRARY=ON
+          -DUMF_BUILD_BENCHMARKS=ON
+          -DUMF_BUILD_TESTS=ON
+          -DUMF_FORMAT_CODE_STYLE=OFF
+          -DUMF_DEVELOPER_MODE=OFF
+          -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
+          -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
+          -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
+          -DUMF_ENABLE_POOL_TRACKING=OFF
+
+      - name: Build UMF
+        run: cmake --build ${{github.workspace}}/build -j $(nproc)
+
+      - name: Run "ctest --output-on-failure" with proxy library
+        working-directory: ${{github.workspace}}/build
+        run: LD_PRELOAD=./lib/libumf_proxy.so ctest --output-on-failure
+
+      - name: Run "./test/umf_test-memoryPool" with proxy library
+        working-directory: ${{github.workspace}}/build
+        run: LD_PRELOAD=./lib/libumf_proxy.so ./test/umf_test-memoryPool
+
+      - name: Run "/usr/bin/ls" with proxy library
+        working-directory: ${{github.workspace}}/build
+        run: LD_PRELOAD=./lib/libumf_proxy.so /usr/bin/ls
+
+      - name: Run "/usr/bin/date" with proxy library
+        working-directory: ${{github.workspace}}/build
+        run: LD_PRELOAD=./lib/libumf_proxy.so /usr/bin/date

@@ -36,9 +36,9 @@ struct umf_ba_main_pool_meta_t {
     size_t chunk_size;         // size of all memory chunks in this pool
     os_mutex_t free_lock;      // lock of free_list
     umf_ba_chunk_t *free_list; // list of free chunks
+    size_t n_allocs;           // number of allocated chunks
 #ifndef NDEBUG
     size_t n_pools;
-    size_t n_allocs;
     size_t n_chunks;
 #endif /* NDEBUG */
 };
@@ -135,9 +135,9 @@ umf_ba_pool_t *umf_ba_create(size_t size) {
     pool->metadata.pool_size = pool_size;
     pool->metadata.chunk_size = chunk_size;
     pool->next_pool = NULL; // this is the only pool now
+    pool->metadata.n_allocs = 0;
 #ifndef NDEBUG
     pool->metadata.n_pools = 1;
-    pool->metadata.n_allocs = 0;
     pool->metadata.n_chunks = 0;
 #endif /* NDEBUG */
 
@@ -187,8 +187,8 @@ void *umf_ba_alloc(umf_ba_pool_t *pool) {
 
     umf_ba_chunk_t *chunk = pool->metadata.free_list;
     pool->metadata.free_list = pool->metadata.free_list->next;
-#ifndef NDEBUG
     pool->metadata.n_allocs++;
+#ifndef NDEBUG
     ba_debug_checks(pool);
 #endif /* NDEBUG */
     util_mutex_unlock(&pool->metadata.free_lock);
@@ -230,18 +230,30 @@ void umf_ba_free(umf_ba_pool_t *pool, void *ptr) {
     assert(pool_contains_pointer(pool, ptr));
     chunk->next = pool->metadata.free_list;
     pool->metadata.free_list = chunk;
-#ifndef NDEBUG
     pool->metadata.n_allocs--;
+#ifndef NDEBUG
     ba_debug_checks(pool);
 #endif /* NDEBUG */
     util_mutex_unlock(&pool->metadata.free_lock);
 }
 
 void umf_ba_destroy(umf_ba_pool_t *pool) {
+    // Do not destroy if we are running in the proxy library,
+    // because it may need those resources till
+    // the very end of exiting the application.
+    if (pool->metadata.n_allocs && is_running_in_proxy_lib()) {
+        return;
+    }
+
 #ifndef NDEBUG
-    assert(pool->metadata.n_allocs == 0);
     ba_debug_checks(pool);
+    if (pool->metadata.n_allocs) {
+        fprintf(stderr, "umf_ba_destroy(): pool->metadata.n_allocs = %zu\n",
+                pool->metadata.n_allocs);
+        assert(pool->metadata.n_allocs == 0);
+    }
 #endif /* NDEBUG */
+
     size_t size = pool->metadata.pool_size;
     umf_ba_next_pool_t *current_pool;
     umf_ba_next_pool_t *next_pool = pool->next_pool;

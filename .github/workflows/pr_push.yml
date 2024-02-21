@@ -91,3 +91,6 @@ jobs:
     Benchmark:
         needs: [Build]
         uses: ./.github/workflows/benchmarks.yml
+    Proxy_lib:
+        needs: [Build]
+        uses: ./.github/workflows/proxy_lib.yml
