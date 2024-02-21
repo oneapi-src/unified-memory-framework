@@ -10,6 +10,7 @@
 #include "provider_tracking.h"
 #include "base_alloc_global.h"
 #include "critnib.h"
+#include "utils_common.h"
 #include "utils_concurrency.h"
 
 #include <umf/memory_pool.h>
@@ -357,18 +358,23 @@ static void check_if_tracker_is_empty(umf_memory_tracker_handle_t hTracker,
     }
 
     if (n_items) {
-        if (pool) {
-            fprintf(stderr,
-                    "ASSERT: tracking provider of pool %p is not empty! (%zu "
-                    "items left)\n",
-                    (void *)pool, n_items);
-        } else {
-            fprintf(
-                stderr,
-                "ASSERT: tracking provider is not empty! (%zu items left)\n",
-                n_items);
+        // Do not assert if we are running in the proxy library,
+        // because it may need those resources till
+        // the very end of exiting the application.
+        if (!is_running_in_proxy_lib()) {
+            if (pool) {
+                fprintf(stderr,
+                        "ASSERT: tracking provider of pool %p is not empty! "
+                        "(%zu items left)\n",
+                        (void *)pool, n_items);
+            } else {
+                fprintf(stderr,
+                        "ASSERT: tracking provider is not empty! (%zu items "
+                        "left)\n",
+                        n_items);
+            }
+            assert(n_items == 0);
         }
-        assert(n_items == 0);
     }
 }
 #endif /* NDEBUG */
@@ -505,12 +511,24 @@ void umfMemoryTrackerDestroy(umf_memory_tracker_handle_t handle) {
         return;
     }
 
+    // Do not destroy if we are running in the proxy library,
+    // because it may need those resources till
+    // the very end of exiting the application.
+    if (is_running_in_proxy_lib()) {
+        return;
+    }
+
 #ifndef NDEBUG
     check_if_tracker_is_empty(handle, NULL);
 #endif /* NDEBUG */
 
+    // We have to zero all inner pointers,
+    // because the tracker handle can be copied
+    // and used in many places.
     critnib_delete(handle->map);
+    handle->map = NULL;
     util_mutex_destroy_not_free(&handle->splitMergeMutex);
     umf_ba_destroy(handle->tracker_allocator);
+    handle->tracker_allocator = NULL;
     umf_ba_global_free(handle, sizeof(struct umf_memory_tracker_t));
 }

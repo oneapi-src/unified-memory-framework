@@ -161,9 +161,17 @@ void *umf_ba_linear_alloc(umf_ba_linear_pool_t *pool, size_t size) {
 }
 
 void umf_ba_linear_destroy(umf_ba_linear_pool_t *pool) {
+    // Do not destroy if we are running in the proxy library,
+    // because it may need those resources till
+    // the very end of exiting the application.
+    if (is_running_in_proxy_lib()) {
+        return;
+    }
+
 #ifndef NDEBUG
     ba_debug_checks(pool);
 #endif /* NDEBUG */
+
     umf_ba_next_linear_pool_t *current_pool;
     umf_ba_next_linear_pool_t *next_pool = pool->next_pool;
     while (next_pool) {

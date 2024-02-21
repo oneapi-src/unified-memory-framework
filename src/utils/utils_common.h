@@ -19,11 +19,45 @@
 extern "C" {
 #endif
 
-#ifdef _WIN32
+#ifdef _WIN32 /* Windows */
+
 #define __TLS __declspec(thread)
-#else
+
+static inline char *os_getenv(const char *name) {
+    char *buffer;
+    size_t numberOfElements;
+    errno_t err = _dupenv_s(&buffer, &numberOfElements, name);
+    if (err) {
+        return NULL;
+    }
+
+    return buffer;
+}
+
+static inline void os_free_getenv(char *val) { free(val); }
+
+#else /* Linux */
+
 #define __TLS __thread
-#endif
+
+static inline char *os_getenv(const char *name) { return getenv(name); }
+static inline void os_free_getenv(const char *val) {
+    (void)val; // unused
+}
+
+#endif /* _WIN32 */
+
+// check if we are running in the proxy library
+static inline int is_running_in_proxy_lib(void) {
+    int is_in_proxy_lib_val = 0;
+    char *ld_preload = os_getenv("LD_PRELOAD");
+    if (ld_preload && strstr(ld_preload, "libumf_proxy.so")) {
+        is_in_proxy_lib_val = 1;
+    }
+
+    os_free_getenv(ld_preload);
+    return is_in_proxy_lib_val;
+}
 
 #define NOFUNCTION                                                             \
     do {                                                                       \
