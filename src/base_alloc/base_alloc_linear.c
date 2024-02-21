@@ -13,8 +13,11 @@
 #include "utils_common.h"
 #include "utils_concurrency.h"
 
+// will be initialized to ba_os_get_page_size() in umf_ba_linear_create()
+static __TLS size_t Page_size;
+
 // minimum size of a single pool of the linear base allocator
-#define MINIMUM_LINEAR_POOL_SIZE (ba_os_get_page_size())
+#define MINIMUM_LINEAR_POOL_SIZE Page_size
 
 // alignment of the linear base allocator
 #define MEMORY_ALIGNMENT (sizeof(uintptr_t))
@@ -72,13 +75,18 @@ static void ba_debug_checks(umf_ba_linear_pool_t *pool) {
 #endif /* NDEBUG */
 
 umf_ba_linear_pool_t *umf_ba_linear_create(size_t pool_size) {
+    // set page size
+    if (!Page_size) {
+        Page_size = ba_os_get_page_size();
+    }
+
     pool_size += sizeof(umf_ba_next_linear_pool_t *) +
                  sizeof(umf_ba_main_linear_pool_meta_t);
     if (pool_size < MINIMUM_LINEAR_POOL_SIZE) {
         pool_size = MINIMUM_LINEAR_POOL_SIZE;
     }
 
-    pool_size = ALIGN_UP(pool_size, ba_os_get_page_size());
+    pool_size = ALIGN_UP(pool_size, Page_size);
 
     umf_ba_linear_pool_t *pool = (umf_ba_linear_pool_t *)ba_os_alloc(pool_size);
     if (!pool) {
@@ -117,7 +125,7 @@ void *umf_ba_linear_alloc(umf_ba_linear_pool_t *pool, size_t size) {
             pool_size - offsetof(umf_ba_next_linear_pool_t, data);
         if (usable_size < aligned_size) {
             pool_size += aligned_size - usable_size;
-            pool_size = ALIGN_UP(pool_size, ba_os_get_page_size());
+            pool_size = ALIGN_UP(pool_size, Page_size);
         }
 
         assert(pool_size - offsetof(umf_ba_next_linear_pool_t, data) >=
