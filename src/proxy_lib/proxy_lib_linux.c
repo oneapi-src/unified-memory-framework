@@ -7,12 +7,6 @@
  *
  */
 
-#define _GNU_SOURCE
-#include <dlfcn.h>
-
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "proxy_lib.h"
 
 // The priority 102 is used, because the constructor should be called as the second one
