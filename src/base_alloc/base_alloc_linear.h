@@ -29,6 +29,12 @@ void umf_ba_linear_destroy(umf_ba_linear_pool_t *pool);
 size_t umf_ba_linear_pool_contains_pointer(umf_ba_linear_pool_t *pool,
                                            void *ptr);
 
+// umf_ba_linear_free() really frees memory only if all allocations from an inactive pool were freed
+// It returns:
+// 0  - ptr belonged to the pool and was freed
+// -1 - ptr doesn't belong to the pool and wasn't freed
+int umf_ba_linear_free(umf_ba_linear_pool_t *pool, void *ptr);
+
 #ifdef __cplusplus
 }
 #endif
