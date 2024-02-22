@@ -163,17 +163,5 @@ The `UMF_BUILD_LIBUMF_POOL_SCALABLE` option has to be turned `ON` to build this 
 
 ## Contributions
 
-All code has to be formatted using clang-format. To check the formatting do:
-
-```bash
-$ mkdir build
-$ cd build
-$ cmake {path_to_source_dir} -DUMF_FORMAT_CODE_STYLE=ON
-$ make clang-format-check
-```
-
-Additionally, to apply code formatting do:
-
-```bash
-$ make clang-format-apply
-```
+All contributions to the UMF project are most welcome! Before submitting
+an issue or a Pull Request, please read [Contribution Guide](./CONTRIBUTING.md).
