@@ -127,6 +127,9 @@ static inline void *ba_generic_realloc(umf_ba_linear_pool_t *pool, void *ptr,
 
     memcpy(new_ptr, ptr, new_size);
 
+    // we can free the old ptr now
+    umf_ba_linear_free(pool, ptr);
+
     return new_ptr;
 }
 
@@ -136,7 +139,7 @@ static inline void *ba_generic_realloc(umf_ba_linear_pool_t *pool, void *ptr,
 
 static void ba_leak_create(void) { Base_alloc_leak = umf_ba_linear_create(0); }
 
-// it does not implement destroy(), because it will not free memory at all
+// it does not implement destroy(), because we cannot destroy non-freed memory
 
 static inline void *ba_leak_malloc(size_t size) {
     util_init_once(&Base_alloc_leak_initialized, ba_leak_create);
@@ -158,6 +161,10 @@ static inline void *ba_leak_aligned_alloc(size_t alignment, size_t size) {
     util_init_once(&Base_alloc_leak_initialized, ba_leak_create);
     void *ptr = umf_ba_linear_alloc(Base_alloc_leak, size + alignment);
     return (void *)ALIGN_UP((uintptr_t)ptr, alignment);
+}
+
+static inline int ba_leak_free(void *ptr) {
+    return umf_ba_linear_free(Base_alloc_leak, ptr);
 }
 
 static inline size_t ba_leak_pool_contains_pointer(void *ptr) {
@@ -221,8 +228,7 @@ void free(void *ptr) {
         return;
     }
 
-    if (ba_leak_pool_contains_pointer(ptr)) {
-        // allocations from the leak linear base allocator will not be freed at all
+    if (ba_leak_free(ptr) == 0) {
         return;
     }
 
