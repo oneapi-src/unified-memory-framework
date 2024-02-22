@@ -19,6 +19,14 @@
 extern "C" {
 #endif
 
+#define DO_WHILE_EMPTY                                                         \
+    do {                                                                       \
+    } while (0)
+#define DO_WHILE_EXPRS(expression)                                             \
+    do {                                                                       \
+        expression;                                                            \
+    } while (0)
+
 #ifdef _WIN32 /* Windows */
 
 #define __TLS __declspec(thread)

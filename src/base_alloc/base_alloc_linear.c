@@ -13,6 +13,16 @@
 #include "utils_common.h"
 #include "utils_concurrency.h"
 
+#ifndef NDEBUG
+#define DEBUG_RUN_CHECKS(pool) ba_debug_checks(pool)
+#define DEBUG_SET_VAR(var, value) DO_WHILE_EXPRS((var = value))
+#define DEBUG_INC_VAR(var) DO_WHILE_EXPRS((var++))
+#else
+#define DEBUG_RUN_CHECKS(pool) DO_WHILE_EMPTY
+#define DEBUG_SET_VAR(var, value) DO_WHILE_EMPTY
+#define DEBUG_INC_VAR(var) DO_WHILE_EMPTY
+#endif /* NDEBUG */
+
 // minimum size of a single pool of the linear base allocator
 #define MINIMUM_LINEAR_POOL_SIZE (ba_os_get_page_size())
 
@@ -94,9 +104,7 @@ umf_ba_linear_pool_t *umf_ba_linear_create(size_t pool_size) {
     pool->metadata.data_ptr = data_ptr;
     pool->metadata.size_left = size_left;
     pool->next_pool = NULL; // this is the only pool now
-#ifndef NDEBUG
-    pool->metadata.n_pools = 1;
-#endif /* NDEBUG */
+    DEBUG_SET_VAR(pool->metadata.n_pools, 1);
 
     // init lock
     os_mutex_t *lock = util_mutex_init(&pool->metadata.lock);
@@ -143,18 +151,14 @@ void *umf_ba_linear_alloc(umf_ba_linear_pool_t *pool, size_t size) {
         // add the new pool to the list of pools
         new_pool->next_pool = pool->next_pool;
         pool->next_pool = new_pool;
-#ifndef NDEBUG
-        pool->metadata.n_pools++;
-#endif /* NDEBUG */
+        DEBUG_INC_VAR(pool->metadata.n_pools);
     }
 
     assert(pool->metadata.size_left >= aligned_size);
     void *ptr = pool->metadata.data_ptr;
     pool->metadata.data_ptr += aligned_size;
     pool->metadata.size_left -= aligned_size;
-#ifndef NDEBUG
-    ba_debug_checks(pool);
-#endif /* NDEBUG */
+    DEBUG_RUN_CHECKS(pool);
     util_mutex_unlock(&pool->metadata.lock);
 
     return ptr;
@@ -168,9 +172,7 @@ void umf_ba_linear_destroy(umf_ba_linear_pool_t *pool) {
         return;
     }
 
-#ifndef NDEBUG
-    ba_debug_checks(pool);
-#endif /* NDEBUG */
+    DEBUG_RUN_CHECKS(pool);
 
     umf_ba_next_linear_pool_t *current_pool;
     umf_ba_next_linear_pool_t *next_pool = pool->next_pool;
