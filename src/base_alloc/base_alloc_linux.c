@@ -13,6 +13,10 @@
 
 #include "base_alloc.h"
 #include "base_alloc_global.h"
+#include "utils_concurrency.h"
+
+static UTIL_ONCE_FLAG Page_size_is_initialized = UTIL_ONCE_FLAG_INIT;
+static size_t Page_size;
 
 // The highest possible priority (101) is used, because the constructor should be called
 // as the first one and the destructor as the last one in order to avoid use-after-free.
@@ -33,4 +37,9 @@ void ba_os_free(void *ptr, size_t size) {
     (void)ret; // unused
 }
 
-size_t ba_os_get_page_size(void) { return sysconf(_SC_PAGE_SIZE); }
+static void _ba_os_init_page_size(void) { Page_size = sysconf(_SC_PAGE_SIZE); }
+
+size_t ba_os_get_page_size(void) {
+    util_init_once(&Page_size_is_initialized, _ba_os_init_page_size);
+    return Page_size;
+}
