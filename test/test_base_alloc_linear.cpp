@@ -10,6 +10,7 @@
 #include <thread>
 
 #include "base_alloc_linear.h"
+#include "utils_common.h"
 
 #include "base.hpp"
 #include "test_helpers.h"
@@ -56,9 +57,14 @@ TEST_F(test, baseAllocLinearMultiThreadedAllocMemset) {
 
     srand(0);
 
+    // The first pool should be bigger than one page,
+    // but not big enough to hold all allocations,
+    // so that there were more pools allocated.
+    // This is needed to test freeing the first pool.
+    size_t pool_size = 2 * util_get_page_size();
+
     auto pool = std::shared_ptr<umf_ba_linear_pool_t>(
-        umf_ba_linear_create(NTHREADS * ITERATIONS * MAX_ALLOCATION_SIZE),
-        umf_ba_linear_destroy);
+        umf_ba_linear_create(pool_size), umf_ba_linear_destroy);
 
     auto poolAlloc = [](int TID, umf_ba_linear_pool_t *pool) {
         struct buffer_t {
