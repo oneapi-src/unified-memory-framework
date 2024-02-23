@@ -15,6 +15,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef _WIN32
+#include <sys/syscall.h>
+#include <unistd.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -44,6 +49,9 @@ static inline char *util_getenv(const char *name) {
 
 static inline void util_free_getenv(char *val) { free(val); }
 
+// TODO: implement util_get_page_size() for Windows
+static inline size_t util_get_page_size(void) { return 4096; }
+
 #else /* Linux */
 
 #define __TLS __thread
@@ -52,6 +60,8 @@ static inline char *util_getenv(const char *name) { return getenv(name); }
 static inline void util_free_getenv(const char *val) {
     (void)val; // unused
 }
+
+static inline size_t util_get_page_size(void) { return sysconf(_SC_PAGE_SIZE); }
 
 #endif /* _WIN32 */
 
