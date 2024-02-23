@@ -328,6 +328,69 @@ static void print_numa_nodes(os_memory_provider_t *os_provider, void *addr,
     hwloc_bitmap_free(nodeset);
 }
 
+static inline void assert_is_page_aligned(uintptr_t ptr, size_t page_size) {
+    assert((ptr & (page_size - 1)) == 0);
+    (void)ptr;       // unused in Release build
+    (void)page_size; // unused in Release build
+}
+
+static int os_mmap_aligned(void *hint_addr, size_t length, size_t alignment,
+                           size_t page_size, int prot, void **out_addr) {
+    assert(out_addr);
+
+    size_t extended_length = length;
+
+    if (alignment > page_size) {
+        // We have to increase length by alignment to be able to "cut out"
+        // the correctly aligned part of the memory from the mapped region
+        // by unmapping the rest: unaligned beginning and unaligned end
+        // of this region.
+        extended_length += alignment;
+    }
+
+    void *ptr = os_mmap(hint_addr, extended_length, prot);
+    if (ptr == NULL) {
+        return -1;
+    }
+
+    if (alignment > page_size) {
+        uintptr_t addr = (uintptr_t)ptr;
+        uintptr_t aligned_addr = addr;
+        uintptr_t rest_of_div = aligned_addr % alignment;
+
+        if (rest_of_div) {
+            aligned_addr += alignment - rest_of_div;
+        }
+
+        assert_is_page_aligned(aligned_addr, page_size);
+
+        size_t head_len = aligned_addr - addr;
+        if (head_len > 0) {
+            os_munmap(ptr, head_len);
+        }
+
+        // tail address has to page-aligned
+        uintptr_t tail = aligned_addr + length;
+        if (tail & (page_size - 1)) {
+            tail = (tail + page_size) & ~(page_size - 1);
+        }
+
+        assert_is_page_aligned(tail, page_size);
+        assert(tail >= aligned_addr + length);
+
+        size_t tail_len = (addr + extended_length) - tail;
+        if (tail_len > 0) {
+            os_munmap((void *)tail, tail_len);
+        }
+
+        *out_addr = (void *)aligned_addr;
+        return 0;
+    }
+
+    *out_addr = ptr;
+    return 0;
+}
+
 static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
                              void **resultPtr) {
     int ret;
@@ -358,8 +421,7 @@ static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
 
     void *addr = NULL;
     errno = 0;
-    ret = os_mmap_aligned(NULL, size, alignment, page_size, protection, -1, 0,
-                          &addr);
+    ret = os_mmap_aligned(NULL, size, alignment, page_size, protection, &addr);
     if (ret) {
         os_store_last_native_error(UMF_OS_RESULT_ERROR_ALLOC_FAILED, errno);
         if (os_provider->traces) {
