@@ -323,7 +323,7 @@ struct poolHandleCheck
           std::function<std::variant<void *, umf_result_t, size_t>(void)>> {};
 
 TEST_P(poolHandleCheck, poolHandleCheckAll) {
-    auto f = GetParam();
+    const auto &f = GetParam();
     auto ret = f();
 
     std::visit(
