@@ -58,8 +58,15 @@ if(UMF_BUILD_OS_MEMORY_PROVIDER)
         provider/provider_os_memory_linux.c
         memory_targets/memory_target_numa.c
         memspaces/memspace_numa.c)
+
     if(LINUX)
-        set(UMF_LIBS ${UMF_LIBS} hwloc)
+        if(PkgConfig_FOUND)
+            pkg_check_modules(LIBHWLOC hwloc)
+        endif()
+        if(NOT LIBHWLOC_FOUND)
+            find_package(LIBHWLOC REQUIRED hwloc)
+        endif()
+        set(UMF_LIBS ${UMF_LIBS} ${LIBHWLOC_LIBRARIES})
     endif()
 endif()
 
