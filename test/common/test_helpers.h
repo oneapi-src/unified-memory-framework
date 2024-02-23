@@ -70,7 +70,9 @@ static inline void UT_OUT(const char *format, ...) {
                       (unsigned long long)(rhs)),                              \
              0)))
 
+#ifndef ALIGN_UP
 #define ALIGN_UP(size, align) (((size) + (align)-1) & ~((align)-1))
+#endif
 
 int bufferIsFilledWithChar(void *ptr, size_t size, char c);
 
