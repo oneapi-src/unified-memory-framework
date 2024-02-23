@@ -45,70 +45,14 @@ static int os_translate_purge_advise(umf_purge_advise_t advise) {
     return -1;
 }
 
-static inline void assert_is_page_aligned(uintptr_t ptr, size_t page_size) {
-    assert((ptr & (page_size - 1)) == 0);
-    (void)ptr;       // unused in Release build
-    (void)page_size; // unused in Release build
-}
-
-int os_mmap_aligned(void *hint_addr, size_t length, size_t alignment,
-                    size_t page_size, int prot, int fd, long offset,
-                    void **out_addr) {
-    assert(out_addr);
-
-    size_t extended_length = length;
-
-    if (alignment > page_size) {
-        // We have to increase length by alignment to be able to "cut out"
-        // the correctly aligned part of the memory from the mapped region
-        // by unmapping the rest: unaligned beginning and unaligned end
-        // of this region.
-        extended_length += alignment;
-    }
-
+void *os_mmap(void *hint_addr, size_t length, int prot) {
     // MAP_ANONYMOUS - the mapping is not backed by any file
-    void *ptr = mmap(hint_addr, extended_length, prot,
-                     MAP_ANONYMOUS | MAP_PRIVATE, fd, offset);
+    void *ptr =
+        mmap(hint_addr, length, prot, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
     if (ptr == MAP_FAILED) {
-        return -1;
+        return NULL;
     }
-
-    if (alignment > page_size) {
-        uintptr_t addr = (uintptr_t)ptr;
-        uintptr_t aligned_addr = addr;
-        uintptr_t rest_of_div = aligned_addr % alignment;
-
-        if (rest_of_div) {
-            aligned_addr += alignment - rest_of_div;
-        }
-
-        assert_is_page_aligned(aligned_addr, page_size);
-
-        size_t head_len = aligned_addr - addr;
-        if (head_len > 0) {
-            munmap(ptr, head_len);
-        }
-
-        // tail address has to page-aligned
-        uintptr_t tail = aligned_addr + length;
-        if (tail & (page_size - 1)) {
-            tail = (tail + page_size) & ~(page_size - 1);
-        }
-
-        assert_is_page_aligned(tail, page_size);
-        assert(tail >= aligned_addr + length);
-
-        size_t tail_len = (addr + extended_length) - tail;
-        if (tail_len > 0) {
-            munmap((void *)tail, tail_len);
-        }
-
-        *out_addr = (void *)aligned_addr;
-        return 0;
-    }
-
-    *out_addr = ptr;
-    return 0;
+    return ptr;
 }
 
 int os_munmap(void *addr, size_t length) { return munmap(addr, length); }
