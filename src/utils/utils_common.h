@@ -31,7 +31,7 @@ extern "C" {
 
 #define __TLS __declspec(thread)
 
-static inline char *os_getenv(const char *name) {
+static inline char *util_getenv(const char *name) {
     char *buffer;
     size_t numberOfElements;
     errno_t err = _dupenv_s(&buffer, &numberOfElements, name);
@@ -42,14 +42,14 @@ static inline char *os_getenv(const char *name) {
     return buffer;
 }
 
-static inline void os_free_getenv(char *val) { free(val); }
+static inline void util_free_getenv(char *val) { free(val); }
 
 #else /* Linux */
 
 #define __TLS __thread
 
-static inline char *os_getenv(const char *name) { return getenv(name); }
-static inline void os_free_getenv(const char *val) {
+static inline char *util_getenv(const char *name) { return getenv(name); }
+static inline void util_free_getenv(const char *val) {
     (void)val; // unused
 }
 
@@ -58,12 +58,12 @@ static inline void os_free_getenv(const char *val) {
 // check if we are running in the proxy library
 static inline int is_running_in_proxy_lib(void) {
     int is_in_proxy_lib_val = 0;
-    char *ld_preload = os_getenv("LD_PRELOAD");
+    char *ld_preload = util_getenv("LD_PRELOAD");
     if (ld_preload && strstr(ld_preload, "libumf_proxy.so")) {
         is_in_proxy_lib_val = 1;
     }
 
-    os_free_getenv(ld_preload);
+    util_free_getenv(ld_preload);
     return is_in_proxy_lib_val;
 }
 
