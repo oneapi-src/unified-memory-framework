@@ -14,15 +14,9 @@
 #include "utils_concurrency.h"
 
 #ifndef NDEBUG
-#define DEBUG_RUN_CHECKS(pool) ba_debug_checks(pool)
-#define DEBUG_SET_VAR(var, value) DO_WHILE_EXPRS((var = value))
-#define DEBUG_INC_VAR(var) DO_WHILE_EXPRS((var++))
-#define DEBUG_DEC_VAR(var) DO_WHILE_EXPRS((var--))
+#define _DEBUG_EXECUTE(expression) DO_WHILE_EXPRS(expression)
 #else
-#define DEBUG_RUN_CHECKS(pool) DO_WHILE_EMPTY
-#define DEBUG_SET_VAR(var, value) DO_WHILE_EMPTY
-#define DEBUG_INC_VAR(var) DO_WHILE_EMPTY
-#define DEBUG_DEC_VAR(var) DO_WHILE_EMPTY
+#define _DEBUG_EXECUTE(expression) DO_WHILE_EMPTY
 #endif /* NDEBUG */
 
 // minimum size of a single pool of the linear base allocator
@@ -110,8 +104,8 @@ umf_ba_linear_pool_t *umf_ba_linear_create(size_t pool_size) {
     pool->metadata.size_left = size_left;
     pool->next_pool = NULL; // this is the only pool now
     pool->metadata.pool_n_allocs = 0;
-    DEBUG_SET_VAR(pool->metadata.n_pools, 1);
-    DEBUG_SET_VAR(pool->metadata.global_n_allocs, 0);
+    _DEBUG_EXECUTE(pool->metadata.n_pools = 1);
+    _DEBUG_EXECUTE(pool->metadata.global_n_allocs = 0);
 
     // init lock
     os_mutex_t *lock = util_mutex_init(&pool->metadata.lock);
@@ -159,7 +153,7 @@ void *umf_ba_linear_alloc(umf_ba_linear_pool_t *pool, size_t size) {
         // add the new pool to the list of pools
         new_pool->next_pool = pool->next_pool;
         pool->next_pool = new_pool;
-        DEBUG_INC_VAR(pool->metadata.n_pools);
+        _DEBUG_EXECUTE(pool->metadata.n_pools++);
     }
 
     assert(pool->metadata.size_left >= aligned_size);
@@ -171,8 +165,8 @@ void *umf_ba_linear_alloc(umf_ba_linear_pool_t *pool, size_t size) {
     } else {
         pool->metadata.pool_n_allocs++;
     }
-    DEBUG_INC_VAR(pool->metadata.global_n_allocs);
-    DEBUG_RUN_CHECKS(pool);
+    _DEBUG_EXECUTE(pool->metadata.global_n_allocs++);
+    _DEBUG_EXECUTE(ba_debug_checks(pool));
     util_mutex_unlock(&pool->metadata.lock);
 
     return ptr;
@@ -191,10 +185,10 @@ static inline int pool_contains_ptr(void *pool, size_t pool_size,
 // -1 - ptr doesn't belong to the pool and wasn't freed
 int umf_ba_linear_free(umf_ba_linear_pool_t *pool, void *ptr) {
     util_mutex_lock(&pool->metadata.lock);
-    DEBUG_RUN_CHECKS(pool);
+    _DEBUG_EXECUTE(ba_debug_checks(pool));
     if (pool_contains_ptr(pool, pool->metadata.pool_size, pool->data, ptr)) {
         pool->metadata.pool_n_allocs--;
-        DEBUG_DEC_VAR(pool->metadata.global_n_allocs);
+        _DEBUG_EXECUTE(pool->metadata.global_n_allocs--);
         size_t page_size = ba_os_get_page_size();
         if ((pool->metadata.pool_n_allocs == 0) && pool->next_pool &&
             (pool->metadata.pool_size > page_size)) {
@@ -203,7 +197,7 @@ int umf_ba_linear_free(umf_ba_linear_pool_t *pool, void *ptr) {
             size_t size = pool->metadata.pool_size - page_size;
             ba_os_free(ptr, size);
         }
-        DEBUG_RUN_CHECKS(pool);
+        _DEBUG_EXECUTE(ba_debug_checks(pool));
         util_mutex_unlock(&pool->metadata.lock);
         return 0;
     }
@@ -213,7 +207,7 @@ int umf_ba_linear_free(umf_ba_linear_pool_t *pool, void *ptr) {
     while (next_pool) {
         if (pool_contains_ptr(next_pool, next_pool->pool_size, next_pool->data,
                               ptr)) {
-            DEBUG_DEC_VAR(pool->metadata.global_n_allocs);
+            _DEBUG_EXECUTE(pool->metadata.global_n_allocs--);
             next_pool->pool_n_allocs--;
             // pool->next_pool is the active pool - we cannot free it
             if ((next_pool->pool_n_allocs == 0) &&
@@ -221,12 +215,12 @@ int umf_ba_linear_free(umf_ba_linear_pool_t *pool, void *ptr) {
                 assert(prev_pool); // it cannot be the active pool
                 assert(prev_pool->next_pool == next_pool);
                 prev_pool->next_pool = next_pool->next_pool;
-                DEBUG_DEC_VAR(pool->metadata.n_pools);
+                _DEBUG_EXECUTE(pool->metadata.n_pools--);
                 void *ptr = next_pool;
                 size_t size = next_pool->pool_size;
                 ba_os_free(ptr, size);
             }
-            DEBUG_RUN_CHECKS(pool);
+            _DEBUG_EXECUTE(ba_debug_checks(pool));
             util_mutex_unlock(&pool->metadata.lock);
             return 0;
         }
@@ -248,7 +242,7 @@ void umf_ba_linear_destroy(umf_ba_linear_pool_t *pool) {
     }
 
 #ifndef NDEBUG
-    DEBUG_RUN_CHECKS(pool);
+    _DEBUG_EXECUTE(ba_debug_checks(pool));
     if (pool->metadata.global_n_allocs) {
         fprintf(stderr, "umf_ba_linear_destroy(): global_n_allocs = %zu\n",
                 pool->metadata.global_n_allocs);
