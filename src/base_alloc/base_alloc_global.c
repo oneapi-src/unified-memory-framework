@@ -23,8 +23,8 @@ static UTIL_ONCE_FLAG ba_is_initialized = UTIL_ONCE_FLAG_INIT;
 
 // allocation classes need to be consecutive powers of 2
 #define ALLOCATION_CLASSES                                                     \
-    { 16, 32, 64, 128 }
-#define NUM_ALLOCATION_CLASSES 4
+    { 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192 }
+#define NUM_ALLOCATION_CLASSES 10
 
 struct base_alloc_t {
     size_t ac_sizes[NUM_ALLOCATION_CLASSES];
@@ -137,8 +137,9 @@ void *umf_ba_global_aligned_alloc(size_t size, size_t alignment) {
     if (size > BASE_ALLOC.ac_sizes[NUM_ALLOCATION_CLASSES - 1]) {
 #ifndef NDEBUG
         fprintf(stderr,
-                "base_alloc: allocation size larger than the biggest "
-                "allocation class. Falling back to OS memory allocation.\n");
+                "base_alloc: allocation size (%zu) larger than the biggest "
+                "allocation class. Falling back to OS memory allocation.\n",
+                size);
 #endif
         return transform_ptr(ba_os_alloc(size), size, alignment);
     }
