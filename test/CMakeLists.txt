@@ -142,9 +142,6 @@ endif()
 add_umf_test(NAME base_alloc
             SRCS ${BA_SOURCES_FOR_TEST} test_base_alloc.cpp
             LIBS umf_utils)
-add_umf_test(NAME base_alloc_linear
-            SRCS ${BA_SOURCES_FOR_TEST} test_base_alloc_linear.cpp
-            LIBS umf_utils)
 if(LINUX)
     # TODO: fix this on windows
     add_umf_test(NAME base_alloc_global

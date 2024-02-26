@@ -6,6 +6,7 @@ include(${UMF_CMAKE_SOURCE_DIR}/cmake/helpers.cmake)
 
 set(PROXY_SOURCES
     proxy_lib.c
+    ${BA_SOURCES}
 )
 
 set(PROXY_SOURCES_LINUX

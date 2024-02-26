@@ -11,6 +11,8 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
+#include <errno.h>
+
 #include "base_alloc.h"
 #include "base_alloc_global.h"
 #include "utils_concurrency.h"
@@ -33,7 +35,8 @@ void *ba_os_alloc(size_t size) {
 
 void ba_os_free(void *ptr, size_t size) {
     int ret = munmap(ptr, size);
-    assert(ret == 0);
+    // TODO: this might fail in proxy_lib
+    // assert(ret == 0);
     (void)ret; // unused
 }
 

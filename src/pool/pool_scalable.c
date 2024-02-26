@@ -171,7 +171,7 @@ static void tbb_pool_finalize(void *pool) {
     util_init_once(&tbb_is_initialized, init_tbb_global_state);
     struct tbb_memory_pool *pool_data = (struct tbb_memory_pool *)pool;
     g_tbb_ops.pool_destroy(pool_data->tbb_pool);
-    umf_ba_global_free(pool_data, sizeof(struct tbb_memory_pool));
+    umf_ba_global_free(pool_data);
 }
 
 static void *tbb_malloc(void *pool, size_t size) {

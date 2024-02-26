@@ -14,15 +14,8 @@
 #include "base_alloc_global.h"
 
 struct base_alloc_pool : public umf_test::pool_base_t {
-    std::unordered_map<void *, size_t> sizes;
-    std::mutex m;
 
-    void *malloc(size_t size) noexcept {
-        auto *ptr = umf_ba_global_alloc(size);
-        std::unique_lock<std::mutex> l(m);
-        sizes[ptr] = size;
-        return ptr;
-    }
+    void *malloc(size_t size) noexcept { return umf_ba_global_alloc(size); }
     void *calloc(size_t, size_t) noexcept {
         umf::getPoolLastStatusRef<base_alloc_pool>() =
             UMF_RESULT_ERROR_NOT_SUPPORTED;
@@ -39,17 +32,10 @@ struct base_alloc_pool : public umf_test::pool_base_t {
         return NULL;
     }
     size_t malloc_usable_size(void *ptr) noexcept {
-        std::unique_lock<std::mutex> l(m);
-        return sizes[ptr];
+        return umf_ba_global_malloc_usable_size(ptr);
     }
     umf_result_t free(void *ptr) noexcept {
-        size_t size;
-        {
-            std::unique_lock<std::mutex> l(m);
-            size = sizes[ptr];
-        }
-
-        umf_ba_global_free(ptr, size);
+        umf_ba_global_free(ptr);
         return UMF_RESULT_SUCCESS;
     }
     umf_result_t get_last_allocation_error() {

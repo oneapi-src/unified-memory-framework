@@ -278,7 +278,7 @@ static umf_result_t os_initialize(void *params, void **provider) {
 err_destroy_hwloc_topology:
     hwloc_topology_destroy(os_provider->topo);
 err_free_os_provider:
-    umf_ba_global_free(os_provider, sizeof(os_memory_provider_t));
+    umf_ba_global_free(os_provider);
     return ret;
 }
 
@@ -291,7 +291,7 @@ static void os_finalize(void *provider) {
     os_memory_provider_t *os_provider = provider;
     hwloc_bitmap_free(os_provider->nodeset);
     hwloc_topology_destroy(os_provider->topo);
-    umf_ba_global_free(os_provider, sizeof(os_memory_provider_t));
+    umf_ba_global_free(os_provider);
 }
 
 static umf_result_t os_get_min_page_size(void *provider, void *ptr,

@@ -15,7 +15,6 @@ set(UMF_LIBS umf_utils)
 
 set(BA_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/base_alloc/base_alloc.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/base_alloc/base_alloc_linear.c
     ${CMAKE_CURRENT_SOURCE_DIR}/base_alloc/base_alloc_global.c)
 
 if (LINUX)

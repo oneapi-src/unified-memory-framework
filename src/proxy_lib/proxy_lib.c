@@ -36,29 +36,23 @@
 #include <umf/memory_provider.h>
 #include <umf/providers/provider_os_memory.h>
 
-#include "base_alloc_linear.h"
+#include "base_alloc_global.h"
 #include "proxy_lib.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
 
 /*
  * The UMF proxy library uses two memory allocators:
- * 1) the "LEAK" internal linear base allocator based on the anonymous mapped
- *    memory that will NOT be destroyed (with API ba_leak_*()).
+ * 1) base_alloc for bootstrapping
  * 2) the main one - UMF pool allocator.
  *
  * Ad 1)
- * The "LEAK" internal linear base allocator is used from the very beginning
+ * The base allocator is used from the very beginning
  * to the creation of a UMF pool in the constructor of the proxy library.
  * It is used to allocate memory for OS specific data used during loading and unloading
  * applications (for example _dl_init() and _dl_fini() on Linux storing data of all
  * constructors and destructors that have to be called) and also memory needed
  * by umfMemoryProviderCreate() and umfPoolCreate().
- * That memory will be leaked on purpose (OS will have to free it during destroying
- * the process), because we cannot free the memory containing data of destructors
- * that have to be called at the end (for example memory allocated by _dl_init()
- * and used internally by _dl_fini() on Linux).
- * The "LEAK" internal linear base allocator uses about 900 kB on Linux.
  *
  * Ad 2)
  * The UMF pool allocator (the main one) is used from the creation to the destruction
@@ -66,8 +60,6 @@
  * by an application.
  */
 
-static UTIL_ONCE_FLAG Base_alloc_leak_initialized = UTIL_ONCE_FLAG_INIT;
-static umf_ba_linear_pool_t *Base_alloc_leak = NULL;
 static umf_memory_provider_handle_t OS_memory_provider = NULL;
 static umf_memory_pool_handle_t Proxy_pool = NULL;
 
@@ -97,78 +89,44 @@ void proxy_lib_create_common(void) {
         exit(-1);
     }
     // The UMF pool has just been created (Proxy_pool != NULL). Stop using
-    // the linear allocator and start using the UMF pool allocator from now on.
+    // the base allocator and start using the UMF pool allocator from now on.
 }
 
 void proxy_lib_destroy_common(void) {
-    // We cannot destroy 'Base_alloc_leak' nor 'Proxy_pool' nor 'OS_memory_provider',
-    // because it could lead to use-after-free in the program's unloader
-    // (for example _dl_fini() on Linux).
+    umfPoolDestroy(Proxy_pool);
+    Proxy_pool = NULL;
+
+    umfMemoryProviderDestroy(OS_memory_provider);
+    OS_memory_provider = NULL;
+
+    umf_ba_destroy_global();
 }
 
 /*****************************************************************************/
-/*** Generic version of realloc() of linear base allocator *******************/
+/*** Generic version of realloc() of base allocator *******************/
 /*****************************************************************************/
 
-static inline void *ba_generic_realloc(umf_ba_linear_pool_t *pool, void *ptr,
-                                       size_t new_size, size_t max_size) {
+static inline void *ba_alloc_global_realloc(void *ptr, size_t new_size) {
     assert(ptr);      // it should be verified in the main realloc()
     assert(new_size); // it should be verified in the main realloc()
-    assert(max_size); // max_size should be set in the main realloc()
 
-    void *new_ptr = umf_ba_linear_alloc(pool, new_size);
+    void *new_ptr = umf_ba_global_alloc(new_size);
     if (!new_ptr) {
         return NULL;
     }
 
-    if (new_size > max_size) {
-        new_size = max_size;
+    size_t old_size = umf_ba_global_malloc_usable_size(ptr);
+
+    if (new_size > old_size) {
+        new_size = old_size;
     }
 
     memcpy(new_ptr, ptr, new_size);
 
     // we can free the old ptr now
-    umf_ba_linear_free(pool, ptr);
+    umf_ba_global_free(ptr);
 
     return new_ptr;
-}
-
-/*****************************************************************************/
-/*** The "LEAK" linear base allocator functions ******************************/
-/*****************************************************************************/
-
-static void ba_leak_create(void) { Base_alloc_leak = umf_ba_linear_create(0); }
-
-// it does not implement destroy(), because we cannot destroy non-freed memory
-
-static inline void *ba_leak_malloc(size_t size) {
-    util_init_once(&Base_alloc_leak_initialized, ba_leak_create);
-    return umf_ba_linear_alloc(Base_alloc_leak, size);
-}
-
-static inline void *ba_leak_calloc(size_t nmemb, size_t size) {
-    util_init_once(&Base_alloc_leak_initialized, ba_leak_create);
-    // umf_ba_linear_alloc() returns zeroed memory
-    return umf_ba_linear_alloc(Base_alloc_leak, nmemb * size);
-}
-
-static inline void *ba_leak_realloc(void *ptr, size_t size, size_t max_size) {
-    util_init_once(&Base_alloc_leak_initialized, ba_leak_create);
-    return ba_generic_realloc(Base_alloc_leak, ptr, size, max_size);
-}
-
-static inline void *ba_leak_aligned_alloc(size_t alignment, size_t size) {
-    util_init_once(&Base_alloc_leak_initialized, ba_leak_create);
-    void *ptr = umf_ba_linear_alloc(Base_alloc_leak, size + alignment);
-    return (void *)ALIGN_UP((uintptr_t)ptr, alignment);
-}
-
-static inline int ba_leak_free(void *ptr) {
-    return umf_ba_linear_free(Base_alloc_leak, ptr);
-}
-
-static inline size_t ba_leak_pool_contains_pointer(void *ptr) {
-    return umf_ba_linear_pool_contains_pointer(Base_alloc_leak, ptr);
 }
 
 /*****************************************************************************/
@@ -183,7 +141,7 @@ void *malloc(size_t size) {
         return ptr;
     }
 
-    return ba_leak_malloc(size);
+    return umf_ba_global_alloc(size);
 }
 
 void *calloc(size_t nmemb, size_t size) {
@@ -194,7 +152,11 @@ void *calloc(size_t nmemb, size_t size) {
         return ptr;
     }
 
-    return ba_leak_calloc(nmemb, size);
+    void *ptr = umf_ba_global_alloc(nmemb * size);
+    if (ptr) {
+        memset(ptr, 0, nmemb * size);
+    }
+    return ptr;
 }
 
 void *realloc(void *ptr, size_t size) {
@@ -207,20 +169,14 @@ void *realloc(void *ptr, size_t size) {
         return NULL;
     }
 
-    size_t leak_pool_contains_pointer = ba_leak_pool_contains_pointer(ptr);
-    if (leak_pool_contains_pointer) {
-        return ba_leak_realloc(ptr, size, leak_pool_contains_pointer);
-    }
-
-    if (Proxy_pool) {
+    if (!was_called_from_umfPool && Proxy_pool) {
         was_called_from_umfPool = 1;
         void *new_ptr = umfPoolRealloc(Proxy_pool, ptr, size);
         was_called_from_umfPool = 0;
         return new_ptr;
     }
 
-    assert(0);
-    return NULL;
+    return ba_alloc_global_realloc(ptr, size);
 }
 
 void free(void *ptr) {
@@ -228,20 +184,17 @@ void free(void *ptr) {
         return;
     }
 
-    if (ba_leak_free(ptr) == 0) {
-        return;
-    }
-
-    if (Proxy_pool) {
+    if (!was_called_from_umfPool && Proxy_pool) {
+        was_called_from_umfPool = 1;
         if (umfPoolFree(Proxy_pool, ptr) != UMF_RESULT_SUCCESS) {
             fprintf(stderr, "error: umfPoolFree() failed\n");
             assert(0);
         }
+        was_called_from_umfPool = 0;
         return;
     }
 
-    assert(0);
-    return;
+    umf_ba_global_free(ptr);
 }
 
 void *aligned_alloc(size_t alignment, size_t size) {
@@ -252,7 +205,7 @@ void *aligned_alloc(size_t alignment, size_t size) {
         return ptr;
     }
 
-    return ba_leak_aligned_alloc(alignment, size);
+    return umf_ba_global_aligned_alloc(size, alignment);
 }
 
 size_t malloc_usable_size(void *ptr) {
@@ -263,5 +216,5 @@ size_t malloc_usable_size(void *ptr) {
         return size;
     }
 
-    return 0; // unsupported in this case
+    return umf_ba_global_malloc_usable_size(ptr);
 }
