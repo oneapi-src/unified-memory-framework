@@ -70,7 +70,7 @@ umf_result_t umfPoolCreateFromMemspace(umf_memspace_handle_t memspace,
     ret = memspace->nodes[0]->ops->pool_create_from_memspace(
         memspace, privs, memspace->size, policy, pool);
 
-    umf_ba_global_free(privs, sizeof(void *) * memspace->size);
+    umf_ba_global_free(privs);
 
     return ret;
 }
@@ -95,7 +95,7 @@ umfMemoryProviderCreateFromMemspace(umf_memspace_handle_t memspace,
     ret = memspace->nodes[0]->ops->memory_provider_create_from_memspace(
         memspace, privs, memspace->size, policy, provider);
 
-    umf_ba_global_free(privs, sizeof(void *) * memspace->size);
+    umf_ba_global_free(privs);
 
     return ret;
 }
@@ -106,7 +106,6 @@ void umfMemspaceDestroy(umf_memspace_handle_t memspace) {
         umfMemoryTargetDestroy(memspace->nodes[i]);
     }
 
-    umf_ba_global_free(memspace->nodes,
-                       memspace->size * sizeof(umf_memory_target_handle_t));
-    umf_ba_global_free(memspace, sizeof(struct umf_memspace_t));
+    umf_ba_global_free(memspace->nodes);
+    umf_ba_global_free(memspace);
 }

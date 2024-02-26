@@ -37,7 +37,7 @@ umf_result_t umfMemoryTargetCreate(const umf_memory_target_ops_t *ops,
     void *target_priv;
     umf_result_t ret = ops->initialize(params, &target_priv);
     if (ret != UMF_RESULT_SUCCESS) {
-        umf_ba_global_free(target, sizeof(umf_memory_target_t));
+        umf_ba_global_free(target);
         return ret;
     }
 
@@ -51,5 +51,5 @@ umf_result_t umfMemoryTargetCreate(const umf_memory_target_ops_t *ops,
 void umfMemoryTargetDestroy(umf_memory_target_handle_t memoryTarget) {
     assert(memoryTarget);
     memoryTarget->ops->finalize(memoryTarget->priv);
-    umf_ba_global_free(memoryTarget, sizeof(umf_memory_target_t));
+    umf_ba_global_free(memoryTarget);
 }

@@ -211,7 +211,7 @@ err_destroy_pool_nodes:
 err_util_mutex_destroy:
     util_mutex_destroy_not_free(&c->mutex);
 err_free_critnib:
-    umf_ba_global_free(c, sizeof(struct critnib));
+    umf_ba_global_free(c);
     return NULL;
 }
 
@@ -261,7 +261,7 @@ void critnib_delete(struct critnib *c) {
 
     umf_ba_destroy(c->pool_nodes);
     umf_ba_destroy(c->pool_leaves);
-    umf_ba_global_free(c, sizeof(struct critnib));
+    umf_ba_global_free(c);
 }
 
 /*

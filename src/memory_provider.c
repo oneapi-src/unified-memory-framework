@@ -45,7 +45,7 @@ umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
     void *provider_priv;
     umf_result_t ret = ops->initialize(params, &provider_priv);
     if (ret != UMF_RESULT_SUCCESS) {
-        umf_ba_global_free(provider, sizeof(umf_memory_provider_t));
+        umf_ba_global_free(provider);
         return ret;
     }
 
@@ -58,7 +58,7 @@ umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
 
 void umfMemoryProviderDestroy(umf_memory_provider_handle_t hProvider) {
     hProvider->ops.finalize(hProvider->provider_priv);
-    umf_ba_global_free(hProvider, sizeof(umf_memory_provider_t));
+    umf_ba_global_free(hProvider);
 }
 
 static void
