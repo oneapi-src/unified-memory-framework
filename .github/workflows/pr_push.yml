@@ -79,6 +79,7 @@ jobs:
           -B ${{github.workspace}}/build
           -DUMF_FORMAT_CODE_STYLE=ON
           -DUMF_BUILD_OS_MEMORY_PROVIDER=OFF
+          -DUMF_BUILD_TESTS=OFF
 
       - name: Build
         run: >

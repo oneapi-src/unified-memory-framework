@@ -110,18 +110,25 @@ else()
 endif()
 
 if(UMF_BUILD_OS_MEMORY_PROVIDER AND LINUX) # OS-specific functions are implemented only for Linux now
+    if(PkgConfig_FOUND)
+        pkg_check_modules(LIBNUMA numa)
+    endif()
+    if(NOT LIBNUMA_FOUND)
+        find_package(LIBNUMA REQUIRED numa)
+    endif()
+
     add_umf_test(NAME provider_os_memory
                  SRCS provider_os_memory.cpp
                  LIBS umf_utils)
     add_umf_test(NAME provider_os_memory_multiple_numa_nodes
                  SRCS provider_os_memory_multiple_numa_nodes.cpp
-                 LIBS umf_utils numa)
+                 LIBS umf_utils ${LIBNUMA_LIBRARIES})
     add_umf_test(NAME memspace_numa
                  SRCS memspace_numa.cpp
-                 LIBS numa)
+                 LIBS ${LIBNUMA_LIBRARIES})
     add_umf_test(NAME provider_os_memory_config
                  SRCS provider_os_memory_config.cpp
-                 LIBS umf_utils numa)
+                 LIBS umf_utils ${LIBNUMA_LIBRARIES})
 endif()
 
 if(UMF_BUILD_SHARED_LIBRARY)
