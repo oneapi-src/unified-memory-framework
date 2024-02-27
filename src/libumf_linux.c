@@ -15,11 +15,11 @@
 
 umf_memory_tracker_handle_t TRACKER = NULL;
 
-void __attribute__((constructor)) umfCreate(void) {
+void __attribute__((constructor(102))) umfCreate(void) {
     TRACKER = umfMemoryTrackerCreate();
 }
 
-void __attribute__((destructor)) umfDestroy(void) {
+void __attribute__((destructor(102))) umfDestroy(void) {
     umf_memory_tracker_handle_t t = TRACKER;
     // make sure TRACKER is not used after being destroyed
     TRACKER = NULL;

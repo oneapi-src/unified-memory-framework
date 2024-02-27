@@ -65,18 +65,6 @@ static inline size_t util_get_page_size(void) { return sysconf(_SC_PAGE_SIZE); }
 
 #endif /* _WIN32 */
 
-// check if we are running in the proxy library
-static inline int is_running_in_proxy_lib(void) {
-    int is_in_proxy_lib_val = 0;
-    char *ld_preload = util_getenv("LD_PRELOAD");
-    if (ld_preload && strstr(ld_preload, "libumf_proxy.so")) {
-        is_in_proxy_lib_val = 1;
-    }
-
-    util_free_getenv(ld_preload);
-    return is_in_proxy_lib_val;
-}
-
 #define NOFUNCTION                                                             \
     do {                                                                       \
     } while (0)

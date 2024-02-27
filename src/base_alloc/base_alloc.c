@@ -238,13 +238,6 @@ void umf_ba_free(umf_ba_pool_t *pool, void *ptr) {
 }
 
 void umf_ba_destroy(umf_ba_pool_t *pool) {
-    // Do not destroy if we are running in the proxy library,
-    // because it may need those resources till
-    // the very end of exiting the application.
-    if (pool->metadata.n_allocs && is_running_in_proxy_lib()) {
-        return;
-    }
-
 #ifndef NDEBUG
     ba_debug_checks(pool);
     if (pool->metadata.n_allocs) {

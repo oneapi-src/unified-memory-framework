@@ -361,20 +361,18 @@ static void check_if_tracker_is_empty(umf_memory_tracker_handle_t hTracker,
         // Do not assert if we are running in the proxy library,
         // because it may need those resources till
         // the very end of exiting the application.
-        if (!is_running_in_proxy_lib()) {
-            if (pool) {
-                fprintf(stderr,
-                        "ASSERT: tracking provider of pool %p is not empty! "
-                        "(%zu items left)\n",
-                        (void *)pool, n_items);
-            } else {
-                fprintf(stderr,
-                        "ASSERT: tracking provider is not empty! (%zu items "
-                        "left)\n",
-                        n_items);
-            }
-            assert(n_items == 0);
+        if (pool) {
+            fprintf(stderr,
+                    "ASSERT: tracking provider of pool %p is not empty! "
+                    "(%zu items left)\n",
+                    (void *)pool, n_items);
+        } else {
+            fprintf(stderr,
+                    "ASSERT: tracking provider is not empty! (%zu items "
+                    "left)\n",
+                    n_items);
         }
+        assert(n_items == 0);
     }
 }
 #endif /* NDEBUG */
@@ -508,13 +506,6 @@ err_free_handle:
 
 void umfMemoryTrackerDestroy(umf_memory_tracker_handle_t handle) {
     if (!handle) {
-        return;
-    }
-
-    // Do not destroy if we are running in the proxy library,
-    // because it may need those resources till
-    // the very end of exiting the application.
-    if (is_running_in_proxy_lib()) {
         return;
     }
 

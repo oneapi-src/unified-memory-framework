@@ -93,13 +93,12 @@ void proxy_lib_create_common(void) {
 }
 
 void proxy_lib_destroy_common(void) {
+
     umfPoolDestroy(Proxy_pool);
     Proxy_pool = NULL;
 
     umfMemoryProviderDestroy(OS_memory_provider);
     OS_memory_provider = NULL;
-
-    umf_ba_destroy_global();
 }
 
 /*****************************************************************************/

@@ -39,9 +39,9 @@ add_umf_library(NAME umf_proxy
 add_library(${PROJECT_NAME}::proxy ALIAS umf_proxy)
 
 if(PROXY_LIB_USES_SCALABLE_POOL)
-    target_compile_definitions(umf_proxy PRIVATE PROXY_LIB_USES_SCALABLE_POOL=1)
+    target_compile_definitions(umf_proxy PRIVATE PROXY_LIB_USES_SCALABLE_POOL=1 SKIP_BASE_ALLOC_DTOR=1)
 elseif(PROXY_LIB_USES_JEMALLOC_POOL)
-    target_compile_definitions(umf_proxy PRIVATE PROXY_LIB_USES_JEMALLOC_POOL=1)
+    target_compile_definitions(umf_proxy PRIVATE PROXY_LIB_USES_JEMALLOC_POOL=1 SKIP_BASE_ALLOC_DTOR=1)
 endif()
 
 target_include_directories(umf_proxy PUBLIC
