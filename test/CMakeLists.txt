@@ -145,6 +145,14 @@ add_umf_test(NAME base_alloc
 add_umf_test(NAME base_alloc_linear
             SRCS ${BA_SOURCES_FOR_TEST} test_base_alloc_linear.cpp
             LIBS umf_utils)
+
+if(WINDOWS)
+    # Disable the warning:
+    # warning C4996: 'getenv': This function or variable may be unsafe.
+    # Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS.
+    target_compile_definitions(umf_test-base_alloc_linear PRIVATE _CRT_SECURE_NO_WARNINGS)
+endif()
+
 if(LINUX)
     # TODO: fix this on windows
     add_umf_test(NAME base_alloc_global

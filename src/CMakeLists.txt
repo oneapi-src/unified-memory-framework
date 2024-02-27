@@ -102,7 +102,16 @@ else()
                     LIBS ${UMF_LIBS})
 endif()
 
+# PUBLIC compile definitions
 target_compile_definitions(umf PUBLIC ${UMF_COMPILE_DEFINITIONS})
+
+# PRIVATE compile definitions
+if(WINDOWS)
+    # Disable the warning:
+    # warning C4996: 'getenv': This function or variable may be unsafe.
+    # Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS.
+    target_compile_definitions(umf PRIVATE _CRT_SECURE_NO_WARNINGS)
+endif()
 
 if (UMF_ENABLE_POOL_TRACKING)
     target_sources(umf PRIVATE memory_pool_tracking.c)
