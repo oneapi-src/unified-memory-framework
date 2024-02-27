@@ -25,12 +25,10 @@ jobs:
         os: [ubuntu-latest, windows-latest]
         include:
           - os: ubuntu-latest
-            nproc: $(nproc)
             pool_scalable: 'ON'
             # Windows doesn't recognize 'CMAKE_BUILD_TYPE', it uses '--config' param in build command
             extra_build_option: ['-DCMAKE_BUILD_TYPE=Release']
           - os: windows-latest
-            nproc: $Env:NUMBER_OF_PROCESSORS
             pool_scalable: 'OFF'
     runs-on: ${{matrix.os}}
 
@@ -63,7 +61,7 @@ jobs:
         -DUMF_BUILD_LIBUMF_POOL_SCALABLE=${{matrix.pool_scalable}}
 
     - name: Build
-      run: cmake --build ${{github.workspace}}/build --config Release -j ${{matrix.nproc}}
+      run: cmake --build ${{github.workspace}}/build --config Release -j
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@b7bf0a3ed3ecfa44160715d7c442788f65f0f923 # v3.23.2
