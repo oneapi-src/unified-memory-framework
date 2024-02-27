@@ -1,3 +1,4 @@
+# CodeQL static analysis
 name: CodeQL
 
 # Due to lower score on Scorecard we're running this separately from
@@ -5,6 +6,10 @@ name: CodeQL
 # or recognized (by Scorecard). If Scorecard changes its behavior we can
 # go back to use 'workflow_call' trigger.
 on: [push, pull_request]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -15,18 +20,20 @@ jobs:
     permissions:
       security-events: write
     strategy:
-        fail-fast: false
-        matrix:
-            os: [ubuntu-latest, windows-latest]
-            include:
-                - os: ubuntu-latest
-                  nproc: $(nproc)
-                  pool_scalable: 'ON'
-                - os: windows-latest
-                  nproc: $Env:NUMBER_OF_PROCESSORS
-                  pool_scalable: 'OFF'
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            nproc: $(nproc)
+            pool_scalable: 'ON'
+            # Windows doesn't recognize 'CMAKE_BUILD_TYPE', it uses '--config' param in build command
+            extra_build_option: ['-DCMAKE_BUILD_TYPE=Release']
+          - os: windows-latest
+            nproc: $Env:NUMBER_OF_PROCESSORS
+            pool_scalable: 'OFF'
     runs-on: ${{matrix.os}}
-            
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -49,15 +56,14 @@ jobs:
       run: >
         cmake
         -B ${{github.workspace}}/build
-        -DCMAKE_BUILD_TYPE=Release
-        -DUMF_FORMAT_CODE_STYLE=ON
+        ${{matrix.extra_build_option}}
+        -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_ENABLE_POOL_TRACKING=ON
         -DUMF_BUILD_LIBUMF_POOL_SCALABLE=${{matrix.pool_scalable}}
 
     - name: Build
-      run: >
-        cmake --build ${{github.workspace}}/build --config Release -j ${{matrix.nproc}}
+      run: cmake --build ${{github.workspace}}/build --config Release -j ${{matrix.nproc}}
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@b7bf0a3ed3ecfa44160715d7c442788f65f0f923 # v3.23.2

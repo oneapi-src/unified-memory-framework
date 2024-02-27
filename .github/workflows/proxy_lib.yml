@@ -1,3 +1,4 @@
+# Builds libumf_proxy and runs tests with it
 name: Proxy library
 
 on: workflow_call
@@ -6,8 +7,8 @@ permissions:
   contents: read
 
 jobs:
-  ubuntu-build:
-    name: Build - Ubuntu
+  proxy-ubuntu:
+    name: Ubuntu
 
     strategy:
       matrix:

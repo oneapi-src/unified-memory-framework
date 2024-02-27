@@ -1,3 +1,4 @@
+# Various non-standard tests, requiring e.g. longer run
 name: Nightly
 
 # This job is run at 00:00 UTC every day or on demand.
@@ -10,38 +11,37 @@ permissions:
   contents: read
 
 jobs:
-    Valgrind:
-        name: Valgrind
-        strategy:
-            fail-fast: false
-            matrix:
-                tool: ['memcheck'] # TODO: enable 'drd' and 'helgrind' when all issues are fixed
-        runs-on: ubuntu-latest
+  valgrind:
+    name: Valgrind
+    strategy:
+      fail-fast: false
+      matrix:
+          tool: ['memcheck'] # TODO: enable 'drd' and 'helgrind' when all issues are fixed
+    runs-on: ubuntu-latest
 
-        steps:
-        - name: Checkout repository
-          uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
-        - name: Install apt packages
-          run: |
-            sudo apt-get update
-            sudo apt-get install -y cmake hwloc libhwloc-dev libjemalloc-dev libnuma-dev libtbb-dev valgrind
+    - name: Install apt packages
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake hwloc libhwloc-dev libjemalloc-dev libnuma-dev libtbb-dev valgrind
 
-        - name: Configure CMake
-          run: >
-            cmake
-            -B ${{github.workspace}}/build
-            -DCMAKE_BUILD_TYPE=Debug
-            -DUMF_FORMAT_CODE_STYLE=OFF
-            -DUMF_DEVELOPER_MODE=ON
-            -DUMF_ENABLE_POOL_TRACKING=ON
-            -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
-            -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
-            -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
+    - name: Configure CMake
+      run: >
+        cmake
+        -B ${{github.workspace}}/build
+        -DCMAKE_BUILD_TYPE=Debug
+        -DUMF_FORMAT_CODE_STYLE=OFF
+        -DUMF_DEVELOPER_MODE=ON
+        -DUMF_ENABLE_POOL_TRACKING=ON
+        -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
+        -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
+        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
 
-        - name: Build
-          run: >
-            cmake --build ${{github.workspace}}/build --config Debug -j$(nproc)
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build --config Debug -j$(nproc)
 
-        - name: Run tests under valgrind
-          run: ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{github.workspace}}/build ${{matrix.tool}}
+    - name: Run tests under valgrind
+      run: ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{github.workspace}}/build ${{matrix.tool}}

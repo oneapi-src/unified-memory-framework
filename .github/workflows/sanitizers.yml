@@ -1,0 +1,154 @@
+# Check code with compilers' sanitizers
+name: Sanitizers
+
+on: workflow_call
+
+env:
+  BUILD_DIR : "${{github.workspace}}/build/"
+
+permissions:
+  contents: read
+
+jobs:
+  icx-build:
+    # TODO: we could merge ICX build with gcc/clang (using our dockers) Issue: #259
+    name: Intel C++ Compiler on Ubuntu
+    strategy:
+      matrix:
+        compiler: [{c: icx, cxx: icpx}]
+        # TSAN is mutually exclusive with other sanitizers
+        sanitizers: [{asan: ON, ubsan: ON, tsan: OFF}, {asan: OFF, ubsan: OFF, tsan: ON}]
+    runs-on: ubuntu-22.04
+    container:
+      image: intel/oneapi:latest
+      volumes:
+        - ${{github.workspace}}:${{github.workspace}}
+      options: "--privileged"
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+    - name: Install apt packages
+      run: |
+        apt-get update
+        apt-get install -y cmake libnuma-dev libjemalloc-dev libtbb-dev libhwloc-dev
+
+    - name: Configure build
+      run: >
+        cmake
+        -B ${{env.BUILD_DIR}}
+        -DCMAKE_BUILD_TYPE=Debug
+        -DUMF_BUILD_SHARED_LIBRARY=OFF
+        -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
+        -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
+        -DUMF_BUILD_OS_MEMORY_PROVIDER=ON
+        -DUMF_ENABLE_POOL_TRACKING=ON
+        -DUMF_FORMAT_CODE_STYLE=OFF
+        -DUMF_DEVELOPER_MODE=ON
+        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
+        -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
+        -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
+        -DUSE_ASAN=${{matrix.sanitizers.asan}}
+        -DUSE_UBSAN=${{matrix.sanitizers.ubsan}}
+        -DUSE_TSAN=${{matrix.sanitizers.tsan}}
+        -DUMF_BUILD_EXAMPLES=ON
+
+    - name: Build UMF
+      run: cmake --build ${{env.BUILD_DIR}} -j $(nproc)
+
+    - name: Run tests
+      working-directory: ${{env.BUILD_DIR}}
+      run: ctest --output-on-failure
+
+  ubuntu-build:
+    name: gcc and clang on Ubuntu
+    strategy:
+      matrix:
+        compiler: [{c: gcc, cxx: g++}, {c: clang, cxx: clang++}]
+        # TSAN is mutually exclusive with other sanitizers
+        sanitizers: [{asan: ON, ubsan: ON, tsan: OFF}, {asan: OFF, ubsan: OFF, tsan: ON}]
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+    - name: Install apt packages
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang cmake libhwloc-dev libnuma-dev libjemalloc-dev libtbb-dev
+
+    - name: Configure build
+      run: >
+        cmake
+        -B ${{env.BUILD_DIR}}
+        -DCMAKE_BUILD_TYPE=Debug
+        -DUMF_BUILD_SHARED_LIBRARY=OFF
+        -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
+        -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
+        -DUMF_BUILD_OS_MEMORY_PROVIDER=ON
+        -DUMF_ENABLE_POOL_TRACKING=ON
+        -DUMF_FORMAT_CODE_STYLE=OFF
+        -DUMF_DEVELOPER_MODE=ON
+        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
+        -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
+        -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
+        -DUSE_ASAN=${{matrix.sanitizers.asan}}
+        -DUSE_UBSAN=${{matrix.sanitizers.ubsan}}
+        -DUSE_TSAN=${{matrix.sanitizers.tsan}}
+        -DUMF_BUILD_EXAMPLES=ON
+
+    - name: Build UMF
+      run: cmake --build ${{env.BUILD_DIR}} -j $(nproc)
+
+    - name: Run tests
+      working-directory: ${{env.BUILD_DIR}}
+      run: ctest --output-on-failure
+
+  windows-build:
+    name: cl and clang-cl on Windows
+    strategy:
+      matrix:
+        compiler: [{c: cl, cxx: cl}, {c: clang-cl, cxx: clang-cl}]
+        # Only ASAN is supported
+        sanitizers: [{asan: ON}]
+    runs-on: windows-2022
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+    # Use '14.38.33130' MSVC toolset when compiling UMF with ASan.
+    # Running binaries compiled with older toolsets results in a
+    # 'STATUS_DLL_INIT_FAILED' error despite being linked with ASan from
+    # the same toolset as the compiler being used.
+    # https://github.com/actions/runner-images/issues/8891
+    - name: Setup MSVC dev command prompt
+      if: matrix.sanitizers.asan == 'ON'
+      uses: TheMrMilchmann/setup-msvc-dev@48edcef51a12c80d7e62ace57aae1417795e511c # v3.0.0
+      with:
+        arch: x64
+        toolset: 14.38.33130
+
+    - name: Configure build
+      run: >
+        cmake
+        -B ${{env.BUILD_DIR}}
+        -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
+        -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
+        -DUMF_BUILD_SHARED_LIBRARY=OFF
+        -DUMF_ENABLE_POOL_TRACKING=OFF
+        -DUMF_FORMAT_CODE_STYLE=OFF
+        -DUMF_DEVELOPER_MODE=ON
+        -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
+        -DUSE_ASAN=${{matrix.sanitizers.asan}}
+        -DUMF_BUILD_OS_MEMORY_PROVIDER=ON
+        -DUMF_BUILD_EXAMPLES=ON
+
+    - name: Build UMF
+      run: cmake --build ${{env.BUILD_DIR}} --config Debug -j $Env:NUMBER_OF_PROCESSORS
+
+    - name: Run tests
+      working-directory: ${{env.BUILD_DIR}}
+      run: ctest -C Debug --output-on-failure
