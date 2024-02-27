@@ -50,7 +50,7 @@ function(add_umf_test)
     set_tests_properties(${TEST_NAME} PROPERTIES LABELS "umf")
 
     if(WIN32)
-        set_property(TEST ${TEST_NAME} PROPERTY ENVIRONMENT_MODIFICATION 
+        set_property(TEST ${TEST_NAME} PROPERTY ENVIRONMENT_MODIFICATION
             "PATH=path_list_append:../bin/$<CONFIG>")
     endif()
 
@@ -61,7 +61,7 @@ endfunction()
 
 add_subdirectory(common)
 
-add_umf_test(NAME base 
+add_umf_test(NAME base
              SRCS base.cpp)
 add_umf_test(NAME memoryPool
              SRCS memoryPoolAPI.cpp malloc_compliance_tests.cpp)
@@ -129,6 +129,9 @@ if(UMF_BUILD_OS_MEMORY_PROVIDER AND LINUX) # OS-specific functions are implement
     add_umf_test(NAME provider_os_memory_config
                  SRCS provider_os_memory_config.cpp
                  LIBS umf_utils ${LIBNUMA_LIBRARIES})
+    add_umf_test(NAME memspace_host_all
+                 SRCS memspace_host_all.cpp
+                 LIBS ${LIBNUMA_LIBRARIES})
 endif()
 
 if(UMF_BUILD_SHARED_LIBRARY)

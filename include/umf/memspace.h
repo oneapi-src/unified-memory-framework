@@ -44,6 +44,12 @@ umfMemoryProviderCreateFromMemspace(umf_memspace_handle_t hMemspace,
                                     umf_memspace_policy_handle_t hPolicy,
                                     umf_memory_provider_handle_t *hProvider);
 
+///
+/// \brief Retrieves predefined host all memspace.
+/// \return host all memspace handle on success or NULL on failure.
+///
+umf_memspace_handle_t umfMemspaceHostAllGet(void);
+
 #ifdef __cplusplus
 }
 #endif

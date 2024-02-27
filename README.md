@@ -161,6 +161,19 @@ The `UMF_BUILD_LIBUMF_POOL_SCALABLE` option has to be turned `ON` to build this 
 2) Required packages:
    - libtbb-dev (libraries: libtbbmalloc.so.2)
 
+### Memspaces (Linux-only)
+
+TODO: Add general information about memspaces.
+
+#### Host all memspace
+
+Memspace backed by all available NUMA nodes discovered on the platform. Can be retrieved
+using umfMemspaceHostAllGet.
+
+##### Requirements
+
+This feature relies on the OS memory provider.
+
 ## Contributions
 
 All contributions to the UMF project are most welcome! Before submitting

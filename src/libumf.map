@@ -10,6 +10,7 @@ UMF_1.0 {
         umfMemoryProviderAllocationMerge;
         umfMemoryProviderAllocationSplit;
         umfMemoryProviderCreate;
+        umfMemoryProviderCreateFromMemspace;
         umfMemoryProviderDestroy;
         umfMemoryProviderFree;
         umfMemoryProviderGetLastNativeError;
@@ -18,10 +19,15 @@ UMF_1.0 {
         umfMemoryProviderGetRecommendedPageSize;
         umfMemoryProviderPurgeForce;
         umfMemoryProviderPurgeLazy;
+        umfMemspaceCreateFromNumaArray;
+        umfMemspaceDestroy;
+        umfMemspaceHostAllGet;
+        umfOsMemoryProviderOps;
         umfPoolAlignedMalloc;
         umfPoolByPtr;
         umfPoolCalloc;
         umfPoolCreate;
+        umfPoolCreateFromMemspace;
         umfPoolDestroy;
         umfPoolFree;
         umfPoolGetLastAllocationError;
@@ -29,12 +35,7 @@ UMF_1.0 {
         umfPoolMalloc;
         umfPoolMallocUsableSize;
         umfPoolRealloc;
-        umfOsMemoryProviderOps;
         umfProxyPoolOps;
-        umfPoolCreateFromMemspace;
-        umfMemoryProviderCreateFromMemspace;
-        umfMemspaceCreateFromNumaArray;
-        umfMemspaceDestroy;
     local:
         *;
 };

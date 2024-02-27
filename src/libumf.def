@@ -16,6 +16,7 @@ EXPORTS
     umfMemoryProviderAllocationMerge
     umfMemoryProviderAllocationSplit
     umfMemoryProviderCreate
+    umfMemoryProviderCreateFromMemspace
     umfMemoryProviderDestroy
     umfMemoryProviderFree
     umfMemoryProviderGetLastNativeError
@@ -24,10 +25,12 @@ EXPORTS
     umfMemoryProviderGetRecommendedPageSize
     umfMemoryProviderPurgeForce
     umfMemoryProviderPurgeLazy
+    umfMemspaceDestroy
     umfPoolAlignedMalloc
     umfPoolByPtr
     umfPoolCalloc
     umfPoolCreate
+    umfPoolCreateFromMemspace
     umfPoolDestroy
     umfPoolFree
     umfPoolGetLastAllocationError
@@ -35,7 +38,4 @@ EXPORTS
     umfPoolMalloc
     umfPoolMallocUsableSize
     umfPoolRealloc
-    umfPoolCreateFromMemspace
-    umfMemoryProviderCreateFromMemspace
-    umfMemspaceDestroy
     umfProxyPoolOps
