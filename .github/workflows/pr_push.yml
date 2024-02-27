@@ -17,20 +17,17 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            nproc: $Env:NUMBER_OF_PROCESSORS
             pool_scalable: 'OFF'
             disjoint: 'OFF'
             jemalloc: 'OFF'
           # pure C build (Windows)
           - os: windows-latest
-            nproc: $Env:NUMBER_OF_PROCESSORS
             pool_scalable: 'OFF'
             disjoint: 'OFF'
             jemalloc: 'OFF'
             # Tests' building is off for a pure C build
             extra_build_options: '-DUMF_BUILD_TESTS=OFF'
           - os: ubuntu-latest
-            nproc: '$(nproc)'
             pool_scalable: 'ON'
             disjoint: 'ON'
             jemalloc: 'ON'
@@ -38,7 +35,6 @@ jobs:
             extra_build_options: '-DCMAKE_BUILD_TYPE=Release -DUMF_BUILD_BENCHMARKS=ON -DUMF_BUILD_BENCHMARKS_MT=ON'
           # pure C build (Linux)
           - os: ubuntu-latest
-            nproc: '$(nproc)'
             pool_scalable: 'ON'
             disjoint: 'OFF'
             jemalloc: 'ON'
@@ -72,7 +68,7 @@ jobs:
         ${{matrix.extra_build_options}}
 
     - name: Build
-      run: cmake --build ${{github.workspace}}/build --config Release -j ${{matrix.nproc}}
+      run: cmake --build ${{github.workspace}}/build --config Release -j
 
     - name: Run examples
       working-directory: ${{github.workspace}}/build
