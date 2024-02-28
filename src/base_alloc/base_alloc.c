@@ -11,6 +11,7 @@
 #include "base_alloc_internal.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
+#include "utils_sanitizers.h"
 
 // minimum size of a single pool of the base allocator
 #define MINIMUM_POOL_SIZE (ba_os_get_page_size())
@@ -80,7 +81,10 @@ static void ba_debug_checks(umf_ba_pool_t *pool) {
     umf_ba_chunk_t *next_chunk = pool->metadata.free_list;
     while (next_chunk) {
         n_free_chunks++;
+        utils_annotate_memory_defined(next_chunk, sizeof(umf_ba_chunk_t));
+        umf_ba_chunk_t *tmp = next_chunk;
         next_chunk = next_chunk->next;
+        utils_annotate_memory_inaccessible(tmp, sizeof(umf_ba_chunk_t));
     }
     assert(n_free_chunks == pool->metadata.n_chunks - pool->metadata.n_allocs);
 }
@@ -89,6 +93,9 @@ static void ba_debug_checks(umf_ba_pool_t *pool) {
 // ba_divide_memory_into_chunks - divide given memory into chunks of chunk_size and add them to the free_list
 static void ba_divide_memory_into_chunks(umf_ba_pool_t *pool, void *ptr,
                                          size_t size) {
+    // mark the memory temporarily accessible to perform the division
+    utils_annotate_memory_undefined(ptr, size);
+
     assert(pool->metadata.free_list == NULL);
     assert(size > pool->metadata.chunk_size);
 
@@ -112,6 +119,17 @@ static void ba_divide_memory_into_chunks(umf_ba_pool_t *pool, void *ptr,
 
     current_chunk->next = NULL;
     pool->metadata.free_list = ptr; // address of the first chunk
+
+    // mark the memory as unaccessible again
+    utils_annotate_memory_inaccessible(ptr, size);
+}
+
+static void *ba_os_alloc_annotated(size_t pool_size) {
+    void *ptr = ba_os_alloc(pool_size);
+    if (ptr) {
+        utils_annotate_memory_inaccessible(ptr, pool_size);
+    }
+    return ptr;
 }
 
 umf_ba_pool_t *umf_ba_create(size_t size) {
@@ -127,10 +145,13 @@ umf_ba_pool_t *umf_ba_create(size_t size) {
 
     pool_size = ALIGN_UP(pool_size, ba_os_get_page_size());
 
-    umf_ba_pool_t *pool = (umf_ba_pool_t *)ba_os_alloc(pool_size);
+    umf_ba_pool_t *pool = (umf_ba_pool_t *)ba_os_alloc_annotated(pool_size);
     if (!pool) {
         return NULL;
     }
+
+    // annotate metadata region as accessible
+    utils_annotate_memory_undefined(pool, offsetof(umf_ba_pool_t, data));
 
     pool->metadata.pool_size = pool_size;
     pool->metadata.chunk_size = chunk_size;
@@ -140,6 +161,8 @@ umf_ba_pool_t *umf_ba_create(size_t size) {
     pool->metadata.n_pools = 1;
     pool->metadata.n_chunks = 0;
 #endif /* NDEBUG */
+
+    utils_annotate_memory_defined(pool, offsetof(umf_ba_pool_t, data));
 
     char *data_ptr = (char *)&pool->data;
     size_t size_left = pool_size - offsetof(umf_ba_pool_t, data);
@@ -163,11 +186,15 @@ void *umf_ba_alloc(umf_ba_pool_t *pool) {
     util_mutex_lock(&pool->metadata.free_lock);
     if (pool->metadata.free_list == NULL) {
         umf_ba_next_pool_t *new_pool =
-            (umf_ba_next_pool_t *)ba_os_alloc(pool->metadata.pool_size);
+            (umf_ba_next_pool_t *)ba_os_alloc_annotated(
+                pool->metadata.pool_size);
         if (!new_pool) {
             util_mutex_unlock(&pool->metadata.free_lock);
             return NULL;
         }
+
+        // annotate metadata region as accessible
+        utils_annotate_memory_undefined(new_pool, sizeof(umf_ba_next_pool_t));
 
         // add the new pool to the list of pools
         new_pool->next_pool = pool->next_pool;
@@ -186,11 +213,20 @@ void *umf_ba_alloc(umf_ba_pool_t *pool) {
     }
 
     umf_ba_chunk_t *chunk = pool->metadata.free_list;
+
+    // mark the memory defined to read the next ptr, after this is done
+    // we'll mark the memory as undefined
+    utils_annotate_memory_defined(chunk, sizeof(chunk));
+
     pool->metadata.free_list = pool->metadata.free_list->next;
     pool->metadata.n_allocs++;
 #ifndef NDEBUG
     ba_debug_checks(pool);
 #endif /* NDEBUG */
+
+    VALGRIND_DO_MALLOCLIKE_BLOCK(chunk, pool->metadata.chunk_size, 0, 0);
+    utils_annotate_memory_undefined(chunk, pool->metadata.chunk_size);
+
     util_mutex_unlock(&pool->metadata.free_lock);
 
     return chunk;
@@ -234,6 +270,10 @@ void umf_ba_free(umf_ba_pool_t *pool, void *ptr) {
 #ifndef NDEBUG
     ba_debug_checks(pool);
 #endif /* NDEBUG */
+
+    VALGRIND_DO_FREELIKE_BLOCK(chunk, 0);
+    utils_annotate_memory_inaccessible(chunk, pool->metadata.chunk_size);
+
     util_mutex_unlock(&pool->metadata.free_lock);
 }
 

@@ -115,6 +115,7 @@ TEST_P(umfPoolTest, reallocFree) {
     static constexpr size_t multiplier = 3;
     auto *ptr = umfPoolMalloc(pool.get(), allocSize);
     ASSERT_NE(ptr, nullptr);
+    memset(ptr, 0, allocSize);
     auto *new_ptr = umfPoolRealloc(pool.get(), ptr, allocSize * multiplier);
     ASSERT_NE(new_ptr, nullptr);
     std::memset(new_ptr, 0, allocSize * multiplier);
