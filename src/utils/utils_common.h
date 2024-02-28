@@ -13,7 +13,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #ifndef _WIN32
 #include <sys/syscall.h>
@@ -36,19 +35,6 @@ extern "C" {
 
 #define __TLS __declspec(thread)
 
-static inline char *util_getenv(const char *name) {
-    char *buffer;
-    size_t numberOfElements;
-    errno_t err = _dupenv_s(&buffer, &numberOfElements, name);
-    if (err) {
-        return NULL;
-    }
-
-    return buffer;
-}
-
-static inline void util_free_getenv(char *val) { free(val); }
-
 // TODO: implement util_get_page_size() for Windows
 static inline size_t util_get_page_size(void) { return 4096; }
 
@@ -56,25 +42,31 @@ static inline size_t util_get_page_size(void) { return 4096; }
 
 #define __TLS __thread
 
-static inline char *util_getenv(const char *name) { return getenv(name); }
-static inline void util_free_getenv(const char *val) {
-    (void)val; // unused
-}
-
 static inline size_t util_get_page_size(void) { return sysconf(_SC_PAGE_SIZE); }
 
 #endif /* _WIN32 */
 
+// util_env_var - populate the given buffer with the value
+//                of the given environment variable
+// Return value
+// If the function succeeds, the return value is the number of characters
+// stored in the buffer pointed to by buffer, not including
+// the terminating null character.
+//
+// If the buffer is not large enough to hold the data, then:
+// 1) the return value equals (-1) * the buffer size (in characters)
+//    required to hold the string and its terminating null character,
+// 2) the content of the buffer is undefined.
+//
+// If the function fails, the return value is zero.
+int util_env_var(const char *envvar, char *buffer, size_t buffer_size);
+
+// Check if the environment variable contains the given string.
+int util_env_var_has_str(const char *envvar, const char *str);
+
 // check if we are running in the proxy library
 static inline int is_running_in_proxy_lib(void) {
-    int is_in_proxy_lib_val = 0;
-    char *ld_preload = util_getenv("LD_PRELOAD");
-    if (ld_preload && strstr(ld_preload, "libumf_proxy.so")) {
-        is_in_proxy_lib_val = 1;
-    }
-
-    util_free_getenv(ld_preload);
-    return is_in_proxy_lib_val;
+    return util_env_var_has_str("LD_PRELOAD", "libumf_proxy.so");
 }
 
 #define NOFUNCTION                                                             \
