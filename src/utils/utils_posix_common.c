@@ -9,6 +9,13 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <sys/syscall.h>
+#include <unistd.h>
+
+#include "utils_concurrency.h"
+
+static UTIL_ONCE_FLAG Page_size_is_initialized = UTIL_ONCE_FLAG_INIT;
+static size_t Page_size;
 
 int util_env_var(const char *envvar, char *buffer, size_t buffer_size) {
     char *value = getenv(envvar);
@@ -35,4 +42,11 @@ int util_env_var_has_str(const char *envvar, const char *str) {
     }
 
     return 0;
+}
+
+static void _util_get_page_size(void) { Page_size = sysconf(_SC_PAGE_SIZE); }
+
+size_t util_get_page_size(void) {
+    util_init_once(&Page_size_is_initialized, _util_get_page_size);
+    return Page_size;
 }
