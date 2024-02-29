@@ -111,6 +111,11 @@ install(
     TARGETS umf_headers
     EXPORT ${PROJECT_NAME}-targets)
 
+if(UMF_BUILD_OS_MEMORY_PROVIDER AND (LINUX OR WINDOWS))
+    # Do not use pkgconfig, because it sets wrong paths on Windows
+    find_package(LIBHWLOC REQUIRED hwloc)
+endif()
+
 add_subdirectory(src)
 
 if(UMF_BUILD_TESTS)

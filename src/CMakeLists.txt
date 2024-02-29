@@ -53,8 +53,8 @@ set(UMF_SOURCES_MACOSX
 )
 
 # Compile definitions for UMF library
-# TODO: Cleanup the compile definitions across all the Cmake files
-set(UMF_COMPILE_DEFINITIONS "")
+# TODO: Cleanup the compile definitions across all the CMake files
+set(UMF_PUBLIC_COMPILE_DEFINITIONS "")
 
 if(UMF_BUILD_OS_MEMORY_PROVIDER)
     set(UMF_SOURCES_LINUX ${UMF_SOURCES_LINUX}
@@ -64,16 +64,14 @@ if(UMF_BUILD_OS_MEMORY_PROVIDER)
         memspaces/memspace_numa.c
         memspaces/memspace_host_all.c)
 
-    if(LINUX)
-        if(PkgConfig_FOUND)
-            pkg_check_modules(LIBHWLOC hwloc)
-        endif()
-        if(NOT LIBHWLOC_FOUND)
-            find_package(LIBHWLOC REQUIRED hwloc)
-        endif()
+    set(UMF_SOURCES_WINDOWS ${UMF_SOURCES_WINDOWS}
+        provider/provider_os_memory.c
+        provider/provider_os_memory_windows.c)
+
+    if(LINUX OR WINDOWS)
         set(UMF_LIBS ${UMF_LIBS} ${LIBHWLOC_LIBRARIES})
-        # Currently, OS provider is only built for Linux
-        set(UMF_COMPILE_DEFINITIONS ${UMF_COMPILE_DEFINITIONS} "UMF_BUILD_OS_MEMORY_PROVIDER=1")
+        # Currently, OS provider is only built for Linux and Windows
+        set(UMF_PUBLIC_COMPILE_DEFINITIONS ${UMF_PUBLIC_COMPILE_DEFINITIONS} "UMF_BUILD_OS_MEMORY_PROVIDER=1")
     endif()
 endif()
 
@@ -86,13 +84,22 @@ elseif(MACOSX)
 endif()
 
 if(UMF_BUILD_SHARED_LIBRARY)
+    if(WINDOWS)
+        # TODO: replace that with generating def and map files
+        if(UMF_BUILD_OS_MEMORY_PROVIDER)
+            set(UMF_DEF_FILE "libumf.def")
+        else()
+            set(UMF_DEF_FILE "libumf_no_os_provider.def")
+        endif()
+    endif()
+
     add_umf_library(NAME umf
                     TYPE SHARED
                     SRCS ${UMF_SOURCES}
                     LIBS ${UMF_LIBS}
                     LINUX_MAP_FILE ${CMAKE_CURRENT_SOURCE_DIR}/libumf.map
-                    WINDOWS_DEF_FILE ${CMAKE_CURRENT_SOURCE_DIR}/libumf.def)
-    set(UMF_COMPILE_DEFINITIONS ${UMF_COMPILE_DEFINITIONS} "UMF_SHARED_LIBRARY")
+                    WINDOWS_DEF_FILE ${CMAKE_CURRENT_SOURCE_DIR}/${UMF_DEF_FILE})
+    set(UMF_PUBLIC_COMPILE_DEFINITIONS ${UMF_PUBLIC_COMPILE_DEFINITIONS} "UMF_SHARED_LIBRARY")
     set_target_properties(umf PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_UMF_OUTPUT_DIRECTORY})
 else()
@@ -102,7 +109,7 @@ else()
                     LIBS ${UMF_LIBS})
 endif()
 
-target_compile_definitions(umf PUBLIC ${UMF_COMPILE_DEFINITIONS})
+target_compile_definitions(umf PUBLIC ${UMF_PUBLIC_COMPILE_DEFINITIONS})
 
 if (UMF_ENABLE_POOL_TRACKING)
     target_sources(umf PRIVATE memory_pool_tracking.c)
@@ -111,6 +118,10 @@ else()
 endif()
 
 add_library(${PROJECT_NAME}::umf ALIAS umf)
+
+if(LIBHWLOC_INCLUDE_DIRS)
+    target_include_directories(umf PRIVATE ${LIBHWLOC_INCLUDE_DIRS})
+endif()
 
 target_include_directories(umf PUBLIC
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
