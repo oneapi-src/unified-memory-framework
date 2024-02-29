@@ -23,6 +23,7 @@ option(USE_ASAN "Enable AddressSanitizer checks" OFF)
 option(USE_UBSAN "Enable UndefinedBehaviorSanitizer checks" OFF)
 option(USE_TSAN "Enable ThreadSanitizer checks" OFF)
 option(USE_MSAN "Enable MemorySanitizer checks" OFF)
+option(USE_VALGRIND "Enable Valgrind instrumentation" OFF)
 
 # For using the options listed in the OPTIONS_REQUIRING_CXX variable
 # a C++17 compiler is required. Moreover, if these options are not set,
