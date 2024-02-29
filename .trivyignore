@@ -1,0 +1,10 @@
+# Docs: https://aquasecurity.github.io/trivy/latest/docs/configuration/filtering/#trivyignore
+
+# In docker files:
+# non-root user is always created within docker, but we switch it only in CI workflows;
+# not enforcing non-root user makes it easier for developers to use their own users in local container
+AVD-DS-0002
+
+# In docker files:
+# HEALTHCHECK is not required for development, nor in CI (failed docker = failed CI)
+AVD-DS-0026

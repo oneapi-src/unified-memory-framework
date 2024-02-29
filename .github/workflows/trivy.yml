@@ -1,0 +1,46 @@
+# Runs linter for Docker files
+name: Trivy
+
+# Due to lower score on Scorecard we're running this separately from
+# "PR/push" workflow. For some reason permissions weren't properly set
+# or recognized (by Scorecard). If Scorecard changes its behavior we can
+# use 'workflow_call' trigger.
+on:
+  push:
+  pull_request:
+    paths:
+      - '.github/docker/*Dockerfile'
+      - '.github/workflows/trivy.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  trivy:
+    name: Trivy
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+
+    steps:
+      - name: Clone the git repo
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Run Trivy
+        uses: aquasecurity/trivy-action@84384bd6e777ef152729993b8145ea352e9dd3ef # v0.17.0
+        with:
+          scan-type: 'config'
+          hide-progress: false
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          exit-code: 1  # Fail if issue found
+          # See .trivyignore file with suppressions
+
+      - name: Upload results
+        uses: github/codeql-action/upload-sarif@e8893c57a1f3a2b659b6b55564fdfdbbd2982911 # v3.24.0
+        with:
+          sarif_file: 'trivy-results.sarif'
