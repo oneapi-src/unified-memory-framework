@@ -14,11 +14,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#ifndef _WIN32
-#include <sys/syscall.h>
-#include <unistd.h>
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -35,14 +30,9 @@ extern "C" {
 
 #define __TLS __declspec(thread)
 
-// TODO: implement util_get_page_size() for Windows
-static inline size_t util_get_page_size(void) { return 4096; }
-
 #else /* Linux */
 
 #define __TLS __thread
-
-static inline size_t util_get_page_size(void) { return sysconf(_SC_PAGE_SIZE); }
 
 #endif /* _WIN32 */
 
@@ -68,6 +58,8 @@ int util_env_var_has_str(const char *envvar, const char *str);
 static inline int is_running_in_proxy_lib(void) {
     return util_env_var_has_str("LD_PRELOAD", "libumf_proxy.so");
 }
+
+size_t util_get_page_size(void);
 
 #define NOFUNCTION                                                             \
     do {                                                                       \
