@@ -170,7 +170,7 @@ static void tbb_pool_finalize(void *pool) {
     tbb_memory_pool_t *pool_data = (tbb_memory_pool_t *)pool;
     pool_data->tbb_callbacks.pool_destroy(pool_data->tbb_pool);
     dlclose(pool_data->tbb_callbacks.lib_handle);
-    umf_ba_global_free(pool_data, sizeof(tbb_memory_pool_t));
+    umf_ba_global_free(pool_data);
 }
 
 static void *tbb_malloc(void *pool, size_t size) {

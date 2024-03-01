@@ -14,13 +14,16 @@
 #include "base_alloc.h"
 #include "base_alloc_global.h"
 #include "base_alloc_internal.h"
+#include "utils_common.h"
 #include "utils_concurrency.h"
 #include "utils_math.h"
 
 // global base allocator used by all providers and pools
 static UTIL_ONCE_FLAG ba_is_initialized = UTIL_ONCE_FLAG_INIT;
 
-// allocation classes need to be powers of 2
+#define ALLOC_METADATA_SIZE (sizeof(size_t))
+
+// allocation classes need to be consecutive powers of 2
 #define ALLOCATION_CLASSES                                                     \
     { 16, 32, 64, 128 }
 #define NUM_ALLOCATION_CLASSES 4
@@ -82,8 +85,67 @@ static int size_to_idx(size_t size) {
     return index;
 }
 
-void *umf_ba_global_alloc(size_t size) {
+// stores metadata just before 'ptr' and returns beginning of usable
+// space to the user. metadata consists of 'size' that is the allocation
+// size and 'offset' that specifies how far is the returned ptr from
+// the origin ptr (used for aligned alloc)
+static void *add_metadata_and_align(void *ptr, size_t size, size_t alignment) {
+    assert(size < (1ULL << 32));
+    assert(alignment < (1ULL << 32));
+    assert(ptr);
+
+    void *user_ptr;
+    if (alignment <= ALLOC_METADATA_SIZE) {
+        user_ptr = (void *)((uintptr_t)ptr + ALLOC_METADATA_SIZE);
+    } else {
+        user_ptr =
+            (void *)ALIGN_UP((uintptr_t)ptr + ALLOC_METADATA_SIZE, alignment);
+    }
+
+    size_t ptr_offset_from_original = (uintptr_t)user_ptr - (uintptr_t)ptr;
+    assert(ptr_offset_from_original < (1ULL << 32));
+
+    size_t *metadata_loc = (size_t *)((char *)user_ptr - ALLOC_METADATA_SIZE);
+    *metadata_loc = size | (ptr_offset_from_original << 32);
+
+    return user_ptr;
+}
+
+// return original ptr (the one that has been passed to add_metadata_and_align)
+// along with total allocation size (needed to find proper alloc class
+// in free) and usable size
+static void *get_original_alloc(void *user_ptr, size_t *total_size,
+                                size_t *usable_size) {
+    assert(user_ptr);
+
+    size_t *metadata_loc = (size_t *)((char *)user_ptr - ALLOC_METADATA_SIZE);
+
+    size_t stored_size = *metadata_loc & ((1ULL << 32) - 1);
+    size_t ptr_offset_from_original = *metadata_loc >> 32;
+
+    void *original_ptr =
+        (void *)((uintptr_t)user_ptr - ptr_offset_from_original);
+
+    if (total_size) {
+        *total_size = stored_size;
+    }
+
+    if (usable_size) {
+        *usable_size = stored_size - ptr_offset_from_original;
+    }
+
+    return original_ptr;
+}
+
+void *umf_ba_global_aligned_alloc(size_t size, size_t alignment) {
     util_init_once(&ba_is_initialized, umf_ba_create_global);
+
+    // for metadata
+    size += ALLOC_METADATA_SIZE;
+
+    if (alignment > ALLOC_METADATA_SIZE) {
+        size += alignment;
+    }
 
     if (size > BASE_ALLOC.ac_sizes[NUM_ALLOCATION_CLASSES - 1]) {
 #ifndef NDEBUG
@@ -91,7 +153,7 @@ void *umf_ba_global_alloc(size_t size) {
                 "base_alloc: allocation size larger than the biggest "
                 "allocation class. Falling back to OS memory allocation.\n");
 #endif
-        return ba_os_alloc(size);
+        return add_metadata_and_align(ba_os_alloc(size), size, alignment);
     }
 
     int ac_index = size_to_idx(size);
@@ -99,24 +161,47 @@ void *umf_ba_global_alloc(size_t size) {
         // if creating ac failed, fall back to os allocation
         fprintf(stderr, "base_alloc: allocation class not created. Falling "
                         "back to OS memory allocation.\n");
-        return ba_os_alloc(size);
+        return add_metadata_and_align(ba_os_alloc(size), size, alignment);
     }
 
-    return umf_ba_alloc(BASE_ALLOC.ac[ac_index]);
+    return add_metadata_and_align(umf_ba_alloc(BASE_ALLOC.ac[ac_index]), size,
+                                  alignment);
 }
 
-void umf_ba_global_free(void *ptr, size_t size) {
-    if (size > BASE_ALLOC.ac_sizes[NUM_ALLOCATION_CLASSES - 1]) {
-        ba_os_free(ptr, size);
+void *umf_ba_global_alloc(size_t size) {
+    return umf_ba_global_aligned_alloc(size, ALLOC_METADATA_SIZE);
+}
+
+void umf_ba_global_free(void *ptr) {
+    if (!ptr) {
         return;
     }
 
-    int ac_index = size_to_idx(size);
+    size_t total_size;
+    ptr = get_original_alloc(ptr, &total_size, NULL);
+
+    if (total_size > BASE_ALLOC.ac_sizes[NUM_ALLOCATION_CLASSES - 1]) {
+        ba_os_free(ptr, total_size);
+        return;
+    }
+
+    int ac_index = size_to_idx(total_size);
     if (!BASE_ALLOC.ac[ac_index]) {
         // if creating ac failed, memory must have been allocated by os
-        ba_os_free(ptr, size);
+        ba_os_free(ptr, total_size);
         return;
     }
 
     umf_ba_free(BASE_ALLOC.ac[ac_index], ptr);
+}
+
+size_t umf_ba_global_malloc_usable_size(void *ptr) {
+    if (!ptr) {
+        return 0;
+    }
+
+    size_t usable_size;
+    get_original_alloc(ptr, NULL, &usable_size);
+
+    return usable_size;
 }

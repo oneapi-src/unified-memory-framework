@@ -42,9 +42,7 @@ static umf_result_t numa_initialize(void *params, void **memTarget) {
     return UMF_RESULT_SUCCESS;
 }
 
-static void numa_finalize(void *memTarget) {
-    umf_ba_global_free(memTarget, sizeof(struct numa_memory_target_t));
-}
+static void numa_finalize(void *memTarget) { umf_ba_global_free(memTarget); }
 
 // sets maxnode and allocates and initializes mask based on provided memory targets
 static umf_result_t
@@ -93,7 +91,7 @@ numa_targets_create_nodemask(struct numa_memory_target_t **targets,
     hwloc_bitmap_free(bitmap);
 
     if (ret) {
-        umf_ba_global_free(nodemask, *mask_size);
+        umf_ba_global_free(nodemask);
         return UMF_RESULT_ERROR_UNKNOWN;
     }
 
@@ -131,7 +129,7 @@ static enum umf_result_t numa_memory_provider_create_from_memspace(
     umf_memory_provider_handle_t numaProvider = NULL;
     ret = umfMemoryProviderCreate(umfOsMemoryProviderOps(), &params,
                                   &numaProvider);
-    umf_ba_global_free(nodemask, nodemask_size);
+    umf_ba_global_free(nodemask);
     if (ret) {
         return ret;
     }

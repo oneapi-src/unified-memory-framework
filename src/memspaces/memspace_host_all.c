@@ -62,7 +62,7 @@ static umf_result_t umfMemspaceHostAllCreate(umf_memspace_handle_t *hMemspace) {
     umf_ret =
         umfMemspaceCreateFromNumaArray(nodeIds, (size_t)nNodes, hMemspace);
 
-    umf_ba_global_free(nodeIds, nNodes * sizeof(size_t));
+    umf_ba_global_free(nodeIds);
 
 err_topology_destroy:
     hwloc_topology_destroy(topology);

@@ -39,7 +39,7 @@ umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
     pool->ops = *ops;
     ret = ops->initialize(pool->provider, params, &pool->pool_priv);
     if (ret != UMF_RESULT_SUCCESS) {
-        umf_ba_global_free(pool, sizeof(umf_memory_pool_t));
+        umf_ba_global_free(pool);
         return ret;
     }
 
@@ -56,7 +56,7 @@ void umfPoolDestroy(umf_memory_pool_handle_t hPool) {
         umfMemoryProviderDestroy(hProvider);
     }
     // TODO: this free keeps memory in base allocator, so it can lead to OOM in some scenarios (it should be optimized)
-    umf_ba_global_free(hPool, sizeof(umf_memory_pool_t));
+    umf_ba_global_free(hPool);
 }
 
 umf_result_t umfFree(void *ptr) {

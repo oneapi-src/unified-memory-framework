@@ -15,8 +15,10 @@ extern "C" {
 #endif
 
 void *umf_ba_global_alloc(size_t size);
-void umf_ba_global_free(void *ptr, size_t size);
+void umf_ba_global_free(void *ptr);
 void umf_ba_destroy_global(void);
+size_t umf_ba_global_malloc_usable_size(void *ptr);
+void *umf_ba_global_aligned_alloc(size_t size, size_t alignment);
 
 #ifdef __cplusplus
 }

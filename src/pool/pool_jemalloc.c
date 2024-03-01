@@ -395,7 +395,7 @@ static umf_result_t je_initialize(umf_memory_provider_handle_t provider,
     return UMF_RESULT_SUCCESS;
 
 err_free_pool:
-    umf_ba_global_free(pool, sizeof(jemalloc_memory_pool_t));
+    umf_ba_global_free(pool);
     return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
 }
 
@@ -406,7 +406,7 @@ static void je_finalize(void *pool) {
     snprintf(cmd, sizeof(cmd), "arena.%u.destroy", je_pool->arena_index);
     mallctl(cmd, NULL, 0, NULL, 0);
     pool_by_arena_index[je_pool->arena_index] = NULL;
-    umf_ba_global_free(je_pool, sizeof(jemalloc_memory_pool_t));
+    umf_ba_global_free(je_pool);
 }
 
 static size_t je_malloc_usable_size(void *pool, void *ptr) {

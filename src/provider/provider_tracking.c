@@ -386,7 +386,7 @@ static void trackingFinalize(void *provider) {
     check_if_tracker_is_empty(p->hTracker, p->pool);
 #endif /* NDEBUG */
 
-    umf_ba_global_free(provider, sizeof(umf_tracking_memory_provider_t));
+    umf_ba_global_free(provider);
 }
 
 static void trackingGetLastError(void *provider, const char **msg,
@@ -502,7 +502,7 @@ err_destroy_mutex:
 err_destroy_tracker_allocator:
     umf_ba_destroy(tracker_allocator);
 err_free_handle:
-    umf_ba_global_free(handle, sizeof(struct umf_memory_tracker_t));
+    umf_ba_global_free(handle);
     return NULL;
 }
 
@@ -530,5 +530,5 @@ void umfMemoryTrackerDestroy(umf_memory_tracker_handle_t handle) {
     util_mutex_destroy_not_free(&handle->splitMergeMutex);
     umf_ba_destroy(handle->tracker_allocator);
     handle->tracker_allocator = NULL;
-    umf_ba_global_free(handle, sizeof(struct umf_memory_tracker_t));
+    umf_ba_global_free(handle);
 }

@@ -52,12 +52,11 @@ umfMemspaceCreateFromNumaArray(size_t *nodeIds, size_t numIds,
     return UMF_RESULT_SUCCESS;
 
 err_target_create:
-    umf_ba_global_free(memspace->nodes,
-                       memspace->size * sizeof(umf_memory_target_handle_t));
+    umf_ba_global_free(memspace->nodes);
     for (size_t i = 0; i < nodeIdx; i++) {
         umfMemoryTargetDestroy(memspace->nodes[i]);
     }
 err_nodes_alloc:
-    umf_ba_global_free(memspace, sizeof(struct umf_memspace_t));
+    umf_ba_global_free(memspace);
     return ret;
 }
