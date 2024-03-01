@@ -19,14 +19,14 @@ TEST_F(numaNodesTest, createDestroy) {
     umfMemspaceDestroy(hMemspace);
 }
 
-TEST_F(numaNodesTest, createNullArray) {
+TEST_F(numaNodesTest, createInvalidNullArray) {
     umf_memspace_handle_t hMemspace = nullptr;
     enum umf_result_t ret = umfMemspaceCreateFromNumaArray(NULL, 0, &hMemspace);
     ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
     ASSERT_EQ(hMemspace, nullptr);
 }
 
-TEST_F(numaNodesTest, createZeroSize) {
+TEST_F(numaNodesTest, createInvalidZeroSize) {
     umf_memspace_handle_t hMemspace = nullptr;
     enum umf_result_t ret =
         umfMemspaceCreateFromNumaArray(nodeIds.data(), 0, &hMemspace);
@@ -34,7 +34,7 @@ TEST_F(numaNodesTest, createZeroSize) {
     ASSERT_EQ(hMemspace, nullptr);
 }
 
-TEST_F(numaNodesTest, createNullHandle) {
+TEST_F(numaNodesTest, createInvalidNullHandle) {
     enum umf_result_t ret =
         umfMemspaceCreateFromNumaArray(nodeIds.data(), nodeIds.size(), nullptr);
     ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
