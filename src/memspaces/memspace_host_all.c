@@ -40,7 +40,10 @@ static umf_result_t umfMemspaceHostAllCreate(umf_memspace_handle_t *hMemspace) {
     // object that can be present on multiple levels.
     // Source: https://www.open-mpi.org/projects/hwloc/doc/hwloc-v2.10.0-letter.pdf
     int nNodes = hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_NUMANODE);
-    assert(nNodes != -1);
+    if (nNodes < 0) {
+        umf_ret = UMF_RESULT_ERROR_UNKNOWN;
+        goto err_topology_destroy;
+    }
 
     size_t *nodeIds = umf_ba_global_alloc(nNodes * sizeof(size_t));
     if (!nodeIds) {
