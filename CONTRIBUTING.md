@@ -29,11 +29,19 @@ the proposed types, just pick a general issue with no template.
 
 ## Submitting Pull Requests
 
-We take outside code contributions to UMF through GitHub pull requests.
+We take all code contributions to UMF through GitHub Pull Requests.
 You must first create your own fork of the project and submit your changes to a branch.
 You can then raise a Pull Request targeting `oneapi-src/unified-memory-framework:main`.
-Please try to keep commits neat and in order - please squash your commits to
-include only relevant ones (no "fixes after review" or similar).
+
+When opening a new Pull Request, you'll be provided with a simple template
+to follow with the basic requirements for your changes to fulfill.
+
+A good practices, when opening a PR, are:
+ - one PR should fix/enhance one thing, split large PR into a few smaller PRs,
+ - keep commits neat and in order,
+ - squash commits to include only relevant ones (no "fixes after review" or similar),
+ - if a commit fixes an open issue, add in the commit message line: `Fixes #<issue_no>`
+ - if a commit only mention an open issue, add in the commit message, e.g. `Ref. #<issue_no>`
 
 ### Building and testing
 
