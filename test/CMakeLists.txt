@@ -124,13 +124,13 @@ if(UMF_BUILD_OS_MEMORY_PROVIDER AND LINUX) # OS-specific functions are implement
                  SRCS provider_os_memory_multiple_numa_nodes.cpp
                  LIBS umf_utils ${LIBNUMA_LIBRARIES})
     add_umf_test(NAME memspace_numa
-                 SRCS memspace_numa.cpp
+                 SRCS memspaces/memspace_numa.cpp
                  LIBS ${LIBNUMA_LIBRARIES})
     add_umf_test(NAME provider_os_memory_config
                  SRCS provider_os_memory_config.cpp
                  LIBS umf_utils ${LIBNUMA_LIBRARIES})
     add_umf_test(NAME memspace_host_all
-                 SRCS memspace_host_all.cpp
+                 SRCS memspaces/memspace_host_all.cpp
                  LIBS ${LIBNUMA_LIBRARIES})
 endif()
 
