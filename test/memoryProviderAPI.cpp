@@ -114,7 +114,7 @@ struct providerHandleCheck
           std::function<std::variant<const char *, umf_result_t>(void)>> {};
 
 TEST_P(providerHandleCheck, providerHandleCheckAll) {
-    auto f = GetParam();
+    const auto &f = GetParam();
     auto ret = f();
 
     std::visit(
