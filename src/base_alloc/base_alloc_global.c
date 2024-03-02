@@ -69,8 +69,6 @@ static void umf_ba_create_global(void) {
 
 // returns index of the allocation class for a given size
 static int size_to_idx(size_t size) {
-    assert(size <= BASE_ALLOC.ac_sizes[NUM_ALLOCATION_CLASSES - 1]);
-
     if (size <= BASE_ALLOC.ac_sizes[0]) {
         return 0;
     }
@@ -80,8 +78,6 @@ static int size_to_idx(size_t size) {
         (int)(log2Utils(size) + !isPowerOf2 - BASE_ALLOC.smallest_ac_size_log2);
 
     assert(index >= 0);
-    assert(index < NUM_ALLOCATION_CLASSES);
-
     return index;
 }
 
@@ -147,7 +143,8 @@ void *umf_ba_global_aligned_alloc(size_t size, size_t alignment) {
         size += alignment;
     }
 
-    if (size > BASE_ALLOC.ac_sizes[NUM_ALLOCATION_CLASSES - 1]) {
+    int ac_index = size_to_idx(size);
+    if (ac_index >= NUM_ALLOCATION_CLASSES) {
 #ifndef NDEBUG
         fprintf(stderr,
                 "base_alloc: allocation size larger than the biggest "
@@ -156,7 +153,6 @@ void *umf_ba_global_aligned_alloc(size_t size, size_t alignment) {
         return add_metadata_and_align(ba_os_alloc(size), size, alignment);
     }
 
-    int ac_index = size_to_idx(size);
     if (!BASE_ALLOC.ac[ac_index]) {
         // if creating ac failed, fall back to os allocation
         fprintf(stderr, "base_alloc: allocation class not created. Falling "
@@ -180,12 +176,12 @@ void umf_ba_global_free(void *ptr) {
     size_t total_size;
     ptr = get_original_alloc(ptr, &total_size, NULL);
 
-    if (total_size > BASE_ALLOC.ac_sizes[NUM_ALLOCATION_CLASSES - 1]) {
+    int ac_index = size_to_idx(total_size);
+    if (ac_index >= NUM_ALLOCATION_CLASSES) {
         ba_os_free(ptr, total_size);
         return;
     }
 
-    int ac_index = size_to_idx(total_size);
     if (!BASE_ALLOC.ac[ac_index]) {
         // if creating ac failed, memory must have been allocated by os
         ba_os_free(ptr, total_size);
