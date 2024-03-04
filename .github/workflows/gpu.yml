@@ -1,0 +1,49 @@
+# This workflow builds and tests providers using GPU memory. It requires 
+# "level_zero" labeled self-hosted runners installed on systems with the 
+# appropriate GPU and drivers.
+name: GPU
+
+on: [workflow_call]
+
+permissions:
+  contents: read
+
+jobs:
+  # TODO: add support for Windows
+  ubuntu-build:
+    name: Build - Ubuntu
+
+    strategy:
+      matrix:
+        os: ['ubuntu-22.04']
+        build_type: [Release]
+        compiler: [{c: gcc, cxx: g++}]
+        shared_library: ['ON', 'OFF']
+    runs-on: level_zero
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Configure build
+        run: >
+          cmake
+          -B ${{github.workspace}}/build
+          -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+          -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
+          -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
+          -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
+          -DUMF_BUILD_BENCHMARKS=ON
+          -DUMF_BUILD_TESTS=ON
+          -DUMF_FORMAT_CODE_STYLE=ON
+          -DUMF_DEVELOPER_MODE=ON
+          -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
+          -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
+          -DUMF_ENABLE_POOL_TRACKING=ON
+
+      - name: Build UMF
+        run: cmake --build ${{github.workspace}}/build -j $(nproc)
+
+      - name: Run tests
+        working-directory: ${{github.workspace}}/build
+        run: ctest --output-on-failure --test-dir test

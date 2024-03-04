@@ -65,6 +65,7 @@ jobs:
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=${{matrix.jemalloc}}
         -DUMF_BUILD_TESTS=ON
         -DUMF_BUILD_EXAMPLES=ON
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
         ${{matrix.extra_build_options}}
 
     - name: Build
@@ -94,6 +95,7 @@ jobs:
         -DUMF_FORMAT_CODE_STYLE=ON
         -DUMF_BUILD_OS_MEMORY_PROVIDER=OFF
         -DUMF_BUILD_TESTS=OFF
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
 
     - name: Check clang-format
       run: cmake --build build --target clang-format-check
@@ -113,3 +115,6 @@ jobs:
   ProxyLib:
     needs: [Build]
     uses: ./.github/workflows/proxy_lib.yml
+  GPU:
+    needs: [Build]
+    uses: ./.github/workflows/gpu.yml
