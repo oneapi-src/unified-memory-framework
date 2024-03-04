@@ -24,12 +24,9 @@ typedef enum umf_usm_memory_type_t {
 
 /// @brief Level Zero Memory Provider settings struct
 typedef struct level_zero_memory_provider_params_t {
-    void *level_zero_context_handle;
-    void *level_zero_device_handle;
-    umf_usm_memory_type_t memory_type;
-    uint32_t level_zero_host_mem_alloc_flags;
-    uint32_t level_zero_device_mem_alloc_flags;
-    uint32_t level_zero_device_local_mem_ordinal;
+    void *level_zero_context_handle;   ///< Handle to the Level Zero context
+    void *level_zero_device_handle;    ///< Handle to the Level Zero device
+    umf_usm_memory_type_t memory_type; ///< Allocation memory type
 } level_zero_memory_provider_params_t;
 
 umf_memory_provider_ops_t *umfLevelZeroMemoryProviderOps(void);
