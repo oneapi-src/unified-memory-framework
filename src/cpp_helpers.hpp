@@ -66,7 +66,7 @@ umf_result_t initialize(T *obj, ArgsTuple &&args) {
 }
 
 template <typename T> umf_memory_pool_ops_t poolOpsBase() {
-    umf_memory_pool_ops_t ops;
+    umf_memory_pool_ops_t ops{};
     ops.version = UMF_VERSION_CURRENT;
     ops.finalize = [](void *obj) { delete reinterpret_cast<T *>(obj); };
     UMF_ASSIGN_OP(ops, T, malloc, ((void *)nullptr));
@@ -80,7 +80,7 @@ template <typename T> umf_memory_pool_ops_t poolOpsBase() {
 }
 
 template <typename T> umf_memory_provider_ops_t providerOpsBase() {
-    umf_memory_provider_ops_t ops;
+    umf_memory_provider_ops_t ops{};
     ops.version = UMF_VERSION_CURRENT;
     ops.finalize = [](void *obj) { delete reinterpret_cast<T *>(obj); };
     UMF_ASSIGN_OP(ops, T, alloc, UMF_RESULT_ERROR_UNKNOWN);
