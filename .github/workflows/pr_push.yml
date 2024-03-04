@@ -89,7 +89,7 @@ jobs:
 
     - name: Run examples
       working-directory: ${{github.workspace}}/build
-      run: ctest --output-on-failure --test-dir examples
+      run: ctest --output-on-failure --test-dir examples -C Release
 
   CodeStyle:
     name: Coding style

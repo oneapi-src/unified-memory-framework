@@ -13,6 +13,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "utils_common.h"
+
 int main(void) {
     // A result object for storing UMF API result status
     umf_result_t res;
@@ -45,9 +47,11 @@ int main(void) {
         goto memory_provider_destroy;
     }
 
+    const char *strSource = "Allocated memory at";
+
     // Write to the allocated memory
     memset(ptr_provider, '\0', alloc_size);
-    strcpy(ptr_provider, "Allocated memory at");
+    util_strncpy(ptr_provider, alloc_size, strSource, strlen(strSource) + 1);
     printf("%s %p with the memory provider at %p\n", (char *)ptr_provider,
            (void *)ptr_provider, (void *)provider);
 
@@ -83,7 +87,7 @@ int main(void) {
     }
 
     // Write a string to allocated memory
-    strcpy(ptr, "Allocated memory at");
+    util_strncpy(ptr, alloc_size, strSource, strlen(strSource) + 1);
     printf("%s %p\n", ptr, (void *)ptr);
 
     // Retrieve a memory pool from a pointer, available with memory tracking

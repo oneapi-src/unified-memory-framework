@@ -11,6 +11,7 @@ if(UMF_BUILD_OS_MEMORY_PROVIDER
                       LIBS umf
                            scalable_pool)
     target_include_directories(${EXAMPLE_NAME} PRIVATE
+        ${UMF_CMAKE_SOURCE_DIR}/src/utils
         ${UMF_CMAKE_SOURCE_DIR}/include)
 
     add_test(NAME ${EXAMPLE_NAME}
@@ -18,6 +19,18 @@ if(UMF_BUILD_OS_MEMORY_PROVIDER
              WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
     set_tests_properties(${EXAMPLE_NAME} PROPERTIES LABELS "example")
+
+    if(WINDOWS)
+        # append PATH to DLLs
+        set(DLL_PATH_LIST "PATH=path_list_append:../bin/$<CONFIG>")
+        if(LIBHWLOC_DLL_DIRS)
+            set(DLL_PATH_LIST "${DLL_PATH_LIST};PATH=path_list_append:${LIBHWLOC_DLL_DIRS}")
+        endif()
+        if(LIBTBB_DLL_DIRS)
+            set(DLL_PATH_LIST "${DLL_PATH_LIST};PATH=path_list_append:${LIBTBB_DLL_DIRS}")
+        endif()
+        set_property(TEST ${EXAMPLE_NAME} PROPERTY ENVIRONMENT_MODIFICATION "${DLL_PATH_LIST}")
+    endif()
 
     install(FILES basic/basic.c
             DESTINATION "${CMAKE_INSTALL_DOCDIR}/examples")
