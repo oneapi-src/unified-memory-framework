@@ -100,6 +100,26 @@ jobs:
     - name: Check clang-format
       run: cmake --build build --target clang-format-check
 
+  DocsBuild:
+    name: Build docs
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+    - name: Install doxygen
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y doxygen
+
+    - name: Install pip requirements
+      run: python3 -m pip install -r third_party/requirements.txt
+
+    - name: Build the documentation
+      working-directory: scripts
+      run: python3 generate_docs.py
+
   Spellcheck:
     uses: ./.github/workflows/spellcheck.yml
   Build:
