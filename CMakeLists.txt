@@ -123,10 +123,10 @@ if(UMF_BUILD_TESTS)
 endif()
 
 if(UMF_BUILD_BENCHMARKS)
-    if(LINUX)
+    if(LINUX OR WINDOWS)
         add_subdirectory(benchmark)
     else()
-        message(FATAL_ERROR "benchmarks are supported on Linux only")
+        message(FATAL_ERROR "benchmarks are supported on Linux and Windows only")
     endif()
 endif()
 
