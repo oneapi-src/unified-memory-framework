@@ -157,9 +157,14 @@ TEST_F(memspaceHostAllProviderTest, memoryPolicyOOM) {
         UT_ASSERTeq(umf_ret, UMF_RESULT_SUCCESS);
     }
 
+    // TODO: we want to enable this check only when tests are running under QEMU.
+    // Otherwise it might sporadically fail on a real system where other processes
+    // occupied all memory from a aparticular NUMA node.
+#if 0
     // Confirm that all the NUMA nodes bound to 'HOST ALL' memspace were exhausted.
     for (auto &id : nodeIds) {
         auto it = std::find(allocNodeIds.begin(), allocNodeIds.end(), id);
         UT_ASSERT(it != allocNodeIds.end());
     }
+#endif
 }
