@@ -95,6 +95,45 @@ the `allocation API`_ as a first argument. There is also a possibility to
 retrieve a memory pool from an existing memory pointer that points to a memory 
 previously allocated by UMF.
 
+Logging
+---------------------
+
+Logging in UMF is handled by logger. There are several levels of logging: *debug*, *info*, *warning*, and *error*.
+The level of logging determines what messages will be printed, ie. the level set to *warning* means all messages at levels *warning* and *error* will be printed.
+
+By default, there is a guarantee that *error* messages are flushed immediately. One can change this behavior to flush on lower-level messages.
+
+Loggers redirect messages to *stdout*, *stderr*, or a file
+
+By default, no messages are printed. To enable logger you have to set **UMF_LOG** environment variable which have following syntax for setting logger options:
+
+  "[level:debug|info|warning|error];[flush:debug|info|warning|error];[output:stdout|stderr|file,<path>];[timestamp:yes|no];[pid:yes|no]"
+
+  * level - a log level, meaning that only messages from this level and above are printed.
+            Possible values, from the lowest level to the highest one: *debug*, *info*, *warning*, *error*,
+  * flush - a flush level, meaning that messages at this level and above are guaranteed to be flushed immediately,
+            possible values are the same as above,
+  * output - indicates where messages should be printed.
+             Possible values are: *stdout*, *stderr* and *file*,
+             when providing a *file* output option, a *<path>* is required
+  * timestamp - add a timestamp to log message
+  * pid - add thread and process ids to log message
+
+  .. note::
+    For output to file, a path to the file has to be provided after a comma, like in the example above. The path has to exist, file will be created if not existing. Path to the file should be no longer than 255 characters long.
+    The output parameter is required, all other logger options are optional. The defaults are set when options are not provided in the environment variable.
+    Options have to be separated with `;`, option names and their values with `:`. Additionally, when providing *file* output, the keyword *file* and a path to a file
+    have to be separated by `'`.
+
+An example of an environment variable for setting up logger with logging level set to *info*, flush level set to *warning*, and output set to
+the ``out.log`` file::
+
+  UMF_LOG="level:info;flush:warning;output:file,out.log"
+
+An example of an environment variable for setting up logger with logging level set to *warning* and output set to stdout::
+
+  UMF_LOGL="level:warning;output:stdout"
+
 .. _UMF: https://github.com/oneapi-src/unified-memory-framework
 .. _README.md: https://github.com/oneapi-src/unified-memory-framework/blob/main/README.md
 .. _allocation API: https://oneapi-src.github.io/unified-memory-framework/api.html#memory-pool

@@ -43,7 +43,7 @@ extern "C" {
 
 #endif /* _WIN32 */
 
-// util_env_var - populate the given buffer with the value
+// utils_env_var - populate the given buffer with the value
 //                of the given environment variable
 // Return value
 // If the function succeeds, the return value is the number of characters
@@ -60,6 +60,23 @@ int util_env_var(const char *envvar, char *buffer, size_t buffer_size);
 
 // Check if the environment variable contains the given string.
 int util_env_var_has_str(const char *envvar, const char *str);
+
+// util_parse_var - Parses var for a prefix,
+//                   optionally identifying a following argument.
+// Parameters:
+//   - var: String to parse  in "option1;option2,arg2;..." format, with options
+//          separated by ';' and optional arguments by ','.
+//   - option: Option to search for within var.
+//   - extraArg: If not NULL, function expects an argument after the option and
+//               updates this pointer to the argument's position within var.
+//               If NULL, function expects option without an argument.
+// Return Value:
+// Pointer to option within var if found; NULL otherwise.
+//
+// IMPORTANT: Both extraArg and return values are pointers within var,
+// and are not null-terminated.
+const char *util_parse_var(const char *var, const char *option,
+                           const char **extraArg);
 
 // check if we are running in the proxy library
 int util_is_running_in_proxy_lib(void);
