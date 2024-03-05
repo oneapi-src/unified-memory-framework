@@ -135,22 +135,22 @@ if(UMF_BUILD_OS_MEMORY_PROVIDER AND LINUX) # OS-specific functions are implement
                  LIBS umf_utils ${LIBNUMA_LIBRARIES})
     add_umf_test(NAME memspace_host_all
                  SRCS memspaces/memspace_host_all.cpp
-                 LIBS ${LIBNUMA_LIBRARIES})
+                 LIBS umf_utils ${LIBNUMA_LIBRARIES})
 endif()
 
 # TODO add support for Windows
 if(UMF_BUILD_LEVEL_ZERO_PROVIDER AND LINUX)
-    # we have two test binaries here that use the same sources, but differ in 
-    # the way they are linked to the Level Zero (statically or at runtime using 
+    # we have two test binaries here that use the same sources, but differ in
+    # the way they are linked to the Level Zero (statically or at runtime using
     # dlopen)
     add_umf_test(NAME provider_level_zero
                  SRCS providers/provider_level_zero.cpp
                  LIBS umf_utils ze_loader)
-                
+
     add_umf_test(NAME provider_level_zero_dlopen
                  SRCS providers/provider_level_zero.cpp
                  LIBS umf_utils)
-    target_compile_definitions(umf_test-provider_level_zero_dlopen 
+    target_compile_definitions(umf_test-provider_level_zero_dlopen
                  PUBLIC USE_DLOPEN=1)
 endif()
 
