@@ -20,7 +20,7 @@ jobs:
     permissions:
       security-events: write
     env:
-      HWLOC_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows"
+      VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows"
     strategy:
       fail-fast: false
       matrix:
@@ -29,7 +29,7 @@ jobs:
           - os: ubuntu-latest
             pool_scalable: 'ON'
             # Windows doesn't recognize 'CMAKE_BUILD_TYPE', it uses '--config' param in build command
-            extra_build_option: ['-DCMAKE_BUILD_TYPE=Release']
+            extra_build_option: '-DCMAKE_BUILD_TYPE=Release'
           - os: windows-latest
             pool_scalable: 'OFF'
     runs-on: ${{matrix.os}}
@@ -70,7 +70,7 @@ jobs:
         cmake
         -B ${{github.workspace}}/build
         ${{matrix.extra_build_option}}
-        -DCMAKE_PREFIX_PATH=${{env.HWLOC_PATH}}
+        -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_ENABLE_POOL_TRACKING=ON

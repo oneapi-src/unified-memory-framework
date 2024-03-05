@@ -111,7 +111,7 @@ jobs:
   windows-build:
     name: cl and clang-cl on Windows
     env:
-      HWLOC_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows"
+      VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows"
     strategy:
       matrix:
         compiler: [{c: cl, cxx: cl}, {c: clang-cl, cxx: clang-cl}]
@@ -152,7 +152,7 @@ jobs:
         -B ${{env.BUILD_DIR}}
         -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
         -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
-        -DCMAKE_PREFIX_PATH=${{env.HWLOC_PATH}}
+        -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
         -DUMF_BUILD_SHARED_LIBRARY=OFF
         -DUMF_ENABLE_POOL_TRACKING=OFF
         -DUMF_FORMAT_CODE_STYLE=OFF

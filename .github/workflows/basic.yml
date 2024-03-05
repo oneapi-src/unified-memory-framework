@@ -178,7 +178,7 @@ jobs:
   windows-build:
     name: Windows
     env:
-      HWLOC_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows"
+      VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows"
     strategy:
       matrix:
         os: ['windows-2019', 'windows-2022']
@@ -229,7 +229,7 @@ jobs:
         cmake
         -B ${{env.BUILD_DIR}}
         ${{matrix.toolset}}
-        -DCMAKE_PREFIX_PATH=${{env.HWLOC_PATH}}
+        -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
         -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
         -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
         -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}

@@ -14,7 +14,7 @@ jobs:
   FastBuild:
     name: Fast build
     env:
-      HWLOC_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows"
+      VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows"
     strategy:
       matrix:
         include:
@@ -72,7 +72,7 @@ jobs:
       run: >
         cmake
         -B ${{github.workspace}}/build
-        -DCMAKE_PREFIX_PATH=${{env.HWLOC_PATH}}
+        -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_ENABLE_POOL_TRACKING=ON
@@ -112,6 +112,7 @@ jobs:
         -DUMF_BUILD_OS_MEMORY_PROVIDER=OFF
         -DUMF_BUILD_TESTS=OFF
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
+        -DUMF_BUILD_LIBUMF_POOL_SCALABLE=OFF
 
     - name: Check clang-format
       run: cmake --build build --target clang-format-check
