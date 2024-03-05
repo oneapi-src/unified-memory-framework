@@ -90,7 +90,7 @@ List of options provided by CMake:
 | - | - | - | - |
 | UMF_BUILD_SHARED_LIBRARY | Build UMF as shared library | ON/OFF | OFF |
 | UMF_BUILD_OS_MEMORY_PROVIDER | Build OS memory provider | ON/OFF | ON |
-| UMF_BUILD_LIBUMF_PROVIDER_LEVEL_ZERO | Build Level Zero memory provider | ON/OFF | OFF |
+| UMF_BUILD_LEVEL_ZERO_PROVIDER | Build Level Zero memory provider | ON/OFF | OFF |
 | UMF_BUILD_LIBUMF_POOL_DISJOINT | Build the libumf_pool_disjoint static library | ON/OFF | OFF |
 | UMF_BUILD_LIBUMF_POOL_JEMALLOC | Build the libumf_pool_jemalloc static library | ON/OFF | OFF |
 | UMF_BUILD_LIBUMF_POOL_SCALABLE | Build the libumf_pool_scalable static library | ON/OFF | OFF |
