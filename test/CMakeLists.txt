@@ -51,8 +51,11 @@ function(add_umf_test)
     set_tests_properties(${TEST_NAME} PROPERTIES LABELS "umf")
 
     if(WIN32)
-        set_property(TEST ${TEST_NAME} PROPERTY ENVIRONMENT_MODIFICATION
-            "PATH=path_list_append:../bin/$<CONFIG>")
+        set(PATH_LIST "PATH=path_list_append:../bin/$<CONFIG>")
+        if(LIBHWLOC_DLL_DIRS)
+            set(PATH_LIST "${PATH_LIST};PATH=path_list_append:${LIBHWLOC_DLL_DIRS}")
+        endif()
+        set_property(TEST ${TEST_NAME} PROPERTY ENVIRONMENT_MODIFICATION "${PATH_LIST}")
     endif()
 
     if (UMF_ENABLE_POOL_TRACKING)

@@ -5,6 +5,19 @@
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 */
 
+#ifdef _WIN32
+#pragma warning(push)
+// Disable the warning:
+// hwloc-win64-build-2.10.0\include\hwloc/helper.h(1266):
+// warning C4996: 'sscanf': This function or variable may be unsafe.
+// Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS.
+#pragma warning(disable : 4996)
+#include <hwloc.h>
+#pragma warning(pop)
+#else
+#include <hwloc.h>
+#endif
+
 #include <assert.h>
 #include <errno.h>
 #include <hwloc.h>
@@ -464,7 +477,9 @@ static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
         if (os_provider->traces) {
             perror("binding memory to NUMA node failed");
         }
-        if (errno != ENOSYS) { // ENOSYS - Function not implemented
+        // TODO: (errno == 0) when hwloc_set_area_membind() fails on Windows - ignore this temporarily
+        if (errno != ENOSYS &&
+            errno != 0) { // ENOSYS - Function not implemented
             // Do not error out if memory binding is not implemented at all (like in case of WSL on Windows).
             goto err_unmap;
         }

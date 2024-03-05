@@ -24,13 +24,17 @@
 #endif
 
 #include <stdbool.h>
+
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 
 #include "ubench.h"
+#include "utils_common.h"
 
 // BENCHMARK CONFIG
 #define N_ITERATIONS 1000
-#define ALLOC_SIZE (getpagesize())
+#define ALLOC_SIZE (util_get_page_size())
 
 // OS MEMORY PROVIDER CONFIG
 #define OS_MEMORY_PROVIDER_TRACE (0)
@@ -65,7 +69,7 @@ static void do_benchmark(alloc_t *array, size_t iters, malloc_t malloc_f,
 }
 
 static alloc_t *alloc_array(size_t iters) {
-    Alloc_size = ALLOC_SIZE;
+    Alloc_size = (int)ALLOC_SIZE;
     alloc_t *array = malloc(iters * sizeof(alloc_t));
     if (array == NULL) {
         perror("malloc() failed");
@@ -223,7 +227,7 @@ UBENCH_EX(simple, disjoint_pool_with_os_memory_provider) {
         exit(-1);
     }
 
-    umf_disjoint_pool_params_t disjoint_memory_pool_params = {};
+    umf_disjoint_pool_params_t disjoint_memory_pool_params = {0};
     disjoint_memory_pool_params.SlabMinSize = DISJOINT_POOL_SLAB_MIN_SIZE;
     disjoint_memory_pool_params.MaxPoolableSize =
         DISJOINT_POOL_MAX_POOLABLE_SIZE;

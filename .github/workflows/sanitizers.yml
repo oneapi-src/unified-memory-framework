@@ -110,6 +110,8 @@ jobs:
 
   windows-build:
     name: cl and clang-cl on Windows
+    env:
+      HWLOC_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows"
     strategy:
       matrix:
         compiler: [{c: cl, cxx: cl}, {c: clang-cl, cxx: clang-cl}]
@@ -133,12 +135,24 @@ jobs:
         arch: x64
         toolset: 14.38.33130
 
+    - name: Initialize vcpkg
+      uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
+      with:
+        vcpkgGitCommitId: 3dd44b931481d7a8e9ba412621fa810232b66289
+        vcpkgDirectory: ${{github.workspace}}/build/vcpkg
+        vcpkgJsonGlob: '**/vcpkg.json'
+
+    - name: Install dependencies
+      run: vcpkg install
+      shell: pwsh # Specifies PowerShell as the shell for running the script.
+
     - name: Configure build
       run: >
         cmake
         -B ${{env.BUILD_DIR}}
         -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
         -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
+        -DCMAKE_PREFIX_PATH=${{env.HWLOC_PATH}}
         -DUMF_BUILD_SHARED_LIBRARY=OFF
         -DUMF_ENABLE_POOL_TRACKING=OFF
         -DUMF_FORMAT_CODE_STYLE=OFF

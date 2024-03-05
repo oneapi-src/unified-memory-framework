@@ -13,6 +13,8 @@ permissions:
 jobs:
   FastBuild:
     name: Fast build
+    env:
+      HWLOC_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows"
     strategy:
       matrix:
         include:
@@ -47,6 +49,19 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
+    - name: Initialize vcpkg
+      if: ${{ matrix.os == 'windows-latest' }}
+      uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
+      with:
+        vcpkgGitCommitId: 3dd44b931481d7a8e9ba412621fa810232b66289
+        vcpkgDirectory: ${{github.workspace}}/build/vcpkg
+        vcpkgJsonGlob: '**/vcpkg.json'
+
+    - name: Install dependencies
+      if: ${{ matrix.os == 'windows-latest' }}
+      run: vcpkg install
+      shell: pwsh # Specifies PowerShell as the shell for running the script.
+
     - name: Install apt packages
       if: matrix.os == 'ubuntu-latest'
       run: |
@@ -57,6 +72,7 @@ jobs:
       run: >
         cmake
         -B ${{github.workspace}}/build
+        -DCMAKE_PREFIX_PATH=${{env.HWLOC_PATH}}
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_ENABLE_POOL_TRACKING=ON

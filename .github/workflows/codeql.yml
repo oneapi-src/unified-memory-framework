@@ -19,6 +19,8 @@ jobs:
     name: Analyze
     permissions:
       security-events: write
+    env:
+      HWLOC_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows"
     strategy:
       fail-fast: false
       matrix:
@@ -41,6 +43,19 @@ jobs:
       with:
         languages: cpp
 
+    - name: Initialize vcpkg
+      if: ${{ matrix.os == 'windows-latest' }}
+      uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
+      with:
+        vcpkgGitCommitId: 3dd44b931481d7a8e9ba412621fa810232b66289
+        vcpkgDirectory: ${{github.workspace}}/build/vcpkg
+        vcpkgJsonGlob: '**/vcpkg.json'
+
+    - name: Install dependencies
+      if: ${{ matrix.os == 'windows-latest' }}
+      run: vcpkg install
+      shell: pwsh # Specifies PowerShell as the shell for running the script.
+
     - name: Install apt packages
       if: matrix.os == 'ubuntu-latest'
       run: |
@@ -55,6 +70,7 @@ jobs:
         cmake
         -B ${{github.workspace}}/build
         ${{matrix.extra_build_option}}
+        -DCMAKE_PREFIX_PATH=${{env.HWLOC_PATH}}
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_ENABLE_POOL_TRACKING=ON

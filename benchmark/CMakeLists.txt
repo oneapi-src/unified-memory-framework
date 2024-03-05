@@ -22,17 +22,21 @@ endif()
 
 add_executable(ubench ubench.c)
 
+if(LINUX)
+	set(LIBS_LINUX m)
+endif()
+
 add_dependencies(ubench
 	umf
 	${LIBS_OPTIONAL})
 
-target_include_directories(ubench PRIVATE ${UMF_CMAKE_SOURCE_DIR}/include/)
+target_include_directories(ubench PRIVATE ${UMF_CMAKE_SOURCE_DIR}/include/ ${UMF_CMAKE_SOURCE_DIR}/src/utils/)
 
 target_link_libraries(ubench
 	umf
 	${LIBS_OPTIONAL}
 	${CMAKE_THREAD_LIBS_INIT}
-	m)
+	${LIBS_LINUX})
 
 if (UMF_BUILD_BENCHMARKS_MT)
 	add_executable(multithread_bench multithread.cpp)
@@ -40,7 +44,7 @@ if (UMF_BUILD_BENCHMARKS_MT)
 		umf
 		${LIBS_OPTIONAL}
 		pthread
-		m)
+		${LIBS_LINUX})
 	target_include_directories(multithread_bench PRIVATE ${UMF_CMAKE_SOURCE_DIR}/include/)
 endif()
 

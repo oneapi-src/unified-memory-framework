@@ -39,6 +39,7 @@ jobs:
           -DUMF_BUILD_TESTS=OFF
           -DUMF_FORMAT_CODE_STYLE=OFF
           -DUMF_DEVELOPER_MODE=OFF
+          -DUMF_BUILD_OS_MEMORY_PROVIDER=ON
           -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
           -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
           -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
@@ -68,3 +69,63 @@ jobs:
       - name: Run MT benchmarks
         working-directory: ${{github.workspace}}/build
         run: ./benchmark/multithread_bench
+
+  benchmarks-windows:
+    name: Windows
+    env:
+      BUILD_DIR : "${{github.workspace}}/build/"
+      HWLOC_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows"
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type: [Release]
+        compiler: [{c: cl, cxx: cl}]
+        shared_library: ['ON', 'OFF']
+    runs-on: 'windows-2022'
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+    - name: Initialize vcpkg
+      uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
+      with:
+        vcpkgGitCommitId: 3dd44b931481d7a8e9ba412621fa810232b66289
+        vcpkgDirectory: ${{github.workspace}}/build/vcpkg
+        vcpkgJsonGlob: '**/vcpkg.json'
+
+    - name: Install dependencies
+      run: vcpkg install
+      shell: pwsh # Specifies PowerShell as the shell for running the script.
+
+    - name: Configure build
+      run: >
+        cmake
+        -B ${{env.BUILD_DIR}}
+        -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
+        -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
+        -DCMAKE_PREFIX_PATH=${{env.HWLOC_PATH}}
+        -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
+        -DUMF_BUILD_BENCHMARKS=ON
+        -DUMF_BUILD_BENCHMARKS_MT=OFF
+        -DUMF_BUILD_TESTS=OFF
+        -DUMF_FORMAT_CODE_STYLE=OFF
+        -DUMF_DEVELOPER_MODE=OFF
+        -DUMF_BUILD_OS_MEMORY_PROVIDER=ON
+        -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
+        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=OFF
+        -DUMF_BUILD_LIBUMF_POOL_SCALABLE=OFF
+        -DUMF_ENABLE_POOL_TRACKING=OFF
+
+    - name: Build UMF
+      run: cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j $Env:NUMBER_OF_PROCESSORS
+
+    - name: Run benchmarks
+      working-directory: ${{env.BUILD_DIR}}
+      shell: pwsh # Specifies PowerShell as the shell for running the script.
+      run: |
+        # add path to umf.dll
+        $env:PATH += ";${{env.BUILD_DIR}}\bin\${{matrix.build_type}}"
+        # add path to hwloc-15.dll
+        $env:PATH += ";${{env.HWLOC_PATH}}\bin"
+        .\benchmark\${{matrix.build_type}}\ubench.exe

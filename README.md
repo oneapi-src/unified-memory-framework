@@ -117,17 +117,16 @@ More detailed documentation is available here: https://oneapi-src.github.io/unif
 
 ### Memory providers
 
-#### OS memory provider (Linux-only yet)
+#### OS memory provider
 
 A memory provider that provides memory from an operating system.
 
 ##### Requirements
 
-1) Linux OS
-2) The `UMF_BUILD_OS_MEMORY_PROVIDER` option turned `ON` (by default)
-3) Required packages:
-   - libhwloc-dev
-4) Required packages for tests:
+1) The `UMF_BUILD_OS_MEMORY_PROVIDER` option turned `ON` (by default)
+2) Required packages:
+   - libhwloc-dev (Linux) / hwloc (Windows)
+3) Required packages for tests (Linux-only yet):
    - libnuma-dev
 
 #### Level Zero memory provider (Linux-only yet)
