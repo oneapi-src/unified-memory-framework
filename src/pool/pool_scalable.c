@@ -8,8 +8,6 @@
  */
 
 #include <assert.h>
-#include <dlfcn.h>
-#include <pthread.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -25,6 +23,7 @@
 #include "base_alloc_global.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
+#include "utils_load_library.h"
 #include "utils_sanitizers.h"
 
 typedef void *(*raw_alloc_tbb_type)(intptr_t, size_t *);
@@ -51,7 +50,11 @@ typedef struct tbb_callbacks_t {
     bool (*pool_destroy)(void *);
     void *(*pool_identify)(void *object);
     size_t (*pool_msize)(void *, void *);
+#ifdef _WIN32
+    HMODULE lib_handle;
+#else
     void *lib_handle;
+#endif
 } tbb_callbacks_t;
 
 typedef struct tbb_memory_pool_t {
@@ -60,42 +63,79 @@ typedef struct tbb_memory_pool_t {
     tbb_callbacks_t tbb_callbacks;
 } tbb_memory_pool_t;
 
+typedef enum tbb_enums_t {
+    TBB_LIB_NAME = 0,
+    TBB_POOL_MALLOC,
+    TBB_POOL_REALLOC,
+    TBB_POOL_ALIGNED_MALLOC,
+    TBB_POOL_FREE,
+    TBB_POOL_CREATE_V1,
+    TBB_POOL_DESTROY,
+    TBB_POOL_IDENTIFY,
+    TBB_POOL_MSIZE,
+    TBB_POOL_SYMBOLS_MAX // it has to be the last one
+} tbb_enums_t;
+
+static const char *tbb_symbol[TBB_POOL_SYMBOLS_MAX] = {
+#ifdef _WIN32
+    // symbols copied from oneTBB/src/tbbmalloc/def/win64-tbbmalloc.def
+    "tbbmalloc.dll",
+    "?pool_malloc@rml@@YAPEAXPEAVMemoryPool@1@_K@Z",
+    "?pool_realloc@rml@@YAPEAXPEAVMemoryPool@1@PEAX_K@Z",
+    "?pool_aligned_malloc@rml@@YAPEAXPEAVMemoryPool@1@_K1@Z",
+    "?pool_free@rml@@YA_NPEAVMemoryPool@1@PEAX@Z",
+    "?pool_create_v1@rml@@YA?AW4MemPoolError@1@_JPEBUMemPoolPolicy@1@"
+    "PEAPEAVMemoryPool@1@@Z",
+    "?pool_destroy@rml@@YA_NPEAVMemoryPool@1@@Z",
+    "?pool_identify@rml@@YAPEAVMemoryPool@1@PEAX@Z",
+    "?pool_msize@rml@@YA_KPEAVMemoryPool@1@PEAX@Z"
+#else
+    // symbols copied from oneTBB/src/tbbmalloc/def/lin64-tbbmalloc.def
+    "libtbbmalloc.so.2",
+    "_ZN3rml11pool_mallocEPNS_10MemoryPoolEm",
+    "_ZN3rml12pool_reallocEPNS_10MemoryPoolEPvm",
+    "_ZN3rml19pool_aligned_mallocEPNS_10MemoryPoolEmm",
+    "_ZN3rml9pool_freeEPNS_10MemoryPoolEPv",
+    "_ZN3rml14pool_create_v1ElPKNS_13MemPoolPolicyEPPNS_10MemoryPoolE",
+    "_ZN3rml12pool_destroyEPNS_10MemoryPoolE",
+    "_ZN3rml13pool_identifyEPv",
+    "_ZN3rml10pool_msizeEPNS_10MemoryPoolEPv"
+#endif
+};
+
 static int init_tbb_callbacks(tbb_callbacks_t *tbb_callbacks) {
     assert(tbb_callbacks);
 
-    const char so_name[] = "libtbbmalloc.so.2";
-    tbb_callbacks->lib_handle = dlopen(so_name, RTLD_LAZY);
+    const char *lib_name = tbb_symbol[TBB_LIB_NAME];
+    tbb_callbacks->lib_handle = util_open_library(lib_name);
     if (!tbb_callbacks->lib_handle) {
-        fprintf(stderr, "%s not found.\n", so_name);
+        fprintf(stderr, "%s not found.\n", lib_name);
         return -1;
     }
 
-    *(void **)&tbb_callbacks->pool_malloc = dlsym(
-        tbb_callbacks->lib_handle, "_ZN3rml11pool_mallocEPNS_10MemoryPoolEm");
-    *(void **)&tbb_callbacks->pool_realloc =
-        dlsym(tbb_callbacks->lib_handle,
-              "_ZN3rml12pool_reallocEPNS_10MemoryPoolEPvm");
-    *(void **)&tbb_callbacks->pool_aligned_malloc =
-        dlsym(tbb_callbacks->lib_handle,
-              "_ZN3rml19pool_aligned_mallocEPNS_10MemoryPoolEmm");
-    *(void **)&tbb_callbacks->pool_free = dlsym(
-        tbb_callbacks->lib_handle, "_ZN3rml9pool_freeEPNS_10MemoryPoolEPv");
-    *(void **)&tbb_callbacks->pool_create_v1 = dlsym(
-        tbb_callbacks->lib_handle,
-        "_ZN3rml14pool_create_v1ElPKNS_13MemPoolPolicyEPPNS_10MemoryPoolE");
-    *(void **)&tbb_callbacks->pool_destroy = dlsym(
-        tbb_callbacks->lib_handle, "_ZN3rml12pool_destroyEPNS_10MemoryPoolE");
-    *(void **)&tbb_callbacks->pool_identify =
-        dlsym(tbb_callbacks->lib_handle, "_ZN3rml13pool_identifyEPv");
-    *(void **)&tbb_callbacks->pool_msize = dlsym(
-        tbb_callbacks->lib_handle, "_ZN3rml10pool_msizeEPNS_10MemoryPoolEPv");
+    *(void **)&tbb_callbacks->pool_malloc = util_get_symbol_addr(
+        tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_MALLOC]);
+    *(void **)&tbb_callbacks->pool_realloc = util_get_symbol_addr(
+        tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_REALLOC]);
+    *(void **)&tbb_callbacks->pool_aligned_malloc = util_get_symbol_addr(
+        tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_ALIGNED_MALLOC]);
+    *(void **)&tbb_callbacks->pool_free = util_get_symbol_addr(
+        tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_FREE]);
+    *(void **)&tbb_callbacks->pool_create_v1 = util_get_symbol_addr(
+        tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_CREATE_V1]);
+    *(void **)&tbb_callbacks->pool_destroy = util_get_symbol_addr(
+        tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_DESTROY]);
+    *(void **)&tbb_callbacks->pool_identify = util_get_symbol_addr(
+        tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_IDENTIFY]);
+    *(void **)&tbb_callbacks->pool_msize = util_get_symbol_addr(
+        tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_MSIZE]);
 
     if (!tbb_callbacks->pool_malloc || !tbb_callbacks->pool_realloc ||
         !tbb_callbacks->pool_aligned_malloc || !tbb_callbacks->pool_free ||
         !tbb_callbacks->pool_create_v1 || !tbb_callbacks->pool_destroy ||
         !tbb_callbacks->pool_identify) {
-        fprintf(stderr, "Could not find symbols in %s.\n", so_name);
-        dlclose(tbb_callbacks->lib_handle);
+        fprintf(stderr, "Could not find symbols in %s.\n", lib_name);
+        util_close_library(tbb_callbacks->lib_handle);
         return -1;
     }
 
@@ -168,7 +208,7 @@ static umf_result_t tbb_pool_initialize(umf_memory_provider_handle_t provider,
 static void tbb_pool_finalize(void *pool) {
     tbb_memory_pool_t *pool_data = (tbb_memory_pool_t *)pool;
     pool_data->tbb_callbacks.pool_destroy(pool_data->tbb_pool);
-    dlclose(pool_data->tbb_callbacks.lib_handle);
+    util_close_library(pool_data->tbb_callbacks.lib_handle);
     umf_ba_global_free(pool_data);
 }
 

@@ -19,25 +19,21 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            pool_scalable: 'OFF'
             disjoint: 'OFF'
             jemalloc: 'OFF'
           # pure C build (Windows)
           - os: windows-latest
-            pool_scalable: 'OFF'
             disjoint: 'OFF'
             jemalloc: 'OFF'
             # Tests' building is off for a pure C build
             extra_build_options: '-DUMF_BUILD_TESTS=OFF'
           - os: ubuntu-latest
-            pool_scalable: 'ON'
             disjoint: 'ON'
             jemalloc: 'ON'
             # Windows doesn't recognize 'CMAKE_BUILD_TYPE', it uses '--config' param in build command
             extra_build_options: '-DCMAKE_BUILD_TYPE=Release -DUMF_BUILD_BENCHMARKS=ON -DUMF_BUILD_BENCHMARKS_MT=ON'
           # pure C build (Linux)
           - os: ubuntu-latest
-            pool_scalable: 'ON'
             disjoint: 'OFF'
             jemalloc: 'ON'
             # Windows doesn't recognize 'CMAKE_BUILD_TYPE', it uses '--config' param in build command
@@ -76,7 +72,7 @@ jobs:
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_ENABLE_POOL_TRACKING=ON
-        -DUMF_BUILD_LIBUMF_POOL_SCALABLE=${{matrix.pool_scalable}}
+        -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
         -DUMF_BUILD_LIBUMF_POOL_DISJOINT=${{matrix.disjoint}}
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=${{matrix.jemalloc}}
         -DUMF_BUILD_TESTS=ON

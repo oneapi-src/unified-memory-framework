@@ -27,11 +27,9 @@ jobs:
         os: [ubuntu-latest, windows-latest]
         include:
           - os: ubuntu-latest
-            pool_scalable: 'ON'
             # Windows doesn't recognize 'CMAKE_BUILD_TYPE', it uses '--config' param in build command
             extra_build_option: '-DCMAKE_BUILD_TYPE=Release'
           - os: windows-latest
-            pool_scalable: 'OFF'
     runs-on: ${{matrix.os}}
 
     steps:
@@ -74,7 +72,7 @@ jobs:
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_ENABLE_POOL_TRACKING=ON
-        -DUMF_BUILD_LIBUMF_POOL_SCALABLE=${{matrix.pool_scalable}}
+        -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
 
     - name: Build
