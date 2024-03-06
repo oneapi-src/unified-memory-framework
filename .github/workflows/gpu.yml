@@ -12,6 +12,8 @@ jobs:
   # TODO: add support for Windows
   ubuntu-build:
     name: Build - Ubuntu
+    # run only on upstream; forks will not have the HW
+    if: github.repository == 'oneapi-src/unified-memory-framework'
 
     strategy:
       matrix:
