@@ -147,9 +147,9 @@ if(UMF_BUILD_OS_MEMORY_PROVIDER AND LINUX) # OS-specific functions are implement
 endif()
 
 # TODO add support for Windows
-if(UMF_BUILD_LEVEL_ZERO_PROVIDER AND LINUX)
-    # we have two test binaries here that use the same sources, but differ in
-    # the way they are linked to the Level Zero (statically or at runtime using
+if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_LEVEL_ZERO_PROVIDER AND LINUX)
+    # we have two test binaries here that use the same sources, but differ in 
+    # the way they are linked to the Level Zero (statically or at runtime using 
     # dlopen)
     add_umf_test(NAME provider_level_zero
                  SRCS providers/provider_level_zero.cpp

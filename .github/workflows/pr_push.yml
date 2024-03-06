@@ -20,21 +20,25 @@ jobs:
         include:
           - os: windows-latest
             disjoint: 'OFF'
+            level_zero_provider: 'OFF' # TODO enable
           # pure C build (Windows)
           - os: windows-latest
             disjoint: 'OFF'
             # Tests' building is off for a pure C build
             extra_build_options: '-DUMF_BUILD_TESTS=OFF'
+            level_zero_provider: 'OFF' # TODO enable
           - os: ubuntu-latest
             disjoint: 'ON'
             # Windows doesn't recognize 'CMAKE_BUILD_TYPE', it uses '--config' param in build command
             extra_build_options: '-DCMAKE_BUILD_TYPE=Release -DUMF_BUILD_BENCHMARKS=ON -DUMF_BUILD_BENCHMARKS_MT=ON'
+            level_zero_provider: 'ON'
           # pure C build (Linux)
           - os: ubuntu-latest
             disjoint: 'OFF'
             # Windows doesn't recognize 'CMAKE_BUILD_TYPE', it uses '--config' param in build command
             # Tests' building is off for a pure C build
             extra_build_options: '-DCMAKE_BUILD_TYPE=Release -DUMF_BUILD_BENCHMARKS=ON -DUMF_BUILD_TESTS=OFF'
+            level_zero_provider: 'ON'
     runs-on: ${{matrix.os}}
 
     steps:
@@ -73,7 +77,7 @@ jobs:
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
         -DUMF_BUILD_TESTS=ON
         -DUMF_BUILD_EXAMPLES=ON
-        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=${{matrix.level_zero_provider}}
         ${{matrix.extra_build_options}}
 
     - name: Build

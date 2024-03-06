@@ -46,7 +46,8 @@ jobs:
         -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
         -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
         -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
-        -DUMF_BUILD_OS_MEMORY_PROVIDER=${{matrix.os_provider}}
+        -DUMF_BUILD_OS_MEMORY_PROVIDER=${{matrix.os_provider}}        
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON  
         -DUMF_ENABLE_POOL_TRACKING=${{matrix.pool_tracking}}
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
@@ -54,7 +55,6 @@ jobs:
         -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
         -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
         -DUMF_BUILD_EXAMPLES=ON
-        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
 
     - name: Build UMF
       run: cmake --build build -j $(nproc)
@@ -86,39 +86,60 @@ jobs:
         pool_tracking: ['ON', 'OFF']
         shared_library: ['OFF']
         os_provider: ['ON']
+        level_zero_provider: ['ON']
         include:
           - os: 'ubuntu-20.04'
             build_type: Release
             compiler: {c: gcc-7, cxx: g++-7}
             shared_library: 'OFF'
             os_provider: 'ON'
+            pool_tracking: 'ON'
+            level_zero_provider: 'ON'
           - os: 'ubuntu-22.04'
             build_type: Release
             compiler: {c: clang, cxx: clang++}
             shared_library: 'OFF'
             os_provider: 'ON'
+            pool_tracking: 'ON'
+            level_zero_provider: 'ON'
           - os: 'ubuntu-22.04'
             build_type: Release
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
             os_provider: 'ON'
+            pool_tracking: 'ON'
+            level_zero_provider: 'ON'
           - os: 'ubuntu-22.04'
             build_type: Debug
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
             os_provider: 'ON'
+            pool_tracking: 'ON'
+            level_zero_provider: 'ON'
           # test os_provider='OFF' with shared_library='ON'
           - os: 'ubuntu-22.04'
             build_type: Release
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
             os_provider: 'OFF'
+            pool_tracking: 'ON'
+            level_zero_provider: 'ON'
           # test os_provider='OFF' with shared_library='OFF'
           - os: 'ubuntu-22.04'
             build_type: Release
             compiler: {c: gcc, cxx: g++}
             shared_library: 'OFF'
             os_provider: 'OFF'
+            pool_tracking: 'ON'
+            level_zero_provider: 'ON'
+          # test level_zero_provider='OFF'
+          - os: 'ubuntu-22.04'
+            build_type: Release
+            compiler: {c: gcc, cxx: g++}
+            shared_library: 'OFF'
+            os_provider: 'ON'
+            pool_tracking: 'ON'
+            level_zero_provider: 'OFF'
     runs-on: ${{matrix.os}}
 
     steps:
@@ -134,7 +155,6 @@ jobs:
       if: matrix.compiler.cxx == 'g++-7'
       run: sudo apt-get install -y ${{matrix.compiler.cxx}}
 
-    # TODO enable building Level Zero provider in all workflows
     - name: Configure build
       run: >
         cmake
@@ -145,13 +165,13 @@ jobs:
         -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
         -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
         -DUMF_BUILD_OS_MEMORY_PROVIDER=${{matrix.os_provider}}
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=${{matrix.level_zero_provider}}
         -DUMF_ENABLE_POOL_TRACKING=${{matrix.pool_tracking}}
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
         -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
         -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
-        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
 
     - name: Build UMF
       run: cmake --build ${{env.BUILD_DIR}} -j $(nproc)
@@ -187,6 +207,7 @@ jobs:
         pool_tracking: ['ON', 'OFF']
         shared_library: ['OFF']
         os_provider: ['ON']
+        # TODO add level zero provider
         include:
           - os: 'windows-2022'
             build_type: Release

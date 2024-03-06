@@ -14,7 +14,12 @@ jobs:
       VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
     strategy:
       matrix:
-        os: ['ubuntu-latest', 'windows-latest']
+        include:
+          - os: ubuntu-latest
+            level_zero_provider: 'ON'
+          - os: windows-latest
+            level_zero_provider: 'OFF'
+
     runs-on: ${{matrix.os}}
 
     steps:
@@ -57,7 +62,7 @@ jobs:
           -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
           -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
           -DUMF_ENABLE_POOL_TRACKING=OFF
-          -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
+          -DUMF_BUILD_LEVEL_ZERO_PROVIDER=${{matrix.level_zero_provider}}
 
       - name: Build UMF on Linux
         if: matrix.os == 'ubuntu-latest'

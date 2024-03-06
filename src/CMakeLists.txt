@@ -3,6 +3,28 @@
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 include(${UMF_CMAKE_SOURCE_DIR}/cmake/helpers.cmake)
+        
+if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
+    include(FetchContent)
+
+    set(LEVEL_ZERO_LOADER_REPO "https://github.com/oneapi-src/level-zero.git")
+    set(LEVEL_ZERO_LOADER_TAG v1.16.1)
+    
+    FetchContent_Declare(level-zero-loader
+        GIT_REPOSITORY    ${LEVEL_ZERO_LOADER_REPO}
+        GIT_TAG           ${LEVEL_ZERO_LOADER_TAG}
+        EXCLUDE_FROM_ALL
+    )
+
+    FetchContent_GetProperties(level-zero-loader)
+    if(NOT level-zero-loader_POPULATED)
+        FetchContent_Populate(level-zero-loader)
+    endif()
+
+    set(LEVEL_ZERO_INCLUDE_DIRS ${level-zero-loader_SOURCE_DIR}/include 
+        CACHE PATH "Path to Level Zero Headers")    
+    message(STATUS "Level Zero include directory: ${LEVEL_ZERO_INCLUDE_DIRS}")
+endif()
 
 # set UMF_PROXY_LIB_BASED_ON_POOL to one of:
 # - SCALABLE
@@ -76,16 +98,6 @@ if(UMF_BUILD_OS_MEMORY_PROVIDER)
     endif()
 endif()
 
-if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
-    # Currently, Level Zero provider is only built for Linux
-    # TODO add fetch content or PkgConfig/find_package for Level Zero
-    set(UMF_SOURCES_LINUX ${UMF_SOURCES_LINUX}
-        provider/provider_level_zero.c)
-
-    set(UMF_COMPILE_DEFINITIONS ${UMF_COMPILE_DEFINITIONS}
-        "UMF_BUILD_LEVEL_ZERO_PROVIDER=1")
-endif()
-
 if(LINUX)
     set(UMF_SOURCES ${UMF_SOURCES} ${UMF_SOURCES_LINUX})
 elseif(WINDOWS)
@@ -130,10 +142,27 @@ else()
     target_sources(umf PRIVATE memory_pool_default.c)
 endif()
 
+# Currently, Level Zero provider is only built for Linux
+if(LINUX AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
+    target_sources(umf PRIVATE
+        provider/provider_level_zero.c)
+
+    # WA for error ze_api.h:14234:20: no newline at end of file [-Werror,-Wnewline-eof]
+    set_source_files_properties(provider/provider_level_zero.c 
+        PROPERTIES APPEND_STRING PROPERTY COMPILE_FLAGS "-Wno-newline-eof")
+
+    set(UMF_COMPILE_DEFINITIONS ${UMF_COMPILE_DEFINITIONS} 
+        "UMF_BUILD_LEVEL_ZERO_PROVIDER=1")
+endif()
+
 add_library(${PROJECT_NAME}::umf ALIAS umf)
 
 if(LIBHWLOC_INCLUDE_DIRS)
     target_include_directories(umf PRIVATE ${LIBHWLOC_INCLUDE_DIRS})
+endif()
+
+if (LEVEL_ZERO_INCLUDE_DIRS)
+    target_include_directories(umf PRIVATE ${LEVEL_ZERO_INCLUDE_DIRS})
 endif()
 
 target_include_directories(umf PUBLIC
