@@ -1,0 +1,126 @@
+# Builds project on qemu with custom hmat settings
+name: Qemu
+
+on: workflow_call
+
+env:
+  CI_BRANCH : "${{ github.head_ref || github.ref_name }}"
+
+permissions:
+  contents: read
+
+jobs:
+  qemu-build:
+    name: Qemu
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+    - name: Enable KVM
+      run: |
+        echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+        sudo udevadm control --reload-rules
+        sudo udevadm trigger --name-match=kvm
+    - name: Install qemu
+      run: |
+        sudo apt update && sudo apt install -y qemu-system genisoimage qemu-utils
+    - name: Run ssh-keygen
+      run: ssh-keygen -b 4096 -N '' -f ~/.ssh/id_rsa
+    - name: Generate iso with user info
+      run: |
+        pub_key=$(cat ~/.ssh/id_rsa.pub)
+
+        cat > user-data << EOF
+        #cloud-config
+
+        # Add a 'cxltest' user to the system with a password
+        users:
+          - default
+          - name: cxltest
+            gecos: CXL Test User
+            primary_group: wheel
+            groups: users
+            sudo: ALL=(ALL) NOPASSWD:ALL
+            lock_passwd: false
+            ssh-authorized-keys:
+              - $pub_key
+            shell: /usr/bin/bash
+
+        # Set local logins
+        chpasswd:
+          list: |
+            root:password
+            cxltest:password
+          expire: False
+        EOF
+
+        cat > meta-data << EOF
+        instance-id: cxl-test
+        local-hostname: cxl-test
+        EOF
+
+        sudo -Sk genisoimage -output ubuntu-cloud-init.iso -volid cidata -joliet -rock ./user-data ./meta-data
+    - name: Download ubuntu image
+      run: wget https://cloud-images.ubuntu.com/lunar/current/lunar-server-cloudimg-amd64.img
+    - name: Resize image
+      run: qemu-img resize ./lunar-server-cloudimg-amd64.img +4G
+    - name: Run qemu
+      run: |
+        sudo qemu-system-x86_64 \
+        -drive file=./lunar-server-cloudimg-amd64.img,format=qcow2,index=0,media=disk,id=hd \
+        -cdrom ./ubuntu-cloud-init.iso \
+        -machine q35,usb=off,hmat=on \
+        -enable-kvm \
+        -net nic -net user,hostfwd=tcp::2222-:22 \
+        -m 3G \
+        -smp 4 \
+        -object memory-backend-ram,size=1G,id=ram0 \
+        -object memory-backend-ram,size=1G,id=ram1 \
+        -object memory-backend-ram,size=1G,id=ram2 \
+        -numa node,nodeid=0,memdev=ram0,cpus=0-1 \
+        -numa node,nodeid=1,memdev=ram1,cpus=2-3 \
+        -numa node,nodeid=2,memdev=ram2,initiator=0 \
+        -numa dist,src=0,dst=0,val=10 \
+        -numa dist,src=0,dst=1,val=20 \
+        -numa dist,src=0,dst=2,val=17 \
+        -numa dist,src=1,dst=0,val=20 \
+        -numa dist,src=1,dst=1,val=10 \
+        -numa dist,src=1,dst=2,val=28 \
+        -numa dist,src=2,dst=0,val=17 \
+        -numa dist,src=2,dst=1,val=28 \
+        -numa dist,src=2,dst=2,val=10 \
+        -numa hmat-lb,initiator=0,target=0,hierarchy=memory,data-type=access-latency,latency=10 \
+        -numa hmat-lb,initiator=0,target=0,hierarchy=memory,data-type=access-bandwidth,bandwidth=10485760 \
+        -numa hmat-lb,initiator=0,target=1,hierarchy=memory,data-type=access-latency,latency=20 \
+        -numa hmat-lb,initiator=0,target=1,hierarchy=memory,data-type=access-bandwidth,bandwidth=5242880 \
+        -numa hmat-lb,initiator=0,target=2,hierarchy=memory,data-type=access-latency,latency=16 \
+        -numa hmat-lb,initiator=0,target=2,hierarchy=memory,data-type=access-bandwidth,bandwidth=1048576 \
+        -numa hmat-lb,initiator=1,target=0,hierarchy=memory,data-type=access-latency,latency=20 \
+        -numa hmat-lb,initiator=1,target=0,hierarchy=memory,data-type=access-bandwidth,bandwidth=5242880 \
+        -numa hmat-lb,initiator=1,target=1,hierarchy=memory,data-type=access-latency,latency=10 \
+        -numa hmat-lb,initiator=1,target=1,hierarchy=memory,data-type=access-bandwidth,bandwidth=10485760 \
+        -numa hmat-lb,initiator=1,target=2,hierarchy=memory,data-type=access-latency,latency=27 \
+        -numa hmat-lb,initiator=1,target=2,hierarchy=memory,data-type=access-bandwidth,bandwidth=1048576 \
+        -daemonize -display none
+    - name: Run ssh keyscan
+      run: |
+        set +e
+        ssh-keyscan -p 2222 -H 127.0.0.1 >> ~/.ssh/known_hosts
+        while [ $? -ne 0 ]
+        do
+          echo "Trying to connect..."
+          ps -aux | grep qemu
+          sleep 5
+          ssh-keyscan -p 2222 -H 127.0.0.1 >> ~/.ssh/known_hosts
+        done
+    - name: Run build on qemu
+      run: |
+        if [ ${{ github.event_name }} = 'pull_request' ]; then
+            CI_REPO="${{ github.event.pull_request.head.repo.full_name }}"
+        else
+            CI_REPO="$GITHUB_REPOSITORY"
+        fi
+
+        scp -P 2222 ${{github.workspace}}/scripts/qemu/run-build.sh cxltest@127.0.0.1:/home/cxltest
+        ssh cxltest@127.0.0.1 -p 2222 -t "bash /home/cxltest/run-build.sh https://github.com/$CI_REPO ${{env.CI_BRANCH}}"
