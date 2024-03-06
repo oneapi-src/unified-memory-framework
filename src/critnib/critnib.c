@@ -742,6 +742,7 @@ int critnib_find(struct critnib *c, uintptr_t key, enum find_dir_t dir,
     struct critnib_leaf *k;
     uintptr_t _rkey = (uintptr_t)0x0;
     void **_rvalue = NULL;
+    util_mutex_lock(&c->mutex);
 
     /* <42 ≡ ≤41 */
     if (dir < -1) {
@@ -787,8 +788,13 @@ int critnib_find(struct critnib *c, uintptr_t key, enum find_dir_t dir,
         if (rvalue) {
             *rvalue = _rvalue;
         }
+
+        util_mutex_unlock(&c->mutex);
+
         return 1;
     }
+
+    util_mutex_unlock(&c->mutex);
 
     return 0;
 }
