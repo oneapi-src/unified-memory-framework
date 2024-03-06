@@ -259,6 +259,7 @@ void umf_ba_linear_destroy(umf_ba_linear_pool_t *pool) {
     }
 #endif /* NDEBUG */
 
+    util_mutex_lock(&pool->metadata.lock);
     umf_ba_next_linear_pool_t *current_pool;
     umf_ba_next_linear_pool_t *next_pool = pool->next_pool;
     while (next_pool) {
@@ -267,6 +268,7 @@ void umf_ba_linear_destroy(umf_ba_linear_pool_t *pool) {
         ba_os_free(current_pool, current_pool->pool_size);
     }
 
+    util_mutex_unlock(&pool->metadata.lock);
     util_mutex_destroy_not_free(&pool->metadata.lock);
     ba_os_free(pool, pool->metadata.pool_size);
 }
