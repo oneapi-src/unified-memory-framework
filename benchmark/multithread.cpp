@@ -65,7 +65,7 @@ static void mt_alloc_free(poolCreateExtParams params,
     auto values = umf_bench::measure<std::chrono::milliseconds>(
         bench.n_repeats, bench.n_threads,
         [&, pool = pool.get()](auto thread_id) {
-            for (int i = 0; i < bench.n_iterations; i++) {
+            for (size_t i = 0; i < bench.n_iterations; i++) {
                 allocs[thread_id].push_back(
                     umfPoolMalloc(pool, bench.alloc_size));
                 if (!allocs[thread_id].back()) {
@@ -73,7 +73,7 @@ static void mt_alloc_free(poolCreateExtParams params,
                 }
             }
 
-            for (int i = 0; i < bench.n_iterations; i++) {
+            for (size_t i = 0; i < bench.n_iterations; i++) {
                 umfPoolFree(pool, allocs[thread_id][i]);
             }
 
@@ -130,6 +130,9 @@ int main() {
 #else
     std::cout << "skipping disjoint_pool mt_alloc_free" << std::endl;
 #endif
+
+    // ctest looks for "PASSED" in the output
+    std::cout << "PASSED" << std::endl;
 
     return 0;
 }
