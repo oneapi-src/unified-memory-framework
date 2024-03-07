@@ -151,3 +151,6 @@ jobs:
   GPU:
     needs: [Build]
     uses: ./.github/workflows/gpu.yml
+  Qemu:
+    needs: [Build]
+    uses: ./.github/workflows/qemu.yml
