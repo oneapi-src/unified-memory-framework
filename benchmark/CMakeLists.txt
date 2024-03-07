@@ -43,7 +43,7 @@ if (UMF_BUILD_BENCHMARKS_MT)
 	target_link_libraries(multithread_bench
 		umf
 		${LIBS_OPTIONAL}
-		pthread
+		${CMAKE_THREAD_LIBS_INIT}
 		${LIBS_LINUX})
 	target_include_directories(multithread_bench PRIVATE ${UMF_CMAKE_SOURCE_DIR}/include/)
 endif()
