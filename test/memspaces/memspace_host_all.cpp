@@ -6,6 +6,7 @@
 #include "memspace_helpers.hpp"
 #include "memspace_internal.h"
 #include "test_helpers.h"
+#include "utils_sanitizers.h"
 
 #include <numa.h>
 #include <numaif.h>
@@ -96,39 +97,53 @@ static void getAllocationPolicy(void *ptr, unsigned long maxNodeId, int &mode,
     allocNodeId = static_cast<size_t>(nodeId);
 }
 
-TEST_F(memspaceHostAllProviderTest, memoryPolicyOOM) {
+TEST_F(memspaceHostAllProviderTest, allocsSpreadAcrossAllNumaNodes) {
+    // This testcase is unsuitable for TSan.
+#ifdef __SANITIZE_THREAD__
+    GTEST_SKIP();
+#endif
+
     // Arbitrary allocation size, should be big enough to avoid unnecessarily
     // prolonging the test execution.
-    size_t size = SIZE_4M * 128;
+    size_t size = SIZE_4M;
     size_t alignment = 0;
-    std::vector<void *> allocs;
 
-    enum umf_result_t umf_ret = UMF_RESULT_SUCCESS;
-    // Create allocations until OOM.
-    while (true) {
+    long long numaCombinedFreeSize = 0;
+    // Gather free size of all numa nodes.
+    for (auto &id : nodeIds) {
+        long long numaFreeSize = 0;
+        long long numaSize = numa_node_size64(id, &numaFreeSize);
+        UT_ASSERTne(numaSize, -1);
+        // We need the space for at least two allocations, so that we can
+        // have some space left to avoid OOM killer.
+        UT_ASSERT(numaFreeSize >= (long long)(2 * size));
+
+        numaCombinedFreeSize += numaFreeSize;
+    }
+
+    umf_result_t umf_ret = UMF_RESULT_SUCCESS;
+    // Create allocations until all the NUMA nodes until there's space only for
+    // one allocation.
+    std::vector<void *> allocs;
+    std::unordered_set<size_t> allocNodeIds;
+    while (numaCombinedFreeSize >= (long long)(2 * size)) {
         void *ptr = nullptr;
         umf_ret = umfMemoryProviderAlloc(hProvider, size, alignment, &ptr);
         if (umf_ret != UMF_RESULT_SUCCESS) {
+            UT_ASSERTeq(umf_ret, UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC);
+            const char *msg = nullptr;
+            int32_t err = 0;
+            umfMemoryProviderGetLastNativeError(hProvider, &msg, &err);
+            // In this scenario, 'UMF_OS_RESULT_ERROR_ALLOC_FAILED' indicates OOM.
+            UT_ASSERTeq(err, UMF_OS_RESULT_ERROR_ALLOC_FAILED);
             break;
         }
 
         UT_ASSERTne(ptr, nullptr);
-        allocs.push_back(ptr);
-    }
+        // Access the allocation, so that all the pages associated with it are
+        // allocated on available NUMA nodes.
+        memset(ptr, 0xFF, size);
 
-    UT_ASSERTeq(umf_ret, UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC);
-    const char *msg = nullptr;
-    int32_t err = 0;
-    umfMemoryProviderGetLastNativeError(hProvider, &msg, &err);
-    // In this scenario, 'UMF_OS_RESULT_ERROR_ALLOC_FAILED' indicates OOM.
-    UT_ASSERTeq(err, UMF_OS_RESULT_ERROR_ALLOC_FAILED);
-
-    // When allocating until OOM, the allocations should be distributed across
-    // all the NUMA nodes bound to 'HOST ALL' memspace, until each node runs
-    // out of memory.
-    UT_ASSERT(allocs.size() >= nodeIds.size());
-    std::unordered_set<size_t> allocNodeIds;
-    for (auto &ptr : allocs) {
         int mode = -1;
         std::vector<size_t> boundNodeIds;
         size_t allocNodeId = SIZE_MAX;
@@ -151,8 +166,14 @@ TEST_F(memspaceHostAllProviderTest, memoryPolicyOOM) {
         auto it = std::find(nodeIds.begin(), nodeIds.end(), allocNodeId);
         UT_ASSERT(it != nodeIds.end());
 
+        allocs.push_back(ptr);
         allocNodeIds.insert(allocNodeId);
 
+        numaCombinedFreeSize -= size;
+    }
+
+    UT_ASSERT(allocs.size() >= nodeIds.size());
+    for (auto &ptr : allocs) {
         umf_ret = umfMemoryProviderFree(hProvider, ptr, size);
         UT_ASSERTeq(umf_ret, UMF_RESULT_SUCCESS);
     }
