@@ -170,7 +170,7 @@ The `UMF_BUILD_LIBUMF_POOL_JEMALLOC` option has to be turned `ON` to build this 
 2) Required packages:
    - libjemalloc-dev
 
-#### libumf_pool_scalable (Linux-only)
+#### libumf_pool_scalable
 
 libumf_pool_scalable is a [oneTBB](https://github.com/oneapi-src/oneTBB)-based memory pool manager built as a separate static library.
 The `UMF_BUILD_LIBUMF_POOL_SCALABLE` option has to be turned `ON` to build this library.
@@ -179,7 +179,7 @@ The `UMF_BUILD_LIBUMF_POOL_SCALABLE` option has to be turned `ON` to build this 
 
 1) The `UMF_BUILD_LIBUMF_POOL_SCALABLE` option turned `ON`
 2) Required packages:
-   - libtbb-dev (libraries: libtbbmalloc.so.2)
+   - libtbb-dev (libtbbmalloc.so.2) on Linux or tbb (tbbmalloc.dll) on Windows
 
 ### Memspaces (Linux-only)
 

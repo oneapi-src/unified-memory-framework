@@ -74,7 +74,8 @@ jobs:
     name: Windows
     env:
       BUILD_DIR : "${{github.workspace}}/build/"
-      HWLOC_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows"
+      VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows"
+      VCPKG_PATH_BIN: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows/bin;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows/bin"
     strategy:
       fail-fast: false
       matrix:
@@ -104,7 +105,7 @@ jobs:
         -B ${{env.BUILD_DIR}}
         -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
         -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
-        -DCMAKE_PREFIX_PATH=${{env.HWLOC_PATH}}
+        -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
         -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
         -DUMF_BUILD_BENCHMARKS=ON
         -DUMF_BUILD_BENCHMARKS_MT=OFF
@@ -126,6 +127,6 @@ jobs:
       run: |
         # add path to umf.dll
         $env:PATH += ";${{env.BUILD_DIR}}\bin\${{matrix.build_type}}"
-        # add path to hwloc-15.dll
-        $env:PATH += ";${{env.HWLOC_PATH}}\bin"
+        # add path to DLL directories
+        $env:PATH += ";${{env.VCPKG_PATH_BIN}}"
         .\benchmark\${{matrix.build_type}}\ubench.exe

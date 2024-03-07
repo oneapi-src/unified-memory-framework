@@ -31,11 +31,21 @@ function(add_umf_test)
     set(TEST_NAME umf-${ARG_NAME})
     set(TEST_TARGET_NAME umf_test-${ARG_NAME})
 
+    if(UMF_BUILD_OS_MEMORY_PROVIDER)
+        set(LIBS_OPTIONAL ${LIBS_OPTIONAL} ${LIBHWLOC_LIBRARIES})
+        set(LIB_DIRS_OPTIONAL ${LIB_DIRS_OPTIONAL} ${LIBHWLOC_LIBRARY_DIRS})
+    endif()
+
     set(TEST_LIBS test_common
         umf
         GTest::gtest_main
+        ${LIBS_OPTIONAL}
         ${ARG_LIBS})
     add_umf_executable(NAME ${TEST_TARGET_NAME} SRCS ${ARG_SRCS} LIBS ${TEST_LIBS})
+
+    if(LIB_DIRS_OPTIONAL)
+        target_link_directories(${TEST_TARGET_NAME} PRIVATE ${LIB_DIRS_OPTIONAL})
+    endif()
 
     target_include_directories(${TEST_TARGET_NAME} PRIVATE
         ${UMF_CMAKE_SOURCE_DIR}/include
@@ -52,8 +62,11 @@ function(add_umf_test)
 
     if(WIN32)
         set(PATH_LIST "PATH=path_list_append:../bin/$<CONFIG>")
-        if(LIBHWLOC_DLL_DIRS)
-            set(PATH_LIST "${PATH_LIST};PATH=path_list_append:${LIBHWLOC_DLL_DIRS}")
+        if(LIBHWLOC_LIBRARY_DIRS)
+            set(PATH_LIST "${PATH_LIST};PATH=path_list_append:${LIBHWLOC_LIBRARY_DIRS}/../bin")
+        endif()
+        if(TBB_LIBRARY_DIRS)
+            set(PATH_LIST "${PATH_LIST};PATH=path_list_append:${TBB_LIBRARY_DIRS}/../bin")
         endif()
         set_property(TEST ${TEST_NAME} PROPERTY ENVIRONMENT_MODIFICATION "${PATH_LIST}")
     endif()

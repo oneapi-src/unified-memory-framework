@@ -114,8 +114,17 @@ install(
     EXPORT ${PROJECT_NAME}-targets)
 
 if(UMF_BUILD_OS_MEMORY_PROVIDER AND (LINUX OR WINDOWS))
-    # Do not use pkgconfig, because it sets wrong paths on Windows
-    find_package(LIBHWLOC REQUIRED hwloc)
+    pkg_check_modules(LIBHWLOC hwloc)
+    if(NOT LIBHWLOC_FOUND)
+        find_package(LIBHWLOC REQUIRED hwloc)
+    endif()
+endif()
+
+if(UMF_BUILD_LIBUMF_POOL_SCALABLE AND (LINUX OR WINDOWS))
+    pkg_check_modules(TBB tbb)
+    if(NOT TBB_FOUND)
+        find_package(TBB REQUIRED tbb)
+    endif()
 endif()
 
 add_subdirectory(src)

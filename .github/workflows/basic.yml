@@ -178,7 +178,7 @@ jobs:
   windows-build:
     name: Windows
     env:
-      HWLOC_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows"
+      VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows"
     strategy:
       matrix:
         os: ['windows-2019', 'windows-2022']
@@ -229,7 +229,7 @@ jobs:
         cmake
         -B ${{env.BUILD_DIR}}
         ${{matrix.toolset}}
-        -DCMAKE_PREFIX_PATH=${{env.HWLOC_PATH}}
+        -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
         -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
         -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
         -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
@@ -237,6 +237,7 @@ jobs:
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
+        -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
         -DUMF_BUILD_OS_MEMORY_PROVIDER=${{matrix.os_provider}}
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
 
@@ -270,6 +271,8 @@ jobs:
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_ENABLE_POOL_TRACKING=ON        
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
+        -DUMF_BUILD_OS_MEMORY_PROVIDER=OFF
+        -DUMF_BUILD_LIBUMF_POOL_SCALABLE=OFF
 
     - name: Build UMF
       run: cmake --build ${{env.BUILD_DIR}} -j $(sysctl -n hw.logicalcpu)

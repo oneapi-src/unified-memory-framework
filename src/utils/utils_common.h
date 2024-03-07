@@ -60,6 +60,7 @@ static inline int is_running_in_proxy_lib(void) {
 }
 
 size_t util_get_page_size(void);
+char *util_strncpy(char *dest, size_t destSize, const char *src, size_t n);
 
 #define NOFUNCTION                                                             \
     do {                                                                       \

@@ -30,7 +30,14 @@ add_dependencies(ubench
 	umf
 	${LIBS_OPTIONAL})
 
+if(UMF_BUILD_OS_MEMORY_PROVIDER)
+    set(LIBS_OPTIONAL ${LIBS_OPTIONAL} ${LIBHWLOC_LIBRARIES})
+    set(LIB_DIRS_OPTIONAL ${LIB_DIRS_OPTIONAL} ${LIBHWLOC_LIBRARY_DIRS})
+endif()
+
 target_include_directories(ubench PRIVATE ${UMF_CMAKE_SOURCE_DIR}/include/ ${UMF_CMAKE_SOURCE_DIR}/src/utils/)
+
+target_link_directories(ubench PRIVATE ${LIB_DIRS_OPTIONAL})
 
 target_link_libraries(ubench
 	umf
@@ -40,6 +47,7 @@ target_link_libraries(ubench
 
 if (UMF_BUILD_BENCHMARKS_MT)
 	add_executable(multithread_bench multithread.cpp)
+	target_link_directories(multithread_bench PRIVATE ${LIB_DIRS_OPTIONAL})
 	target_link_libraries(multithread_bench
 		umf
 		${LIBS_OPTIONAL}
