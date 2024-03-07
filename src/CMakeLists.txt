@@ -72,6 +72,7 @@ if(UMF_BUILD_OS_MEMORY_PROVIDER)
         set(UMF_LIBS ${UMF_LIBS} ${LIBHWLOC_LIBRARIES})
         # Currently, OS provider is only built for Linux and Windows
         set(UMF_PUBLIC_COMPILE_DEFINITIONS ${UMF_PUBLIC_COMPILE_DEFINITIONS} "UMF_BUILD_OS_MEMORY_PROVIDER=1")
+        set(UMF_PRIVATE_LIBRARY_DIRS ${UMF_PRIVATE_LIBRARY_DIRS} ${LIBHWLOC_LIBRARY_DIRS})
     endif()
 endif()
 
@@ -120,6 +121,8 @@ else()
                     SRCS ${UMF_SOURCES}
                     LIBS ${UMF_LIBS})
 endif()
+
+target_link_directories(umf PRIVATE ${UMF_PRIVATE_LIBRARY_DIRS})
 
 target_compile_definitions(umf PUBLIC ${UMF_PUBLIC_COMPILE_DEFINITIONS})
 

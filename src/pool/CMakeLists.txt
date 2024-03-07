@@ -65,7 +65,7 @@ if(UMF_BUILD_LIBUMF_POOL_SCALABLE)
                         TYPE STATIC
                         SRCS pool_scalable.c ${POOL_EXTRA_SRCS}
                         LIBS ${LIBS_POOL_SCALABLE})
-        target_include_directories(scalable_pool PRIVATE ${LIBTBB_INCLUDE_DIRS})
+        target_include_directories(scalable_pool PRIVATE ${TBB_INCLUDE_DIRS})
         target_compile_definitions(scalable_pool PUBLIC ${POOL_COMPILE_DEFINITIONS})
         add_library(${PROJECT_NAME}::scalable_pool ALIAS scalable_pool)
         install(TARGETS scalable_pool
