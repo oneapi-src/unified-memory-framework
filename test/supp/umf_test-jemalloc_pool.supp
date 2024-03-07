@@ -1,0 +1,8 @@
+{
+   realloc false-positive suppresion - see pool_jemalloc.c for more details
+   Memcheck:Addr8
+   fun:memmove
+   ...
+   fun:do_rallocx
+   fun:je_realloc
+}

@@ -40,6 +40,7 @@ jobs:
         -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
+        -DUSE_VALGRIND=1
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config Debug -j$(nproc)

@@ -16,6 +16,8 @@
 #include "base_alloc_global.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
+#include "utils_sanitizers.h"
+
 #include <umf/memory_pool.h>
 #include <umf/memory_pool_ops.h>
 #include <umf/pools/pool_jemalloc.h>
@@ -72,7 +74,14 @@ static void *arena_extent_alloc(extent_hooks_t *extent_hooks, void *new_addr,
         return NULL;
     }
 
+#ifndef __SANITIZE_ADDRESS__
+    // jemalloc might write to new extents in realloc, so we cannot
+    // mark them as unaccessible under asan
+    utils_annotate_memory_inaccessible(ptr, size);
+#endif
+
     if (*zero) {
+        utils_annotate_memory_defined(ptr, size);
         memset(ptr, 0, size); // TODO: device memory is not accessible by host
     }
 
@@ -282,6 +291,8 @@ static void *je_malloc(void *pool, size_t size) {
         return NULL;
     }
 
+    VALGRIND_DO_MEMPOOL_ALLOC(pool, ptr, size);
+
     return ptr;
 }
 
@@ -290,6 +301,7 @@ static umf_result_t je_free(void *pool, void *ptr) {
     assert(pool);
 
     if (ptr != NULL) {
+        VALGRIND_DO_MEMPOOL_FREE(pool, ptr);
         dallocx(ptr, MALLOCX_TCACHE_NONE);
     }
 
@@ -305,6 +317,8 @@ static void *je_calloc(void *pool, size_t num, size_t size) {
         return NULL;
     }
 
+    utils_annotate_memory_defined(ptr, num * size);
+
     memset(ptr, 0, csize); // TODO: device memory is not accessible by host
     return ptr;
 }
@@ -314,6 +328,7 @@ static void *je_realloc(void *pool, void *ptr, size_t size) {
     if (size == 0 && ptr != NULL) {
         dallocx(ptr, MALLOCX_TCACHE_NONE);
         TLS_last_allocation_error = UMF_RESULT_SUCCESS;
+        VALGRIND_DO_MEMPOOL_FREE(pool, ptr);
         return NULL;
     } else if (ptr == NULL) {
         return je_malloc(pool, size);
@@ -327,6 +342,14 @@ static void *je_realloc(void *pool, void *ptr, size_t size) {
     if (new_ptr == NULL) {
         TLS_last_allocation_error = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
         return NULL;
+    }
+
+    if (new_ptr != ptr) {
+        VALGRIND_DO_MEMPOOL_ALLOC(pool, new_ptr, size);
+        VALGRIND_DO_MEMPOOL_FREE(pool, ptr);
+
+        // memory was copied from old ptr so it's now defined
+        utils_annotate_memory_defined(new_ptr, size);
     }
 
     return new_ptr;
@@ -345,6 +368,8 @@ static void *je_aligned_alloc(void *pool, size_t size, size_t alignment) {
         TLS_last_allocation_error = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
         return NULL;
     }
+
+    VALGRIND_DO_MEMPOOL_ALLOC(pool, ptr, size);
 
     return ptr;
 }
@@ -392,6 +417,8 @@ static umf_result_t je_initialize(umf_memory_provider_handle_t provider,
 
     *out_pool = (umf_memory_pool_handle_t)pool;
 
+    VALGRIND_DO_CREATE_MEMPOOL(pool, 0, 0);
+
     return UMF_RESULT_SUCCESS;
 
 err_free_pool:
@@ -407,6 +434,8 @@ static void je_finalize(void *pool) {
     mallctl(cmd, NULL, 0, NULL, 0);
     pool_by_arena_index[je_pool->arena_index] = NULL;
     umf_ba_global_free(je_pool);
+
+    VALGRIND_DO_DESTROY_MEMPOOL(pool);
 }
 
 static size_t je_malloc_usable_size(void *pool, void *ptr) {
