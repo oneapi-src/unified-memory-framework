@@ -38,13 +38,14 @@ template <typename T> T generateArg() { return T{}; }
 // with all arguments created by calling generateArg()
 template <typename Ret, typename... Args>
 std::function<Ret(void)> withGeneratedArgs(Ret (*f)(Args...)) {
-    std::tuple<Args...> tuple = {};
-    auto args = std::apply(
-        [](auto... x) {
-            return std::make_tuple(generateArg<decltype(x)>()...);
-        },
-        tuple);
-    return [=]() { return std::apply(f, args); };
+    return [f]() {
+        auto args = std::apply(
+            [](auto... x) {
+                return std::make_tuple(generateArg<decltype(x)>()...);
+            },
+            std::tuple<Args...>{});
+        return std::apply(f, std::move(args));
+    };
 }
 
 } // namespace umf_test
