@@ -158,7 +158,7 @@ jobs:
 
     - name: Run tests
       working-directory: ${{env.BUILD_DIR}}
-      run: ctest --output-on-failure
+      run: ctest --output-on-failure --test-dir test
 
     - name: Test make install
       # Run only when the example is built
@@ -246,7 +246,7 @@ jobs:
 
     - name: Run tests
       working-directory: ${{env.BUILD_DIR}}
-      run: ctest -C ${{matrix.build_type}} --output-on-failure
+      run: ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
 
   macos-build:
     name: MacOS

@@ -51,7 +51,7 @@ function(add_umf_benchmark)
         if(TBB_LIBRARY_DIRS)
             set(DLL_PATH_LIST "${DLL_PATH_LIST};PATH=path_list_append:${TBB_LIBRARY_DIRS}/../bin")
         endif()
-        set_property(TEST ${EXAMPLE_NAME} PROPERTY ENVIRONMENT_MODIFICATION "${DLL_PATH_LIST}")
+        set_property(TEST ${BENCH_NAME} PROPERTY ENVIRONMENT_MODIFICATION "${DLL_PATH_LIST}")
     endif()
 
     if (UMF_BUILD_OS_MEMORY_PROVIDER)
