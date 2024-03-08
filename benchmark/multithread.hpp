@@ -144,11 +144,11 @@ template <typename T> double mean(const std::vector<T> &values) {
 
 template <typename T> double std_dev(const std::vector<T> &values) {
     auto m = mean(values);
-    std::vector<T> diff_squares;
+    std::vector<double> diff_squares;
     diff_squares.reserve(values.size());
 
     for (auto &v : values) {
-        diff_squares.push_back(std::pow((v - m), 2.0));
+        diff_squares.push_back((v - m) * (v - m));
     }
 
     return std::sqrt(mean(diff_squares));
