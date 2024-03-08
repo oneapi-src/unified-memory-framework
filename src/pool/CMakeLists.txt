@@ -51,14 +51,14 @@ if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
 endif()
 
 # libumf_pool_scalable
-if(LINUX)
-    set(LIBS_POOL_SCALABLE dl umf_utils)
-elseif(WINDOWS)
-    set(LIBS_POOL_SCALABLE umf_utils)
-endif()
-
 if(UMF_BUILD_LIBUMF_POOL_SCALABLE)
     if(LINUX OR WINDOWS)
+        if(LINUX)
+            set(LIBS_POOL_SCALABLE dl umf_utils)
+        elseif(WINDOWS)
+            set(LIBS_POOL_SCALABLE umf_utils)
+        endif()
+
         add_umf_library(NAME scalable_pool
                         TYPE STATIC
                         SRCS pool_scalable.c ${POOL_EXTRA_SRCS}
