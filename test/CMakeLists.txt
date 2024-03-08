@@ -106,11 +106,9 @@ endif()
 
 if(UMF_BUILD_OS_MEMORY_PROVIDER)
     if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
-        # TODO: we link directly with libc to force using malloc from glibc
-        # This is a temporary fix for https://github.com/oneapi-src/unified-memory-framework/issues/161
         add_umf_test(NAME jemalloc_pool
                     SRCS pools/jemalloc_pool.cpp malloc_compliance_tests.cpp
-                    LIBS c jemalloc_pool)
+                    LIBS jemalloc_pool)
     endif()
 else()
     message(STATUS "The jemalloc_pool test is DISABLED, because it uses OS_MEMORY_PROVIDER, while the UMF_BUILD_OS_MEMORY_PROVIDER option is set to OFF")
