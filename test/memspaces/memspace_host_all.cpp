@@ -107,6 +107,9 @@ TEST_F(memspaceHostAllProviderTest, allocsSpreadAcrossAllNumaNodes) {
     // prolonging the test execution.
     size_t size = SIZE_4M;
     size_t alignment = 0;
+    // Unallocated memory space that has to be left in an attempt to avoid OOM
+    // killer - 512MB.
+    size_t remainingSpace = SIZE_4M * 128;
 
     long long numaCombinedFreeSize = 0;
     // Gather free size of all numa nodes.
@@ -114,9 +117,7 @@ TEST_F(memspaceHostAllProviderTest, allocsSpreadAcrossAllNumaNodes) {
         long long numaFreeSize = 0;
         long long numaSize = numa_node_size64(id, &numaFreeSize);
         UT_ASSERTne(numaSize, -1);
-        // We need the space for at least two allocations, so that we can
-        // have some space left to avoid OOM killer.
-        UT_ASSERT(numaFreeSize >= (long long)(2 * size));
+        UT_ASSERT(numaFreeSize >= (long long)(remainingSpace + size));
 
         numaCombinedFreeSize += numaFreeSize;
     }
@@ -126,7 +127,7 @@ TEST_F(memspaceHostAllProviderTest, allocsSpreadAcrossAllNumaNodes) {
     // one allocation.
     std::vector<void *> allocs;
     std::unordered_set<size_t> allocNodeIds;
-    while (numaCombinedFreeSize >= (long long)(2 * size)) {
+    while (numaCombinedFreeSize >= (long long)(remainingSpace + size)) {
         void *ptr = nullptr;
         umf_ret = umfMemoryProviderAlloc(hProvider, size, alignment, &ptr);
         if (umf_ret != UMF_RESULT_SUCCESS) {
