@@ -4,7 +4,7 @@
 
 message(STATUS "Checking for module 'tbb' using find_library()")
 
-find_library(TBB_LIBRARY NAMES tbbmalloc tbbmalloc)
+find_library(TBB_LIBRARY NAMES libtbbmalloc tbbmalloc)
 set(TBB_LIBRARIES ${TBB_LIBRARY})
 
 get_filename_component(TBB_LIB_DIR ${TBB_LIBRARIES} DIRECTORY)
