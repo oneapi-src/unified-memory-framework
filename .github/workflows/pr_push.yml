@@ -14,28 +14,24 @@ jobs:
   FastBuild:
     name: Fast build
     env:
-      VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows"
+      VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
     strategy:
       matrix:
         include:
           - os: windows-latest
             disjoint: 'OFF'
-            jemalloc: 'OFF'
           # pure C build (Windows)
           - os: windows-latest
             disjoint: 'OFF'
-            jemalloc: 'OFF'
             # Tests' building is off for a pure C build
             extra_build_options: '-DUMF_BUILD_TESTS=OFF'
           - os: ubuntu-latest
             disjoint: 'ON'
-            jemalloc: 'ON'
             # Windows doesn't recognize 'CMAKE_BUILD_TYPE', it uses '--config' param in build command
             extra_build_options: '-DCMAKE_BUILD_TYPE=Release -DUMF_BUILD_BENCHMARKS=ON -DUMF_BUILD_BENCHMARKS_MT=ON'
           # pure C build (Linux)
           - os: ubuntu-latest
             disjoint: 'OFF'
-            jemalloc: 'ON'
             # Windows doesn't recognize 'CMAKE_BUILD_TYPE', it uses '--config' param in build command
             # Tests' building is off for a pure C build
             extra_build_options: '-DCMAKE_BUILD_TYPE=Release -DUMF_BUILD_BENCHMARKS=ON -DUMF_BUILD_TESTS=OFF'
@@ -74,7 +70,7 @@ jobs:
         -DUMF_ENABLE_POOL_TRACKING=ON
         -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
         -DUMF_BUILD_LIBUMF_POOL_DISJOINT=${{matrix.disjoint}}
-        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=${{matrix.jemalloc}}
+        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
         -DUMF_BUILD_TESTS=ON
         -DUMF_BUILD_EXAMPLES=ON
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
@@ -109,6 +105,7 @@ jobs:
         -DUMF_BUILD_TESTS=OFF
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
         -DUMF_BUILD_LIBUMF_POOL_SCALABLE=OFF
+        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=OFF
 
     - name: Check clang-format
       run: cmake --build build --target clang-format-check

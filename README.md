@@ -159,7 +159,7 @@ TODO: Add a description
 
 To enable this feature, the `UMF_BUILD_LIBUMF_POOL_DISJOINT` option needs to be turned `ON`.
 
-#### libumf_pool_jemalloc (Linux-only)
+#### libumf_pool_jemalloc
 
 libumf_pool_jemalloc is a [jemalloc](https://github.com/jemalloc/jemalloc)-based memory pool manager built as a separate static library.
 The `UMF_BUILD_LIBUMF_POOL_JEMALLOC` option has to be turned `ON` to build this library.
@@ -168,7 +168,7 @@ The `UMF_BUILD_LIBUMF_POOL_JEMALLOC` option has to be turned `ON` to build this 
 
 1) The `UMF_BUILD_LIBUMF_POOL_JEMALLOC` option turned `ON`
 2) Required packages:
-   - libjemalloc-dev
+   - libjemalloc-dev (Linux) or jemalloc (Windows)
 
 #### libumf_pool_scalable
 

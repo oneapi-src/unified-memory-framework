@@ -178,7 +178,7 @@ jobs:
   windows-build:
     name: Windows
     env:
-      VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows"
+      VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
     strategy:
       matrix:
         os: ['windows-2019', 'windows-2022']
@@ -238,6 +238,7 @@ jobs:
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
         -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
+        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
         -DUMF_BUILD_OS_MEMORY_PROVIDER=${{matrix.os_provider}}
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
 
@@ -273,6 +274,7 @@ jobs:
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
         -DUMF_BUILD_OS_MEMORY_PROVIDER=OFF
         -DUMF_BUILD_LIBUMF_POOL_SCALABLE=OFF
+        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=OFF
 
     - name: Build UMF
       run: cmake --build ${{env.BUILD_DIR}} -j $(sysctl -n hw.logicalcpu)

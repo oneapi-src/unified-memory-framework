@@ -11,16 +11,10 @@ jobs:
     name: Benchmarks
     env:
       BUILD_DIR : "${{github.workspace}}/build/"
-      VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows"
+      VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
     strategy:
       matrix:
-        include:
-          - os: ubuntu-latest
-            pool_jemalloc: 'ON'
-
-          - os: windows-latest
-            pool_jemalloc: 'OFF'
-
+        os: ['ubuntu-latest', 'windows-latest']
     runs-on: ${{matrix.os}}
 
     steps:
@@ -60,7 +54,7 @@ jobs:
           -DUMF_DEVELOPER_MODE=OFF
           -DUMF_BUILD_OS_MEMORY_PROVIDER=ON
           -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
-          -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=${{matrix.pool_jemalloc}}
+          -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
           -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
           -DUMF_ENABLE_POOL_TRACKING=OFF
           -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF

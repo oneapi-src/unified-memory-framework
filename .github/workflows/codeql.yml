@@ -20,7 +20,7 @@ jobs:
     permissions:
       security-events: write
     env:
-      VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows"
+      VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
     strategy:
       fail-fast: false
       matrix:
@@ -73,6 +73,7 @@ jobs:
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_ENABLE_POOL_TRACKING=ON
         -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
+        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
 
     - name: Build

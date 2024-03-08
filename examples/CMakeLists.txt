@@ -25,13 +25,6 @@ if(UMF_BUILD_OS_MEMORY_PROVIDER AND UMF_BUILD_LIBUMF_POOL_SCALABLE AND UMF_ENABL
 
     if(WINDOWS)
         # append PATH to DLLs
-        set(DLL_PATH_LIST "PATH=path_list_append:../bin/$<CONFIG>")
-        if(LIBHWLOC_LIBRARY_DIRS)
-            set(DLL_PATH_LIST "${DLL_PATH_LIST};PATH=path_list_append:${LIBHWLOC_LIBRARY_DIRS}/../bin")
-        endif()
-        if(TBB_LIBRARY_DIRS)
-            set(DLL_PATH_LIST "${DLL_PATH_LIST};PATH=path_list_append:${TBB_LIBRARY_DIRS}/../bin")
-        endif()
         set_property(TEST ${EXAMPLE_NAME} PROPERTY ENVIRONMENT_MODIFICATION "${DLL_PATH_LIST}")
     endif()
 
