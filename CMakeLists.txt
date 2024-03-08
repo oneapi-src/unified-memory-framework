@@ -113,11 +113,18 @@ install(
     TARGETS umf_headers
     EXPORT ${PROJECT_NAME}-targets)
 
+if(WINDOWS)
+    # set PATH to DLLs on Windows
+    set(DLL_PATH_LIST "PATH=path_list_append:../bin/$<CONFIG>")
+endif()
+
 if(UMF_BUILD_OS_MEMORY_PROVIDER AND (LINUX OR WINDOWS))
     pkg_check_modules(LIBHWLOC hwloc)
     if(NOT LIBHWLOC_FOUND)
         find_package(LIBHWLOC REQUIRED hwloc)
     endif()
+    # add PATH to DLL on Windows
+    set(DLL_PATH_LIST "${DLL_PATH_LIST};PATH=path_list_append:${LIBHWLOC_LIBRARY_DIRS}/../bin")
 endif()
 
 if(UMF_BUILD_LIBUMF_POOL_SCALABLE AND (LINUX OR WINDOWS))
@@ -125,6 +132,17 @@ if(UMF_BUILD_LIBUMF_POOL_SCALABLE AND (LINUX OR WINDOWS))
     if(NOT TBB_FOUND)
         find_package(TBB REQUIRED tbb)
     endif()
+    # add PATH to DLL on Windows
+    set(DLL_PATH_LIST "${DLL_PATH_LIST};PATH=path_list_append:${TBB_LIBRARY_DIRS}/../bin")
+endif()
+
+if(UMF_BUILD_LIBUMF_POOL_JEMALLOC AND (LINUX OR WINDOWS))
+    pkg_check_modules(JEMALLOC jemalloc)
+    if(NOT JEMALLOC_FOUND)
+        find_package(JEMALLOC REQUIRED jemalloc)
+    endif()
+    # add PATH to DLL on Windows
+    set(DLL_PATH_LIST "${DLL_PATH_LIST};PATH=path_list_append:${JEMALLOC_LIBRARY_DIRS}/../bin")
 endif()
 
 add_subdirectory(src)

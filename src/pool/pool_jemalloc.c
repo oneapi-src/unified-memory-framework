@@ -9,9 +9,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/mman.h>
-
-#include <jemalloc/jemalloc.h>
 
 #include "base_alloc_global.h"
 #include "utils_common.h"
@@ -21,6 +18,18 @@
 #include <umf/memory_pool.h>
 #include <umf/memory_pool_ops.h>
 #include <umf/pools/pool_jemalloc.h>
+
+#include <jemalloc/jemalloc.h>
+
+// The Windows version of jemalloc uses API with je_ prefix,
+// while the Linux one does not.
+#ifndef _WIN32
+#define je_mallocx mallocx
+#define je_dallocx dallocx
+#define je_rallocx rallocx
+#define je_mallctl mallctl
+#define je_malloc_usable_size malloc_usable_size
+#endif
 
 #define MALLOCX_ARENA_MAX (MALLCTL_ARENAS_ALL - 1)
 
@@ -279,13 +288,13 @@ static extent_hooks_t arena_extent_hooks = {
     .merge = arena_extent_merge,
 };
 
-static void *je_malloc(void *pool, size_t size) {
+static void *op_malloc(void *pool, size_t size) {
     assert(pool);
     jemalloc_memory_pool_t *je_pool = (jemalloc_memory_pool_t *)pool;
     // MALLOCX_TCACHE_NONE is set, because jemalloc can mix objects from different arenas inside
     // the tcache, so we wouldn't be able to guarantee isolation of different providers.
     int flags = MALLOCX_ARENA(je_pool->arena_index) | MALLOCX_TCACHE_NONE;
-    void *ptr = mallocx(size, flags);
+    void *ptr = je_mallocx(size, flags);
     if (ptr == NULL) {
         TLS_last_allocation_error = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
         return NULL;
@@ -296,24 +305,24 @@ static void *je_malloc(void *pool, size_t size) {
     return ptr;
 }
 
-static umf_result_t je_free(void *pool, void *ptr) {
+static umf_result_t op_free(void *pool, void *ptr) {
     (void)pool; // unused
     assert(pool);
 
     if (ptr != NULL) {
         VALGRIND_DO_MEMPOOL_FREE(pool, ptr);
-        dallocx(ptr, MALLOCX_TCACHE_NONE);
+        je_dallocx(ptr, MALLOCX_TCACHE_NONE);
     }
 
     return UMF_RESULT_SUCCESS;
 }
 
-static void *je_calloc(void *pool, size_t num, size_t size) {
+static void *op_calloc(void *pool, size_t num, size_t size) {
     assert(pool);
     size_t csize = num * size;
-    void *ptr = je_malloc(pool, csize);
+    void *ptr = op_malloc(pool, csize);
     if (ptr == NULL) {
-        // TLS_last_allocation_error is set by je_malloc()
+        // TLS_last_allocation_error is set by op_malloc()
         return NULL;
     }
 
@@ -323,22 +332,22 @@ static void *je_calloc(void *pool, size_t num, size_t size) {
     return ptr;
 }
 
-static void *je_realloc(void *pool, void *ptr, size_t size) {
+static void *op_realloc(void *pool, void *ptr, size_t size) {
     assert(pool);
     if (size == 0 && ptr != NULL) {
-        dallocx(ptr, MALLOCX_TCACHE_NONE);
+        je_dallocx(ptr, MALLOCX_TCACHE_NONE);
         TLS_last_allocation_error = UMF_RESULT_SUCCESS;
         VALGRIND_DO_MEMPOOL_FREE(pool, ptr);
         return NULL;
     } else if (ptr == NULL) {
-        return je_malloc(pool, size);
+        return op_malloc(pool, size);
     }
 
     jemalloc_memory_pool_t *je_pool = (jemalloc_memory_pool_t *)pool;
     // MALLOCX_TCACHE_NONE is set, because jemalloc can mix objects from different arenas inside
     // the tcache, so we wouldn't be able to guarantee isolation of different providers.
     int flags = MALLOCX_ARENA(je_pool->arena_index) | MALLOCX_TCACHE_NONE;
-    void *new_ptr = rallocx(ptr, size, flags);
+    void *new_ptr = je_rallocx(ptr, size, flags);
     if (new_ptr == NULL) {
         TLS_last_allocation_error = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
         return NULL;
@@ -355,7 +364,7 @@ static void *je_realloc(void *pool, void *ptr, size_t size) {
     return new_ptr;
 }
 
-static void *je_aligned_alloc(void *pool, size_t size, size_t alignment) {
+static void *op_aligned_alloc(void *pool, size_t size, size_t alignment) {
     assert(pool);
     jemalloc_memory_pool_t *je_pool = (jemalloc_memory_pool_t *)pool;
     unsigned arena = je_pool->arena_index;
@@ -363,7 +372,7 @@ static void *je_aligned_alloc(void *pool, size_t size, size_t alignment) {
     // the tcache, so we wouldn't be able to guarantee isolation of different providers.
     int flags =
         MALLOCX_ALIGN(alignment) | MALLOCX_ARENA(arena) | MALLOCX_TCACHE_NONE;
-    void *ptr = mallocx(size, flags);
+    void *ptr = je_mallocx(size, flags);
     if (ptr == NULL) {
         TLS_last_allocation_error = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
         return NULL;
@@ -374,7 +383,7 @@ static void *je_aligned_alloc(void *pool, size_t size, size_t alignment) {
     return ptr;
 }
 
-static umf_result_t je_initialize(umf_memory_provider_handle_t provider,
+static umf_result_t op_initialize(umf_memory_provider_handle_t provider,
                                   void *params, void **out_pool) {
     assert(provider);
     assert(out_pool);
@@ -393,8 +402,8 @@ static umf_result_t je_initialize(umf_memory_provider_handle_t provider,
     pool->provider = provider;
 
     unsigned arena_index;
-    err =
-        mallctl("arenas.create", (void *)&arena_index, &unsigned_size, NULL, 0);
+    err = je_mallctl("arenas.create", (void *)&arena_index, &unsigned_size,
+                     NULL, 0);
     if (err) {
         fprintf(stderr, "Could not create arena.\n");
         goto err_free_pool;
@@ -403,10 +412,10 @@ static umf_result_t je_initialize(umf_memory_provider_handle_t provider,
     // setup extent_hooks for newly created arena
     char cmd[64];
     snprintf(cmd, sizeof(cmd), "arena.%u.extent_hooks", arena_index);
-    err = mallctl(cmd, NULL, NULL, (void *)&pHooks, sizeof(void *));
+    err = je_mallctl(cmd, NULL, NULL, (void *)&pHooks, sizeof(void *));
     if (err) {
         snprintf(cmd, sizeof(cmd), "arena.%u.destroy", arena_index);
-        mallctl(cmd, NULL, 0, NULL, 0);
+        je_mallctl(cmd, NULL, 0, NULL, 0);
         fprintf(stderr,
                 "Could not setup extent_hooks for newly created arena.\n");
         goto err_free_pool;
@@ -426,39 +435,39 @@ err_free_pool:
     return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
 }
 
-static void je_finalize(void *pool) {
+static void op_finalize(void *pool) {
     assert(pool);
     jemalloc_memory_pool_t *je_pool = (jemalloc_memory_pool_t *)pool;
     char cmd[64];
     snprintf(cmd, sizeof(cmd), "arena.%u.destroy", je_pool->arena_index);
-    mallctl(cmd, NULL, 0, NULL, 0);
+    je_mallctl(cmd, NULL, 0, NULL, 0);
     pool_by_arena_index[je_pool->arena_index] = NULL;
     umf_ba_global_free(je_pool);
 
     VALGRIND_DO_DESTROY_MEMPOOL(pool);
 }
 
-static size_t je_malloc_usable_size(void *pool, void *ptr) {
+static size_t op_malloc_usable_size(void *pool, void *ptr) {
     (void)pool; // not used
-    return malloc_usable_size(ptr);
+    return je_malloc_usable_size(ptr);
 }
 
-static umf_result_t je_get_last_allocation_error(void *pool) {
+static umf_result_t op_get_last_allocation_error(void *pool) {
     (void)pool; // not used
     return TLS_last_allocation_error;
 }
 
 static umf_memory_pool_ops_t UMF_JEMALLOC_POOL_OPS = {
     .version = UMF_VERSION_CURRENT,
-    .initialize = je_initialize,
-    .finalize = je_finalize,
-    .malloc = je_malloc,
-    .calloc = je_calloc,
-    .realloc = je_realloc,
-    .aligned_malloc = je_aligned_alloc,
-    .malloc_usable_size = je_malloc_usable_size,
-    .free = je_free,
-    .get_last_allocation_error = je_get_last_allocation_error,
+    .initialize = op_initialize,
+    .finalize = op_finalize,
+    .malloc = op_malloc,
+    .calloc = op_calloc,
+    .realloc = op_realloc,
+    .aligned_malloc = op_aligned_alloc,
+    .malloc_usable_size = op_malloc_usable_size,
+    .free = op_free,
+    .get_last_allocation_error = op_get_last_allocation_error,
 };
 
 umf_memory_pool_ops_t *umfJemallocPoolOps(void) {

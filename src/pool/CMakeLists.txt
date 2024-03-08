@@ -35,18 +35,19 @@ endif()
 
 # libumf_pool_jemalloc
 if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
-    if(LINUX)
+    if(LINUX OR WINDOWS)
         add_umf_library(NAME jemalloc_pool
                         TYPE STATIC
                         SRCS pool_jemalloc.c ${POOL_EXTRA_SRCS}
                         LIBS jemalloc umf_utils)
+        target_include_directories(jemalloc_pool PRIVATE ${JEMALLOC_INCLUDE_DIRS})
         target_compile_definitions(jemalloc_pool PUBLIC ${POOL_COMPILE_DEFINITIONS})
         add_library(${PROJECT_NAME}::jemalloc_pool ALIAS jemalloc_pool)
         install(TARGETS jemalloc_pool
             EXPORT ${PROJECT_NAME}-targets
         )
     else()
-        message(FATAL_ERROR "libumf_pool_jemalloc is supported on Linux only")
+        message(FATAL_ERROR "libumf_pool_jemalloc is supported on Linux and Windows only")
     endif()
 endif()
 

@@ -35,6 +35,9 @@ function(add_umf_test)
         set(LIBS_OPTIONAL ${LIBS_OPTIONAL} ${LIBHWLOC_LIBRARIES})
         set(LIB_DIRS_OPTIONAL ${LIB_DIRS_OPTIONAL} ${LIBHWLOC_LIBRARY_DIRS})
     endif()
+    if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
+        set(LIB_DIRS_OPTIONAL ${LIB_DIRS_OPTIONAL} ${JEMALLOC_LIBRARY_DIRS})
+    endif()
 
     set(TEST_LIBS test_common
         umf
@@ -60,15 +63,9 @@ function(add_umf_test)
 
     set_tests_properties(${TEST_NAME} PROPERTIES LABELS "umf")
 
-    if(WIN32)
-        set(PATH_LIST "PATH=path_list_append:../bin/$<CONFIG>")
-        if(LIBHWLOC_LIBRARY_DIRS)
-            set(PATH_LIST "${PATH_LIST};PATH=path_list_append:${LIBHWLOC_LIBRARY_DIRS}/../bin")
-        endif()
-        if(TBB_LIBRARY_DIRS)
-            set(PATH_LIST "${PATH_LIST};PATH=path_list_append:${TBB_LIBRARY_DIRS}/../bin")
-        endif()
-        set_property(TEST ${TEST_NAME} PROPERTY ENVIRONMENT_MODIFICATION "${PATH_LIST}")
+    if(WINDOWS)
+        # append PATH to DLLs
+        set_property(TEST ${TEST_NAME} PROPERTY ENVIRONMENT_MODIFICATION "${DLL_PATH_LIST}")
     endif()
 
     if (UMF_ENABLE_POOL_TRACKING)
@@ -101,7 +98,7 @@ if(UMF_BUILD_LIBUMF_POOL_DISJOINT
    AND UMF_ENABLE_POOL_TRACKING)
     add_umf_test(NAME c_api_multi_pool
                  SRCS c_api/multi_pool.c
-                 LIBS disjoint_pool jemalloc_pool scalable_pool)
+                 LIBS disjoint_pool jemalloc_pool scalable_pool ${JEMALLOC_LIBRARIES})
 endif()
 
 if(UMF_BUILD_OS_MEMORY_PROVIDER)
