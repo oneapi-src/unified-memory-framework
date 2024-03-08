@@ -7,14 +7,20 @@ permissions:
   contents: read
 
 jobs:
-  benchmarks-ubuntu:
-    name: Ubuntu
+  benchmarks:
+    name: Benchmarks
+    env:
+      BUILD_DIR : "${{github.workspace}}/build/"
+      VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows"
     strategy:
       matrix:
-        os: ['ubuntu-22.04']
-        build_type: [Release]
-        compiler: [{c: gcc, cxx: g++}]
-        shared_library: ['ON', 'OFF']
+        include:
+          - os: ubuntu-latest
+            pool_jemalloc: 'ON'
+
+          - os: windows-latest
+            pool_jemalloc: 'OFF'
+
     runs-on: ${{matrix.os}}
 
     steps:
@@ -22,111 +28,51 @@ jobs:
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - name: Install apt packages
+        if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake libhwloc-dev libnuma-dev libjemalloc-dev libtbb-dev
 
+      - name: Initialize vcpkg
+        if: matrix.os == 'windows-latest'
+        uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
+        with:
+          vcpkgGitCommitId: 3dd44b931481d7a8e9ba412621fa810232b66289
+          vcpkgDirectory: ${{env.BUILD_DIR}}/vcpkg
+          vcpkgJsonGlob: '**/vcpkg.json'
+
+      - name: Install vcpkg packages
+        if: matrix.os == 'windows-latest'
+        run: vcpkg install
+        shell: pwsh # Specifies PowerShell as the shell for running the script.
+
       - name: Configure build
         run: >
           cmake
-          -B ${{github.workspace}}/build
-          -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
-          -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
-          -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
-          -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
+          -B ${{env.BUILD_DIR}}
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
+          -DUMF_BUILD_SHARED_LIBRARY=ON
           -DUMF_BUILD_BENCHMARKS=ON
           -DUMF_BUILD_BENCHMARKS_MT=ON
           -DUMF_BUILD_TESTS=OFF
           -DUMF_FORMAT_CODE_STYLE=OFF
           -DUMF_DEVELOPER_MODE=OFF
           -DUMF_BUILD_OS_MEMORY_PROVIDER=ON
-          -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
           -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
+          -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=${{matrix.pool_jemalloc}}
           -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
           -DUMF_ENABLE_POOL_TRACKING=OFF
           -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
 
-      - name: Build UMF
-        run: cmake --build ${{github.workspace}}/build -j $(nproc)
+      - name: Build UMF on Linux
+        if: matrix.os == 'ubuntu-latest'
+        run: cmake --build ${{env.BUILD_DIR}} -j $(nproc)
+
+      - name: Build UMF on Windows
+        if: matrix.os == 'windows-latest'
+        run: cmake --build ${{env.BUILD_DIR}} --config Release -j $Env:NUMBER_OF_PROCESSORS
 
       - name: Run benchmarks
-        working-directory: ${{github.workspace}}/build
-        # The benchmark of TBB pool manager fails very often with the
-        # "confidence interval exceeds maximum permitted 2.5%" error.
-        # Do not treat that as a failure in CI.
-        run: |
-          export LOG=/tmp/ubench.log
-          if ! ./benchmark/ubench 2>/dev/null > $LOG; then \
-            cat $LOG; \
-            if ! grep -q -e "exceeds maximum permitted 2.5" $LOG; then \
-              echo "[  FAILED  ] The CI benchmark job FAILED."; \
-              exit 1; \
-            fi; \
-          fi
-          cat $LOG
-          echo "[  PASSED  ] The CI benchmark job PASSED."
-
-      - name: Run MT benchmarks
-        working-directory: ${{github.workspace}}/build
-        run: ./benchmark/multithread_bench
-
-  benchmarks-windows:
-    name: Windows
-    env:
-      BUILD_DIR : "${{github.workspace}}/build/"
-      VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows"
-      VCPKG_PATH_BIN: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows/bin;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows/bin"
-    strategy:
-      fail-fast: false
-      matrix:
-        build_type: [Release]
-        compiler: [{c: cl, cxx: cl}]
-        shared_library: ['ON', 'OFF']
-    runs-on: 'windows-2022'
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-
-    - name: Initialize vcpkg
-      uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
-      with:
-        vcpkgGitCommitId: 3dd44b931481d7a8e9ba412621fa810232b66289
-        vcpkgDirectory: ${{github.workspace}}/build/vcpkg
-        vcpkgJsonGlob: '**/vcpkg.json'
-
-    - name: Install dependencies
-      run: vcpkg install
-      shell: pwsh # Specifies PowerShell as the shell for running the script.
-
-    - name: Configure build
-      run: >
-        cmake
-        -B ${{env.BUILD_DIR}}
-        -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
-        -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
-        -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
-        -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
-        -DUMF_BUILD_BENCHMARKS=ON
-        -DUMF_BUILD_BENCHMARKS_MT=OFF
-        -DUMF_BUILD_TESTS=OFF
-        -DUMF_FORMAT_CODE_STYLE=OFF
-        -DUMF_DEVELOPER_MODE=OFF
-        -DUMF_BUILD_OS_MEMORY_PROVIDER=ON
-        -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
-        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=OFF
-        -DUMF_BUILD_LIBUMF_POOL_SCALABLE=OFF
-        -DUMF_ENABLE_POOL_TRACKING=OFF
-
-    - name: Build UMF
-      run: cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j $Env:NUMBER_OF_PROCESSORS
-
-    - name: Run benchmarks
-      working-directory: ${{env.BUILD_DIR}}
-      shell: pwsh # Specifies PowerShell as the shell for running the script.
-      run: |
-        # add path to umf.dll
-        $env:PATH += ";${{env.BUILD_DIR}}\bin\${{matrix.build_type}}"
-        # add path to DLL directories
-        $env:PATH += ";${{env.VCPKG_PATH_BIN}}"
-        .\benchmark\${{matrix.build_type}}\ubench.exe
+        working-directory: ${{env.BUILD_DIR}}
+        run: ctest -V --test-dir benchmark -C Release

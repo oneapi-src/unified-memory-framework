@@ -81,10 +81,16 @@ static alloc_t *alloc_array(size_t iters) {
 ////////////////// GLIBC
 
 static void *glibc_malloc(void *provider, size_t size, size_t alignment) {
+    (void)provider;  // unused
+    (void)alignment; // unused
     return malloc(size);
 }
 
-static void glibc_free(void *provider, void *ptr, size_t size) { free(ptr); }
+static void glibc_free(void *provider, void *ptr, size_t size) {
+    (void)provider; // unused
+    (void)size;     // unused
+    free(ptr);
+}
 
 UBENCH_EX(simple, glibc_malloc) {
     alloc_t *array = alloc_array(N_ITERATIONS);
@@ -162,11 +168,13 @@ UBENCH_EX(simple, os_memory_provider) {
 }
 
 static void *w_umfPoolMalloc(void *provider, size_t size, size_t alignment) {
+    (void)alignment; // unused
     umf_memory_pool_handle_t hPool = (umf_memory_pool_handle_t)provider;
     return umfPoolMalloc(hPool, size);
 }
 
 static void w_umfPoolFree(void *provider, void *ptr, size_t size) {
+    (void)size; // unused
     enum umf_result_t umf_result;
     umf_memory_pool_handle_t hPool = (umf_memory_pool_handle_t)provider;
     umf_result = umfPoolFree(hPool, ptr);
@@ -330,4 +338,4 @@ UBENCH_EX(simple, scalable_pool_with_os_memory_provider) {
 }
 #endif /* (defined UMF_BUILD_LIBUMF_POOL_SCALABLE) && (defined UMF_BUILD_OS_MEMORY_PROVIDER) */
 
-UBENCH_MAIN();
+UBENCH_MAIN()
