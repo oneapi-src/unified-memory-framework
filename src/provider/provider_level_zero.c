@@ -12,7 +12,8 @@
 #include <stddef.h>
 #include <unistd.h>
 
-#include <level_zero/ze_api.h>
+// Level Zero API
+#include <ze_api.h>
 
 #include <umf.h>
 #include <umf/memory_provider_ops.h>
@@ -84,7 +85,7 @@ enum umf_result_t ze_memory_provider_initialize(void *params, void **provider) {
 
     ze_provider->context = ze_params->level_zero_context_handle;
     ze_provider->device = ze_params->level_zero_device_handle;
-    ze_provider->memory_type = ze_params->memory_type;
+    ze_provider->memory_type = (ze_memory_type_t)ze_params->memory_type;
 
     *provider = ze_provider;
 

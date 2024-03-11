@@ -43,6 +43,7 @@ jobs:
         -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
         -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
         -DUMF_BUILD_OS_MEMORY_PROVIDER=ON
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
         -DUMF_ENABLE_POOL_TRACKING=ON
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
@@ -53,7 +54,6 @@ jobs:
         -DUSE_UBSAN=${{matrix.sanitizers.ubsan}}
         -DUSE_TSAN=${{matrix.sanitizers.tsan}}
         -DUMF_BUILD_EXAMPLES=ON
-        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
 
     - name: Build UMF
       run: cmake --build ${{env.BUILD_DIR}} -j $(nproc)
@@ -89,6 +89,7 @@ jobs:
         -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
         -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
         -DUMF_BUILD_OS_MEMORY_PROVIDER=ON
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
         -DUMF_ENABLE_POOL_TRACKING=ON
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
@@ -99,7 +100,6 @@ jobs:
         -DUSE_UBSAN=${{matrix.sanitizers.ubsan}}
         -DUSE_TSAN=${{matrix.sanitizers.tsan}}
         -DUMF_BUILD_EXAMPLES=ON
-        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
 
     - name: Build UMF
       run: cmake --build ${{env.BUILD_DIR}} -j $(nproc)
@@ -146,6 +146,7 @@ jobs:
       run: vcpkg install
       shell: pwsh # Specifies PowerShell as the shell for running the script.
 
+    # TODO enable level zero provider
     - name: Configure build
       run: >
         cmake

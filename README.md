@@ -34,7 +34,7 @@ For development and contributions:
 For building tests, multithreaded benchmarks and Disjoint Pool:
 - C++ compiler with C++17 support
 
-For Level Zero memory provider and its tests:
+For Level Zero memory provider tests:
 - Level Zero headers and libraries
 - compatible GPU with installed driver
 
@@ -91,11 +91,12 @@ List of options provided by CMake:
 | - | - | - | - |
 | UMF_BUILD_SHARED_LIBRARY | Build UMF as shared library | ON/OFF | OFF |
 | UMF_BUILD_OS_MEMORY_PROVIDER | Build OS memory provider | ON/OFF | ON |
-| UMF_BUILD_LEVEL_ZERO_PROVIDER | Build Level Zero memory provider | ON/OFF | OFF |
+| UMF_BUILD_LEVEL_ZERO_PROVIDER | Build Level Zero memory provider | ON/OFF | ON |
 | UMF_BUILD_LIBUMF_POOL_DISJOINT | Build the libumf_pool_disjoint static library | ON/OFF | OFF |
 | UMF_BUILD_LIBUMF_POOL_JEMALLOC | Build the libumf_pool_jemalloc static library | ON/OFF | OFF |
 | UMF_BUILD_LIBUMF_POOL_SCALABLE | Build the libumf_pool_scalable static library | ON/OFF | OFF |
 | UMF_BUILD_TESTS | Build UMF tests | ON/OFF | ON |
+| UMF_BUILD_GPU_TESTS | Build UMF GPU tests | ON/OFF | OFF |
 | UMF_BUILD_BENCHMARKS | Build UMF benchmarks | ON/OFF | OFF |
 | UMF_BUILD_EXAMPLES | Build UMF examples | ON/OFF | ON |
 | UMF_ENABLE_POOL_TRACKING | Build UMF with pool tracking | ON/OFF | ON |
@@ -137,11 +138,14 @@ A memory provider that provides memory from L0 device.
 
 ##### Requirements
 
-1) System with Level Zero compatible GPU
-2) Linux OS
-3) The `UMF_BUILD_LIBUMF_PROVIDER_LEVEL_ZERO` option turned `ON`
-4) Required packages:
-   - level-zero-dev (TODO: check this)
+1) Linux OS
+2) The `UMF_BUILD_LEVEL_ZERO_PROVIDER` option turned `ON` (by default)
+
+Additionally, required for tests: 
+3) The `UMF_BUILD_GPU_TESTS` option turned `ON`
+4) System with Level Zero compatible GPU
+5) Required packages:
+   - liblevel-zero-dev
 
 ### Memory pool managers
 
