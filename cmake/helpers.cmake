@@ -77,9 +77,11 @@ function(add_umf_target_exec_options name)
 endfunction()
 
 function(add_umf_executable)
-    # NAME - a name of the executable
-    # SRCS - source files
-    # LIBS - libraries to be linked with
+    # Parameters:
+    #
+    # * NAME - a name of the executable
+    # * SRCS - source files
+    # * LIBS - libraries to be linked with
     set(oneValueArgs NAME)
     set(multiValueArgs SRCS LIBS)
     cmake_parse_arguments(ARG "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
@@ -92,13 +94,16 @@ function(add_umf_executable)
 endfunction()
 
 function(add_umf_library)
-    # NAME - a name of the library
-    # TYPE - type of the library (shared or static)
-    #        if shared library, LINUX_MAP_FILE and WINDOWS_DEF_FILE must also be specified
-    # SRCS - source files
-    # LIBS - libraries to be linked with
-    # LINUX_MAP_FILE - path to linux linker map (.map) file
-    # WINDOWS_DEF_FILE - path to windows module-definition (DEF) file
+    # Parameters:
+    #
+    # * NAME - a name of the library
+    # * TYPE - type of the library (shared or static)
+    #          if shared library, LINUX_MAP_FILE and WINDOWS_DEF_FILE must also 
+    #          be specified
+    # * SRCS - source files
+    # * LIBS - libraries to be linked with
+    # * LINUX_MAP_FILE - path to linux linker map (.map) file
+    # * WINDOWS_DEF_FILE - path to windows module-definition (DEF) file
 
     set(oneValueArgs NAME TYPE LINUX_MAP_FILE WINDOWS_DEF_FILE)
     set(multiValueArgs SRCS LIBS)
@@ -109,7 +114,8 @@ function(add_umf_library)
     string(TOUPPER "${ARG_TYPE}" ARG_TYPE)
     if(ARG_TYPE STREQUAL "SHARED")
         if(NOT ARG_LINUX_MAP_FILE OR NOT ARG_WINDOWS_DEF_FILE)
-            message(FATAL_ERROR "LINUX_MAP_FILE or WINDOWS_DEF_FILE not specified")
+            message(FATAL_ERROR "LINUX_MAP_FILE or WINDOWS_DEF_FILE "
+                    "not specified")
         endif()
 
         if (WINDOWS)
@@ -155,12 +161,14 @@ macro(add_sanitizer_flag flag)
     # Check C and CXX compilers for a given sanitizer flag.
     check_c_compiler_flag("${SANITIZER_FLAG}" "C_${check_name}")
     if (NOT C_${check_name})
-        message(FATAL_ERROR "sanitizer '${flag}' is not supported by the C compiler)")
+        message(FATAL_ERROR "sanitizer '${flag}' is not supported "
+                "by the C compiler)")
     endif()
     if (CMAKE_CXX_COMPILE_FEATURES)
         check_cxx_compiler_flag("${SANITIZER_FLAG}" "CXX_${check_name}")
         if (NOT CXX_${check_name})
-            message(FATAL_ERROR "sanitizer '${flag}' is not supported by the CXX compiler)")
+            message(FATAL_ERROR "sanitizer '${flag}' is not supported by the "
+                    "CXX compiler)")
         endif()
     endif()
 
@@ -170,12 +178,14 @@ macro(add_sanitizer_flag flag)
     if (SANITIZER_ARGS)
         check_c_compiler_flag("${SANITIZER_ARGS}" "C_HAS_SAN_ARGS")
         if (NOT C_HAS_SAN_ARGS)
-            message(FATAL_ERROR "sanitizer argument '${SANITIZER_ARGS}' is not supported by the C compiler)")
+            message(FATAL_ERROR "sanitizer argument '${SANITIZER_ARGS}' is "
+                    "not supported by the C compiler)")
         endif()
         if (CMAKE_CXX_COMPILE_FEATURES)
             check_cxx_compiler_flag("${SANITIZER_ARGS}" "CXX_HAS_SAN_ARGS")
             if (NOT CXX_HAS_SAN_ARGS)
-                message(FATAL_ERROR "sanitizer argument '${SANITIZER_ARGS}' is not supported by the CXX compiler)")
+                message(FATAL_ERROR "sanitizer argument '${SANITIZER_ARGS}' "
+                        "is not supported by the CXX compiler)")
             endif()
         endif()
 

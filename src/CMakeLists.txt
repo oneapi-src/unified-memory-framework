@@ -65,7 +65,8 @@ set(UMF_SOURCES_WINDOWS
     libumf_windows.c
 )
 
-# Compile definitions for UMF library
+# Compile definitions for UMF library.
+#
 # TODO: Cleanup the compile definitions across all the CMake files
 set(UMF_PUBLIC_COMPILE_DEFINITIONS "")
 

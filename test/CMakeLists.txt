@@ -21,9 +21,11 @@ enable_testing()
 set(UMF_TEST_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 function(add_umf_test)
-    # NAME - a name of the test
-    # SRCS - source files
-    # LIBS - libraries to be linked with
+    # Parameters:
+    #
+    # * NAME - a name of the test
+    # * SRCS - source files
+    # * LIBS - libraries to be linked with
     set(oneValueArgs NAME)
     set(multiValueArgs SRCS LIBS)
     cmake_parse_arguments(ARG "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})

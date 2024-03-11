@@ -11,10 +11,12 @@ if (UMF_BUILD_BENCHMARKS_MT)
 endif()
 
 function(add_umf_benchmark)
-    # NAME - a name of the benchmark
-    # SRCS - source files
-    # LIBS - libraries to be linked with
-    # LIBDIRS - directories of libraries to be linked with
+    # Parameters:
+    #
+    # * NAME - a name of the benchmark
+    # * SRCS - source files
+    # * LIBS - libraries to be linked with
+    # * LIBDIRS - directories of libraries to be linked with
     set(oneValueArgs NAME)
     set(multiValueArgs SRCS LIBS LIBDIRS)
     cmake_parse_arguments(ARG "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
