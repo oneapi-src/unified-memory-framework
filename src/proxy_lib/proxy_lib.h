@@ -8,8 +8,6 @@
 #ifndef UMF_PROXY_LIB_H
 #define UMF_PROXY_LIB_H 1
 
-#include <stddef.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif

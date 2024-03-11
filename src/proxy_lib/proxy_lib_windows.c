@@ -9,8 +9,6 @@
 
 #include <Windows.h>
 
-#include <stdio.h>
-
 #include "proxy_lib.h"
 
 static void proxy_lib_create(void) { proxy_lib_create_common(); }
