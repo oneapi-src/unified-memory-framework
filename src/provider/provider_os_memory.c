@@ -662,11 +662,11 @@ static umf_memory_provider_ops_t UMF_OS_MEMORY_PROVIDER_OPS = {
     .get_last_native_error = os_get_last_native_error,
     .get_recommended_page_size = os_get_recommended_page_size,
     .get_min_page_size = os_get_min_page_size,
-    .purge_lazy = os_purge_lazy,
-    .purge_force = os_purge_force,
     .get_name = os_get_name,
-    .allocation_split = os_allocation_split,
-    .allocation_merge = os_allocation_merge};
+    .ext.purge_lazy = os_purge_lazy,
+    .ext.purge_force = os_purge_force,
+    .ext.allocation_merge = os_allocation_merge,
+    .ext.allocation_split = os_allocation_split};
 
 umf_memory_provider_ops_t *umfOsMemoryProviderOps(void) {
     return &UMF_OS_MEMORY_PROVIDER_OPS;

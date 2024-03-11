@@ -438,11 +438,11 @@ umf_memory_provider_ops_t UMF_TRACKING_MEMORY_PROVIDER_OPS = {
     .get_last_native_error = trackingGetLastError,
     .get_min_page_size = trackingGetMinPageSize,
     .get_recommended_page_size = trackingGetRecommendedPageSize,
-    .purge_force = trackingPurgeForce,
-    .purge_lazy = trackingPurgeLazy,
     .get_name = trackingName,
-    .allocation_split = trackingAllocationSplit,
-    .allocation_merge = trackingAllocationMerge};
+    .ext.purge_force = trackingPurgeForce,
+    .ext.purge_lazy = trackingPurgeLazy,
+    .ext.allocation_split = trackingAllocationSplit,
+    .ext.allocation_merge = trackingAllocationMerge};
 
 umf_result_t umfTrackingMemoryProviderCreate(
     umf_memory_provider_handle_t hUpstream, umf_memory_pool_handle_t hPool,

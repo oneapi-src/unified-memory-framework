@@ -52,6 +52,7 @@ typedef struct provider_base_t {
                                    [[maybe_unused]] size_t *pageSize) noexcept {
         return UMF_RESULT_ERROR_UNKNOWN;
     }
+    const char *get_name() noexcept { return "base"; }
     umf_result_t purge_lazy([[maybe_unused]] void *ptr,
                             [[maybe_unused]] size_t size) noexcept {
         return UMF_RESULT_ERROR_UNKNOWN;
@@ -60,7 +61,18 @@ typedef struct provider_base_t {
                              [[maybe_unused]] size_t size) noexcept {
         return UMF_RESULT_ERROR_UNKNOWN;
     }
-    const char *get_name() noexcept { return "base"; }
+
+    umf_result_t allocation_merge([[maybe_unused]] void *lowPtr,
+                                  [[maybe_unused]] void *highPtr,
+                                  [[maybe_unused]] size_t totalSize) {
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
+
+    umf_result_t allocation_split([[maybe_unused]] void *ptr,
+                                  [[maybe_unused]] size_t totalSize,
+                                  [[maybe_unused]] size_t firstSize) {
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
 } provider_base_t;
 
 umf_memory_provider_ops_t BASE_PROVIDER_OPS =

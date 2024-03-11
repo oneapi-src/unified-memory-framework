@@ -88,9 +88,11 @@ template <typename T> umf_memory_provider_ops_t providerOpsBase() {
     UMF_ASSIGN_OP_NORETURN(ops, T, get_last_native_error);
     UMF_ASSIGN_OP(ops, T, get_recommended_page_size, UMF_RESULT_ERROR_UNKNOWN);
     UMF_ASSIGN_OP(ops, T, get_min_page_size, UMF_RESULT_ERROR_UNKNOWN);
-    UMF_ASSIGN_OP(ops, T, purge_lazy, UMF_RESULT_ERROR_UNKNOWN);
-    UMF_ASSIGN_OP(ops, T, purge_force, UMF_RESULT_ERROR_UNKNOWN);
     UMF_ASSIGN_OP(ops, T, get_name, "");
+    UMF_ASSIGN_OP(ops.ext, T, purge_lazy, UMF_RESULT_ERROR_UNKNOWN);
+    UMF_ASSIGN_OP(ops.ext, T, purge_force, UMF_RESULT_ERROR_UNKNOWN);
+    UMF_ASSIGN_OP(ops.ext, T, allocation_merge, UMF_RESULT_ERROR_UNKNOWN);
+    UMF_ASSIGN_OP(ops.ext, T, allocation_split, UMF_RESULT_ERROR_UNKNOWN);
     return ops;
 }
 } // namespace detail

@@ -56,6 +56,11 @@ static umf_result_t nullGetPageSize(void *provider, void *ptr,
     return UMF_RESULT_SUCCESS;
 }
 
+static const char *nullName(void *provider) {
+    (void)provider;
+    return "null";
+}
+
 static umf_result_t nullPurgeLazy(void *provider, void *ptr, size_t size) {
     (void)provider;
     (void)ptr;
@@ -70,9 +75,22 @@ static umf_result_t nullPurgeForce(void *provider, void *ptr, size_t size) {
     return UMF_RESULT_SUCCESS;
 }
 
-static const char *nullName(void *provider) {
+static umf_result_t nullAllocationMerge(void *provider, void *lowPtr,
+                                        void *highPtr, size_t totalSize) {
     (void)provider;
-    return "null";
+    (void)lowPtr;
+    (void)highPtr;
+    (void)totalSize;
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t nullAllocationSplit(void *provider, void *ptr,
+                                        size_t totalSize, size_t firstSize) {
+    (void)provider;
+    (void)ptr;
+    (void)totalSize;
+    (void)firstSize;
+    return UMF_RESULT_SUCCESS;
 }
 
 umf_memory_provider_ops_t UMF_NULL_PROVIDER_OPS = {
@@ -84,7 +102,9 @@ umf_memory_provider_ops_t UMF_NULL_PROVIDER_OPS = {
     .get_last_native_error = nullGetLastError,
     .get_recommended_page_size = nullGetRecommendedPageSize,
     .get_min_page_size = nullGetPageSize,
-    .purge_lazy = nullPurgeLazy,
-    .purge_force = nullPurgeForce,
     .get_name = nullName,
+    .ext.purge_lazy = nullPurgeLazy,
+    .ext.purge_force = nullPurgeForce,
+    .ext.allocation_merge = nullAllocationMerge,
+    .ext.allocation_split = nullAllocationSplit,
 };

@@ -8,6 +8,7 @@
  */
 
 #include <assert.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -24,11 +25,78 @@ typedef struct umf_memory_provider_t {
     void *provider_priv;
 } umf_memory_provider_t;
 
+static umf_result_t umfDefaultPurgeLazy(void *provider, void *ptr,
+                                        size_t size) {
+    (void)provider;
+    (void)ptr;
+    (void)size;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+static umf_result_t umfDefaultPurgeForce(void *provider, void *ptr,
+                                         size_t size) {
+    (void)provider;
+    (void)ptr;
+    (void)size;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+static umf_result_t umfDefaultAllocationSplit(void *provider, void *ptr,
+                                              size_t totalSize,
+                                              size_t firstSize) {
+    (void)provider;
+    (void)ptr;
+    (void)totalSize;
+    (void)firstSize;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+static umf_result_t umfDefaultAllocationMerge(void *provider, void *lowPtr,
+                                              void *highPtr, size_t totalSize) {
+    (void)provider;
+    (void)lowPtr;
+    (void)highPtr;
+    (void)totalSize;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+void assignOpsExtDefaults(umf_memory_provider_ops_t *ops) {
+    if (!ops->ext.purge_lazy) {
+        ops->ext.purge_lazy = umfDefaultPurgeLazy;
+    }
+    if (!ops->ext.purge_force) {
+        ops->ext.purge_force = umfDefaultPurgeForce;
+    }
+    if (!ops->ext.allocation_split) {
+        ops->ext.allocation_split = umfDefaultAllocationSplit;
+    }
+    if (!ops->ext.allocation_merge) {
+        ops->ext.allocation_merge = umfDefaultAllocationMerge;
+    }
+}
+
+static bool validateOps(const umf_memory_provider_ops_t *ops) {
+    // Mandatory ops should be non-NULL
+    if (!ops->alloc || !ops->free || !ops->get_recommended_page_size ||
+        !ops->get_min_page_size || !ops->initialize || !ops->finalize ||
+        !ops->get_last_native_error || !ops->get_name) {
+        return false;
+    }
+
+    // allocation_split and allocation_merge should be both set or both NULL
+    if ((ops->ext.allocation_split && !ops->ext.allocation_merge) ||
+        (!ops->ext.allocation_split && ops->ext.allocation_merge)) {
+        return false;
+    }
+
+    return true;
+}
+
 umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
                                      void *params,
                                      umf_memory_provider_handle_t *hProvider) {
     libumfInit();
-    if (!ops || !hProvider) {
+    if (!ops || !hProvider || !validateOps(ops)) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -41,6 +109,8 @@ umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
     assert(ops->version == UMF_VERSION_CURRENT);
 
     provider->ops = *ops;
+
+    assignOpsExtDefaults(&(provider->ops));
 
     void *provider_priv;
     umf_result_t ret = ops->initialize(params, &provider_priv);
@@ -119,11 +189,16 @@ umfMemoryProviderGetMinPageSize(umf_memory_provider_handle_t hProvider,
     return res;
 }
 
+const char *umfMemoryProviderGetName(umf_memory_provider_handle_t hProvider) {
+    UMF_CHECK((hProvider != NULL), NULL);
+    return hProvider->ops.get_name(hProvider->provider_priv);
+}
+
 umf_result_t umfMemoryProviderPurgeLazy(umf_memory_provider_handle_t hProvider,
                                         void *ptr, size_t size) {
     UMF_CHECK((hProvider != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
     umf_result_t res =
-        hProvider->ops.purge_lazy(hProvider->provider_priv, ptr, size);
+        hProvider->ops.ext.purge_lazy(hProvider->provider_priv, ptr, size);
     checkErrorAndSetLastProvider(res, hProvider);
     return res;
 }
@@ -132,14 +207,9 @@ umf_result_t umfMemoryProviderPurgeForce(umf_memory_provider_handle_t hProvider,
                                          void *ptr, size_t size) {
     UMF_CHECK((hProvider != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
     umf_result_t res =
-        hProvider->ops.purge_force(hProvider->provider_priv, ptr, size);
+        hProvider->ops.ext.purge_force(hProvider->provider_priv, ptr, size);
     checkErrorAndSetLastProvider(res, hProvider);
     return res;
-}
-
-const char *umfMemoryProviderGetName(umf_memory_provider_handle_t hProvider) {
-    UMF_CHECK((hProvider != NULL), NULL);
-    return hProvider->ops.get_name(hProvider->provider_priv);
 }
 
 umf_memory_provider_handle_t umfGetLastFailedMemoryProvider(void) {
@@ -160,7 +230,7 @@ umfMemoryProviderAllocationSplit(umf_memory_provider_handle_t hProvider,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    umf_result_t res = hProvider->ops.allocation_split(
+    umf_result_t res = hProvider->ops.ext.allocation_split(
         hProvider->provider_priv, ptr, totalSize, firstSize);
     checkErrorAndSetLastProvider(res, hProvider);
     return res;
@@ -183,7 +253,7 @@ umfMemoryProviderAllocationMerge(umf_memory_provider_handle_t hProvider,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    umf_result_t res = hProvider->ops.allocation_merge(
+    umf_result_t res = hProvider->ops.ext.allocation_merge(
         hProvider->provider_priv, lowPtr, highPtr, totalSize);
     checkErrorAndSetLastProvider(res, hProvider);
     return res;

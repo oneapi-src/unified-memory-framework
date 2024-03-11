@@ -51,6 +51,11 @@ TEST_F(test, memoryProviderTrace) {
     ASSERT_EQ(calls["get_min_page_size"], 1);
     ASSERT_EQ(calls.size(), ++call_count);
 
+    const char *pName = umfMemoryProviderGetName(tracingProvider.get());
+    ASSERT_EQ(calls["name"], 1);
+    ASSERT_EQ(calls.size(), ++call_count);
+    ASSERT_EQ(std::string(pName), std::string("null"));
+
     ret = umfMemoryProviderPurgeLazy(tracingProvider.get(), nullptr, 0);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
     ASSERT_EQ(calls["purge_lazy"], 1);
@@ -61,10 +66,67 @@ TEST_F(test, memoryProviderTrace) {
     ASSERT_EQ(calls["purge_force"], 1);
     ASSERT_EQ(calls.size(), ++call_count);
 
-    const char *pName = umfMemoryProviderGetName(tracingProvider.get());
-    ASSERT_EQ(calls["name"], 1);
+    void *lowPtr = (void *)0xBAD;
+    void *highPtr = (void *)((uintptr_t)lowPtr + 4096);
+    ret = umfMemoryProviderAllocationMerge(tracingProvider.get(), lowPtr,
+                                           highPtr, 2 * 4096);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(calls["allocation_merge"], 1);
     ASSERT_EQ(calls.size(), ++call_count);
-    ASSERT_EQ(std::string(pName), std::string("null"));
+
+    ptr = (void *)0xBAD;
+    ret = umfMemoryProviderAllocationSplit(tracingProvider.get(), ptr, 2 * 4096,
+                                           4096);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(calls["allocation_split"], 1);
+    ASSERT_EQ(calls.size(), ++call_count);
+}
+
+TEST_F(test, memoryProviderOpsNullPurgeLazyField) {
+    umf_memory_provider_ops_t provider_ops = UMF_NULL_PROVIDER_OPS;
+    provider_ops.ext.purge_lazy = nullptr;
+    umf_memory_provider_handle_t hProvider;
+    auto ret = umfMemoryProviderCreate(&provider_ops, nullptr, &hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfMemoryProviderPurgeLazy(hProvider, nullptr, 0);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_NOT_SUPPORTED);
+
+    umfMemoryProviderDestroy(hProvider);
+}
+
+TEST_F(test, memoryProviderOpsNullPurgeForceField) {
+    umf_memory_provider_ops_t provider_ops = UMF_NULL_PROVIDER_OPS;
+    provider_ops.ext.purge_force = nullptr;
+    umf_memory_provider_handle_t hProvider;
+    auto ret = umfMemoryProviderCreate(&provider_ops, nullptr, &hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfMemoryProviderPurgeForce(hProvider, nullptr, 0);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_NOT_SUPPORTED);
+
+    umfMemoryProviderDestroy(hProvider);
+}
+
+TEST_F(test, memoryProviderOpsNullAllocationSplitAllocationMergeFields) {
+    umf_memory_provider_ops_t provider_ops = UMF_NULL_PROVIDER_OPS;
+    provider_ops.ext.allocation_split = nullptr;
+    provider_ops.ext.allocation_merge = nullptr;
+    umf_memory_provider_handle_t hProvider;
+    auto ret = umfMemoryProviderCreate(&provider_ops, nullptr, &hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    void *ptr = (void *)0xBAD;
+    ret = umfMemoryProviderAllocationSplit(hProvider, ptr, 2 * 4096, 4096);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_NOT_SUPPORTED);
+
+    void *lowPtr = (void *)0xBAD;
+    void *highPtr = (void *)((uintptr_t)lowPtr + 4096);
+    ret =
+        umfMemoryProviderAllocationMerge(hProvider, lowPtr, highPtr, 2 * 4096);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_NOT_SUPPORTED);
+
+    umfMemoryProviderDestroy(hProvider);
 }
 
 ////////////////// Negative test cases /////////////////
@@ -78,6 +140,70 @@ TEST_F(test, memoryProviderCreateNullOps) {
 TEST_F(test, memoryProviderNullPoolHandle) {
     auto ret =
         umfMemoryProviderCreate(&UMF_NULL_PROVIDER_OPS, nullptr, nullptr);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, memoryProviderOpsNullAllocField) {
+    umf_memory_provider_ops_t provider_ops = UMF_NULL_PROVIDER_OPS;
+    provider_ops.alloc = nullptr;
+    umf_memory_provider_handle_t hProvider;
+    auto ret = umfMemoryProviderCreate(&provider_ops, nullptr, &hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, memoryProviderOpsNullFreeField) {
+    umf_memory_provider_ops_t provider_ops = UMF_NULL_PROVIDER_OPS;
+    provider_ops.free = nullptr;
+    umf_memory_provider_handle_t hProvider;
+    auto ret = umfMemoryProviderCreate(&provider_ops, nullptr, &hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, memoryProviderOpsNullGetLastNativeErrorField) {
+    umf_memory_provider_ops_t provider_ops = UMF_NULL_PROVIDER_OPS;
+    provider_ops.get_last_native_error = nullptr;
+    umf_memory_provider_handle_t hProvider;
+    auto ret = umfMemoryProviderCreate(&provider_ops, nullptr, &hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, memoryProviderOpsNullGetRecommendedPageSizeField) {
+    umf_memory_provider_ops_t provider_ops = UMF_NULL_PROVIDER_OPS;
+    provider_ops.get_recommended_page_size = nullptr;
+    umf_memory_provider_handle_t hProvider;
+    auto ret = umfMemoryProviderCreate(&provider_ops, nullptr, &hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, memoryProviderOpsNullGetMinPageSizeField) {
+    umf_memory_provider_ops_t provider_ops = UMF_NULL_PROVIDER_OPS;
+    provider_ops.get_min_page_size = nullptr;
+    umf_memory_provider_handle_t hProvider;
+    auto ret = umfMemoryProviderCreate(&provider_ops, nullptr, &hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, memoryProviderOpsNullGetNameField) {
+    umf_memory_provider_ops_t provider_ops = UMF_NULL_PROVIDER_OPS;
+    provider_ops.get_name = nullptr;
+    umf_memory_provider_handle_t hProvider;
+    auto ret = umfMemoryProviderCreate(&provider_ops, nullptr, &hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, memoryProviderOpsNullAllocationSplitField) {
+    umf_memory_provider_ops_t provider_ops = UMF_NULL_PROVIDER_OPS;
+    provider_ops.ext.allocation_split = nullptr;
+    umf_memory_provider_handle_t hProvider;
+    auto ret = umfMemoryProviderCreate(&provider_ops, nullptr, &hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, memoryProviderOpsNullAllocationMergeField) {
+    umf_memory_provider_ops_t provider_ops = UMF_NULL_PROVIDER_OPS;
+    provider_ops.ext.allocation_merge = nullptr;
+    umf_memory_provider_handle_t hProvider;
+    auto ret = umfMemoryProviderCreate(&provider_ops, nullptr, &hProvider);
     ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 }
 
