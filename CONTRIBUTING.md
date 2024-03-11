@@ -62,18 +62,20 @@ To enable additional checks (including `-Werror` / `/WX` compilation flag), swit
 ["CMake standard options"](./README.md#cmake-standard-options) section in the top-level Readme.
 
 ### Code style
-
-We use `clang-format` to verify and apply code style changes. To see all rules we require,
-please take a look at `.clang-format` file in the root directory of this repository.
+We use `clang-format` to verify and apply code style changes to source files. 
+To see all rules we require, please take a look at `.clang-format` file in the 
+root directory of this repository. Similarly, we use `cmake-format` tool and
+`.cmake-format` file to verify and apply code style changes to CMake files.
 
 To enable code style checks and re-formatting, CMake option `UMF_FORMAT_CODE_STYLE` has to
-be switched on. You'll then have two additional CMake targets available.
+be switched on. You'll then have additional CMake targets available.
 
 To verify correct coding style of your changes execute (assuming `build` is your build directory):
 
 ```bash
 $ cmake -B build -DUMF_FORMAT_CODE_STYLE=ON
 $ cmake --build build --target clang-format-check
+$ cmake --build build --target cmake-format-check
 ```
 
 We run this check in our Continuous Integration (CI). So, if any issues were found,
@@ -82,6 +84,7 @@ to fix the issues) execute the second available CMake target - run a command:
 
 ```bash
 $ cmake --build build --target clang-format-apply
+$ cmake --build build --target cmake-format-apply
 
 # Remember to review introduced changes
 ```

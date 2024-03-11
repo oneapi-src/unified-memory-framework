@@ -212,25 +212,33 @@ if(UMF_BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif()
 
-# Check if clang-format (in correct version) is available for code formatting.
 if(UMF_FORMAT_CODE_STYLE)
     find_program(CLANG_FORMAT NAMES clang-format-15 clang-format-15.0 clang-format)
+    find_program(CMAKE_FORMAT NAMES cmake-format)
 
-    if(CLANG_FORMAT)
+    if(CLANG_FORMAT AND CMAKE_FORMAT)
         get_program_version_major_minor(${CLANG_FORMAT} CLANG_FORMAT_VERSION)
-        message(STATUS "Found clang-format: ${CLANG_FORMAT} (version: ${CLANG_FORMAT_VERSION})")
+        get_program_version_major_minor(${CMAKE_FORMAT} CMAKE_FORMAT_VERSION)
+        message(STATUS "Found clang-format: ${CLANG_FORMAT} "
+                "(version: ${CLANG_FORMAT_VERSION})")
+        message(STATUS "Found cmake-format: ${CMAKE_FORMAT} "
+                "(version: ${CMAKE_FORMAT_VERSION})")
 
+        # Check if clang-format (in correct version) is available for code formatting.
         set(CLANG_FORMAT_REQUIRED "15.0")
         if(NOT (CLANG_FORMAT_VERSION VERSION_EQUAL CLANG_FORMAT_REQUIRED))
-            message(FATAL_ERROR "Required clang-format version is ${CLANG_FORMAT_REQUIRED}")
+            message(FATAL_ERROR "Required clang-format version is "
+                    "${CLANG_FORMAT_REQUIRED}")
         endif()
     else()
-        message(FATAL_ERROR "UMF_FORMAT_CODE_STYLE=ON, but clang-format not found (required version: ${CLANG_FORMAT_REQUIRED})")
+        message(FATAL_ERROR "UMF_FORMAT_CODE_STYLE=ON, but clang-format or "
+                "cmake-format not found (required version: "
+                "${CLANG_FORMAT_REQUIRED})")
     endif()
 
     # Obtain files for clang-format check
     set(format_glob)
-    foreach(DIR IN ITEMS include src test benchmark)
+    foreach(DIR IN ITEMS include examples src test benchmark)
         list(APPEND format_glob
             "${DIR}/*.h"
             "${DIR}/*.hpp"
@@ -244,7 +252,8 @@ if(UMF_FORMAT_CODE_STYLE)
     endforeach()
     file(GLOB_RECURSE format_list ${format_glob})
 
-    message(STATUS "Adding clang-format-check and clang-format-apply make targets")
+    message(STATUS "Adding clang-format-check and clang-format-apply make "
+            "targets")
 
     add_custom_target(clang-format-check
         COMMAND ${CLANG_FORMAT}
@@ -260,6 +269,31 @@ if(UMF_FORMAT_CODE_STYLE)
             --i
             ${format_list}
         COMMENT "Format files using clang-format")
+
+    # Obtain files for cmake-format check
+    set(format_cmake_glob)
+    foreach(DIR IN ITEMS examples cmake include src test benchmark)
+        list(APPEND format_cmake_glob
+            "${DIR}/CMakeLists.txt"
+            "${DIR}/*.cmake"
+            "${DIR}/**/CMakeLists.txt"
+            "${DIR}/**/*.cmake")
+    endforeach()
+    file(GLOB_RECURSE format_cmake_list ${format_cmake_glob})
+    list(APPEND format_cmake_list "${PROJECT_SOURCE_DIR}/CMakeLists.txt")
+
+    message(STATUS "Adding cmake-format-check and cmake-format-apply make "
+            "targets")
+
+    add_custom_target(
+        cmake-format-check
+        COMMAND ${CMAKE_FORMAT} --check ${format_cmake_list}
+        COMMENT "Check files formatting using cmake-format")
+
+    add_custom_target(
+        cmake-format-apply
+        COMMAND ${CMAKE_FORMAT} --in-place ${format_cmake_list}
+        COMMENT "Format files using cmake-format")
 endif()
 
 # Add license to the installation path

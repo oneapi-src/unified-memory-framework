@@ -94,7 +94,7 @@ jobs:
     - name: Install apt packages
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake clang-format-15 libhwloc-dev
+        sudo apt-get install -y cmake clang-format-15 cmake-format libhwloc-dev
 
     - name: Configure CMake
       run: >
@@ -108,6 +108,9 @@ jobs:
 
     - name: Check clang-format
       run: cmake --build build --target clang-format-check
+
+    - name: Check cmake-format
+      run: cmake --build build --target cmake-format-check
 
   DocsBuild:
     name: Build docs
