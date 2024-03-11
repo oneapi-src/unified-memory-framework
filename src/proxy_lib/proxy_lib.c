@@ -17,6 +17,21 @@
  * - realloc()
  */
 
+#ifdef _MSC_VER
+// Disable warning about inconsistent dll linkage:
+// warning C4273: 'malloc': inconsistent dll linkage
+// ucrt\corecrt_malloc.h(101): note: see previous definition of 'malloc'
+#pragma warning(disable : 4273)
+#pragma warning(push, 1)
+#endif
+
+#ifdef _WIN32
+// fix the error: 'malloc' redeclared without 'dllimport' attribute: 'dllexport' attribute added
+#define WIN32_dllexport __declspec(dllexport)
+#else
+#define WIN32_dllexport
+#endif
+
 #if (defined PROXY_LIB_USES_JEMALLOC_POOL)
 #include <umf/pools/pool_jemalloc.h>
 #define umfPoolManagerOps umfJemallocPoolOps
@@ -174,7 +189,7 @@ static inline size_t ba_leak_pool_contains_pointer(void *ptr) {
 /*** The UMF pool allocator functions (the public API) ***********************/
 /*****************************************************************************/
 
-void *malloc(size_t size) {
+WIN32_dllexport void *malloc(size_t size) {
     if (!was_called_from_umfPool && Proxy_pool) {
         was_called_from_umfPool = 1;
         void *ptr = umfPoolMalloc(Proxy_pool, size);
@@ -185,7 +200,7 @@ void *malloc(size_t size) {
     return ba_leak_malloc(size);
 }
 
-void *calloc(size_t nmemb, size_t size) {
+WIN32_dllexport void *calloc(size_t nmemb, size_t size) {
     if (!was_called_from_umfPool && Proxy_pool) {
         was_called_from_umfPool = 1;
         void *ptr = umfPoolCalloc(Proxy_pool, nmemb, size);
@@ -196,7 +211,7 @@ void *calloc(size_t nmemb, size_t size) {
     return ba_leak_calloc(nmemb, size);
 }
 
-void *realloc(void *ptr, size_t size) {
+WIN32_dllexport void *realloc(void *ptr, size_t size) {
     if (ptr == NULL) {
         return malloc(size);
     }
@@ -222,7 +237,7 @@ void *realloc(void *ptr, size_t size) {
     return NULL;
 }
 
-void free(void *ptr) {
+WIN32_dllexport void free(void *ptr) {
     if (ptr == NULL) {
         return;
     }
@@ -243,7 +258,7 @@ void free(void *ptr) {
     return;
 }
 
-void *aligned_alloc(size_t alignment, size_t size) {
+WIN32_dllexport void *aligned_alloc(size_t alignment, size_t size) {
     if (!was_called_from_umfPool && Proxy_pool) {
         was_called_from_umfPool = 1;
         void *ptr = umfPoolAlignedMalloc(Proxy_pool, size, alignment);
@@ -254,7 +269,7 @@ void *aligned_alloc(size_t alignment, size_t size) {
     return ba_leak_aligned_alloc(alignment, size);
 }
 
-size_t malloc_usable_size(void *ptr) {
+WIN32_dllexport size_t malloc_usable_size(void *ptr) {
     if (!was_called_from_umfPool && Proxy_pool) {
         was_called_from_umfPool = 1;
         size_t size = umfPoolMallocUsableSize(Proxy_pool, ptr);
