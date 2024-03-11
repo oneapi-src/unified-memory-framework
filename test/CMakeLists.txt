@@ -173,9 +173,7 @@ add_umf_test(NAME base_alloc
 add_umf_test(NAME base_alloc_linear
             SRCS ${BA_SOURCES_FOR_TEST} test_base_alloc_linear.cpp
             LIBS umf_utils)
-if(LINUX)
-    # TODO: fix this on windows
-    add_umf_test(NAME base_alloc_global
-                SRCS ${BA_SOURCES_FOR_TEST} pools/pool_base_alloc.cpp malloc_compliance_tests.cpp
-                LIBS umf_utils)
-endif()
+
+add_umf_test(NAME base_alloc_global
+            SRCS ${BA_SOURCES_FOR_TEST} pools/pool_base_alloc.cpp malloc_compliance_tests.cpp
+            LIBS umf_utils)
