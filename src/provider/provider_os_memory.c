@@ -45,11 +45,14 @@ typedef struct umf_os_memory_provider_config_t {
     int traces; // log level of debug traces
 } umf_os_memory_provider_config_t;
 
+#define NODESET_STR_BUF_LEN 1024
+
 typedef struct os_memory_provider_t {
     unsigned protection; // combination of OS-specific protection flags
 
     // NUMA config
     hwloc_bitmap_t nodeset;
+    char *nodeset_str_buf; // allocated only if traces==1
     hwloc_membind_policy_t numa_policy;
     int numa_flags; // combination of hwloc flags
 
@@ -274,14 +277,18 @@ static umf_result_t os_initialize(void *params, void **provider) {
     }
 
     if (os_provider->traces) {
-        char *strp = NULL;
-        hwloc_bitmap_list_asprintf(&strp, os_provider->nodeset);
-
-        if (strp) {
-            printf("OS provider initialized with NUMA nodes: %s\n", strp);
+        os_provider->nodeset_str_buf = umf_ba_global_alloc(NODESET_STR_BUF_LEN);
+        if (!os_provider->nodeset_str_buf) {
+            fprintf(stderr,
+                    "Allocating memory for printing NUMA nodes failed\n");
+        } else {
+            if (hwloc_bitmap_list_snprintf(os_provider->nodeset_str_buf,
+                                           NODESET_STR_BUF_LEN,
+                                           os_provider->nodeset)) {
+                printf("OS provider initialized with NUMA nodes: %s\n",
+                       os_provider->nodeset_str_buf);
+            }
         }
-
-        free(strp);
     }
 
     *provider = os_provider;
@@ -302,6 +309,10 @@ static void os_finalize(void *provider) {
     }
 
     os_memory_provider_t *os_provider = provider;
+    if (os_provider->traces && os_provider->nodeset_str_buf) {
+        umf_ba_global_free(os_provider->nodeset_str_buf);
+    }
+
     hwloc_bitmap_free(os_provider->nodeset);
     hwloc_topology_destroy(os_provider->topo);
     umf_ba_global_free(os_provider);
@@ -312,29 +323,32 @@ static umf_result_t os_get_min_page_size(void *provider, void *ptr,
 
 static void print_numa_nodes(os_memory_provider_t *os_provider, void *addr,
                              size_t size) {
+
+    if (os_provider->nodeset_str_buf == NULL) {
+        // cannot print assigned NUMA node due to allocation failure in os_initialize()
+        return;
+    }
+
     hwloc_bitmap_t nodeset = hwloc_bitmap_alloc();
     if (!nodeset) {
         fprintf(stderr,
                 "cannot print assigned NUMA node due to allocation failure\n");
-    } else {
-        int ret = hwloc_get_area_memlocation(os_provider->topo, addr, 1,
-                                             nodeset, HWLOC_MEMBIND_BYNODESET);
-        if (ret) {
-            fprintf(stderr, "cannot print assigned NUMA node (errno = %i)\n",
-                    errno);
-            perror("get_mempolicy()");
-        } else {
-            char *strp = NULL;
-            hwloc_bitmap_list_asprintf(&strp, nodeset);
+        return;
+    }
 
-            if (!strp) {
-                fprintf(stderr, "cannot print assigned NUMA node due to "
-                                "allocation failure\n");
-            } else {
-                printf("alloc(%zu) = 0x%llx, allocate on NUMA nodes = %s\n",
-                       size, (unsigned long long)addr, strp);
-            }
-            free(strp);
+    int ret = hwloc_get_area_memlocation(os_provider->topo, addr, 1, nodeset,
+                                         HWLOC_MEMBIND_BYNODESET);
+    if (ret) {
+        fprintf(stderr, "cannot print assigned NUMA node (errno = %i)\n",
+                errno);
+        perror("get_mempolicy()");
+    } else {
+        if (hwloc_bitmap_list_snprintf(os_provider->nodeset_str_buf,
+                                       NODESET_STR_BUF_LEN, nodeset)) {
+            printf("alloc(%zu) = 0x%llx, allocate on NUMA nodes = %s\n", size,
+                   (unsigned long long)addr, os_provider->nodeset_str_buf);
+        } else {
+            fprintf(stderr, "cannot print assigned NUMA node\n");
         }
     }
 
