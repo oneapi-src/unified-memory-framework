@@ -91,7 +91,8 @@ if(USE_TSAN)
     add_sanitizer_flag(thread)
 endif()
 if(USE_MSAN)
-    message(WARNING "MemorySanitizer requires instrumented libraries to prevent reporting false-positives")
+    message(WARNING "MemorySanitizer requires instrumented libraries to "
+            "prevent reporting false-positives")
     add_sanitizer_flag(memory)
 endif()
 

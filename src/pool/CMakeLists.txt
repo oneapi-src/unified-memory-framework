@@ -47,7 +47,8 @@ if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
             EXPORT ${PROJECT_NAME}-targets
         )
     else()
-        message(FATAL_ERROR "libumf_pool_jemalloc is supported on Linux and Windows only")
+        message(FATAL_ERROR "libumf_pool_jemalloc is supported on Linux and "
+                "Windows only")
     endif()
 endif()
 
@@ -71,6 +72,7 @@ if(UMF_BUILD_LIBUMF_POOL_SCALABLE)
             EXPORT ${PROJECT_NAME}-targets
         )
     else()
-        message(FATAL_ERROR "libumf_pool_scalable is supported on Linux and Windows only")
+        message(FATAL_ERROR "libumf_pool_scalable is supported on Linux and "
+                "Windows only")
     endif()
 endif()

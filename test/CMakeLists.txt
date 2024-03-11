@@ -21,9 +21,11 @@ enable_testing()
 set(UMF_TEST_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 function(add_umf_test)
-    # NAME - a name of the test
-    # SRCS - source files
-    # LIBS - libraries to be linked with
+    # Parameters:
+    #
+    # * NAME - a name of the test
+    # * SRCS - source files
+    # * LIBS - libraries to be linked with
     set(oneValueArgs NAME)
     set(multiValueArgs SRCS LIBS)
     cmake_parse_arguments(ARG "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
@@ -108,7 +110,9 @@ if(UMF_BUILD_OS_MEMORY_PROVIDER)
                     LIBS jemalloc_pool)
     endif()
 else()
-    message(STATUS "The jemalloc_pool test is DISABLED, because it uses OS_MEMORY_PROVIDER, while the UMF_BUILD_OS_MEMORY_PROVIDER option is set to OFF")
+    message(STATUS "The jemalloc_pool test is DISABLED, because it uses "
+            "OS_MEMORY_PROVIDER, while the UMF_BUILD_OS_MEMORY_PROVIDER "
+            "option is set to OFF")
 endif()
 
 if(UMF_BUILD_OS_MEMORY_PROVIDER)
@@ -118,7 +122,9 @@ if(UMF_BUILD_OS_MEMORY_PROVIDER)
                     LIBS scalable_pool)
     endif()
 else()
-    message(STATUS "The scalable_pool test is DISABLED, because it uses OS_MEMORY_PROVIDER, while the UMF_BUILD_OS_MEMORY_PROVIDER option is set to OFF")
+    message(STATUS "The scalable_pool test is DISABLED, because it uses "
+            "OS_MEMORY_PROVIDER, while the UMF_BUILD_OS_MEMORY_PROVIDER "
+            "option is set to OFF")
 endif()
 
 if(UMF_BUILD_OS_MEMORY_PROVIDER AND LINUX) # OS-specific functions are implemented only for Linux now

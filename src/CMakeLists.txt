@@ -27,9 +27,14 @@ if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
 endif()
 
 # set UMF_PROXY_LIB_BASED_ON_POOL to one of:
-# - SCALABLE
-# - JEMALLOC
-set(UMF_PROXY_LIB_BASED_ON_POOL SCALABLE CACHE STRING "A UMF pool the proxy library is based on (SCALABLE or JEMALLOC)" FORCE)
+#
+# * SCALABLE
+# * JEMALLOC
+set(UMF_PROXY_LIB_BASED_ON_POOL
+    SCALABLE
+    CACHE STRING
+          "A UMF pool the proxy library is based on (SCALABLE or JEMALLOC)"
+          FORCE)
 
 add_subdirectory(utils)
 
@@ -74,7 +79,8 @@ set(UMF_SOURCES_MACOSX
     libumf_linux.c
 )
 
-# Compile definitions for UMF library
+# Compile definitions for UMF library.
+#
 # TODO: Cleanup the compile definitions across all the CMake files
 set(UMF_PUBLIC_COMPILE_DEFINITIONS "")
 
