@@ -84,7 +84,7 @@ static void mt_alloc_free(poolCreateExtParams params,
     std::cout << "mean: " << umf_bench::mean(values)
               << " [ms] std_dev: " << umf_bench::std_dev(values) << " [ms]"
               << " (total alloc failures: "
-              << std::accumulate(numFailures.begin(), numFailures.end(), 0)
+              << std::accumulate(numFailures.begin(), numFailures.end(), 0ULL)
               << " out of "
               << bench.n_iterations * bench.n_repeats * bench.n_threads << ")"
               << std::endl;
