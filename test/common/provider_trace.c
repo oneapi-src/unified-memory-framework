@@ -81,6 +81,14 @@ static umf_result_t traceGetPageSize(void *provider, void *ptr,
                                            ptr, pageSize);
 }
 
+static const char *traceName(void *provider) {
+    umf_provider_trace_params_priv_t *traceProvider =
+        (umf_provider_trace_params_priv_t *)provider;
+
+    traceProvider->trace("name");
+    return umfMemoryProviderGetName(traceProvider->hUpstreamProvider);
+}
+
 static umf_result_t tracePurgeLazy(void *provider, void *ptr, size_t size) {
     umf_provider_trace_params_priv_t *traceProvider =
         (umf_provider_trace_params_priv_t *)provider;
@@ -99,12 +107,24 @@ static umf_result_t tracePurgeForce(void *provider, void *ptr, size_t size) {
                                        size);
 }
 
-static const char *traceName(void *provider) {
+static umf_result_t traceAllocationMerge(void *provider, void *lowPtr,
+                                         void *highPtr, size_t totalSize) {
     umf_provider_trace_params_priv_t *traceProvider =
         (umf_provider_trace_params_priv_t *)provider;
 
-    traceProvider->trace("name");
-    return umfMemoryProviderGetName(traceProvider->hUpstreamProvider);
+    traceProvider->trace("allocation_merge");
+    return umfMemoryProviderAllocationMerge(traceProvider->hUpstreamProvider,
+                                            lowPtr, highPtr, totalSize);
+}
+
+static umf_result_t traceAllocationSplit(void *provider, void *ptr,
+                                         size_t totalSize, size_t firstSize) {
+    umf_provider_trace_params_priv_t *traceProvider =
+        (umf_provider_trace_params_priv_t *)provider;
+
+    traceProvider->trace("allocation_split");
+    return umfMemoryProviderAllocationSplit(traceProvider->hUpstreamProvider,
+                                            ptr, totalSize, firstSize);
 }
 
 umf_memory_provider_ops_t UMF_TRACE_PROVIDER_OPS = {
@@ -116,7 +136,9 @@ umf_memory_provider_ops_t UMF_TRACE_PROVIDER_OPS = {
     .get_last_native_error = traceGetLastError,
     .get_recommended_page_size = traceGetRecommendedPageSize,
     .get_min_page_size = traceGetPageSize,
-    .purge_lazy = tracePurgeLazy,
-    .purge_force = tracePurgeForce,
     .get_name = traceName,
+    .ext.purge_lazy = tracePurgeLazy,
+    .ext.purge_force = tracePurgeForce,
+    .ext.allocation_merge = traceAllocationMerge,
+    .ext.allocation_split = traceAllocationSplit,
 };

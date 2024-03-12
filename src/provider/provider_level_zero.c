@@ -263,11 +263,11 @@ static struct umf_memory_provider_ops_t UMF_LEVEL_ZERO_MEMORY_PROVIDER_OPS = {
     .get_last_native_error = ze_memory_provider_get_last_native_error,
     .get_recommended_page_size = ze_memory_provider_get_recommended_page_size,
     .get_min_page_size = ze_memory_provider_get_min_page_size,
-    .purge_lazy = ze_memory_provider_purge_lazy,
-    .purge_force = ze_memory_provider_purge_force,
     .get_name = ze_memory_provider_get_name,
-    .allocation_split = ze_memory_provider_allocation_split,
-    .allocation_merge = ze_memory_provider_allocation_merge,
+    .ext.purge_lazy = ze_memory_provider_purge_lazy,
+    .ext.purge_force = ze_memory_provider_purge_force,
+    .ext.allocation_merge = ze_memory_provider_allocation_merge,
+    .ext.allocation_split = ze_memory_provider_allocation_split,
 };
 
 umf_memory_provider_ops_t *umfLevelZeroMemoryProviderOps(void) {

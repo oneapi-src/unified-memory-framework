@@ -17,6 +17,66 @@ extern "C" {
 #endif
 
 ///
+/// @brief This structure comprises optional function pointers used
+/// by corresponding umfMemoryProvider* calls. A memory provider implementation
+/// can keep them NULL.
+///
+typedef struct umf_memory_provider_ext_ops_t {
+    ///
+    /// @brief Discard physical pages within the virtual memory mapping associated at the given addr
+    ///        and \p size. This call is asynchronous and may delay purging the pages indefinitely.
+    /// @param provider pointer to the memory provider
+    /// @param ptr beginning of the virtual memory range
+    /// @param size size of the virtual memory range
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+    ///         UMF_RESULT_ERROR_INVALID_ALIGNMENT if ptr or size is not page-aligned.
+    ///         UMF_RESULT_ERROR_NOT_SUPPORTED if operation is not supported by this provider.
+    ///
+    umf_result_t (*purge_lazy)(void *provider, void *ptr, size_t size);
+
+    ///
+    /// @brief Discard physical pages within the virtual memory mapping associated at the given addr and \p size.
+    ///        This call is synchronous and if it succeeds, pages are guaranteed to be zero-filled on the next access.
+    /// @param provider pointer to the memory provider
+    /// @param ptr beginning of the virtual memory range
+    /// @param size size of the virtual memory range
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure
+    ///         UMF_RESULT_ERROR_INVALID_ALIGNMENT if ptr or size is not page-aligned.
+    ///         UMF_RESULT_ERROR_NOT_SUPPORTED if operation is not supported by this provider.
+    ///
+    umf_result_t (*purge_force)(void *provider, void *ptr, size_t size);
+
+    ///
+    /// @brief Merges two coarse grain allocations into a single allocation that
+    ///        can be managed (freed) as a whole.
+    ///        allocation_split and allocation_merge should be both set or both NULL.
+    /// @param hProvider handle to the memory provider
+    /// @param lowPtr pointer to the first allocation
+    /// @param highPtr pointer to the second allocation (should be > lowPtr)
+    /// @param totalSize size of a new merged allocation. Should be equal
+    ///        to the sum of sizes of allocations beginning at lowPtr and highPtr
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure
+    ///
+    umf_result_t (*allocation_merge)(void *hProvider, void *lowPtr,
+                                     void *highPtr, size_t totalSize);
+
+    ///
+    /// @brief Splits a coarse grain allocation into 2 adjacent allocations that
+    ///        can be managed (freed) separately.
+    ///        allocation_split and allocation_merge should be both set or both NULL.
+    /// @param hProvider handle to the memory provider
+    /// @param ptr pointer to the beginning of the allocation
+    /// @param totalSize total size of the allocation to be split
+    /// @param firstSize size of the first new allocation, second allocation
+    //         has a size equal to totalSize - firstSize
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure
+    ///
+    umf_result_t (*allocation_split)(void *hProvider, void *ptr,
+                                     size_t totalSize, size_t firstSize);
+
+} umf_memory_provider_ext_ops_t;
+
+///
 /// @brief This structure comprises function pointers used by corresponding
 /// umfMemoryProvider* calls. Each memory provider implementation should
 /// initialize all function pointers.
@@ -110,30 +170,6 @@ typedef struct umf_memory_provider_ops_t {
                                       size_t *pageSize);
 
     ///
-    /// @brief Discard physical pages within the virtual memory mapping associated at the given addr
-    ///        and \p size. This call is asynchronous and may delay purging the pages indefinitely.
-    /// @param provider pointer to the memory provider
-    /// @param ptr beginning of the virtual memory range
-    /// @param size size of the virtual memory range
-    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
-    ///         UMF_RESULT_ERROR_INVALID_ALIGNMENT if ptr or size is not page-aligned.
-    ///         UMF_RESULT_ERROR_NOT_SUPPORTED if operation is not supported by this provider.
-    ///
-    umf_result_t (*purge_lazy)(void *provider, void *ptr, size_t size);
-
-    ///
-    /// @brief Discard physical pages within the virtual memory mapping associated at the given addr and \p size.
-    ///        This call is synchronous and if it succeeds, pages are guaranteed to be zero-filled on the next access.
-    /// @param provider pointer to the memory provider
-    /// @param ptr beginning of the virtual memory range
-    /// @param size size of the virtual memory range
-    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure
-    ///         UMF_RESULT_ERROR_INVALID_ALIGNMENT if ptr or size is not page-aligned.
-    ///         UMF_RESULT_ERROR_NOT_SUPPORTED if operation is not supported by this provider.
-    ///
-    umf_result_t (*purge_force)(void *provider, void *ptr, size_t size);
-
-    ///
     /// @brief Retrieve name of a given memory \p provider.
     /// @param provider pointer to the memory provider
     /// @return pointer to a string containing the name of the \p provider
@@ -141,30 +177,9 @@ typedef struct umf_memory_provider_ops_t {
     const char *(*get_name)(void *provider);
 
     ///
-    /// @brief Splits a coarse grain allocation into 2 adjacent allocations that
-    ///        can be managed (freed) separately.
-    /// @param hProvider handle to the memory provider
-    /// @param ptr pointer to the beginning of the allocation
-    /// @param totalSize total size of the allocation to be split
-    /// @param firstSize size of the first new allocation, second allocation
-    //         has a size equal to totalSize - firstSize
-    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure
+    /// @brief Optional ops
     ///
-    umf_result_t (*allocation_split)(void *hProvider, void *ptr,
-                                     size_t totalSize, size_t firstSize);
-
-    ///
-    /// @brief Merges two coarse grain allocations into a single allocation that
-    ///        can be managed (freed) as a whole.
-    /// @param hProvider handle to the memory provider
-    /// @param lowPtr pointer to the first allocation
-    /// @param highPtr pointer to the second allocation (should be > lowPtr)
-    /// @param totalSize size of a new merged allocation. Should be equal
-    ///        to the sum of sizes of allocations beginning at lowPtr and highPtr
-    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure
-    ///
-    umf_result_t (*allocation_merge)(void *hProvider, void *lowPtr,
-                                     void *highPtr, size_t totalSize);
+    umf_memory_provider_ext_ops_t ext;
 } umf_memory_provider_ops_t;
 
 #ifdef __cplusplus
