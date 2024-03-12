@@ -214,13 +214,14 @@ jobs:
         pool_tracking: ['ON', 'OFF']
         shared_library: ['OFF']
         os_provider: ['ON']
-        # TODO add level zero provider
+        level_zero_provider: ['ON']
         include:
           - os: 'windows-2022'
             build_type: Release
             compiler: {c: clang-cl, cxx: clang-cl}
             pool_tracking: 'ON'
             os_provider: 'ON'
+            level_zero_provider: 'ON'
             toolset: "-T ClangCL"
           - os: 'windows-2022'
             build_type: Release
@@ -228,12 +229,22 @@ jobs:
             pool_tracking: 'ON'
             shared_library: 'ON'
             os_provider: 'ON'
+            level_zero_provider: 'ON'
           - os: 'windows-2022'
             build_type: Release
             compiler: {c: cl, cxx: cl}
             pool_tracking: 'ON'
             shared_library: 'ON'
             os_provider: 'OFF'
+            level_zero_provider: 'ON'
+          - os: 'windows-2022'
+            build_type: Release
+            compiler: {c: cl, cxx: cl}
+            pool_tracking: 'ON'
+            shared_library: 'ON'
+            os_provider: 'ON'
+            level_zero_provider: 'OFF'
+
     runs-on: ${{matrix.os}}
 
     steps:
@@ -267,7 +278,7 @@ jobs:
         -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
         -DUMF_BUILD_OS_MEMORY_PROVIDER=${{matrix.os_provider}}
-        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=${{matrix.level_zero_provider}}
 
     - name: Build UMF
       run: cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j $Env:NUMBER_OF_PROCESSORS

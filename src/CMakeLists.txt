@@ -142,14 +142,16 @@ else()
     target_sources(umf PRIVATE memory_pool_default.c)
 endif()
 
-# Currently, Level Zero provider is only built for Linux
-if(LINUX AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
+# Currently, Level Zero provider is only built for Linux and Windows
+if((LINUX OR WINDOWS) AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
     target_sources(umf PRIVATE
         provider/provider_level_zero.c)
 
-    # WA for error ze_api.h:14234:20: no newline at end of file [-Werror,-Wnewline-eof]
-    set_source_files_properties(provider/provider_level_zero.c 
-        PROPERTIES APPEND_STRING PROPERTY COMPILE_FLAGS "-Wno-newline-eof")
+    if(LINUX)
+        # WA for error ze_api.h:14234:20: no newline at end of file [-Werror,-Wnewline-eof]
+        set_source_files_properties(provider/provider_level_zero.c 
+            PROPERTIES APPEND_STRING PROPERTY COMPILE_FLAGS "-Wno-newline-eof")
+    endif()
 
     set(UMF_COMPILE_DEFINITIONS ${UMF_COMPILE_DEFINITIONS} 
         "UMF_BUILD_LEVEL_ZERO_PROVIDER=1")

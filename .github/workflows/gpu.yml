@@ -9,9 +9,9 @@ permissions:
   contents: read
 
 jobs:
-  # TODO: add support for Windows
-  ubuntu-build:
-    name: Build - Ubuntu
+  # TODO: add support for tests on Windows
+  gpu:
+    name: Build
     # run only on upstream; forks will not have the HW
     if: github.repository == 'oneapi-src/unified-memory-framework'
 
@@ -20,6 +20,7 @@ jobs:
         build_type: [Release]
         compiler: [{c: gcc, cxx: g++}]
         shared_library: ['ON', 'OFF']
+    # TODO enable testing on DSS-WINDOWS
     runs-on:  [ "DSS-LEVEL_ZERO", "DSS-UBUNTU" ]
 
     steps:

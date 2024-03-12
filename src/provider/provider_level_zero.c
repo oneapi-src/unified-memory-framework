@@ -6,11 +6,8 @@
 */
 
 #include <assert.h>
-#include <dlfcn.h>
-#include <pthread.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <unistd.h>
 
 // Level Zero API
 #include <ze_api.h>
@@ -22,6 +19,7 @@
 #include "base_alloc_global.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
+#include "utils_load_library.h"
 #include "utils_sanitizers.h"
 
 typedef struct ze_memory_provider_t {
@@ -51,10 +49,13 @@ static bool Init_ze_global_state_failed;
 static void init_ze_global_state(void) {
     // check if Level Zero shared library is already loaded
     // we pass 0 as a handle to search the global symbol table
-    *(void **)&g_ze_ops.zeMemAllocHost = dlsym(0, "zeMemAllocHost");
-    *(void **)&g_ze_ops.zeMemAllocDevice = dlsym(0, "zeMemAllocDevice");
-    *(void **)&g_ze_ops.zeMemAllocShared = dlsym(0, "zeMemAllocShared");
-    *(void **)&g_ze_ops.zeMemFree = dlsym(0, "zeMemFree");
+    *(void **)&g_ze_ops.zeMemAllocHost =
+        util_get_symbol_addr(0, "zeMemAllocHost");
+    *(void **)&g_ze_ops.zeMemAllocDevice =
+        util_get_symbol_addr(0, "zeMemAllocDevice");
+    *(void **)&g_ze_ops.zeMemAllocShared =
+        util_get_symbol_addr(0, "zeMemAllocShared");
+    *(void **)&g_ze_ops.zeMemFree = util_get_symbol_addr(0, "zeMemFree");
 
     if (!g_ze_ops.zeMemAllocHost || !g_ze_ops.zeMemAllocDevice ||
         !g_ze_ops.zeMemAllocShared || !g_ze_ops.zeMemFree) {
