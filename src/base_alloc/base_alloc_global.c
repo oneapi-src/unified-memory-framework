@@ -17,6 +17,7 @@
 #include "utils_common.h"
 #include "utils_concurrency.h"
 #include "utils_math.h"
+#include "utils_sanitizers.h"
 
 // global base allocator used by all providers and pools
 static UTIL_ONCE_FLAG ba_is_initialized = UTIL_ONCE_FLAG_INIT;
@@ -102,7 +103,14 @@ static void *add_metadata_and_align(void *ptr, size_t size, size_t alignment) {
     assert(ptr_offset_from_original < (1ULL << 32));
 
     size_t *metadata_loc = (size_t *)((char *)user_ptr - ALLOC_METADATA_SIZE);
+
+    // mark entire allocation as undefined memory so that we can store metadata
+    utils_annotate_memory_undefined(ptr, size);
+
     *metadata_loc = size | (ptr_offset_from_original << 32);
+
+    // mark the metadata part as inaccessible
+    utils_annotate_memory_inaccessible(ptr, ptr_offset_from_original);
 
     return user_ptr;
 }
@@ -116,8 +124,14 @@ static void *get_original_alloc(void *user_ptr, size_t *total_size,
 
     size_t *metadata_loc = (size_t *)((char *)user_ptr - ALLOC_METADATA_SIZE);
 
+    // mark the metadata as defined to read the size and offset
+    utils_annotate_memory_undefined(metadata_loc, ALLOC_METADATA_SIZE);
+
     size_t stored_size = *metadata_loc & ((1ULL << 32) - 1);
     size_t ptr_offset_from_original = *metadata_loc >> 32;
+
+    // restore the original access mode
+    utils_annotate_memory_inaccessible(metadata_loc, ALLOC_METADATA_SIZE);
 
     void *original_ptr =
         (void *)((uintptr_t)user_ptr - ptr_offset_from_original);
@@ -178,16 +192,20 @@ void umf_ba_global_free(void *ptr) {
 
     int ac_index = size_to_idx(total_size);
     if (ac_index >= NUM_ALLOCATION_CLASSES) {
+        utils_annotate_memory_inaccessible(ptr, total_size);
         ba_os_free(ptr, total_size);
         return;
     }
 
     if (!BASE_ALLOC.ac[ac_index]) {
         // if creating ac failed, memory must have been allocated by os
+        utils_annotate_memory_inaccessible(ptr, total_size);
         ba_os_free(ptr, total_size);
         return;
     }
 
+    // base_alloc expects the allocation to be undefined memory
+    utils_annotate_memory_undefined(ptr, total_size);
     umf_ba_free(BASE_ALLOC.ac[ac_index], ptr);
 }
 
