@@ -3,22 +3,29 @@
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 cmake_minimum_required(VERSION 3.14.0 FATAL_ERROR)
-project(unified-memory-framework VERSION 0.1.0 LANGUAGES C)
+project(
+    unified-memory-framework
+    VERSION 0.1.0
+    LANGUAGES C)
 
 # Build Options
 option(UMF_BUILD_SHARED_LIBRARY "Build UMF as shared library" OFF)
 option(UMF_BUILD_OS_MEMORY_PROVIDER "Build OS memory provider" ON)
 option(UMF_BUILD_LEVEL_ZERO_PROVIDER "Build Level Zero memory provider" ON)
-option(UMF_BUILD_LIBUMF_POOL_DISJOINT "Build the libumf_pool_disjoint static library" OFF)
-option(UMF_BUILD_LIBUMF_POOL_JEMALLOC "Build the libumf_pool_jemalloc static library" OFF)
-option(UMF_BUILD_LIBUMF_POOL_SCALABLE "Build the libumf_pool_scalable static library" OFF)
+option(UMF_BUILD_LIBUMF_POOL_DISJOINT
+       "Build the libumf_pool_disjoint static library" OFF)
+option(UMF_BUILD_LIBUMF_POOL_JEMALLOC
+       "Build the libumf_pool_jemalloc static library" OFF)
+option(UMF_BUILD_LIBUMF_POOL_SCALABLE
+       "Build the libumf_pool_scalable static library" OFF)
 option(UMF_BUILD_TESTS "Build UMF tests" ON)
 option(UMF_BUILD_GPU_TESTS "Build UMF GPU tests" OFF)
 option(UMF_BUILD_BENCHMARKS "Build UMF benchmarks" OFF)
 option(UMF_BUILD_BENCHMARKS_MT "Build UMF multithreaded benchmarks" OFF)
 option(UMF_BUILD_EXAMPLES "Build UMF examples" ON)
 option(UMF_ENABLE_POOL_TRACKING "Build UMF with pool tracking" ON)
-option(UMF_DEVELOPER_MODE "Enable developer checks, treats warnings as errors" OFF)
+option(UMF_DEVELOPER_MODE "Enable developer checks, treats warnings as errors"
+       OFF)
 option(UMF_FORMAT_CODE_STYLE "Format UMF code with clang-format" OFF)
 option(USE_ASAN "Enable AddressSanitizer checks" OFF)
 option(USE_UBSAN "Enable UndefinedBehaviorSanitizer checks" OFF)
@@ -26,13 +33,11 @@ option(USE_TSAN "Enable ThreadSanitizer checks" OFF)
 option(USE_MSAN "Enable MemorySanitizer checks" OFF)
 option(USE_VALGRIND "Enable Valgrind instrumentation" OFF)
 
-# For using the options listed in the OPTIONS_REQUIRING_CXX variable
-# a C++17 compiler is required. Moreover, if these options are not set,
-# CMake will set up a strict C build, without C++ support.
-set(OPTIONS_REQUIRING_CXX
-    "UMF_BUILD_TESTS"
-    "UMF_BUILD_LIBUMF_POOL_DISJOINT"
-    "UMF_BUILD_BENCHMARKS_MT")
+# For using the options listed in the OPTIONS_REQUIRING_CXX variable a C++17
+# compiler is required. Moreover, if these options are not set, CMake will set
+# up a strict C build, without C++ support.
+set(OPTIONS_REQUIRING_CXX "UMF_BUILD_TESTS" "UMF_BUILD_LIBUMF_POOL_DISJOINT"
+                          "UMF_BUILD_BENCHMARKS_MT")
 foreach(option_name ${OPTIONS_REQUIRING_CXX})
     if(${option_name})
         enable_language(CXX)
@@ -92,7 +97,7 @@ if(USE_TSAN)
 endif()
 if(USE_MSAN)
     message(WARNING "MemorySanitizer requires instrumented libraries to "
-            "prevent reporting false-positives")
+                    "prevent reporting false-positives")
     add_sanitizer_flag(memory)
 endif()
 
@@ -102,18 +107,15 @@ add_library(umf_headers INTERFACE)
 
 # Alias target to support FetchContent.
 add_library(${PROJECT_NAME}::headers ALIAS umf_headers)
-target_include_directories(umf_headers INTERFACE
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+target_include_directories(
+    umf_headers INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+                          $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 # Add the include directory and the headers target to the install.
-install(
-    DIRECTORY "${PROJECT_SOURCE_DIR}/include/"
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(DIRECTORY "${PROJECT_SOURCE_DIR}/include/"
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-install(
-    TARGETS umf_headers
-    EXPORT ${PROJECT_NAME}-targets)
+install(TARGETS umf_headers EXPORT ${PROJECT_NAME}-targets)
 
 if(WINDOWS)
     # set PATH to DLLs on Windows
@@ -126,7 +128,9 @@ if(UMF_BUILD_OS_MEMORY_PROVIDER AND (LINUX OR WINDOWS))
         find_package(LIBHWLOC REQUIRED hwloc)
     endif()
     # add PATH to DLL on Windows
-    set(DLL_PATH_LIST "${DLL_PATH_LIST};PATH=path_list_append:${LIBHWLOC_LIBRARY_DIRS}/../bin")
+    set(DLL_PATH_LIST
+        "${DLL_PATH_LIST};PATH=path_list_append:${LIBHWLOC_LIBRARY_DIRS}/../bin"
+    )
 endif()
 
 if(UMF_BUILD_LIBUMF_POOL_SCALABLE AND (LINUX OR WINDOWS))
@@ -135,7 +139,8 @@ if(UMF_BUILD_LIBUMF_POOL_SCALABLE AND (LINUX OR WINDOWS))
         find_package(TBB REQUIRED tbb)
     endif()
     # add PATH to DLL on Windows
-    set(DLL_PATH_LIST "${DLL_PATH_LIST};PATH=path_list_append:${TBB_LIBRARY_DIRS}/../bin")
+    set(DLL_PATH_LIST
+        "${DLL_PATH_LIST};PATH=path_list_append:${TBB_LIBRARY_DIRS}/../bin")
 endif()
 
 if(UMF_BUILD_LIBUMF_POOL_JEMALLOC AND (LINUX OR WINDOWS))
@@ -144,7 +149,9 @@ if(UMF_BUILD_LIBUMF_POOL_JEMALLOC AND (LINUX OR WINDOWS))
         find_package(JEMALLOC REQUIRED jemalloc)
     endif()
     # add PATH to DLL on Windows
-    set(DLL_PATH_LIST "${DLL_PATH_LIST};PATH=path_list_append:${JEMALLOC_LIBRARY_DIRS}/../bin")
+    set(DLL_PATH_LIST
+        "${DLL_PATH_LIST};PATH=path_list_append:${JEMALLOC_LIBRARY_DIRS}/../bin"
+    )
 endif()
 
 add_subdirectory(src)
@@ -157,7 +164,8 @@ if(UMF_BUILD_BENCHMARKS)
     if(LINUX OR WINDOWS)
         add_subdirectory(benchmark)
     else()
-        message(FATAL_ERROR "benchmarks are supported on Linux and Windows only")
+        message(
+            FATAL_ERROR "benchmarks are supported on Linux and Windows only")
     endif()
 endif()
 
@@ -166,33 +174,45 @@ if(UMF_BUILD_EXAMPLES)
 endif()
 
 if(UMF_FORMAT_CODE_STYLE)
-    find_program(CLANG_FORMAT NAMES clang-format-15 clang-format-15.0 clang-format)
+    find_program(CLANG_FORMAT NAMES clang-format-15 clang-format-15.0
+                                    clang-format)
     find_program(CMAKE_FORMAT NAMES cmake-format)
 
     if(CLANG_FORMAT AND CMAKE_FORMAT)
         get_program_version_major_minor(${CLANG_FORMAT} CLANG_FORMAT_VERSION)
         get_program_version_major_minor(${CMAKE_FORMAT} CMAKE_FORMAT_VERSION)
         message(STATUS "Found clang-format: ${CLANG_FORMAT} "
-                "(version: ${CLANG_FORMAT_VERSION})")
+                       "(version: ${CLANG_FORMAT_VERSION})")
         message(STATUS "Found cmake-format: ${CMAKE_FORMAT} "
-                "(version: ${CMAKE_FORMAT_VERSION})")
+                       "(version: ${CMAKE_FORMAT_VERSION})")
 
-        # Check if clang-format (in correct version) is available for code formatting.
+        # Check if clang-format (in correct version) is available for code
+        # formatting.
         set(CLANG_FORMAT_REQUIRED "15.0")
         if(NOT (CLANG_FORMAT_VERSION VERSION_EQUAL CLANG_FORMAT_REQUIRED))
             message(FATAL_ERROR "Required clang-format version is "
-                    "${CLANG_FORMAT_REQUIRED}")
+                                "${CLANG_FORMAT_REQUIRED}")
         endif()
     else()
-        message(FATAL_ERROR "UMF_FORMAT_CODE_STYLE=ON, but clang-format or "
+        message(
+            FATAL_ERROR
+                "UMF_FORMAT_CODE_STYLE=ON, but clang-format or "
                 "cmake-format not found (required version: "
                 "${CLANG_FORMAT_REQUIRED})")
     endif()
 
     # Obtain files for clang-format check
     set(format_glob)
-    foreach(DIR IN ITEMS include examples src test benchmark)
-        list(APPEND format_glob
+    foreach(
+        DIR IN
+        ITEMS include
+              examples
+              src
+              test
+              benchmark)
+        list(
+            APPEND
+            format_glob
             "${DIR}/*.h"
             "${DIR}/*.hpp"
             "${DIR}/*.c"
@@ -200,33 +220,36 @@ if(UMF_FORMAT_CODE_STYLE)
             "${DIR}/**/*.h"
             "${DIR}/**/*.hpp"
             "${DIR}/**/*.c"
-            "${DIR}/**/*.cpp"
-        )
+            "${DIR}/**/*.cpp")
     endforeach()
     file(GLOB_RECURSE format_list ${format_glob})
 
     message(STATUS "Adding clang-format-check and clang-format-apply make "
-            "targets")
+                   "targets")
 
-    add_custom_target(clang-format-check
-        COMMAND ${CLANG_FORMAT}
-            --style=file
-            --dry-run
-            -Werror
-            ${format_list}
+    add_custom_target(
+        clang-format-check
+        COMMAND ${CLANG_FORMAT} --style=file --dry-run -Werror ${format_list}
         COMMENT "Check files formatting using clang-format")
 
-    add_custom_target(clang-format-apply
-        COMMAND ${CLANG_FORMAT}
-            --style=file
-            --i
-            ${format_list}
+    add_custom_target(
+        clang-format-apply
+        COMMAND ${CLANG_FORMAT} --style=file --i ${format_list}
         COMMENT "Format files using clang-format")
 
     # Obtain files for cmake-format check
     set(format_cmake_glob)
-    foreach(DIR IN ITEMS examples cmake include src test benchmark)
-        list(APPEND format_cmake_glob
+    foreach(
+        DIR IN
+        ITEMS examples
+              cmake
+              include
+              src
+              test
+              benchmark)
+        list(
+            APPEND
+            format_cmake_glob
             "${DIR}/CMakeLists.txt"
             "${DIR}/*.cmake"
             "${DIR}/**/CMakeLists.txt"
@@ -236,7 +259,7 @@ if(UMF_FORMAT_CODE_STYLE)
     list(APPEND format_cmake_list "${PROJECT_SOURCE_DIR}/CMakeLists.txt")
 
     message(STATUS "Adding cmake-format-check and cmake-format-apply make "
-            "targets")
+                   "targets")
 
     add_custom_target(
         cmake-format-check
@@ -254,8 +277,8 @@ install(FILES ${CMAKE_SOURCE_DIR}/LICENSE.TXT
         DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/doc/${PROJECT_NAME}/")
 
 # Add the list of installed targets to the install. This includes the namespace
-# which all installed targets will be prefixed with, e.g. for the headers
-# target users will depend on ${PROJECT_NAME}::headers.
+# which all installed targets will be prefixed with, e.g. for the headers target
+# users will depend on ${PROJECT_NAME}::headers.
 install(
     EXPORT ${PROJECT_NAME}-targets
     FILE ${PROJECT_NAME}-targets.cmake
@@ -275,16 +298,12 @@ configure_package_config_file(
     INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
 
 # Add the package files to the install.
-install(
-    FILES
-        ${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}-config.cmake
-        ${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}-config-version.cmake
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+install(FILES ${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}-config.cmake
+              ${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}-config-version.cmake
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
 
-configure_file(
-    "${PROJECT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
-    "${PROJECT_BINARY_DIR}/cmake_uninstall.cmake"
-    IMMEDIATE @ONLY)
+configure_file("${PROJECT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
+               "${PROJECT_BINARY_DIR}/cmake_uninstall.cmake" IMMEDIATE @ONLY)
 
-add_custom_target(uninstall
-    COMMAND ${CMAKE_COMMAND} -P ${PROJECT_BINARY_DIR}/cmake_uninstall.cmake)
+add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P
+                                    ${PROJECT_BINARY_DIR}/cmake_uninstall.cmake)
