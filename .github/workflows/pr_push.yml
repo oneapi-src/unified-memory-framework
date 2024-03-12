@@ -27,13 +27,13 @@ jobs:
             # Tests' building is off for a pure C build
             extra_build_options: '-DUMF_BUILD_TESTS=OFF'
             level_zero_provider: 'OFF' # TODO enable
-          - os: ubuntu-latest
+          - os: DSS-UBUNTU
             disjoint: 'ON'
             # Windows doesn't recognize 'CMAKE_BUILD_TYPE', it uses '--config' param in build command
             extra_build_options: '-DCMAKE_BUILD_TYPE=Release -DUMF_BUILD_BENCHMARKS=ON -DUMF_BUILD_BENCHMARKS_MT=ON'
             level_zero_provider: 'ON'
           # pure C build (Linux)
-          - os: ubuntu-latest
+          - os: DSS-UBUNTU
             disjoint: 'OFF'
             # Windows doesn't recognize 'CMAKE_BUILD_TYPE', it uses '--config' param in build command
             # Tests' building is off for a pure C build
@@ -116,7 +116,7 @@ jobs:
 
   DocsBuild:
     name: Build docs
-    runs-on: ubuntu-latest
+    runs-on: "DSS-CPU-ONLY"
 
     steps:
     - name: Checkout repository
