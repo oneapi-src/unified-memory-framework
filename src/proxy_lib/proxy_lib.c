@@ -202,6 +202,27 @@ void *calloc(size_t nmemb, size_t size) {
     return ba_leak_calloc(nmemb, size);
 }
 
+void free(void *ptr) {
+    if (ptr == NULL) {
+        return;
+    }
+
+    if (ba_leak_free(ptr) == 0) {
+        return;
+    }
+
+    if (Proxy_pool) {
+        if (umfPoolFree(Proxy_pool, ptr) != UMF_RESULT_SUCCESS) {
+            fprintf(stderr, "error: umfPoolFree() failed\n");
+            assert(0);
+        }
+        return;
+    }
+
+    assert(0);
+    return;
+}
+
 void *realloc(void *ptr, size_t size) {
     if (ptr == NULL) {
         return malloc(size);
@@ -226,27 +247,6 @@ void *realloc(void *ptr, size_t size) {
 
     assert(0);
     return NULL;
-}
-
-void free(void *ptr) {
-    if (ptr == NULL) {
-        return;
-    }
-
-    if (ba_leak_free(ptr) == 0) {
-        return;
-    }
-
-    if (Proxy_pool) {
-        if (umfPoolFree(Proxy_pool, ptr) != UMF_RESULT_SUCCESS) {
-            fprintf(stderr, "error: umfPoolFree() failed\n");
-            assert(0);
-        }
-        return;
-    }
-
-    assert(0);
-    return;
 }
 
 void *aligned_alloc(size_t alignment, size_t size) {
