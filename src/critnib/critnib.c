@@ -60,7 +60,7 @@
 #include "base_alloc.h"
 #include "base_alloc_global.h"
 #include "critnib.h"
-#include "utils_common.h"
+#include "utils_assert.h"
 #include "utils_concurrency.h"
 
 /*
