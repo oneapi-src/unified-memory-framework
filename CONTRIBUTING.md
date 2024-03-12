@@ -74,23 +74,28 @@ To verify correct coding style of your changes execute (assuming `build` is your
 
 ```bash
 $ cmake -B build -DUMF_FORMAT_CODE_STYLE=ON
-$ cmake --build build --target clang-format-check
-$ cmake --build build --target cmake-format-check
+$ cmake --build build --target format-checks
 ```
 
-We run this check in our Continuous Integration (CI). So, if any issues were found,
+We run these checks in our Continuous Integration (CI). So, if any issues were found,
 the Pull Request will be blocked from merging. To apply proper formatting (meaning,
-to fix the issues) execute the second available CMake target - run a command:
+to fix the issues) you can use the convenience target provided for applying formats:
 
 ```bash
-$ cmake --build build --target clang-format-apply
-$ cmake --build build --target cmake-format-apply
+$ cmake --build build --target format-apply
 
 # Remember to review introduced changes
 ```
 
-**NOTE**: We use specific clang-format version - **15.0** is required. It can be installed,
-e.g., with command: `python -m pip install clang-format==15.0.7`.
+If you wish to use only `clang-format` or only `cmake-format`, you can execute the corresponding
+`clang-format-check` and `clang-format-apply` for source files, or `cmake-format-check` and
+`cmake-format-apply` for CMake files, respectively.
+
+**NOTE**: We use specific versions of formatting tools to ensure consistency across the project. The required versions are:
+- clang-format version **15.0**, which can be installed with the command: `python -m pip install clang-format==15.0.7`.
+- cmake-format version **0.6.13**, which can be installed with the command: `python -m pip install cmake-format==0.6`.
+
+Please ensure you have these specific versions installed before contributing to the project.
 
 ### When my PR is merged?
 
