@@ -17,21 +17,6 @@
  * - realloc()
  */
 
-#ifdef _MSC_VER
-// Disable warning about inconsistent dll linkage:
-// warning C4273: 'malloc': inconsistent dll linkage
-// ucrt\corecrt_malloc.h(101): note: see previous definition of 'malloc'
-#pragma warning(disable : 4273)
-#pragma warning(push, 1)
-#endif
-
-#ifdef _WIN32
-// fix the error: 'malloc' redeclared without 'dllimport' attribute: 'dllexport' attribute added
-#define WIN32_dllexport __declspec(dllexport)
-#else
-#define WIN32_dllexport
-#endif
-
 #if (defined PROXY_LIB_USES_JEMALLOC_POOL)
 #include <umf/pools/pool_jemalloc.h>
 #define umfPoolManagerOps umfJemallocPoolOps
@@ -43,8 +28,6 @@
 #endif
 
 #include <assert.h>
-#include <stdlib.h>
-#include <string.h>
 
 #include <umf/memory_pool.h>
 #include <umf/memory_provider.h>
@@ -52,8 +35,30 @@
 
 #include "base_alloc_linear.h"
 #include "proxy_lib.h"
+
+#ifdef _WIN32
+#define _X86_
+#include <process.h>
+#include <synchapi.h>
+
+#define __TLS __declspec(thread)
+#define UTIL_ONCE_FLAG INIT_ONCE
+
+#define UTIL_ONCE_FLAG_INIT INIT_ONCE_STATIC_INIT
+void util_init_once(UTIL_ONCE_FLAG *flag, void (*onceCb)(void));
+#else               // !_WIN32
+#include <string.h> // memcpy
+
 #include "utils_common.h"
 #include "utils_concurrency.h"
+#endif
+
+// TODO separate assert-related stuff to utils_assert
+// and include utils_common here
+#ifndef ALIGN_UP
+#define ALIGN_UP(value, align) (((value) + (align)-1) & ~((align)-1))
+#define ALIGN_DOWN(value, align) ((value) & ~((align)-1))
+#endif
 
 /*
  * The UMF proxy library uses two memory allocators:
@@ -100,14 +105,16 @@ void proxy_lib_create_common(void) {
     umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(), &os_params,
                                          &OS_memory_provider);
     if (umf_result != UMF_RESULT_SUCCESS) {
-        fprintf(stderr, "error: creating OS memory provider failed\n");
+        // TODO
+        // fprintf(stderr, "error: creating OS memory provider failed\n");
         exit(-1);
     }
 
     umf_result = umfPoolCreate(umfPoolManagerOps(), OS_memory_provider, NULL, 0,
                                &Proxy_pool);
     if (umf_result != UMF_RESULT_SUCCESS) {
-        fprintf(stderr, "error: creating UMF pool manager failed\n");
+        // TODO
+        // fprintf(stderr, "error: creating UMF pool manager failed\n");
         exit(-1);
     }
     // The UMF pool has just been created (Proxy_pool != NULL). Stop using
@@ -189,7 +196,7 @@ static inline size_t ba_leak_pool_contains_pointer(void *ptr) {
 /*** The UMF pool allocator functions (the public API) ***********************/
 /*****************************************************************************/
 
-WIN32_dllexport void *malloc(size_t size) {
+void *malloc(size_t size) {
     if (!was_called_from_umfPool && Proxy_pool) {
         was_called_from_umfPool = 1;
         void *ptr = umfPoolMalloc(Proxy_pool, size);
@@ -200,7 +207,7 @@ WIN32_dllexport void *malloc(size_t size) {
     return ba_leak_malloc(size);
 }
 
-WIN32_dllexport void *calloc(size_t nmemb, size_t size) {
+void *calloc(size_t nmemb, size_t size) {
     if (!was_called_from_umfPool && Proxy_pool) {
         was_called_from_umfPool = 1;
         void *ptr = umfPoolCalloc(Proxy_pool, nmemb, size);
@@ -211,7 +218,28 @@ WIN32_dllexport void *calloc(size_t nmemb, size_t size) {
     return ba_leak_calloc(nmemb, size);
 }
 
-WIN32_dllexport void *realloc(void *ptr, size_t size) {
+void free(void *ptr) {
+    if (ptr == NULL) {
+        return;
+    }
+
+    if (ba_leak_free(ptr) == 0) {
+        return;
+    }
+
+    if (Proxy_pool) {
+        if (umfPoolFree(Proxy_pool, ptr) != UMF_RESULT_SUCCESS) {
+            //    fprintf(stderr, "error: umfPoolFree() failed\n");
+            assert(0);
+        }
+        return;
+    }
+
+    assert(0);
+    return;
+}
+
+void *realloc(void *ptr, size_t size) {
     if (ptr == NULL) {
         return malloc(size);
     }
@@ -237,28 +265,7 @@ WIN32_dllexport void *realloc(void *ptr, size_t size) {
     return NULL;
 }
 
-WIN32_dllexport void free(void *ptr) {
-    if (ptr == NULL) {
-        return;
-    }
-
-    if (ba_leak_free(ptr) == 0) {
-        return;
-    }
-
-    if (Proxy_pool) {
-        if (umfPoolFree(Proxy_pool, ptr) != UMF_RESULT_SUCCESS) {
-            fprintf(stderr, "error: umfPoolFree() failed\n");
-            assert(0);
-        }
-        return;
-    }
-
-    assert(0);
-    return;
-}
-
-WIN32_dllexport void *aligned_alloc(size_t alignment, size_t size) {
+void *aligned_alloc(size_t alignment, size_t size) {
     if (!was_called_from_umfPool && Proxy_pool) {
         was_called_from_umfPool = 1;
         void *ptr = umfPoolAlignedMalloc(Proxy_pool, size, alignment);
@@ -269,7 +276,7 @@ WIN32_dllexport void *aligned_alloc(size_t alignment, size_t size) {
     return ba_leak_aligned_alloc(alignment, size);
 }
 
-WIN32_dllexport size_t malloc_usable_size(void *ptr) {
+size_t malloc_usable_size(void *ptr) {
     if (!was_called_from_umfPool && Proxy_pool) {
         was_called_from_umfPool = 1;
         size_t size = umfPoolMallocUsableSize(Proxy_pool, ptr);
