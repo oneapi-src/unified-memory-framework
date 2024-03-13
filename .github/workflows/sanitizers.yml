@@ -34,6 +34,10 @@ jobs:
         apt-get update
         apt-get install -y cmake libnuma-dev libjemalloc-dev libtbb-dev libhwloc-dev
 
+    # Remove this once https://github.com/actions/runner-images/issues/9491 was fixed
+    - name: Decrease ASLR entropy due to the issue
+      run: sysctl vm.mmap_rnd_bits=28
+
     - name: Configure build
       run: >
         cmake
@@ -79,6 +83,10 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y clang cmake libhwloc-dev libnuma-dev libjemalloc-dev libtbb-dev
+
+    # Remove this once https://github.com/actions/runner-images/issues/9491 was fixed
+    - name: Decrease ASLR entropy due to the issue
+      run: sudo sysctl vm.mmap_rnd_bits=28
 
     - name: Configure build
       run: >
