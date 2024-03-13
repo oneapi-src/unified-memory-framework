@@ -1,0 +1,75 @@
+/*
+ *
+ * Copyright (C) 2024 Intel Corporation
+ *
+ * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+ *
+ */
+
+#include <assert.h>
+#include <hwloc.h>
+#include <stdlib.h>
+
+#include "base_alloc_global.h"
+#include "memory_target_numa.h"
+#include "memspace_internal.h"
+#include "memspace_numa.h"
+#include "topology.h"
+#include "utils_concurrency.h"
+
+static umf_result_t
+umfMemspaceHighestCapacityCreate(umf_memspace_handle_t *hMemspace) {
+    if (!hMemspace) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    umf_memspace_handle_t hostAllMemspace = umfMemspaceHostAllGet();
+    if (!hostAllMemspace) {
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
+
+    umf_memspace_handle_t highCapacityMemspace;
+    umf_result_t ret = umfMemspaceClone(hostAllMemspace, &highCapacityMemspace);
+    if (ret != UMF_RESULT_SUCCESS) {
+        return ret;
+    }
+
+    ret = umfMemspaceSortDesc(highCapacityMemspace,
+                              (umfGetPropertyFn)&umfMemoryTargetGetCapacity);
+    if (ret != UMF_RESULT_SUCCESS) {
+        return ret;
+    }
+
+    *hMemspace = highCapacityMemspace;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_memspace_handle_t UMF_MEMSPACE_HIGHEST_CAPACITY = NULL;
+static UTIL_ONCE_FLAG UMF_MEMSPACE_HIGHEST_CAPACITY_INITIALIZED =
+    UTIL_ONCE_FLAG_INIT;
+
+void umfMemspaceHighestCapacityDestroy(void) {
+    if (UMF_MEMSPACE_HIGHEST_CAPACITY) {
+        umfMemspaceDestroy(UMF_MEMSPACE_HIGHEST_CAPACITY);
+        UMF_MEMSPACE_HIGHEST_CAPACITY = NULL;
+    }
+}
+
+static void umfMemspaceHighestCapacityInit(void) {
+    umf_result_t ret =
+        umfMemspaceHighestCapacityCreate(&UMF_MEMSPACE_HIGHEST_CAPACITY);
+    assert(ret == UMF_RESULT_SUCCESS);
+    (void)ret;
+
+#if defined(_WIN32) && !defined(UMF_SHARED_LIBRARY)
+    atexit(umfMemspaceHostAllDestroy);
+#endif
+}
+
+umf_memspace_handle_t umfMemspaceHighestCapacityGet(void) {
+    util_init_once(&UMF_MEMSPACE_HIGHEST_CAPACITY_INITIALIZED,
+                   umfMemspaceHighestCapacityInit);
+    return UMF_MEMSPACE_HIGHEST_CAPACITY;
+}

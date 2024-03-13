@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023 Intel Corporation
+ * Copyright (C) 2023-2024 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -108,4 +108,103 @@ void umfMemspaceDestroy(umf_memspace_handle_t memspace) {
 
     umf_ba_global_free(memspace->nodes);
     umf_ba_global_free(memspace);
+}
+
+enum umf_result_t umfMemspaceClone(umf_memspace_handle_t hMemspace,
+                                   umf_memspace_handle_t *outHandle) {
+    if (!hMemspace || !outHandle) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    umf_memspace_handle_t clone =
+        umf_ba_global_alloc(sizeof(struct umf_memspace_t));
+    if (!clone) {
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    clone->size = hMemspace->size;
+    clone->nodes =
+        umf_ba_global_alloc(sizeof(umf_memory_target_handle_t) * clone->size);
+    if (!clone->nodes) {
+        umf_ba_global_free(clone);
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    size_t i;
+    umf_result_t ret;
+
+    for (i = 0; i < clone->size; i++) {
+        ret = umfMemoryTargetClone(hMemspace->nodes[i], &clone->nodes[i]);
+        if (ret != UMF_RESULT_SUCCESS) {
+            goto err;
+        }
+    }
+
+    *outHandle = clone;
+
+    return UMF_RESULT_SUCCESS;
+err:
+    while (i != 0) {
+        i--;
+        umfMemoryTargetDestroy(clone->nodes[i]);
+    }
+    umf_ba_global_free(clone->nodes);
+    umf_ba_global_free(clone);
+    return ret;
+}
+
+struct memory_target_sort_entry {
+    uint64_t property;
+    umf_memory_target_handle_t node;
+};
+
+static int propertyCmp(const void *a, const void *b) {
+    const struct memory_target_sort_entry *entryA = a;
+    const struct memory_target_sort_entry *entryB = b;
+
+    if (entryA->property < entryB->property) {
+        return 1;
+    } else if (entryA->property > entryB->property) {
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+enum umf_result_t
+umfMemspaceSortDesc(umf_memspace_handle_t hMemspace,
+                    umf_result_t (*getProperty)(umf_memory_target_handle_t node,
+                                                uint64_t *property)) {
+    if (!hMemspace || !getProperty) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    struct memory_target_sort_entry *entries = umf_ba_global_alloc(
+        sizeof(struct memory_target_sort_entry) * hMemspace->size);
+    if (!entries) {
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    // create temporary array that contains desired property values for sorting
+    for (size_t i = 0; i < hMemspace->size; i++) {
+        entries[i].node = hMemspace->nodes[i];
+        umf_result_t ret =
+            getProperty(hMemspace->nodes[i], &entries[i].property);
+        if (ret != UMF_RESULT_SUCCESS) {
+            umf_ba_global_free(entries);
+            return ret;
+        }
+    }
+
+    qsort(entries, hMemspace->size, sizeof(struct memory_target_sort_entry),
+          propertyCmp);
+
+    // apply the order to the original array
+    for (size_t i = 0; i < hMemspace->size; i++) {
+        hMemspace->nodes[i] = entries[i].node;
+    }
+
+    umf_ba_global_free(entries);
+
+    return UMF_RESULT_SUCCESS;
 }

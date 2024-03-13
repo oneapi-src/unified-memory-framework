@@ -28,6 +28,7 @@ void __attribute__((destructor)) umfDestroy(void) {
     TRACKER = NULL;
     umfMemoryTrackerDestroy(t);
     umfMemspaceHostAllDestroy();
+    umfMemspaceHighestCapacityDestroy();
     umfDestroyTopology();
 }
 

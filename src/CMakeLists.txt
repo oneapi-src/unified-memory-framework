@@ -78,7 +78,8 @@ set(UMF_SOURCES_LINUX
     provider/provider_os_memory_linux.c
     memory_targets/memory_target_numa.c
     memspaces/memspace_numa.c
-    memspaces/memspace_host_all.c)
+    memspaces/memspace_host_all.c
+    memspaces/memspace_highest_capacity.c)
 
 set(UMF_SOURCES_WINDOWS ${UMF_SOURCES_WINDOWS} provider/provider_os_memory.c
                         provider/provider_os_memory_windows.c)

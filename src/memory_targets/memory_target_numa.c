@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023 Intel Corporation
+ * Copyright (C) 2023-2024 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -18,6 +18,7 @@
 #include "base_alloc.h"
 #include "base_alloc_global.h"
 #include "memory_target_numa.h"
+#include "topology.h"
 
 struct numa_memory_target_t {
     size_t id;
@@ -150,10 +151,47 @@ static umf_result_t numa_pool_create_from_memspace(
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
+static umf_result_t numa_clone(void *memTarget, void **outMemTarget) {
+    struct numa_memory_target_t *numaTarget =
+        (struct numa_memory_target_t *)memTarget;
+    struct numa_memory_target_t *newNumaTarget =
+        umf_ba_global_alloc(sizeof(struct numa_memory_target_t));
+    if (!newNumaTarget) {
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    newNumaTarget->id = numaTarget->id;
+    *outMemTarget = newNumaTarget;
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t numa_get_capacity(void *memTarget, size_t *capacity) {
+    hwloc_topology_t topology = umfGetTopology();
+    if (!topology) {
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
+
+    hwloc_obj_t numaNode =
+        hwloc_get_obj_by_type(topology, HWLOC_OBJ_NUMANODE,
+                              ((struct numa_memory_target_t *)memTarget)->id);
+    if (!numaNode) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (!numaNode->attr) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    *capacity = numaNode->attr->numanode.local_memory;
+    return UMF_RESULT_SUCCESS;
+}
+
 struct umf_memory_target_ops_t UMF_MEMORY_TARGET_NUMA_OPS = {
     .version = UMF_VERSION_CURRENT,
     .initialize = numa_initialize,
     .finalize = numa_finalize,
     .pool_create_from_memspace = numa_pool_create_from_memspace,
+    .clone = numa_clone,
+    .get_capacity = numa_get_capacity,
     .memory_provider_create_from_memspace =
         numa_memory_provider_create_from_memspace};

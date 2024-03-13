@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023 Intel Corporation
+ * Copyright (C) 2023-2024 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -52,4 +52,35 @@ void umfMemoryTargetDestroy(umf_memory_target_handle_t memoryTarget) {
     assert(memoryTarget);
     memoryTarget->ops->finalize(memoryTarget->priv);
     umf_ba_global_free(memoryTarget);
+}
+
+umf_result_t umfMemoryTargetClone(umf_memory_target_handle_t memoryTarget,
+                                  umf_memory_target_handle_t *outHandle) {
+    assert(memoryTarget);
+    assert(outHandle);
+
+    *outHandle =
+        (umf_memory_target_t *)umf_ba_global_alloc(sizeof(umf_memory_target_t));
+    if (!*outHandle) {
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    void *outPriv;
+    umf_result_t ret = memoryTarget->ops->clone(memoryTarget->priv, &outPriv);
+    if (ret != UMF_RESULT_SUCCESS) {
+        umf_ba_global_free(*outHandle);
+        return ret;
+    }
+
+    (*outHandle)->ops = memoryTarget->ops;
+    (*outHandle)->priv = outPriv;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t umfMemoryTargetGetCapacity(umf_memory_target_handle_t memoryTarget,
+                                        size_t *capacity) {
+    assert(memoryTarget);
+    assert(capacity);
+    return memoryTarget->ops->get_capacity(memoryTarget->priv, capacity);
 }
