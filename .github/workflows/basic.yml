@@ -80,7 +80,7 @@ jobs:
     name: Ubuntu
     strategy:
       matrix:
-        os: ['ubuntu-20.04', 'ubuntu-22.04']
+        os_version: ['20.04', '22.04']
         build_type: [Debug, Release]
         compiler: [{c: gcc, cxx: g++}]
         pool_tracking: ['ON', 'OFF']
@@ -88,28 +88,28 @@ jobs:
         os_provider: ['ON']
         level_zero_provider: ['ON']
         include:
-          - os: 'ubuntu-20.04'
+          - os_version: '20.04'
             build_type: Release
             compiler: {c: gcc-7, cxx: g++-7}
             shared_library: 'OFF'
             os_provider: 'ON'
             pool_tracking: 'ON'
             level_zero_provider: 'ON'
-          - os: 'ubuntu-22.04'
+          - os_version: '22.04'
             build_type: Release
             compiler: {c: clang, cxx: clang++}
             shared_library: 'OFF'
             os_provider: 'ON'
             pool_tracking: 'ON'
             level_zero_provider: 'ON'
-          - os: 'ubuntu-22.04'
+          - os_version: '22.04'
             build_type: Release
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
             os_provider: 'ON'
             pool_tracking: 'ON'
             level_zero_provider: 'ON'
-          - os: 'ubuntu-22.04'
+          - os_version: '22.04'
             build_type: Debug
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
@@ -117,7 +117,7 @@ jobs:
             pool_tracking: 'ON'
             level_zero_provider: 'ON'
           # test os_provider='OFF' with shared_library='ON'
-          - os: 'ubuntu-22.04'
+          - os_version: '22.04'
             build_type: Release
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
@@ -125,7 +125,7 @@ jobs:
             pool_tracking: 'ON'
             level_zero_provider: 'ON'
           # test os_provider='OFF' with shared_library='OFF'
-          - os: 'ubuntu-22.04'
+          - os_version: '22.04'
             build_type: Release
             compiler: {c: gcc, cxx: g++}
             shared_library: 'OFF'
@@ -133,14 +133,18 @@ jobs:
             pool_tracking: 'ON'
             level_zero_provider: 'ON'
           # test level_zero_provider='OFF'
-          - os: 'ubuntu-22.04'
+          - os_version: '22.04'
             build_type: Release
             compiler: {c: gcc, cxx: g++}
             shared_library: 'OFF'
             os_provider: 'ON'
             pool_tracking: 'ON'
             level_zero_provider: 'OFF'
-    runs-on: ${{matrix.os}}
+    runs-on: ubuntu-${{matrix.os_version}}
+    container:
+      image: ubuntu:${{matrix.os_version}}
+      volumes:
+        - ${{github.workspace}}:${{github.workspace}}
 
     steps:
     - name: Checkout
@@ -148,12 +152,12 @@ jobs:
 
     - name: Install apt packages
       run: |
-        sudo apt-get update
-        sudo apt-get install -y clang cmake libhwloc-dev libnuma-dev libjemalloc-dev libtbb-dev
+        apt-get update
+        apt-get install -y clang g++ git cmake libhwloc-dev libnuma-dev libjemalloc-dev libtbb-dev
 
     - name: Install g++-7
       if: matrix.compiler.cxx == 'g++-7'
-      run: sudo apt-get install -y ${{matrix.compiler.cxx}}
+      run: apt-get install -y ${{matrix.compiler.cxx}}
 
     - name: Configure build
       run: >
