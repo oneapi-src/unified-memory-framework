@@ -117,6 +117,7 @@ install(
 if(WINDOWS)
     # set PATH to DLLs on Windows
     set(DLL_PATH_LIST "PATH=path_list_append:../bin/$<CONFIG>")
+    add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 endif()
 
 if(UMF_BUILD_OS_MEMORY_PROVIDER AND (LINUX OR WINDOWS))
