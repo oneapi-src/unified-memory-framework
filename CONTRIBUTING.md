@@ -93,7 +93,7 @@ If you wish to use only `clang-format` or only `cmake-format`, you can execute t
 
 **NOTE**: We use specific versions of formatting tools to ensure consistency across the project. The required versions are:
 - clang-format version **15.0**, which can be installed with the command: `python -m pip install clang-format==15.0.7`.
-- cmake-format version **0.6.13**, which can be installed with the command: `python -m pip install cmake-format==0.6`.
+- cmake-format version **0.6**, which can be installed with the command: `python -m pip install cmake-format==0.6.13`.
 
 Please ensure you have these specific versions installed before contributing to the project.
 

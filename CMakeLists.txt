@@ -235,8 +235,8 @@ if(UMF_FORMAT_CODE_STYLE)
         message(STATUS "Found cmake-format: ${CMAKE_FORMAT} "
                        "(version: ${CMAKE_FORMAT_VERSION})")
 
-        # Check if cmake-format (in correct version) is available for code
-        # formatting.
+        # Check if cmake-format (in correct version) is available for cmake
+        # files formatting.
         set(CMAKE_FORMAT_REQUIRED "0.6")
         if(NOT (CMAKE_FORMAT_VERSION VERSION_EQUAL CMAKE_FORMAT_REQUIRED))
             message(FATAL_ERROR "Required cmake-format version is"
@@ -248,12 +248,13 @@ if(UMF_FORMAT_CODE_STYLE)
         message(
             FATAL_ERROR
                 "UMF_FORMAT_CODE_STYLE=ON, but neither clang-format (required version: "
-                "${CLANG_FORMAT_REQUIRED}) nor cmake-format was found.")
+                "${CLANG_FORMAT_REQUIRED}) nor cmake-format (required version: "
+                "${CMAKE_FORMAT_VERSION}) was found.")
     endif()
 
     # Obtain files for clang-format check
     set(format_glob)
-    foreach(DIR IN ITEMS include examples src test benchmark)
+    foreach(DIR IN ITEMS benchmark examples include src test)
         list(APPEND format_glob
             "${DIR}/*.h"
             "${DIR}/*.hpp"
@@ -297,12 +298,6 @@ if(UMF_FORMAT_CODE_STYLE)
     file(GLOB_RECURSE format_cmake_list ${format_cmake_glob})
     list(APPEND format_cmake_list "${PROJECT_SOURCE_DIR}/CMakeLists.txt")
 
-    # Print the list of files targeted for formatting by cmake-format
-    message(STATUS "Files to be formatted with cmake-format:")
-    foreach(file IN LISTS format_cmake_list)
-        message(STATUS "${file}")
-    endforeach()
-
     message(STATUS "Adding cmake-format-check and cmake-format-apply make "
             "targets")
 
@@ -319,7 +314,7 @@ if(UMF_FORMAT_CODE_STYLE)
     # Add a convenience target for running both clang-format and cmake-format
     # checks/apply
     add_custom_target(
-        format-checks
+        format-check
         COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target
                 clang-format-check
         COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target
