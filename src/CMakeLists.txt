@@ -60,7 +60,8 @@ set(UMF_SOURCES
     memspace.c
     provider/provider_tracking.c
     critnib/critnib.c
-    pool/pool_proxy.c)
+    pool/pool_proxy.c
+    topology.c)
 
 set(UMF_SOURCES_LINUX libumf_linux.c)
 

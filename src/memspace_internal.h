@@ -30,6 +30,8 @@ struct umf_memspace_t {
 ///
 void umfMemspaceDestroy(umf_memspace_handle_t hMemspace);
 
+void umfMemspaceHostAllDestroy(void);
+
 #ifdef __cplusplus
 }
 #endif
