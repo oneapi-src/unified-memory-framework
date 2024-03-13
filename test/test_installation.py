@@ -69,10 +69,20 @@ class UmfInstaller:
             lib_ext_shared = "dylib"
             lib_prefix = "lib"
 
+        # Currently the proxy library uses and requires the scalable pool
+        # The proxy library does not work in the Debug build on Windows yet.
+        if ("scalable_pool" in self.pools) and not (platform.system() == "Windows" and self.build_type == "debug"):
+            is_umf_proxy = True
+        else:
+            is_umf_proxy = False
+
         bin = []
-        if platform.system() == "Windows" and self.shared_library:
+        if platform.system() == "Windows" and (self.shared_library or is_umf_proxy):
             bin.append("bin")
-            bin.append("bin/umf.dll")
+            if self.shared_library:
+                bin.append("bin/umf.dll")
+            if is_umf_proxy:
+                bin.append("bin/umf_proxy.dll")
 
         include_dir = Path(self.workspace_dir, "include")
         include = [
@@ -94,9 +104,7 @@ class UmfInstaller:
             lib.append(f"lib/{lib_prefix}{pool}.{lib_ext_static}")
         lib_ext = lib_ext_shared if self.shared_library else lib_ext_static
         lib.append(f"lib/{lib_prefix}umf.{lib_ext}")
-        if platform.system() != "Windows" and (
-            "jemalloc_pool" in self.pools or "scalable_pool" in self.pools
-        ):
+        if is_umf_proxy:
             lib.append(f"lib/{lib_prefix}umf_proxy.{lib_ext_shared}")
         lib.append(f"lib/{lib_prefix}umf_utils.{lib_ext_static}")
 
