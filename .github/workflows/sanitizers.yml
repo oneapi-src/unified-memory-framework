@@ -18,7 +18,7 @@ jobs:
         compiler: [{c: icx, cxx: icpx}]
         # TSAN is mutually exclusive with other sanitizers
         sanitizers: [{asan: ON, ubsan: ON, tsan: OFF}, {asan: OFF, ubsan: OFF, tsan: ON}]
-    runs-on: ubuntu-22.04
+    runs-on: 'intel-ubuntu-latest'
     container:
       image: intel/oneapi:latest
       volumes:
@@ -69,7 +69,7 @@ jobs:
         compiler: [{c: gcc, cxx: g++}, {c: clang, cxx: clang++}]
         # TSAN is mutually exclusive with other sanitizers
         sanitizers: [{asan: ON, ubsan: ON, tsan: OFF}, {asan: OFF, ubsan: OFF, tsan: ON}]
-    runs-on: ubuntu-22.04
+    runs-on: 'intel-ubuntu-latest'
 
     steps:
     - name: Checkout
