@@ -145,6 +145,7 @@ jobs:
       image: ubuntu:${{matrix.os_version}}
       volumes:
         - ${{github.workspace}}:${{github.workspace}}
+      options: --privileged
 
     steps:
     - name: Checkout
