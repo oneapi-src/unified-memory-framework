@@ -125,7 +125,7 @@ static void *get_original_alloc(void *user_ptr, size_t *total_size,
     size_t *metadata_loc = (size_t *)((char *)user_ptr - ALLOC_METADATA_SIZE);
 
     // mark the metadata as defined to read the size and offset
-    utils_annotate_memory_undefined(metadata_loc, ALLOC_METADATA_SIZE);
+    utils_annotate_memory_defined(metadata_loc, ALLOC_METADATA_SIZE);
 
     size_t stored_size = *metadata_loc & ((1ULL << 32) - 1);
     size_t ptr_offset_from_original = *metadata_loc >> 32;
