@@ -34,7 +34,6 @@ jobs:
 
     - name: Install apt packages
       run: |
-        export DEBIAN_FRONTEND=noninteractive
         apt-get update
         apt-get install -y libnuma-dev libjemalloc-dev libtbb-dev libhwloc-dev
 
@@ -161,6 +160,7 @@ jobs:
 
     - name: Install apt packages
       run: |
+        export DEBIAN_FRONTEND=noninteractive
         apt-get update
         apt-get install -y clang g++ git cmake libhwloc-dev libnuma-dev libjemalloc-dev libtbb-dev
 
