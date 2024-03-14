@@ -97,7 +97,7 @@ umf_ba_linear_pool_t *umf_ba_linear_create(size_t pool_size) {
     void *data_ptr = &pool->data;
     size_t size_left = pool_size - offsetof(umf_ba_linear_pool_t, data);
 
-    align_ptr_size(&data_ptr, &size_left, MEMORY_ALIGNMENT);
+    util_align_ptr_size(&data_ptr, &size_left, MEMORY_ALIGNMENT);
 
     pool->metadata.pool_size = pool_size;
     pool->metadata.data_ptr = data_ptr;
@@ -145,7 +145,7 @@ void *umf_ba_linear_alloc(umf_ba_linear_pool_t *pool, size_t size) {
         void *data_ptr = &new_pool->data;
         size_t size_left =
             new_pool->pool_size - offsetof(umf_ba_next_linear_pool_t, data);
-        align_ptr_size(&data_ptr, &size_left, MEMORY_ALIGNMENT);
+        util_align_ptr_size(&data_ptr, &size_left, MEMORY_ALIGNMENT);
 
         pool->metadata.data_ptr = data_ptr;
         pool->metadata.size_left = size_left;
@@ -239,7 +239,7 @@ void umf_ba_linear_destroy(umf_ba_linear_pool_t *pool) {
     // Do not destroy if we are running in the proxy library,
     // because it may need those resources till
     // the very end of exiting the application.
-    if (is_running_in_proxy_lib()) {
+    if (util_is_running_in_proxy_lib()) {
         return;
     }
 

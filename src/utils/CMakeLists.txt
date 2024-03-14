@@ -5,6 +5,10 @@
 include(${UMF_CMAKE_SOURCE_DIR}/cmake/helpers.cmake)
 include(FindThreads)
 
+set(UMF_UTILS_SOURCES_COMMON
+    utils_common.c
+)
+
 set(UMF_UTILS_SOURCES_POSIX
     utils_posix_common.c
     utils_posix_concurrency.c
@@ -31,9 +35,9 @@ if(USE_VALGRIND)
 endif()
 
 if(LINUX OR MACOSX)
-    set(UMF_UTILS_SOURCES ${UMF_UTILS_SOURCES_POSIX})
+    set(UMF_UTILS_SOURCES ${UMF_UTILS_SOURCES_COMMON} ${UMF_UTILS_SOURCES_POSIX})
 elseif(WINDOWS)
-    set(UMF_UTILS_SOURCES ${UMF_UTILS_SOURCES_WINDOWS})
+    set(UMF_UTILS_SOURCES ${UMF_UTILS_SOURCES_COMMON} ${UMF_UTILS_SOURCES_WINDOWS})
 endif()
 
 add_umf_library(NAME umf_utils

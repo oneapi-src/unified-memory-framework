@@ -167,7 +167,7 @@ umf_ba_pool_t *umf_ba_create(size_t size) {
     char *data_ptr = (char *)&pool->data;
     size_t size_left = pool_size - offsetof(umf_ba_pool_t, data);
 
-    align_ptr_size((void **)&data_ptr, &size_left, MEMORY_ALIGNMENT);
+    util_align_ptr_size((void **)&data_ptr, &size_left, MEMORY_ALIGNMENT);
 
     // init free_lock
     os_mutex_t *mutex = util_mutex_init(&pool->metadata.free_lock);
@@ -208,7 +208,7 @@ void *umf_ba_alloc(umf_ba_pool_t *pool) {
         size_t size_left =
             pool->metadata.pool_size - offsetof(umf_ba_next_pool_t, data);
 
-        align_ptr_size((void **)&data_ptr, &size_left, MEMORY_ALIGNMENT);
+        util_align_ptr_size((void **)&data_ptr, &size_left, MEMORY_ALIGNMENT);
         ba_divide_memory_into_chunks(pool, data_ptr, size_left);
     }
 
@@ -281,7 +281,7 @@ void umf_ba_destroy(umf_ba_pool_t *pool) {
     // Do not destroy if we are running in the proxy library,
     // because it may need those resources till
     // the very end of exiting the application.
-    if (pool->metadata.n_allocs && is_running_in_proxy_lib()) {
+    if (pool->metadata.n_allocs && util_is_running_in_proxy_lib()) {
         return;
     }
 
