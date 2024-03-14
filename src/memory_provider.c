@@ -18,7 +18,7 @@
 #include "base_alloc_global.h"
 #include "libumf.h"
 #include "memory_provider_internal.h"
-#include "utils_common.h"
+#include "utils_assert.h"
 
 typedef struct umf_memory_provider_t {
     umf_memory_provider_ops_t ops;

@@ -9,7 +9,7 @@
 
 #include "libumf.h"
 #include "memory_pool_internal.h"
-#include "utils_common.h"
+#include "utils_assert.h"
 
 #include <umf/memory_pool.h>
 #include <umf/memory_pool_ops.h>
