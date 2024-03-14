@@ -34,6 +34,7 @@ jobs:
 
     - name: Install apt packages
       run: |
+        export DEBIAN_FRONTEND=noninteractive
         apt-get update
         apt-get install -y libnuma-dev libjemalloc-dev libtbb-dev libhwloc-dev
 
