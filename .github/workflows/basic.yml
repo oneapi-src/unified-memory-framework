@@ -26,7 +26,7 @@ jobs:
       image: intel/oneapi:latest
       volumes:
         - ${{github.workspace}}:${{github.workspace}}
-      options: "--privileged"
+      options: --privileged
 
     steps:
     - name: Checkout
