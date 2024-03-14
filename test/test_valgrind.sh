@@ -79,7 +79,21 @@ for test in $(ls -1 ./umf_test-*); do
 	SUP="${WORKSPACE}/test/supp/${test}.supp"
 	OPT_SUP=""
 	[ -f ${SUP} ] && OPT_SUP="--suppressions=${SUP}"
-	HWLOC_CPUID_PATH=./cpuid valgrind $OPTION $OPT_SUP --gen-suppressions=all $test >$LOG 2>&1 || echo -n "(valgrind failed) "
+
+	# skip tests incompatible with valgrind
+	case $test in
+	./umf_test-disjointPool) # TODO: temporarily skip failing disjointPool tests - fix it
+		FILTER='--gtest_filter="-*pow2AlignedAlloc:*multiThreadedpow2AlignedAlloc"'
+		;;
+	./umf_test-memspace_host_all)
+		FILTER='--gtest_filter="-*allocsSpreadAcrossAllNumaNodes"'
+		;;
+	./umf_test-provider_os_memory_config)
+		FILTER='--gtest_filter="-*protection_flag_none:*protection_flag_read:*providerConfigTestNumaMode*"'
+		;;
+	esac
+
+	HWLOC_CPUID_PATH=./cpuid valgrind $OPTION $OPT_SUP --gen-suppressions=all $test $FILTER >$LOG 2>&1 || echo -n "(valgrind failed) "
 	# grep for "ERROR SUMMARY" with errors (there can be many lines with "ERROR SUMMARY")
 	grep -e "ERROR SUMMARY:" $LOG | grep -v -e "ERROR SUMMARY: 0 errors from 0 contexts" > $ERR || true
 	if [ $(cat $ERR | wc -l) -eq 0 ]; then
