@@ -24,6 +24,7 @@ which includes the code of the basic [example](https://github.com/oneapi-src/uni
 ### Requirements
 
 Required packages:
+- libhwloc-dev (Linux) / hwloc (Windows)
 - C compiler
 - [CMake](https://cmake.org/) >= 3.14.0
 
@@ -89,7 +90,6 @@ List of options provided by CMake:
 | Name | Description | Values | Default |
 | - | - | - | - |
 | UMF_BUILD_SHARED_LIBRARY | Build UMF as shared library | ON/OFF | OFF |
-| UMF_BUILD_OS_MEMORY_PROVIDER | Build OS memory provider | ON/OFF | ON |
 | UMF_BUILD_LEVEL_ZERO_PROVIDER | Build Level Zero memory provider | ON/OFF | ON |
 | UMF_BUILD_LIBUMF_POOL_DISJOINT | Build the libumf_pool_disjoint static library | ON/OFF | OFF |
 | UMF_BUILD_LIBUMF_POOL_JEMALLOC | Build the libumf_pool_jemalloc static library | ON/OFF | OFF |
@@ -125,10 +125,7 @@ A memory provider that provides memory from an operating system.
 
 ##### Requirements
 
-1) The `UMF_BUILD_OS_MEMORY_PROVIDER` option turned `ON` (by default)
-2) Required packages:
-   - libhwloc-dev (Linux) / hwloc (Windows)
-3) Required packages for tests (Linux-only yet):
+Required packages for tests (Linux-only yet):
    - libnuma-dev
 
 #### Level Zero memory provider (Linux-only yet)

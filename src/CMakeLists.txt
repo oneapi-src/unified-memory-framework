@@ -70,33 +70,25 @@ set(UMF_SOURCES_WINDOWS
     libumf_windows.c
 )
 
-set(UMF_SOURCES_MACOSX
-    libumf_linux.c
-)
-
 # Compile definitions for UMF library
 # TODO: Cleanup the compile definitions across all the CMake files
 set(UMF_PUBLIC_COMPILE_DEFINITIONS "")
 
-if(UMF_BUILD_OS_MEMORY_PROVIDER)
-    set(UMF_SOURCES_LINUX ${UMF_SOURCES_LINUX}
-        provider/provider_os_memory.c
-        provider/provider_os_memory_linux.c
-        memory_targets/memory_target_numa.c
-        memspaces/memspace_numa.c
-        memspaces/memspace_host_all.c)
+set(UMF_SOURCES_LINUX ${UMF_SOURCES_LINUX}
+    provider/provider_os_memory.c
+    provider/provider_os_memory_linux.c
+    memory_targets/memory_target_numa.c
+    memspaces/memspace_numa.c
+    memspaces/memspace_host_all.c)
 
-    set(UMF_SOURCES_WINDOWS ${UMF_SOURCES_WINDOWS}
-        provider/provider_os_memory.c
-        provider/provider_os_memory_windows.c)
+set(UMF_SOURCES_WINDOWS ${UMF_SOURCES_WINDOWS}
+    provider/provider_os_memory.c
+    provider/provider_os_memory_windows.c)
 
-    if(LINUX OR WINDOWS)
-        set(UMF_LIBS ${UMF_LIBS} ${LIBHWLOC_LIBRARIES})
-        # Currently, OS provider is only built for Linux and Windows
-        set(UMF_PUBLIC_COMPILE_DEFINITIONS ${UMF_PUBLIC_COMPILE_DEFINITIONS} "UMF_BUILD_OS_MEMORY_PROVIDER=1")
-        set(UMF_PRIVATE_LIBRARY_DIRS ${UMF_PRIVATE_LIBRARY_DIRS} ${LIBHWLOC_LIBRARY_DIRS})
-    endif()
-endif()
+set(UMF_LIBS ${UMF_LIBS} ${LIBHWLOC_LIBRARIES})
+set(UMF_PRIVATE_LIBRARY_DIRS ${UMF_PRIVATE_LIBRARY_DIRS} ${LIBHWLOC_LIBRARY_DIRS})
+
+set(UMF_SOURCES_MACOSX ${UMF_SOURCES_MACOSX} ${UMF_SOURCES_LINUX})
 
 if(LINUX)
     set(UMF_SOURCES ${UMF_SOURCES} ${UMF_SOURCES_LINUX})
@@ -107,21 +99,12 @@ elseif(MACOSX)
 endif()
 
 if(UMF_BUILD_SHARED_LIBRARY)
-    if(WINDOWS)
-        # TODO: replace that with generating def and map files
-        if(UMF_BUILD_OS_MEMORY_PROVIDER)
-            set(UMF_DEF_FILE "libumf.def")
-        else()
-            set(UMF_DEF_FILE "libumf_no_os_provider.def")
-        endif()
-    endif()
-
     add_umf_library(NAME umf
                     TYPE SHARED
                     SRCS ${UMF_SOURCES}
                     LIBS ${UMF_LIBS}
                     LINUX_MAP_FILE ${CMAKE_CURRENT_SOURCE_DIR}/libumf.map
-                    WINDOWS_DEF_FILE ${CMAKE_CURRENT_SOURCE_DIR}/${UMF_DEF_FILE})
+                    WINDOWS_DEF_FILE ${CMAKE_CURRENT_SOURCE_DIR}/libumf.def)
     set(UMF_PUBLIC_COMPILE_DEFINITIONS ${UMF_PUBLIC_COMPILE_DEFINITIONS} "UMF_SHARED_LIBRARY")
     set_target_properties(umf PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_UMF_OUTPUT_DIRECTORY})

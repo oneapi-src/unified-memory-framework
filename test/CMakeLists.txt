@@ -31,12 +31,10 @@ function(add_umf_test)
     set(TEST_NAME umf-${ARG_NAME})
     set(TEST_TARGET_NAME umf_test-${ARG_NAME})
 
-    if(UMF_BUILD_OS_MEMORY_PROVIDER)
-        set(LIBS_OPTIONAL ${LIBS_OPTIONAL} ${LIBHWLOC_LIBRARIES})
-        set(LIB_DIRS_OPTIONAL ${LIB_DIRS_OPTIONAL} ${LIBHWLOC_LIBRARY_DIRS})
-    endif()
+    set(LIB_DIRS ${LIB_DIRS} ${LIBHWLOC_LIBRARY_DIRS})
+
     if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
-        set(LIB_DIRS_OPTIONAL ${LIB_DIRS_OPTIONAL} ${JEMALLOC_LIBRARY_DIRS})
+        set(LIB_DIRS ${LIB_DIRS} ${JEMALLOC_LIBRARY_DIRS})
     endif()
 
     set(TEST_LIBS test_common
@@ -46,9 +44,7 @@ function(add_umf_test)
         ${ARG_LIBS})
     add_umf_executable(NAME ${TEST_TARGET_NAME} SRCS ${ARG_SRCS} LIBS ${TEST_LIBS})
 
-    if(LIB_DIRS_OPTIONAL)
-        target_link_directories(${TEST_TARGET_NAME} PRIVATE ${LIB_DIRS_OPTIONAL})
-    endif()
+    target_link_directories(${TEST_TARGET_NAME} PRIVATE ${LIB_DIRS})
 
     target_include_directories(${TEST_TARGET_NAME} PRIVATE
         ${UMF_CMAKE_SOURCE_DIR}/include
@@ -94,34 +90,25 @@ endif()
 if(UMF_BUILD_LIBUMF_POOL_DISJOINT
    AND UMF_BUILD_LIBUMF_POOL_JEMALLOC
    AND UMF_BUILD_LIBUMF_POOL_SCALABLE
-   AND UMF_BUILD_OS_MEMORY_PROVIDER
    AND UMF_ENABLE_POOL_TRACKING)
     add_umf_test(NAME c_api_multi_pool
                  SRCS c_api/multi_pool.c
                  LIBS disjoint_pool jemalloc_pool scalable_pool ${JEMALLOC_LIBRARIES})
 endif()
 
-if(UMF_BUILD_OS_MEMORY_PROVIDER)
-    if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
-        add_umf_test(NAME jemalloc_pool
-                    SRCS pools/jemalloc_pool.cpp malloc_compliance_tests.cpp
-                    LIBS jemalloc_pool)
-    endif()
-else()
-    message(STATUS "The jemalloc_pool test is DISABLED, because it uses OS_MEMORY_PROVIDER, while the UMF_BUILD_OS_MEMORY_PROVIDER option is set to OFF")
+if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
+    add_umf_test(NAME jemalloc_pool
+                SRCS pools/jemalloc_pool.cpp malloc_compliance_tests.cpp
+                LIBS jemalloc_pool)
 endif()
 
-if(UMF_BUILD_OS_MEMORY_PROVIDER)
-    if(UMF_BUILD_LIBUMF_POOL_SCALABLE)
-        add_umf_test(NAME scalable_pool
-                    SRCS pools/scalable_pool.cpp malloc_compliance_tests.cpp
-                    LIBS scalable_pool)
-    endif()
-else()
-    message(STATUS "The scalable_pool test is DISABLED, because it uses OS_MEMORY_PROVIDER, while the UMF_BUILD_OS_MEMORY_PROVIDER option is set to OFF")
+if(UMF_BUILD_LIBUMF_POOL_SCALABLE)
+    add_umf_test(NAME scalable_pool
+                SRCS pools/scalable_pool.cpp malloc_compliance_tests.cpp
+                LIBS scalable_pool)
 endif()
 
-if(UMF_BUILD_OS_MEMORY_PROVIDER AND LINUX) # OS-specific functions are implemented only for Linux now
+if(LINUX) # OS-specific functions are implemented only for Linux now
     if(PkgConfig_FOUND)
         pkg_check_modules(LIBNUMA numa)
     endif()

@@ -7,7 +7,6 @@ project(unified-memory-framework VERSION 0.1.0 LANGUAGES C)
 
 # Build Options
 option(UMF_BUILD_SHARED_LIBRARY "Build UMF as shared library" OFF)
-option(UMF_BUILD_OS_MEMORY_PROVIDER "Build OS memory provider" ON)
 option(UMF_BUILD_LEVEL_ZERO_PROVIDER "Build Level Zero memory provider" ON)
 option(UMF_BUILD_LIBUMF_POOL_DISJOINT "Build the libumf_pool_disjoint static library" OFF)
 option(UMF_BUILD_LIBUMF_POOL_JEMALLOC "Build the libumf_pool_jemalloc static library" OFF)
@@ -120,14 +119,12 @@ if(WINDOWS)
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 endif()
 
-if(UMF_BUILD_OS_MEMORY_PROVIDER AND (LINUX OR WINDOWS))
-    pkg_check_modules(LIBHWLOC hwloc)
-    if(NOT LIBHWLOC_FOUND)
-        find_package(LIBHWLOC REQUIRED hwloc)
-    endif()
-    # add PATH to DLL on Windows
-    set(DLL_PATH_LIST "${DLL_PATH_LIST};PATH=path_list_append:${LIBHWLOC_LIBRARY_DIRS}/../bin")
+pkg_check_modules(LIBHWLOC hwloc)
+if(NOT LIBHWLOC_FOUND)
+    find_package(LIBHWLOC REQUIRED hwloc)
 endif()
+# add PATH to DLL on Windows
+set(DLL_PATH_LIST "${DLL_PATH_LIST};PATH=path_list_append:${LIBHWLOC_LIBRARY_DIRS}/../bin")
 
 if(UMF_BUILD_LIBUMF_POOL_SCALABLE AND (LINUX OR WINDOWS))
     pkg_check_modules(TBB tbb)
