@@ -155,3 +155,6 @@ jobs:
   Qemu:
     needs: [Build]
     uses: ./.github/workflows/qemu.yml
+  Valgrind:
+    needs: [Build]
+    uses: ./.github/workflows/valgrind.yml
