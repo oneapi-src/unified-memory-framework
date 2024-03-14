@@ -56,6 +56,7 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <string.h>
 
 #include "base_alloc.h"
 #include "base_alloc_global.h"
@@ -186,6 +187,8 @@ struct critnib *critnib_new(void) {
     if (!c) {
         return NULL;
     }
+
+    memset(c, 0, sizeof(struct critnib));
 
     void *mutex_ptr = util_mutex_init(&c->mutex);
     if (!mutex_ptr) {
