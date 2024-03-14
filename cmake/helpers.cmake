@@ -114,7 +114,7 @@ function(add_umf_library)
 
         if (WINDOWS)
             target_link_options(${ARG_NAME} PRIVATE /DEF:${ARG_WINDOWS_DEF_FILE})
-        else()
+        elseif(LINUX)
             target_link_options(${ARG_NAME} PRIVATE "-Wl,--version-script=${ARG_LINUX_MAP_FILE}")
         endif()
     endif()
