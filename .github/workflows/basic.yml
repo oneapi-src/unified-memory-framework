@@ -61,7 +61,9 @@ jobs:
 
     - name: Run tests
       working-directory: ${{github.workspace}}/build
-      run: ctest --output-on-failure --test-dir test
+      run: |
+        sysctl vm.mmap_rnd_bits=28
+        ctest --output-on-failure --test-dir test
 
     - name: Test UMF installation and uninstallation
       # The '--shared-library' parameter is added to the installation test when the UMF is built as a shared library
