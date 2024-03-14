@@ -131,9 +131,6 @@ struct critnib {
     uint64_t remove_count;
 
     struct os_mutex_t mutex; /* writes/removes */
-
-    umf_ba_pool_t *pool_nodes;
-    umf_ba_pool_t *pool_leaves;
 };
 
 /*
@@ -195,25 +192,10 @@ struct critnib *critnib_new(void) {
         goto err_free_critnib;
     }
 
-    c->pool_nodes = umf_ba_create(sizeof(struct critnib_node));
-    if (!c->pool_nodes) {
-        goto err_util_mutex_destroy;
-    }
-
-    c->pool_leaves = umf_ba_create(sizeof(struct critnib_leaf));
-    if (!c->pool_leaves) {
-        goto err_destroy_pool_nodes;
-    }
-
     VALGRIND_HG_DRD_DISABLE_CHECKING(&c->root, sizeof(c->root));
     VALGRIND_HG_DRD_DISABLE_CHECKING(&c->remove_count, sizeof(c->remove_count));
 
     return c;
-
-err_destroy_pool_nodes:
-    umf_ba_destroy(c->pool_nodes);
-err_util_mutex_destroy:
-    util_mutex_destroy_not_free(&c->mutex);
 err_free_critnib:
     umf_ba_global_free(c);
     return NULL;
@@ -224,7 +206,7 @@ err_free_critnib:
  */
 static void delete_node(struct critnib *c, struct critnib_node *__restrict n) {
     if (is_leaf(n)) {
-        umf_ba_free(c->pool_leaves, to_leaf(n));
+        umf_ba_global_free(to_leaf(n));
     } else {
         for (int i = 0; i < SLNODES; i++) {
             if (n->child[i]) {
@@ -232,7 +214,7 @@ static void delete_node(struct critnib *c, struct critnib_node *__restrict n) {
             }
         }
 
-        umf_ba_free(c->pool_nodes, n);
+        umf_ba_global_free(n);
     }
 }
 
@@ -248,23 +230,21 @@ void critnib_delete(struct critnib *c) {
 
     for (struct critnib_node *m = c->deleted_node; m;) {
         struct critnib_node *mm = m->child[0];
-        umf_ba_free(c->pool_nodes, m);
+        umf_ba_global_free(m);
         m = mm;
     }
 
     for (struct critnib_leaf *k = c->deleted_leaf; k;) {
         struct critnib_leaf *kk = k->value;
-        umf_ba_free(c->pool_leaves, k);
+        umf_ba_global_free(k);
         k = kk;
     }
 
     for (int i = 0; i < DELETED_LIFE; i++) {
-        umf_ba_free(c->pool_nodes, c->pending_del_nodes[i]);
-        umf_ba_free(c->pool_leaves, c->pending_del_leaves[i]);
+        umf_ba_global_free(c->pending_del_nodes[i]);
+        umf_ba_global_free(c->pending_del_leaves[i]);
     }
 
-    umf_ba_destroy(c->pool_nodes);
-    umf_ba_destroy(c->pool_leaves);
     umf_ba_global_free(c);
 }
 
@@ -292,7 +272,7 @@ static void free_node(struct critnib *__restrict c,
  */
 static struct critnib_node *alloc_node(struct critnib *__restrict c) {
     if (!c->deleted_node) {
-        return umf_ba_alloc(c->pool_nodes);
+        return umf_ba_global_alloc(sizeof(struct critnib_node));
     }
 
     struct critnib_node *n = c->deleted_node;
@@ -323,7 +303,7 @@ static void free_leaf(struct critnib *__restrict c,
  */
 static struct critnib_leaf *alloc_leaf(struct critnib *__restrict c) {
     if (!c->deleted_leaf) {
-        return umf_ba_alloc(c->pool_leaves);
+        return umf_ba_global_alloc(sizeof(struct critnib_leaf));
     }
 
     struct critnib_leaf *k = c->deleted_leaf;
