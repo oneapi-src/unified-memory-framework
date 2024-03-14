@@ -23,7 +23,7 @@ jobs:
       image: intel/oneapi:latest
       volumes:
         - ${{github.workspace}}:${{github.workspace}}
-      options: "--privileged"
+      options: --privileged
 
     steps:
     - name: Checkout
@@ -60,7 +60,9 @@ jobs:
 
     - name: Run tests
       working-directory: ${{env.BUILD_DIR}}
-      run: ctest --output-on-failure
+      run: |
+        sysctl vm.mmap_rnd_bits=28
+        ctest --output-on-failure
 
   ubuntu-build:
     name: gcc and clang on Ubuntu
