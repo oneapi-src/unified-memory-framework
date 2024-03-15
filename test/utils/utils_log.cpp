@@ -17,12 +17,6 @@ FILE *mock_fopen(const char *filename, const char *mode) {
     return MOCK_FILE_PTR;
 }
 
-int mock_fopen_s(FILE **f, const char *filename, const char *mode) {
-    *f = mock_fopen(filename, mode);
-
-    return 0;
-}
-
 std::string expected_message = "";
 FILE *expected_stream;
 int expect_fput_count = 0;
@@ -64,7 +58,6 @@ int mock_util_env_var(const char *envvar, char *buffer, size_t buffer_size) {
 }
 
 #define fopen(A, B) mock_fopen(A, B)
-#define fopen_s(A, B, C) mock_fopen_s(A, B, C)
 #define fputs(A, B) mock_fputs(A, B)
 #define fflush(A) mock_fflush(A)
 #define util_env_var(A, B, C) mock_util_env_var(A, B, C)

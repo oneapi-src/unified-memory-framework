@@ -159,13 +159,7 @@ void util_log_init(void) {
         if (len <= MAX_FILE_PATH) {
             memcpy(file, arg, len);
             file[len] = '\0';
-#ifdef _WIN32
-            if (fopen_s(&loggerConfig.output, file, "w")) {
-                loggerConfig.output = NULL;
-            }
-#else
             loggerConfig.output = fopen(file, "w");
-#endif
         }
         if (!loggerConfig.output) {
             loggerConfig.output = stderr;
