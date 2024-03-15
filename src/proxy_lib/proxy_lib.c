@@ -28,8 +28,7 @@
 #endif
 
 #include <assert.h>
-#include <stdlib.h>
-#include <string.h>
+#include <stdio.h>
 
 #include <umf/memory_pool.h>
 #include <umf/memory_provider.h>
@@ -38,7 +37,26 @@
 #include "base_alloc_linear.h"
 #include "proxy_lib.h"
 #include "utils_common.h"
+
+#ifdef _WIN32 /* Windows ***************************************/
+
+#define _X86_
+#include <process.h>
+#include <synchapi.h>
+
+#define UTIL_ONCE_FLAG INIT_ONCE
+#define UTIL_ONCE_FLAG_INIT INIT_ONCE_STATIC_INIT
+
+void util_init_once(UTIL_ONCE_FLAG *flag, void (*onceCb)(void));
+
+#else /* Linux *************************************************/
+
+#include <stdlib.h>
+#include <string.h>
+
 #include "utils_concurrency.h"
+
+#endif /* _WIN32 ***********************************************/
 
 /*
  * The UMF proxy library uses two memory allocators:
@@ -100,9 +118,20 @@ void proxy_lib_create_common(void) {
 }
 
 void proxy_lib_destroy_common(void) {
-    // We cannot destroy 'Base_alloc_leak' nor 'Proxy_pool' nor 'OS_memory_provider',
-    // because it could lead to use-after-free in the program's unloader
-    // (for example _dl_fini() on Linux).
+    if (util_is_running_in_proxy_lib()) {
+        // We cannot destroy 'Base_alloc_leak' nor 'Proxy_pool' nor 'OS_memory_provider',
+        // because it could lead to use-after-free in the program's unloader
+        // (for example _dl_fini() on Linux).
+        return;
+    }
+
+    umf_memory_pool_handle_t pool = Proxy_pool;
+    Proxy_pool = NULL;
+    umfPoolDestroy(pool);
+
+    umf_memory_provider_handle_t provider = OS_memory_provider;
+    OS_memory_provider = NULL;
+    umfMemoryProviderDestroy(provider);
 }
 
 /*****************************************************************************/
@@ -202,6 +231,34 @@ void *calloc(size_t nmemb, size_t size) {
     return ba_leak_calloc(nmemb, size);
 }
 
+void free(void *ptr) {
+    if (ptr == NULL) {
+        return;
+    }
+
+    if (ba_leak_free(ptr) == 0) {
+        return;
+    }
+
+    if (Proxy_pool) {
+        if (umfPoolFree(Proxy_pool, ptr) != UMF_RESULT_SUCCESS) {
+            fprintf(stderr, "error: umfPoolFree() failed\n");
+            assert(0);
+        }
+        return;
+    }
+
+    assert(0);
+    return;
+}
+
+#ifdef _WIN32
+void _free_dbg(void *userData, int blockType) {
+    (void)blockType; // unused
+    free(userData);
+}
+#endif
+
 void *realloc(void *ptr, size_t size) {
     if (ptr == NULL) {
         return malloc(size);
@@ -228,27 +285,6 @@ void *realloc(void *ptr, size_t size) {
     return NULL;
 }
 
-void free(void *ptr) {
-    if (ptr == NULL) {
-        return;
-    }
-
-    if (ba_leak_free(ptr) == 0) {
-        return;
-    }
-
-    if (Proxy_pool) {
-        if (umfPoolFree(Proxy_pool, ptr) != UMF_RESULT_SUCCESS) {
-            fprintf(stderr, "error: umfPoolFree() failed\n");
-            assert(0);
-        }
-        return;
-    }
-
-    assert(0);
-    return;
-}
-
 void *aligned_alloc(size_t alignment, size_t size) {
     if (!was_called_from_umfPool && Proxy_pool) {
         was_called_from_umfPool = 1;
@@ -260,7 +296,17 @@ void *aligned_alloc(size_t alignment, size_t size) {
     return ba_leak_aligned_alloc(alignment, size);
 }
 
+#ifdef _WIN32
+size_t _msize(void *ptr) {
+#else
 size_t malloc_usable_size(void *ptr) {
+#endif
+
+    // a check to verify we are running the proxy library
+    if (ptr == (void *)0x01) {
+        return 0xDEADBEEF;
+    }
+
     if (!was_called_from_umfPool && Proxy_pool) {
         was_called_from_umfPool = 1;
         size_t size = umfPoolMallocUsableSize(Proxy_pool, ptr);

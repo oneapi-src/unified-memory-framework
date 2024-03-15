@@ -26,11 +26,6 @@ if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
     message(STATUS "Level Zero include directory: ${LEVEL_ZERO_INCLUDE_DIRS}")
 endif()
 
-# set UMF_PROXY_LIB_BASED_ON_POOL to one of:
-# - SCALABLE
-# - JEMALLOC
-set(UMF_PROXY_LIB_BASED_ON_POOL SCALABLE CACHE STRING "A UMF pool the proxy library is based on (SCALABLE or JEMALLOC)" FORCE)
-
 add_subdirectory(utils)
 
 set(UMF_LIBS umf_utils)
@@ -166,25 +161,6 @@ install(TARGETS umf
 
 add_subdirectory(pool)
 
-# TODO: enable proxy_lib on Windows
-if(LINUX)
-    if(UMF_PROXY_LIB_BASED_ON_POOL STREQUAL SCALABLE)
-        set(PROXY_LIB_USES_SCALABLE_POOL ON)
-        set(PROXY_LIBS umf scalable_pool)
-        if(UMF_BUILD_LIBUMF_POOL_SCALABLE)
-            add_subdirectory(proxy_lib)
-        else()
-            message(STATUS "Disabling the proxy library, because UMF_PROXY_LIB_BASED_ON_POOL==SCALABLE but UMF_BUILD_LIBUMF_POOL_SCALABLE is OFF")
-        endif()
-    elseif(UMF_PROXY_LIB_BASED_ON_POOL STREQUAL JEMALLOC)
-        set(PROXY_LIB_USES_JEMALLOC_POOL ON)
-        set(PROXY_LIBS umf jemalloc_pool)
-        if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
-            add_subdirectory(proxy_lib)
-        else()
-            message(STATUS "Disabling the proxy library, because UMF_PROXY_LIB_BASED_ON_POOL==JEMALLOC but UMF_BUILD_LIBUMF_POOL_JEMALLOC is OFF")
-        endif()
-    else()
-        message(FATAL_ERROR "Proxy library: pool manager not chosen or set to a non-supported one (see UMF_PROXY_LIB_BASED_ON_POOL)")
-    endif()
+if(UMF_PROXY_LIB_ENABLED)
+    add_subdirectory(proxy_lib)
 endif()

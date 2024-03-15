@@ -37,11 +37,13 @@ function(add_umf_test)
         set(LIB_DIRS ${LIB_DIRS} ${JEMALLOC_LIBRARY_DIRS})
     endif()
 
-    set(TEST_LIBS test_common
+    set(TEST_LIBS
+        test_common
         umf
+        ${ARG_LIBS}
         GTest::gtest_main
-        ${LIBS_OPTIONAL}
-        ${ARG_LIBS})
+        ${LIBS_OPTIONAL})
+
     add_umf_executable(NAME ${TEST_TARGET_NAME} SRCS ${ARG_SRCS} LIBS ${TEST_LIBS})
 
     target_link_directories(${TEST_TARGET_NAME} PRIVATE ${LIB_DIRS})
@@ -171,3 +173,15 @@ add_umf_test(NAME base_alloc_linear
 add_umf_test(NAME base_alloc_global
             SRCS ${BA_SOURCES_FOR_TEST} pools/pool_base_alloc.cpp malloc_compliance_tests.cpp
             LIBS umf_utils)
+
+# tests for the proxy library
+if(UMF_PROXY_LIB_ENABLED AND UMF_BUILD_SHARED_LIBRARY)
+    add_umf_test(NAME proxy_lib_basic
+                SRCS test_proxy_lib.cpp
+                LIBS umf_proxy)
+
+    # the memoryPool test run with the proxy library
+    add_umf_test(NAME proxy_lib_memoryPool
+                SRCS memoryPoolAPI.cpp malloc_compliance_tests.cpp
+                LIBS umf_proxy)
+endif()

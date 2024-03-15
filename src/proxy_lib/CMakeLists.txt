@@ -37,6 +37,8 @@ add_umf_library(NAME umf_proxy
 
 add_library(${PROJECT_NAME}::proxy ALIAS umf_proxy)
 
+target_link_directories(umf_proxy PRIVATE ${LIBHWLOC_LIBRARY_DIRS})
+
 if(PROXY_LIB_USES_SCALABLE_POOL)
     target_compile_definitions(umf_proxy PRIVATE PROXY_LIB_USES_SCALABLE_POOL=1)
 elseif(PROXY_LIB_USES_JEMALLOC_POOL)
