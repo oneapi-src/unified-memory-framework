@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2024 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -127,6 +127,53 @@ static umf_result_t traceAllocationSplit(void *provider, void *ptr,
                                             ptr, totalSize, firstSize);
 }
 
+static umf_result_t traceGetIpcHandleSize(void *provider, size_t *pSize) {
+    umf_provider_trace_params_priv_t *traceProvider =
+        (umf_provider_trace_params_priv_t *)provider;
+
+    traceProvider->trace("get_ipc_handle_size");
+    return umfMemoryProviderGetIPCHandleSize(traceProvider->hUpstreamProvider,
+                                             pSize);
+}
+
+static umf_result_t traceGetIpcHandle(void *provider, const void *ptr,
+                                      size_t size, void *ipcHandle) {
+    umf_provider_trace_params_priv_t *traceProvider =
+        (umf_provider_trace_params_priv_t *)provider;
+
+    traceProvider->trace("get_ipc_handle");
+    return umfMemoryProviderGetIPCHandle(traceProvider->hUpstreamProvider, ptr,
+                                         size, ipcHandle);
+}
+
+static umf_result_t tracePutIpcHandle(void *provider, void *ipcHandle) {
+    umf_provider_trace_params_priv_t *traceProvider =
+        (umf_provider_trace_params_priv_t *)provider;
+
+    traceProvider->trace("put_ipc_handle");
+    return umfMemoryProviderPutIPCHandle(traceProvider->hUpstreamProvider,
+                                         ipcHandle);
+}
+
+static umf_result_t traceOpenIpcHandle(void *provider, void *ipcHandle,
+                                       void **ptr) {
+    umf_provider_trace_params_priv_t *traceProvider =
+        (umf_provider_trace_params_priv_t *)provider;
+
+    traceProvider->trace("open_ipc_handle");
+    return umfMemoryProviderOpenIPCHandle(traceProvider->hUpstreamProvider,
+                                          ipcHandle, ptr);
+}
+
+static umf_result_t traceCloseIpcHandle(void *provider, void *ptr) {
+    umf_provider_trace_params_priv_t *traceProvider =
+        (umf_provider_trace_params_priv_t *)provider;
+
+    traceProvider->trace("close_ipc_handle");
+    return umfMemoryProviderCloseIPCHandle(traceProvider->hUpstreamProvider,
+                                           ptr);
+}
+
 umf_memory_provider_ops_t UMF_TRACE_PROVIDER_OPS = {
     .version = UMF_VERSION_CURRENT,
     .initialize = traceInitialize,
@@ -141,4 +188,9 @@ umf_memory_provider_ops_t UMF_TRACE_PROVIDER_OPS = {
     .ext.purge_force = tracePurgeForce,
     .ext.allocation_merge = traceAllocationMerge,
     .ext.allocation_split = traceAllocationSplit,
+    .ipc.get_ipc_handle_size = traceGetIpcHandleSize,
+    .ipc.get_ipc_handle = traceGetIpcHandle,
+    .ipc.put_ipc_handle = tracePutIpcHandle,
+    .ipc.open_ipc_handle = traceOpenIpcHandle,
+    .ipc.close_ipc_handle = traceCloseIpcHandle,
 };

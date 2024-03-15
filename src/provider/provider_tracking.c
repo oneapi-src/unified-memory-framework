@@ -10,6 +10,7 @@
 #include "provider_tracking.h"
 #include "base_alloc_global.h"
 #include "critnib.h"
+#include "ipc_internal.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
 
@@ -21,6 +22,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 typedef struct tracker_value_t {
     umf_memory_pool_handle_t pool;
@@ -104,10 +106,36 @@ umf_memory_pool_handle_t umfMemoryTrackerGetPool(const void *ptr) {
     return (rkey + rvalue->size >= (uintptr_t)ptr) ? rvalue->pool : NULL;
 }
 
+umf_result_t umfMemoryTrackerGetAllocInfo(const void *ptr,
+                                          umf_alloc_info_t *pAllocInfo) {
+    assert(ptr);
+    assert(pAllocInfo);
+
+    uintptr_t rkey;
+    tracker_value_t *rvalue;
+    int found = critnib_find(TRACKER->map, (uintptr_t)ptr, FIND_LE,
+                             (void *)&rkey, (void **)&rvalue);
+    if (!found || (uintptr_t)ptr >= rkey + rvalue->size) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    pAllocInfo->base = (void *)rkey;
+    pAllocInfo->size = rvalue->size;
+    pAllocInfo->pool = rvalue->pool;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+typedef struct ipc_cache_value_t {
+    uint64_t size;
+    char ipcData[];
+} ipc_cache_value_t;
+
 typedef struct umf_tracking_memory_provider_t {
     umf_memory_provider_handle_t hUpstream;
     umf_memory_tracker_handle_t hTracker;
     umf_memory_pool_handle_t pool;
+    critnib *ipcCache;
 } umf_tracking_memory_provider_t;
 
 typedef struct umf_tracking_memory_provider_t umf_tracking_memory_provider_t;
@@ -314,11 +342,22 @@ static umf_result_t trackingFree(void *hProvider, void *ptr, size_t size) {
         }
     }
 
+    void *value = critnib_remove(p->ipcCache, (uintptr_t)ptr);
+    if (value) {
+        ipc_cache_value_t *cache_value = (ipc_cache_value_t *)value;
+        ret = umfMemoryProviderPutIPCHandle(p->hUpstream, cache_value->ipcData);
+        if (ret != UMF_RESULT_SUCCESS) {
+            fprintf(stderr, "tracking free: failed to put IPC handle\n");
+        }
+        umf_ba_global_free(value);
+    }
+
     ret = umfMemoryProviderFree(p->hUpstream, ptr, size);
     if (ret != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "tracking free: umfMemoryProviderFree failed\n");
         if (umfMemoryTrackerAdd(p->hTracker, p->pool, ptr, size) !=
             UMF_RESULT_SUCCESS) {
-            // TODO: LOG
+            fprintf(stderr, "tracking free: umfMemoryTrackerAdd failed\n");
         }
         return ret;
     }
@@ -380,9 +419,10 @@ static void check_if_tracker_is_empty(umf_memory_tracker_handle_t hTracker,
 #endif /* NDEBUG */
 
 static void trackingFinalize(void *provider) {
-#ifndef NDEBUG
     umf_tracking_memory_provider_t *p =
         (umf_tracking_memory_provider_t *)provider;
+    critnib_delete(p->ipcCache);
+#ifndef NDEBUG
     check_if_tracker_is_empty(p->hTracker, p->pool);
 #endif /* NDEBUG */
 
@@ -429,6 +469,157 @@ static const char *trackingName(void *provider) {
     return umfMemoryProviderGetName(p->hUpstream);
 }
 
+static umf_result_t trackingGetIpcHandleSize(void *provider, size_t *size) {
+    umf_tracking_memory_provider_t *p =
+        (umf_tracking_memory_provider_t *)provider;
+    return umfMemoryProviderGetIPCHandleSize(p->hUpstream, size);
+}
+
+static umf_result_t trackingGetIpcHandle(void *provider, const void *ptr,
+                                         size_t size, void *ipcData) {
+    umf_tracking_memory_provider_t *p =
+        (umf_tracking_memory_provider_t *)provider;
+    umf_result_t ret = UMF_RESULT_SUCCESS;
+    size_t ipcDataSize = 0;
+    int cached = 0;
+    do {
+        void *value = critnib_get(p->ipcCache, (uintptr_t)ptr);
+        if (value) { //cache hit
+            ipc_cache_value_t *cache_value = (ipc_cache_value_t *)value;
+            memcpy(ipcData, cache_value->ipcData, cache_value->size);
+            cached = 1;
+        } else {
+            ret =
+                umfMemoryProviderGetIPCHandle(p->hUpstream, ptr, size, ipcData);
+            if (ret != UMF_RESULT_SUCCESS) {
+                fprintf(stderr, "tracking get ipc handle: "
+                                "umfMemoryProviderGetIPCHandle failed\n");
+                return ret;
+            }
+
+            ret = umfMemoryProviderGetIPCHandleSize(p->hUpstream, &ipcDataSize);
+            if (ret != UMF_RESULT_SUCCESS) {
+                fprintf(stderr, "tracking get ipc handle: "
+                                "umfMemoryProviderGetIPCHandleSize failed\n");
+                ret = umfMemoryProviderPutIPCHandle(p->hUpstream, ipcData);
+                if (ret != UMF_RESULT_SUCCESS) {
+                    fprintf(stderr, "tracking get ipc handle: "
+                                    "umfMemoryProviderPutIPCHandle failed\n");
+                }
+                return ret;
+            }
+
+            size_t value_size = sizeof(ipc_cache_value_t) + ipcDataSize;
+            ipc_cache_value_t *cache_value =
+                (ipc_cache_value_t *)umf_ba_global_alloc(value_size);
+            if (!cache_value) {
+                fprintf(stderr, "tracking get ipc handle: failed to allocate "
+                                "cache_value\n");
+                ret = umfMemoryProviderPutIPCHandle(p->hUpstream, ipcData);
+                if (ret != UMF_RESULT_SUCCESS) {
+                    fprintf(stderr, "tracking get ipc handle: "
+                                    "umfMemoryProviderPutIPCHandle failed\n");
+                }
+                return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+            }
+
+            cache_value->size = ipcDataSize;
+            memcpy(cache_value->ipcData, ipcData, ipcDataSize);
+
+            int insRes = critnib_insert(p->ipcCache, (uintptr_t)ptr,
+                                        (void *)cache_value, 0 /*update*/);
+            if (insRes == 0) {
+                cached = 1;
+            } else {
+                // critnib_insert might fail in 2 cases:
+                // 1. Another thread created cache entry. So we need to
+                //    clean up allocated handle and try to read again from
+                //    the cache. Alternative approach could be insert empty
+                //    cache_value and only if insert succeed get actual IPC
+                //    handle and fill the cache_value structure under the lock.
+                //    But this case should be rare enough.
+                // 2. critnib failed to allocate memory internally. We need
+                //    to cleanup and return corresponding error.
+                umf_ba_global_free(cache_value);
+                ret = umfMemoryProviderPutIPCHandle(p->hUpstream, ipcData);
+                if (ret != UMF_RESULT_SUCCESS) {
+                    fprintf(stderr, "tracking get ipc handle: "
+                                    "umfMemoryProviderPutIPCHandle failed\n");
+                    return ret;
+                }
+                if (insRes == ENOMEM) {
+                    fprintf(stderr, "tracking get ipc handle: insert to IPC "
+                                    "cache failed\n");
+                    return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+                }
+            }
+        }
+    } while (!cached);
+
+    return ret;
+}
+
+static umf_result_t trackingPutIpcHandle(void *provider, void *ipcData) {
+    (void)provider;
+    (void)ipcData;
+    // We just keep ipcData in the provider->ipcCache.
+    // The actual Put is called inside trackingFree
+    return UMF_RESULT_SUCCESS;
+}
+
+static size_t getDataSizeFromIpcHandle(const void *ipcData) {
+    // This is hack to get size of memory pointed by IPC handle.
+    // tracking memory provider gets only provider-specific data
+    // pointed by ipcData, but the size of allocation tracked
+    // by umf_ipc_data_t. We use this trick to get pointer to
+    // umf_ipc_data_t data because the ipcData is
+    // the Flexible Array Member of umf_ipc_data_t.
+    umf_ipc_data_t *ipcUmfData =
+        (umf_ipc_data_t *)((uint8_t *)ipcData - sizeof(umf_ipc_data_t));
+    return ipcUmfData->size;
+}
+
+static umf_result_t trackingOpenIpcHandle(void *provider, void *ipcData,
+                                          void **ptr) {
+    umf_tracking_memory_provider_t *p =
+        (umf_tracking_memory_provider_t *)provider;
+    umf_result_t ret = UMF_RESULT_SUCCESS;
+
+    ret = umfMemoryProviderOpenIPCHandle(p->hUpstream, ipcData, ptr);
+    if (ret != UMF_RESULT_SUCCESS) {
+        return ret;
+    }
+    size_t bufferSize = getDataSizeFromIpcHandle(ipcData);
+    ret = umfMemoryTrackerAdd(p->hTracker, p->pool, *ptr, bufferSize);
+    if (ret != UMF_RESULT_SUCCESS && p->hUpstream) {
+        if (umfMemoryProviderCloseIPCHandle(p->hUpstream, *ptr)) {
+            // TODO: LOG
+        }
+    }
+    return ret;
+}
+
+static umf_result_t trackingCloseIpcHandle(void *provider, void *ptr) {
+    umf_tracking_memory_provider_t *p =
+        (umf_tracking_memory_provider_t *)provider;
+
+    // umfMemoryTrackerRemove should be called before umfMemoryProviderFree
+    // to avoid a race condition. If the order would be different, other thread
+    // could allocate the memory at address `ptr` before a call to umfMemoryTrackerRemove
+    // resulting in inconsistent state.
+    if (ptr) {
+        // TODO: below method requires size but does not use it internally
+        //       Perhaps we should remove size parameter from umfMemoryTrackerRemove
+        umf_result_t ret = umfMemoryTrackerRemove(p->hTracker, ptr, 0);
+        if (ret != UMF_RESULT_SUCCESS) {
+            // DO NOT return an error here, because the tracking provider
+            // cannot change behaviour of the upstream provider.
+            fprintf(stderr, "tracking free: umfMemoryTrackerRemove failed\n");
+        }
+    }
+    return umfMemoryProviderCloseIPCHandle(p->hUpstream, ptr);
+}
+
 umf_memory_provider_ops_t UMF_TRACKING_MEMORY_PROVIDER_OPS = {
     .version = UMF_VERSION_CURRENT,
     .initialize = trackingInitialize,
@@ -442,7 +633,12 @@ umf_memory_provider_ops_t UMF_TRACKING_MEMORY_PROVIDER_OPS = {
     .ext.purge_force = trackingPurgeForce,
     .ext.purge_lazy = trackingPurgeLazy,
     .ext.allocation_split = trackingAllocationSplit,
-    .ext.allocation_merge = trackingAllocationMerge};
+    .ext.allocation_merge = trackingAllocationMerge,
+    .ipc.get_ipc_handle_size = trackingGetIpcHandleSize,
+    .ipc.get_ipc_handle = trackingGetIpcHandle,
+    .ipc.put_ipc_handle = trackingPutIpcHandle,
+    .ipc.open_ipc_handle = trackingOpenIpcHandle,
+    .ipc.close_ipc_handle = trackingCloseIpcHandle};
 
 umf_result_t umfTrackingMemoryProviderCreate(
     umf_memory_provider_handle_t hUpstream, umf_memory_pool_handle_t hPool,
@@ -455,6 +651,10 @@ umf_result_t umfTrackingMemoryProviderCreate(
         return UMF_RESULT_ERROR_UNKNOWN;
     }
     params.pool = hPool;
+    params.ipcCache = critnib_new();
+    if (!params.ipcCache) {
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
 
     return umfMemoryProviderCreate(&UMF_TRACKING_MEMORY_PROVIDER_OPS, &params,
                                    hTrackingProvider);

@@ -40,6 +40,15 @@ void umfMemoryTrackerDestroy(umf_memory_tracker_handle_t handle);
 
 umf_memory_pool_handle_t umfMemoryTrackerGetPool(const void *ptr);
 
+typedef struct umf_alloc_info_t {
+    void *base;
+    size_t size;
+    umf_memory_pool_handle_t pool;
+} umf_alloc_info_t;
+
+umf_result_t umfMemoryTrackerGetAllocInfo(const void *ptr,
+                                          umf_alloc_info_t *pAllocInfo);
+
 // Creates a memory provider that tracks each allocation/deallocation through umf_memory_tracker_handle_t and
 // forwards all requests to hUpstream memory Provider. hUpstream lifetime should be managed by the user of this function.
 umf_result_t umfTrackingMemoryProviderCreate(
