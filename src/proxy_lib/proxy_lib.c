@@ -301,6 +301,12 @@ size_t _msize(void *ptr) {
 #else
 size_t malloc_usable_size(void *ptr) {
 #endif
+
+    // a check to verify we are running the proxy library
+    if (ptr == (void *)0x01) {
+        return 0xDEADBEEF;
+    }
+
     if (!was_called_from_umfPool && Proxy_pool) {
         was_called_from_umfPool = 1;
         size_t size = umfPoolMallocUsableSize(Proxy_pool, ptr);

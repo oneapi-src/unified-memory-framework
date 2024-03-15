@@ -25,6 +25,9 @@ option(USE_TSAN "Enable ThreadSanitizer checks" OFF)
 option(USE_MSAN "Enable MemorySanitizer checks" OFF)
 option(USE_VALGRIND "Enable Valgrind instrumentation" OFF)
 
+# set UMF_PROXY_LIB_BASED_ON_POOL to one of: SCALABLE or JEMALLOC
+set(UMF_PROXY_LIB_BASED_ON_POOL SCALABLE CACHE STRING "A UMF pool the proxy library is based on (SCALABLE or JEMALLOC)" FORCE)
+
 set(KNOWN_BUILD_TYPES Release Debug RelWithDebInfo MinSizeRel)
 string(REPLACE ";" " " KNOWN_BUILD_TYPES_STR "${KNOWN_BUILD_TYPES}")
 
@@ -131,9 +134,13 @@ install(
     EXPORT ${PROJECT_NAME}-targets)
 
 if(WINDOWS)
-    # set PATH to DLLs on Windows
-    set(DLL_PATH_LIST "PATH=path_list_append:../bin/$<CONFIG>")
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+    # set PATH to DLLs on Windows
+    set(DLL_PATH_LIST "PATH=path_list_append:${PROJECT_BINARY_DIR}/bin/$<CONFIG>")
+    # add path to the proxy lib DLL
+    set(DLL_PATH_LIST "${DLL_PATH_LIST};PATH=path_list_append:${PROJECT_BINARY_DIR}/src/proxy_lib")
+    # MSVC implicitly adds $<CONFIG> to the output path
+    set(DLL_PATH_LIST "${DLL_PATH_LIST};PATH=path_list_append:${PROJECT_BINARY_DIR}/src/proxy_lib/$<CONFIG>")
 endif()
 
 pkg_check_modules(LIBHWLOC hwloc)
@@ -159,6 +166,32 @@ if(UMF_BUILD_LIBUMF_POOL_JEMALLOC AND (LINUX OR WINDOWS))
     endif()
     # add PATH to DLL on Windows
     set(DLL_PATH_LIST "${DLL_PATH_LIST};PATH=path_list_append:${JEMALLOC_LIBRARY_DIRS}/../bin")
+endif()
+
+# set UMF_PROXY_LIB_ENABLED
+if(LINUX OR WINDOWS)
+    # TODO: enable the proxy library in the Debug build on Windows
+    if(WINDOWS AND NOT (CMAKE_BUILD_TYPE STREQUAL "Release"))
+        message(STATUS "Disabling the proxy library, because it is supported only in the Release build on Windows (CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE})")
+    elseif(UMF_PROXY_LIB_BASED_ON_POOL STREQUAL SCALABLE)
+        if(UMF_BUILD_LIBUMF_POOL_SCALABLE)
+            set(UMF_PROXY_LIB_ENABLED ON)
+            set(PROXY_LIB_USES_SCALABLE_POOL ON)
+            set(PROXY_LIBS umf scalable_pool)
+        else()
+            message(STATUS "Disabling the proxy library, because UMF_PROXY_LIB_BASED_ON_POOL==SCALABLE but UMF_BUILD_LIBUMF_POOL_SCALABLE is OFF")
+        endif()
+    elseif(UMF_PROXY_LIB_BASED_ON_POOL STREQUAL JEMALLOC)
+        if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
+            set(UMF_PROXY_LIB_ENABLED ON)
+            set(PROXY_LIB_USES_JEMALLOC_POOL ON)
+            set(PROXY_LIBS umf jemalloc_pool)
+        else()
+            message(STATUS "Disabling the proxy library, because UMF_PROXY_LIB_BASED_ON_POOL==JEMALLOC but UMF_BUILD_LIBUMF_POOL_JEMALLOC is OFF")
+        endif()
+    else()
+        message(FATAL_ERROR "Proxy library: pool manager not chosen or set to a non-supported one (see UMF_PROXY_LIB_BASED_ON_POOL)")
+    endif()
 endif()
 
 add_subdirectory(src)
