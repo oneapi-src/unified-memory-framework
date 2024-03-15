@@ -26,6 +26,23 @@ option(USE_TSAN "Enable ThreadSanitizer checks" OFF)
 option(USE_MSAN "Enable MemorySanitizer checks" OFF)
 option(USE_VALGRIND "Enable Valgrind instrumentation" OFF)
 
+set(KNOWN_BUILD_TYPES Release Debug RelWithDebInfo MinSizeRel)
+string(REPLACE ";" " " KNOWN_BUILD_TYPES_STR "${KNOWN_BUILD_TYPES}")
+
+if(NOT CMAKE_BUILD_TYPE)
+    message(STATUS "No build type selected (CMAKE_BUILD_TYPE), defaulting to Release")
+    set(CMAKE_BUILD_TYPE "Release")
+else()
+    message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
+    if(NOT CMAKE_BUILD_TYPE IN_LIST KNOWN_BUILD_TYPES)
+        message(WARNING "Unusual build type was set (${CMAKE_BUILD_TYPE}), please make sure it is a correct one. "
+                        "The following ones are supported by default: ${KNOWN_BUILD_TYPES_STR}.")
+    endif()
+endif()
+
+set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING "Choose the type of build, options are: ${KNOWN_BUILD_TYPES_STR} ..." FORCE)
+set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${KNOWN_BUILD_TYPES})
+
 # For using the options listed in the OPTIONS_REQUIRING_CXX variable
 # a C++17 compiler is required. Moreover, if these options are not set,
 # CMake will set up a strict C build, without C++ support.
