@@ -76,7 +76,14 @@ add_umf_test(NAME base
 add_umf_test(NAME memoryPool
              SRCS memoryPoolAPI.cpp malloc_compliance_tests.cpp)
 add_umf_test(NAME memoryProvider
-             SRCS memoryProviderAPI.cpp)
+    		 SRCS memoryProviderAPI.cpp)
+
+add_umf_test(NAME logger
+             SRCS utils/utils_log.cpp
+             LIBS umf_utils)
+add_umf_test(NAME utils_common
+		     SRCS utils/utils.cpp
+             LIBS umf_utils)
 
 if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
     add_umf_test(NAME disjointPool
