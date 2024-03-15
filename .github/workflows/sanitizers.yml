@@ -46,7 +46,6 @@ jobs:
         -DUMF_BUILD_SHARED_LIBRARY=OFF
         -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
         -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
-        -DUMF_BUILD_OS_MEMORY_PROVIDER=ON
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
         -DUMF_ENABLE_POOL_TRACKING=ON
         -DUMF_FORMAT_CODE_STYLE=OFF
@@ -96,7 +95,6 @@ jobs:
         -DUMF_BUILD_SHARED_LIBRARY=OFF
         -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
         -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
-        -DUMF_BUILD_OS_MEMORY_PROVIDER=ON
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
         -DUMF_ENABLE_POOL_TRACKING=ON
         -DUMF_FORMAT_CODE_STYLE=OFF
@@ -168,7 +166,6 @@ jobs:
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
         -DUSE_ASAN=${{matrix.sanitizers.asan}}
-        -DUMF_BUILD_OS_MEMORY_PROVIDER=ON
         -DUMF_BUILD_EXAMPLES=ON
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
 

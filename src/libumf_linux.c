@@ -24,10 +24,7 @@ void __attribute__((destructor)) umfDestroy(void) {
     // make sure TRACKER is not used after being destroyed
     TRACKER = NULL;
     umfMemoryTrackerDestroy(t);
-
-#if defined(UMF_BUILD_OS_MEMORY_PROVIDER)
     umfMemspaceHostAllDestroy();
-#endif
 }
 
 void libumfInit(void) {

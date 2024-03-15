@@ -94,14 +94,13 @@ jobs:
     - name: Install apt packages
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake clang-format-15
+        sudo apt-get install -y cmake clang-format-15 libhwloc-dev
 
     - name: Configure CMake
       run: >
         cmake
         -B ${{github.workspace}}/build
         -DUMF_FORMAT_CODE_STYLE=ON
-        -DUMF_BUILD_OS_MEMORY_PROVIDER=OFF
         -DUMF_BUILD_TESTS=OFF
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
         -DUMF_BUILD_LIBUMF_POOL_SCALABLE=OFF

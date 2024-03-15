@@ -16,7 +16,6 @@ jobs:
         compiler: [{c: icx, cxx: icpx}]
         pool_tracking: ['ON', 'OFF']
         shared_library: ['OFF']
-        os_provider: ['ON']
     env:
       BUILD_DIR : "${{github.workspace}}/build/"
       INSTL_DIR : "${{github.workspace}}/../install-dir"
@@ -46,8 +45,7 @@ jobs:
         -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
         -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
         -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
-        -DUMF_BUILD_OS_MEMORY_PROVIDER=${{matrix.os_provider}}        
-        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON  
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
         -DUMF_ENABLE_POOL_TRACKING=${{matrix.pool_tracking}}
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
@@ -65,7 +63,7 @@ jobs:
 
     - name: Test UMF installation and uninstallation
       # The '--shared-library' parameter is added to the installation test when the UMF is built as a shared library
-      # OS provider, pool tracking and scalable pool (always ON in this job) has to be enabled for the basic example to be built
+      # pool tracking and scalable pool (always ON in this job) has to be enabled for the basic example to be built
       # The '--examples' parameter is added to the installation test when examples are built
       run: >
         python3 ${{github.workspace}}/test/test_installation.py
@@ -76,7 +74,7 @@ jobs:
         --jemalloc-pool
         --scalable-pool
         ${{ matrix.shared_library == 'ON' && '--shared-library' || ''}}
-        ${{ (matrix.os_provider == 'ON' && matrix.pool_tracking == 'ON') && '--examples' || '' }}
+        ${{ matrix.pool_tracking == 'ON' && '--examples' || '' }}
 
   ubuntu-build:
     name: Ubuntu
@@ -87,51 +85,30 @@ jobs:
         compiler: [{c: gcc, cxx: g++}]
         pool_tracking: ['ON', 'OFF']
         shared_library: ['OFF']
-        os_provider: ['ON']
         level_zero_provider: ['ON']
         include:
           - os: 'ubuntu-20.04'
             build_type: Release
             compiler: {c: gcc-7, cxx: g++-7}
             shared_library: 'OFF'
-            os_provider: 'ON'
             pool_tracking: 'ON'
             level_zero_provider: 'ON'
           - os: 'ubuntu-22.04'
             build_type: Release
             compiler: {c: clang, cxx: clang++}
             shared_library: 'OFF'
-            os_provider: 'ON'
             pool_tracking: 'ON'
             level_zero_provider: 'ON'
           - os: 'ubuntu-22.04'
             build_type: Release
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
-            os_provider: 'ON'
             pool_tracking: 'ON'
             level_zero_provider: 'ON'
           - os: 'ubuntu-22.04'
             build_type: Debug
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
-            os_provider: 'ON'
-            pool_tracking: 'ON'
-            level_zero_provider: 'ON'
-          # test os_provider='OFF' with shared_library='ON'
-          - os: 'ubuntu-22.04'
-            build_type: Release
-            compiler: {c: gcc, cxx: g++}
-            shared_library: 'ON'
-            os_provider: 'OFF'
-            pool_tracking: 'ON'
-            level_zero_provider: 'ON'
-          # test os_provider='OFF' with shared_library='OFF'
-          - os: 'ubuntu-22.04'
-            build_type: Release
-            compiler: {c: gcc, cxx: g++}
-            shared_library: 'OFF'
-            os_provider: 'OFF'
             pool_tracking: 'ON'
             level_zero_provider: 'ON'
           # test level_zero_provider='OFF'
@@ -139,7 +116,6 @@ jobs:
             build_type: Release
             compiler: {c: gcc, cxx: g++}
             shared_library: 'OFF'
-            os_provider: 'ON'
             pool_tracking: 'ON'
             level_zero_provider: 'OFF'
     env:
@@ -169,7 +145,6 @@ jobs:
         -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
         -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
         -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
-        -DUMF_BUILD_OS_MEMORY_PROVIDER=${{matrix.os_provider}}
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=${{matrix.level_zero_provider}}
         -DUMF_ENABLE_POOL_TRACKING=${{matrix.pool_tracking}}
         -DUMF_FORMAT_CODE_STYLE=OFF
@@ -198,7 +173,7 @@ jobs:
         --jemalloc-pool
         --scalable-pool
         ${{ matrix.shared_library == 'ON' && '--shared-library' || '' }}
-        ${{ (matrix.os_provider == 'ON' && matrix.pool_tracking == 'ON') && '--examples' || '' }}
+        ${{ matrix.pool_tracking == 'ON' && '--examples' || '' }}
 
   windows-build:
     name: Windows
@@ -213,14 +188,12 @@ jobs:
         compiler: [{c: cl, cxx: cl}]
         pool_tracking: ['ON', 'OFF']
         shared_library: ['OFF']
-        os_provider: ['ON']
         level_zero_provider: ['ON']
         include:
           - os: 'windows-2022'
             build_type: Release
             compiler: {c: clang-cl, cxx: clang-cl}
             pool_tracking: 'ON'
-            os_provider: 'ON'
             level_zero_provider: 'ON'
             toolset: "-T ClangCL"
           - os: 'windows-2022'
@@ -228,21 +201,12 @@ jobs:
             compiler: {c: cl, cxx: cl}
             pool_tracking: 'ON'
             shared_library: 'ON'
-            os_provider: 'ON'
             level_zero_provider: 'ON'
           - os: 'windows-2022'
             build_type: Release
             compiler: {c: cl, cxx: cl}
             pool_tracking: 'ON'
             shared_library: 'ON'
-            os_provider: 'OFF'
-            level_zero_provider: 'ON'
-          - os: 'windows-2022'
-            build_type: Release
-            compiler: {c: cl, cxx: cl}
-            pool_tracking: 'ON'
-            shared_library: 'ON'
-            os_provider: 'ON'
             level_zero_provider: 'OFF'
 
     runs-on: ${{matrix.os}}
@@ -277,7 +241,6 @@ jobs:
         -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
         -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
-        -DUMF_BUILD_OS_MEMORY_PROVIDER=${{matrix.os_provider}}
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=${{matrix.level_zero_provider}}
 
     - name: Build UMF
@@ -300,7 +263,7 @@ jobs:
         --jemalloc-pool
         --scalable-pool
         ${{ matrix.shared_library == 'ON' && '--shared-library' || ''}}
-        ${{ (matrix.os_provider == 'ON' && matrix.pool_tracking == 'ON') && '--examples' || '' }}
+        ${{ matrix.pool_tracking == 'ON' && '--examples' || '' }}
 
   macos-build:
     name: MacOS
@@ -320,6 +283,9 @@ jobs:
     - name: Install Python requirements
       run: python3 -m pip install -r third_party/requirements.txt
 
+    - name: Install hwloc
+      run: brew install hwloc
+
     - name: Configure build
       run: >
         cmake
@@ -329,7 +295,6 @@ jobs:
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_ENABLE_POOL_TRACKING=ON        
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
-        -DUMF_BUILD_OS_MEMORY_PROVIDER=OFF
         -DUMF_BUILD_LIBUMF_POOL_SCALABLE=OFF
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=OFF
         -DUMF_BUILD_SHARED_LIBRARY=ON

@@ -47,9 +47,6 @@ function(add_umf_benchmark)
         set_property(TEST ${BENCH_NAME} PROPERTY ENVIRONMENT_MODIFICATION "${DLL_PATH_LIST}")
     endif()
 
-    if (UMF_BUILD_OS_MEMORY_PROVIDER)
-        target_compile_definitions(${BENCH_NAME} PRIVATE UMF_BUILD_OS_MEMORY_PROVIDER=1)
-    endif()
     if (UMF_BUILD_LIBUMF_POOL_DISJOINT)
         target_compile_definitions(${BENCH_NAME} PRIVATE UMF_BUILD_LIBUMF_POOL_DISJOINT=1)
     endif()
@@ -61,23 +58,21 @@ function(add_umf_benchmark)
     endif()
 endfunction()
 
+set(LIB_DIRS ${LIBHWLOC_LIBRARY_DIRS})
+
 # optional libraries
 if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
     set(LIBS_OPTIONAL ${LIBS_OPTIONAL} disjoint_pool)
 endif()
 if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
     set(LIBS_OPTIONAL ${LIBS_OPTIONAL} jemalloc_pool ${JEMALLOC_LIBRARIES})
-    set(LIB_DIRS_OPTIONAL ${LIB_DIRS_OPTIONAL} ${JEMALLOC_LIBRARY_DIRS})
+    set(LIB_DIRS ${LIB_DIRS} ${JEMALLOC_LIBRARY_DIRS})
 endif()
 if(UMF_BUILD_LIBUMF_POOL_SCALABLE)
     set(LIBS_OPTIONAL ${LIBS_OPTIONAL} scalable_pool)
 endif()
 if(LINUX)
     set(LIBS_OPTIONAL ${LIBS_OPTIONAL} m)
-endif()
-if(UMF_BUILD_OS_MEMORY_PROVIDER)
-    set(LIBS_OPTIONAL ${LIBS_OPTIONAL} ${LIBHWLOC_LIBRARIES})
-    set(LIB_DIRS_OPTIONAL ${LIB_DIRS_OPTIONAL} ${LIBHWLOC_LIBRARY_DIRS})
 endif()
 
 # BENCHMARKS
@@ -86,12 +81,12 @@ add_umf_benchmark(
     NAME ubench
     SRCS ubench.c
     LIBS ${LIBS_OPTIONAL}
-    LIBDIRS ${LIB_DIRS_OPTIONAL})
+    LIBDIRS ${LIB_DIRS})
 
 if (UMF_BUILD_BENCHMARKS_MT)
     add_umf_benchmark(
         NAME multithreaded
         SRCS multithread.cpp
         LIBS ${LIBS_OPTIONAL} ${CMAKE_THREAD_LIBS_INIT}
-        LIBDIRS ${LIB_DIRS_OPTIONAL})
+        LIBDIRS ${LIB_DIRS})
 endif()
