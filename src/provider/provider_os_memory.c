@@ -5,19 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 */
 
-#ifdef _WIN32
-#pragma warning(push)
-// Disable the warning:
-// hwloc-win64-build-2.10.0\include\hwloc/helper.h(1266):
-// warning C4996: 'sscanf': This function or variable may be unsafe.
-// Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS.
-#pragma warning(disable : 4996)
-#include <hwloc.h>
-#pragma warning(pop)
-#else
-#include <hwloc.h>
-#endif
-
 #include <assert.h>
 #include <errno.h>
 #include <hwloc.h>
