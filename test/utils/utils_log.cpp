@@ -47,22 +47,8 @@ int mock_fflush(FILE *stream) {
 }
 
 extern "C" {
+
 const char *env_variable = "";
-
-int mock_util_env_var(const char *envvar, char *buffer, size_t buffer_size) {
-    (void)envvar;
-    if (!env_variable) {
-        return 0;
-    }
-
-    size_t len = strlen(env_variable) + 1;
-    len = buffer_size < len ? buffer_size : len;
-
-    memcpy(buffer, env_variable, len);
-
-    return (int)len;
-}
-
 #define fopen(A, B) mock_fopen(A, B)
 #define fopen_s(A, B, C) mock_fopen_s(A, B, C)
 #define fputs(A, B) mock_fputs(A, B)
