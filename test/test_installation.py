@@ -60,9 +60,13 @@ class UmfInstaller:
         if platform.system() == "Windows":
             lib_ext_static = "lib"
             lib_ext_shared = "lib"
-        else:
+        elif platform.system() == "Linux":
             lib_ext_static = "a"
             lib_ext_shared = "so"
+            lib_prefix = "lib"
+        else: # MacOS
+            lib_ext_static = "a"
+            lib_ext_shared = "dylib"
             lib_prefix = "lib"
 
         bin = []
