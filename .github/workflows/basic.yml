@@ -285,7 +285,7 @@ jobs:
       run: python3 -m pip install -r third_party/requirements.txt
 
     - name: Install hwloc
-      run: brew install hwloc
+      run: brew install hwloc jemalloc tbb
 
     - name: Configure build
       run: >
@@ -294,10 +294,11 @@ jobs:
         -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
-        -DUMF_ENABLE_POOL_TRACKING=ON        
+        -DUMF_ENABLE_POOL_TRACKING=ON
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
-        -DUMF_BUILD_LIBUMF_POOL_SCALABLE=OFF
-        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=OFF
+        -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
+        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
+        -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
         -DUMF_BUILD_SHARED_LIBRARY=ON
 
     - name: Build UMF
@@ -310,3 +311,7 @@ jobs:
         --install-dir ${{env.INSTL_DIR}}
         --build-type ${{env.BUILD_TYPE}}
         --shared-library
+        --disjoint-pool
+        --jemalloc-pool
+        --scalable-pool
+        --examples

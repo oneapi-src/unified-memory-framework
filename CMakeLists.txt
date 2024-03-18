@@ -172,7 +172,7 @@ endif()
 set(DLL_PATH_LIST
     "${DLL_PATH_LIST};PATH=path_list_append:${LIBHWLOC_LIBRARY_DIRS}/../bin")
 
-if(UMF_BUILD_LIBUMF_POOL_SCALABLE AND (LINUX OR WINDOWS))
+if(UMF_BUILD_LIBUMF_POOL_SCALABLE)
     pkg_check_modules(TBB tbb)
     if(NOT TBB_FOUND)
         find_package(TBB REQUIRED tbb)
@@ -182,7 +182,7 @@ if(UMF_BUILD_LIBUMF_POOL_SCALABLE AND (LINUX OR WINDOWS))
         "${DLL_PATH_LIST};PATH=path_list_append:${TBB_LIBRARY_DIRS}/../bin")
 endif()
 
-if(UMF_BUILD_LIBUMF_POOL_JEMALLOC AND (LINUX OR WINDOWS))
+if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
     pkg_check_modules(JEMALLOC jemalloc)
     if(NOT JEMALLOC_FOUND)
         find_package(JEMALLOC REQUIRED jemalloc)
@@ -194,41 +194,39 @@ if(UMF_BUILD_LIBUMF_POOL_JEMALLOC AND (LINUX OR WINDOWS))
 endif()
 
 # set UMF_PROXY_LIB_ENABLED
-if(LINUX OR WINDOWS)
+if(WINDOWS AND NOT (CMAKE_BUILD_TYPE STREQUAL "Release"))
     # TODO: enable the proxy library in the Debug build on Windows
-    if(WINDOWS AND NOT (CMAKE_BUILD_TYPE STREQUAL "Release"))
-        message(
-            STATUS
-                "Disabling the proxy library, because it is supported only in the Release build on Windows (CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE})"
-        )
-    elseif(UMF_PROXY_LIB_BASED_ON_POOL STREQUAL SCALABLE)
-        if(UMF_BUILD_LIBUMF_POOL_SCALABLE)
-            set(UMF_PROXY_LIB_ENABLED ON)
-            set(PROXY_LIB_USES_SCALABLE_POOL ON)
-            set(PROXY_LIBS umf scalable_pool)
-        else()
-            message(
-                STATUS
-                    "Disabling the proxy library, because UMF_PROXY_LIB_BASED_ON_POOL==SCALABLE but UMF_BUILD_LIBUMF_POOL_SCALABLE is OFF"
-            )
-        endif()
-    elseif(UMF_PROXY_LIB_BASED_ON_POOL STREQUAL JEMALLOC)
-        if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
-            set(UMF_PROXY_LIB_ENABLED ON)
-            set(PROXY_LIB_USES_JEMALLOC_POOL ON)
-            set(PROXY_LIBS umf jemalloc_pool)
-        else()
-            message(
-                STATUS
-                    "Disabling the proxy library, because UMF_PROXY_LIB_BASED_ON_POOL==JEMALLOC but UMF_BUILD_LIBUMF_POOL_JEMALLOC is OFF"
-            )
-        endif()
+    message(
+        STATUS
+            "Disabling the proxy library, because it is supported only in the Release build on Windows (CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE})"
+    )
+elseif(UMF_PROXY_LIB_BASED_ON_POOL STREQUAL SCALABLE)
+    if(UMF_BUILD_LIBUMF_POOL_SCALABLE)
+        set(UMF_PROXY_LIB_ENABLED ON)
+        set(PROXY_LIB_USES_SCALABLE_POOL ON)
+        set(PROXY_LIBS umf scalable_pool)
     else()
         message(
-            FATAL_ERROR
-                "Proxy library: pool manager not chosen or set to a non-supported one (see UMF_PROXY_LIB_BASED_ON_POOL)"
+            STATUS
+                "Disabling the proxy library, because UMF_PROXY_LIB_BASED_ON_POOL==SCALABLE but UMF_BUILD_LIBUMF_POOL_SCALABLE is OFF"
         )
     endif()
+elseif(UMF_PROXY_LIB_BASED_ON_POOL STREQUAL JEMALLOC)
+    if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
+        set(UMF_PROXY_LIB_ENABLED ON)
+        set(PROXY_LIB_USES_JEMALLOC_POOL ON)
+        set(PROXY_LIBS umf jemalloc_pool)
+    else()
+        message(
+            STATUS
+                "Disabling the proxy library, because UMF_PROXY_LIB_BASED_ON_POOL==JEMALLOC but UMF_BUILD_LIBUMF_POOL_JEMALLOC is OFF"
+        )
+    endif()
+else()
+    message(
+        FATAL_ERROR
+            "Proxy library: pool manager not chosen or set to a non-supported one (see UMF_PROXY_LIB_BASED_ON_POOL)"
+    )
 endif()
 
 add_subdirectory(src)
@@ -238,12 +236,7 @@ if(UMF_BUILD_TESTS)
 endif()
 
 if(UMF_BUILD_BENCHMARKS)
-    if(LINUX OR WINDOWS)
-        add_subdirectory(benchmark)
-    else()
-        message(
-            FATAL_ERROR "benchmarks are supported on Linux and Windows only")
-    endif()
+    add_subdirectory(benchmark)
 endif()
 
 if(UMF_BUILD_EXAMPLES)
