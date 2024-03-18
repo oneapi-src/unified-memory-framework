@@ -216,7 +216,7 @@ void *umf_ba_alloc(umf_ba_pool_t *pool) {
 
     // mark the memory defined to read the next ptr, after this is done
     // we'll mark the memory as undefined
-    utils_annotate_memory_defined(chunk, sizeof(chunk));
+    utils_annotate_memory_defined(chunk, sizeof(*chunk));
 
     pool->metadata.free_list = pool->metadata.free_list->next;
     pool->metadata.n_allocs++;
