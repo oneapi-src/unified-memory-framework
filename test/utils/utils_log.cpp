@@ -78,11 +78,13 @@ void helper_checkConfig(util_log_config_t *expected, util_log_config_t *is) {
 TEST_F(test, parseEnv_errors) {
     expected_message = "";
     loggerConfig = {0, 0, LOG_ERROR, LOG_ERROR, NULL};
+
     expect_fput_count = 0;
     expected_stream = stderr;
     util_log_config_t b = loggerConfig;
     helper_log_init(NULL);
     helper_checkConfig(&b, &loggerConfig);
+
     expect_fput_count = 1;
     helper_log_init("");
     helper_checkConfig(&b, &loggerConfig);
@@ -92,9 +94,10 @@ TEST_F(test, parseEnv_errors) {
     helper_checkConfig(&b, &loggerConfig);
     helper_log_init("_level:debug");
     helper_checkConfig(&b, &loggerConfig);
-    expect_fput_count = 1;
     expected_message = "[ERROR UMF] Cannot open output file - path too long\n";
-    helper_log_init(("output:file," + std::string(300, 'x')).c_str());
+    std::string test_env = "output:file," + std::string(300, 'x');
+    helper_log_init(test_env.c_str());
+    env_variable = NULL; // reset env_variable as test_env string is freed.
 }
 
 TEST_F(test, parseEnv) {
