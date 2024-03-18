@@ -17,12 +17,6 @@ FILE *mock_fopen(const char *filename, const char *mode) {
     return MOCK_FILE_PTR;
 }
 
-int mock_fopen_s(FILE **f, const char *filename, const char *mode) {
-    *f = mock_fopen(filename, mode);
-
-    return 0;
-}
-
 std::string expected_message = "";
 FILE *expected_stream;
 int expect_fput_count = 0;
@@ -50,7 +44,6 @@ extern "C" {
 
 const char *env_variable = "";
 #define fopen(A, B) mock_fopen(A, B)
-#define fopen_s(A, B, C) mock_fopen_s(A, B, C)
 #define fputs(A, B) mock_fputs(A, B)
 #define fflush(A) mock_fflush(A)
 #define util_env_var(A, B, C) mock_util_env_var(A, B, C)
@@ -83,6 +76,7 @@ void helper_checkConfig(util_log_config_t *expected, util_log_config_t *is) {
 }
 
 TEST_F(test, parseEnv_errors) {
+    expected_message = "";
     loggerConfig = {0, 0, LOG_ERROR, LOG_ERROR, NULL};
     expect_fput_count = 0;
     expected_stream = stderr;
@@ -98,6 +92,9 @@ TEST_F(test, parseEnv_errors) {
     helper_checkConfig(&b, &loggerConfig);
     helper_log_init("_level:debug");
     helper_checkConfig(&b, &loggerConfig);
+    expect_fput_count = 1;
+    expected_message = "[ERROR UMF] Cannot open output file - path too long\n";
+    helper_log_init(("output:file," + std::string(300, 'x')).c_str());
 }
 
 TEST_F(test, parseEnv) {
@@ -141,17 +138,20 @@ TEST_F(test, parseEnv) {
                                              output.first + ";" +
                                              timestamp.first + ";" + pid.first;
                         b = loggerConfig = {0, 0, LOG_ERROR, LOG_ERROR, NULL};
+                        expect_fput_count = 0;
+                        expect_fopen_count = 0;
+                        expected_stream = stderr;
+                        expected_message = "";
+                        expected_filename = "";
+                        auto n = output.first.find(',');
+                        if (n != std::string::npos) {
+                            expected_filename = output.first.substr(n + 1);
+                        }
+
                         if (output.second != NULL) {
                             b.output = output.second;
                             if (output.second == MOCK_FILE_PTR) {
                                 expect_fopen_count = 1;
-                            } else {
-                                expect_fopen_count = 0;
-                            }
-                            auto n = output.first.find(',');
-                            if (n != std::string::npos) {
-                                expected_filename =
-                                    output.first.substr(n + 1).c_str();
                             }
                             expected_stream = output.second;
                             b.timestamp = timestamp.second;
@@ -161,13 +161,14 @@ TEST_F(test, parseEnv) {
                             b.level = (util_log_level_t)logLevel.second;
                             if (logLevel.second <= LOG_INFO) {
                                 expect_fput_count = 1;
-                            } else {
-                                expect_fput_count = 0;
                             }
                         } else {
                             expect_fput_count = 1;
-                            expect_fopen_count = 0;
-                            expected_stream = stderr;
+                            if (expected_filename.size() > MAX_FILE_PATH) {
+                                expected_message =
+                                    "[ERROR UMF] Cannot open output file - "
+                                    "path too long\n";
+                            }
                         }
                         helper_log_init(envVar.c_str());
                         helper_checkConfig(&b, &loggerConfig);

@@ -156,26 +156,23 @@ void util_log_init(void) {
             len = strlen(arg);
         }
 
-        if (len <= MAX_FILE_PATH) {
-            memcpy(file, arg, len);
-            file[len] = '\0';
-#ifdef _WIN32
-            if (fopen_s(&loggerConfig.output, file, "w")) {
-                loggerConfig.output = NULL;
-            }
-#else
-            loggerConfig.output = fopen(file, "w");
-#endif
+        if (len > MAX_FILE_PATH) {
+            loggerConfig.output = stderr;
+            LOG_ERR("Cannot open output file - path too long");
+            loggerConfig.output = NULL;
+            return;
         }
+
+        memcpy(file, arg, len);
+        file[len] = '\0';
+        loggerConfig.output = fopen(file, "w");
         if (!loggerConfig.output) {
             loggerConfig.output = stderr;
             LOG_ERR("Cannot open output file %s - logging disabled", file);
             loggerConfig.output = NULL;
             return;
         }
-    }
-
-    else {
+    } else {
         loggerConfig.output = stderr;
         LOG_ERR("Logging output not set - logging disabled");
         loggerConfig.output = NULL;
