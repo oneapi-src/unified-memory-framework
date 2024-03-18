@@ -73,7 +73,9 @@ struct memspaceNumaProviderTest : ::memspaceNumaTest {
     void TearDown() override {
         ::memspaceNumaTest::TearDown();
 
-        umfMemoryProviderDestroy(hProvider);
+        if (hProvider != nullptr) {
+            umfMemoryProviderDestroy(hProvider);
+        }
     }
 
     umf_memory_provider_handle_t hProvider = nullptr;
