@@ -18,24 +18,6 @@
 static UTIL_ONCE_FLAG Page_size_is_initialized = UTIL_ONCE_FLAG_INIT;
 static size_t Page_size;
 
-int util_env_var(const char *envvar, char *buffer, size_t buffer_size) {
-    int ret = GetEnvironmentVariableA(envvar, buffer, (DWORD)buffer_size);
-    if (ret >= buffer_size) {
-        return -ret;
-    }
-
-    return ret;
-}
-
-int util_env_var_has_str(const char *envvar, const char *str) {
-    char buffer[BUFFER_SIZE];
-    if (util_env_var(envvar, buffer, BUFFER_SIZE) > 0) {
-        return (strstr(buffer, str) != NULL);
-    }
-
-    return 0;
-}
-
 static void _util_get_page_size(void) {
     SYSTEM_INFO SystemInfo;
     GetSystemInfo(&SystemInfo);

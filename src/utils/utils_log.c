@@ -133,9 +133,9 @@ void util_log(util_log_level_t level, const char *format, ...) {
 static const char *bool_to_str(int b) { return b ? "yes" : "no"; }
 
 void util_log_init(void) {
-    char envVar[MAX_ENV_LEN];
+    const char *envVar = getenv("UMF_LOG");
 
-    if (util_env_var("UMF_LOG", envVar, sizeof(envVar)) <= 0) {
+    if (!envVar) {
         return;
     }
 

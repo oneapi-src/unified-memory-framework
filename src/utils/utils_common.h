@@ -43,21 +43,6 @@ extern "C" {
 
 #endif /* _WIN32 */
 
-// utils_env_var - populate the given buffer with the value
-//                of the given environment variable
-// Return value
-// If the function succeeds, the return value is the number of characters
-// stored in the buffer pointed to by buffer, not including
-// the terminating null character.
-//
-// If the buffer is not large enough to hold the data, then:
-// 1) the return value equals (-1) * the buffer size (in characters)
-//    required to hold the string and its terminating null character,
-// 2) the content of the buffer is undefined.
-//
-// If the function fails, the return value is zero.
-int util_env_var(const char *envvar, char *buffer, size_t buffer_size);
-
 // Check if the environment variable contains the given string.
 int util_env_var_has_str(const char *envvar, const char *str);
 
