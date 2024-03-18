@@ -9,46 +9,44 @@ endif()
 
 # libumf_pool_disjoint
 if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
-    add_umf_library(NAME disjoint_pool
-                    TYPE STATIC
-                    SRCS pool_disjoint.cpp ${POOL_EXTRA_SRCS}
-                    LIBS umf_utils)
+    add_umf_library(
+        NAME disjoint_pool
+        TYPE STATIC
+        SRCS pool_disjoint.cpp ${POOL_EXTRA_SRCS}
+        LIBS umf_utils)
     target_compile_definitions(disjoint_pool PUBLIC ${POOL_COMPILE_DEFINITIONS})
 
     add_library(${PROJECT_NAME}::disjoint_pool ALIAS disjoint_pool)
 
-    add_dependencies(disjoint_pool
-        umf)
+    add_dependencies(disjoint_pool umf)
 
-    target_link_libraries(disjoint_pool PRIVATE
-        umf)
+    target_link_libraries(disjoint_pool PRIVATE umf)
 
-    target_include_directories(disjoint_pool PUBLIC
-        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/umf/pools>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-    )
+    target_include_directories(
+        disjoint_pool
+        PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/umf/pools>
+               $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
-    install(TARGETS disjoint_pool
-        EXPORT ${PROJECT_NAME}-targets
-    )
+    install(TARGETS disjoint_pool EXPORT ${PROJECT_NAME}-targets)
 endif()
 
 # libumf_pool_jemalloc
 if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
     if(LINUX OR WINDOWS)
-        add_umf_library(NAME jemalloc_pool
-                        TYPE STATIC
-                        SRCS pool_jemalloc.c ${POOL_EXTRA_SRCS}
-                        LIBS jemalloc umf_utils)
-        target_include_directories(jemalloc_pool PRIVATE ${JEMALLOC_INCLUDE_DIRS})
-        target_compile_definitions(jemalloc_pool PUBLIC ${POOL_COMPILE_DEFINITIONS})
+        add_umf_library(
+            NAME jemalloc_pool
+            TYPE STATIC
+            SRCS pool_jemalloc.c ${POOL_EXTRA_SRCS}
+            LIBS jemalloc umf_utils)
+        target_include_directories(jemalloc_pool
+                                   PRIVATE ${JEMALLOC_INCLUDE_DIRS})
+        target_compile_definitions(jemalloc_pool
+                                   PUBLIC ${POOL_COMPILE_DEFINITIONS})
         add_library(${PROJECT_NAME}::jemalloc_pool ALIAS jemalloc_pool)
-        install(TARGETS jemalloc_pool
-            EXPORT ${PROJECT_NAME}-targets
-        )
+        install(TARGETS jemalloc_pool EXPORT ${PROJECT_NAME}-targets)
     else()
         message(FATAL_ERROR "libumf_pool_jemalloc is supported on Linux and "
-                "Windows only")
+                            "Windows only")
     endif()
 endif()
 
@@ -61,18 +59,18 @@ if(UMF_BUILD_LIBUMF_POOL_SCALABLE)
             set(LIBS_POOL_SCALABLE umf_utils)
         endif()
 
-        add_umf_library(NAME scalable_pool
-                        TYPE STATIC
-                        SRCS pool_scalable.c ${POOL_EXTRA_SRCS}
-                        LIBS ${LIBS_POOL_SCALABLE})
+        add_umf_library(
+            NAME scalable_pool
+            TYPE STATIC
+            SRCS pool_scalable.c ${POOL_EXTRA_SRCS}
+            LIBS ${LIBS_POOL_SCALABLE})
         target_include_directories(scalable_pool PRIVATE ${TBB_INCLUDE_DIRS})
-        target_compile_definitions(scalable_pool PUBLIC ${POOL_COMPILE_DEFINITIONS})
+        target_compile_definitions(scalable_pool
+                                   PUBLIC ${POOL_COMPILE_DEFINITIONS})
         add_library(${PROJECT_NAME}::scalable_pool ALIAS scalable_pool)
-        install(TARGETS scalable_pool
-            EXPORT ${PROJECT_NAME}-targets
-        )
+        install(TARGETS scalable_pool EXPORT ${PROJECT_NAME}-targets)
     else()
         message(FATAL_ERROR "libumf_pool_scalable is supported on Linux and "
-                "Windows only")
+                            "Windows only")
     endif()
 endif()

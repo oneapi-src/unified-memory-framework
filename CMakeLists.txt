@@ -3,21 +3,28 @@
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 cmake_minimum_required(VERSION 3.14.0 FATAL_ERROR)
-project(unified-memory-framework VERSION 0.1.0 LANGUAGES C)
+project(
+    unified-memory-framework
+    VERSION 0.1.0
+    LANGUAGES C)
 
 # Build Options
 option(UMF_BUILD_SHARED_LIBRARY "Build UMF as shared library" OFF)
 option(UMF_BUILD_LEVEL_ZERO_PROVIDER "Build Level Zero memory provider" ON)
-option(UMF_BUILD_LIBUMF_POOL_DISJOINT "Build the libumf_pool_disjoint static library" OFF)
-option(UMF_BUILD_LIBUMF_POOL_JEMALLOC "Build the libumf_pool_jemalloc static library" OFF)
-option(UMF_BUILD_LIBUMF_POOL_SCALABLE "Build the libumf_pool_scalable static library" OFF)
+option(UMF_BUILD_LIBUMF_POOL_DISJOINT
+       "Build the libumf_pool_disjoint static library" OFF)
+option(UMF_BUILD_LIBUMF_POOL_JEMALLOC
+       "Build the libumf_pool_jemalloc static library" OFF)
+option(UMF_BUILD_LIBUMF_POOL_SCALABLE
+       "Build the libumf_pool_scalable static library" OFF)
 option(UMF_BUILD_TESTS "Build UMF tests" ON)
 option(UMF_BUILD_GPU_TESTS "Build UMF GPU tests" OFF)
 option(UMF_BUILD_BENCHMARKS "Build UMF benchmarks" OFF)
 option(UMF_BUILD_BENCHMARKS_MT "Build UMF multithreaded benchmarks" OFF)
 option(UMF_BUILD_EXAMPLES "Build UMF examples" ON)
 option(UMF_ENABLE_POOL_TRACKING "Build UMF with pool tracking" ON)
-option(UMF_DEVELOPER_MODE "Enable developer checks, treats warnings as errors" OFF)
+option(UMF_DEVELOPER_MODE "Enable developer checks, treats warnings as errors"
+       OFF)
 option(UMF_FORMAT_CODE_STYLE "Format UMF code with clang-format" OFF)
 option(USE_ASAN "Enable AddressSanitizer checks" OFF)
 option(USE_UBSAN "Enable UndefinedBehaviorSanitizer checks" OFF)
@@ -26,32 +33,43 @@ option(USE_MSAN "Enable MemorySanitizer checks" OFF)
 option(USE_VALGRIND "Enable Valgrind instrumentation" OFF)
 
 # set UMF_PROXY_LIB_BASED_ON_POOL to one of: SCALABLE or JEMALLOC
-set(UMF_PROXY_LIB_BASED_ON_POOL SCALABLE CACHE STRING "A UMF pool the proxy library is based on (SCALABLE or JEMALLOC)" FORCE)
+set(UMF_PROXY_LIB_BASED_ON_POOL
+    SCALABLE
+    CACHE STRING
+          "A UMF pool the proxy library is based on (SCALABLE or JEMALLOC)"
+          FORCE)
 
 set(KNOWN_BUILD_TYPES Release Debug RelWithDebInfo MinSizeRel)
 string(REPLACE ";" " " KNOWN_BUILD_TYPES_STR "${KNOWN_BUILD_TYPES}")
 
 if(NOT CMAKE_BUILD_TYPE)
-    message(STATUS "No build type selected (CMAKE_BUILD_TYPE), defaulting to Release")
+    message(
+        STATUS
+            "No build type selected (CMAKE_BUILD_TYPE), defaulting to Release")
     set(CMAKE_BUILD_TYPE "Release")
 else()
     message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
     if(NOT CMAKE_BUILD_TYPE IN_LIST KNOWN_BUILD_TYPES)
-        message(WARNING "Unusual build type was set (${CMAKE_BUILD_TYPE}), please make sure it is a correct one. "
-                        "The following ones are supported by default: ${KNOWN_BUILD_TYPES_STR}.")
+        message(
+            WARNING
+                "Unusual build type was set (${CMAKE_BUILD_TYPE}), please make sure it is a correct one. "
+                "The following ones are supported by default: ${KNOWN_BUILD_TYPES_STR}."
+        )
     endif()
 endif()
 
-set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING "Choose the type of build, options are: ${KNOWN_BUILD_TYPES_STR} ..." FORCE)
+set(CMAKE_BUILD_TYPE
+    "${CMAKE_BUILD_TYPE}"
+    CACHE STRING
+          "Choose the type of build, options are: ${KNOWN_BUILD_TYPES_STR} ..."
+          FORCE)
 set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${KNOWN_BUILD_TYPES})
 
-# For using the options listed in the OPTIONS_REQUIRING_CXX variable
-# a C++17 compiler is required. Moreover, if these options are not set,
-# CMake will set up a strict C build, without C++ support.
-set(OPTIONS_REQUIRING_CXX
-    "UMF_BUILD_TESTS"
-    "UMF_BUILD_LIBUMF_POOL_DISJOINT"
-    "UMF_BUILD_BENCHMARKS_MT")
+# For using the options listed in the OPTIONS_REQUIRING_CXX variable a C++17
+# compiler is required. Moreover, if these options are not set, CMake will set
+# up a strict C build, without C++ support.
+set(OPTIONS_REQUIRING_CXX "UMF_BUILD_TESTS" "UMF_BUILD_LIBUMF_POOL_DISJOINT"
+                          "UMF_BUILD_BENCHMARKS_MT")
 foreach(option_name ${OPTIONS_REQUIRING_CXX})
     if(${option_name})
         enable_language(CXX)
@@ -111,7 +129,7 @@ if(USE_TSAN)
 endif()
 if(USE_MSAN)
     message(WARNING "MemorySanitizer requires instrumented libraries to "
-            "prevent reporting false-positives")
+                    "prevent reporting false-positives")
     add_sanitizer_flag(memory)
 endif()
 
@@ -121,27 +139,29 @@ add_library(umf_headers INTERFACE)
 
 # Alias target to support FetchContent.
 add_library(${PROJECT_NAME}::headers ALIAS umf_headers)
-target_include_directories(umf_headers INTERFACE
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+target_include_directories(
+    umf_headers INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+                          $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 # Add the include directory and the headers target to the install.
-install(
-    DIRECTORY "${PROJECT_SOURCE_DIR}/include/"
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(DIRECTORY "${PROJECT_SOURCE_DIR}/include/"
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-install(
-    TARGETS umf_headers
-    EXPORT ${PROJECT_NAME}-targets)
+install(TARGETS umf_headers EXPORT ${PROJECT_NAME}-targets)
 
 if(WINDOWS)
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
     # set PATH to DLLs on Windows
-    set(DLL_PATH_LIST "PATH=path_list_append:${PROJECT_BINARY_DIR}/bin/$<CONFIG>")
+    set(DLL_PATH_LIST
+        "PATH=path_list_append:${PROJECT_BINARY_DIR}/bin/$<CONFIG>")
     # add path to the proxy lib DLL
-    set(DLL_PATH_LIST "${DLL_PATH_LIST};PATH=path_list_append:${PROJECT_BINARY_DIR}/src/proxy_lib")
+    set(DLL_PATH_LIST
+        "${DLL_PATH_LIST};PATH=path_list_append:${PROJECT_BINARY_DIR}/src/proxy_lib"
+    )
     # MSVC implicitly adds $<CONFIG> to the output path
-    set(DLL_PATH_LIST "${DLL_PATH_LIST};PATH=path_list_append:${PROJECT_BINARY_DIR}/src/proxy_lib/$<CONFIG>")
+    set(DLL_PATH_LIST
+        "${DLL_PATH_LIST};PATH=path_list_append:${PROJECT_BINARY_DIR}/src/proxy_lib/$<CONFIG>"
+    )
 endif()
 
 pkg_check_modules(LIBHWLOC hwloc)
@@ -149,7 +169,8 @@ if(NOT LIBHWLOC_FOUND)
     find_package(LIBHWLOC REQUIRED hwloc)
 endif()
 # add PATH to DLL on Windows
-set(DLL_PATH_LIST "${DLL_PATH_LIST};PATH=path_list_append:${LIBHWLOC_LIBRARY_DIRS}/../bin")
+set(DLL_PATH_LIST
+    "${DLL_PATH_LIST};PATH=path_list_append:${LIBHWLOC_LIBRARY_DIRS}/../bin")
 
 if(UMF_BUILD_LIBUMF_POOL_SCALABLE AND (LINUX OR WINDOWS))
     pkg_check_modules(TBB tbb)
@@ -157,7 +178,8 @@ if(UMF_BUILD_LIBUMF_POOL_SCALABLE AND (LINUX OR WINDOWS))
         find_package(TBB REQUIRED tbb)
     endif()
     # add PATH to DLL on Windows
-    set(DLL_PATH_LIST "${DLL_PATH_LIST};PATH=path_list_append:${TBB_LIBRARY_DIRS}/../bin")
+    set(DLL_PATH_LIST
+        "${DLL_PATH_LIST};PATH=path_list_append:${TBB_LIBRARY_DIRS}/../bin")
 endif()
 
 if(UMF_BUILD_LIBUMF_POOL_JEMALLOC AND (LINUX OR WINDOWS))
@@ -166,21 +188,29 @@ if(UMF_BUILD_LIBUMF_POOL_JEMALLOC AND (LINUX OR WINDOWS))
         find_package(JEMALLOC REQUIRED jemalloc)
     endif()
     # add PATH to DLL on Windows
-    set(DLL_PATH_LIST "${DLL_PATH_LIST};PATH=path_list_append:${JEMALLOC_LIBRARY_DIRS}/../bin")
+    set(DLL_PATH_LIST
+        "${DLL_PATH_LIST};PATH=path_list_append:${JEMALLOC_LIBRARY_DIRS}/../bin"
+    )
 endif()
 
 # set UMF_PROXY_LIB_ENABLED
 if(LINUX OR WINDOWS)
     # TODO: enable the proxy library in the Debug build on Windows
     if(WINDOWS AND NOT (CMAKE_BUILD_TYPE STREQUAL "Release"))
-        message(STATUS "Disabling the proxy library, because it is supported only in the Release build on Windows (CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE})")
+        message(
+            STATUS
+                "Disabling the proxy library, because it is supported only in the Release build on Windows (CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE})"
+        )
     elseif(UMF_PROXY_LIB_BASED_ON_POOL STREQUAL SCALABLE)
         if(UMF_BUILD_LIBUMF_POOL_SCALABLE)
             set(UMF_PROXY_LIB_ENABLED ON)
             set(PROXY_LIB_USES_SCALABLE_POOL ON)
             set(PROXY_LIBS umf scalable_pool)
         else()
-            message(STATUS "Disabling the proxy library, because UMF_PROXY_LIB_BASED_ON_POOL==SCALABLE but UMF_BUILD_LIBUMF_POOL_SCALABLE is OFF")
+            message(
+                STATUS
+                    "Disabling the proxy library, because UMF_PROXY_LIB_BASED_ON_POOL==SCALABLE but UMF_BUILD_LIBUMF_POOL_SCALABLE is OFF"
+            )
         endif()
     elseif(UMF_PROXY_LIB_BASED_ON_POOL STREQUAL JEMALLOC)
         if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
@@ -188,10 +218,16 @@ if(LINUX OR WINDOWS)
             set(PROXY_LIB_USES_JEMALLOC_POOL ON)
             set(PROXY_LIBS umf jemalloc_pool)
         else()
-            message(STATUS "Disabling the proxy library, because UMF_PROXY_LIB_BASED_ON_POOL==JEMALLOC but UMF_BUILD_LIBUMF_POOL_JEMALLOC is OFF")
+            message(
+                STATUS
+                    "Disabling the proxy library, because UMF_PROXY_LIB_BASED_ON_POOL==JEMALLOC but UMF_BUILD_LIBUMF_POOL_JEMALLOC is OFF"
+            )
         endif()
     else()
-        message(FATAL_ERROR "Proxy library: pool manager not chosen or set to a non-supported one (see UMF_PROXY_LIB_BASED_ON_POOL)")
+        message(
+            FATAL_ERROR
+                "Proxy library: pool manager not chosen or set to a non-supported one (see UMF_PROXY_LIB_BASED_ON_POOL)"
+        )
     endif()
 endif()
 
@@ -205,7 +241,8 @@ if(UMF_BUILD_BENCHMARKS)
     if(LINUX OR WINDOWS)
         add_subdirectory(benchmark)
     else()
-        message(FATAL_ERROR "benchmarks are supported on Linux and Windows only")
+        message(
+            FATAL_ERROR "benchmarks are supported on Linux and Windows only")
     endif()
 endif()
 
@@ -214,7 +251,8 @@ if(UMF_BUILD_EXAMPLES)
 endif()
 
 if(UMF_FORMAT_CODE_STYLE)
-    find_program(CLANG_FORMAT NAMES clang-format-15 clang-format-15.0 clang-format)
+    find_program(CLANG_FORMAT NAMES clang-format-15 clang-format-15.0
+                                    clang-format)
     find_program(CMAKE_FORMAT NAMES cmake-format)
 
     if(CLANG_FORMAT)
@@ -222,11 +260,12 @@ if(UMF_FORMAT_CODE_STYLE)
         message(STATUS "Found clang-format: ${CLANG_FORMAT} "
                        "(version: ${CLANG_FORMAT_VERSION})")
 
-        # Check if clang-format (in correct version) is available for code formatting.
+        # Check if clang-format (in correct version) is available for code
+        # formatting.
         set(CLANG_FORMAT_REQUIRED "15.0")
         if(NOT (CLANG_FORMAT_VERSION VERSION_EQUAL CLANG_FORMAT_REQUIRED))
             message(FATAL_ERROR "Required clang-format version is "
-                    "${CLANG_FORMAT_REQUIRED}")
+                                "${CLANG_FORMAT_REQUIRED}")
         endif()
     endif()
 
@@ -254,8 +293,16 @@ if(UMF_FORMAT_CODE_STYLE)
 
     # Obtain files for clang-format check
     set(format_glob)
-    foreach(DIR IN ITEMS benchmark examples include src test)
-        list(APPEND format_glob
+    foreach(
+        DIR IN
+        ITEMS benchmark
+              examples
+              include
+              src
+              test)
+        list(
+            APPEND
+            format_glob
             "${DIR}/*.h"
             "${DIR}/*.hpp"
             "${DIR}/*.c"
@@ -263,33 +310,36 @@ if(UMF_FORMAT_CODE_STYLE)
             "${DIR}/**/*.h"
             "${DIR}/**/*.hpp"
             "${DIR}/**/*.c"
-            "${DIR}/**/*.cpp"
-        )
+            "${DIR}/**/*.cpp")
     endforeach()
     file(GLOB_RECURSE format_list ${format_glob})
 
     message(STATUS "Adding clang-format-check and clang-format-apply make "
-            "targets")
+                   "targets")
 
-    add_custom_target(clang-format-check
-        COMMAND ${CLANG_FORMAT}
-            --style=file
-            --dry-run
-            -Werror
-            ${format_list}
+    add_custom_target(
+        clang-format-check
+        COMMAND ${CLANG_FORMAT} --style=file --dry-run -Werror ${format_list}
         COMMENT "Check files formatting using clang-format")
 
-    add_custom_target(clang-format-apply
-        COMMAND ${CLANG_FORMAT}
-            --style=file
-            --i
-            ${format_list}
+    add_custom_target(
+        clang-format-apply
+        COMMAND ${CLANG_FORMAT} --style=file --i ${format_list}
         COMMENT "Format files using clang-format")
 
     # Obtain files for cmake-format check
     set(format_cmake_glob)
-    foreach(DIR IN ITEMS examples cmake include src test benchmark)
-        list(APPEND format_cmake_glob
+    foreach(
+        DIR IN
+        ITEMS examples
+              cmake
+              include
+              src
+              test
+              benchmark)
+        list(
+            APPEND
+            format_cmake_glob
             "${DIR}/CMakeLists.txt"
             "${DIR}/*.cmake"
             "${DIR}/**/CMakeLists.txt"
@@ -299,7 +349,7 @@ if(UMF_FORMAT_CODE_STYLE)
     list(APPEND format_cmake_list "${PROJECT_SOURCE_DIR}/CMakeLists.txt")
 
     message(STATUS "Adding cmake-format-check and cmake-format-apply make "
-            "targets")
+                   "targets")
 
     add_custom_target(
         cmake-format-check
@@ -335,8 +385,8 @@ install(FILES ${CMAKE_SOURCE_DIR}/LICENSE.TXT
         DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/doc/${PROJECT_NAME}/")
 
 # Add the list of installed targets to the install. This includes the namespace
-# which all installed targets will be prefixed with, e.g. for the headers
-# target users will depend on ${PROJECT_NAME}::headers.
+# which all installed targets will be prefixed with, e.g. for the headers target
+# users will depend on ${PROJECT_NAME}::headers.
 install(
     EXPORT ${PROJECT_NAME}-targets
     FILE ${PROJECT_NAME}-targets.cmake
@@ -356,16 +406,12 @@ configure_package_config_file(
     INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
 
 # Add the package files to the install.
-install(
-    FILES
-        ${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}-config.cmake
-        ${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}-config-version.cmake
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+install(FILES ${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}-config.cmake
+              ${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}-config-version.cmake
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
 
-configure_file(
-    "${PROJECT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
-    "${PROJECT_BINARY_DIR}/cmake_uninstall.cmake"
-    IMMEDIATE @ONLY)
+configure_file("${PROJECT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
+               "${PROJECT_BINARY_DIR}/cmake_uninstall.cmake" IMMEDIATE @ONLY)
 
-add_custom_target(uninstall
-    COMMAND ${CMAKE_COMMAND} -P ${PROJECT_BINARY_DIR}/cmake_uninstall.cmake)
+add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P
+                                    ${PROJECT_BINARY_DIR}/cmake_uninstall.cmake)
