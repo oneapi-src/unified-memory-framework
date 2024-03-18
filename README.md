@@ -30,6 +30,7 @@ Required packages:
 
 For development and contributions:
 - clang-format-15.0 (can be installed with `python -m pip install clang-format==15.0.7`)
+- cmake-format-0.6 (can be installed with `python -m pip install cmake-format==0.6.13`)
 
 For building tests, multithreaded benchmarks and Disjoint Pool:
 - C++ compiler with C++17 support
@@ -100,7 +101,7 @@ List of options provided by CMake:
 | UMF_BUILD_EXAMPLES | Build UMF examples | ON/OFF | ON |
 | UMF_ENABLE_POOL_TRACKING | Build UMF with pool tracking | ON/OFF | ON |
 | UMF_DEVELOPER_MODE | Treat warnings as errors and enables additional checks | ON/OFF | OFF |
-| UMF_FORMAT_CODE_STYLE | Add clang-format-check and clang-format-apply targets to make | ON/OFF | OFF |
+| UMF_FORMAT_CODE_STYLE | Add clang and cmake -format-check and -format-apply targets to make | ON/OFF | OFF |
 | USE_ASAN | Enable AddressSanitizer checks | ON/OFF | OFF |
 | USE_UBSAN | Enable UndefinedBehaviorSanitizer checks | ON/OFF | OFF |
 | USE_TSAN | Enable ThreadSanitizer checks | ON/OFF | OFF |

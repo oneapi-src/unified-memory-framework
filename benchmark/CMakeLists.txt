@@ -3,58 +3,74 @@
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-	message(WARNING "The benchmarks SHOULD NOT be run in the Debug build type!")
+    message(WARNING "The benchmarks SHOULD NOT be run in the Debug build type!")
 endif()
 
-if (UMF_BUILD_BENCHMARKS_MT)
-	include(FindThreads)
+if(UMF_BUILD_BENCHMARKS_MT)
+    include(FindThreads)
 endif()
 
 function(add_umf_benchmark)
-    # NAME - a name of the benchmark
-    # SRCS - source files
-    # LIBS - libraries to be linked with
-    # LIBDIRS - directories of libraries to be linked with
+    # Parameters:
+    #
+    # * NAME - a name of the benchmark
+    # * SRCS - source files
+    # * LIBS - libraries to be linked with
+    # * LIBDIRS - directories of libraries to be linked with
     set(oneValueArgs NAME)
     set(multiValueArgs SRCS LIBS LIBDIRS)
-    cmake_parse_arguments(ARG "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+    cmake_parse_arguments(
+        ARG
+        ""
+        "${oneValueArgs}"
+        "${multiValueArgs}"
+        ${ARGN})
 
     set(BENCH_NAME umf-bench-${ARG_NAME})
 
     set(BENCH_LIBS umf ${ARG_LIBS})
 
-    add_umf_executable(NAME ${BENCH_NAME} SRCS ${ARG_SRCS} LIBS ${BENCH_LIBS})
+    add_umf_executable(
+        NAME ${BENCH_NAME}
+        SRCS ${ARG_SRCS}
+        LIBS ${BENCH_LIBS})
 
-    target_include_directories(${BENCH_NAME} PRIVATE
-        ${UMF_CMAKE_SOURCE_DIR}/include
-        ${UMF_CMAKE_SOURCE_DIR}/src/utils)
+    target_include_directories(
+        ${BENCH_NAME} PRIVATE ${UMF_CMAKE_SOURCE_DIR}/include
+                              ${UMF_CMAKE_SOURCE_DIR}/src/utils)
 
     target_link_directories(${BENCH_NAME} PRIVATE ${ARG_LIBDIRS})
 
-    add_test(NAME ${BENCH_NAME}
+    add_test(
+        NAME ${BENCH_NAME}
         COMMAND ${BENCH_NAME}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
-    # Benchmark passes if it prints "PASSED" in the output,
-    # because ubench of scalable pool fails if the confidence interval
-    # exceeds maximum permitted 2.5%.
-    set_tests_properties(${BENCH_NAME} PROPERTIES
+    # Benchmark passes if it prints "PASSED" in the output, because ubench of
+    # scalable pool fails if the confidence interval exceeds maximum permitted
+    # 2.5%.
+    set_tests_properties(
+        ${BENCH_NAME} PROPERTIES
         LABELS "benchmark"
         PASS_REGULAR_EXPRESSION "PASSED")
 
     if(WINDOWS)
         # append PATH to DLLs
-        set_property(TEST ${BENCH_NAME} PROPERTY ENVIRONMENT_MODIFICATION "${DLL_PATH_LIST}")
+        set_property(TEST ${BENCH_NAME} PROPERTY ENVIRONMENT_MODIFICATION
+                                                 "${DLL_PATH_LIST}")
     endif()
 
-    if (UMF_BUILD_LIBUMF_POOL_DISJOINT)
-        target_compile_definitions(${BENCH_NAME} PRIVATE UMF_BUILD_LIBUMF_POOL_DISJOINT=1)
+    if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
+        target_compile_definitions(${BENCH_NAME}
+                                   PRIVATE UMF_BUILD_LIBUMF_POOL_DISJOINT=1)
     endif()
-    if (UMF_BUILD_LIBUMF_POOL_JEMALLOC)
-        target_compile_definitions(${BENCH_NAME} PRIVATE UMF_BUILD_LIBUMF_POOL_JEMALLOC=1)
+    if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
+        target_compile_definitions(${BENCH_NAME}
+                                   PRIVATE UMF_BUILD_LIBUMF_POOL_JEMALLOC=1)
     endif()
-    if (UMF_BUILD_LIBUMF_POOL_SCALABLE)
-        target_compile_definitions(${BENCH_NAME} PRIVATE UMF_BUILD_LIBUMF_POOL_SCALABLE=1)
+    if(UMF_BUILD_LIBUMF_POOL_SCALABLE)
+        target_compile_definitions(${BENCH_NAME}
+                                   PRIVATE UMF_BUILD_LIBUMF_POOL_SCALABLE=1)
     endif()
 endfunction()
 
@@ -83,7 +99,7 @@ add_umf_benchmark(
     LIBS ${LIBS_OPTIONAL}
     LIBDIRS ${LIB_DIRS})
 
-if (UMF_BUILD_BENCHMARKS_MT)
+if(UMF_BUILD_BENCHMARKS_MT)
     add_umf_benchmark(
         NAME multithreaded
         SRCS multithread.cpp
