@@ -18,7 +18,7 @@
 # -- Project information -----------------------------------------------------
 
 project = "Intel Unified Memory Framework"
-copyright = "2023, Intel"
+copyright = "2023-2024, Intel"
 author = "Intel"
 
 # The full version, including alpha/beta/rc tags

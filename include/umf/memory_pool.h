@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023 Intel Corporation
+ * Copyright (C) 2023-2024 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -22,8 +22,6 @@ extern "C" {
 ///        functions
 typedef struct umf_memory_pool_t *umf_memory_pool_handle_t;
 
-struct umf_memory_pool_ops_t;
-
 /// @brief This structure comprises function pointers used by corresponding umfPool*
 ///        calls. Each memory pool implementation should initialize all function
 ///        pointers.
@@ -31,17 +29,20 @@ struct umf_memory_pool_ops_t;
 typedef struct umf_memory_pool_ops_t umf_memory_pool_ops_t;
 
 /// @brief Supported pool creation flags
-typedef uint32_t umf_pool_create_flags_t;
 typedef enum umf_pool_create_flag_t {
-    UMF_POOL_CREATE_FLAG_NONE = 0,
+    UMF_POOL_CREATE_FLAG_NONE =
+        0, ///< Pool will be created with no additional flags
     UMF_POOL_CREATE_FLAG_OWN_PROVIDER =
         (1
-         << 0), ///< pool will own the specified provider and destroy it in umfPoolDestroy
+         << 0), ///< Pool will own the specified provider and destroy it in umfPoolDestroy
     /// @cond
     UMF_POOL_CREATE_FLAG_FORCE_UINT32 = 0x7fffffff
     /// @endcond
 
 } umf_pool_create_flag_t;
+
+/// @brief Type for combinations of pool creation flags
+typedef uint32_t umf_pool_create_flags_t;
 
 ///
 /// @brief Creates new memory pool.

@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2024 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -29,7 +29,7 @@ umfDisjointPoolSharedLimitsCreate(size_t MaxSize);
 void umfDisjointPoolSharedLimitsDestroy(
     umf_disjoint_pool_shared_limits_t *PoolLimits);
 
-/// Configuration of Disjoint Pool
+/// @brief Configuration of Disjoint Pool
 typedef struct umf_disjoint_pool_params_t {
     /// Minimum allocation size that will be requested from the system.
     /// By default this is the minimum allocation size of each memory type.
