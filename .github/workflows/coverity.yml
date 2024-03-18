@@ -58,7 +58,7 @@ jobs:
         tar czvf cov-int_umf.tgz cov-int
 
     - name: Push to Coverity Scan
-      if: ${{ github.event.inputs.cov_push_tarball == 'true' }}
+      if: ${{ github.event_name == 'schedule' || github.event.inputs.cov_push_tarball == 'true' }}
       run: |
         BRANCH_NAME=$(echo ${GITHUB_REF_NAME})
         COMMIT_ID=$(echo $GITHUB_SHA)
