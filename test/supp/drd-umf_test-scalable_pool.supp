@@ -1,0 +1,36 @@
+{
+   Conflicting Access in libtbbmalloc.so - internal issue of libjemalloc
+   drd:ConflictingAccess
+   obj:*libtbbmalloc.so*
+   ...
+}
+
+{
+   [false-positive] Conflicting Access in memset in pow2AlignedAllocHelper
+   drd:ConflictingAccess
+   fun:memset
+   fun:*pow2AlignedAllocHelper*
+   fun:*umfPoolTest_multiThreadedpow2AlignedAlloc_Test*
+   ...
+}
+
+{
+   [false-positive] Conflicting Access in tbb_realloc in multiThreadedReallocFree test
+   drd:ConflictingAccess
+   fun:memmove
+   obj:*libtbbmalloc.so*
+   fun:tbb_realloc
+   fun:umfPoolRealloc
+   fun:*umfPoolTest_multiThreadedReallocFree*
+   ...
+}
+
+{
+   [false-positive] Conflicting Access in memset in multiThreadedCallocFree test
+   drd:ConflictingAccess
+   fun:memset
+   fun:tbb_calloc
+   fun:umfPoolCalloc
+   fun:*umfPoolTest_multiThreadedCallocFree*
+   ...
+}
