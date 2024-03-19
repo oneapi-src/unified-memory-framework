@@ -126,8 +126,7 @@ else()
     target_sources(umf PRIVATE memory_pool_default.c)
 endif()
 
-# Currently, Level Zero provider is only built for Linux and Windows
-if((LINUX OR WINDOWS) AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
+if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
     target_sources(umf PRIVATE provider/provider_level_zero.c)
 
     if(LINUX)

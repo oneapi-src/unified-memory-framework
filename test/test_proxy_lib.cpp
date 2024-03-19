@@ -5,7 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 */
 
+#if defined(__APPLE__)
+#include <malloc/malloc.h>
+#else
 #include <malloc.h>
+#endif
 
 #include "base.hpp"
 #include "test_helpers.h"
