@@ -7,20 +7,20 @@
  *
  */
 
-#ifndef UMF_MEMSPACE_HOST_ALL_INTERNAL_H
-#define UMF_MEMSPACE_HOST_ALL_INTERNAL_H 1
+#ifndef UMF_TOPOLOGY_H
+#define UMF_TOPOLOGY_H 1
+
+#include <hwloc.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-///
-/// \brief Destroys the predefined host all memspace.
-///
-void umfMemspaceHostAllDestroy(void);
+hwloc_topology_t umfGetTopology(void);
+void umfDestroyTopology(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* UMF_MEMSPACE_HOST_ALL_INTERNAL_H */
+#endif /* UMF_TOPOLOGY_H */

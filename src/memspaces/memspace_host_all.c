@@ -13,9 +13,9 @@
 
 #include "base_alloc_global.h"
 #include "memory_target_numa.h"
-#include "memspace_host_all_internal.h"
 #include "memspace_internal.h"
 #include "memspace_numa.h"
+#include "topology.h"
 #include "utils_concurrency.h"
 
 static umf_result_t umfMemspaceHostAllCreate(umf_memspace_handle_t *hMemspace) {
@@ -25,15 +25,10 @@ static umf_result_t umfMemspaceHostAllCreate(umf_memspace_handle_t *hMemspace) {
 
     umf_result_t umf_ret = UMF_RESULT_SUCCESS;
 
-    hwloc_topology_t topology;
-    if (hwloc_topology_init(&topology)) {
+    hwloc_topology_t topology = umfGetTopology();
+    if (!topology) {
         // TODO: What would be an approrpiate err?
         return UMF_RESULT_ERROR_UNKNOWN;
-    }
-
-    if (hwloc_topology_load(topology)) {
-        umf_ret = UMF_RESULT_ERROR_UNKNOWN;
-        goto err_topology_destroy;
     }
 
     // Shouldn't return -1, as 'HWLOC_OBJ_NUMANODE' doesn't appear to be an
@@ -42,13 +37,13 @@ static umf_result_t umfMemspaceHostAllCreate(umf_memspace_handle_t *hMemspace) {
     int nNodes = hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_NUMANODE);
     if (nNodes < 0) {
         umf_ret = UMF_RESULT_ERROR_UNKNOWN;
-        goto err_topology_destroy;
+        goto err;
     }
 
     size_t *nodeIds = umf_ba_global_alloc(nNodes * sizeof(size_t));
     if (!nodeIds) {
         umf_ret = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-        goto err_topology_destroy;
+        goto err;
     }
 
     // Collect all available NUMA node ids on the platform
@@ -67,8 +62,7 @@ static umf_result_t umfMemspaceHostAllCreate(umf_memspace_handle_t *hMemspace) {
 
     umf_ba_global_free(nodeIds);
 
-err_topology_destroy:
-    hwloc_topology_destroy(topology);
+err:
     return umf_ret;
 }
 

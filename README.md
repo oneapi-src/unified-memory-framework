@@ -192,9 +192,10 @@ TODO: Add general information about memspaces.
 Memspace backed by all available NUMA nodes discovered on the platform. Can be retrieved
 using umfMemspaceHostAllGet.
 
-##### Requirements
+#### Highest capacity memspace
 
-This feature relies on the OS memory provider.
+Memspace backed by all available NUMA nodes discovered on the platform sorted by capacity.
+Can be retrieved using umfMemspaceHighestCapacityGet.
 
 ## Contributions
 
