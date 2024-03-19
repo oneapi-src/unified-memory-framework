@@ -220,7 +220,7 @@ TEST_F(test, log_levels) {
                 expect_fflush_count = 1;
             }
             expected_message = "[" + helper_log_str(j) + " UMF] example log\n";
-            helper_test_log((util_log_level_t)j, "example log");
+            helper_test_log((util_log_level_t)j, "%s", "example log");
         }
     }
 }
@@ -233,7 +233,7 @@ TEST_F(test, log_outputs) {
     for (auto o : outs) {
         loggerConfig = {0, 0, LOG_DEBUG, LOG_DEBUG, o};
         expected_stream = o;
-        helper_test_log(LOG_DEBUG, "example log");
+        helper_test_log(LOG_DEBUG, "%s", "example log");
     }
 }
 
@@ -249,7 +249,7 @@ TEST_F(test, flush_levels) {
                 expect_fflush_count = 1;
             }
             expected_message = "[" + helper_log_str(j) + " UMF] example log\n";
-            helper_test_log((util_log_level_t)j, "example log");
+            helper_test_log((util_log_level_t)j, "%s", "example log");
         }
     }
 }
@@ -259,10 +259,10 @@ TEST_F(test, long_log) {
     expect_fflush_count = 1;
     loggerConfig = {0, 0, LOG_DEBUG, LOG_DEBUG, stderr};
     expected_message = "[DEBUG UMF] " + std::string(8191, 'x') + "\n";
-    helper_test_log(LOG_DEBUG, std::string(8191, 'x').c_str());
+    helper_test_log(LOG_DEBUG, "%s", std::string(8191, 'x').c_str());
     expected_message =
         "[DEBUG UMF] " + std::string(8191, 'x') + "[truncated...]\n";
-    helper_test_log(LOG_DEBUG, +std::string(8192, 'x').c_str());
+    helper_test_log(LOG_DEBUG, "%s", std::string(8192, 'x').c_str());
 }
 
 TEST_F(test, timestamp_log) {
@@ -272,7 +272,7 @@ TEST_F(test, timestamp_log) {
     // TODO: for now we do not check output message,
     // as it requires more sophisticated message validation (a.k.a regrex)
     expected_message = "";
-    helper_test_log(LOG_DEBUG, "example log");
+    helper_test_log(LOG_DEBUG, "%s", "example log");
 }
 
 TEST_F(test, pid_log) {
@@ -282,7 +282,7 @@ TEST_F(test, pid_log) {
     // TODO: for now we do not check output message,
     // as it requires more sophisticated message validation (a.k.a regrex)
     expected_message = "";
-    helper_test_log(LOG_DEBUG, "example log");
+    helper_test_log(LOG_DEBUG, "%s", "example log");
 }
 
 TEST_F(test, log_macros) {

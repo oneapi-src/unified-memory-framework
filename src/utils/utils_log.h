@@ -17,8 +17,12 @@ extern "C" {
 typedef enum { LOG_DEBUG, LOG_INFO, LOG_WARNING, LOG_ERROR } util_log_level_t;
 
 void util_log_init(void);
+#ifdef _WIN32
 void util_log(util_log_level_t level, const char *format, ...);
-
+#else
+void util_log(util_log_level_t level, const char *format, ...)
+    __attribute__((format(printf, 2, 3)));
+#endif
 #define LOG_DEBUG(...) util_log(LOG_DEBUG, __VA_ARGS__);
 #define LOG_INFO(...) util_log(LOG_INFO, __VA_ARGS__);
 #define LOG_WARN(...) util_log(LOG_WARNING, __VA_ARGS__);
