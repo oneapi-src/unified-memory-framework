@@ -63,6 +63,7 @@ void helper_log_init(const char *var) {
     fopen_count = 0;
     fput_count = 0;
     util_log_init();
+    env_variable = NULL;
     EXPECT_EQ(fopen_count, expect_fopen_count);
     EXPECT_EQ(fput_count, expect_fput_count);
 }
@@ -97,7 +98,6 @@ TEST_F(test, parseEnv_errors) {
     expected_message = "[ERROR UMF] Cannot open output file - path too long\n";
     std::string test_env = "output:file," + std::string(300, 'x');
     helper_log_init(test_env.c_str());
-    env_variable = NULL; // reset env_variable as test_env string is freed.
 }
 
 TEST_F(test, parseEnv) {
