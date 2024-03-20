@@ -244,6 +244,14 @@ if(UMF_FORMAT_CODE_STYLE)
                                     clang-format)
     find_program(CMAKE_FORMAT NAMES cmake-format)
 
+    if(NOT CLANG_FORMAT AND NOT CMAKE_FORMAT)
+        message(
+            FATAL_ERROR
+                "UMF_FORMAT_CODE_STYLE=ON, but neither clang-format (required version: "
+                "${CLANG_FORMAT_REQUIRED}) nor cmake-format (required version: "
+                "${CMAKE_FORMAT_VERSION}) was found.")
+    endif()
+
     if(CLANG_FORMAT)
         get_program_version_major_minor(${CLANG_FORMAT} CLANG_FORMAT_VERSION)
         message(STATUS "Found clang-format: ${CLANG_FORMAT} "
@@ -256,6 +264,44 @@ if(UMF_FORMAT_CODE_STYLE)
             message(FATAL_ERROR "Required clang-format version is "
                                 "${CLANG_FORMAT_REQUIRED}")
         endif()
+
+        # Obtain files for clang-format check
+        set(format_clang_glob)
+        foreach(
+            DIR IN
+            ITEMS benchmark
+                  examples
+                  include
+                  src
+                  test)
+            list(
+                APPEND
+                format_clang_glob
+                "${DIR}/*.h"
+                "${DIR}/*.hpp"
+                "${DIR}/*.c"
+                "${DIR}/*.cpp"
+                "${DIR}/**/*.h"
+                "${DIR}/**/*.hpp"
+                "${DIR}/**/*.c"
+                "${DIR}/**/*.cpp")
+        endforeach()
+        file(GLOB_RECURSE format_list ${format_clang_glob})
+
+        message(
+            STATUS "Adding 'clang-format-check' and 'clang-format-apply' make "
+                   "targets")
+
+        add_custom_target(
+            clang-format-check
+            COMMAND ${CLANG_FORMAT} --style=file --dry-run -Werror
+                    ${format_list}
+            COMMENT "Check files formatting using clang-format")
+
+        add_custom_target(
+            clang-format-apply
+            COMMAND ${CLANG_FORMAT} --style=file --i ${format_list}
+            COMMENT "Format files using clang-format")
     endif()
 
     if(CMAKE_FORMAT)
@@ -270,103 +316,68 @@ if(UMF_FORMAT_CODE_STYLE)
             message(FATAL_ERROR "Required cmake-format version is"
                                 "${CMAKE_FORMAT_REQUIRED}")
         endif()
-    endif()
 
-    if(NOT CLANG_FORMAT AND NOT CMAKE_FORMAT)
+        # Obtain files for cmake-format check
+        set(format_cmake_glob)
+        foreach(
+            DIR IN
+            ITEMS cmake
+                  benchmark
+                  examples
+                  include
+                  src
+                  test)
+            list(
+                APPEND
+                format_cmake_glob
+                "${DIR}/CMakeLists.txt"
+                "${DIR}/*.cmake"
+                "${DIR}/**/CMakeLists.txt"
+                "${DIR}/**/*.cmake")
+        endforeach()
+        file(GLOB_RECURSE format_cmake_list ${format_cmake_glob})
+        list(APPEND format_cmake_list "${PROJECT_SOURCE_DIR}/CMakeLists.txt")
+
         message(
-            FATAL_ERROR
-                "UMF_FORMAT_CODE_STYLE=ON, but neither clang-format (required version: "
-                "${CLANG_FORMAT_REQUIRED}) nor cmake-format (required version: "
-                "${CMAKE_FORMAT_VERSION}) was found.")
+            STATUS "Adding 'cmake-format-check' and 'cmake-format-apply' make "
+                   "targets")
+
+        add_custom_target(
+            cmake-format-check
+            COMMAND ${CMAKE_FORMAT} --check ${format_cmake_list}
+            COMMENT "Check CMake files formatting using cmake-format")
+
+        add_custom_target(
+            cmake-format-apply
+            COMMAND ${CMAKE_FORMAT} --in-place ${format_cmake_list}
+            COMMENT "Format Cmake files using cmake-format")
     endif()
 
-    # Obtain files for clang-format check
-    set(format_glob)
-    foreach(
-        DIR IN
-        ITEMS benchmark
-              examples
-              include
-              src
-              test)
-        list(
-            APPEND
-            format_glob
-            "${DIR}/*.h"
-            "${DIR}/*.hpp"
-            "${DIR}/*.c"
-            "${DIR}/*.cpp"
-            "${DIR}/**/*.h"
-            "${DIR}/**/*.hpp"
-            "${DIR}/**/*.c"
-            "${DIR}/**/*.cpp")
-    endforeach()
-    file(GLOB_RECURSE format_list ${format_glob})
+    # Add a convenience target for running both tools at once - available only
+    # if both are found.
+    if(CLANG_FORMAT AND CMAKE_FORMAT)
+        add_custom_target(
+            format-check
+            COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target
+                    clang-format-check
+            COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target
+                    cmake-format-check
+            COMMENT "Running both clang-format-check and cmake-format-check")
 
-    message(STATUS "Adding clang-format-check and clang-format-apply make "
-                   "targets")
-
-    add_custom_target(
-        clang-format-check
-        COMMAND ${CLANG_FORMAT} --style=file --dry-run -Werror ${format_list}
-        COMMENT "Check files formatting using clang-format")
-
-    add_custom_target(
-        clang-format-apply
-        COMMAND ${CLANG_FORMAT} --style=file --i ${format_list}
-        COMMENT "Format files using clang-format")
-
-    # Obtain files for cmake-format check
-    set(format_cmake_glob)
-    foreach(
-        DIR IN
-        ITEMS examples
-              cmake
-              include
-              src
-              test
-              benchmark)
-        list(
-            APPEND
-            format_cmake_glob
-            "${DIR}/CMakeLists.txt"
-            "${DIR}/*.cmake"
-            "${DIR}/**/CMakeLists.txt"
-            "${DIR}/**/*.cmake")
-    endforeach()
-    file(GLOB_RECURSE format_cmake_list ${format_cmake_glob})
-    list(APPEND format_cmake_list "${PROJECT_SOURCE_DIR}/CMakeLists.txt")
-
-    message(STATUS "Adding cmake-format-check and cmake-format-apply make "
-                   "targets")
-
-    add_custom_target(
-        cmake-format-check
-        COMMAND ${CMAKE_FORMAT} --check ${format_cmake_list}
-        COMMENT "Check files formatting using cmake-format")
-
-    add_custom_target(
-        cmake-format-apply
-        COMMAND ${CMAKE_FORMAT} --in-place ${format_cmake_list}
-        COMMENT "Format files using cmake-format")
-
-    # Add a convenience target for running both clang-format and cmake-format
-    # checks/apply
-    add_custom_target(
-        format-check
-        COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target
-                clang-format-check
-        COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target
-                cmake-format-check
-        COMMENT "Running both clang-format-check and cmake-format-check")
-
-    add_custom_target(
-        format-apply
-        COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target
-                clang-format-apply
-        COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target
-                cmake-format-apply
-        COMMENT "Format files using clang-format and cmake-format")
+        add_custom_target(
+            format-apply
+            COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target
+                    clang-format-apply
+            COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target
+                    cmake-format-apply
+            COMMENT "Format files using clang-format and cmake-format")
+    else()
+        message(
+            STATUS
+                "  Convenience targets 'make format-check' and 'make format-apply' are "
+                "not available. Use commands specific for found tools (see the log above)."
+        )
+    endif()
 endif()
 
 # --------------------------------------------------------------------------- #
