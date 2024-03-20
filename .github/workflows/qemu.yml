@@ -62,13 +62,13 @@ jobs:
 
         sudo -Sk genisoimage -output ubuntu-cloud-init.iso -volid cidata -joliet -rock ./user-data ./meta-data
     - name: Download ubuntu image
-      run: wget https://cloud-images.ubuntu.com/lunar/current/lunar-server-cloudimg-amd64.img
+      run: wget https://cloud-images.ubuntu.com/releases/lunar/release/ubuntu-23.04-server-cloudimg-amd64.img
     - name: Resize image
-      run: qemu-img resize ./lunar-server-cloudimg-amd64.img +4G
+      run: qemu-img resize ./ubuntu-23.04-server-cloudimg-amd64.img +4G
     - name: Run qemu
       run: |
         sudo qemu-system-x86_64 \
-        -drive file=./lunar-server-cloudimg-amd64.img,format=qcow2,index=0,media=disk,id=hd \
+        -drive file=./ubuntu-23.04-server-cloudimg-amd64.img,format=qcow2,index=0,media=disk,id=hd \
         -cdrom ./ubuntu-cloud-init.iso \
         -machine q35,usb=off,hmat=on \
         -enable-kvm \
