@@ -63,8 +63,6 @@ jobs:
 
     - name: Test UMF installation and uninstallation
       # The '--shared-library' parameter is added to the installation test when the UMF is built as a shared library
-      # pool tracking and scalable pool (always ON in this job) has to be enabled for the basic example to be built
-      # The '--examples' parameter is added to the installation test when examples are built
       run: >
         python3 ${{github.workspace}}/test/test_installation.py
         --build-dir ${{env.BUILD_DIR}}
@@ -74,7 +72,6 @@ jobs:
         --jemalloc-pool
         --scalable-pool
         ${{ matrix.shared_library == 'ON' && '--shared-library' || ''}}
-        ${{ matrix.pool_tracking == 'ON' && '--examples' || '' }}
 
   ubuntu-build:
     name: Ubuntu
@@ -162,8 +159,6 @@ jobs:
 
     - name: Test UMF installation and uninstallation
       # The '--shared-library' parameter is added to the installation test when the UMF is built as a shared library
-      # OS provider, pool tracking and scalable pool (always ON in this job) has to be enabled for the basic example to be built
-      # The '--examples' parameter is added to the installation test when examples are built
       run: >
         python3 ${{github.workspace}}/test/test_installation.py
         --build-dir ${{env.BUILD_DIR}}
@@ -173,7 +168,6 @@ jobs:
         --jemalloc-pool
         --scalable-pool
         ${{ matrix.shared_library == 'ON' && '--shared-library' || '' }}
-        ${{ matrix.pool_tracking == 'ON' && '--examples' || '' }}
 
   windows-build:
     name: Windows
@@ -253,8 +247,6 @@ jobs:
 
     - name: Test UMF installation and uninstallation
       # The '--shared-library' parameter is added to the installation test when the UMF is built as a shared library
-      # OS provider, pool tracking and scalable pool (always ON in this job) has to be enabled for the basic example to be built
-      # The '--examples' parameter is added to the installation test when examples are built
       run: >
         python3 ${{github.workspace}}/test/test_installation.py
         --build-dir ${{env.BUILD_DIR}}
@@ -264,7 +256,6 @@ jobs:
         --jemalloc-pool
         --scalable-pool
         ${{ matrix.shared_library == 'ON' && '--shared-library' || ''}}
-        ${{ matrix.pool_tracking == 'ON' && '--examples' || '' }}
 
   macos-build:
     name: MacOS
@@ -314,4 +305,3 @@ jobs:
         --disjoint-pool
         --jemalloc-pool
         --scalable-pool
-        --examples

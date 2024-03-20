@@ -28,9 +28,6 @@ if(UMF_BUILD_LIBUMF_POOL_SCALABLE AND UMF_ENABLE_POOL_TRACKING)
         set_property(TEST ${EXAMPLE_NAME} PROPERTY ENVIRONMENT_MODIFICATION
                                                    "${DLL_PATH_LIST}")
     endif()
-
-    install(FILES basic/basic.c DESTINATION "${CMAKE_INSTALL_DOCDIR}/examples")
-
 else()
     message(
         STATUS

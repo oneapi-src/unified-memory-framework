@@ -379,6 +379,9 @@ endif()
 install(FILES ${CMAKE_SOURCE_DIR}/LICENSE.TXT
         DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/doc/${PROJECT_NAME}/")
 
+install(FILES examples/basic/basic.c
+        DESTINATION "${CMAKE_INSTALL_DOCDIR}/examples")
+
 # Add the list of installed targets to the install. This includes the namespace
 # which all installed targets will be prefixed with, e.g. for the headers target
 # users will depend on ${PROJECT_NAME}::headers.
