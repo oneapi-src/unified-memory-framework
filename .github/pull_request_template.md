@@ -35,3 +35,4 @@ Before checking all the boxes please mark the PR as draft.
 - [ ] Extended the README/documentation
 - [ ] All newly added source files have a license
 - [ ] All newly added source files are referenced in CMake files
+- [ ] Logger (with debug/info/... messages) is used

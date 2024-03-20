@@ -12,7 +12,7 @@ simply replace word `docker` with `podman`.
 To build docker image on local machine enter the root dir of the repository and execute:
 
 ```sh
-docker build -t ur:ubuntu-22.04 -f .github/docker/ubuntu-22.04.Dockerfile .
+docker build -t umf:ubuntu-22.04 -f .github/docker/ubuntu-22.04.Dockerfile .
 ```
 
 To set any build time variable (e.g., an optional ARG from docker recipe), add to the command (after `build`), e.g.:
@@ -33,7 +33,7 @@ One other example of using these extra build arguments are proxy settings. They 
 To run docker container (using the previously built image) execute:
 
 ```sh
-docker run --shm-size=4G -v /your/workspace/path/:/opt/workspace:z -w /opt/workspace/ -it ur:ubuntu-22.04 /bin/bash
+docker run --shm-size=4G -v /your/workspace/path/:/opt/workspace:z -w /opt/workspace/ -it umf:ubuntu-22.04 /bin/bash
 ```
 
 To set (or override) any docker environment variable, add to the command (after `run`):
