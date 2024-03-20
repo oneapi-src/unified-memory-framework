@@ -2,8 +2,14 @@
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    message(WARNING "The benchmarks SHOULD NOT be run in the Debug build type!")
+# In MSVC builds, there is no way to determine the actual build type during the
+# CMake configuration step. Therefore, this message is printed in all MSVC
+# builds.
+if(WINDOWS OR NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    message(
+        STATUS
+            "The benchmarks SHOULD NOT be run in the Debug build type! The benchmarks will be built, however their output is relevant only in the Release build!"
+    )
 endif()
 
 if(UMF_BUILD_BENCHMARKS_MT)

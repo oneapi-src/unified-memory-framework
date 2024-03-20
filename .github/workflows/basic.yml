@@ -226,7 +226,6 @@ jobs:
         -B ${{env.BUILD_DIR}}
         ${{matrix.toolset}}
         -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
-        -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
         -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
         -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
         -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}

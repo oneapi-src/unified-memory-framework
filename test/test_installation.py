@@ -67,11 +67,7 @@ class UmfInstaller:
             lib_prefix = "lib"
 
         # Currently the proxy library uses and requires the scalable pool
-        # The proxy library does not work in the Debug build on Windows yet.
-        if ("scalable_pool" in self.pools) and not (platform.system() == "Windows" and self.build_type == "debug"):
-            is_umf_proxy = True
-        else:
-            is_umf_proxy = False
+        is_umf_proxy = True if "scalable_pool" in self.pools else False
 
         bin = []
         if platform.system() == "Windows" and (self.shared_library or is_umf_proxy):
