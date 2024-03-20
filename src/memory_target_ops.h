@@ -19,8 +19,6 @@
 extern "C" {
 #endif
 
-typedef struct umf_memory_target_t *umf_memory_target_handle_t;
-
 typedef struct umf_memory_target_ops_t {
     /// Version of the ops structure.
     /// Should be initialized using UMF_VERSION_CURRENT

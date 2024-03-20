@@ -78,6 +78,15 @@ and operate on the provider.
 .. doxygenfile:: memory_provider.h
     :sections: define enum typedef func var
 
+Coarse Provider
+------------------------------------------
+
+A memory provider that should be used as a "cache" for pre-allocated buffer or 
+with additional upstream provider (e.g. OS Memory Provider).
+
+.. doxygenfile:: provider_coarse.h
+    :sections: define enum typedef func var
+
 OS Memory Provider
 ------------------------------------------
 
