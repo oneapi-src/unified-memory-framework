@@ -71,29 +71,43 @@ echo "Running: \"valgrind $OPTION\" for the following tests:"
 FAIL=0
 rm -f umf_test-*.log umf_test-*.err
 
-for test in $(ls -1 ./umf_test-*); do
+for test in $(ls -1 umf_test-*); do
 	[ ! -x $test ] && continue
 	echo -n "$test "
 	LOG=${test}.log
 	ERR=${test}.err
-	SUP="${WORKSPACE}/test/supp/${test}.supp"
+	SUP="${WORKSPACE}/test/supp/${TOOL}-${test}.supp"
 	OPT_SUP=""
-	[ -f ${SUP} ] && OPT_SUP="--suppressions=${SUP}"
+	[ -f ${SUP} ] && OPT_SUP="--suppressions=${SUP}" && echo -n "(${TOOL}-${test}.supp) "
 
 	# skip tests incompatible with valgrind
+	FILTER=""
 	case $test in
-	./umf_test-disjointPool) # TODO: temporarily skip failing disjointPool tests - fix it
+	umf_test-disjointPool) # TODO: temporarily skip failing disjointPool tests - fix it
 		FILTER='--gtest_filter="-*pow2AlignedAlloc:*multiThreadedpow2AlignedAlloc"'
 		;;
-	./umf_test-memspace_host_all)
+	umf_test-memspace_host_all)
 		FILTER='--gtest_filter="-*allocsSpreadAcrossAllNumaNodes"'
 		;;
-	./umf_test-provider_os_memory_config)
+	umf_test-provider_os_memory_config)
 		FILTER='--gtest_filter="-*protection_flag_none:*protection_flag_read:*providerConfigTestNumaMode*"'
+		;;
+	umf_test-memspace_highest_capacity)
+		FILTER='--gtest_filter="-*highestCapacityVerify*"'
 		;;
 	esac
 
-	HWLOC_CPUID_PATH=./cpuid valgrind $OPTION $OPT_SUP --gen-suppressions=all $test $FILTER >$LOG 2>&1 || echo -n "(valgrind failed) "
+	[ "$FILTER" != "" ] && echo -n "($FILTER) "
+
+	if ! HWLOC_CPUID_PATH=./cpuid valgrind $OPTION $OPT_SUP --gen-suppressions=all ./$test $FILTER >$LOG 2>&1; then
+		FAIL=1
+		echo "(valgrind FAILED) "
+		echo "Command: HWLOC_CPUID_PATH=./cpuid valgrind $OPTION $OPT_SUP --gen-suppressions=all ./$test $FILTER >$LOG 2>&1"
+		echo "Output:"
+		cat $LOG
+		echo "====================="
+		echo
+	fi || true
 	# grep for "ERROR SUMMARY" with errors (there can be many lines with "ERROR SUMMARY")
 	grep -e "ERROR SUMMARY:" $LOG | grep -v -e "ERROR SUMMARY: 0 errors from 0 contexts" > $ERR || true
 	if [ $(cat $ERR | wc -l) -eq 0 ]; then
