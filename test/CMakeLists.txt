@@ -121,6 +121,15 @@ if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
         NAME c_api_disjoint_pool
         SRCS c_api/disjoint_pool.c
         LIBS disjoint_pool)
+    # TODO fix case for win + shared lib
+    if(UMF_BUILD_SHARED_LIBRARY)
+
+    else()
+        add_umf_test(
+            NAME disjointCoarseMallocPool
+            SRCS disjointCoarseMallocPool.cpp
+            LIBS disjoint_pool)
+    endif()
 endif()
 
 if(UMF_BUILD_LIBUMF_POOL_DISJOINT
