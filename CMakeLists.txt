@@ -36,8 +36,7 @@ option(USE_VALGRIND "Enable Valgrind instrumentation" OFF)
 set(UMF_PROXY_LIB_BASED_ON_POOL
     SCALABLE
     CACHE STRING
-          "A UMF pool the proxy library is based on (SCALABLE or JEMALLOC)"
-          FORCE)
+          "A UMF pool the proxy library is based on (SCALABLE or JEMALLOC)")
 
 set(KNOWN_BUILD_TYPES Release Debug RelWithDebInfo MinSizeRel)
 string(REPLACE ";" " " KNOWN_BUILD_TYPES_STR "${KNOWN_BUILD_TYPES}")
