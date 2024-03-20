@@ -89,6 +89,9 @@ for test in $(ls -1 umf_test-*); do
 	umf_test-provider_os_memory_config)
 		FILTER='--gtest_filter="-*protection_flag_none:*protection_flag_read:*providerConfigTestNumaMode*"'
 		;;
+	./umf_test-disjointCoarseMallocPool) # TODO
+		FILTER='--gtest_filter="*disjointCoarseMallocPool*"'
+		;;
 	umf_test-memspace_highest_capacity)
 		FILTER='--gtest_filter="-*highestCapacityVerify*"'
 		;;

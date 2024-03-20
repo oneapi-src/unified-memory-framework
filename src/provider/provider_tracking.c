@@ -138,8 +138,6 @@ typedef struct umf_tracking_memory_provider_t {
     critnib *ipcCache;
 } umf_tracking_memory_provider_t;
 
-typedef struct umf_tracking_memory_provider_t umf_tracking_memory_provider_t;
-
 static umf_result_t trackingAlloc(void *hProvider, size_t size,
                                   size_t alignment, void **ptr) {
     umf_tracking_memory_provider_t *p =
