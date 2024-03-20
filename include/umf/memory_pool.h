@@ -145,7 +145,7 @@ umf_result_t umfFree(void *ptr);
 ///
 /// * The implementation of this function *should* be lock-free.
 /// @param hPool specified memory pool handle for which the last allocation error is returned
-/// @return Error code desciribng the failure of the last failed allocation operation.
+/// @return Error code describing the failure of the last failed allocation operation.
 ///         The value is undefined if the previous allocation was successful.
 ///
 umf_result_t umfPoolGetLastAllocationError(umf_memory_pool_handle_t hPool);

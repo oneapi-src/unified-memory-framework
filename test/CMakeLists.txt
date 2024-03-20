@@ -112,6 +112,15 @@ if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
         NAME c_api_disjoint_pool
         SRCS c_api/disjoint_pool.c
         LIBS disjoint_pool)
+    # TODO fix case for win + shared lib
+    if(UMF_BUILD_SHARED_LIBRARY)
+
+    else()
+        add_umf_test(
+            NAME disjointCoarseMallocPool
+            SRCS disjointCoarseMallocPool.cpp
+            LIBS disjoint_pool)
+    endif()
 endif()
 
 if(UMF_BUILD_LIBUMF_POOL_DISJOINT
@@ -201,11 +210,11 @@ add_umf_test(
     NAME base_alloc
     SRCS ${BA_SOURCES_FOR_TEST} test_base_alloc.cpp
     LIBS umf_utils)
+
 add_umf_test(
     NAME base_alloc_linear
     SRCS ${BA_SOURCES_FOR_TEST} test_base_alloc_linear.cpp
     LIBS umf_utils)
-
 add_umf_test(
     NAME base_alloc_global
     SRCS ${BA_SOURCES_FOR_TEST} pools/pool_base_alloc.cpp

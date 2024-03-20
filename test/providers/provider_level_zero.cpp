@@ -341,7 +341,7 @@ TEST_F(umfLevelZeroProviderTest, basic) {
     params.level_zero_context_handle = hContext;
     params.level_zero_device_handle = hDevice;
     params.memory_type = UMF_MEMORY_TYPE_DEVICE;
-    // create Level Zero provider
+
     umf_memory_provider_handle_t provider = nullptr;
     umf_result_t umf_result = umfMemoryProviderCreate(
         umfLevelZeroMemoryProviderOps(), &params, &provider);

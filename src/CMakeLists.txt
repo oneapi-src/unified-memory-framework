@@ -53,14 +53,15 @@ set(BA_SOURCES
 
 set(UMF_SOURCES
     ${BA_SOURCES}
+    critnib/critnib.c
     memory_pool.c
     memory_provider.c
     memory_provider_get_last_failed.c
     memory_target.c
     memspace.c
-    provider/provider_tracking.c
-    critnib/critnib.c
     pool/pool_proxy.c
+    provider/provider_tracking.c
+    ravl/ravl.c
     topology.c)
 
 set(UMF_SOURCES_LINUX libumf_linux.c)
@@ -74,6 +75,7 @@ set(UMF_PUBLIC_COMPILE_DEFINITIONS "")
 
 set(UMF_SOURCES_LINUX
     ${UMF_SOURCES_LINUX}
+    provider/provider_coarse.c
     provider/provider_os_memory.c
     provider/provider_os_memory_linux.c
     memory_targets/memory_target_numa.c
@@ -81,8 +83,9 @@ set(UMF_SOURCES_LINUX
     memspaces/memspace_host_all.c
     memspaces/memspace_highest_capacity.c)
 
-set(UMF_SOURCES_WINDOWS ${UMF_SOURCES_WINDOWS} provider/provider_os_memory.c
-                        provider/provider_os_memory_windows.c)
+set(UMF_SOURCES_WINDOWS
+    ${UMF_SOURCES_WINDOWS} provider/provider_coarse.c
+    provider/provider_os_memory.c provider/provider_os_memory_windows.c)
 
 set(UMF_LIBS ${UMF_LIBS} ${LIBHWLOC_LIBRARIES})
 set(UMF_PRIVATE_LIBRARY_DIRS ${UMF_PRIVATE_LIBRARY_DIRS}
@@ -157,6 +160,7 @@ target_include_directories(
     umf
     PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+           $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/ravl>
            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/critnib>
            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/provider>
            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/memspaces>

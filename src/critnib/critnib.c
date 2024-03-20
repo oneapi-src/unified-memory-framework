@@ -315,7 +315,7 @@ static struct critnib_leaf *alloc_leaf(struct critnib *__restrict c) {
 }
 
 /*
- * crinib_insert -- write a key:value pair to the critnib structure
+ * critnib_insert -- write a key:value pair to the critnib structure
  *
  * Returns:
  *  • 0 on success

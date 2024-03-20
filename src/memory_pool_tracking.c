@@ -7,9 +7,6 @@
  *
  */
 
-#include <assert.h>
-#include <stdlib.h>
-
 #include <umf/memory_pool.h>
 
 #include "base_alloc_global.h"
