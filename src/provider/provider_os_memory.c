@@ -16,6 +16,7 @@
 
 #include "base_alloc_global.h"
 #include "provider_os_memory_internal.h"
+#include "utils_log.h"
 #include <umf.h>
 #include <umf/memory_provider_ops.h>
 #include <umf/providers/provider_os_memory.h>
@@ -318,24 +319,26 @@ static void print_numa_nodes(os_memory_provider_t *os_provider, void *addr,
 
     hwloc_bitmap_t nodeset = hwloc_bitmap_alloc();
     if (!nodeset) {
-        fprintf(stderr,
-                "cannot print assigned NUMA node due to allocation failure\n");
+        util_fprintf(
+            stderr,
+            "cannot print assigned NUMA node due to allocation failure\n");
         return;
     }
 
     int ret = hwloc_get_area_memlocation(os_provider->topo, addr, 1, nodeset,
                                          HWLOC_MEMBIND_BYNODESET);
     if (ret) {
-        fprintf(stderr, "cannot print assigned NUMA node (errno = %i)\n",
-                errno);
+        util_fprintf(stderr, "cannot print assigned NUMA node (errno = %i)\n",
+                     errno);
         perror("get_mempolicy()");
     } else {
         if (hwloc_bitmap_list_snprintf(os_provider->nodeset_str_buf,
                                        NODESET_STR_BUF_LEN, nodeset)) {
-            printf("alloc(%zu) = 0x%llx, allocate on NUMA nodes = %s\n", size,
-                   (unsigned long long)addr, os_provider->nodeset_str_buf);
+            util_fprintf(
+                stdout, "alloc(%zu) = 0x%llx, allocate on NUMA nodes = %s\n",
+                size, (unsigned long long)addr, os_provider->nodeset_str_buf);
         } else {
-            fprintf(stderr, "cannot print assigned NUMA node\n");
+            util_fprintf(stderr, "cannot print assigned NUMA node\n");
         }
     }
 

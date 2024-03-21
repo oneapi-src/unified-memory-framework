@@ -33,6 +33,7 @@
 #define LOG_HEADER 256
 #define MAX_FILE_PATH 256
 #define MAX_ENV_LEN 2048
+#define TRUNCATED_STR "[truncated...]"
 
 typedef struct {
     int timestamp;
@@ -58,6 +59,22 @@ static const char *level_to_str(util_log_level_t l) {
         ASSERT(0);
         return "";
     }
+}
+
+void util_fprintf(FILE *stream, const char *format, ...) {
+    // subtract size of '\0' from TRUNCATED_STR,
+    // as space for it is already included in LOG_MAX
+    char buffer[LOG_MAX + sizeof(TRUNCATED_STR) - sizeof('\0')];
+    va_list args;
+    va_start(args, format);
+    int ret = vsnprintf(buffer, LOG_MAX, format, args);
+    if (ret >= LOG_MAX) {
+        //TODO: alloc bigger buffer with base alloc
+        char *p = buffer + strlen(buffer);
+        memcpy(p, TRUNCATED_STR, sizeof(TRUNCATED_STR));
+    }
+
+    fputs(buffer, stream);
 }
 
 void util_log(util_log_level_t level, const char *format, ...) {
@@ -88,7 +105,7 @@ void util_log(util_log_level_t level, const char *format, ...) {
     const char *overflow = "";
     if (ret >= (intptr_t)sizeof(buffer)) {
         //TODO: alloc bigger buffer with base alloc
-        overflow = "[truncated...]";
+        overflow = TRUNCATED_STR;
     }
     va_end(args);
     char header[LOG_HEADER];

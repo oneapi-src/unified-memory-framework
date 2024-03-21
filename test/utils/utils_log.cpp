@@ -261,7 +261,7 @@ TEST_F(test, long_log) {
     expected_message = "[DEBUG UMF] " + std::string(8191, 'x') + "\n";
     helper_test_log(LOG_DEBUG, "%s", std::string(8191, 'x').c_str());
     expected_message =
-        "[DEBUG UMF] " + std::string(8191, 'x') + "[truncated...]\n";
+        "[DEBUG UMF] " + std::string(8191, 'x') + TRUNCATED_STR + "\n";
     helper_test_log(LOG_DEBUG, "%s", std::string(8192, 'x').c_str());
 }
 
@@ -318,4 +318,19 @@ TEST_F(test, log_macros) {
     LOG_ERR("example log");
     EXPECT_EQ(fput_count, expect_fput_count);
     EXPECT_EQ(fflush_count, expect_fflush_count);
+}
+
+template <typename... Args> void helper_test_fprintf(Args... args) {
+    fput_count = 0;
+    util_fprintf(args...);
+    EXPECT_EQ(fput_count, expect_fput_count);
+}
+
+TEST_F(test, long_print) {
+    expect_fput_count = 1;
+    expected_message = std::string(8191, 'x');
+    expected_stream = stderr;
+    helper_test_fprintf(stderr, "%s", std::string(8191, 'x').c_str());
+    expected_message = std::string(8191, 'x') + TRUNCATED_STR;
+    helper_test_fprintf(stderr, "%s", std::string(8192, 'x').c_str());
 }
