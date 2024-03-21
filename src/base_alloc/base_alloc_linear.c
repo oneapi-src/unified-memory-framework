@@ -251,14 +251,7 @@ void umf_ba_linear_destroy(umf_ba_linear_pool_t *pool) {
     if (pool->metadata.global_n_allocs) {
         fprintf(stderr, "umf_ba_linear_destroy(): global_n_allocs = %zu\n",
                 pool->metadata.global_n_allocs);
-        // This assert fails sporadically on Windows only.
-        // TODO: fix this issue and uncomment this assert
-        // It is safe to comment it out temporarily,
-        // because the linear base allocator is used
-        // in the proxy library only but umf_ba_linear_destroy()
-        // is skipped, so this code is never run in real life.
-        //
-        // assert(pool->metadata.global_n_allocs == 0);
+        assert(pool->metadata.global_n_allocs == 0);
     }
 #endif /* NDEBUG */
 
