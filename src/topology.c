@@ -11,6 +11,7 @@
 
 #include "base_alloc_global.h"
 #include "utils_concurrency.h"
+#include "utils_log.h"
 
 static hwloc_topology_t topology = NULL;
 static UTIL_ONCE_FLAG topology_initialized = UTIL_ONCE_FLAG_INIT;
@@ -23,13 +24,13 @@ void umfDestroyTopology(void) {
 
 static void umfCreateTopology(void) {
     if (hwloc_topology_init(&topology)) {
-        fprintf(stderr, "Error: Failed to initialize topology\n");
+        LOG_ERR("Failed to initialize topology");
         topology = NULL;
         return;
     }
 
     if (hwloc_topology_load(topology)) {
-        fprintf(stderr, "Error: Failed to initialize topology\n");
+        LOG_ERR("Failed to initialize topology");
         hwloc_topology_destroy(topology);
         topology = NULL;
     }

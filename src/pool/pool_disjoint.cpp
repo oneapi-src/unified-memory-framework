@@ -25,6 +25,7 @@
 #include "../cpp_helpers.hpp"
 #include "pool_disjoint.h"
 #include "umf.h"
+#include "utils_log.h"
 #include "utils_math.h"
 #include "utils_sanitizers.h"
 
@@ -433,22 +434,22 @@ Slab::~Slab() {
     try {
         unregSlab(*this);
     } catch (std::exception &e) {
-        std::cerr << "DisjointPool: unexpected error: " << e.what() << "\n";
+        LOG_ERR("DisjointPool: unexpected error: %s", e.what());
     }
 
     try {
         memoryProviderFree(bucket.getMemHandle(), MemPtr);
     } catch (MemoryProviderError &e) {
-        std::cerr << "DisjointPool: error from memory provider: " << e.code
-                  << "\n";
+        LOG_ERR("DisjointPool: error from memory provider: %d", e.code);
+
         if (e.code == UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC) {
             const char *message = "";
             int error = 0;
 
             umfMemoryProviderGetLastNativeError(
                 umfGetLastFailedMemoryProvider(), &message, &error);
-            std::cerr << "Native error msg: " << message
-                      << ", native error code: " << error << std::endl;
+            LOG_ERR("Native error msg: %s, native error code: %d", message,
+                    error);
         }
     }
 }

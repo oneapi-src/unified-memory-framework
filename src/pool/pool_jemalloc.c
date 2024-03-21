@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2023 Intel Corporation
+ * Copyright (C) 2022-2024 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -13,6 +13,7 @@
 #include "base_alloc_global.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
+#include "utils_log.h"
 #include "utils_sanitizers.h"
 
 #include <umf/memory_pool.h>
@@ -116,7 +117,7 @@ static void arena_extent_destroy(extent_hooks_t *extent_hooks, void *addr,
     umf_result_t ret;
     ret = umfMemoryProviderFree(pool->provider, addr, size);
     if (ret != UMF_RESULT_SUCCESS) {
-        fprintf(stderr, "umfMemoryProviderFree failed \n");
+        LOG_ERR("umfMemoryProviderFree failed");
     }
 }
 
@@ -138,7 +139,7 @@ static bool arena_extent_dalloc(extent_hooks_t *extent_hooks, void *addr,
     umf_result_t ret;
     ret = umfMemoryProviderFree(pool->provider, addr, size);
     if (ret != UMF_RESULT_SUCCESS) {
-        fprintf(stderr, "umfMemoryProviderFree failed in dalloc \n");
+        LOG_ERR("umfMemoryProviderFree failed in dalloc");
     }
 
     return ret != UMF_RESULT_SUCCESS;
@@ -405,7 +406,7 @@ static umf_result_t op_initialize(umf_memory_provider_handle_t provider,
     err = je_mallctl("arenas.create", (void *)&arena_index, &unsigned_size,
                      NULL, 0);
     if (err) {
-        fprintf(stderr, "Could not create arena.\n");
+        LOG_ERR("Could not create arena.");
         goto err_free_pool;
     }
 
@@ -416,8 +417,7 @@ static umf_result_t op_initialize(umf_memory_provider_handle_t provider,
     if (err) {
         snprintf(cmd, sizeof(cmd), "arena.%u.destroy", arena_index);
         je_mallctl(cmd, NULL, 0, NULL, 0);
-        fprintf(stderr,
-                "Could not setup extent_hooks for newly created arena.\n");
+        LOG_ERR("Could not setup extent_hooks for newly created arena.");
         goto err_free_pool;
     }
 

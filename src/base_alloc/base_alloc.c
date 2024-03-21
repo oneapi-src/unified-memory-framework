@@ -11,6 +11,7 @@
 #include "base_alloc_internal.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
+#include "utils_log.h"
 #include "utils_sanitizers.h"
 
 // minimum size of a single pool of the base allocator
@@ -288,7 +289,7 @@ void umf_ba_destroy(umf_ba_pool_t *pool) {
 #ifndef NDEBUG
     ba_debug_checks(pool);
     if (pool->metadata.n_allocs) {
-        fprintf(stderr, "umf_ba_destroy(): pool->metadata.n_allocs = %zu\n",
+        LOG_ERR("umf_ba_destroy(): pool->metadata.n_allocs = %zu",
                 pool->metadata.n_allocs);
         assert(pool->metadata.n_allocs == 0);
     }

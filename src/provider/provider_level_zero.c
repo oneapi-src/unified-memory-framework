@@ -20,6 +20,7 @@
 #include "utils_common.h"
 #include "utils_concurrency.h"
 #include "utils_load_library.h"
+#include "utils_log.h"
 #include "utils_sanitizers.h"
 
 typedef struct ze_memory_provider_t {
@@ -59,7 +60,7 @@ static void init_ze_global_state(void) {
 
     if (!g_ze_ops.zeMemAllocHost || !g_ze_ops.zeMemAllocDevice ||
         !g_ze_ops.zeMemAllocShared || !g_ze_ops.zeMemFree) {
-        fprintf(stderr, "Required Level Zero symbols not found.\n");
+        LOG_ERR("Required Level Zero symbols not found.");
         Init_ze_global_state_failed = true;
     }
 }
@@ -74,7 +75,7 @@ enum umf_result_t ze_memory_provider_initialize(void *params, void **provider) {
 
     util_init_once(&ze_is_initialized, init_ze_global_state);
     if (Init_ze_global_state_failed) {
-        fprintf(stderr, "Loading Level Zero symbols failed\n");
+        LOG_ERR("Loading Level Zero symbols failed");
         return UMF_RESULT_ERROR_UNKNOWN;
     }
 
