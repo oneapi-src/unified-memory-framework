@@ -24,6 +24,7 @@
 #include "utils_common.h"
 #include "utils_concurrency.h"
 #include "utils_load_library.h"
+#include "utils_log.h"
 #include "utils_sanitizers.h"
 
 typedef void *(*raw_alloc_tbb_type)(intptr_t, size_t *);
@@ -109,7 +110,7 @@ static int init_tbb_callbacks(tbb_callbacks_t *tbb_callbacks) {
     const char *lib_name = tbb_symbol[TBB_LIB_NAME];
     tbb_callbacks->lib_handle = util_open_library(lib_name);
     if (!tbb_callbacks->lib_handle) {
-        fprintf(stderr, "%s not found.\n", lib_name);
+        LOG_ERR("%s not found.", lib_name);
         return -1;
     }
 
@@ -134,7 +135,7 @@ static int init_tbb_callbacks(tbb_callbacks_t *tbb_callbacks) {
         !tbb_callbacks->pool_aligned_malloc || !tbb_callbacks->pool_free ||
         !tbb_callbacks->pool_create_v1 || !tbb_callbacks->pool_destroy ||
         !tbb_callbacks->pool_identify) {
-        fprintf(stderr, "Could not find symbols in %s.\n", lib_name);
+        LOG_ERR("Could not find symbols in %s", lib_name);
         util_close_library(tbb_callbacks->lib_handle);
         return -1;
     }
@@ -160,10 +161,8 @@ static void tbb_raw_free_wrapper(intptr_t pool_id, void *ptr, size_t bytes) {
     umf_result_t ret = umfMemoryProviderFree(pool->mem_provider, ptr, bytes);
     if (ret != UMF_RESULT_SUCCESS) {
         TLS_last_free_error = ret;
-        fprintf(
-            stderr,
-            "Memory provider failed to free memory, addr = %p, size = %zu\n",
-            ptr, bytes);
+        LOG_ERR("Memory provider failed to free memory, addr = %p, size = %zu",
+                ptr, bytes);
     }
 }
 
@@ -183,13 +182,13 @@ static umf_result_t tbb_pool_initialize(umf_memory_provider_handle_t provider,
     tbb_memory_pool_t *pool_data =
         umf_ba_global_alloc(sizeof(tbb_memory_pool_t));
     if (!pool_data) {
-        fprintf(stderr, "cannot allocate memory for metadata\n");
+        LOG_ERR("cannot allocate memory for metadata");
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
     int ret = init_tbb_callbacks(&pool_data->tbb_callbacks);
     if (ret != 0) {
-        fprintf(stderr, "loading TBB symbols failed\n");
+        LOG_ERR("loading TBB symbols failed");
         return UMF_RESULT_ERROR_UNKNOWN;
     }
 

@@ -70,10 +70,6 @@ typedef struct umf_os_memory_provider_params_t {
     unsigned long maxnode;
     /// Describes how nodemask is interpreted
     umf_numa_mode_t numa_mode;
-
-    // others
-    /// Log level of debug traces
-    int traces;
 } umf_os_memory_provider_params_t;
 
 /// @brief OS Memory Provider operation results
@@ -98,7 +94,6 @@ umfOsMemoryProviderParamsDefault(void) {
         NULL,                                       /* nodemask */
         0,                                          /* maxnode */
         UMF_NUMA_MODE_DEFAULT,                      /* numa_mode */
-        0                                           /* traces */
     };
 
     return params;

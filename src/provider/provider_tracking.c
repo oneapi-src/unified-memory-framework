@@ -12,6 +12,7 @@
 #include "critnib.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
+#include "utils_log.h"
 
 #include <umf/memory_pool.h>
 #include <umf/memory_provider.h>
@@ -53,8 +54,7 @@ static umf_result_t umfMemoryTrackerAdd(umf_memory_tracker_handle_t hTracker,
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    // This should not happen
-    // TODO: add logging here
+    LOG_ERR("umfMemoryTrackerAdd: Unknown Error %d", ret);
     return UMF_RESULT_ERROR_UNKNOWN;
 }
 
@@ -70,8 +70,7 @@ static umf_result_t umfMemoryTrackerRemove(umf_memory_tracker_handle_t hTracker,
 
     void *value = critnib_remove(hTracker->map, (uintptr_t)ptr);
     if (!value) {
-        // This should not happen
-        // TODO: add logging here
+        LOG_ERR("umfMemoryTrackerRemove: Unknown Error");
         return UMF_RESULT_ERROR_UNKNOWN;
     }
 
@@ -84,12 +83,12 @@ umf_memory_pool_handle_t umfMemoryTrackerGetPool(const void *ptr) {
     assert(ptr);
 
     if (TRACKER == NULL) {
-        fprintf(stderr, "tracker is not created\n");
+        LOG_ERR("tracker is not created");
         return NULL;
     }
 
     if (TRACKER->map == NULL) {
-        fprintf(stderr, "tracker's map is not created\n");
+        LOG_ERR("tracker's map is not created");
         return NULL;
     }
 
@@ -129,9 +128,7 @@ static umf_result_t trackingAlloc(void *hProvider, size_t size,
 
     umf_result_t ret2 = umfMemoryTrackerAdd(p->hTracker, p->pool, *ptr, size);
     if (ret2 != UMF_RESULT_SUCCESS) {
-        // DO NOT call umfMemoryProviderFree() here, because the tracking provider
-        // cannot change behaviour of the upstream provider.
-        // TODO: LOG
+        LOG_ERR("umfMemoryTrackerAdd failed: %d", ret2);
     }
 
     return ret;
@@ -161,12 +158,12 @@ static umf_result_t trackingAllocationSplit(void *hProvider, void *ptr,
     tracker_value_t *value =
         (tracker_value_t *)critnib_get(provider->hTracker->map, (uintptr_t)ptr);
     if (!value) {
-        fprintf(stderr, "tracking split: no such value\n");
+        LOG_ERR("tracking split: no such value");
         ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
         goto err;
     }
     if (value->size != totalSize) {
-        fprintf(stderr, "tracking split: %zu != %zu\n", value->size, totalSize);
+        LOG_ERR("tracking split: %zu != %zu", value->size, totalSize);
         ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
         goto err;
     }
@@ -174,8 +171,7 @@ static umf_result_t trackingAllocationSplit(void *hProvider, void *ptr,
     ret = umfMemoryProviderAllocationSplit(provider->hUpstream, ptr, totalSize,
                                            firstSize);
     if (ret != UMF_RESULT_SUCCESS) {
-        fprintf(stderr,
-                "tracking split: umfMemoryProviderAllocationSplit failed\n");
+        LOG_ERR("tracking split: umfMemoryProviderAllocationSplit failed");
         goto err;
     }
 
@@ -187,7 +183,7 @@ static umf_result_t trackingAllocationSplit(void *hProvider, void *ptr,
     ret = umfMemoryTrackerAdd(provider->hTracker, provider->pool, highPtr,
                               secondSize);
     if (ret != UMF_RESULT_SUCCESS) {
-        fprintf(stderr, "tracking split: umfMemoryTrackerAdd failed\n");
+        LOG_ERR("tracking split: umfMemoryTrackerAdd failed");
         // TODO: what now? should we rollback the split? This can only happen due to ENOMEM
         // so it's unlikely but probably the best solution would be to try to preallocate everything
         // (value and critnib nodes) before calling umfMemoryProviderAllocationSplit.
@@ -237,25 +233,25 @@ static umf_result_t trackingAllocationMerge(void *hProvider, void *lowPtr,
     tracker_value_t *lowValue = (tracker_value_t *)critnib_get(
         provider->hTracker->map, (uintptr_t)lowPtr);
     if (!lowValue) {
-        fprintf(stderr, "tracking merge: no left value\n");
+        LOG_ERR("tracking merge: no left value");
         ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
         goto err;
     }
     tracker_value_t *highValue = (tracker_value_t *)critnib_get(
         provider->hTracker->map, (uintptr_t)highPtr);
     if (!highValue) {
-        fprintf(stderr, "tracking merge: no right value\n");
+        LOG_ERR("tracking merge: no right value");
         ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
         goto err;
     }
     if (lowValue->pool != highValue->pool) {
-        fprintf(stderr, "tracking merge: pool mismatch\n");
+        LOG_ERR("tracking merge: pool mismatch");
         ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
         goto err;
     }
     if (lowValue->size + highValue->size != totalSize) {
-        fprintf(stderr, "tracking merge: lowValue->size + highValue->size != "
-                        "totalSize\n");
+        LOG_ERR("tracking merge: lowValue->size + highValue->size != "
+                "totalSize");
         ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
         goto err;
     }
@@ -263,8 +259,7 @@ static umf_result_t trackingAllocationMerge(void *hProvider, void *lowPtr,
     ret = umfMemoryProviderAllocationMerge(provider->hUpstream, lowPtr, highPtr,
                                            totalSize);
     if (ret != UMF_RESULT_SUCCESS) {
-        fprintf(stderr,
-                "tracking merge: umfMemoryProviderAllocationMerge failed\n");
+        LOG_ERR("tracking merge: umfMemoryProviderAllocationMerge failed");
         goto err;
     }
 
@@ -363,14 +358,12 @@ static void check_if_tracker_is_empty(umf_memory_tracker_handle_t hTracker,
         // the very end of exiting the application.
         if (!util_is_running_in_proxy_lib()) {
             if (pool) {
-                fprintf(stderr,
-                        "ASSERT: tracking provider of pool %p is not empty! "
-                        "(%zu items left)\n",
+                LOG_ERR("tracking provider of pool %p is not empty! "
+                        "(%zu items left)",
                         (void *)pool, n_items);
             } else {
-                fprintf(stderr,
-                        "ASSERT: tracking provider is not empty! (%zu items "
-                        "left)\n",
+                LOG_ERR("tracking provider is not empty! (%zu items "
+                        "left)",
                         n_items);
             }
             assert(n_items == 0);

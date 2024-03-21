@@ -15,6 +15,7 @@
 #include <umf/providers/provider_os_memory.h>
 
 #include "utils_concurrency.h"
+#include "utils_log.h"
 
 static UTIL_ONCE_FLAG Page_size_is_initialized = UTIL_ONCE_FLAG_INIT;
 static size_t Page_size;
@@ -38,9 +39,8 @@ int os_translate_mem_protection_flags(unsigned protection) {
     case UMF_PROTECTION_WRITE:
         return PAGE_WRITECOPY;
     }
-    fprintf(stderr,
-            "os_translate_mem_protection_flags(): unsupported protection flag: "
-            "%u\n",
+    LOG_ERR("os_translate_mem_protection_flags(): unsupported protection flag: "
+            "%u",
             protection);
     assert(0);
     return -1;
