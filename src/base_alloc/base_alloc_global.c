@@ -150,6 +150,10 @@ static void *get_original_alloc(void *user_ptr, size_t *total_size,
 void *umf_ba_global_aligned_alloc(size_t size, size_t alignment) {
     util_init_once(&ba_is_initialized, umf_ba_create_global);
 
+    if (size == 0) {
+        return NULL;
+    }
+
     // for metadata
     size += ALLOC_METADATA_SIZE;
 
