@@ -33,10 +33,13 @@ option(USE_MSAN "Enable MemorySanitizer checks" OFF)
 option(USE_VALGRIND "Enable Valgrind instrumentation" OFF)
 
 # set UMF_PROXY_LIB_BASED_ON_POOL to one of: SCALABLE or JEMALLOC
+set(KNOWN_PROXY_LIB_POOLS SCALABLE JEMALLOC)
 set(UMF_PROXY_LIB_BASED_ON_POOL
     SCALABLE
     CACHE STRING
           "A UMF pool the proxy library is based on (SCALABLE or JEMALLOC)")
+set_property(CACHE UMF_PROXY_LIB_BASED_ON_POOL
+             PROPERTY STRINGS ${KNOWN_PROXY_LIB_POOLS})
 
 set(KNOWN_BUILD_TYPES Release Debug RelWithDebInfo MinSizeRel)
 string(REPLACE ";" " " KNOWN_BUILD_TYPES_STR "${KNOWN_BUILD_TYPES}")
