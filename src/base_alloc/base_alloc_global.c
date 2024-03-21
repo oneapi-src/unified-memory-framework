@@ -26,8 +26,8 @@ static UTIL_ONCE_FLAG ba_is_initialized = UTIL_ONCE_FLAG_INIT;
 
 // allocation classes need to be consecutive powers of 2
 #define ALLOCATION_CLASSES                                                     \
-    { 16, 32, 64, 128 }
-#define NUM_ALLOCATION_CLASSES 4
+    { 16, 32, 64, 128, 256 }
+#define NUM_ALLOCATION_CLASSES 5
 
 struct base_alloc_t {
     size_t ac_sizes[NUM_ALLOCATION_CLASSES];
