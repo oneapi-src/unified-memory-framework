@@ -47,6 +47,10 @@ function(add_umf_test)
         set(LIB_DIRS ${LIB_DIRS} ${JEMALLOC_LIBRARY_DIRS})
     endif()
 
+    if(UMF_BUILD_LIBUMF_POOL_SCALABLE)
+        set(LIB_DIRS ${LIB_DIRS} ${TBB_LIBRARY_DIRS})
+    endif()
+
     set(TEST_LIBS
         test_common
         umf
@@ -214,14 +218,18 @@ add_umf_test(
 
 # tests for the proxy library
 if(UMF_PROXY_LIB_ENABLED AND UMF_BUILD_SHARED_LIBRARY)
+    set(PROXY_LIBS umf_proxy)
+    if(PROXY_LIB_USES_JEMALLOC_POOL)
+        set(PROXY_LIBS ${PROXY_LIBS} ${JEMALLOC_LIBRARIES})
+    endif()
     add_umf_test(
         NAME proxy_lib_basic
         SRCS test_proxy_lib.cpp
-        LIBS umf_proxy)
+        LIBS ${PROXY_LIBS})
 
     # the memoryPool test run with the proxy library
     add_umf_test(
         NAME proxy_lib_memoryPool
         SRCS memoryPoolAPI.cpp malloc_compliance_tests.cpp
-        LIBS umf_proxy)
+        LIBS ${PROXY_LIBS})
 endif()
