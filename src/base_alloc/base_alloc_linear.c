@@ -118,6 +118,9 @@ umf_ba_linear_pool_t *umf_ba_linear_create(size_t pool_size) {
 }
 
 void *umf_ba_linear_alloc(umf_ba_linear_pool_t *pool, size_t size) {
+    if (size == 0) {
+        return NULL;
+    }
     size_t aligned_size = ALIGN_UP(size, MEMORY_ALIGNMENT);
     util_mutex_lock(&pool->metadata.lock);
     if (pool->metadata.size_left < aligned_size) {
