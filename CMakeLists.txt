@@ -145,12 +145,6 @@ target_include_directories(
     umf_headers INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
                           $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
-# Add the include directory and the headers target to the install.
-install(DIRECTORY "${PROJECT_SOURCE_DIR}/include/"
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-
-install(TARGETS umf_headers EXPORT ${PROJECT_NAME}-targets)
-
 if(WINDOWS)
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
     # set PATH to DLLs on Windows
@@ -375,9 +369,20 @@ if(UMF_FORMAT_CODE_STYLE)
         COMMENT "Format files using clang-format and cmake-format")
 endif()
 
-# Add license to the installation path
+# --------------------------------------------------------------------------- #
+# Configure make install/uninstall and packages
+# --------------------------------------------------------------------------- #
 install(FILES ${CMAKE_SOURCE_DIR}/LICENSE.TXT
         DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/doc/${PROJECT_NAME}/")
+
+install(FILES examples/basic/basic.c
+        DESTINATION "${CMAKE_INSTALL_DOCDIR}/examples")
+
+# Add the include directory and the headers target to the install.
+install(DIRECTORY "${PROJECT_SOURCE_DIR}/include/"
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+install(TARGETS umf_headers EXPORT ${PROJECT_NAME}-targets)
 
 # Add the list of installed targets to the install. This includes the namespace
 # which all installed targets will be prefixed with, e.g. for the headers target
@@ -405,6 +410,7 @@ install(FILES ${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}-config.cmake
               ${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}-config-version.cmake
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
 
+# Configure uninstall commands
 configure_file("${PROJECT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
                "${PROJECT_BINARY_DIR}/cmake_uninstall.cmake" IMMEDIATE @ONLY)
 

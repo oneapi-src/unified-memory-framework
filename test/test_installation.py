@@ -25,7 +25,6 @@ class UmfInstaller:
     build_type (str): Debug or Release build type passed to the script
     shared_library (bool): Determines if the UMF was built as a shared library
     pools (List[str]): A list of enabled pools during the UMF compilation
-    examples (bool): Determines if the UMF examples were built
     match_list (List[str]): A list of relative paths of files that should be installed
     """
 
@@ -37,7 +36,6 @@ class UmfInstaller:
         build_type: str,
         shared_library: bool,
         pools: List[str],
-        examples: bool,
     ):
         self.workspace_dir = workspace_dir
         self.build_dir = build_dir
@@ -45,7 +43,6 @@ class UmfInstaller:
         self.build_type = build_type
         self.shared_library = shared_library
         self.pools = pools
-        self.examples = examples
         self.match_list = self._create_match_list()
 
     def _create_match_list(self) -> List[str]:
@@ -114,16 +111,15 @@ class UmfInstaller:
             "share/doc",
             "share/doc/unified-memory-framework",
         ]
-        if self.examples:
-            examples_dir = Path(self.workspace_dir, "examples")
-            examples_dirs = [dir for dir in examples_dir.iterdir() if dir.is_dir()]
-            examples = [
-                f"share/doc/unified-memory-framework/examples/{file_path.name}"
-                for example_dir in examples_dirs
-                for file_path in example_dir.iterdir()
-            ]
-            examples.insert(0, "share/doc/unified-memory-framework/examples")
-            share.extend(examples)
+        examples_dir = Path(self.workspace_dir, "examples")
+        examples_dirs = [dir for dir in examples_dir.iterdir() if dir.is_dir()]
+        examples = [
+            f"share/doc/unified-memory-framework/examples/{file_path.name}"
+            for example_dir in examples_dirs
+            for file_path in example_dir.iterdir()
+        ]
+        examples.insert(0, "share/doc/unified-memory-framework/examples")
+        share.extend(examples)
         share.append("share/doc/unified-memory-framework/LICENSE.TXT")
 
         all_files = bin + include + lib + share
@@ -260,11 +256,6 @@ class UmfInstallationTester:
             action="store_true",
             help="Add this argument if the UMF was built with Scalable Pool enabled",
         )
-        self.parser.add_argument(
-            "--examples",
-            action="store_true",
-            help="Add this argument if the examples were built",
-        )
         return self.parser.parse_args()
 
     def run(self) -> None:
@@ -290,7 +281,6 @@ class UmfInstallationTester:
             self.args.build_type,
             self.args.shared_library,
             pools,
-            self.args.examples,
         )
 
         print("Installation test - BEGIN", flush=True)
