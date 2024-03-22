@@ -7,15 +7,19 @@
 
 #include "pool.hpp"
 #include "poolFixtures.hpp"
+#include "provider.hpp"
 
 using umf_test::test;
 using namespace umf_test;
 
 auto defaultParams = umfOsMemoryProviderParamsDefault();
-INSTANTIATE_TEST_SUITE_P(jemallocPoolTest, umfPoolTest,
-                         ::testing::Values(poolCreateExtParams{
-                             umfJemallocPoolOps(), nullptr,
-                             umfOsMemoryProviderOps(), &defaultParams}));
+INSTANTIATE_TEST_SUITE_P(
+    jemallocPoolTest, umfPoolTest,
+    ::testing::Values(poolCreateExtParams{umfJemallocPoolOps(), nullptr,
+                                          umfOsMemoryProviderOps(),
+                                          &defaultParams},
+                      poolCreateExtParams{umfJemallocPoolOps(), nullptr,
+                                          &MALLOC_PROVIDER_OPS, nullptr}));
 
 // this test makes sure that jemalloc does not use
 // memory provider to allocate metadata (and hence
