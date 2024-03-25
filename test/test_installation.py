@@ -103,7 +103,6 @@ class UmfInstaller:
         lib.append(f"lib/{lib_prefix}umf.{lib_ext}")
         if is_umf_proxy:
             lib.append(f"lib/{lib_prefix}umf_proxy.{lib_ext_shared}")
-        lib.append(f"lib/{lib_prefix}umf_utils.{lib_ext_static}")
 
         share = []
         share = [
