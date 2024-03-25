@@ -36,3 +36,6 @@ make -j $(nproc)
 
 ctest --output-on-failure
 
+# run tests bound to a numa node
+numactl -N 0 ctest --output-on-failure
+numactl -N 1 ctest --output-on-failure

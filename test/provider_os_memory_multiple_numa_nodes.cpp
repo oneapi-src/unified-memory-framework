@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 #include "base.hpp"
+#include "numa_helpers.h"
 
 #include <numa.h>
 #include <numaif.h>
@@ -50,14 +51,6 @@ struct testNumaNodes : public testing::TestWithParam<int> {
                                              &os_memory_provider);
         ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
         ASSERT_NE(os_memory_provider, nullptr);
-    }
-
-    int retrieve_numa_node_number(void *addr) {
-        int numa_node;
-        int ret = get_mempolicy(&numa_node, nullptr, 0, addr,
-                                MPOL_F_NODE | MPOL_F_ADDR);
-        EXPECT_EQ(ret, 0);
-        return numa_node;
     }
 
     void TearDown() override {
@@ -108,6 +101,6 @@ TEST_P(testNumaNodes, checkNumaNodesAllocations) {
     // This pointer must point to an initialized value before retrieving a number of
     // the numa node that the pointer was allocated on (calling get_mempolicy).
     memset(ptr, 0xFF, alloc_size);
-    int retrieved_numa_node_number = retrieve_numa_node_number(ptr);
+    int retrieved_numa_node_number = getNumaNodeByPtr(ptr);
     ASSERT_EQ(retrieved_numa_node_number, numa_node_number);
 }

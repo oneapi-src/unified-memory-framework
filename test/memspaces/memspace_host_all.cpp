@@ -5,6 +5,7 @@
 #include "memory_target_numa.h"
 #include "memspace_helpers.hpp"
 #include "memspace_internal.h"
+#include "numa_helpers.h"
 #include "test_helpers.h"
 #include "utils_sanitizers.h"
 
@@ -91,9 +92,7 @@ static void getAllocationPolicy(void *ptr, unsigned long maxNodeId, int &mode,
     }
 
     // Get the node that allocated the memory at 'ptr'.
-    int nodeId = -1;
-    ret = get_mempolicy(&nodeId, nullptr, 0, ptr, MPOL_F_ADDR | MPOL_F_NODE);
-    UT_ASSERTeq(ret, 0);
+    int nodeId = getNumaNodeByPtr(ptr);
     allocNodeId = static_cast<size_t>(nodeId);
 }
 
