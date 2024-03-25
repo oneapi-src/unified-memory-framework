@@ -106,8 +106,6 @@
     } while (0)
 #endif
 
-#include <stdlib.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
