@@ -6,7 +6,6 @@
 #include "memspace_helpers.hpp"
 #include "memspace_internal.h"
 #include "test_helpers.h"
-#include "utils_sanitizers.h"
 
 #include <numa.h>
 #include <numaif.h>

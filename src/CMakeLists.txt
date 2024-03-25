@@ -29,7 +29,7 @@ endif()
 
 add_subdirectory(utils)
 
-set(UMF_LIBS umf_utils)
+set(UMF_LIBS $<BUILD_INTERFACE:umf_utils>)
 
 set(BA_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/base_alloc/base_alloc.c
