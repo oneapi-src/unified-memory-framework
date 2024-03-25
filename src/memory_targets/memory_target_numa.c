@@ -106,6 +106,7 @@ static enum umf_result_t numa_memory_provider_create_from_memspace(
     umf_memspace_policy_handle_t policy,
     umf_memory_provider_handle_t *provider) {
     (void)memspace;
+    (void)numTargets;
     // TODO: apply policy
     (void)policy;
 
@@ -115,9 +116,18 @@ static enum umf_result_t numa_memory_provider_create_from_memspace(
     unsigned long *nodemask;
     unsigned maxnode;
     size_t nodemask_size;
+    size_t numNodesProvider;
+
+    if (memspace == umfMemspaceHighestCapacityGet()) {
+        // Pass only a single node to provider for now.
+        // TODO: change this once we implement memspace policies
+        numNodesProvider = 1;
+    } else {
+        numNodesProvider = numTargets;
+    }
 
     umf_result_t ret = numa_targets_create_nodemask(
-        numaTargets, numTargets, &nodemask, &maxnode, &nodemask_size);
+        numaTargets, numNodesProvider, &nodemask, &maxnode, &nodemask_size);
     if (ret != UMF_RESULT_SUCCESS) {
         return ret;
     }
