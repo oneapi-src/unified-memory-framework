@@ -210,6 +210,7 @@ add_umf_test(
     NAME base_alloc
     SRCS ${BA_SOURCES_FOR_TEST} test_base_alloc.cpp
     LIBS ${UMF_UTILS_FOR_TEST})
+    
 add_umf_test(
     NAME base_alloc_linear
     SRCS ${BA_SOURCES_FOR_TEST} test_base_alloc_linear.cpp
