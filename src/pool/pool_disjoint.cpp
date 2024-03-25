@@ -19,12 +19,14 @@
 #include <utility>
 #include <vector>
 
-// TODO: replace with logger?
+// TODO use logger
 #include <iostream>
 
+#include <umf/memory_pool.h>
+#include <umf/memory_pool_ops.h>
+#include <umf/pools/pool_disjoint.h>
+
 #include "../cpp_helpers.hpp"
-#include "pool_disjoint.h"
-#include "umf.h"
 #include "utils_log.h"
 #include "utils_math.h"
 #include "utils_sanitizers.h"

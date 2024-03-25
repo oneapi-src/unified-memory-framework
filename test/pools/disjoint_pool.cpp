@@ -2,9 +2,10 @@
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
+#include <umf/pools/pool_disjoint.h>
+
 #include "pool.hpp"
 #include "poolFixtures.hpp"
-#include "pool_disjoint.h"
 #include "provider.hpp"
 #include "provider_null.h"
 #include "provider_trace.h"

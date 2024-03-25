@@ -102,13 +102,13 @@ endif()
 add_umf_benchmark(
     NAME ubench
     SRCS ubench.c
-    LIBS ${LIBS_OPTIONAL}
+    LIBS ${LIBS_OPTIONAL} umf_utils
     LIBDIRS ${LIB_DIRS})
 
 if(UMF_BUILD_BENCHMARKS_MT)
     add_umf_benchmark(
         NAME multithreaded
         SRCS multithread.cpp
-        LIBS ${LIBS_OPTIONAL} ${CMAKE_THREAD_LIBS_INIT}
+        LIBS ${LIBS_OPTIONAL} ${CMAKE_THREAD_LIBS_INIT} umf_utils
         LIBDIRS ${LIB_DIRS})
 endif()

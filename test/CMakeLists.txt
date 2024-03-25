@@ -225,14 +225,15 @@ add_umf_test(
 if(UMF_PROXY_LIB_ENABLED AND UMF_BUILD_SHARED_LIBRARY)
     add_umf_test(
         NAME proxy_lib_basic
-        SRCS test_proxy_lib.cpp
-        LIBS umf_proxy)
+        SRCS ${BA_SOURCES_FOR_TEST} test_proxy_lib.cpp
+        LIBS umf_proxy ${UMF_UTILS_FOR_TEST})
 
     # the memoryPool test run with the proxy library
     add_umf_test(
         NAME proxy_lib_memoryPool
-        SRCS memoryPoolAPI.cpp malloc_compliance_tests.cpp
-        LIBS umf_proxy)
+        SRCS ${BA_SOURCES_FOR_TEST} memoryPoolAPI.cpp
+             malloc_compliance_tests.cpp
+        LIBS umf_proxy ${UMF_UTILS_FOR_TEST})
     target_compile_definitions(umf_test-proxy_lib_memoryPool
                                PUBLIC UMF_PROXY_LIB_ENABLED=1)
 endif()
