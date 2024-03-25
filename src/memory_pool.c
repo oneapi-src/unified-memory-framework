@@ -17,17 +17,125 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include "base_alloc_global.h"
+#include "memory_pool_internal.h"
+#include "memory_provider_internal.h"
+#include "provider_tracking.h"
+
+static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
+                                          umf_memory_provider_handle_t provider,
+                                          void *params,
+                                          umf_pool_create_flags_t flags,
+                                          umf_memory_pool_handle_t *hPool) {
+    if (!ops || !provider || !hPool) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    umf_result_t ret = UMF_RESULT_SUCCESS;
+    umf_memory_pool_handle_t pool =
+        umf_ba_global_alloc(sizeof(umf_memory_pool_t));
+    if (!pool) {
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    assert(ops->version == UMF_VERSION_CURRENT);
+
+    if (!(flags & UMF_POOL_CREATE_FLAG_DISABLE_TRACKING)) {
+        // wrap provider with memory tracking provider
+        ret = umfTrackingMemoryProviderCreate(provider, pool, &pool->provider);
+        if (ret != UMF_RESULT_SUCCESS) {
+            goto err_provider_create;
+        }
+    } else {
+        pool->provider = provider;
+    }
+
+    pool->flags = flags;
+    pool->ops = *ops;
+
+    ret = ops->initialize(pool->provider, params, &pool->pool_priv);
+    if (ret != UMF_RESULT_SUCCESS) {
+        goto err_pool_init;
+    }
+
+    *hPool = pool;
+    return UMF_RESULT_SUCCESS;
+
+err_pool_init:
+    if (!(flags & UMF_POOL_CREATE_FLAG_DISABLE_TRACKING)) {
+        umfMemoryProviderDestroy(pool->provider);
+    }
+err_provider_create:
+    umf_ba_global_free(pool);
+    return ret;
+}
+
+void umfPoolDestroy(umf_memory_pool_handle_t hPool) {
+    hPool->ops.finalize(hPool->pool_priv);
+    if (hPool->flags & UMF_POOL_CREATE_FLAG_OWN_PROVIDER) {
+        // Destroy associated memory provider.
+        umf_memory_provider_handle_t hProvider = NULL;
+        umfPoolGetMemoryProvider(hPool, &hProvider);
+        umfMemoryProviderDestroy(hProvider);
+    }
+
+    if (!(hPool->flags & UMF_POOL_CREATE_FLAG_DISABLE_TRACKING)) {
+        // Destroy tracking provider.
+        umfMemoryProviderDestroy(hPool->provider);
+    }
+    // TODO: this free keeps memory in base allocator, so it can lead to OOM in some scenarios (it should be optimized)
+    umf_ba_global_free(hPool);
+}
+
+umf_result_t umfFree(void *ptr) {
+#ifndef UMF_ENABLE_POOL_TRACKING
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+#endif
+
+    umf_memory_pool_handle_t hPool = umfPoolByPtr(ptr);
+    if (hPool) {
+        return umfPoolFree(hPool, ptr);
+    }
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_memory_pool_handle_t umfPoolByPtr(const void *ptr) {
+    return umfMemoryTrackerGetPool(ptr);
+}
+
+umf_result_t umfPoolGetMemoryProvider(umf_memory_pool_handle_t hPool,
+                                      umf_memory_provider_handle_t *hProvider) {
+    if (!hProvider) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (hPool->flags & UMF_POOL_CREATE_FLAG_DISABLE_TRACKING) {
+        *hProvider = hPool->provider;
+    } else {
+        umfTrackingMemoryProviderGetUpstreamProvider(
+            umfMemoryProviderGetPriv(hPool->provider), hProvider);
+    }
+
+    return UMF_RESULT_SUCCESS;
+}
+
 umf_result_t umfPoolCreate(const umf_memory_pool_ops_t *ops,
                            umf_memory_provider_handle_t provider, void *params,
                            umf_pool_create_flags_t flags,
                            umf_memory_pool_handle_t *hPool) {
     libumfInit();
-    umf_result_t ret = umfPoolCreateInternal(ops, provider, params, hPool);
+
+#ifndef UMF_ENABLE_POOL_TRACKING
+    // if tracking is not enabled during compilation, disable it for each pool here as well
+    flags |= UMF_POOL_CREATE_FLAG_DISABLE_TRACKING;
+#endif
+
+    umf_result_t ret =
+        umfPoolCreateInternal(ops, provider, params, flags, hPool);
     if (ret != UMF_RESULT_SUCCESS) {
         return ret;
     }
     assert(*hPool != NULL);
-    (*hPool)->own_provider = (flags & UMF_POOL_CREATE_FLAG_OWN_PROVIDER);
 
     return UMF_RESULT_SUCCESS;
 }

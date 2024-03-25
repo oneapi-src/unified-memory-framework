@@ -26,17 +26,11 @@ extern "C" {
 typedef struct umf_memory_pool_t {
     void *pool_priv;
     umf_memory_pool_ops_t ops;
+    umf_pool_create_flags_t flags;
 
     // Memory provider used by the pool.
     umf_memory_provider_handle_t provider;
-    // Tells whether memory provider is owned by the pool.
-    bool own_provider;
 } umf_memory_pool_t;
-
-umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
-                                   umf_memory_provider_handle_t provider,
-                                   void *params,
-                                   umf_memory_pool_handle_t *hPool);
 
 #ifdef __cplusplus
 }

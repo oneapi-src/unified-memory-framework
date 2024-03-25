@@ -118,15 +118,14 @@ else()
         LIBS ${UMF_LIBS})
 endif()
 
+if(UMF_ENABLE_POOL_TRACKING)
+    set(UMF_PUBLIC_COMPILE_DEFINITIONS ${UMF_PUBLIC_COMPILE_DEFINITIONS}
+                                       "UMF_ENABLE_POOL_TRACKING")
+endif()
+
 target_link_directories(umf PRIVATE ${UMF_PRIVATE_LIBRARY_DIRS})
 
 target_compile_definitions(umf PUBLIC ${UMF_PUBLIC_COMPILE_DEFINITIONS})
-
-if(UMF_ENABLE_POOL_TRACKING)
-    target_sources(umf PRIVATE memory_pool_tracking.c)
-else()
-    target_sources(umf PRIVATE memory_pool_default.c)
-endif()
 
 if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
     target_sources(umf PRIVATE provider/provider_level_zero.c)
