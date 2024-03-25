@@ -61,3 +61,4 @@ RUN pip3 install --no-cache-dir -r /opt/umf/requirements.txt
 ENV USER test_user
 ENV USERPASS pass
 RUN useradd -m "${USER}" -g sudo -p "$(mkpasswd ${USERPASS})"
+USER test_user
