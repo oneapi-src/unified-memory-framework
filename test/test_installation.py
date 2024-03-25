@@ -91,11 +91,11 @@ class UmfInstaller:
         lib = [
             "lib",
             "lib/cmake",
-            "lib/cmake/unified-memory-framework",
-            "lib/cmake/unified-memory-framework/unified-memory-framework-config-version.cmake",
-            "lib/cmake/unified-memory-framework/unified-memory-framework-config.cmake",
-            f"lib/cmake/unified-memory-framework/unified-memory-framework-targets-{self.build_type}.cmake",
-            "lib/cmake/unified-memory-framework/unified-memory-framework-targets.cmake",
+            "lib/cmake/umf",
+            "lib/cmake/umf/umf-config-version.cmake",
+            "lib/cmake/umf/umf-config.cmake",
+            f"lib/cmake/umf/umf-targets-{self.build_type}.cmake",
+            "lib/cmake/umf/umf-targets.cmake",
         ]
         for pool in self.pools:
             lib.append(f"lib/{lib_prefix}{pool}.{lib_ext_static}")
@@ -109,18 +109,18 @@ class UmfInstaller:
         share = [
             "share",
             "share/doc",
-            "share/doc/unified-memory-framework",
+            "share/doc/umf",
         ]
         examples_dir = Path(self.workspace_dir, "examples")
         examples_dirs = [dir for dir in examples_dir.iterdir() if dir.is_dir()]
         examples = [
-            f"share/doc/unified-memory-framework/examples/{file_path.name}"
+            f"share/doc/umf/examples/{file_path.name}"
             for example_dir in examples_dirs
             for file_path in example_dir.iterdir()
         ]
-        examples.insert(0, "share/doc/unified-memory-framework/examples")
+        examples.insert(0, "share/doc/umf/examples")
         share.extend(examples)
-        share.append("share/doc/unified-memory-framework/LICENSE.TXT")
+        share.append("share/doc/umf/LICENSE.TXT")
 
         all_files = bin + include + lib + share
         if platform.system() == "Windows":
