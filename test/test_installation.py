@@ -113,6 +113,7 @@ class UmfInstaller:
             for example_dir in examples_dirs
             for file_path in example_dir.iterdir()
         ]
+        examples = sorted(examples)
         examples.insert(0, "share/doc/umf/examples")
         share.extend(examples)
         share.append("share/doc/umf/LICENSE.TXT")

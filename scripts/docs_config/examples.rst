@@ -2,20 +2,27 @@
     :linenothreshold: 10
 
 ==============================================================================
-Example usage
+Examples
 ==============================================================================
 
 This section will walk you through a basic usage
 of :ref:`memory provider <glossary-memory-provider>`
-and :ref:`pool allocator <glossary-pool-allocator>`. OS Memory Provider
-and Scalable Pool will be used for this purpose.
+and :ref:`pool allocator <glossary-pool-allocator>` APIs.
+There are two examples described here: basic and GPU shared.
 
-There are also other memory pools available in the UMF. See `README`_ for
-more information.
+Basic example uses OS Memory Provider and Scalable Pool,
+while the GPU shared uses Level Zero Memory Provider and Disjoint Pool.
 
-There are some API functions that are supported only when the UMF is built
-with the memory tracking enabled (UMF_ENABLE_POOL_TRACKING=ON). These functions
-are explicitly described in this tutorial as requiring memory tracking.
+There are also other memory providers and pools available in the UMF.
+See `README`_ for more information.
+
+.. note::
+    There are some API functions that are supported only when the UMF is built
+    with the memory tracking enabled (UMF_ENABLE_POOL_TRACKING=ON). These functions
+    are explicitly described in this tutorial as requiring memory tracking.
+
+Basic
+==============================================================================
 
 You can find the full example code in the `examples/basic/basic.c`_ file
 in the UMF repository.
@@ -112,7 +119,16 @@ Freeing memory is as easy as can be::
     If the memory tracking is disabled, you should call a different function:
     :any:`umfPoolFree`.
 
+GPU shared memory
+==============================================================================
+
+You can find the full example code in the `examples/basic/gpu_shared_memory.c`_ file
+in the UMF repository.
+
+TODO
+
 .. _examples/basic/basic.c: https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/basic/basic.c
+.. _examples/basic/gpu_shared_memory.c: https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/basic/gpu_shared_memory.c
 .. _README: https://github.com/oneapi-src/unified-memory-framework/blob/main/README.md#memory-pool-managers
 .. _provider_os_memory.h: https://github.com/oneapi-src/unified-memory-framework/blob/main/include/umf/providers/provider_os_memory.h
 .. _pool_scalable.h: https://github.com/oneapi-src/unified-memory-framework/blob/main/include/umf/pools/pool_scalable.h

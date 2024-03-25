@@ -17,8 +17,13 @@ The Unified Memory Framework (UMF) is a library for constructing allocators and 
 
 ## Usage
 
-For a quick introduction to UMF usage, see [Example usage](https://oneapi-src.github.io/unified-memory-framework/example-usage.html),
-which includes the code of the basic [example](https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/basic/basic.c).
+For a quick introduction to UMF usage, please see
+[examples](https://oneapi-src.github.io/unified-memory-framework/examples.html)
+documentation, which includes the code of the
+[basic example](https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/basic/basic.c)
+and the more advanced one that allocates
+[USM memory from the GPU device](https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/basic/gpu_shared_memory.c)
+using the Level Zero API and UMF Level Zero memory provider.
 
 ## Build
 
@@ -100,6 +105,7 @@ List of options provided by CMake:
 | UMF_BUILD_GPU_TESTS | Build UMF GPU tests | ON/OFF | OFF |
 | UMF_BUILD_BENCHMARKS | Build UMF benchmarks | ON/OFF | OFF |
 | UMF_BUILD_EXAMPLES | Build UMF examples | ON/OFF | ON |
+| UMF_BUILD_GPU_EXAMPLES | Build UMF GPU examples | ON/OFF | OFF |
 | UMF_ENABLE_POOL_TRACKING | Build UMF with pool tracking | ON/OFF | ON |
 | UMF_DEVELOPER_MODE | Treat warnings as errors and enables additional checks | ON/OFF | OFF |
 | UMF_FORMAT_CODE_STYLE | Add clang, cmake, and black -format-check and -format-apply targets to make | ON/OFF | OFF |

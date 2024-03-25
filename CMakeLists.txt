@@ -22,6 +22,7 @@ option(UMF_BUILD_GPU_TESTS "Build UMF GPU tests" OFF)
 option(UMF_BUILD_BENCHMARKS "Build UMF benchmarks" OFF)
 option(UMF_BUILD_BENCHMARKS_MT "Build UMF multithreaded benchmarks" OFF)
 option(UMF_BUILD_EXAMPLES "Build UMF examples" ON)
+option(UMF_BUILD_GPU_EXAMPLES "Build UMF GPU examples" OFF)
 option(UMF_ENABLE_POOL_TRACKING "Build UMF with pool tracking" ON)
 option(UMF_DEVELOPER_MODE "Enable developer checks, treats warnings as errors"
        OFF)
@@ -435,7 +436,8 @@ endif()
 install(FILES ${CMAKE_SOURCE_DIR}/LICENSE.TXT
         DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/doc/${PROJECT_NAME}/")
 
-install(FILES examples/basic/basic.c
+install(FILES examples/basic/gpu_shared_memory.c
+              examples/basic/utils_level_zero.h examples/basic/basic.c
         DESTINATION "${CMAKE_INSTALL_DOCDIR}/examples")
 
 # Add the include directory and the headers target to the install.
