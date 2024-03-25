@@ -1,5 +1,5 @@
 """
- Copyright (C) 2023 Intel Corporation
+ Copyright (C) 2023-2024 Intel Corporation
  
  Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -7,7 +7,7 @@
 
 from pathlib import Path
 from shutil import rmtree
-import subprocess
+import subprocess   # nosec B404
 import time
 
 
@@ -41,9 +41,8 @@ def _prepare_docs_dir(docs_path: Path) -> None:
 def _generate_xml(config_path: Path, docs_path: Path) -> None:
     print("Generating XML files with doxygen...", flush=True)
     try:
-        subprocess.run(
-            ["doxygen", Path(config_path, "Doxyfile")], text=True
-        ).check_returncode()
+        subprocess.run(["doxygen", Path(config_path, "Doxyfile")], text=True
+                       ).check_returncode()    # nosec B603, B607
         print(f"All XML files generated in {docs_path}", flush=True)
     except subprocess.CalledProcessError as ex:
         print("Generating XML files failed!")
@@ -54,9 +53,8 @@ def _generate_xml(config_path: Path, docs_path: Path) -> None:
 def _generate_html(config_path: Path, docs_path: Path) -> None:
     print("Generating HTML pages with sphinx...", flush=True)
     try:
-        subprocess.run(
-            ["sphinx-build", config_path, Path(docs_path, "html")], text=True
-        ).check_returncode()
+        subprocess.run(["sphinx-build", config_path, Path(docs_path, "html")], text=True
+                       ).check_returncode()    # nosec B603, B607
         print(f"All HTML files generated in {docs_path}", flush=True)
     except subprocess.CalledProcessError as ex:
         print("Generating HTML pages failed!")
