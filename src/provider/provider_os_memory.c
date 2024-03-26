@@ -311,8 +311,7 @@ static void print_numa_nodes(os_memory_provider_t *os_provider, void *addr,
     int ret = hwloc_get_area_memlocation(os_provider->topo, addr, 1, nodeset,
                                          HWLOC_MEMBIND_BYNODESET);
     if (ret) {
-        LOG_DEBUG("cannot print assigned NUMA node (errno = %i)", errno);
-        perror("get_mempolicy()");
+        LOG_PDEBUG("cannot print assigned NUMA node (errno = %i)", errno);
     } else {
         if (hwloc_bitmap_list_snprintf(os_provider->nodeset_str_buf,
                                        NODESET_STR_BUF_LEN, nodeset)) {
@@ -422,7 +421,7 @@ static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
     ret = os_mmap_aligned(NULL, size, alignment, page_size, protection, &addr);
     if (ret) {
         os_store_last_native_error(UMF_OS_RESULT_ERROR_ALLOC_FAILED, errno);
-        perror("memory allocation failed");
+        LOG_PERR("memory allocation failed");
 
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
@@ -455,7 +454,7 @@ static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
 
     if (ret) {
         os_store_last_native_error(UMF_OS_RESULT_ERROR_BIND_FAILED, errno);
-        perror("binding memory to NUMA node failed");
+        LOG_PERR("binding memory to NUMA node failed");
         // TODO: (errno == 0) when hwloc_set_area_membind() fails on Windows - ignore this temporarily
         if (errno != ENOSYS &&
             errno != 0) { // ENOSYS - Function not implemented
@@ -483,7 +482,7 @@ static umf_result_t os_free(void *provider, void *ptr, size_t size) {
     // ignore error when size == 0
     if (ret && (size > 0)) {
         os_store_last_native_error(UMF_OS_RESULT_ERROR_FREE_FAILED, errno);
-        perror("memory deallocation failed");
+        LOG_PERR("memory deallocation failed");
 
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
@@ -555,7 +554,7 @@ static umf_result_t os_purge_lazy(void *provider, void *ptr, size_t size) {
     if (os_purge(ptr, size, UMF_PURGE_LAZY)) {
         os_store_last_native_error(UMF_OS_RESULT_ERROR_PURGE_LAZY_FAILED,
                                    errno);
-        perror("lazy purging failed");
+        LOG_PERR("lazy purging failed");
 
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
@@ -571,7 +570,7 @@ static umf_result_t os_purge_force(void *provider, void *ptr, size_t size) {
     if (os_purge(ptr, size, UMF_PURGE_FORCE)) {
         os_store_last_native_error(UMF_OS_RESULT_ERROR_PURGE_FORCE_FAILED,
                                    errno);
-        perror("force purging failed");
+        LOG_PERR("force purging failed");
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
     return UMF_RESULT_SUCCESS;

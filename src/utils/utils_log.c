@@ -20,6 +20,7 @@
 #include <pthread.h>
 #endif
 
+#include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -54,14 +55,17 @@ static const char *level_to_str(util_log_level_t l) {
         return "INFO";
     case LOG_WARNING:
         return "WARN";
+    case LOG_FATAL:
+        return "FATAL";
     default:
         ASSERT(0);
         return "";
     }
 }
 
-void util_log(util_log_level_t level, const char *format, ...) {
-    if (!loggerConfig.output) {
+static void util_log_internal(util_log_level_t level, int perror,
+                              const char *format, va_list args) {
+    if (!loggerConfig.output && level != LOG_FATAL) {
         return; //logger not enabled
     }
     if (level < loggerConfig.level) {
@@ -82,17 +86,73 @@ void util_log(util_log_level_t level, const char *format, ...) {
 #endif
 
     char buffer[LOG_MAX];
-    va_list args;
-    va_start(args, format);
-    int ret = vsnprintf(buffer, sizeof(buffer), format, args);
-    const char *overflow = "";
-    if (ret >= (intptr_t)sizeof(buffer)) {
-        //TODO: alloc bigger buffer with base alloc
-        overflow = "[truncated...]";
+    char *b_pos = buffer;
+    int b_size = sizeof(buffer);
+
+    int tmp = vsnprintf(buffer, sizeof(buffer), format, args);
+    ASSERT(tmp > 0);
+
+    b_pos += (int)tmp;
+    b_size -= (int)tmp;
+
+    const char *postfix = "";
+
+    if (perror) {
+        if (b_size > 2) {
+            strncat(b_pos, ": ", b_size);
+            b_pos += 2;
+            b_size -= 2;
+#if defined(_WIN32)
+            char err[80]; // max size according to msdn
+            if (strerror_s(err, sizeof(err), errno)) {
+                *err = '\0';
+                postfix = "[strerror_s failed]";
+            }
+#elif defined(__APPLE__)
+            char err[1024]; // max size according to manpage.
+            int saveno = errno;
+            errno = 0;
+            if (strerror_r(saveno, err, sizeof(err))) {
+                /* should never happen */
+                *err = '\0';
+                postfix = "[strerror_r failed]";
+            }
+
+            if (errno == ERANGE) {
+                postfix = "[truncated...]";
+            }
+            errno = saveno;
+#else
+            char err_buff[1024]; // max size according to manpage.
+            int saveno = errno;
+            errno = 0;
+            char *err = strerror_r(saveno, err_buff, sizeof(err_buff));
+            if (errno == ERANGE) {
+                postfix = "[truncated...]";
+            }
+            errno = saveno;
+#endif
+            strncpy(b_pos, err, b_size);
+            size_t err_size = strlen(err);
+            b_pos += err_size;
+            b_size -= (int)err_size;
+            if (b_size <= 0) {
+                buffer[LOG_MAX - 1] =
+                    '\0'; //strncpy do not add \0 in case of overflow
+            }
+        } else {
+            postfix = "[truncated...]";
+        }
     }
-    va_end(args);
+
+    if (b_size <= 0) {
+        //TODO: alloc bigger buffer with base alloc
+        postfix = "[truncated...]";
+    }
+
     char header[LOG_HEADER];
     char *h_pos = header;
+    int h_size = sizeof(header);
     memset(header, 0, sizeof(header));
 
     if (loggerConfig.timestamp) {
@@ -104,30 +164,46 @@ void util_log(util_log_level_t level, const char *format, ...) {
         localtime_r(&now, &tm_info);
 #endif
 
-        ASSERT((intptr_t)sizeof(header) > (h_pos - header));
-        h_pos += strftime(h_pos, sizeof(header) - (h_pos - header),
-                          "%Y-%m-%dT%H:%M:%S ", &tm_info);
+        ASSERT(h_size > 0);
+        tmp = (int)strftime(h_pos, h_size, "%Y-%m-%dT%H:%M:%S ", &tm_info);
+        h_pos += tmp;
+        h_size -= tmp;
     }
 
     if (loggerConfig.pid) {
-        ASSERT((intptr_t)sizeof(header) > (h_pos - header));
-        h_pos += snprintf(h_pos, sizeof(header) - (h_pos - header),
-                          "PID:%-6lu TID:%-6lu ", (unsigned long)pid,
-                          (unsigned long)tid);
+        ASSERT(h_size > 0);
+        tmp = snprintf(h_pos, h_size, "PID:%-6lu TID:%-6lu ",
+                       (unsigned long)pid, (unsigned long)tid);
+        h_pos += tmp;
+        h_size -= tmp;
     }
 
     // We take twice header size here to ensure that
-    // we have space for log level and overflow string
+    // we have space for log level and postfix string
     // otherwise -Wformat-truncation might be thrown by compiler
     char logLine[LOG_MAX + LOG_HEADER * 2];
     snprintf(logLine, sizeof(logLine), "[%s%-5s UMF] %s%s\n", header,
-             level_to_str(level), buffer, overflow);
-
-    fputs(logLine, loggerConfig.output);
+             level_to_str(level), buffer, postfix);
+    FILE *out = loggerConfig.output ? loggerConfig.output : stderr;
+    fputs(logLine, out);
 
     if (level >= loggerConfig.flushLevel) {
-        fflush(loggerConfig.output);
+        fflush(out);
     }
+}
+
+void util_log(util_log_level_t level, const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    util_log_internal(level, 0, format, args);
+    va_end(args);
+}
+
+void util_plog(util_log_level_t level, const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    util_log_internal(level, 1, format, args);
+    va_end(args);
 }
 
 static const char *bool_to_str(int b) { return b ? "yes" : "no"; }
@@ -199,6 +275,8 @@ void util_log_init(void) {
         loggerConfig.level = LOG_WARNING;
     } else if (util_parse_var(envVar, "level:error", NULL)) {
         loggerConfig.level = LOG_ERROR;
+    } else if (util_parse_var(envVar, "level:fatal", NULL)) {
+        loggerConfig.level = LOG_FATAL;
     }
 
     if (util_parse_var(envVar, "flush:debug", NULL)) {
@@ -209,6 +287,8 @@ void util_log_init(void) {
         loggerConfig.flushLevel = LOG_WARNING;
     } else if (util_parse_var(envVar, "flush:error", NULL)) {
         loggerConfig.flushLevel = LOG_ERROR;
+    } else if (util_parse_var(envVar, "flush:fatal", NULL)) {
+        loggerConfig.flushLevel = LOG_FATAL;
     }
 
     LOG_INFO(
