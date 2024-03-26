@@ -66,6 +66,7 @@ function(add_umf_test)
         PRIVATE ${UMF_CMAKE_SOURCE_DIR}/include
                 ${UMF_CMAKE_SOURCE_DIR}/src
                 ${UMF_CMAKE_SOURCE_DIR}/src/base_alloc
+                ${UMF_CMAKE_SOURCE_DIR}/src/utils
                 ${UMF_TEST_DIR}/common
                 ${UMF_TEST_DIR})
 
@@ -94,14 +95,22 @@ add_umf_test(NAME base SRCS base.cpp)
 add_umf_test(NAME memoryPool SRCS memoryPoolAPI.cpp malloc_compliance_tests.cpp)
 add_umf_test(NAME memoryProvider SRCS memoryProviderAPI.cpp)
 
-add_umf_test(
-    NAME logger
-    SRCS utils/utils_log.cpp
-    LIBS umf_utils)
+if(UMF_BUILD_SHARED_LIBRARY)
+    # if build as shared library, utils symbols won't be visible in tests
+    set(UMF_UTILS_FOR_TEST umf_utils)
+endif()
+
+if(UMF_BUILD_SHARED_LIBRARY)
+    add_umf_test(NAME logger SRCS utils/utils_log.cpp
+                                  ../src/utils/utils_common.c)
+else()
+    add_umf_test(NAME logger SRCS utils/utils_log.cpp)
+endif()
+
 add_umf_test(
     NAME utils_common
     SRCS utils/utils.cpp
-    LIBS umf_utils)
+    LIBS ${UMF_UTILS_FOR_TEST})
 
 if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
     add_umf_test(
@@ -149,11 +158,11 @@ if(LINUX) # OS-specific functions are implemented only for Linux now
     add_umf_test(
         NAME provider_os_memory
         SRCS provider_os_memory.cpp
-        LIBS umf_utils)
+        LIBS ${UMF_UTILS_FOR_TEST})
     add_umf_test(
         NAME provider_os_memory_multiple_numa_nodes
         SRCS provider_os_memory_multiple_numa_nodes.cpp
-        LIBS umf_utils ${LIBNUMA_LIBRARIES})
+        LIBS ${UMF_UTILS_FOR_TEST} ${LIBNUMA_LIBRARIES})
     add_umf_test(
         NAME memspace_numa
         SRCS memspaces/memspace_numa.cpp
@@ -161,15 +170,15 @@ if(LINUX) # OS-specific functions are implemented only for Linux now
     add_umf_test(
         NAME provider_os_memory_config
         SRCS provider_os_memory_config.cpp
-        LIBS umf_utils ${LIBNUMA_LIBRARIES})
+        LIBS ${UMF_UTILS_FOR_TEST} ${LIBNUMA_LIBRARIES})
     add_umf_test(
         NAME memspace_host_all
         SRCS memspaces/memspace_host_all.cpp
-        LIBS umf_utils ${LIBNUMA_LIBRARIES})
+        LIBS ${UMF_UTILS_FOR_TEST} ${LIBNUMA_LIBRARIES})
     add_umf_test(
         NAME memspace_highest_capacity
         SRCS memspaces/memspace_highest_capacity.cpp
-        LIBS umf_utils ${LIBNUMA_LIBRARIES})
+        LIBS ${UMF_UTILS_FOR_TEST} ${LIBNUMA_LIBRARIES})
 endif()
 
 # TODO add support for Windows
@@ -182,12 +191,12 @@ if(UMF_BUILD_GPU_TESTS
     add_umf_test(
         NAME provider_level_zero
         SRCS providers/provider_level_zero.cpp
-        LIBS umf_utils ze_loader)
+        LIBS ${UMF_UTILS_FOR_TEST} ze_loader)
 
     add_umf_test(
         NAME provider_level_zero_dlopen
         SRCS providers/provider_level_zero.cpp
-        LIBS umf_utils)
+        LIBS ${UMF_UTILS_FOR_TEST})
     target_compile_definitions(umf_test-provider_level_zero_dlopen
                                PUBLIC USE_DLOPEN=1)
 endif()
@@ -200,17 +209,17 @@ endif()
 add_umf_test(
     NAME base_alloc
     SRCS ${BA_SOURCES_FOR_TEST} test_base_alloc.cpp
-    LIBS umf_utils)
+    LIBS ${UMF_UTILS_FOR_TEST})
 add_umf_test(
     NAME base_alloc_linear
     SRCS ${BA_SOURCES_FOR_TEST} test_base_alloc_linear.cpp
-    LIBS umf_utils)
+    LIBS ${UMF_UTILS_FOR_TEST})
 
 add_umf_test(
     NAME base_alloc_global
     SRCS ${BA_SOURCES_FOR_TEST} pools/pool_base_alloc.cpp
          malloc_compliance_tests.cpp
-    LIBS umf_utils)
+    LIBS ${UMF_UTILS_FOR_TEST})
 
 # tests for the proxy library
 if(UMF_PROXY_LIB_ENABLED AND UMF_BUILD_SHARED_LIBRARY)

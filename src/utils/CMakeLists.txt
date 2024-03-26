@@ -37,23 +37,18 @@ elseif(WINDOWS)
                           ${UMF_UTILS_SOURCES_WINDOWS})
 endif()
 
-add_umf_library(
-    NAME umf_utils
-    TYPE STATIC
-    SRCS ${UMF_UTILS_SOURCES}
-    LIBS ${CMAKE_THREAD_LIBS_INIT})
-
+add_library(umf_utils INTERFACE)
 add_library(${PROJECT_NAME}::utils ALIAS umf_utils)
+
+target_sources(umf_utils INTERFACE ${UMF_UTILS_SOURCES})
+target_link_libraries(umf_utils INTERFACE ${CMAKE_THREAD_LIBS_INIT})
 
 target_include_directories(
     umf_utils
-    PUBLIC ${VALGRIND_INCLUDE_DIRS}
-           $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-           $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-           $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+    INTERFACE ${VALGRIND_INCLUDE_DIRS}
+              $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+              $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 
 if(USE_VALGRIND)
-    target_compile_definitions(umf_utils PUBLIC UMF_VG_ENABLED=1)
+    target_compile_definitions(umf_utils INTERFACE UMF_VG_ENABLED=1)
 endif()
-
-install(TARGETS umf_utils EXPORT ${PROJECT_NAME}-targets)
