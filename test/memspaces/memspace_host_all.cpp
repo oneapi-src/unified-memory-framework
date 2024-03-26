@@ -28,7 +28,7 @@ TEST_F(numaNodesTest, memspaceGet) {
         struct umf_numa_memory_target_config_t *numaTargetCfg =
             (struct umf_numa_memory_target_config_t *)hMemspace->nodes[i]->priv;
         UT_ASSERT(std::find(nodeIds.begin(), nodeIds.end(),
-                            numaTargetCfg->id) != nodeIds.end());
+                            numaTargetCfg->physical_id) != nodeIds.end());
     }
 }
 

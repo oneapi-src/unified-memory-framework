@@ -21,7 +21,7 @@
 #include "topology.h"
 
 struct numa_memory_target_t {
-    size_t id;
+    size_t physical_id;
 };
 
 static umf_result_t numa_initialize(void *params, void **memTarget) {
@@ -38,7 +38,7 @@ static umf_result_t numa_initialize(void *params, void **memTarget) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    numaTarget->id = config->id;
+    numaTarget->physical_id = config->physical_id;
     *memTarget = numaTarget;
     return UMF_RESULT_SUCCESS;
 }
@@ -60,7 +60,7 @@ numa_targets_create_nodemask(struct numa_memory_target_t **targets,
     }
 
     for (size_t i = 0; i < numTargets; i++) {
-        if (hwloc_bitmap_set(bitmap, targets[i]->id)) {
+        if (hwloc_bitmap_set(bitmap, targets[i]->physical_id)) {
             hwloc_bitmap_free(bitmap);
             return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
         }
@@ -170,7 +170,7 @@ static umf_result_t numa_clone(void *memTarget, void **outMemTarget) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    newNumaTarget->id = numaTarget->id;
+    newNumaTarget->physical_id = numaTarget->physical_id;
     *outMemTarget = newNumaTarget;
     return UMF_RESULT_SUCCESS;
 }
@@ -181,9 +181,8 @@ static umf_result_t numa_get_capacity(void *memTarget, size_t *capacity) {
         return UMF_RESULT_ERROR_NOT_SUPPORTED;
     }
 
-    hwloc_obj_t numaNode =
-        hwloc_get_obj_by_type(topology, HWLOC_OBJ_NUMANODE,
-                              ((struct numa_memory_target_t *)memTarget)->id);
+    hwloc_obj_t numaNode = hwloc_get_numanode_obj_by_os_index(
+        topology, ((struct numa_memory_target_t *)memTarget)->physical_id);
     if (!numaNode) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
