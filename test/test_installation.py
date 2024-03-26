@@ -9,7 +9,7 @@ import argparse
 import difflib
 from pathlib import Path
 import platform
-import subprocess
+import subprocess   # nosec B404
 import sys
 from typing import List
 
@@ -143,7 +143,7 @@ class UmfInstaller:
 
         install_cmd = f"cmake --install {self.build_dir} --config {self.build_type.title()} --prefix {self.install_dir}"
         try:
-            subprocess.run(install_cmd.split()).check_returncode()
+            subprocess.run(install_cmd.split()).check_returncode()      # nosec B603
         except subprocess.CalledProcessError:
             sys.exit(f"Error: UMF installation command '{install_cmd}' failed")
 
@@ -180,7 +180,7 @@ class UmfInstaller:
         """
         uninstall_cmd = f"cmake --build {self.build_dir} --target uninstall"
         try:
-            subprocess.run(uninstall_cmd.split()).check_returncode()
+            subprocess.run(uninstall_cmd.split()).check_returncode()    # nosec B603
         except subprocess.CalledProcessError:
             sys.exit(f"Error: UMF uninstallation command '{uninstall_cmd}' failed")
 
