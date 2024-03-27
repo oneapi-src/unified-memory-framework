@@ -5,6 +5,7 @@
 #include "memory_target_numa.h"
 #include "memspace_helpers.hpp"
 #include "memspace_internal.h"
+#include "numa_helpers.h"
 #include "test_helpers.h"
 
 #include <numa.h>
@@ -39,28 +40,29 @@ TEST_F(memspaceHighestCapacityProviderTest, highestCapacityVerify) {
     static constexpr size_t alloc_size = 1024;
 
     long long maxCapacity = 0;
-    int maxCapacityNode = -1;
+    std::vector<int> maxCapacityNodes{};
     for (auto nodeId : nodeIds) {
         if (numa_node_size64(nodeId, nullptr) > maxCapacity) {
-            maxCapacityNode = nodeId;
             maxCapacity = numa_node_size64(nodeId, nullptr);
+        }
+    }
+
+    for (auto nodeId : nodeIds) {
+        if (numa_node_size64(nodeId, nullptr) == maxCapacity) {
+            maxCapacityNodes.push_back(nodeId);
         }
     }
 
     // Confirm that the HighestCapacity memspace indeed has highest capacity
     void *ptr;
     auto ret = umfMemoryProviderAlloc(hProvider, alloc_size, 0, &ptr);
+    memset(ptr, 0, alloc_size);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 
-    struct bitmask *nodemask = numa_allocate_nodemask();
-    UT_ASSERTne(nodemask, nullptr);
-    int retm = get_mempolicy(nullptr, nodemask->maskp, nodemask->size, ptr,
-                             MPOL_F_ADDR);
-    UT_ASSERTeq(retm, 0);
-    UT_ASSERT(numa_bitmask_isbitset(nodemask, maxCapacityNode));
+    auto nodeId = getNumaNodeByPtr(ptr);
+    ASSERT_TRUE(std::any_of(maxCapacityNodes.begin(), maxCapacityNodes.end(),
+                            [nodeId](int node) { return nodeId == node; }));
 
     ret = umfMemoryProviderFree(hProvider, ptr, alloc_size);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
-
-    numa_bitmask_free(nodemask);
 }

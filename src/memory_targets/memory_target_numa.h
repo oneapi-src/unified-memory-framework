@@ -21,7 +21,7 @@ extern "C" {
 #endif
 
 struct umf_numa_memory_target_config_t {
-    size_t id;
+    size_t physical_id;
 };
 
 extern struct umf_memory_target_ops_t UMF_MEMORY_TARGET_NUMA_OPS;
