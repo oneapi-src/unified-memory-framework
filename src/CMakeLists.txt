@@ -70,7 +70,7 @@ set(UMF_SOURCES_WINDOWS libumf_windows.c)
 # Compile definitions for UMF library.
 #
 # TODO: Cleanup the compile definitions across all the CMake files
-set(UMF_PUBLIC_COMPILE_DEFINITIONS "")
+set(UMF_PRIVATE_COMPILE_DEFINITIONS "")
 
 set(UMF_SOURCES_LINUX
     ${UMF_SOURCES_LINUX}
@@ -106,8 +106,8 @@ if(UMF_BUILD_SHARED_LIBRARY)
         LIBS ${UMF_LIBS}
         LINUX_MAP_FILE ${CMAKE_CURRENT_SOURCE_DIR}/libumf.map
         WINDOWS_DEF_FILE ${CMAKE_CURRENT_SOURCE_DIR}/libumf.def)
-    set(UMF_PUBLIC_COMPILE_DEFINITIONS ${UMF_PUBLIC_COMPILE_DEFINITIONS}
-                                       "UMF_SHARED_LIBRARY")
+    set(UMF_PRIVATE_COMPILE_DEFINITIONS ${UMF_PRIVATE_COMPILE_DEFINITIONS}
+                                        "UMF_SHARED_LIBRARY")
     set_target_properties(umf PROPERTIES RUNTIME_OUTPUT_DIRECTORY
                                          ${CMAKE_UMF_OUTPUT_DIRECTORY})
 else()
@@ -119,13 +119,13 @@ else()
 endif()
 
 if(UMF_ENABLE_POOL_TRACKING)
-    set(UMF_PUBLIC_COMPILE_DEFINITIONS ${UMF_PUBLIC_COMPILE_DEFINITIONS}
-                                       "UMF_ENABLE_POOL_TRACKING")
+    set(UMF_PRIVATE_COMPILE_DEFINITIONS ${UMF_PRIVATE_COMPILE_DEFINITIONS}
+                                        "UMF_ENABLE_POOL_TRACKING")
 endif()
 
 target_link_directories(umf PRIVATE ${UMF_PRIVATE_LIBRARY_DIRS})
 
-target_compile_definitions(umf PUBLIC ${UMF_PUBLIC_COMPILE_DEFINITIONS})
+target_compile_definitions(umf PRIVATE ${UMF_PRIVATE_COMPILE_DEFINITIONS})
 
 if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
     target_sources(umf PRIVATE provider/provider_level_zero.c)
