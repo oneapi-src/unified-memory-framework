@@ -23,10 +23,12 @@
 #include <iostream>
 
 #include "../cpp_helpers.hpp"
-#include "pool_disjoint.h"
-#include "umf.h"
 #include "utils_math.h"
 #include "utils_sanitizers.h"
+
+#include <umf/memory_pool.h>
+#include <umf/memory_pool_ops.h>
+#include <umf/pools/pool_disjoint.h>
 
 typedef struct umf_disjoint_pool_shared_limits_t {
     size_t MaxSize;
