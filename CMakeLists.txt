@@ -41,31 +41,51 @@ set(UMF_PROXY_LIB_BASED_ON_POOL
 set_property(CACHE UMF_PROXY_LIB_BASED_ON_POOL
              PROPERTY STRINGS ${KNOWN_PROXY_LIB_POOLS})
 
-set(KNOWN_BUILD_TYPES Release Debug RelWithDebInfo MinSizeRel)
-string(REPLACE ";" " " KNOWN_BUILD_TYPES_STR "${KNOWN_BUILD_TYPES}")
-
-if(NOT CMAKE_BUILD_TYPE)
-    message(
-        STATUS
-            "No build type selected (CMAKE_BUILD_TYPE), defaulting to Release")
-    set(CMAKE_BUILD_TYPE "Release")
+if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    set(LINUX TRUE)
+    set(OS_NAME "linux")
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    set(WINDOWS TRUE)
+    set(OS_NAME "windows")
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    set(MACOSX TRUE)
+    set(OS_NAME "macosx")
 else()
-    message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
-    if(NOT CMAKE_BUILD_TYPE IN_LIST KNOWN_BUILD_TYPES)
-        message(
-            WARNING
-                "Unusual build type was set (${CMAKE_BUILD_TYPE}), please make sure it is a correct one. "
-                "The following ones are supported by default: ${KNOWN_BUILD_TYPES_STR}."
-        )
-    endif()
+    message(FATAL_ERROR "Unknown OS type")
 endif()
 
-set(CMAKE_BUILD_TYPE
-    "${CMAKE_BUILD_TYPE}"
-    CACHE STRING
-          "Choose the type of build, options are: ${KNOWN_BUILD_TYPES_STR} ..."
-          FORCE)
-set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${KNOWN_BUILD_TYPES})
+# This build type check is not possible on Windows when CMAKE_BUILD_TYPE is not
+# set, because in this case the build type is determined after a CMake
+# configuration is done (at the build time)
+if(NOT WINDOWS)
+    set(KNOWN_BUILD_TYPES Release Debug RelWithDebInfo MinSizeRel)
+    string(REPLACE ";" " " KNOWN_BUILD_TYPES_STR "${KNOWN_BUILD_TYPES}")
+
+    if(NOT CMAKE_BUILD_TYPE)
+        message(
+            STATUS
+                "No build type selected (CMAKE_BUILD_TYPE), defaulting to Release"
+        )
+        set(CMAKE_BUILD_TYPE "Release")
+    else()
+        message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
+        if(NOT CMAKE_BUILD_TYPE IN_LIST KNOWN_BUILD_TYPES)
+            message(
+                WARNING
+                    "Unusual build type was set (${CMAKE_BUILD_TYPE}), please make sure it is a correct one. "
+                    "The following ones are supported by default: ${KNOWN_BUILD_TYPES_STR}."
+            )
+        endif()
+    endif()
+
+    set(CMAKE_BUILD_TYPE
+        "${CMAKE_BUILD_TYPE}"
+        CACHE
+            STRING
+            "Choose the type of build, options are: ${KNOWN_BUILD_TYPES_STR} ..."
+            FORCE)
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${KNOWN_BUILD_TYPES})
+endif()
 
 # For using the options listed in the OPTIONS_REQUIRING_CXX variable a C++17
 # compiler is required. Moreover, if these options are not set, CMake will set
@@ -88,19 +108,6 @@ find_package(PkgConfig)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(helpers)
-
-if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    set(LINUX TRUE)
-    set(OS_NAME "linux")
-elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    set(WINDOWS TRUE)
-    set(OS_NAME "windows")
-elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    set(MACOSX TRUE)
-    set(OS_NAME "macosx")
-else()
-    message(FATAL_ERROR "Unknown OS type")
-endif()
 
 # needed when UMF is used as an external project
 set(UMF_CMAKE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -190,13 +197,18 @@ if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
 endif()
 
 # set UMF_PROXY_LIB_ENABLED
-if(WINDOWS AND NOT (CMAKE_BUILD_TYPE STREQUAL "Release"))
+if(WINDOWS)
     # TODO: enable the proxy library in the Debug build on Windows
+    #
+    # In MSVC builds, there is no way to determine the actual build type during
+    # the CMake configuration step. Therefore, this message is printed in all
+    # MSVC builds.
     message(
         STATUS
-            "Disabling the proxy library, because it is supported only in the Release build on Windows (CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE})"
+            "The proxy library will be built, however it is supported only in the Release build on Windows"
     )
-elseif(UMF_PROXY_LIB_BASED_ON_POOL STREQUAL SCALABLE)
+endif()
+if(UMF_PROXY_LIB_BASED_ON_POOL STREQUAL SCALABLE)
     if(UMF_BUILD_LIBUMF_POOL_SCALABLE)
         set(UMF_PROXY_LIB_ENABLED ON)
         set(PROXY_LIB_USES_SCALABLE_POOL ON)

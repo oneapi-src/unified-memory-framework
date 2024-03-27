@@ -15,6 +15,10 @@ jobs:
     strategy:
       matrix:
         os: ['ubuntu-latest', 'windows-latest']
+        include: 
+          # Windows doesn't recognize 'CMAKE_BUILD_TYPE', it uses '--config' param in build command to determine the build type
+          - os: ubuntu-latest
+            extra_build_option: '-DCMAKE_BUILD_TYPE=Release'
     runs-on: ${{matrix.os}}
 
     steps:
@@ -44,7 +48,7 @@ jobs:
         run: >
           cmake
           -B ${{env.BUILD_DIR}}
-          -DCMAKE_BUILD_TYPE=Release
+          ${{matrix.extra_build_option}}
           -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
           -DUMF_BUILD_SHARED_LIBRARY=ON
           -DUMF_BUILD_BENCHMARKS=ON
