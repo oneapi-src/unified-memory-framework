@@ -25,56 +25,66 @@ function system_info {
 	echo "**********system_info**********"
 	cat /etc/os-release | grep -oP "PRETTY_NAME=\K.*"
 	cat /proc/version
-	echo "**********SYCL-LS**********"
-	source /opt/intel/oneapi/setvars.sh
-	sycl-ls
-	echo "**********VGA**********"
-	lspci | grep VGA
-	echo "**********CUDA Version**********"
-	if command -v nvidia-smi &> /dev/null; then
-		nvidia-smi
-	else
-		echo "CUDA not installed"
-	fi
+
+	# echo "**********SYCL-LS**********"
+	# source /opt/intel/oneapi/setvars.sh
+	# sycl-ls
+
+	echo "**********VGA info**********"
+	lspci | grep -i VGA
+
+	# echo "**********CUDA Version**********"
+	# if command -v nvidia-smi &> /dev/null; then
+	# 	nvidia-smi
+	# else
+	# 	echo "CUDA not installed"
+	# fi
+
 	echo "**********L0 Version**********"
 	check_L0_version
-	echo "**********ROCm Version**********"
-	if command -v rocminfo &> /dev/null; then
-		rocminfo
-	else
-		echo "ROCm not installed"
-	fi
-	echo "**********/proc/cmdline**********"
-	cat /proc/cmdline
-	echo "**********CPU info**********"
-	lscpu
-	echo "**********/proc/meminfo**********"
-	cat /proc/meminfo
-	echo "**********build/bin/urinfo**********"
-	$(dirname "$(readlink -f "$0")")/../../build/bin/urinfo || true
+
+	# echo "**********ROCm Version**********"
+	# if command -v rocminfo &> /dev/null; then
+	# 	rocminfo
+	# else
+	# 	echo "ROCm not installed"
+	# fi
+
 	echo "******OpenCL*******"
 	# The driver version of OpenCL Graphics is the compute-runtime version
 	clinfo || echo "OpenCL not installed"
-	echo "**********list-environment**********"
-	echo "PATH=$PATH"
+
+	echo "**********/proc/cmdline**********"
+	cat /proc/cmdline
+
+	echo "**********CPU info**********"
+	lscpu
+
+	echo "**********/proc/meminfo**********"
+	cat /proc/meminfo
+
+	echo "**********env variables**********"
+	echo "PATH=${PATH}"
+	echo "CPATH=${CPATH}"
+	echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
+	echo "LIBRARY_PATH=${LIBRARY_PATH}"
+	echo "PKG_CONFIG_PATH=${PKG_CONFIG_PATH}"
 	echo
-	echo "CPATH=$CPATH"
-	echo
-	echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
-	echo
-	echo "LIBRARY_PATH=$LIBRARY_PATH"
-	echo
-	echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
-	echo
-	echo "******list-build-system-versions*******"
+
+	echo "******build tools versions*******"
 	gcc --version 2>/dev/null || true
 	echo
 	clang --version 2>/dev/null || true
 	echo
 	make --version 2>/dev/null || true
+	echo
+	cmake --version 2>/dev/null || true
+	echo
+
 	echo "**********/proc/modules**********"
 	cat /proc/modules
-	echo "***************installed-packages***************"
+
+	echo "***************all installed packages***************"
 	# Instructions below will return some minor errors, as they are dependent on the Linux distribution.
 	zypper se --installed-only 2>/dev/null || true
 	apt list --installed 2>/dev/null || true
