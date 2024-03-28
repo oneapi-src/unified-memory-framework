@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023 Intel Corporation
+ * Copyright (C) 2023-2024 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -44,7 +44,6 @@
 #define DISJOINT_POOL_MAX_POOLABLE_SIZE (2 * ALLOC_SIZE)
 #define DISJOINT_POOL_CAPACITY (N_ITERATIONS + 10)
 #define DISJOINT_POOL_MIN_BUCKET_SIZE (ALLOC_SIZE)
-#define DISJOINT_POOL_TRACE (0)
 
 typedef struct alloc_s {
     void *ptr;
@@ -115,7 +114,6 @@ static umf_os_memory_provider_params_t UMF_OS_MEMORY_PROVIDER_PARAMS = {
     /* .numa_mode = */ UMF_NUMA_MODE_DEFAULT,
 
     // others
-    /* .traces = */ OS_MEMORY_PROVIDER_TRACE,
 };
 
 static void *w_umfMemoryProviderAlloc(void *provider, size_t size,
@@ -237,7 +235,6 @@ UBENCH_EX(simple, disjoint_pool_with_os_memory_provider) {
         DISJOINT_POOL_MAX_POOLABLE_SIZE;
     disjoint_memory_pool_params.Capacity = DISJOINT_POOL_CAPACITY;
     disjoint_memory_pool_params.MinBucketSize = DISJOINT_POOL_MIN_BUCKET_SIZE;
-    disjoint_memory_pool_params.PoolTrace = DISJOINT_POOL_TRACE;
 
     umf_memory_pool_handle_t disjoint_pool;
     umf_result = umfPoolCreate(umfDisjointPoolOps(), os_memory_provider,
