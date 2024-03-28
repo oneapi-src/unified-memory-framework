@@ -24,6 +24,10 @@ jobs:
     runs-on:  [ "DSS-LEVEL_ZERO", "DSS-UBUNTU" ]
 
     steps:
+      - name: Get information about platform
+        if: ${{ always() }}
+        run: .github/scripts/get_system_info.sh
+
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
