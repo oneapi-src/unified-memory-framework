@@ -28,7 +28,7 @@ int main(void) {
 
     res = umfMemoryProviderCreate(provider_ops, &params, &provider);
     if (res != UMF_RESULT_SUCCESS) {
-        printf("Failed to create a memory provider!");
+        printf("Failed to create a memory provider!\n");
         return -1;
     }
     printf("OS memory provider created at %p\n", (void *)provider);
@@ -41,7 +41,7 @@ int main(void) {
     res =
         umfMemoryProviderAlloc(provider, alloc_size, alignment, &ptr_provider);
     if (res != UMF_RESULT_SUCCESS) {
-        printf("Failed to allocate memory from the memory provider!");
+        printf("Failed to allocate memory from the memory provider!\n");
         goto memory_provider_destroy;
     }
 
@@ -56,7 +56,7 @@ int main(void) {
     // Free allocated memory
     res = umfMemoryProviderFree(provider, ptr_provider, alloc_size);
     if (res != UMF_RESULT_SUCCESS) {
-        printf("Failed to free memory to the provider!");
+        printf("Failed to free memory to the provider!\n");
         goto memory_provider_destroy;
     }
     printf("Freed memory at %p\n", ptr_provider);
@@ -69,10 +69,10 @@ int main(void) {
 
     res = umfPoolCreate(pool_ops, provider, pool_params, flags, &pool);
     if (res != UMF_RESULT_SUCCESS) {
-        printf("\nFailed to create a pool!");
+        printf("Failed to create a pool!\n");
         goto memory_provider_destroy;
     }
-    printf("\nScalable memory pool created at %p\n", (void *)pool);
+    printf("Scalable memory pool created at %p\n", (void *)pool);
 
     // Allocate some memory in the pool
     size_t num = 1;
@@ -80,7 +80,7 @@ int main(void) {
 
     char *ptr = umfPoolCalloc(pool, num, alloc_size);
     if (!ptr) {
-        printf("Failed to allocate memory in the pool!");
+        printf("Failed to allocate memory in the pool!\n");
         goto memory_pool_destroy;
     }
 
@@ -97,7 +97,7 @@ int main(void) {
     umf_memory_provider_handle_t check_provider;
     res = umfPoolGetMemoryProvider(pool, &check_provider);
     if (res != UMF_RESULT_SUCCESS) {
-        printf("Failed to retrieve a memory provider for the pool!");
+        printf("Failed to retrieve a memory provider for the pool!\n");
         goto memory_pool_destroy;
     }
     printf("Pool at %p has been allocated from the provider at %p\n",
