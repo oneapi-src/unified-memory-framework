@@ -105,12 +105,12 @@ By default, there is a guarantee that *error* messages are flushed immediately. 
 
 Loggers redirect messages to *stdout*, *stderr*, or a file
 
-By default, no messages are printed. To enable logger you have to set **UMF_LOG** environment variable which have following syntax for setting logger options:
+By default, only fatal messages are printed. To enable logger you have to set **UMF_LOG** environment variable which have following syntax for setting logger options:
 
-  "[level:debug|info|warning|error];[flush:debug|info|warning|error];[output:stdout|stderr|file,<path>];[timestamp:yes|no];[pid:yes|no]"
+  "[level:debug|info|warning|error|fatal];[flush:debug|info|warning|error|fatal];[output:stdout|stderr|file,<path>];[timestamp:yes|no];[pid:yes|no]"
 
   * level - a log level, meaning that only messages from this level and above are printed.
-            Possible values, from the lowest level to the highest one: *debug*, *info*, *warning*, *error*,
+            Possible values, from the lowest level to the highest one: *debug*, *info*, *warning*, *error*, *fatal*
   * flush - a flush level, meaning that messages at this level and above are guaranteed to be flushed immediately,
             possible values are the same as above,
   * output - indicates where messages should be printed.

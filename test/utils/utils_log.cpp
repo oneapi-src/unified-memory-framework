@@ -6,6 +6,7 @@
 #include "test_helpers.h"
 
 #define MOCK_FILE_PTR (FILE *)0xBADBEEF
+#define INVALID_ERRNO 42
 std::string expected_filename;
 int expect_fopen_count = 0;
 int fopen_count = 0;
@@ -40,6 +41,54 @@ int mock_fflush(FILE *stream) {
     return 0;
 }
 
+const char *strerr = "";
+int strerror_ret_static = 1;
+char *mock_strerror_gnu(int errnum, char *buff, size_t s) {
+    if (errnum == INVALID_ERRNO) {
+        errno = EINVAL;
+        return (char *)"unknown error";
+    }
+    if (strerror_ret_static) {
+        return (char *)strerr;
+    }
+
+    strncpy(buff, strerr, s);
+
+    if (s < strlen(strerr)) {
+        errno = ERANGE;
+        buff[s - 1] = '\0';
+    }
+    return buff;
+}
+
+int mock_strerror_posix(int errnum, char *buff, size_t s) {
+    if (errnum == INVALID_ERRNO) {
+        errno = EINVAL;
+        strncpy(buff, "unknown error", s);
+    } else {
+        strncpy(buff, strerr, s);
+    }
+
+    if (s < strlen(strerr)) {
+        errno = ERANGE;
+        buff[s - 1] = '\0';
+    }
+    return 0;
+}
+
+int mock_strerror_windows(char *buff, size_t s, int errnum) {
+    if (errnum == INVALID_ERRNO) {
+        strncpy(buff, "unknown error", s);
+    } else {
+        strncpy(buff, strerr, s);
+    }
+
+    if (s < strlen(strerr)) {
+        buff[s - 1] = '\0';
+    }
+    return 0;
+}
+
 extern "C" {
 
 const char *env_variable = "";
@@ -47,7 +96,12 @@ const char *env_variable = "";
 #define fputs(A, B) mock_fputs(A, B)
 #define fflush(A) mock_fflush(A)
 #define util_env_var(A, B, C) mock_util_env_var(A, B, C)
-
+#if defined(__APPLE__)
+#define strerror_r(A, B, C) mock_strerror_posix(A, B, C)
+#else
+#define strerror_r(A, B, C) mock_strerror_gnu(A, B, C)
+#endif
+#define strerror_s(A, B, C) mock_strerror_windows(A, B, C)
 //getenv returns 'char *' not 'const char *' so we need explicit cast to drop const
 #define getenv(X) strstr(X, "UMF_LOG") ? (char *)env_variable : getenv(X)
 #include "utils/utils_log.c"
@@ -105,14 +159,22 @@ TEST_F(test, parseEnv) {
     expected_message = "";
 
     std::vector<std::pair<std::string, int>> logLevels = {
-        {"level:debug", LOG_DEBUG},   {"level:info", LOG_INFO},
-        {"level:invalid", LOG_ERROR}, {"level:warning", LOG_WARNING},
-        {"level:error", LOG_ERROR},   {"", LOG_ERROR}};
+        {"level:debug", LOG_DEBUG},
+        {"level:info", LOG_INFO},
+        {"level:invalid", LOG_ERROR},
+        {"level:warning", LOG_WARNING},
+        {"level:error", LOG_ERROR},
+        {"level:fatal", LOG_FATAL},
+        {"", LOG_ERROR}};
 
     std::vector<std::pair<std::string, int>> flushLevels = {
-        {"flush:debug", LOG_DEBUG}, {"flush:invalid", LOG_ERROR},
-        {"flush:info", LOG_INFO},   {"flush:warning", LOG_WARNING},
-        {"flush:error", LOG_ERROR}, {"", LOG_ERROR}};
+        {"flush:debug", LOG_DEBUG},
+        {"flush:invalid", LOG_ERROR},
+        {"flush:info", LOG_INFO},
+        {"flush:warning", LOG_WARNING},
+        {"flush:error", LOG_ERROR},
+        {"flush:fatal", LOG_FATAL},
+        {"", LOG_ERROR}};
 
     std::vector<std::pair<std::string, FILE *>> outputs = {
         {"output:stdout", stdout},
@@ -200,6 +262,8 @@ static std::string helper_log_str(int l) {
         return "INFO ";
     case LOG_WARNING:
         return "WARN ";
+    case LOG_FATAL:
+        return "FATAL";
     default:
         ASSERT(0);
         return "";
@@ -285,6 +349,17 @@ TEST_F(test, pid_log) {
     helper_test_log(LOG_DEBUG, "%s", "example log");
 }
 
+TEST_F(test, log_fatal) {
+    loggerConfig = {0, 0, LOG_DEBUG, LOG_DEBUG, NULL};
+    expected_stream = stderr;
+    expect_fput_count = 1;
+    expect_fflush_count = 1;
+
+    expected_message = "[FATAL UMF] example log\n";
+    strerror_ret_static = 0;
+    helper_test_log(LOG_FATAL, "%s", "example log");
+}
+
 TEST_F(test, log_macros) {
     expected_stream = stderr;
     expect_fput_count = 1;
@@ -316,6 +391,133 @@ TEST_F(test, log_macros) {
     fput_count = 0;
     fflush_count = 0;
     LOG_ERR("example log");
+    EXPECT_EQ(fput_count, expect_fput_count);
+    EXPECT_EQ(fflush_count, expect_fflush_count);
+
+    expected_message = "[FATAL UMF] example log\n";
+    fput_count = 0;
+    fflush_count = 0;
+    LOG_FATAL("example log");
+    EXPECT_EQ(fput_count, expect_fput_count);
+    EXPECT_EQ(fflush_count, expect_fflush_count);
+}
+
+template <typename... Args> void helper_test_plog(Args... args) {
+    fput_count = 0;
+    fflush_count = 0;
+    util_plog(args...);
+    EXPECT_EQ(fput_count, expect_fput_count);
+    EXPECT_EQ(fflush_count, expect_fflush_count);
+}
+
+TEST_F(test, plog_basic) {
+    loggerConfig = {0, 0, LOG_DEBUG, LOG_DEBUG, stderr};
+    expected_stream = stderr;
+    errno = 1;
+    strerr = "test error";
+    expect_fput_count = 1;
+    expect_fflush_count = 1;
+
+    expected_message = "[DEBUG UMF] example log: test error\n";
+    strerror_ret_static = 1;
+    helper_test_plog(LOG_DEBUG, "%s", "example log");
+    strerror_ret_static = 0;
+    helper_test_plog(LOG_DEBUG, "%s", "example log");
+}
+
+TEST_F(test, plog_invalid) {
+    loggerConfig = {0, 0, LOG_DEBUG, LOG_DEBUG, stderr};
+    expected_stream = stderr;
+    errno = INVALID_ERRNO;
+    strerr = "test error";
+    expect_fput_count = 1;
+    expect_fflush_count = 1;
+
+    expected_message = "[DEBUG UMF] example log: unknown error\n";
+    strerror_ret_static = 1;
+    helper_test_plog(LOG_DEBUG, "%s", "example log");
+    strerror_ret_static = 0;
+    helper_test_plog(LOG_DEBUG, "%s", "example log");
+}
+
+TEST_F(test, plog_long_message) {
+    loggerConfig = {0, 0, LOG_DEBUG, LOG_DEBUG, stderr};
+    expected_stream = stderr;
+    expect_fput_count = 1;
+    expect_fflush_count = 1;
+    strerror_ret_static = 0;
+    strerr = "test error";
+    errno = 1;
+
+    expected_message = "[DEBUG UMF] " + std::string(8180, 'x') + ": test err" +
+                       "o[truncated...]\n";
+    helper_test_plog(LOG_DEBUG, "%s", std::string(8180, 'x').c_str());
+    expected_message =
+        "[DEBUG UMF] " + std::string(8191, 'x') + "[truncated...]\n";
+    helper_test_plog(LOG_DEBUG, "%s", std::string(8192, 'x').c_str());
+}
+
+TEST_F(test, plog_long_error) {
+    loggerConfig = {0, 0, LOG_DEBUG, LOG_DEBUG, stderr};
+    expected_stream = stderr;
+    expect_fput_count = 1;
+    expect_fflush_count = 1;
+    strerror_ret_static = 0;
+    std::string tmp = std::string(2000, 'x');
+    strerr = tmp.c_str();
+    errno = 1;
+#ifdef WIN32
+    /* On windows limit is shorter, and there is no truncated detection*/
+    expected_message =
+        "[DEBUG UMF] example log: " + std::string(79, 'x') + "\n";
+#else
+    expected_message = "[DEBUG UMF] example log: " + std::string(1023, 'x') +
+                       "[truncated...]\n";
+#endif
+    strerror_ret_static = 0;
+    helper_test_plog(LOG_DEBUG, "%s", "example log");
+}
+
+TEST_F(test, log_pmacros) {
+    expected_stream = stderr;
+    expect_fput_count = 1;
+    expect_fflush_count = 1;
+    loggerConfig = {0, 0, LOG_DEBUG, LOG_DEBUG, stderr};
+    errno = 1;
+    strerr = "test error";
+
+    expected_message = "[DEBUG UMF] example log: test error\n";
+    fput_count = 0;
+    fflush_count = 0;
+    LOG_PDEBUG("example log");
+    EXPECT_EQ(fput_count, expect_fput_count);
+    EXPECT_EQ(fflush_count, expect_fflush_count);
+
+    expected_message = "[INFO  UMF] example log: test error\n";
+    fput_count = 0;
+    fflush_count = 0;
+    LOG_PINFO("example log");
+    EXPECT_EQ(fput_count, expect_fput_count);
+    EXPECT_EQ(fflush_count, expect_fflush_count);
+
+    expected_message = "[WARN  UMF] example log: test error\n";
+    fput_count = 0;
+    fflush_count = 0;
+    LOG_PWARN("example log");
+    EXPECT_EQ(fput_count, expect_fput_count);
+    EXPECT_EQ(fflush_count, expect_fflush_count);
+
+    expected_message = "[ERROR UMF] example log: test error\n";
+    fput_count = 0;
+    fflush_count = 0;
+    LOG_PERR("example log");
+    EXPECT_EQ(fput_count, expect_fput_count);
+    EXPECT_EQ(fflush_count, expect_fflush_count);
+
+    expected_message = "[FATAL UMF] example log: test error\n";
+    fput_count = 0;
+    fflush_count = 0;
+    LOG_PFATAL("example log");
     EXPECT_EQ(fput_count, expect_fput_count);
     EXPECT_EQ(fflush_count, expect_fflush_count);
 }

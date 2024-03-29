@@ -10,6 +10,7 @@
 #ifndef UMF_ASSERT_H
 #define UMF_ASSERT_H 1
 
+#include "utils_log.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,9 +30,8 @@ extern "C" {
 #define ASSERT(x)                                                              \
     do {                                                                       \
         if (!(x)) {                                                            \
-            fprintf(stderr,                                                    \
-                    "Assertion failed: " #x " at " __FILE__ " line %d.\n",     \
-                    __LINE__);                                                 \
+            LOG_FATAL("Assertion failed: " #x " at " __FILE__ " line %d.",     \
+                      __LINE__);                                               \
             abort();                                                           \
         }                                                                      \
     } while (0)
@@ -40,10 +40,9 @@ extern "C" {
         long X = (x);                                                          \
         long Y = (y);                                                          \
         if (X == Y) {                                                          \
-            fprintf(stderr,                                                    \
-                    "Assertion failed: " #x " != " #y                          \
-                    ", both are %ld, at " __FILE__ " line %d.\n",              \
-                    X, __LINE__);                                              \
+            LOG_FATAL("Assertion failed: " #x " != " #y                        \
+                      ", both are %ld, at " __FILE__ " line %d.",              \
+                      X, __LINE__);                                            \
             abort();                                                           \
         }                                                                      \
     } while (0)
@@ -52,8 +51,7 @@ extern "C" {
 #define UMF_CHECK(condition, errorStatus)                                      \
     do {                                                                       \
         if (!(condition)) {                                                    \
-            fprintf(stderr, "UMF check failed: " #condition " in %s\n",        \
-                    __func__);                                                 \
+            LOG_FATAL("UMF check failed: " #condition " in %s", __func__);     \
             return errorStatus;                                                \
         }                                                                      \
     } while (0)

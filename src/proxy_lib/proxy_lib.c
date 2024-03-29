@@ -37,6 +37,7 @@
 #include "base_alloc_linear.h"
 #include "proxy_lib.h"
 #include "utils_common.h"
+#include "utils_log.h"
 
 #ifdef _WIN32 /* Windows ***************************************/
 
@@ -103,7 +104,7 @@ void proxy_lib_create_common(void) {
     umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(), &os_params,
                                          &OS_memory_provider);
     if (umf_result != UMF_RESULT_SUCCESS) {
-        fprintf(stderr, "error: creating OS memory provider failed\n");
+        LOG_ERR("creating OS memory provider failed");
         exit(-1);
     }
 
@@ -111,7 +112,7 @@ void proxy_lib_create_common(void) {
         umfPoolCreate(umfPoolManagerOps(), OS_memory_provider, NULL,
                       UMF_POOL_CREATE_FLAG_DISABLE_TRACKING, &Proxy_pool);
     if (umf_result != UMF_RESULT_SUCCESS) {
-        fprintf(stderr, "error: creating UMF pool manager failed\n");
+        LOG_ERR("creating UMF pool manager failed");
         exit(-1);
     }
     // The UMF pool has just been created (Proxy_pool != NULL). Stop using
@@ -243,7 +244,7 @@ void free(void *ptr) {
 
     if (Proxy_pool) {
         if (umfPoolFree(Proxy_pool, ptr) != UMF_RESULT_SUCCESS) {
-            fprintf(stderr, "error: umfPoolFree() failed\n");
+            LOG_ERR("umfPoolFree() failed");
             assert(0);
         }
         return;

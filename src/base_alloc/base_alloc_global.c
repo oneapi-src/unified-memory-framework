@@ -16,6 +16,7 @@
 #include "base_alloc_internal.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
+#include "utils_log.h"
 #include "utils_math.h"
 #include "utils_sanitizers.h"
 
@@ -52,8 +53,7 @@ static void umf_ba_create_global(void) {
         assert(0 == (BASE_ALLOC.ac_sizes[i] & (BASE_ALLOC.ac_sizes[i] - 1)));
         BASE_ALLOC.ac[i] = umf_ba_create(BASE_ALLOC.ac_sizes[i]);
         if (!BASE_ALLOC.ac[i]) {
-            fprintf(stderr,
-                    "base_alloc: Error. Cannot create base alloc allocation "
+            LOG_ERR("base_alloc: Cannot create base alloc allocation "
                     "class for size: %zu\n. Each allocation will fallback to "
                     "allocating memory from the OS.",
                     BASE_ALLOC.ac_sizes[i]);
@@ -163,18 +163,16 @@ void *umf_ba_global_aligned_alloc(size_t size, size_t alignment) {
 
     int ac_index = size_to_idx(size);
     if (ac_index >= NUM_ALLOCATION_CLASSES) {
-        // TODO: use logger here
-        // fprintf(stderr,
-        //         "base_alloc: allocation size (%zu) larger than the biggest "
-        //         "allocation class. Falling back to OS memory allocation.\n",
-        //         size);
+        LOG_WARN("base_alloc: allocation size (%zu) larger than the biggest "
+                 "allocation class. Falling back to OS memory allocation.",
+                 size);
         return add_metadata_and_align(ba_os_alloc(size), size, alignment);
     }
 
     if (!BASE_ALLOC.ac[ac_index]) {
         // if creating ac failed, fall back to os allocation
-        fprintf(stderr, "base_alloc: allocation class not created. Falling "
-                        "back to OS memory allocation.\n");
+        LOG_WARN("base_alloc: allocation class not created. Falling "
+                 "back to OS memory allocation.");
         return add_metadata_and_align(ba_os_alloc(size), size, alignment);
     }
 

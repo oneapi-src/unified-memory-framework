@@ -12,6 +12,7 @@
 #include "base_alloc_linear.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
+#include "utils_log.h"
 
 #ifndef NDEBUG
 #define _DEBUG_EXECUTE(expression) DO_WHILE_EXPRS(expression)
@@ -249,7 +250,7 @@ void umf_ba_linear_destroy(umf_ba_linear_pool_t *pool) {
 #ifndef NDEBUG
     _DEBUG_EXECUTE(ba_debug_checks(pool));
     if (pool->metadata.global_n_allocs) {
-        fprintf(stderr, "umf_ba_linear_destroy(): global_n_allocs = %zu\n",
+        LOG_ERR("umf_ba_linear_destroy(): global_n_allocs = %zu",
                 pool->metadata.global_n_allocs);
         assert(pool->metadata.global_n_allocs == 0);
     }
