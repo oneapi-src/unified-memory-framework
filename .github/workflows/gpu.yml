@@ -27,6 +27,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
+      - name: Get information about platform
+        run: .github/scripts/get_system_info.sh
+
       - name: Configure build
         run: >
           cmake
