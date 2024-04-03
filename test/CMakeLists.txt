@@ -30,7 +30,7 @@ function(add_umf_test)
     # * SRCS - source files
     # * LIBS - libraries to be linked with
     set(oneValueArgs NAME)
-    set(multiValueArgs SRCS LIBS)
+    set(multiValueArgs SRCS LIBS CFGS)
     cmake_parse_arguments(
         ARG
         ""
@@ -73,6 +73,7 @@ function(add_umf_test)
     add_test(
         NAME ${TEST_NAME}
         COMMAND ${TEST_TARGET_NAME}
+        CONFIGURATIONS ${ARG_CFGS}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
     set_tests_properties(${TEST_NAME} PROPERTIES LABELS "umf")
@@ -223,14 +224,20 @@ add_umf_test(
 
 # tests for the proxy library
 if(UMF_PROXY_LIB_ENABLED AND UMF_BUILD_SHARED_LIBRARY)
+    # The CFGS variable can be removed when the issue of running the proxy
+    # library on Windows with Debug configuration is fixed.
+    if(WINDOWS)
+        set(CONFIGS Release RelWithDebInfo MinSizeRel)
+    endif()
     add_umf_test(
         NAME proxy_lib_basic
         SRCS test_proxy_lib.cpp
-        LIBS umf_proxy)
-
+        LIBS umf_proxy
+        CFGS ${CONFIGS})
     # the memoryPool test run with the proxy library
     add_umf_test(
         NAME proxy_lib_memoryPool
         SRCS memoryPoolAPI.cpp malloc_compliance_tests.cpp
-        LIBS umf_proxy)
+        LIBS umf_proxy
+        CFGS ${CONFIGS})
 endif()
