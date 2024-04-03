@@ -181,13 +181,14 @@ jobs:
         build_type: [Debug, Release]
         compiler: [{c: cl, cxx: cl}]
         pool_tracking: ['ON', 'OFF']
-        shared_library: ['OFF']
+        shared_library: ['ON', 'OFF']
         level_zero_provider: ['ON']
         include:
           - os: 'windows-2022'
             build_type: Release
             compiler: {c: clang-cl, cxx: clang-cl}
             pool_tracking: 'ON'
+            shared_library: 'ON'
             level_zero_provider: 'ON'
             toolset: "-T ClangCL"
           - os: 'windows-2022'
