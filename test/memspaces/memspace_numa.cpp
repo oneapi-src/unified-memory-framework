@@ -9,6 +9,47 @@
 
 #include <umf/providers/provider_os_memory.h>
 
+struct memspaceNumaTest : ::numaNodesTest {
+    void SetUp() override {
+        ::numaNodesTest::SetUp();
+
+        umf_result_t ret = umfMemspaceCreateFromNumaArray(
+            nodeIds.data(), nodeIds.size(), &hMemspace);
+        ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+        ASSERT_NE(hMemspace, nullptr);
+    }
+
+    void TearDown() override {
+        ::numaNodesTest::TearDown();
+        if (hMemspace) {
+            umfMemspaceDestroy(hMemspace);
+        }
+    }
+
+    umf_memspace_handle_t hMemspace = nullptr;
+};
+
+struct memspaceNumaProviderTest : ::memspaceNumaTest {
+    void SetUp() override {
+        ::memspaceNumaTest::SetUp();
+
+        umf_result_t ret =
+            umfMemoryProviderCreateFromMemspace(hMemspace, nullptr, &hProvider);
+        ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+        ASSERT_NE(hProvider, nullptr);
+    }
+
+    void TearDown() override {
+        ::memspaceNumaTest::TearDown();
+
+        if (hProvider != nullptr) {
+            umfMemoryProviderDestroy(hProvider);
+        }
+    }
+
+    umf_memory_provider_handle_t hProvider = nullptr;
+};
+
 TEST_F(numaNodesTest, createDestroy) {
     umf_memspace_handle_t hMemspace = nullptr;
     umf_result_t ret = umfMemspaceCreateFromNumaArray(
