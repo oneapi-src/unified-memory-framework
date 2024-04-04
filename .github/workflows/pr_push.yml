@@ -106,10 +106,10 @@ jobs:
         -DUMF_BUILD_LIBUMF_POOL_SCALABLE=OFF
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=OFF
 
-    - name: Check clang-format
+    - name: Check C/C++ formatting
       run: cmake --build build --target clang-format-check
 
-    - name: Check cmake-format
+    - name: Check CMake formatting
       run: cmake --build build --target cmake-format-check
 
     - name: Check Python formatting
