@@ -29,6 +29,7 @@ void __attribute__((destructor)) umfDestroy(void) {
     umfMemoryTrackerDestroy(t);
     umfMemspaceHostAllDestroy();
     umfMemspaceHighestCapacityDestroy();
+    umfMemspaceHighestBandwidthDestroy();
     umfDestroyTopology();
 }
 

@@ -208,3 +208,85 @@ umfMemspaceSortDesc(umf_memspace_handle_t hMemspace,
 
     return UMF_RESULT_SUCCESS;
 }
+
+umf_result_t umfMemspaceFilter(umf_memspace_handle_t hMemspace,
+                               umfGetTargetFn getTarget,
+                               umf_memspace_handle_t *filteredMemspace) {
+    if (!hMemspace || !getTarget) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    umf_memory_target_handle_t *uniqueBestNodes =
+        umf_ba_global_alloc(hMemspace->size * sizeof(*uniqueBestNodes));
+    if (!uniqueBestNodes) {
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    umf_result_t ret = UMF_RESULT_SUCCESS;
+
+    size_t numUniqueBestNodes = 0;
+    for (size_t nodeIdx = 0; nodeIdx < hMemspace->size; nodeIdx++) {
+        umf_memory_target_handle_t target = NULL;
+        ret = getTarget(hMemspace->nodes[nodeIdx], hMemspace->nodes,
+                        hMemspace->size, &target);
+        if (ret != UMF_RESULT_SUCCESS) {
+            goto err_free_best_targets;
+        }
+
+        // check if the target is already present in the best nodes
+        size_t bestTargetIdx;
+        for (bestTargetIdx = 0; bestTargetIdx < numUniqueBestNodes;
+             bestTargetIdx++) {
+            if (uniqueBestNodes[bestTargetIdx] == target) {
+                break;
+            }
+        }
+
+        // if the target is not present, add it to the best nodes
+        if (bestTargetIdx == numUniqueBestNodes) {
+            uniqueBestNodes[numUniqueBestNodes++] = target;
+        }
+    }
+
+    // copy the unique best nodes into a new memspace
+    umf_memspace_handle_t newMemspace =
+        umf_ba_global_alloc(sizeof(*newMemspace));
+    if (!newMemspace) {
+        ret = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+        goto err_free_best_targets;
+    }
+
+    newMemspace->size = numUniqueBestNodes;
+    newMemspace->nodes =
+        umf_ba_global_alloc(sizeof(*newMemspace->nodes) * newMemspace->size);
+    if (!newMemspace->nodes) {
+        ret = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+        goto err_free_new_memspace;
+    }
+
+    size_t cloneIdx = 0;
+    for (size_t cloneIdx = 0; cloneIdx < newMemspace->size; cloneIdx++) {
+        ret = umfMemoryTargetClone(uniqueBestNodes[cloneIdx],
+                                   &newMemspace->nodes[cloneIdx]);
+        if (ret != UMF_RESULT_SUCCESS) {
+            goto err_free_cloned_nodes;
+        }
+    }
+
+    *filteredMemspace = newMemspace;
+    umf_ba_global_free(uniqueBestNodes);
+
+    return UMF_RESULT_SUCCESS;
+
+err_free_cloned_nodes:
+    while (cloneIdx != 0) {
+        cloneIdx--;
+        umfMemoryTargetDestroy(newMemspace->nodes[cloneIdx]);
+    }
+    umf_ba_global_free(newMemspace->nodes);
+err_free_new_memspace:
+    umf_ba_global_free(newMemspace);
+err_free_best_targets:
+    umf_ba_global_free(uniqueBestNodes);
+    return ret;
+}

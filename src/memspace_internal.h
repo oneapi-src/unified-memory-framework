@@ -39,6 +39,18 @@ typedef umf_result_t (*umfGetPropertyFn)(umf_memory_target_handle_t,
 umf_result_t umfMemspaceSortDesc(umf_memspace_handle_t hMemspace,
                                  umfGetPropertyFn getProperty);
 
+typedef umf_result_t (*umfGetTargetFn)(umf_memory_target_handle_t initiator,
+                                       umf_memory_target_handle_t *nodes,
+                                       size_t numNodes,
+                                       umf_memory_target_handle_t *target);
+
+///
+/// \brief Filters the targets using getTarget() to create a new memspace
+///
+umf_result_t umfMemspaceFilter(umf_memspace_handle_t hMemspace,
+                               umfGetTargetFn getTarget,
+                               umf_memspace_handle_t *filteredMemspace);
+
 ///
 /// \brief Destroys memspace
 /// \param hMemspace handle to memspace
@@ -47,6 +59,7 @@ void umfMemspaceDestroy(umf_memspace_handle_t hMemspace);
 
 void umfMemspaceHostAllDestroy(void);
 void umfMemspaceHighestCapacityDestroy(void);
+void umfMemspaceHighestBandwidthDestroy(void);
 
 #ifdef __cplusplus
 }

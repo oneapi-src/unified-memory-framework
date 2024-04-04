@@ -56,6 +56,11 @@ umf_memspace_handle_t umfMemspaceHostAllGet(void);
 ///
 umf_memspace_handle_t umfMemspaceHighestCapacityGet(void);
 
+/// \brief Retrieves predefined highest bandwidth memspace.
+/// \return highest bandwidth memspace handle on success or NULL on failure.
+///
+umf_memspace_handle_t umfMemspaceHighestBandwidthGet(void);
+
 #ifdef __cplusplus
 }
 #endif

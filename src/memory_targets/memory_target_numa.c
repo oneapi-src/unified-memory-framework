@@ -19,6 +19,7 @@
 #include "base_alloc_global.h"
 #include "memory_target_numa.h"
 #include "topology.h"
+#include "utils_log.h"
 
 struct numa_memory_target_t {
     unsigned physical_id;
@@ -143,6 +144,50 @@ static umf_result_t numa_get_capacity(void *memTarget, size_t *capacity) {
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t numa_get_bandwidth(void *srcMemoryTarget,
+                                       void *dstMemoryTarget,
+                                       size_t *bandwidth) {
+    hwloc_topology_t topology = umfGetTopology();
+    if (!topology) {
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
+
+    hwloc_obj_t srcNumaNode = hwloc_get_obj_by_type(
+        topology, HWLOC_OBJ_NUMANODE,
+        ((struct numa_memory_target_t *)srcMemoryTarget)->physical_id);
+    if (!srcNumaNode) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    hwloc_obj_t dstNumaNode = hwloc_get_obj_by_type(
+        topology, HWLOC_OBJ_NUMANODE,
+        ((struct numa_memory_target_t *)dstMemoryTarget)->physical_id);
+    if (!dstNumaNode) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    // Given NUMA nodes aren't local, HWLOC returns an error in such case.
+    if (!hwloc_bitmap_intersects(srcNumaNode->cpuset, dstNumaNode->cpuset)) {
+        *bandwidth = 0;
+        return UMF_RESULT_SUCCESS;
+    }
+
+    struct hwloc_location initiator = {.location.cpuset = srcNumaNode->cpuset,
+                                       .type = HWLOC_LOCATION_TYPE_CPUSET};
+    hwloc_uint64_t value = 0;
+    int ret = hwloc_memattr_get_value(topology, HWLOC_MEMATTR_ID_BANDWIDTH,
+                                      dstNumaNode, &initiator, 0, &value);
+    if (ret) {
+        LOG_ERR("Retrieving bandwidth for initiator node %u to node %u failed.",
+                srcNumaNode->os_index, dstNumaNode->os_index);
+        return (errno == EINVAL) ? UMF_RESULT_ERROR_NOT_SUPPORTED
+                                 : UMF_RESULT_ERROR_UNKNOWN;
+    }
+
+    *bandwidth = value;
+    return UMF_RESULT_SUCCESS;
+}
+
 struct umf_memory_target_ops_t UMF_MEMORY_TARGET_NUMA_OPS = {
     .version = UMF_VERSION_CURRENT,
     .initialize = numa_initialize,
@@ -150,5 +195,6 @@ struct umf_memory_target_ops_t UMF_MEMORY_TARGET_NUMA_OPS = {
     .pool_create_from_memspace = numa_pool_create_from_memspace,
     .clone = numa_clone,
     .get_capacity = numa_get_capacity,
+    .get_bandwidth = numa_get_bandwidth,
     .memory_provider_create_from_memspace =
         numa_memory_provider_create_from_memspace};
