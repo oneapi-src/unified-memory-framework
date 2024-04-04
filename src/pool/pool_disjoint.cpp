@@ -446,10 +446,14 @@ Slab::~Slab() {
             const char *message = "";
             int error = 0;
 
-            umfMemoryProviderGetLastNativeError(
-                umfGetLastFailedMemoryProvider(), &message, &error);
-            LOG_ERR("Native error msg: %s, native error code: %d", message,
-                    error);
+            try {
+                umfMemoryProviderGetLastNativeError(
+                    umfGetLastFailedMemoryProvider(), &message, &error);
+                LOG_ERR("Native error msg: %s, native error code: %d", message,
+                        error);
+            } catch (...) {
+                // ignore any additional errors from logger
+            }
         }
     }
 }
