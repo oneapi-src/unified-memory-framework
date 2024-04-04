@@ -62,10 +62,11 @@ To enable additional checks (including `-Werror` / `/WX` compilation flag), swit
 ["CMake standard options"](./README.md#cmake-standard-options) section in the top-level Readme.
 
 ### Code style
-We use `clang-format` to verify and apply code style changes to source files. 
+We use `clang-format` to verify and apply code style changes to C/C++ source files.
 To see all rules we require, please take a look at `.clang-format` file in the 
 root directory of this repository. Similarly, we use `cmake-format` tool and
 `.cmake-format` file to verify and apply code style changes to CMake files.
+For Python source files we use `black` tool.
 
 To enable code style checks and re-formatting, CMake option `UMF_FORMAT_CODE_STYLE` has to
 be switched on. You'll then have additional CMake targets available.
@@ -74,7 +75,7 @@ To verify correct coding style of your changes execute (assuming `build` is your
 
 ```bash
 $ cmake -B build -DUMF_FORMAT_CODE_STYLE=ON
-$ cmake --build build --target format-checks
+$ cmake --build build --target format-check
 ```
 
 We run these checks in our Continuous Integration (CI). So, if any issues were found,
@@ -87,9 +88,10 @@ $ cmake --build build --target format-apply
 # Remember to review introduced changes
 ```
 
-If you wish to use only `clang-format` or only `cmake-format`, you can execute the corresponding
-`clang-format-check` and `clang-format-apply` for source files, or `cmake-format-check` and
-`cmake-format-apply` for CMake files, respectively.
+If you wish to use only `clang-format`, or `cmake-format`, or `black`, you can execute the corresponding
+`clang-format-check` and `clang-format-apply` for C/C++ source files, or `cmake-format-check` and
+`cmake-format-apply` for CMake files, or `black-format-check` and `black-format-apply` for Python
+source files, respectively.
 
 **NOTE**: We use specific versions of formatting tools to ensure consistency across the project. The required versions are:
 - clang-format version **15.0**, which can be installed with the command: `python -m pip install clang-format==15.0.7`.
