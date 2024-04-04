@@ -83,9 +83,6 @@ for test in $(ls -1 umf_test-*); do
 	# skip tests incompatible with valgrind
 	FILTER=""
 	case $test in
-	umf_test-disjointPool) # TODO: temporarily skip failing disjointPool tests - fix it
-		FILTER='--gtest_filter="-*pow2AlignedAlloc"'
-		;;
 	umf_test-memspace_host_all)
 		FILTER='--gtest_filter="-*allocsSpreadAcrossAllNumaNodes"'
 		;;

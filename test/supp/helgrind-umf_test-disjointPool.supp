@@ -11,3 +11,19 @@
    fun:mutex_unlock_WRK
    fun:pthread_mutex_unlock
 }
+
+{
+   Incompatibility with helgrind's implementation ("pthread_mutex_lock with a pthread_rwlock_t* argument")
+   Helgrind:Misc
+   obj:*vgpreload_helgrind-amd64-linux.so
+   fun:*gthread_mutex_lock*pthread_mutex_t
+   ...
+}
+
+{
+   Incompatibility with helgrind's implementation ("pthread_mutex_unlock with a pthread_rwlock_t* argument")
+   Helgrind:Misc
+   obj:*vgpreload_helgrind-amd64-linux.so
+   fun:*gthread_mutex_unlock*pthread_mutex_t
+   ...
+}
