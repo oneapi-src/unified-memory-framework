@@ -7,6 +7,9 @@
  *
  */
 
+#ifndef UMF_UTILS_SANITIZERS_H
+#define UMF_UTILS_SANITIZERS_H 1
+
 #if defined(__has_feature)
 #if __has_feature(thread_sanitizer)
 #ifndef __SANITIZE_THREAD__
@@ -113,6 +116,8 @@ extern "C" {
 static inline void utils_annotate_acquire(void *ptr) {
 #if __SANITIZE_THREAD__
     __tsan_acquire(ptr);
+#elif UMF_VG_HELGRIND_ENABLED || UMF_VG_DRD_ENABLED
+    ANNOTATE_HAPPENS_AFTER(ptr);
 #else
     (void)ptr;
 #endif
@@ -121,6 +126,8 @@ static inline void utils_annotate_acquire(void *ptr) {
 static inline void utils_annotate_release(void *ptr) {
 #if __SANITIZE_THREAD__
     __tsan_release(ptr);
+#elif UMF_VG_HELGRIND_ENABLED || UMF_VG_DRD_ENABLED
+    ANNOTATE_HAPPENS_BEFORE(ptr);
 #else
     (void)ptr;
 #endif
@@ -164,3 +171,5 @@ static inline void utils_annotate_memory_inaccessible(void *ptr, size_t size) {
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* UMF_UTILS_SANITIZERS_H */

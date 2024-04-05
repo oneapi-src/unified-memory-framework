@@ -18,6 +18,8 @@
 #include <stdatomic.h>
 #endif
 
+#include "utils_sanitizers.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -72,9 +74,17 @@ static __inline unsigned char util_mssb_index(long long value) {
 #define util_lssb_index(x) ((unsigned char)__builtin_ctzll(x))
 #define util_mssb_index(x) ((unsigned char)(63 - __builtin_clzll(x)))
 #define util_atomic_load_acquire(object, dest)                                 \
-    __atomic_load(object, dest, memory_order_acquire)
+    do {                                                                       \
+        utils_annotate_acquire((void *)object);                                \
+        __atomic_load(object, dest, memory_order_acquire);                     \
+    } while (0)
+
 #define util_atomic_store_release(object, desired)                             \
-    __atomic_store_n(object, desired, memory_order_release)
+    do {                                                                       \
+        __atomic_store_n(object, desired, memory_order_release);               \
+        utils_annotate_release((void *)dst);                                   \
+    } while (0)
+
 #define util_atomic_increment(object)                                          \
     __atomic_add_fetch(object, 1, __ATOMIC_ACQ_REL)
 #endif
