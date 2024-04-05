@@ -127,11 +127,14 @@ jobs:
     - name: Install apt packages
       run: |
         sudo apt-get update
-        sudo apt-get install -y clang cmake libhwloc-dev libnuma-dev libjemalloc-dev libtbb-dev
+        sudo apt-get install -y clang cmake libnuma-dev libjemalloc-dev libtbb-dev
 
     - name: Install g++-7
       if: matrix.compiler.cxx == 'g++-7'
       run: sudo apt-get install -y ${{matrix.compiler.cxx}}
+
+    - name: Install libhwloc
+      run: .github/scripts/install_hwloc.sh
 
     - name: Configure build
       run: >

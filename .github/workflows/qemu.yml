@@ -123,4 +123,5 @@ jobs:
         fi
 
         scp -P 2222 ${{github.workspace}}/scripts/qemu/run-build.sh cxltest@127.0.0.1:/home/cxltest
+        scp -P 2222 ${{github.workspace}}/.github/scripts/install_hwloc.sh cxltest@127.0.0.1:/home/cxltest
         ssh cxltest@127.0.0.1 -p 2222 -t "bash /home/cxltest/run-build.sh https://github.com/$CI_REPO ${{env.CI_BRANCH}}"
