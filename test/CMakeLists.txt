@@ -241,3 +241,7 @@ if(UMF_PROXY_LIB_ENABLED AND UMF_BUILD_SHARED_LIBRARY)
         LIBS umf_proxy
         CFGS ${CONFIGS})
 endif()
+
+if(UMF_ENABLE_POOL_TRACKING)
+    add_umf_test(NAME ipc SRCS ipcAPI.cpp)
+endif()

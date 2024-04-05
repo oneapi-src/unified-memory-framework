@@ -4,26 +4,34 @@
 
 UMF_1.0 {
     global:
+        umfCloseIPCHandle;
         umfFree;
+        umfGetIPCHandle;
         umfGetLastFailedMemoryProvider;
         umfLevelZeroMemoryProviderOps;
         umfMemoryProviderAlloc;
         umfMemoryProviderAllocationMerge;
         umfMemoryProviderAllocationSplit;
+        umfMemoryProviderCloseIPCHandle;
         umfMemoryProviderCreate;
         umfMemoryProviderCreateFromMemspace;
         umfMemoryProviderDestroy;
         umfMemoryProviderFree;
+        umfMemoryProviderGetIPCHandle;
+        umfMemoryProviderGetIPCHandleSize;
         umfMemoryProviderGetLastNativeError;
         umfMemoryProviderGetMinPageSize;
         umfMemoryProviderGetName;
         umfMemoryProviderGetRecommendedPageSize;
+        umfMemoryProviderOpenIPCHandle;
         umfMemoryProviderPurgeForce;
         umfMemoryProviderPurgeLazy;
+        umfMemoryProviderPutIPCHandle;
         umfMemspaceCreateFromNumaArray;
         umfMemspaceDestroy;
         umfMemspaceHighestCapacityGet;
         umfMemspaceHostAllGet;
+        umfOpenIPCHandle;
         umfOsMemoryProviderOps;
         umfPoolAlignedMalloc;
         umfPoolByPtr;
@@ -38,6 +46,7 @@ UMF_1.0 {
         umfPoolMallocUsableSize;
         umfPoolRealloc;
         umfProxyPoolOps;
+        umfPutIPCHandle;
     local:
         *;
 };

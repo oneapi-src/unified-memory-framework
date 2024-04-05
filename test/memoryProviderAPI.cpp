@@ -207,6 +207,46 @@ TEST_F(test, memoryProviderOpsNullAllocationMergeField) {
     ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 }
 
+TEST_F(test, memoryProviderOpsNullGetIpcHandleSize) {
+    umf_memory_provider_ops_t provider_ops = UMF_NULL_PROVIDER_OPS;
+    provider_ops.ipc.get_ipc_handle_size = nullptr;
+    umf_memory_provider_handle_t hProvider;
+    auto ret = umfMemoryProviderCreate(&provider_ops, nullptr, &hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, memoryProviderOpsNullGetIpcHandle) {
+    umf_memory_provider_ops_t provider_ops = UMF_NULL_PROVIDER_OPS;
+    provider_ops.ipc.get_ipc_handle = nullptr;
+    umf_memory_provider_handle_t hProvider;
+    auto ret = umfMemoryProviderCreate(&provider_ops, nullptr, &hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, memoryProviderOpsNullPutIpcHandle) {
+    umf_memory_provider_ops_t provider_ops = UMF_NULL_PROVIDER_OPS;
+    provider_ops.ipc.put_ipc_handle = nullptr;
+    umf_memory_provider_handle_t hProvider;
+    auto ret = umfMemoryProviderCreate(&provider_ops, nullptr, &hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, memoryProviderOpsNullOpenIpcHandle) {
+    umf_memory_provider_ops_t provider_ops = UMF_NULL_PROVIDER_OPS;
+    provider_ops.ipc.open_ipc_handle = nullptr;
+    umf_memory_provider_handle_t hProvider;
+    auto ret = umfMemoryProviderCreate(&provider_ops, nullptr, &hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, memoryProviderOpsNullCloseIpcHandle) {
+    umf_memory_provider_ops_t provider_ops = UMF_NULL_PROVIDER_OPS;
+    provider_ops.ipc.close_ipc_handle = nullptr;
+    umf_memory_provider_handle_t hProvider;
+    auto ret = umfMemoryProviderCreate(&provider_ops, nullptr, &hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
 struct providerInitializeTest : umf_test::test,
                                 ::testing::WithParamInterface<umf_result_t> {};
 

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023 Intel Corporation
+ * Copyright (C) 2023-2024 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -60,6 +60,42 @@ static umf_result_t umfDefaultAllocationMerge(void *provider, void *lowPtr,
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
+static umf_result_t umfDefaultGetIPCHandleSize(void *provider, size_t *size) {
+    (void)provider;
+    (void)size;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+static umf_result_t umfDefaultGetIPCHandle(void *provider, const void *ptr,
+                                           size_t size, void *providerIpcData) {
+    (void)provider;
+    (void)ptr;
+    (void)size;
+    (void)providerIpcData;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+static umf_result_t umfDefaultPutIPCHandle(void *provider,
+                                           void *providerIpcData) {
+    (void)provider;
+    (void)providerIpcData;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+static umf_result_t umfDefaultOpenIPCHandle(void *provider,
+                                            void *providerIpcData, void **ptr) {
+    (void)provider;
+    (void)providerIpcData;
+    (void)ptr;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+static umf_result_t umfDefaultCloseIPCHandle(void *provider, void *ptr) {
+    (void)provider;
+    (void)ptr;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
 void assignOpsExtDefaults(umf_memory_provider_ops_t *ops) {
     if (!ops->ext.purge_lazy) {
         ops->ext.purge_lazy = umfDefaultPurgeLazy;
@@ -75,21 +111,50 @@ void assignOpsExtDefaults(umf_memory_provider_ops_t *ops) {
     }
 }
 
-static bool validateOps(const umf_memory_provider_ops_t *ops) {
+void assignOpsIpcDefaults(umf_memory_provider_ops_t *ops) {
+    if (!ops->ipc.get_ipc_handle_size) {
+        ops->ipc.get_ipc_handle_size = umfDefaultGetIPCHandleSize;
+    }
+    if (!ops->ipc.get_ipc_handle) {
+        ops->ipc.get_ipc_handle = umfDefaultGetIPCHandle;
+    }
+    if (!ops->ipc.put_ipc_handle) {
+        ops->ipc.put_ipc_handle = umfDefaultPutIPCHandle;
+    }
+    if (!ops->ipc.open_ipc_handle) {
+        ops->ipc.open_ipc_handle = umfDefaultOpenIPCHandle;
+    }
+    if (!ops->ipc.close_ipc_handle) {
+        ops->ipc.close_ipc_handle = umfDefaultCloseIPCHandle;
+    }
+}
+
+static bool validateOpsMandatory(const umf_memory_provider_ops_t *ops) {
     // Mandatory ops should be non-NULL
-    if (!ops->alloc || !ops->free || !ops->get_recommended_page_size ||
-        !ops->get_min_page_size || !ops->initialize || !ops->finalize ||
-        !ops->get_last_native_error || !ops->get_name) {
-        return false;
-    }
+    return ops->alloc && ops->free && ops->get_recommended_page_size &&
+           ops->get_min_page_size && ops->initialize && ops->finalize &&
+           ops->get_last_native_error && ops->get_name;
+}
 
-    // allocation_split and allocation_merge should be both set or both NULL
-    if ((ops->ext.allocation_split && !ops->ext.allocation_merge) ||
-        (!ops->ext.allocation_split && ops->ext.allocation_merge)) {
-        return false;
-    }
+static bool validateOpsExt(const umf_memory_provider_ext_ops_t *ext) {
+    // split and merge functions should be both NULL or both non-NULL
+    return (ext->allocation_split && ext->allocation_merge) ||
+           (!ext->allocation_split && !ext->allocation_merge);
+}
 
-    return true;
+static bool validateOpsIpc(const umf_memory_provider_ipc_ops_t *ipc) {
+    // valid if all ops->ipc.* are non-NULL or all are NULL
+    return (ipc->get_ipc_handle_size && ipc->get_ipc_handle &&
+            ipc->put_ipc_handle && ipc->open_ipc_handle &&
+            ipc->close_ipc_handle) ||
+           (!ipc->get_ipc_handle_size && !ipc->get_ipc_handle &&
+            !ipc->put_ipc_handle && !ipc->open_ipc_handle &&
+            !ipc->close_ipc_handle);
+}
+
+static bool validateOps(const umf_memory_provider_ops_t *ops) {
+    return validateOpsMandatory(ops) && validateOpsExt(&(ops->ext)) &&
+           validateOpsIpc(&(ops->ipc));
 }
 
 umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
@@ -111,6 +176,7 @@ umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
     provider->ops = *ops;
 
     assignOpsExtDefaults(&(provider->ops));
+    assignOpsIpcDefaults(&(provider->ops));
 
     void *provider_priv;
     umf_result_t ret = ops->initialize(params, &provider_priv);
@@ -257,4 +323,39 @@ umfMemoryProviderAllocationMerge(umf_memory_provider_handle_t hProvider,
         hProvider->provider_priv, lowPtr, highPtr, totalSize);
     checkErrorAndSetLastProvider(res, hProvider);
     return res;
+}
+
+umf_result_t
+umfMemoryProviderGetIPCHandleSize(umf_memory_provider_handle_t hProvider,
+                                  size_t *size) {
+    return hProvider->ops.ipc.get_ipc_handle_size(hProvider->provider_priv,
+                                                  size);
+}
+
+umf_result_t
+umfMemoryProviderGetIPCHandle(umf_memory_provider_handle_t hProvider,
+                              const void *ptr, size_t size,
+                              void *providerIpcData) {
+    return hProvider->ops.ipc.get_ipc_handle(hProvider->provider_priv, ptr,
+                                             size, providerIpcData);
+}
+
+umf_result_t
+umfMemoryProviderPutIPCHandle(umf_memory_provider_handle_t hProvider,
+                              void *providerIpcData) {
+    return hProvider->ops.ipc.put_ipc_handle(hProvider->provider_priv,
+                                             providerIpcData);
+}
+
+umf_result_t
+umfMemoryProviderOpenIPCHandle(umf_memory_provider_handle_t hProvider,
+                               void *providerIpcData, void **ptr) {
+    return hProvider->ops.ipc.open_ipc_handle(hProvider->provider_priv,
+                                              providerIpcData, ptr);
+}
+
+umf_result_t
+umfMemoryProviderCloseIPCHandle(umf_memory_provider_handle_t hProvider,
+                                void *ptr) {
+    return hProvider->ops.ipc.close_ipc_handle(hProvider->provider_priv, ptr);
 }

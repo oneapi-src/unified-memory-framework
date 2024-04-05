@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <string.h>
 
 // Level Zero API
 #include <ze_api.h>
@@ -17,6 +18,7 @@
 #include <umf/providers/provider_level_zero.h>
 
 #include "base_alloc_global.h"
+#include "utils_assert.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
 #include "utils_load_library.h"
@@ -41,6 +43,13 @@ typedef struct ze_ops_t {
                                     const ze_host_mem_alloc_desc_t *, size_t,
                                     size_t, ze_device_handle_t, void *);
     ze_result_t (*zeMemFree)(ze_context_handle_t, void *);
+    ze_result_t (*zeMemGetIpcHandle)(ze_context_handle_t, const void *,
+                                     ze_ipc_mem_handle_t *);
+    ze_result_t (*zeMemPutIpcHandle)(ze_context_handle_t, ze_ipc_mem_handle_t);
+    ze_result_t (*zeMemOpenIpcHandle)(ze_context_handle_t, ze_device_handle_t,
+                                      ze_ipc_mem_handle_t,
+                                      ze_ipc_memory_flags_t, void **);
+    ze_result_t (*zeMemCloseIpcHandle)(ze_context_handle_t, void *);
 } ze_ops_t;
 
 static ze_ops_t g_ze_ops;
@@ -57,9 +66,21 @@ static void init_ze_global_state(void) {
     *(void **)&g_ze_ops.zeMemAllocShared =
         util_get_symbol_addr(0, "zeMemAllocShared");
     *(void **)&g_ze_ops.zeMemFree = util_get_symbol_addr(0, "zeMemFree");
+    *(void **)&g_ze_ops.zeMemGetIpcHandle =
+        util_get_symbol_addr(0, "zeMemGetIpcHandle");
+    *(void **)&g_ze_ops.zeMemPutIpcHandle =
+        util_get_symbol_addr(0, "zeMemPutIpcHandle");
+    *(void **)&g_ze_ops.zeMemOpenIpcHandle =
+        util_get_symbol_addr(0, "zeMemOpenIpcHandle");
+    *(void **)&g_ze_ops.zeMemCloseIpcHandle =
+        util_get_symbol_addr(0, "zeMemCloseIpcHandle");
 
     if (!g_ze_ops.zeMemAllocHost || !g_ze_ops.zeMemAllocDevice ||
-        !g_ze_ops.zeMemAllocShared || !g_ze_ops.zeMemFree) {
+        !g_ze_ops.zeMemAllocShared || !g_ze_ops.zeMemFree ||
+        !g_ze_ops.zeMemGetIpcHandle || !g_ze_ops.zeMemOpenIpcHandle ||
+        !g_ze_ops.zeMemCloseIpcHandle) {
+        // g_ze_ops.zeMemPutIpcHandle can be NULL because it was introduced
+        // starting from Level Zero 1.6
         LOG_ERR("Required Level Zero symbols not found.");
         Init_ze_global_state_failed = true;
     }
@@ -256,6 +277,112 @@ static umf_result_t ze_memory_provider_allocation_split(void *provider,
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
+struct ipc_data_t {
+    ze_ipc_mem_handle_t ze_ipc_handle;
+    ze_memory_type_t memory_type;
+    //TODO: do we need size?
+    size_t size;
+};
+
+static umf_result_t ze_memory_provider_get_ipc_handle_size(void *provider,
+                                                           size_t *size) {
+    (void)provider;
+    ASSERT(size != NULL);
+    *size = sizeof(struct ipc_data_t);
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t ze_memory_provider_get_ipc_handle(void *provider,
+                                                      const void *ptr,
+                                                      size_t size,
+                                                      void *providerIpcData) {
+    ASSERT(ptr != NULL);
+    ASSERT(providerIpcData != NULL);
+    ze_result_t ze_result;
+    ze_ipc_mem_handle_t ze_ipc_handle = {0};
+    struct ipc_data_t *ipc_data = (struct ipc_data_t *)providerIpcData;
+    struct ze_memory_provider_t *ze_provider =
+        (struct ze_memory_provider_t *)provider;
+
+    ze_result =
+        g_ze_ops.zeMemGetIpcHandle(ze_provider->context, ptr, &ze_ipc_handle);
+    if (ze_result != ZE_RESULT_SUCCESS) {
+        LOG_ERR("zeMemGetIpcHandle() failed.");
+        return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
+    }
+
+    memcpy(&(ipc_data->ze_ipc_handle), &ze_ipc_handle,
+           sizeof(ze_ipc_mem_handle_t));
+    ipc_data->memory_type = ze_provider->memory_type;
+    ipc_data->size = size;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t ze_memory_provider_put_ipc_handle(void *provider,
+                                                      void *providerIpcData) {
+    ASSERT(provider != NULL);
+    ASSERT(providerIpcData != NULL);
+    ze_result_t ze_result;
+    struct ze_memory_provider_t *ze_provider =
+        (struct ze_memory_provider_t *)provider;
+    struct ipc_data_t *ipc_data = (struct ipc_data_t *)providerIpcData;
+
+    if (g_ze_ops.zeMemPutIpcHandle == NULL) {
+        // g_ze_ops.zeMemPutIpcHandle can be NULL because it was introduced
+        // starting from Level Zero 1.6. Before Level Zero 1.6 IPC handle
+        // is released automatically when corresponding memory buffer is freed.
+        return UMF_RESULT_SUCCESS;
+    }
+
+    ze_result = g_ze_ops.zeMemPutIpcHandle(ze_provider->context,
+                                           ipc_data->ze_ipc_handle);
+    if (ze_result != ZE_RESULT_SUCCESS) {
+        LOG_ERR("zeMemPutIpcHandle() failed.");
+        return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
+    }
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t ze_memory_provider_open_ipc_handle(void *provider,
+                                                       void *providerIpcData,
+                                                       void **ptr) {
+    ASSERT(provider != NULL);
+    ASSERT(providerIpcData != NULL);
+    ASSERT(ptr != NULL);
+    ze_result_t ze_result;
+    struct ipc_data_t *ipc_data = (struct ipc_data_t *)providerIpcData;
+    struct ze_memory_provider_t *ze_provider =
+        (struct ze_memory_provider_t *)provider;
+
+    ze_result =
+        g_ze_ops.zeMemOpenIpcHandle(ze_provider->context, ze_provider->device,
+                                    ipc_data->ze_ipc_handle, 0, ptr);
+    if (ze_result != ZE_RESULT_SUCCESS) {
+        LOG_ERR("zeMemOpenIpcHandle() failed.");
+        return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
+    }
+
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t ze_memory_provider_close_ipc_handle(void *provider,
+                                                        void *ptr) {
+    ASSERT(provider != NULL);
+    ASSERT(ptr != NULL);
+    ze_result_t ze_result;
+    struct ze_memory_provider_t *ze_provider =
+        (struct ze_memory_provider_t *)provider;
+
+    ze_result = g_ze_ops.zeMemCloseIpcHandle(ze_provider->context, ptr);
+    if (ze_result != ZE_RESULT_SUCCESS) {
+        LOG_ERR("zeMemCloseIpcHandle() failed.");
+        return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
+    }
+
+    return UMF_RESULT_SUCCESS;
+}
+
 static struct umf_memory_provider_ops_t UMF_LEVEL_ZERO_MEMORY_PROVIDER_OPS = {
     .version = UMF_VERSION_CURRENT,
     .initialize = ze_memory_provider_initialize,
@@ -270,6 +397,11 @@ static struct umf_memory_provider_ops_t UMF_LEVEL_ZERO_MEMORY_PROVIDER_OPS = {
     .ext.purge_force = ze_memory_provider_purge_force,
     .ext.allocation_merge = ze_memory_provider_allocation_merge,
     .ext.allocation_split = ze_memory_provider_allocation_split,
+    .ipc.get_ipc_handle_size = ze_memory_provider_get_ipc_handle_size,
+    .ipc.get_ipc_handle = ze_memory_provider_get_ipc_handle,
+    .ipc.put_ipc_handle = ze_memory_provider_put_ipc_handle,
+    .ipc.open_ipc_handle = ze_memory_provider_open_ipc_handle,
+    .ipc.close_ipc_handle = ze_memory_provider_close_ipc_handle,
 };
 
 umf_memory_provider_ops_t *umfLevelZeroMemoryProviderOps(void) {
