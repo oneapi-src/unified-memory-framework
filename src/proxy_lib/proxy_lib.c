@@ -13,8 +13,18 @@
  * - calloc()
  * - free()
  * - malloc()
- * - malloc_usable_size()
+ * - malloc_usable_size() for Linux or _msize() for Windows
  * - realloc()
+ *
+ * Additionally for Windows only:
+ * - _aligned_malloc()
+ * - _aligned_realloc()
+ * - _aligned_recalloc()
+ * - _aligned_msize()
+ * - _aligned_free()
+ * - _aligned_offset_malloc()
+ * - _aligned_offset_realloc()
+ * - _aligned_offset_recalloc()
  */
 
 #if (defined PROXY_LIB_USES_JEMALLOC_POOL)
@@ -254,13 +264,6 @@ void free(void *ptr) {
     return;
 }
 
-#ifdef _WIN32
-void _free_dbg(void *userData, int blockType) {
-    (void)blockType; // unused
-    free(userData);
-}
-#endif
-
 void *realloc(void *ptr, size_t size) {
     if (ptr == NULL) {
         return malloc(size);
@@ -318,3 +321,60 @@ size_t malloc_usable_size(void *ptr) {
 
     return 0; // unsupported in this case
 }
+
+// Add Microsoft aligned variants
+#ifdef _WIN32
+
+void *_aligned_malloc(size_t size, size_t alignment) {
+    return aligned_alloc(alignment, size);
+}
+
+void *_aligned_realloc(void *ptr, size_t size, size_t alignment) {
+    if (alignment == 0) {
+        return realloc(ptr, size);
+    }
+    return NULL; // not supported in this case
+}
+
+void *_aligned_recalloc(void *ptr, size_t num, size_t size, size_t alignment) {
+    (void)ptr;       // unused
+    (void)num;       // unused
+    (void)size;      // unused
+    (void)alignment; // unused
+    return NULL;     // not supported
+}
+
+size_t _aligned_msize(void *ptr, size_t alignment, size_t offset) {
+    (void)alignment; // unused
+    (void)offset;    // unused
+    return _msize(ptr);
+}
+
+void _aligned_free(void *ptr) { free(ptr); }
+
+void *_aligned_offset_malloc(size_t size, size_t alignment, size_t offset) {
+    if (offset == 0) {
+        return aligned_alloc(alignment, size);
+    }
+    return NULL; // not supported in this case
+}
+
+void *_aligned_offset_realloc(void *ptr, size_t size, size_t alignment,
+                              size_t offset) {
+    if (alignment == 0 && offset == 0) {
+        return realloc(ptr, size);
+    }
+    return NULL; // not supported in this case
+}
+
+void *_aligned_offset_recalloc(void *ptr, size_t num, size_t size,
+                               size_t alignment, size_t offset) {
+    (void)ptr;       // unused
+    (void)num;       // unused
+    (void)size;      // unused
+    (void)alignment; // unused
+    (void)offset;    // unused
+    return NULL;     // not supported
+}
+
+#endif
