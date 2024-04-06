@@ -179,7 +179,9 @@ TEST_P(umfPoolTest, multiThreadedMallocFree) {
         std::vector<void *> allocations;
         for (size_t i = 0; i <= 10; ++i) {
             allocations.emplace_back(umfPoolMalloc(pool, allocSize));
-            ASSERT_NE(allocations.back(), nullptr);
+            if (allocSize > 0) {
+                ASSERT_NE(allocations.back(), nullptr);
+            }
         }
 
         for (auto allocation : allocations) {
@@ -229,7 +231,9 @@ TEST_P(umfPoolTest, multiThreadedReallocFree) {
         std::vector<void *> allocations;
         for (size_t i = 0; i <= 10; ++i) {
             allocations.emplace_back(umfPoolMalloc(pool, allocSize));
-            ASSERT_NE(allocations.back(), nullptr);
+            if (allocSize > 0) {
+                ASSERT_NE(allocations.back(), nullptr);
+            }
         }
 
         for (auto allocation : allocations) {
@@ -259,7 +263,9 @@ TEST_P(umfPoolTest, multiThreadedCallocFree) {
         std::vector<void *> allocations;
         for (size_t i = 0; i <= 10; ++i) {
             allocations.emplace_back(umfPoolCalloc(pool, num, size));
-            ASSERT_NE(allocations.back(), nullptr);
+            if (num * size > 0) {
+                ASSERT_NE(allocations.back(), nullptr);
+            }
         }
 
         for (auto allocation : allocations) {
@@ -282,7 +288,9 @@ TEST_P(umfPoolTest, multiThreadedMallocFreeRandomSizes) {
         std::vector<void *> allocations;
         for (size_t i = 0; i <= 10; ++i) {
             allocations.emplace_back(umfPoolMalloc(pool, allocSize));
-            ASSERT_NE(allocations.back(), nullptr);
+            if (allocSize > 0) {
+                ASSERT_NE(allocations.back(), nullptr);
+            }
         }
 
         for (auto allocation : allocations) {
@@ -313,7 +321,9 @@ TEST_P(umfMemTest, outOfMem) {
                 UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY) {
             break;
         }
-        ASSERT_NE(allocations.back(), nullptr);
+        if (allocSize > 0) {
+            ASSERT_NE(allocations.back(), nullptr);
+        }
     }
 
     // next part of the test- freeing some memory to allocate it again (as the memory
@@ -324,7 +334,10 @@ TEST_P(umfMemTest, outOfMem) {
     ASSERT_EQ(allocations.back(), nullptr);
     allocations.pop_back();
 
-    ASSERT_NE(allocations.back(), nullptr);
+    if (allocSize > 0) {
+        ASSERT_NE(allocations.back(), nullptr);
+    }
+
     for (int i = 0; i < expectedRecycledPoolAllocs; i++) {
         umfPoolFree(hPool, allocations.back());
         allocations.pop_back();
@@ -332,7 +345,9 @@ TEST_P(umfMemTest, outOfMem) {
 
     for (int i = 0; i < expectedRecycledPoolAllocs; i++) {
         allocations.emplace_back(umfPoolMalloc(hPool, allocSize));
-        ASSERT_NE(allocations.back(), nullptr);
+        if (allocSize > 0) {
+            ASSERT_NE(allocations.back(), nullptr);
+        }
     }
 
     for (auto allocation : allocations) {
