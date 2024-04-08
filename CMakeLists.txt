@@ -224,7 +224,7 @@ if(UMF_PROXY_LIB_BASED_ON_POOL STREQUAL SCALABLE)
     if(UMF_BUILD_LIBUMF_POOL_SCALABLE)
         set(UMF_PROXY_LIB_ENABLED ON)
         set(PROXY_LIB_USES_SCALABLE_POOL ON)
-        set(PROXY_LIBS umf scalable_pool)
+        set(PROXY_LIBS scalable_pool umf)
     else()
         message(
             STATUS
@@ -235,7 +235,7 @@ elseif(UMF_PROXY_LIB_BASED_ON_POOL STREQUAL JEMALLOC)
     if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
         set(UMF_PROXY_LIB_ENABLED ON)
         set(PROXY_LIB_USES_JEMALLOC_POOL ON)
-        set(PROXY_LIBS umf jemalloc_pool)
+        set(PROXY_LIBS jemalloc_pool umf)
     else()
         message(
             STATUS
@@ -262,6 +262,17 @@ endif()
 if(UMF_BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif()
+
+# Conditional configuration for Level Zero provider
+if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
+    set(OPTIONAL_SYMBOLS "umfLevelZeroMemoryProviderOps")
+else()
+    set(OPTIONAL_SYMBOLS "")
+endif()
+
+# Configure the DEF file based on whether Level Zero provider is built
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/libumf.def.in"
+               "${CMAKE_CURRENT_BINARY_DIR}/src/libumf.def" @ONLY)
 
 if(UMF_FORMAT_CODE_STYLE)
     find_program(CLANG_FORMAT NAMES clang-format-15 clang-format-15.0

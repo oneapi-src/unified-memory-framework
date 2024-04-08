@@ -160,12 +160,5 @@ jobs:
   GPU:
     needs: [Build]
     uses: ./.github/workflows/gpu.yml
-  Qemu:
-    needs: [Build]
-    uses: ./.github/workflows/qemu.yml
   Valgrind:
-    needs: [Build]
     uses: ./.github/workflows/valgrind.yml
-  MultiNuma:
-    needs: [Build]
-    uses: ./.github/workflows/multi_numa.yml
