@@ -27,3 +27,14 @@ cleans up and exits with an error status.
 * Level Zero headers and libraries
 * compatible GPU with installed driver
 * set UMF_BUILD_GPU_EXAMPLES, UMF_BUILD_LIBUMF_POOL_DISJOINT and UMF_BUILD_LEVEL_ZERO_PROVIDER CMake configuration flags to ON
+
+## IPC example with Level Zero memory provider
+This example demonstrates how to use UMF IPC API. The example creates two
+memory pools of Level Zero device memory: the producer pool (where the buffer
+is allocated) and the consumer pool (where the IPC handle is mapped). To run
+and build this example Level Zero development package should be installed.
+
+### Requirements
+* Level Zero headers and libraries
+* compatible GPU with installed driver
+* set UMF_BUILD_GPU_EXAMPLES, UMF_BUILD_LIBUMF_POOL_DISJOINT, UMF_BUILD_LEVEL_ZERO_PROVIDER and UMF_ENABLE_POOL_TRACKING CMake configuration flags to ON

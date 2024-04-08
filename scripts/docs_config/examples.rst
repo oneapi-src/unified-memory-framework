@@ -127,8 +127,86 @@ in the UMF repository.
 
 TODO
 
+IPC example with Level Zero Memory Provider
+==============================================================================
+The full code of the example is in the `examples/basic/ipc_level_zero.c`_ file in the UMF repository.
+The example demonstrates how to use UMF :ref:`IPC API <ipc-api>`. For demonstration purpose the example uses
+Level Zero memory provider to instantiate a pool. But the same flow will work with any memory provider that
+supports IPC capabilities.
+
+Here we omit describing how memory pools are created as its orthogonal to the IPC API usage. For more information
+on how to create memory pools refer to the previous examples. Also for simplification, our example is single process
+while :ref:`IPC API <ipc-api>` targeted for interprocess communication when IPC handle is created by one process
+to be used in another process.
+
+To use :ref:`IPC API <ipc-api>` the `umf/ipc.h`_ header should be included.
+
+.. code-block:: c
+
+   #include <umf/ipc.h>
+
+To get IPC handle for the memory allocated by UMF the :any:`umfGetIPCHandle` function should be used.
+
+.. code-block:: c
+
+    umf_ipc_handle_t ipc_handle = NULL;
+    size_t handle_size = 0;
+    umf_result_t umf_result = umfGetIPCHandle(initial_buf, &ipc_handle, &handle_size);
+
+The :any:`umfGetIPCHandle` function requires only the memory pointer as an input parameter and internally determines
+the memory pool to which the memory region belongs. While in our example the :any:`umfPoolMalloc` function is called
+a few lines before the :any:`umfGetIPCHandle` function is called, in a real application, memory might be allocated even
+by a different library and the caller of the :any:`umfGetIPCHandle` function may not know the corresponding memory pool.
+
+The :any:`umfGetIPCHandle` function returns the IPC handle and its size. The IPC handle is a byte-copyable opaque
+data structure. The :any:`umf_ipc_handle_t` type is defined as a pointer to a byte array. The size of the handle
+might be different for different memory provider types. The code snippet below demonstrates how the IPC handle can
+be serialized for marshalling purposes.
+
+.. code-block:: c
+
+    // Serialize IPC handle
+    void *serialized_ipc_handle = malloc(handle_size);
+    memcpy(serialized_ipc_handle, (void*)ipc_handle, handle_size);
+
+.. note::
+    The method of sending the IPC handle between processes is not defined by the UMF.
+
+When the IPC handle is transferred
+to another process it can be opened by the :any:`umfOpenIPCHandle` function.
+
+.. code-block:: c
+
+    void *mapped_buf = NULL;
+    umf_result = umfOpenIPCHandle(consumer_pool, ipc_handle, &mapped_buf);
+
+The :any:`umfOpenIPCHandle` function requires the memory pool handle and the IPC handle as input parameters. It mapps
+the handle to the current process address space and returns the pointer to the same memory region that was allocated
+in the producer process.
+
+.. note::
+    The virtual addresses of the memory region referred to by the IPC handle may not be the same in the producer and consumer processes.
+
+To release IPC handle on the producer side the :any:`umfPutIPCHandle` function should be used.
+
+.. code-block:: c
+
+    umf_result = umfPutIPCHandle(ipc_handle);
+
+To close IPC handle on the consumer side the :any:`umfCloseIPCHandle` function should be used.
+
+.. code-block:: c
+
+    umf_result = umfCloseIPCHandle(mapped_buf);
+
+The :any:`umfPutIPCHandle` function on the producer side might be called even before the :any:`umfCloseIPCHandle`
+function is called on the consumer side. The memory mappings on the consumer side remains valid until
+the :any:`umfCloseIPCHandle` function is called.
+
 .. _examples/basic/basic.c: https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/basic/basic.c
 .. _examples/basic/gpu_shared_memory.c: https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/basic/gpu_shared_memory.c
+.. _examples/basic/ipc_level_zero.c: https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/basic/ipc_level_zero.c
 .. _README: https://github.com/oneapi-src/unified-memory-framework/blob/main/README.md#memory-pool-managers
+.. _umf/ipc.h: https://github.com/oneapi-src/unified-memory-framework/blob/main/include/umf/ipc.h
 .. _provider_os_memory.h: https://github.com/oneapi-src/unified-memory-framework/blob/main/include/umf/providers/provider_os_memory.h
 .. _pool_scalable.h: https://github.com/oneapi-src/unified-memory-framework/blob/main/include/umf/pools/pool_scalable.h

@@ -436,9 +436,10 @@ endif()
 install(FILES ${CMAKE_SOURCE_DIR}/LICENSE.TXT
         DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/doc/${PROJECT_NAME}/")
 
-install(FILES examples/basic/gpu_shared_memory.c
-              examples/basic/utils_level_zero.h examples/basic/basic.c
-        DESTINATION "${CMAKE_INSTALL_DOCDIR}/examples")
+install(
+    FILES examples/basic/gpu_shared_memory.c examples/basic/utils_level_zero.h
+          examples/basic/basic.c examples/basic/ipc_level_zero.c
+    DESTINATION "${CMAKE_INSTALL_DOCDIR}/examples")
 
 # Add the include directory and the headers target to the install.
 install(DIRECTORY "${PROJECT_SOURCE_DIR}/include/"
