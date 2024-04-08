@@ -240,6 +240,8 @@ if(UMF_PROXY_LIB_ENABLED AND UMF_BUILD_SHARED_LIBRARY)
         SRCS memoryPoolAPI.cpp malloc_compliance_tests.cpp
         LIBS umf_proxy
         CFGS ${CONFIGS})
+    target_compile_definitions(umf_test-proxy_lib_memoryPool
+                               PUBLIC UMF_PROXY_LIB_ENABLED=1)
 endif()
 
 if(UMF_ENABLE_POOL_TRACKING)

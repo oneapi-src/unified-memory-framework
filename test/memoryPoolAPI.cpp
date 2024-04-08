@@ -14,6 +14,10 @@
 #include <umf/memory_provider.h>
 #include <umf/pools/pool_proxy.h>
 
+#ifdef UMF_PROXY_LIB_ENABLED
+#include <umf/proxy_lib_new_delete.h>
+#endif
+
 #include <array>
 #include <string>
 #include <thread>
