@@ -586,17 +586,23 @@ static umf_result_t trackingOpenIpcHandle(void *provider, void *providerIpcData,
         (umf_tracking_memory_provider_t *)provider;
     umf_result_t ret = UMF_RESULT_SUCCESS;
 
+    if (p->hUpstream == NULL) {
+        LOG_ERR("tracking open ipc handle failed: no upstream provider");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     ret = umfMemoryProviderOpenIPCHandle(p->hUpstream, providerIpcData, ptr);
     if (ret != UMF_RESULT_SUCCESS) {
         return ret;
     }
     size_t bufferSize = getDataSizeFromIpcHandle(providerIpcData);
     ret = umfMemoryTrackerAdd(p->hTracker, p->pool, *ptr, bufferSize);
-    if (ret != UMF_RESULT_SUCCESS && p->hUpstream) {
+    if (ret != UMF_RESULT_SUCCESS) {
         if (umfMemoryProviderCloseIPCHandle(p->hUpstream, *ptr)) {
-            // TODO: LOG
+            LOG_ERR("failed to close IPC handle");
         }
     }
+
     return ret;
 }
 
