@@ -49,10 +49,10 @@ function(add_umf_test)
 
     set(TEST_LIBS
         test_common
-        umf
         ${ARG_LIBS}
         GTest::gtest_main
-        ${LIBS_OPTIONAL})
+        ${LIBS_OPTIONAL}
+        umf)
 
     add_umf_executable(
         NAME ${TEST_TARGET_NAME}
@@ -175,10 +175,7 @@ if(LINUX) # OS-specific functions are implemented only for Linux now
         LIBS ${UMF_UTILS_FOR_TEST} ${LIBNUMA_LIBRARIES})
 endif()
 
-# TODO add support for Windows
-if(UMF_BUILD_GPU_TESTS
-   AND UMF_BUILD_LEVEL_ZERO_PROVIDER
-   AND LINUX)
+if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
     # we have two test binaries here that use the same sources, but differ in
     # the way they are linked to the Level Zero (statically or at runtime using
     # dlopen)

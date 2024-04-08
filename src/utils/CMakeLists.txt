@@ -5,7 +5,7 @@
 include(${UMF_CMAKE_SOURCE_DIR}/cmake/helpers.cmake)
 include(FindThreads)
 
-set(UMF_UTILS_SOURCES_COMMON utils_common.c utils_log.c)
+set(UMF_UTILS_SOURCES_COMMON utils_common.c utils_log.c utils_load_library.c)
 
 set(UMF_UTILS_SOURCES_POSIX utils_posix_common.c utils_posix_concurrency.c
                             utils_posix_math.c)

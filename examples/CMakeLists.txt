@@ -8,7 +8,7 @@ if(UMF_BUILD_LIBUMF_POOL_SCALABLE)
     add_umf_executable(
         NAME ${EXAMPLE_NAME}
         SRCS basic/basic.c
-        LIBS umf scalable_pool)
+        LIBS scalable_pool umf)
 
     target_include_directories(
         ${EXAMPLE_NAME} PRIVATE ${UMF_CMAKE_SOURCE_DIR}/src/utils
@@ -37,14 +37,13 @@ endif()
 
 if(UMF_BUILD_GPU_EXAMPLES
    AND UMF_BUILD_LIBUMF_POOL_DISJOINT
-   AND UMF_BUILD_LEVEL_ZERO_PROVIDER
-   AND LINUX)
+   AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
     set(EXAMPLE_NAME umf_example_gpu_shared_memory)
 
     add_umf_executable(
         NAME ${EXAMPLE_NAME}
         SRCS basic/gpu_shared_memory.c
-        LIBS umf disjoint_pool ze_loader)
+        LIBS disjoint_pool ze_loader umf)
 
     target_include_directories(
         ${EXAMPLE_NAME}
@@ -73,15 +72,18 @@ else()
             "to be turned ON - skipping")
 endif()
 
+# TODO: it looks like there is some problem with IPC implementation in Level
+# Zero on windows
 if(UMF_BUILD_GPU_EXAMPLES
    AND UMF_BUILD_LIBUMF_POOL_DISJOINT
-   AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
+   AND UMF_BUILD_LEVEL_ZERO_PROVIDER
+   AND LINUX)
     set(EXAMPLE_NAME umf_example_ipc_level_zero)
 
     add_umf_executable(
         NAME ${EXAMPLE_NAME}
         SRCS basic/ipc_level_zero.c
-        LIBS umf disjoint_pool ze_loader)
+        LIBS disjoint_pool ze_loader umf)
 
     target_include_directories(
         ${EXAMPLE_NAME}
@@ -118,7 +120,7 @@ if(LINUX AND UMF_BUILD_LIBUMF_POOL_SCALABLE)
         add_umf_executable(
             NAME ${EX_NAME}
             SRCS basic/${BASE_NAME}_${loop_var}.c
-            LIBS umf scalable_pool)
+            LIBS scalable_pool umf)
 
         target_include_directories(
             ${EX_NAME} PRIVATE ${UMF_CMAKE_SOURCE_DIR}/src/utils

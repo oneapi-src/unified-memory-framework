@@ -151,7 +151,7 @@ If the shared memory mapping is used then an anonymous file descriptor for memor
 Required packages for tests (Linux-only yet):
    - libnuma-dev
 
-#### Level Zero memory provider (Linux-only yet)
+#### Level Zero memory provider
 
 A memory provider that provides memory from L0 device.
 
@@ -162,11 +162,10 @@ A memory provider that provides memory from L0 device.
 
 Additionally, required for tests:
 
-3) Linux OS
-4) The `UMF_BUILD_GPU_TESTS` option turned `ON`
-5) System with Level Zero compatible GPU
-6) Required packages:
-   - liblevel-zero-dev
+3) The `UMF_BUILD_GPU_TESTS` option turned `ON`
+4) System with Level Zero compatible GPU
+5) Required packages:
+   - liblevel-zero-dev (Linux) or level-zero-sdk (Windows)
 
 ### Memory pool managers
 

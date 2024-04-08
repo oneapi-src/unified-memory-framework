@@ -108,28 +108,29 @@ static int init_tbb_callbacks(tbb_callbacks_t *tbb_callbacks) {
     assert(tbb_callbacks);
 
     const char *lib_name = tbb_symbol[TBB_LIB_NAME];
-    tbb_callbacks->lib_handle = util_open_library(lib_name);
+    tbb_callbacks->lib_handle = util_open_library(lib_name, 0);
     if (!tbb_callbacks->lib_handle) {
         LOG_ERR("%s not found.", lib_name);
         return -1;
     }
 
     *(void **)&tbb_callbacks->pool_malloc = util_get_symbol_addr(
-        tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_MALLOC]);
+        tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_MALLOC], lib_name);
     *(void **)&tbb_callbacks->pool_realloc = util_get_symbol_addr(
-        tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_REALLOC]);
-    *(void **)&tbb_callbacks->pool_aligned_malloc = util_get_symbol_addr(
-        tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_ALIGNED_MALLOC]);
+        tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_REALLOC], lib_name);
+    *(void **)&tbb_callbacks->pool_aligned_malloc =
+        util_get_symbol_addr(tbb_callbacks->lib_handle,
+                             tbb_symbol[TBB_POOL_ALIGNED_MALLOC], lib_name);
     *(void **)&tbb_callbacks->pool_free = util_get_symbol_addr(
-        tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_FREE]);
+        tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_FREE], lib_name);
     *(void **)&tbb_callbacks->pool_create_v1 = util_get_symbol_addr(
-        tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_CREATE_V1]);
+        tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_CREATE_V1], lib_name);
     *(void **)&tbb_callbacks->pool_destroy = util_get_symbol_addr(
-        tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_DESTROY]);
+        tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_DESTROY], lib_name);
     *(void **)&tbb_callbacks->pool_identify = util_get_symbol_addr(
-        tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_IDENTIFY]);
+        tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_IDENTIFY], lib_name);
     *(void **)&tbb_callbacks->pool_msize = util_get_symbol_addr(
-        tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_MSIZE]);
+        tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_MSIZE], lib_name);
 
     if (!tbb_callbacks->pool_malloc || !tbb_callbacks->pool_realloc ||
         !tbb_callbacks->pool_aligned_malloc || !tbb_callbacks->pool_free ||

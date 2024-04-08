@@ -34,7 +34,7 @@ function(add_umf_benchmark)
 
     set(BENCH_NAME umf-bench-${ARG_NAME})
 
-    set(BENCH_LIBS umf ${ARG_LIBS})
+    set(BENCH_LIBS ${ARG_LIBS} umf)
 
     add_umf_executable(
         NAME ${BENCH_NAME}

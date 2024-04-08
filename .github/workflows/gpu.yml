@@ -9,32 +9,41 @@ permissions:
   contents: read
 
 jobs:
-  # TODO: add support for tests on Windows
   gpu:
     name: Build
+    env:
+      BUILD_TYPE: Release
+      VCPKG_PATH: "${{github.workspace}}/../../../../vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/../../../../vcpkg/packages/tbb_x64-windows;${{github.workspace}}/../../../../vcpkg/packages/jemalloc_x64-windows"
     # run only on upstream; forks will not have the HW
     if: github.repository == 'oneapi-src/unified-memory-framework'
-
     strategy:
       matrix:
-        build_type: [Release]
-        compiler: [{c: gcc, cxx: g++}]
         shared_library: ['ON', 'OFF']
-    # TODO enable testing on DSS-WINDOWS
-    runs-on:  [ "DSS-LEVEL_ZERO", "DSS-UBUNTU" ]
+        os: ['Ubuntu', 'Windows']
+        include:
+          - os: 'Ubuntu'
+            compiler: {c: gcc, cxx: g++}
+            number_of_processors: '$(nproc)'
+          - os: 'Windows'
+            compiler: {c: cl, cxx: cl}
+            number_of_processors: '$Env:NUMBER_OF_PROCESSORS'
 
+    runs-on: ["DSS-LEVEL_ZERO", "DSS-${{matrix.os}}"]
     steps:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - name: Get information about platform
+        if: matrix.os == 'Ubuntu'
         run: .github/scripts/get_system_info.sh
 
-      - name: Configure build
+      - name: Configure build for Win
+        if: matrix.os == 'Windows'
         run: >
           cmake
+          -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
           -B ${{github.workspace}}/build
-          -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+          -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
           -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
           -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
           -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
@@ -42,18 +51,40 @@ jobs:
           -DUMF_BUILD_TESTS=ON
           -DUMF_BUILD_GPU_TESTS=ON
           -DUMF_BUILD_GPU_EXAMPLES=ON
-          -DUMF_FORMAT_CODE_STYLE=ON
+          -DUMF_FORMAT_CODE_STYLE=OFF
           -DUMF_DEVELOPER_MODE=ON
           -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
+          -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
+          -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
+          -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
+      
+      - name: Configure build for Ubuntu
+        if: matrix.os == 'Ubuntu'
+        run: >
+          cmake
+          -B ${{github.workspace}}/build
+          -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+          -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
+          -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
+          -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
+          -DUMF_BUILD_BENCHMARKS=ON
+          -DUMF_BUILD_TESTS=ON
+          -DUMF_BUILD_GPU_TESTS=ON
+          -DUMF_BUILD_GPU_EXAMPLES=ON
+          -DUMF_FORMAT_CODE_STYLE=OFF
+          -DUMF_DEVELOPER_MODE=ON
+          -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
+          -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
+          -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
+          -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
 
       - name: Build UMF
-        run: cmake --build ${{github.workspace}}/build -j $(nproc)
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -j ${{matrix.number_of_processors}}
 
       - name: Run tests
         working-directory: ${{github.workspace}}/build
-        run: ctest --output-on-failure --test-dir test
+        run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure --test-dir test
 
       - name: Run examples
         working-directory: ${{github.workspace}}/build
-        run: ctest --output-on-failure --test-dir examples -C ${{matrix.build_type}}
-
+        run: ctest --output-on-failure --test-dir examples -C ${{env.BUILD_TYPE}}
