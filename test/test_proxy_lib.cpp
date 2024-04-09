@@ -11,6 +11,8 @@
 #include <malloc.h>
 #endif
 
+#include <umf/proxy_lib_new_delete.h>
+
 #include "base.hpp"
 #include "test_helpers.h"
 

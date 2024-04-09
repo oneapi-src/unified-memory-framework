@@ -199,6 +199,26 @@ using umfMemspaceHostAllGet.
 Memspace backed by all available NUMA nodes discovered on the platform sorted by capacity.
 Can be retrieved using umfMemspaceHighestCapacityGet.
 
+### Proxy library
+
+UMF provides the UMF proxy library (`umf_proxy`) that makes it possible
+to override the default allocator in other programs in both Linux and Windows.
+
+#### Linux
+
+In case of Linux it can be done without any code changes using the `LD_PRELOAD` environment variable:
+
+```sh
+$ LD_PRELOAD=/usr/lib/libumf_proxy.so myprogram
+```
+
+#### Windows
+
+In case of Windows it requires:
+1) explicitly linking your program dynamically with the `umf_proxy.dll` library
+2) (C++ code only) including `proxy_lib_new_delete.h` in a single(!) source file in your project
+   to override also the `new`/`delete` operations.
+
 ## Contributions
 
 All contributions to the UMF project are most welcome! Before submitting
