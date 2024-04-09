@@ -91,7 +91,7 @@ Memory Pools
 
 A memory pool consists of a pool allocator and a memory provider instancies 
 along with their properties and allocation policies. Memory pools are used by 
-the `allocation API`_ as a first argument. There is also a possibility to 
+the :ref:`allocation API <allocation API>` as a first argument. There is also a possibility to 
 retrieve a memory pool from an existing memory pointer that points to a memory 
 previously allocated by UMF.
 
@@ -134,6 +134,26 @@ An example of an environment variable for setting up logger with logging level s
 
   UMF_LOGL="level:warning;output:stdout"
 
+Inter-Process Communication
+===========================
+
+The :ref:`IPC API <ipc-api>` allows sharing of memory objects, allocated from UMF memory pools, across different processes. 
+Since each process has its own virtual address space, there is no guarantee that the same virtual address will be available when the memory object is shared in a new process. 
+There is a set of UMF APIs that makes it easier to share the memory objects with ease.
+
+The :ref:`IPC API <ipc-api>` is based on the concept of IPC handles. An IPC handle is an opaque data structure that is used as a unique identifier to share memory objects across different processes. 
+Memory providers are responsible for creating actual IPC handles. As a result, IPC handles are created by the memory provider per coarse grain allocations. 
+UMF implementation employs caching for IPC handles returned by the memory provider to avoid creating multiple handles for the same memory region. 
+When a client requests an IPC handle for a memory allocated by UMF, UMF does the following:
+
+#. finds the corresponding memory pool.
+
+#. finds corresponding coarse grain allocation (multiple fine grain allocations might reside in a coarse grain memory region returned by the memory provider).
+
+#. checks if the IPC handle for a coarse grain is already cached and returns the cached handle if it exists. Otherwise creates a new IPC handle for the coarse grain allocation.
+
+Not every memory provider can and must support IPC operations. It is up to the memory provider implementation to decide if it supports IPC operations. 
+If the corresponding memory provider does not support IPC operations, UMF will return an error when a client requests an IPC handle for a memory object allocated by this memory provider.
+
 .. _UMF: https://github.com/oneapi-src/unified-memory-framework
 .. _README.md: https://github.com/oneapi-src/unified-memory-framework/blob/main/README.md
-.. _allocation API: https://oneapi-src.github.io/unified-memory-framework/api.html#memory-pool
