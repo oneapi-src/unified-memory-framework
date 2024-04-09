@@ -25,7 +25,9 @@ option(UMF_BUILD_EXAMPLES "Build UMF examples" ON)
 option(UMF_ENABLE_POOL_TRACKING "Build UMF with pool tracking" ON)
 option(UMF_DEVELOPER_MODE "Enable developer checks, treats warnings as errors"
        OFF)
-option(UMF_FORMAT_CODE_STYLE "Format UMF code with clang-format" OFF)
+option(UMF_FORMAT_CODE_STYLE
+       "Add clang, cmake, and black -format-check and -format-apply targets"
+       OFF)
 option(USE_ASAN "Enable AddressSanitizer checks" OFF)
 option(USE_UBSAN "Enable UndefinedBehaviorSanitizer checks" OFF)
 option(USE_TSAN "Enable ThreadSanitizer checks" OFF)
@@ -255,13 +257,19 @@ if(UMF_FORMAT_CODE_STYLE)
     find_program(CLANG_FORMAT NAMES clang-format-15 clang-format-15.0
                                     clang-format)
     find_program(CMAKE_FORMAT NAMES cmake-format)
+    find_program(BLACK NAMES black)
 
-    if(NOT CLANG_FORMAT AND NOT CMAKE_FORMAT)
+    set(CLANG_FORMAT_REQUIRED "15.0")
+    set(CMAKE_FORMAT_REQUIRED "0.6")
+
+    if(NOT CLANG_FORMAT
+       AND NOT CMAKE_FORMAT
+       AND NOT BLACK)
         message(
             FATAL_ERROR
                 "UMF_FORMAT_CODE_STYLE=ON, but neither clang-format (required version: "
-                "${CLANG_FORMAT_REQUIRED}) nor cmake-format (required version: "
-                "${CMAKE_FORMAT_VERSION}) was found.")
+                "${CLANG_FORMAT_REQUIRED}), nor cmake-format (required version: "
+                "${CMAKE_FORMAT_REQUIRED}), nor black was found.")
     endif()
 
     if(CLANG_FORMAT)
@@ -271,7 +279,6 @@ if(UMF_FORMAT_CODE_STYLE)
 
         # Check if clang-format (in correct version) is available for code
         # formatting.
-        set(CLANG_FORMAT_REQUIRED "15.0")
         if(NOT (CLANG_FORMAT_VERSION VERSION_EQUAL CLANG_FORMAT_REQUIRED))
             message(FATAL_ERROR "Required clang-format version is "
                                 "${CLANG_FORMAT_REQUIRED}")
@@ -301,8 +308,8 @@ if(UMF_FORMAT_CODE_STYLE)
         file(GLOB_RECURSE format_list ${format_clang_glob})
 
         message(
-            STATUS "Adding 'clang-format-check' and 'clang-format-apply' make "
-                   "targets")
+            STATUS
+                "Adding 'clang-format-check' and 'clang-format-apply' targets")
 
         add_custom_target(
             clang-format-check
@@ -312,7 +319,7 @@ if(UMF_FORMAT_CODE_STYLE)
 
         add_custom_target(
             clang-format-apply
-            COMMAND ${CLANG_FORMAT} --style=file --i ${format_list}
+            COMMAND ${CLANG_FORMAT} --style=file -i ${format_list}
             COMMENT "Format files using clang-format")
     endif()
 
@@ -323,7 +330,6 @@ if(UMF_FORMAT_CODE_STYLE)
 
         # Check if cmake-format (in correct version) is available for cmake
         # files formatting.
-        set(CMAKE_FORMAT_REQUIRED "0.6")
         if(NOT (CMAKE_FORMAT_VERSION VERSION_EQUAL CMAKE_FORMAT_REQUIRED))
             message(FATAL_ERROR "Required cmake-format version is"
                                 "${CMAKE_FORMAT_REQUIRED}")
@@ -351,8 +357,8 @@ if(UMF_FORMAT_CODE_STYLE)
         list(APPEND format_cmake_list "${PROJECT_SOURCE_DIR}/CMakeLists.txt")
 
         message(
-            STATUS "Adding 'cmake-format-check' and 'cmake-format-apply' make "
-                   "targets")
+            STATUS
+                "Adding 'cmake-format-check' and 'cmake-format-apply' targets")
 
         add_custom_target(
             cmake-format-check
@@ -365,16 +371,41 @@ if(UMF_FORMAT_CODE_STYLE)
             COMMENT "Format Cmake files using cmake-format")
     endif()
 
-    # Add a convenience target for running both tools at once - available only
-    # if both are found.
-    if(CLANG_FORMAT AND CMAKE_FORMAT)
+    if(BLACK)
+        # black should maintain backward compatibility, we don't have to require
+        # a specific version
+        get_program_version_major_minor(${BLACK} BLACK_VERSION)
+        message(STATUS "Found black: ${BLACK} (version: ${BLACK_VERSION})")
+
+        message(
+            STATUS
+                "Adding 'black-format-check' and 'black-format-apply' targets")
+
+        add_custom_target(
+            black-format-check
+            COMMAND ${BLACK} --check --verbose ${CMAKE_SOURCE_DIR}
+            COMMENT "Check Python files formatting using black formatter")
+
+        add_custom_target(
+            black-format-apply
+            COMMAND ${BLACK} ${CMAKE_SOURCE_DIR}
+            COMMENT "Format Python files using black formatter")
+    endif()
+
+    # Add a convenience target for running all tools at once - available only if
+    # all are found.
+    if(CLANG_FORMAT
+       AND CMAKE_FORMAT
+       AND BLACK)
         add_custom_target(
             format-check
             COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target
                     clang-format-check
             COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target
                     cmake-format-check
-            COMMENT "Running both clang-format-check and cmake-format-check")
+            COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target
+                    black-format-check
+            COMMENT "Running all formatting checks")
 
         add_custom_target(
             format-apply
@@ -382,11 +413,17 @@ if(UMF_FORMAT_CODE_STYLE)
                     clang-format-apply
             COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target
                     cmake-format-apply
-            COMMENT "Format files using clang-format and cmake-format")
+            COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target
+                    black-format-apply
+            COMMENT "Format C/C++, CMake, and Python files")
+        message(
+            STATUS
+                "  Adding convenience targets 'format-check' and 'format-apply'."
+        )
     else()
         message(
             STATUS
-                "  Convenience targets 'make format-check' and 'make format-apply' are "
+                "  Convenience targets 'format-check' and 'format-apply' are "
                 "not available. Use commands specific for found tools (see the log above)."
         )
     endif()

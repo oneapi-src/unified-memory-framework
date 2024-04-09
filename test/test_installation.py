@@ -9,7 +9,7 @@ import argparse
 import difflib
 from pathlib import Path
 import platform
-import subprocess   # nosec B404
+import subprocess  # nosec B404
 import sys
 from typing import List
 
@@ -61,7 +61,7 @@ class UmfInstaller:
             lib_ext_static = "a"
             lib_ext_shared = "so"
             lib_prefix = "lib"
-        else: # MacOS
+        else:  # MacOS
             lib_ext_static = "a"
             lib_ext_shared = "dylib"
             lib_prefix = "lib"
@@ -138,7 +138,7 @@ class UmfInstaller:
 
         install_cmd = f"cmake --install {self.build_dir} --config {self.build_type.title()} --prefix {self.install_dir}"
         try:
-            subprocess.run(install_cmd.split()).check_returncode()      # nosec B603
+            subprocess.run(install_cmd.split()).check_returncode()  # nosec B603
         except subprocess.CalledProcessError:
             sys.exit(f"Error: UMF installation command '{install_cmd}' failed")
 
@@ -175,7 +175,7 @@ class UmfInstaller:
         """
         uninstall_cmd = f"cmake --build {self.build_dir} --target uninstall"
         try:
-            subprocess.run(uninstall_cmd.split()).check_returncode()    # nosec B603
+            subprocess.run(uninstall_cmd.split()).check_returncode()  # nosec B603
         except subprocess.CalledProcessError:
             sys.exit(f"Error: UMF uninstallation command '{uninstall_cmd}' failed")
 
