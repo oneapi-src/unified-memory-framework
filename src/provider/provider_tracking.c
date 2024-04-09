@@ -147,9 +147,7 @@ static umf_result_t trackingAlloc(void *hProvider, size_t size,
         (umf_tracking_memory_provider_t *)hProvider;
     umf_result_t ret = UMF_RESULT_SUCCESS;
 
-    if (!p->hUpstream) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
+    assert(p->hUpstream);
 
     ret = umfMemoryProviderAlloc(p->hUpstream, size, alignment, ptr);
     if (ret != UMF_RESULT_SUCCESS || !*ptr) {
@@ -372,6 +370,11 @@ static umf_result_t trackingInitialize(void *params, void **ret) {
     }
 
     *provider = *((umf_tracking_memory_provider_t *)params);
+    if (provider->hUpstream == NULL || provider->hTracker == NULL ||
+        provider->pool == NULL || provider->ipcCache == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     *ret = provider;
     return UMF_RESULT_SUCCESS;
 }
@@ -586,13 +589,15 @@ static umf_result_t trackingOpenIpcHandle(void *provider, void *providerIpcData,
         (umf_tracking_memory_provider_t *)provider;
     umf_result_t ret = UMF_RESULT_SUCCESS;
 
+    assert(p->hUpstream);
+
     ret = umfMemoryProviderOpenIPCHandle(p->hUpstream, providerIpcData, ptr);
     if (ret != UMF_RESULT_SUCCESS) {
         return ret;
     }
     size_t bufferSize = getDataSizeFromIpcHandle(providerIpcData);
     ret = umfMemoryTrackerAdd(p->hTracker, p->pool, *ptr, bufferSize);
-    if (ret != UMF_RESULT_SUCCESS && p->hUpstream) {
+    if (ret != UMF_RESULT_SUCCESS) {
         if (umfMemoryProviderCloseIPCHandle(p->hUpstream, *ptr)) {
             // TODO: LOG
         }
