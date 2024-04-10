@@ -42,8 +42,10 @@ function(add_umf_benchmark)
         LIBS ${BENCH_LIBS})
 
     target_include_directories(
-        ${BENCH_NAME} PRIVATE ${UMF_CMAKE_SOURCE_DIR}/include
-                              ${UMF_CMAKE_SOURCE_DIR}/src/utils)
+        ${BENCH_NAME}
+        PRIVATE ${UMF_CMAKE_SOURCE_DIR}/include
+                ${UMF_CMAKE_SOURCE_DIR}/src/utils
+                ${UMF_CMAKE_SOURCE_DIR}/test/common)
 
     target_link_directories(${BENCH_NAME} PRIVATE ${ARG_LIBDIRS})
 

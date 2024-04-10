@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // This file contains tests for UMF pool API
 
+#include "multithread_helpers.hpp"
 #include "pool.hpp"
 #include "provider.hpp"
 
@@ -217,10 +218,10 @@ TEST_F(umfIpcTest, ConcurrentGetPutHandles) {
 
     std::array<std::vector<umf_ipc_handle_t>, NTHREADS> ipcHandles;
 
-    auto getHandlesFn = [&ipcHandles, &ptrs](size_t tid) {
-        // TODO: better to wait on the barrier here so that every thread
-        // starts at the same point. But std::barrier is available only
-        // starting from C++20
+    umf_test::syncthreads_barrier syncthreads(NTHREADS);
+
+    auto getHandlesFn = [&ipcHandles, &ptrs, &syncthreads](size_t tid) {
+        syncthreads();
         for (void *ptr : ptrs) {
             umf_ipc_handle_t ipcHandle;
             size_t handleSize;
@@ -230,31 +231,17 @@ TEST_F(umfIpcTest, ConcurrentGetPutHandles) {
         }
     };
 
-    std::vector<std::thread> threads;
-    for (int i = 0; i < NTHREADS; i++) {
-        threads.emplace_back(getHandlesFn, i);
-    }
+    umf_test::parallel_exec(NTHREADS, getHandlesFn);
 
-    for (auto &thread : threads) {
-        thread.join();
-    }
-    threads.clear();
-
-    auto putHandlesFn = [&ipcHandles](size_t tid) {
+    auto putHandlesFn = [&ipcHandles, &syncthreads](size_t tid) {
+        syncthreads();
         for (umf_ipc_handle_t ipcHandle : ipcHandles[tid]) {
             umf_result_t ret = umfPutIPCHandle(ipcHandle);
             EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
         }
     };
 
-    for (int i = 0; i < NTHREADS; i++) {
-        threads.emplace_back(putHandlesFn, i);
-    }
-
-    for (auto &thread : threads) {
-        thread.join();
-    }
-    threads.clear();
+    umf_test::parallel_exec(NTHREADS, putHandlesFn);
 
     for (void *ptr : ptrs) {
         umf_result_t ret = umfPoolFree(pool.get(), ptr);
@@ -287,10 +274,11 @@ TEST_F(umfIpcTest, ConcurrentOpenCloseHandles) {
 
     std::array<std::vector<void *>, NTHREADS> openedIpcHandles;
 
-    auto openHandlesFn = [this, &ipcHandles, &openedIpcHandles](size_t tid) {
-        // TODO: better to wait on the barrier here so that every thread
-        // starts at the same point. But std::barrier is available only
-        // starting from C++20
+    umf_test::syncthreads_barrier syncthreads(NTHREADS);
+
+    auto openHandlesFn = [this, &ipcHandles, &openedIpcHandles,
+                          &syncthreads](size_t tid) {
+        syncthreads();
         for (auto ipcHandle : ipcHandles) {
             void *ptr;
             umf_result_t ret = umfOpenIPCHandle(pool.get(), ipcHandle, &ptr);
@@ -299,31 +287,17 @@ TEST_F(umfIpcTest, ConcurrentOpenCloseHandles) {
         }
     };
 
-    std::vector<std::thread> threads;
-    for (int i = 0; i < NTHREADS; i++) {
-        threads.emplace_back(openHandlesFn, i);
-    }
+    umf_test::parallel_exec(NTHREADS, openHandlesFn);
 
-    for (auto &thread : threads) {
-        thread.join();
-    }
-    threads.clear();
-
-    auto closeHandlesFn = [&openedIpcHandles](size_t tid) {
+    auto closeHandlesFn = [&openedIpcHandles, &syncthreads](size_t tid) {
+        syncthreads();
         for (void *ptr : openedIpcHandles[tid]) {
             umf_result_t ret = umfCloseIPCHandle(ptr);
             EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
         }
     };
 
-    for (int i = 0; i < NTHREADS; i++) {
-        threads.emplace_back(closeHandlesFn, i);
-    }
-
-    for (auto &thread : threads) {
-        thread.join();
-    }
-    threads.clear();
+    umf_test::parallel_exec(NTHREADS, closeHandlesFn);
 
     for (auto ipcHandle : ipcHandles) {
         umf_result_t ret = umfPutIPCHandle(ipcHandle);
