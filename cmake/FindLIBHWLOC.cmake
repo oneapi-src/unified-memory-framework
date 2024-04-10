@@ -15,7 +15,7 @@ get_filename_component(LIBHWLOC_INCLUDE_DIR ${LIBHWLOC_HEADER} DIRECTORY)
 set(LIBHWLOC_INCLUDE_DIRS ${LIBHWLOC_INCLUDE_DIR})
 
 if(WINDOWS)
-    find_file(LIBHWLOC_DLL NAMES "bin/hwloc-15.dll" "bin/libhwloc-15.dll")
+    find_file(LIBHWLOC_DLL NAMES "bin/hwloc-*.dll" "bin/libhwloc-*.dll")
     get_filename_component(LIBHWLOC_DLL_DIR ${LIBHWLOC_DLL} DIRECTORY)
     set(LIBHWLOC_DLL_DIRS ${LIBHWLOC_DLL_DIR})
 endif()
