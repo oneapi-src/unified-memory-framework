@@ -22,18 +22,6 @@
 #include <umf/memory_provider_ops.h>
 #include <umf/providers/provider_os_memory.h>
 
-typedef struct umf_os_memory_provider_config_t {
-    unsigned protection; // combination of OS-specific protection flags
-
-    // NUMA config
-    unsigned long *nodemask;
-    unsigned long maxnode;
-    unsigned numa_mode;
-
-    // others
-    int traces; // log level of debug traces
-} umf_os_memory_provider_config_t;
-
 #define NODESET_STR_BUF_LEN 1024
 
 typedef struct os_memory_provider_t {
