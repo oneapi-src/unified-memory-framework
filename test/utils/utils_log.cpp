@@ -476,6 +476,7 @@ TEST_F(test, plog_long_error) {
 #endif
     strerror_ret_static = 0;
     helper_test_plog(LOG_DEBUG, "%s", "example log");
+    strerr = NULL; // do not use tmp.c_str() beyond its scope
 }
 
 TEST_F(test, log_pmacros) {
