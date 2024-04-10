@@ -343,7 +343,7 @@ int critnib_insert(struct critnib *c, word key, void *value, int update) {
 
     struct critnib_node *n = c->root;
     if (!n) {
-        c->root = kn;
+        store(&c->root, kn);
 
         util_mutex_unlock(&c->mutex);
 
