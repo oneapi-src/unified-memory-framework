@@ -41,6 +41,7 @@ jobs:
           -DUMF_BUILD_BENCHMARKS=ON
           -DUMF_BUILD_TESTS=ON
           -DUMF_BUILD_GPU_TESTS=ON
+          -DUMF_BUILD_GPU_EXAMPLES=ON
           -DUMF_FORMAT_CODE_STYLE=ON
           -DUMF_DEVELOPER_MODE=ON
           -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
@@ -52,3 +53,8 @@ jobs:
       - name: Run tests
         working-directory: ${{github.workspace}}/build
         run: ctest --output-on-failure --test-dir test
+
+      - name: Run examples
+        working-directory: ${{github.workspace}}/build
+        run: ctest --output-on-failure --test-dir examples -C ${{matrix.build_type}}
+
