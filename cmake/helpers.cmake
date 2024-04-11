@@ -31,8 +31,7 @@ function(add_umf_target_compile_options name)
                     -Wpedantic
                     -Wempty-body
                     -Wunused-parameter
-                    $<$<CXX_COMPILER_ID:GNU>:-fdiagnostics-color=always>
-                    $<$<CXX_COMPILER_ID:Clang,AppleClang>:-fcolor-diagnostics>)
+                    $<$<CXX_COMPILER_ID:GNU>:-fdiagnostics-color=auto>)
         if(CMAKE_BUILD_TYPE STREQUAL "Release")
             target_compile_definitions(${name} PRIVATE -D_FORTIFY_SOURCE=2)
         endif()
