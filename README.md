@@ -30,7 +30,7 @@ using the Level Zero API and UMF Level Zero memory provider.
 ### Requirements
 
 Required packages:
-- libhwloc-dev (Linux) / hwloc (Windows)
+- libhwloc-dev >= 2.3.0 (Linux) / hwloc >= 2.3.0 (Windows)
 - C compiler
 - [CMake](https://cmake.org/) >= 3.14.0
 

@@ -170,9 +170,9 @@ if(WINDOWS)
     )
 endif()
 
-pkg_check_modules(LIBHWLOC hwloc)
+pkg_check_modules(LIBHWLOC hwloc>=2.3.0)
 if(NOT LIBHWLOC_FOUND)
-    find_package(LIBHWLOC REQUIRED hwloc)
+    find_package(LIBHWLOC 2.3.0 REQUIRED hwloc)
 endif()
 # add PATH to DLL on Windows
 set(DLL_PATH_LIST

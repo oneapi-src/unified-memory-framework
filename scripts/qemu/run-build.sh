@@ -10,7 +10,11 @@ repo=$1
 branch=$2
 
 echo password | sudo -Sk apt update
-echo password | sudo -Sk apt install -y git cmake gcc g++ numactl libnuma-dev libjemalloc-dev libtbb-dev libhwloc-dev
+echo password | sudo -Sk apt install -y git cmake gcc g++ numactl libnuma-dev libjemalloc-dev libtbb-dev
+
+# install packages required for building hwloc from source
+echo password | sudo -Sk apt install -y autoconf libtool
+source install_hwloc.sh
 
 numactl -H
 
