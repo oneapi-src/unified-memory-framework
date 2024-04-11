@@ -17,6 +17,8 @@ allocations memory allocations.
 UMF includes predefined pool allocators. UMF can also work with user-defined 
 pools which implement the memory pool API.
 
+.. _allocation API:
+
 Memory Pool
 ------------------------------------------
 
@@ -102,4 +104,18 @@ TODO: Add general information about memspaces.
 Memspace
 ------------------------------------------
 .. doxygenfile:: memspace.h
+    :sections: define enum typedef func var
+
+Inter-Process Communication
+==========================================
+
+IPC API allows retrieving IPC handles for the memory buffers allocated from 
+UMF memory pools. The memory provider used by the pool should support IPC 
+operations for this API to work. Otherwise IPC APIs return an error.
+
+.. _ipc-api:
+
+IPC API
+------------------------------------------
+.. doxygenfile:: ipc.h
     :sections: define enum typedef func var
