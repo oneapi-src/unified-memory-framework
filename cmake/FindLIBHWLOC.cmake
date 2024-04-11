@@ -55,7 +55,7 @@ if(LIBHWLOC_LIBRARY)
 
     if(LIBHWLOC_FIND_VERSION)
         if(NOT LIBHWLOC_VERSION)
-            message(WARNING "Failed to retrieve libhwloc version")
+            message(FATAL_ERROR "Failed to retrieve libhwloc version")
         elseif(NOT LIBHWLOC_VERSION VERSION_GREATER_EQUAL LIBHWLOC_FIND_VERSION)
             message(
                 FATAL_ERROR
