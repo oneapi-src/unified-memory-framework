@@ -81,14 +81,10 @@ static void os_store_last_native_error(int32_t native_error, int errno_value) {
     TLS_last_native_error.errno_value = errno_value;
 }
 
-static umf_result_t nodemask_to_hwloc_nodeset(const unsigned long *nodemask,
-                                              unsigned long maxnode,
+static umf_result_t nodemask_to_hwloc_nodeset(const unsigned *nodelist,
+                                              unsigned long listsize,
                                               hwloc_bitmap_t *out_nodeset) {
     if (out_nodeset == NULL) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
-    if (maxnode > UINT_MAX) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -97,13 +93,16 @@ static umf_result_t nodemask_to_hwloc_nodeset(const unsigned long *nodemask,
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    if (maxnode == 0 || nodemask == NULL) {
+    if (listsize == 0) {
         return UMF_RESULT_SUCCESS;
     }
 
-    unsigned bits_per_mask = sizeof(unsigned long) * 8;
-    hwloc_bitmap_from_ulongs(
-        *out_nodeset, (maxnode + bits_per_mask - 1) / bits_per_mask, nodemask);
+    for (unsigned long i = 0; i < listsize; i++) {
+        if (hwloc_bitmap_set(*out_nodeset, nodelist[i])) {
+            hwloc_bitmap_free(*out_nodeset);
+            return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+        }
+    }
 
     return UMF_RESULT_SUCCESS;
 }
@@ -193,7 +192,7 @@ static umf_result_t translate_params(umf_os_memory_provider_params_t *in_params,
     }
 
     // NUMA config
-    int emptyNodeset = (!in_params->maxnode || !in_params->nodemask);
+    int emptyNodeset = in_params->numa_list_len == 0;
     result = translate_numa_mode(in_params->numa_mode, emptyNodeset,
                                  &provider->numa_policy);
     if (result != UMF_RESULT_SUCCESS) {
@@ -203,8 +202,8 @@ static umf_result_t translate_params(umf_os_memory_provider_params_t *in_params,
 
     provider->numa_flags = getHwlocMembindFlags(in_params->numa_mode);
 
-    return nodemask_to_hwloc_nodeset(in_params->nodemask, in_params->maxnode,
-                                     &provider->nodeset);
+    return nodemask_to_hwloc_nodeset(
+        in_params->numa_list, in_params->numa_list_len, &provider->nodeset);
 }
 
 static umf_result_t os_initialize(void *params, void **provider) {

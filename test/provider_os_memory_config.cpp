@@ -155,8 +155,18 @@ TEST_P(providerConfigTestNumaMode, numa_modes) {
     if (params.numa_mode != UMF_NUMA_MODE_DEFAULT &&
         params.numa_mode != UMF_NUMA_MODE_LOCAL) {
         allowed_nodes = numa_get_mems_allowed();
-        params.nodemask = allowed_nodes->maskp;
-        params.maxnode = allowed_nodes->size;
+        // convert bitmask to array of nodes
+        params.numa_list_len = numa_bitmask_weight(allowed_nodes);
+        params.numa_list = (unsigned *)malloc(params.numa_list_len *
+                                              sizeof(*params.numa_list));
+        ASSERT_NE(params.numa_list, nullptr);
+        unsigned count = 0;
+        for (unsigned i = 0; i < params.numa_list_len; i++) {
+            if (numa_bitmask_isbitset(allowed_nodes, i)) {
+                params.numa_list[count++] = i;
+            }
+        }
+        ASSERT_EQ(count, params.numa_list_len);
     }
 
     create_provider(&params);
@@ -182,9 +192,10 @@ TEST_P(providerConfigTestNumaMode, numa_modes) {
         // MPOL_PREFERRED_* is equivalent to MPOL_LOCAL if no node is set
         if (actual_mode == MPOL_PREFERRED ||
             actual_mode == MPOL_PREFERRED_MANY) {
-            ASSERT_EQ(params.maxnode, 0);
+            ASSERT_EQ(params.numa_list_len, 0);
         } else {
             ASSERT_EQ(actual_mode, MPOL_LOCAL);
         }
     }
+    free(params.numa_list);
 }
