@@ -108,25 +108,29 @@ static umf_result_t nodemask_to_hwloc_nodeset(const unsigned long *nodemask,
     return UMF_RESULT_SUCCESS;
 }
 
-int os_translate_flags(unsigned in_flags, unsigned max,
-                       int (*translate_flag)(unsigned)) {
-    unsigned out_flags = 0;
+umf_result_t os_translate_flags(unsigned in_flags, unsigned max,
+                                umf_result_t (*translate_flag)(unsigned,
+                                                               unsigned *),
+                                unsigned *out_flags) {
+    unsigned out_f = 0;
     for (unsigned n = 1; n < max; n <<= 1) {
         if (in_flags & n) {
-            int f = translate_flag(n);
-            if (f < 0) {
-                return -1;
+            unsigned flag;
+            umf_result_t result = translate_flag(n, &flag);
+            if (result != UMF_RESULT_SUCCESS) {
+                return result;
             }
-            out_flags |= (unsigned)f;
+            out_f |= flag;
             in_flags &= ~n; // clear this bit
         }
     }
 
     if (in_flags != 0) {
-        return -1;
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    return out_flags;
+    *out_flags = out_f;
+    return UMF_RESULT_SUCCESS;
 }
 
 static hwloc_membind_policy_t translate_numa_mode(umf_numa_mode_t mode,
@@ -174,14 +178,15 @@ static int getHwlocMembindFlags(umf_numa_mode_t mode) {
 
 static umf_result_t translate_params(umf_os_memory_provider_params_t *in_params,
                                      os_memory_provider_t *provider) {
+    umf_result_t result;
     int ret;
 
-    ret = os_translate_mem_protection_flags(in_params->protection);
-    if (ret < 0) {
+    result = os_translate_mem_protection_flags(in_params->protection,
+                                               &provider->protection);
+    if (result != UMF_RESULT_SUCCESS) {
         LOG_ERR("incorrect memory protection flags: %u", in_params->protection);
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        return result;
     }
-    provider->protection = ret;
 
     // NUMA config
     int emptyNodeset = (!in_params->maxnode || !in_params->nodemask);

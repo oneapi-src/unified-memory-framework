@@ -20,30 +20,38 @@
 static UTIL_ONCE_FLAG Page_size_is_initialized = UTIL_ONCE_FLAG_INIT;
 static size_t Page_size;
 
-int os_translate_mem_protection_flags(unsigned protection) {
-    switch (protection) {
+umf_result_t os_translate_mem_protection_flags(unsigned in_protection,
+                                               unsigned *out_protection) {
+    switch (in_protection) {
     case UMF_PROTECTION_NONE:
-        return PAGE_NOACCESS;
+        *out_protection = PAGE_NOACCESS;
+        return UMF_RESULT_SUCCESS;
     case UMF_PROTECTION_EXEC:
-        return PAGE_EXECUTE;
+        *out_protection = PAGE_EXECUTE;
+        return UMF_RESULT_SUCCESS;
     case (UMF_PROTECTION_EXEC | UMF_PROTECTION_READ):
-        return PAGE_EXECUTE_READ;
+        *out_protection = PAGE_EXECUTE_READ;
+        return UMF_RESULT_SUCCESS;
     case (UMF_PROTECTION_EXEC | UMF_PROTECTION_READ | UMF_PROTECTION_WRITE):
-        return PAGE_EXECUTE_READWRITE;
+        *out_protection = PAGE_EXECUTE_READWRITE;
+        return UMF_RESULT_SUCCESS;
     case (UMF_PROTECTION_EXEC | UMF_PROTECTION_WRITE):
-        return PAGE_EXECUTE_WRITECOPY;
+        *out_protection = PAGE_EXECUTE_WRITECOPY;
+        return UMF_RESULT_SUCCESS;
     case UMF_PROTECTION_READ:
-        return PAGE_READONLY;
+        *out_protection = PAGE_READONLY;
+        return UMF_RESULT_SUCCESS;
     case (UMF_PROTECTION_READ | UMF_PROTECTION_WRITE):
-        return PAGE_READWRITE;
+        *out_protection = PAGE_READWRITE;
+        return UMF_RESULT_SUCCESS;
     case UMF_PROTECTION_WRITE:
-        return PAGE_WRITECOPY;
+        *out_protection = PAGE_WRITECOPY;
+        return UMF_RESULT_SUCCESS;
     }
     LOG_ERR("os_translate_mem_protection_flags(): unsupported protection flag: "
             "%u",
-            protection);
-    assert(0);
-    return -1;
+            in_protection);
+    return UMF_RESULT_ERROR_INVALID_ARGUMENT;
 }
 
 void *os_mmap(void *hint_addr, size_t length, int prot) {
