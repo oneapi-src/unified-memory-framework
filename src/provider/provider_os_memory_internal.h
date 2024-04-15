@@ -20,10 +20,13 @@ typedef enum umf_purge_advise_t {
     UMF_PURGE_FORCE,
 } umf_purge_advise_t;
 
-int os_translate_flags(unsigned in_flags, unsigned max,
-                       int (*translate_flag)(unsigned));
+umf_result_t os_translate_flags(unsigned in_flags, unsigned max,
+                                umf_result_t (*translate_flag)(unsigned,
+                                                               unsigned *),
+                                unsigned *out_flags);
 
-int os_translate_mem_protection_flags(unsigned protection);
+umf_result_t os_translate_mem_protection_flags(unsigned in_protection,
+                                               unsigned *out_protection);
 
 void *os_mmap(void *hint_addr, size_t length, int prot);
 

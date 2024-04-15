@@ -13,25 +13,31 @@
 #include "provider_os_memory_internal.h"
 #include <umf/providers/provider_os_memory.h>
 
-static int os_translate_mem_protection_one_flag(unsigned protection) {
-    switch (protection) {
+umf_result_t os_translate_mem_protection_one_flag(unsigned in_protection,
+                                                  unsigned *out_protection) {
+    switch (in_protection) {
     case UMF_PROTECTION_NONE:
-        return PROT_NONE;
+        *out_protection = PROT_NONE;
+        return UMF_RESULT_SUCCESS;
     case UMF_PROTECTION_READ:
-        return PROT_READ;
+        *out_protection = PROT_READ;
+        return UMF_RESULT_SUCCESS;
     case UMF_PROTECTION_WRITE:
-        return PROT_WRITE;
+        *out_protection = PROT_WRITE;
+        return UMF_RESULT_SUCCESS;
     case UMF_PROTECTION_EXEC:
-        return PROT_EXEC;
+        *out_protection = PROT_EXEC;
+        return UMF_RESULT_SUCCESS;
     }
-    assert(0);
-    return -1;
+    return UMF_RESULT_ERROR_INVALID_ARGUMENT;
 }
 
-int os_translate_mem_protection_flags(unsigned protection_flags) {
+umf_result_t os_translate_mem_protection_flags(unsigned in_protection,
+                                               unsigned *out_protection) {
     // translate protection - combination of 'umf_mem_protection_flags_t' flags
-    return os_translate_flags(protection_flags, UMF_PROTECTION_MAX,
-                              os_translate_mem_protection_one_flag);
+    return os_translate_flags(in_protection, UMF_PROTECTION_MAX,
+                              os_translate_mem_protection_one_flag,
+                              out_protection);
 }
 
 static int os_translate_purge_advise(umf_purge_advise_t advise) {
