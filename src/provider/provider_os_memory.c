@@ -133,37 +133,42 @@ umf_result_t os_translate_flags(unsigned in_flags, unsigned max,
     return UMF_RESULT_SUCCESS;
 }
 
-static hwloc_membind_policy_t translate_numa_mode(umf_numa_mode_t mode,
-                                                  int nodemaskEmpty) {
+static umf_result_t translate_numa_mode(umf_numa_mode_t mode, int nodemaskEmpty,
+                                        hwloc_membind_policy_t *numa_policy) {
     switch (mode) {
     case UMF_NUMA_MODE_DEFAULT:
         if (!nodemaskEmpty) {
             // nodeset must be empty
-            return -1;
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
         }
-        return HWLOC_MEMBIND_DEFAULT;
+        *numa_policy = HWLOC_MEMBIND_DEFAULT;
+        return UMF_RESULT_SUCCESS;
     case UMF_NUMA_MODE_BIND:
         if (nodemaskEmpty) {
             // nodeset must not be empty
-            return -1;
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
         }
-        return HWLOC_MEMBIND_BIND;
+        *numa_policy = HWLOC_MEMBIND_BIND;
+        return UMF_RESULT_SUCCESS;
     case UMF_NUMA_MODE_INTERLEAVE:
         if (nodemaskEmpty) {
             // nodeset must not be empty
-            return -1;
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
         }
-        return HWLOC_MEMBIND_INTERLEAVE;
+        *numa_policy = HWLOC_MEMBIND_INTERLEAVE;
+        return UMF_RESULT_SUCCESS;
     case UMF_NUMA_MODE_PREFERRED:
-        return HWLOC_MEMBIND_BIND;
+        *numa_policy = HWLOC_MEMBIND_BIND;
+        return UMF_RESULT_SUCCESS;
     case UMF_NUMA_MODE_LOCAL:
         if (!nodemaskEmpty) {
             // nodeset must be empty
-            return -1;
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
         }
-        return HWLOC_MEMBIND_BIND;
+        *numa_policy = HWLOC_MEMBIND_BIND;
+        return UMF_RESULT_SUCCESS;
     }
-    return -1;
+    return UMF_RESULT_ERROR_INVALID_ARGUMENT;
 }
 
 static int getHwlocMembindFlags(umf_numa_mode_t mode) {
@@ -179,7 +184,6 @@ static int getHwlocMembindFlags(umf_numa_mode_t mode) {
 static umf_result_t translate_params(umf_os_memory_provider_params_t *in_params,
                                      os_memory_provider_t *provider) {
     umf_result_t result;
-    int ret;
 
     result = os_translate_mem_protection_flags(in_params->protection,
                                                &provider->protection);
@@ -190,12 +194,13 @@ static umf_result_t translate_params(umf_os_memory_provider_params_t *in_params,
 
     // NUMA config
     int emptyNodeset = (!in_params->maxnode || !in_params->nodemask);
-    ret = translate_numa_mode(in_params->numa_mode, emptyNodeset);
-    if (ret < 0) {
+    result = translate_numa_mode(in_params->numa_mode, emptyNodeset,
+                                 &provider->numa_policy);
+    if (result != UMF_RESULT_SUCCESS) {
         LOG_ERR("incorrect NUMA mode: %u", in_params->numa_mode);
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        return result;
     }
-    provider->numa_policy = ret;
+
     provider->numa_flags = getHwlocMembindFlags(in_params->numa_mode);
 
     return nodemask_to_hwloc_nodeset(in_params->nodemask, in_params->maxnode,
