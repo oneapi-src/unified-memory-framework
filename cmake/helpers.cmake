@@ -28,6 +28,8 @@ function(add_umf_target_compile_options name)
             ${name}
             PRIVATE -fPIC
                     -Wall
+                    -Wsign-compare
+                    -Wconversion
                     -Wpedantic
                     -Wempty-body
                     -Wunused-parameter

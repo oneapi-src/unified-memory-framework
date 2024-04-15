@@ -16,5 +16,5 @@
 size_t getLeftmostSetBitPos(size_t num) {
     assert(num != 0 &&
            "Finding leftmost set bit when number equals zero is undefined");
-    return (sizeof(num) * CHAR_BIT - 1) - __builtin_clzll(num);
+    return (sizeof(num) * CHAR_BIT - 1) - (size_t)__builtin_clzll(num);
 }

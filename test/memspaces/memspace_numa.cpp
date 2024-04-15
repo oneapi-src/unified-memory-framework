@@ -12,7 +12,7 @@
 TEST_F(numaNodesTest, createDestroy) {
     umf_memspace_handle_t hMemspace = nullptr;
     enum umf_result_t ret = umfMemspaceCreateFromNumaArray(
-        nodeIds.data(), nodeIds.size(), &hMemspace);
+        nodeIds.data(), (unsigned)nodeIds.size(), &hMemspace);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
     ASSERT_NE(hMemspace, nullptr);
 
@@ -35,8 +35,8 @@ TEST_F(numaNodesTest, createInvalidZeroSize) {
 }
 
 TEST_F(numaNodesTest, createInvalidNullHandle) {
-    enum umf_result_t ret =
-        umfMemspaceCreateFromNumaArray(nodeIds.data(), nodeIds.size(), nullptr);
+    enum umf_result_t ret = umfMemspaceCreateFromNumaArray(
+        nodeIds.data(), (unsigned)nodeIds.size(), nullptr);
     ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 }
 

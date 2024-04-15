@@ -20,7 +20,7 @@ std::vector<int> get_available_numa_nodes_numbers() {
 
     std::vector<int> available_numa_nodes_numbers;
     // Get all available NUMA nodes numbers.
-    for (size_t i = 0; i < (size_t)numa_max_node() + 1; ++i) {
+    for (unsigned i = 0; i < (unsigned)numa_max_node() + 1; ++i) {
         if (numa_bitmask_isbitset(numa_all_nodes_ptr, i) == 1) {
             available_numa_nodes_numbers.emplace_back(i);
         }

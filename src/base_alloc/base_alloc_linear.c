@@ -277,7 +277,8 @@ size_t umf_ba_linear_pool_contains_pointer(umf_ba_linear_pool_t *pool,
     char *cptr = (char *)ptr;
     if (cptr >= pool->data &&
         cptr < ((char *)(pool)) + pool->metadata.pool_size) {
-        size_t size = ((char *)(pool)) + pool->metadata.pool_size - cptr;
+        size_t size =
+            (uintptr_t)(pool) + pool->metadata.pool_size - (uintptr_t)cptr;
         util_mutex_unlock(&pool->metadata.lock);
         return size;
     }
@@ -286,7 +287,8 @@ size_t umf_ba_linear_pool_contains_pointer(umf_ba_linear_pool_t *pool,
     while (next_pool) {
         if (cptr >= next_pool->data &&
             cptr < ((char *)(next_pool)) + next_pool->pool_size) {
-            size_t size = ((char *)(next_pool)) + next_pool->pool_size - cptr;
+            size_t size = ((uintptr_t)(next_pool)) + next_pool->pool_size -
+                          (uintptr_t)cptr;
             util_mutex_unlock(&pool->metadata.lock);
             return size;
         }

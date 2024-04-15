@@ -37,7 +37,9 @@ void ba_os_free(void *ptr, size_t size) {
     (void)ret; // unused
 }
 
-static void _ba_os_init_page_size(void) { Page_size = sysconf(_SC_PAGE_SIZE); }
+static void _ba_os_init_page_size(void) {
+    Page_size = (size_t)sysconf(_SC_PAGE_SIZE);
+}
 
 size_t ba_os_get_page_size(void) {
     util_init_once(&Page_size_is_initialized, _ba_os_init_page_size);

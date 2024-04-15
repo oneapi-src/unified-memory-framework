@@ -34,13 +34,13 @@ static umf_result_t umfMemspaceHostAllCreate(umf_memspace_handle_t *hMemspace) {
     // Shouldn't return -1, as 'HWLOC_OBJ_NUMANODE' doesn't appear to be an
     // object that can be present on multiple levels.
     // Source: https://www.open-mpi.org/projects/hwloc/doc/hwloc-v2.10.0-letter.pdf
-    int nNodes = hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_NUMANODE);
-    if (nNodes < 0) {
+    int _nNodes = hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_NUMANODE);
+    if (_nNodes < 0) {
         umf_ret = UMF_RESULT_ERROR_UNKNOWN;
         goto err;
     }
-
-    size_t *nodeIds = umf_ba_global_alloc(nNodes * sizeof(size_t));
+    unsigned nNodes = (unsigned)_nNodes;
+    unsigned *nodeIds = umf_ba_global_alloc(nNodes * sizeof(*nodeIds));
     if (!nodeIds) {
         umf_ret = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
         goto err;
@@ -57,8 +57,7 @@ static umf_result_t umfMemspaceHostAllCreate(umf_memspace_handle_t *hMemspace) {
         nodeIds[nodeIdx++] = numaNodeObj->os_index;
     }
 
-    umf_ret =
-        umfMemspaceCreateFromNumaArray(nodeIds, (size_t)nNodes, hMemspace);
+    umf_ret = umfMemspaceCreateFromNumaArray(nodeIds, nNodes, hMemspace);
 
     umf_ba_global_free(nodeIds);
 

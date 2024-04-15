@@ -15,7 +15,7 @@
 #include "memspace_numa.h"
 
 enum umf_result_t
-umfMemspaceCreateFromNumaArray(size_t *nodeIds, size_t numIds,
+umfMemspaceCreateFromNumaArray(unsigned *nodeIds, unsigned numIds,
                                umf_memspace_handle_t *hMemspace) {
     if (!nodeIds || numIds == 0 || !hMemspace) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;

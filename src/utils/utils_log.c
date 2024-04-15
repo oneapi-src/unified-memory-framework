@@ -87,13 +87,13 @@ static void util_log_internal(util_log_level_t level, int perror,
 
     char buffer[LOG_MAX];
     char *b_pos = buffer;
-    int b_size = sizeof(buffer);
+    size_t b_size = sizeof(buffer);
 
     int tmp = vsnprintf(buffer, sizeof(buffer), format, args);
     ASSERT(tmp > 0);
 
-    b_pos += (int)tmp;
-    b_size -= (int)tmp;
+    b_pos += (unsigned)tmp;
+    b_size -= (unsigned)tmp;
 
     const char *postfix = "";
 
@@ -135,7 +135,7 @@ static void util_log_internal(util_log_level_t level, int perror,
             strncpy(b_pos, err, b_size);
             size_t err_size = strlen(err);
             b_pos += err_size;
-            b_size -= (int)err_size;
+            b_size -= err_size;
             if (b_size <= 0) {
                 buffer[LOG_MAX - 1] =
                     '\0'; //strncpy do not add \0 in case of overflow
@@ -152,7 +152,7 @@ static void util_log_internal(util_log_level_t level, int perror,
 
     char header[LOG_HEADER];
     char *h_pos = header;
-    int h_size = sizeof(header);
+    size_t h_size = sizeof(header);
     memset(header, 0, sizeof(header));
 
     if (loggerConfig.timestamp) {
@@ -165,17 +165,18 @@ static void util_log_internal(util_log_level_t level, int perror,
 #endif
 
         ASSERT(h_size > 0);
-        tmp = (int)strftime(h_pos, h_size, "%Y-%m-%dT%H:%M:%S ", &tm_info);
+        size_t tmp = strftime(h_pos, h_size, "%Y-%m-%dT%H:%M:%S ", &tm_info);
         h_pos += tmp;
         h_size -= tmp;
     }
 
     if (loggerConfig.pid) {
         ASSERT(h_size > 0);
-        tmp = snprintf(h_pos, h_size, "PID:%-6lu TID:%-6lu ",
-                       (unsigned long)pid, (unsigned long)tid);
-        h_pos += tmp;
-        h_size -= tmp;
+        int tmp = snprintf(h_pos, h_size, "PID:%-6lu TID:%-6lu ",
+                           (unsigned long)pid, (unsigned long)tid);
+        assert(tmp > 0);
+        h_pos += (unsigned)tmp;
+        h_size -= (unsigned)tmp;
     }
 
     // We take twice header size here to ensure that
@@ -227,7 +228,8 @@ void util_log_init(void) {
         size_t len = 0;
 
         if (argEnd) {
-            len = argEnd - arg;
+            assert(argEnd - arg >= 0);
+            len = (size_t)(argEnd - arg);
         } else {
             len = strlen(arg);
         }

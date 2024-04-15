@@ -103,7 +103,8 @@ static umf_result_t nodemask_to_hwloc_nodeset(const unsigned long *nodemask,
 
     unsigned bits_per_mask = sizeof(unsigned long) * 8;
     hwloc_bitmap_from_ulongs(
-        *out_nodeset, (maxnode + bits_per_mask - 1) / bits_per_mask, nodemask);
+        *out_nodeset, (unsigned)(maxnode + bits_per_mask - 1) / bits_per_mask,
+        nodemask);
 
     return UMF_RESULT_SUCCESS;
 }
@@ -412,7 +413,7 @@ static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    int protection = os_provider->protection;
+    int protection = (int)os_provider->protection;
 
     void *addr = NULL;
     errno = 0;

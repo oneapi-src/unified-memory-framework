@@ -28,7 +28,7 @@ struct numaNodesTest : ::umf_test::test {
             GTEST_FAIL() << "No available numa nodes";
         }
 
-        for (int i = 0; i <= maxNode; i++) {
+        for (unsigned i = 0; i <= (unsigned)maxNode; i++) {
             if (numa_bitmask_isbitset(numa_all_nodes_ptr, i)) {
                 nodeIds.emplace_back(i);
                 maxNodeId = i;
@@ -36,7 +36,7 @@ struct numaNodesTest : ::umf_test::test {
         }
     }
 
-    std::vector<size_t> nodeIds;
+    std::vector<unsigned> nodeIds;
     unsigned long maxNodeId = 0;
 };
 
@@ -45,7 +45,7 @@ struct memspaceNumaTest : ::numaNodesTest {
         ::numaNodesTest::SetUp();
 
         enum umf_result_t ret = umfMemspaceCreateFromNumaArray(
-            nodeIds.data(), nodeIds.size(), &hMemspace);
+            nodeIds.data(), (unsigned)nodeIds.size(), &hMemspace);
         ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
         ASSERT_NE(hMemspace, nullptr);
     }

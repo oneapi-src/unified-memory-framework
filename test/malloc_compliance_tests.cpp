@@ -67,9 +67,9 @@ void malloc_compliance_test(umf_memory_pool_handle_t hPool) {
         memset(alloc_ptr[i], i % 0xFF, alloc_ptr_size[i]);
     }
     for (int i = 0; i < ITERATIONS; i++) {
-        ASSERT_NE(
-            bufferIsFilledWithChar(alloc_ptr[i], alloc_ptr_size[i], i % 0xFF),
-            0)
+        ASSERT_NE(bufferIsFilledWithChar(alloc_ptr[i], alloc_ptr_size[i],
+                                         (char)(i % 0xFF)),
+                  0)
             << "Object returned by malloc is not disjoined from others";
         memset(alloc_ptr[i], 1, alloc_ptr_size[i]);
     }

@@ -24,7 +24,7 @@ extern "C" {
 /// \param hMemspace [out] handle to the newly created memspace
 /// \return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 ///
-umf_result_t umfMemspaceCreateFromNumaArray(size_t *nodeIds, size_t numIds,
+umf_result_t umfMemspaceCreateFromNumaArray(unsigned *nodeIds, unsigned numIds,
                                             umf_memspace_handle_t *hMemspace);
 
 #ifdef __cplusplus

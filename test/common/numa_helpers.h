@@ -19,8 +19,7 @@ extern "C" {
 // returns the node where page starting at 'ptr' resides
 int getNumaNodeByPtr(void *ptr) {
     int nodeId;
-    int retm =
-        get_mempolicy(&nodeId, nullptr, 0, ptr, MPOL_F_ADDR | MPOL_F_NODE);
+    long retm = get_mempolicy(&nodeId, 0, 0, ptr, MPOL_F_ADDR | MPOL_F_NODE);
     UT_ASSERTeq(retm, 0);
     return nodeId;
 }

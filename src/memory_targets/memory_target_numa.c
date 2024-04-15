@@ -21,7 +21,7 @@
 #include "topology.h"
 
 struct numa_memory_target_t {
-    size_t physical_id;
+    unsigned physical_id;
 };
 
 static umf_result_t numa_initialize(void *params, void **memTarget) {
@@ -66,19 +66,19 @@ numa_targets_create_nodemask(struct numa_memory_target_t **targets,
         }
     }
 
-    int lastBit = hwloc_bitmap_last(bitmap);
-    if (lastBit == -1) {
+    int _lastBit = hwloc_bitmap_last(bitmap);
+    if (_lastBit == -1) {
         // no node is set
         hwloc_bitmap_free(bitmap);
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
-
+    unsigned lastBit = (unsigned)_lastBit;
     *maxnode = lastBit + 1;
 
     // Do not use hwloc_bitmap_nr_ulongs due to:
     // https://github.com/open-mpi/hwloc/issues/429
     unsigned bits_per_long = sizeof(unsigned long) * 8;
-    int nrUlongs = (lastBit + bits_per_long) / bits_per_long;
+    unsigned nrUlongs = (lastBit + bits_per_long) / bits_per_long;
 
     *mask_size = sizeof(unsigned long) * nrUlongs;
 

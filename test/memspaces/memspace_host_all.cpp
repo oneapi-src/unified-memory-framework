@@ -69,15 +69,15 @@ TEST_F(memspaceHostAllProviderTest, allocFree) {
 static void getAllocationPolicy(void *ptr, unsigned long maxNodeId, int &mode,
                                 std::vector<size_t> &boundNodeIds,
                                 size_t &allocNodeId) {
-    const static unsigned bitsPerUlong = sizeof(unsigned long) * 8;
+    const static size_t bitsPerUlong = sizeof(unsigned long) * 8;
 
-    const unsigned nrUlongs = (maxNodeId + bitsPerUlong) / bitsPerUlong;
+    const size_t nrUlongs = (maxNodeId + bitsPerUlong) / bitsPerUlong;
     std::vector<unsigned long> memNodeMasks(nrUlongs, 0);
 
     int memMode = -1;
     // Get policy and the nodes associated with this policy.
-    int ret = get_mempolicy(&memMode, memNodeMasks.data(),
-                            nrUlongs * bitsPerUlong, ptr, MPOL_F_ADDR);
+    long ret = get_mempolicy(&memMode, memNodeMasks.data(),
+                             nrUlongs * bitsPerUlong, ptr, MPOL_F_ADDR);
     UT_ASSERTeq(ret, 0);
     mode = memMode;
 
