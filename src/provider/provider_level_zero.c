@@ -366,10 +366,11 @@ static umf_result_t ze_memory_provider_open_ipc_handle(void *provider,
     return UMF_RESULT_SUCCESS;
 }
 
-static umf_result_t ze_memory_provider_close_ipc_handle(void *provider,
-                                                        void *ptr) {
+static umf_result_t
+ze_memory_provider_close_ipc_handle(void *provider, void *ptr, size_t size) {
     ASSERT(provider != NULL);
     ASSERT(ptr != NULL);
+    (void)size;
     ze_result_t ze_result;
     struct ze_memory_provider_t *ze_provider =
         (struct ze_memory_provider_t *)provider;

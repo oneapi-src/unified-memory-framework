@@ -111,7 +111,8 @@ struct provider_mock_ipc : public umf_test::provider_base_t {
 
         return UMF_RESULT_SUCCESS;
     }
-    enum umf_result_t close_ipc_handle(void *ptr) noexcept {
+    enum umf_result_t close_ipc_handle(void *ptr, size_t size) noexcept {
+        (void)size;
         ++stat->closeCount;
         std::free(ptr);
         return UMF_RESULT_SUCCESS;

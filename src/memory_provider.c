@@ -90,9 +90,11 @@ static umf_result_t umfDefaultOpenIPCHandle(void *provider,
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
-static umf_result_t umfDefaultCloseIPCHandle(void *provider, void *ptr) {
+static umf_result_t umfDefaultCloseIPCHandle(void *provider, void *ptr,
+                                             size_t size) {
     (void)provider;
     (void)ptr;
+    (void)size;
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
@@ -356,6 +358,7 @@ umfMemoryProviderOpenIPCHandle(umf_memory_provider_handle_t hProvider,
 
 umf_result_t
 umfMemoryProviderCloseIPCHandle(umf_memory_provider_handle_t hProvider,
-                                void *ptr) {
-    return hProvider->ops.ipc.close_ipc_handle(hProvider->provider_priv, ptr);
+                                void *ptr, size_t size) {
+    return hProvider->ops.ipc.close_ipc_handle(hProvider->provider_priv, ptr,
+                                               size);
 }

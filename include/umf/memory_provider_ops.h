@@ -125,10 +125,11 @@ typedef struct umf_memory_provider_ipc_ops_t {
     /// @brief Closes an IPC memory handle.
     /// @param provider pointer to the memory provider.
     /// @param ptr pointer to the memory retrieved with open_ipc_handle function.
+    /// @param size size of the memory address range.
     /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
     ///         UMF_RESULT_ERROR_INVALID_ARGUMENT if invalid \p ptr is passed.
     ///         UMF_RESULT_ERROR_NOT_SUPPORTED if IPC functionality is not supported by this provider.
-    umf_result_t (*close_ipc_handle)(void *provider, void *ptr);
+    umf_result_t (*close_ipc_handle)(void *provider, void *ptr, size_t size);
 } umf_memory_provider_ipc_ops_t;
 
 ///

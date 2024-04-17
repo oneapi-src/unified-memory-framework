@@ -598,14 +598,15 @@ static umf_result_t trackingOpenIpcHandle(void *provider, void *providerIpcData,
     size_t bufferSize = getDataSizeFromIpcHandle(providerIpcData);
     ret = umfMemoryTrackerAdd(p->hTracker, p->pool, *ptr, bufferSize);
     if (ret != UMF_RESULT_SUCCESS) {
-        if (umfMemoryProviderCloseIPCHandle(p->hUpstream, *ptr)) {
+        if (umfMemoryProviderCloseIPCHandle(p->hUpstream, *ptr, bufferSize)) {
             // TODO: LOG
         }
     }
     return ret;
 }
 
-static umf_result_t trackingCloseIpcHandle(void *provider, void *ptr) {
+static umf_result_t trackingCloseIpcHandle(void *provider, void *ptr,
+                                           size_t size) {
     umf_tracking_memory_provider_t *p =
         (umf_tracking_memory_provider_t *)provider;
 
@@ -621,7 +622,7 @@ static umf_result_t trackingCloseIpcHandle(void *provider, void *ptr) {
             LOG_ERR("tracking free: umfMemoryTrackerRemove failed");
         }
     }
-    return umfMemoryProviderCloseIPCHandle(p->hUpstream, ptr);
+    return umfMemoryProviderCloseIPCHandle(p->hUpstream, ptr, size);
 }
 
 umf_memory_provider_ops_t UMF_TRACKING_MEMORY_PROVIDER_OPS = {
