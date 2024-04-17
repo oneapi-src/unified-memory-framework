@@ -113,5 +113,6 @@ umf_result_t umfCloseIPCHandle(void *ptr) {
     // upstream provider but we need tracking one
     umf_memory_provider_handle_t hProvider = allocInfo.pool->provider;
 
-    return umfMemoryProviderCloseIPCHandle(hProvider, allocInfo.base);
+    return umfMemoryProviderCloseIPCHandle(hProvider, allocInfo.base,
+                                           allocInfo.size);
 }

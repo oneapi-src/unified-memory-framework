@@ -90,7 +90,8 @@ typedef struct provider_base_t {
                                  [[maybe_unused]] void **ptr) noexcept {
         return UMF_RESULT_ERROR_UNKNOWN;
     }
-    umf_result_t close_ipc_handle([[maybe_unused]] void *ptr) noexcept {
+    umf_result_t close_ipc_handle([[maybe_unused]] void *ptr,
+                                  [[maybe_unused]] size_t size) noexcept {
         return UMF_RESULT_ERROR_UNKNOWN;
     }
 } provider_base_t;

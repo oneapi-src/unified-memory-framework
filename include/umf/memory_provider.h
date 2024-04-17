@@ -188,12 +188,13 @@ umfMemoryProviderOpenIPCHandle(umf_memory_provider_handle_t hProvider,
 /// @brief Close an IPC memory handle.
 /// @param hProvider [in] handle to the memory provider.
 /// @param ptr [in] pointer returned by umfMemoryProviderOpenIPCHandle function.
+/// @param size [in] size of the memory address range.
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 ///         UMF_RESULT_ERROR_INVALID_ARGUMENT if invalid \p hProvider or \p ptr are passed.
 ///         UMF_RESULT_ERROR_NOT_SUPPORTED if IPC functionality is not supported by this provider.
 umf_result_t
 umfMemoryProviderCloseIPCHandle(umf_memory_provider_handle_t hProvider,
-                                void *ptr);
+                                void *ptr, size_t size);
 
 ///
 /// @brief Retrieve name of a given memory \p hProvider.

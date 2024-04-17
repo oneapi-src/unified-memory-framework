@@ -122,9 +122,10 @@ static umf_result_t nullOpenIpcHandle(void *provider, void *ipcHandle,
     return UMF_RESULT_SUCCESS;
 }
 
-static umf_result_t nullCloseIpcHandle(void *provider, void *ptr) {
+static umf_result_t nullCloseIpcHandle(void *provider, void *ptr, size_t size) {
     (void)provider;
     (void)ptr;
+    (void)size;
     return UMF_RESULT_SUCCESS;
 }
 
