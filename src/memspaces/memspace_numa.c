@@ -23,15 +23,14 @@ umfMemspaceCreateFromNumaArray(size_t *nodeIds, size_t numIds,
 
     enum umf_result_t ret = UMF_RESULT_SUCCESS;
     umf_memspace_handle_t memspace =
-        (struct umf_memspace_t *)umf_ba_global_alloc(
-            sizeof(struct umf_memspace_t));
+        umf_ba_global_alloc(sizeof(struct umf_memspace_t));
     if (!memspace) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
     memspace->size = numIds;
-    memspace->nodes = (umf_memory_target_handle_t *)umf_ba_global_alloc(
-        memspace->size * sizeof(umf_memory_target_handle_t));
+    memspace->nodes = umf_ba_global_alloc(memspace->size *
+                                          sizeof(umf_memory_target_handle_t));
     if (!memspace->nodes) {
         ret = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
         goto err_nodes_alloc;

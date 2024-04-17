@@ -218,8 +218,7 @@ static umf_result_t os_initialize(void *params, void **provider) {
         (umf_os_memory_provider_params_t *)params;
 
     os_memory_provider_t *os_provider =
-        (os_memory_provider_t *)umf_ba_global_alloc(
-            sizeof(os_memory_provider_t));
+        umf_ba_global_alloc(sizeof(os_memory_provider_t));
     if (!os_provider) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }

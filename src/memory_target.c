@@ -25,7 +25,7 @@ umf_result_t umfMemoryTargetCreate(const umf_memory_target_ops_t *ops,
     }
 
     umf_memory_target_handle_t target =
-        (umf_memory_target_t *)umf_ba_global_alloc(sizeof(umf_memory_target_t));
+        umf_ba_global_alloc(sizeof(umf_memory_target_t));
     if (!target) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
@@ -59,8 +59,7 @@ umf_result_t umfMemoryTargetClone(umf_memory_target_handle_t memoryTarget,
     assert(memoryTarget);
     assert(outHandle);
 
-    *outHandle =
-        (umf_memory_target_t *)umf_ba_global_alloc(sizeof(umf_memory_target_t));
+    *outHandle = umf_ba_global_alloc(sizeof(umf_memory_target_t));
     if (!*outHandle) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
