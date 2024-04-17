@@ -40,6 +40,13 @@ jobs:
           exit-code: 1  # Fail if issue found
           # file with suppressions: .trivyignore (in root dir)
 
+      - name: Print report and trivyignore file
+        run: |
+          echo "### Trivy ignore content:"
+          cat .trivyignore
+          echo "### Trivy report:"
+          cat trivy-results.sarif
+
       - name: Upload results
         uses: github/codeql-action/upload-sarif@e8893c57a1f3a2b659b6b55564fdfdbbd2982911 # v3.24.0
         with:
