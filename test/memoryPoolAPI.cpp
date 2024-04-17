@@ -41,20 +41,28 @@ struct umfPoolWithCreateFlagsTest
 };
 
 TEST_P(umfPoolWithCreateFlagsTest, memoryPoolTrace) {
-    static std::unordered_map<std::string, size_t> poolCalls;
-    static std::unordered_map<std::string, size_t> providerCalls;
-    auto tracePool = [](const char *name) { poolCalls[name]++; };
-    auto traceProvider = [](const char *name) { providerCalls[name]++; };
+    using calls_type = std::unordered_map<std::string, size_t>;
+    calls_type poolCalls;
+    calls_type providerCalls;
+    auto tracePool = [](void *handler, const char *name) {
+        auto &poolCalls = *static_cast<calls_type *>(handler);
+        ++poolCalls[name];
+    };
+    auto traceProvider = [](void *handler, const char *name) {
+        auto &providerCalls = *static_cast<calls_type *>(handler);
+        ++providerCalls[name];
+    };
 
-    auto nullProvider = umf_test::wrapProviderUnique(nullProviderCreate());
-    auto provider = traceProviderCreate(nullProvider.get(), traceProvider);
+    auto nullProvider = nullProviderCreate();
+    auto provider =
+        traceProviderCreate(nullProvider, true, &providerCalls, traceProvider);
 
     auto proxyPool = wrapPoolUnique(
         createPoolChecked(umfProxyPoolOps(), provider, nullptr, flags));
 
     auto providerDesc = umf_test::wrapProviderUnique(nullProviderCreate());
-    auto tracingPool = umf_test::wrapPoolUnique(
-        tracePoolCreate(proxyPool.get(), providerDesc.get(), tracePool));
+    auto tracingPool = umf_test::wrapPoolUnique(tracePoolCreate(
+        proxyPool.get(), providerDesc.get(), &poolCalls, tracePool));
 
     poolCalls.clear();
     providerCalls.clear();

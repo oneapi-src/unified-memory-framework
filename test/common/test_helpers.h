@@ -13,6 +13,8 @@
 #include <umf/memory_pool.h>
 #include <umf/memory_provider_ops.h>
 
+#include "provider_trace.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -84,12 +86,13 @@ umf_memory_provider_handle_t nullProviderCreate(void);
 
 umf_memory_provider_handle_t
 traceProviderCreate(umf_memory_provider_handle_t hUpstreamProvider,
-                    void (*trace)(const char *));
+                    bool own_upstream, void *trace_context,
+                    trace_handler_t trace_handler);
 
 umf_memory_pool_handle_t
 tracePoolCreate(umf_memory_pool_handle_t hUpstreamPool,
-                umf_memory_provider_handle_t providerDesc,
-                void (*trace)(const char *));
+                umf_memory_provider_handle_t providerDesc, void *trace_context,
+                trace_handler_t trace_handler);
 
 #ifdef __cplusplus
 }

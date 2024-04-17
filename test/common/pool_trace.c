@@ -8,13 +8,8 @@
 #include "pool_trace.h"
 #include <umf/memory_pool_ops.h>
 
-typedef struct umf_pool_trace_params_priv {
-    umf_memory_pool_handle_t hUpstreamPool;
-    void (*trace)(const char *);
-} umf_pool_trace_params_priv_t;
-
 typedef struct trace_pool {
-    umf_pool_trace_params_priv_t params;
+    umf_pool_trace_params_t params;
 } trace_pool_t;
 
 static umf_result_t traceInitialize(umf_memory_provider_handle_t provider,
@@ -26,7 +21,8 @@ static umf_result_t traceInitialize(umf_memory_provider_handle_t provider,
 
     umf_pool_trace_params_t *pub_params = params;
     trace_pool->params.hUpstreamPool = pub_params->hUpstreamPool;
-    trace_pool->params.trace = pub_params->trace;
+    trace_pool->params.trace_context = pub_params->trace_context;
+    trace_pool->params.trace_handler = pub_params->trace_handler;
 
     (void)provider;
     assert(provider);
@@ -40,28 +36,32 @@ static void traceFinalize(void *pool) { free(pool); }
 static void *traceMalloc(void *pool, size_t size) {
     trace_pool_t *trace_pool = (trace_pool_t *)pool;
 
-    trace_pool->params.trace("malloc");
+    trace_pool->params.trace_handler(trace_pool->params.trace_context,
+                                     "malloc");
     return umfPoolMalloc(trace_pool->params.hUpstreamPool, size);
 }
 
 static void *traceCalloc(void *pool, size_t num, size_t size) {
     trace_pool_t *trace_pool = (trace_pool_t *)pool;
 
-    trace_pool->params.trace("calloc");
+    trace_pool->params.trace_handler(trace_pool->params.trace_context,
+                                     "calloc");
     return umfPoolCalloc(trace_pool->params.hUpstreamPool, num, size);
 }
 
 static void *traceRealloc(void *pool, void *ptr, size_t size) {
     trace_pool_t *trace_pool = (trace_pool_t *)pool;
 
-    trace_pool->params.trace("realloc");
+    trace_pool->params.trace_handler(trace_pool->params.trace_context,
+                                     "realloc");
     return umfPoolRealloc(trace_pool->params.hUpstreamPool, ptr, size);
 }
 
 static void *traceAlignedMalloc(void *pool, size_t size, size_t alignment) {
     trace_pool_t *trace_pool = (trace_pool_t *)pool;
 
-    trace_pool->params.trace("aligned_malloc");
+    trace_pool->params.trace_handler(trace_pool->params.trace_context,
+                                     "aligned_malloc");
     return umfPoolAlignedMalloc(trace_pool->params.hUpstreamPool, size,
                                 alignment);
 }
@@ -69,21 +69,23 @@ static void *traceAlignedMalloc(void *pool, size_t size, size_t alignment) {
 static size_t traceMallocUsableSize(void *pool, void *ptr) {
     trace_pool_t *trace_pool = (trace_pool_t *)pool;
 
-    trace_pool->params.trace("malloc_usable_size");
+    trace_pool->params.trace_handler(trace_pool->params.trace_context,
+                                     "malloc_usable_size");
     return umfPoolMallocUsableSize(trace_pool->params.hUpstreamPool, ptr);
 }
 
 static umf_result_t traceFree(void *pool, void *ptr) {
     trace_pool_t *trace_pool = (trace_pool_t *)pool;
 
-    trace_pool->params.trace("free");
+    trace_pool->params.trace_handler(trace_pool->params.trace_context, "free");
     return umfPoolFree(trace_pool->params.hUpstreamPool, ptr);
 }
 
 static umf_result_t traceGetLastStatus(void *pool) {
     trace_pool_t *trace_pool = (trace_pool_t *)pool;
 
-    trace_pool->params.trace("get_last_native_error");
+    trace_pool->params.trace_handler(trace_pool->params.trace_context,
+                                     "get_last_native_error");
     return umfPoolGetLastAllocationError(trace_pool->params.hUpstreamPool);
 }
 
