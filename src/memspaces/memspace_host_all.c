@@ -40,7 +40,7 @@ static umf_result_t umfMemspaceHostAllCreate(umf_memspace_handle_t *hMemspace) {
         goto err;
     }
 
-    size_t *nodeIds = umf_ba_global_alloc(nNodes * sizeof(size_t));
+    unsigned *nodeIds = umf_ba_global_alloc(nNodes * sizeof(*nodeIds));
     if (!nodeIds) {
         umf_ret = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
         goto err;

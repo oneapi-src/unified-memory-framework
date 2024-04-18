@@ -128,16 +128,16 @@ static void test_alloc_failure(umf_memory_provider_handle_t provider,
 // negative tests for umfMemoryProviderCreate()
 
 static umf_result_t create_os_provider_with_mode(umf_numa_mode_t mode,
-                                                 unsigned long *nodemask,
-                                                 unsigned long maxnode) {
+                                                 unsigned *node_list,
+                                                 unsigned node_list_size) {
     umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = nullptr;
     umf_os_memory_provider_params_t os_memory_provider_params =
         umfOsMemoryProviderParamsDefault();
 
     os_memory_provider_params.numa_mode = mode;
-    os_memory_provider_params.nodemask = nodemask;
-    os_memory_provider_params.maxnode = maxnode;
+    os_memory_provider_params.numa_list = node_list;
+    os_memory_provider_params.numa_list_len = node_list_size;
 
     umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(),
                                          &os_memory_provider_params,
@@ -152,18 +152,18 @@ static umf_result_t create_os_provider_with_mode(umf_numa_mode_t mode,
     return umf_result;
 }
 
-static unsigned long valid_nodemask = 0x1;
-static unsigned long valid_maxnode = 2;
+static unsigned valid_list = 0x1;
+static unsigned long valid_list_len = 1;
 
 TEST_F(test, create_WRONG_NUMA_MODE_DEFAULT) {
-    auto ret = create_os_provider_with_mode(UMF_NUMA_MODE_DEFAULT,
-                                            &valid_nodemask, valid_maxnode);
+    auto ret = create_os_provider_with_mode(UMF_NUMA_MODE_DEFAULT, &valid_list,
+                                            valid_list_len);
     ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 }
 
 TEST_F(test, create_WRONG_NUMA_MODE_LOCAL) {
-    auto ret = create_os_provider_with_mode(UMF_NUMA_MODE_LOCAL,
-                                            &valid_nodemask, valid_maxnode);
+    auto ret = create_os_provider_with_mode(UMF_NUMA_MODE_LOCAL, &valid_list,
+                                            valid_list_len);
     ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 }
 

@@ -36,7 +36,7 @@ struct numaNodesTest : ::umf_test::test {
         }
     }
 
-    std::vector<size_t> nodeIds;
+    std::vector<unsigned> nodeIds;
     unsigned long maxNodeId = 0;
 };
 

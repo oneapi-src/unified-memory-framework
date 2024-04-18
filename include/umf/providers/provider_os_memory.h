@@ -63,12 +63,12 @@ typedef struct umf_os_memory_provider_params_t {
     unsigned protection;
 
     // NUMA config
-    /// Points to a bit mask of nodes containing up to maxnode bits, depending on
-    /// selected numa_mode newly allocated memory will be bound to those nodes
-    unsigned long *nodemask;
-    /// Max number of bits in nodemask
-    unsigned long maxnode;
-    /// Describes how nodemask is interpreted
+    /// ordered list of numa nodes
+    unsigned *numa_list;
+    /// length of numa_list
+    unsigned numa_list_len;
+
+    /// Describes how node list is interpreted
     umf_numa_mode_t numa_mode;
 } umf_os_memory_provider_params_t;
 
@@ -91,8 +91,8 @@ static inline umf_os_memory_provider_params_t
 umfOsMemoryProviderParamsDefault(void) {
     umf_os_memory_provider_params_t params = {
         UMF_PROTECTION_READ | UMF_PROTECTION_WRITE, /* protection */
-        NULL,                                       /* nodemask */
-        0,                                          /* maxnode */
+        NULL,                                       /* numa_list */
+        0,                                          /* numa_list_len */
         UMF_NUMA_MODE_DEFAULT,                      /* numa_mode */
     };
 

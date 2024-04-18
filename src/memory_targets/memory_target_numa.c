@@ -21,7 +21,7 @@
 #include "topology.h"
 
 struct numa_memory_target_t {
-    size_t physical_id;
+    unsigned physical_id;
 };
 
 static umf_result_t numa_initialize(void *params, void **memTarget) {
@@ -45,77 +45,15 @@ static umf_result_t numa_initialize(void *params, void **memTarget) {
 
 static void numa_finalize(void *memTarget) { umf_ba_global_free(memTarget); }
 
-// sets maxnode and allocates and initializes mask based on provided memory targets
-static umf_result_t
-numa_targets_create_nodemask(struct numa_memory_target_t **targets,
-                             size_t numTargets, unsigned long **mask,
-                             unsigned *maxnode, size_t *mask_size) {
-    assert(targets);
-    assert(mask);
-    assert(maxnode);
-
-    hwloc_bitmap_t bitmap = hwloc_bitmap_alloc();
-    if (!bitmap) {
-        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-    }
-
-    for (size_t i = 0; i < numTargets; i++) {
-        if (hwloc_bitmap_set(bitmap, targets[i]->physical_id)) {
-            hwloc_bitmap_free(bitmap);
-            return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-        }
-    }
-
-    int lastBit = hwloc_bitmap_last(bitmap);
-    if (lastBit == -1) {
-        // no node is set
-        hwloc_bitmap_free(bitmap);
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
-    *maxnode = lastBit + 1;
-
-    // Do not use hwloc_bitmap_nr_ulongs due to:
-    // https://github.com/open-mpi/hwloc/issues/429
-    unsigned bits_per_long = sizeof(unsigned long) * 8;
-    int nrUlongs = (lastBit + bits_per_long) / bits_per_long;
-
-    *mask_size = sizeof(unsigned long) * nrUlongs;
-
-    unsigned long *nodemask = umf_ba_global_alloc(*mask_size);
-    if (!nodemask) {
-        hwloc_bitmap_free(bitmap);
-        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-    }
-
-    int ret = hwloc_bitmap_to_ulongs(bitmap, nrUlongs, nodemask);
-    hwloc_bitmap_free(bitmap);
-
-    if (ret) {
-        umf_ba_global_free(nodemask);
-        return UMF_RESULT_ERROR_UNKNOWN;
-    }
-
-    *mask = nodemask;
-
-    return UMF_RESULT_SUCCESS;
-}
-
-static enum umf_result_t numa_memory_provider_create_from_memspace(
+static umf_result_t numa_memory_provider_create_from_memspace(
     umf_memspace_handle_t memspace, void **memTargets, size_t numTargets,
     umf_memspace_policy_handle_t policy,
     umf_memory_provider_handle_t *provider) {
-    (void)memspace;
-    (void)numTargets;
     // TODO: apply policy
     (void)policy;
-
     struct numa_memory_target_t **numaTargets =
         (struct numa_memory_target_t **)memTargets;
 
-    unsigned long *nodemask;
-    unsigned maxnode;
-    size_t nodemask_size;
     size_t numNodesProvider;
 
     if (memspace == umfMemspaceHighestCapacityGet()) {
@@ -126,21 +64,31 @@ static enum umf_result_t numa_memory_provider_create_from_memspace(
         numNodesProvider = numTargets;
     }
 
-    umf_result_t ret = numa_targets_create_nodemask(
-        numaTargets, numNodesProvider, &nodemask, &maxnode, &nodemask_size);
-    if (ret != UMF_RESULT_SUCCESS) {
-        return ret;
+    if (numNodesProvider == 0) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
     umf_os_memory_provider_params_t params = umfOsMemoryProviderParamsDefault();
-    params.nodemask = nodemask;
-    params.maxnode = maxnode;
+    params.numa_list =
+        umf_ba_global_alloc(sizeof(*params.numa_list) * numNodesProvider);
+
+    if (!params.numa_list) {
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    for (size_t i = 0; i < numNodesProvider; i++) {
+        params.numa_list[i] = numaTargets[i]->physical_id;
+    }
+
+    params.numa_list_len = numNodesProvider;
     params.numa_mode = UMF_NUMA_MODE_BIND;
 
     umf_memory_provider_handle_t numaProvider = NULL;
-    ret = umfMemoryProviderCreate(umfOsMemoryProviderOps(), &params,
-                                  &numaProvider);
-    umf_ba_global_free(nodemask);
+    int ret = umfMemoryProviderCreate(umfOsMemoryProviderOps(), &params,
+                                      &numaProvider);
+
+    umf_ba_global_free(params.numa_list);
+
     if (ret) {
         return ret;
     }

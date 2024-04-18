@@ -83,12 +83,15 @@ INSTANTIATE_TEST_SUITE_P(
 // available on the system. The available nodes are returned in vector from the
 // get_available_numa_nodes_numbers() function and passed to test as parameters.
 TEST_P(testNumaNodes, checkNumaNodesAllocations) {
-    int numa_node_number = GetParam();
+    int param = GetParam();
+    ASSERT_GE(param, 0);
+    unsigned numa_node_number = param;
     umf_os_memory_provider_params_t os_memory_provider_params =
         UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
-    os_memory_provider_params.maxnode = numa_node_number + 1;
+
+    os_memory_provider_params.numa_list = &numa_node_number;
     numa_bitmask_setbit(nodemask, numa_node_number);
-    os_memory_provider_params.nodemask = nodemask->maskp;
+    os_memory_provider_params.numa_list_len = 1;
     os_memory_provider_params.numa_mode = UMF_NUMA_MODE_BIND;
     initOsProvider(os_memory_provider_params);
 
