@@ -20,13 +20,15 @@ jobs:
         include:
           - os: windows-latest
             disjoint: 'OFF'
+            build_tests: 'ON'
           # pure C build (Windows)
           - os: windows-latest
             disjoint: 'OFF'
             # Tests' building is off for a pure C build
-            extra_build_options: '-DUMF_BUILD_TESTS=OFF'
+            build_tests: 'OFF'
           - os: ubuntu-latest
             disjoint: 'ON'
+            build_tests: 'ON'
             # Windows doesn't recognize 'CMAKE_BUILD_TYPE', it uses '--config' param in build command
             extra_build_options: '-DCMAKE_BUILD_TYPE=Release -DUMF_BUILD_BENCHMARKS=ON -DUMF_BUILD_BENCHMARKS_MT=ON'
           # pure C build (Linux)
@@ -34,7 +36,8 @@ jobs:
             disjoint: 'OFF'
             # Windows doesn't recognize 'CMAKE_BUILD_TYPE', it uses '--config' param in build command
             # Tests' building is off for a pure C build
-            extra_build_options: '-DCMAKE_BUILD_TYPE=Release -DUMF_BUILD_BENCHMARKS=ON -DUMF_BUILD_TESTS=OFF'
+            build_tests: 'OFF'
+            extra_build_options: '-DCMAKE_BUILD_TYPE=Release -DUMF_BUILD_BENCHMARKS=ON'
     runs-on: ${{matrix.os}}
 
     steps:
@@ -42,7 +45,7 @@ jobs:
       uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
     - name: Initialize vcpkg
-      if: ${{ matrix.os == 'windows-latest' }}
+      if: matrix.os == 'windows-latest'
       uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
       with:
         vcpkgGitCommitId: 3dd44b931481d7a8e9ba412621fa810232b66289
@@ -50,7 +53,7 @@ jobs:
         vcpkgJsonGlob: '**/vcpkg.json'
 
     - name: Install dependencies
-      if: ${{ matrix.os == 'windows-latest' }}
+      if: matrix.os == 'windows-latest'
       run: vcpkg install
       shell: pwsh # Specifies PowerShell as the shell for running the script.
 
@@ -71,7 +74,7 @@ jobs:
         -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
         -DUMF_BUILD_LIBUMF_POOL_DISJOINT=${{matrix.disjoint}}
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
-        -DUMF_BUILD_TESTS=ON
+        -DUMF_BUILD_TESTS=${{matrix.build_tests}}
         -DUMF_BUILD_EXAMPLES=ON
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
         ${{matrix.extra_build_options}}
@@ -82,6 +85,11 @@ jobs:
     - name: Run examples
       working-directory: ${{github.workspace}}/build
       run: ctest --output-on-failure --test-dir examples -C Release
+
+    - name: Run tests
+      if: matrix.build_tests == 'ON'
+      working-directory: ${{github.workspace}}/build
+      run: ctest --output-on-failure --test-dir test -C Release
 
   CodeStyle:
     name: Coding style
