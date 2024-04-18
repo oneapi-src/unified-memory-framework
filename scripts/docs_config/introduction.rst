@@ -22,7 +22,10 @@ distribution among memory tiers and further data migration. Unenlightened
 applications do not require any code modifications and rely on underlying 
 infrastructure. An underlying infrastructure refers not only to the OS with 
 various memory tiering solutions to migrate memory pages between tiers, but 
-also middleware: frameworks and libraries. 
+also middleware: frameworks and libraries.
+
+Please note that UMF is a Work-In-Progress! Read the disclaimer
+about that in the `README.md`_ file, before using our project.
 
 ==============
  Architecture
