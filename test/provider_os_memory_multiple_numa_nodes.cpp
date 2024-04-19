@@ -15,21 +15,22 @@
 static umf_os_memory_provider_params_t UMF_OS_MEMORY_PROVIDER_PARAMS_TEST =
     umfOsMemoryProviderParamsDefault();
 
-std::vector<int> get_available_numa_nodes_numbers() {
-    if (numa_available() == -1 || numa_all_nodes_ptr == nullptr ||
-        numa_num_task_nodes() <= 1) {
-        return {-1};
-    }
+std::vector<unsigned> get_available_numa_nodes() {
+    UT_ASSERTne(numa_available(), -1);
+    UT_ASSERTne(numa_all_nodes_ptr, nullptr);
 
-    std::vector<int> available_numa_nodes_numbers;
+    std::vector<unsigned> available_numa_nodes;
     // Get all available NUMA nodes numbers.
+    printf("All NUMA nodes: ");
     for (size_t i = 0; i < (size_t)numa_max_node() + 1; ++i) {
         if (numa_bitmask_isbitset(numa_all_nodes_ptr, i) == 1) {
-            available_numa_nodes_numbers.emplace_back(i);
+            available_numa_nodes.emplace_back((unsigned)i);
+            printf("%ld, ", i);
         }
     }
+    printf("\n");
 
-    return available_numa_nodes_numbers;
+    return available_numa_nodes;
 }
 
 std::vector<int> get_available_cpus() {
@@ -40,11 +41,14 @@ std::vector<int> get_available_cpus() {
     int ret = sched_getaffinity(0, sizeof(cpu_set_t), mask);
     UT_ASSERTeq(ret, 0);
     // Get all available cpus.
+    printf("All CPUs: ");
     for (size_t i = 0; i < CPU_SETSIZE; ++i) {
         if (CPU_ISSET(i, mask)) {
             available_cpus.emplace_back(i);
+            printf("%ld, ", i);
         }
     }
+    printf("\n");
     CPU_FREE(mask);
 
     return available_cpus;
@@ -115,23 +119,21 @@ struct testNuma : testing::Test {
     umf_memory_provider_handle_t os_memory_provider = nullptr;
 };
 
-struct testNumaOnAllNodes : testNuma, testing::WithParamInterface<int> {};
-struct testNumaOnAllCpus : testNuma, testing::WithParamInterface<int> {};
+struct testNumaOnEachNode : testNuma, testing::WithParamInterface<unsigned> {};
+struct testNumaOnEachCpu : testNuma, testing::WithParamInterface<int> {};
 
-INSTANTIATE_TEST_SUITE_P(
-    testNumaNodesAllocations, testNumaOnAllNodes,
-    ::testing::ValuesIn(get_available_numa_nodes_numbers()));
+INSTANTIATE_TEST_SUITE_P(testNumaNodesAllocations, testNumaOnEachNode,
+                         ::testing::ValuesIn(get_available_numa_nodes()));
 
-INSTANTIATE_TEST_SUITE_P(testNumaNodesAllocationsAllCpus, testNumaOnAllCpus,
+INSTANTIATE_TEST_SUITE_P(testNumaNodesAllocationsAllCpus, testNumaOnEachCpu,
                          ::testing::ValuesIn(get_available_cpus()));
 
-// Test for allocations on numa nodes. This test will be executed for all numa nodes
-// available on the system. The available nodes are returned in vector from the
-// get_available_numa_nodes_numbers() function and passed to test as parameters.
-TEST_P(testNumaOnAllNodes, checkNumaNodesAllocations) {
-    int param = GetParam();
-    ASSERT_GE(param, 0);
-    unsigned numa_node_number = param;
+// Test for allocations on numa nodes. It will be executed on each of
+// the available numa nodes.
+TEST_P(testNumaOnEachNode, checkNumaNodesAllocations) {
+    unsigned numa_node_number = GetParam();
+    ASSERT_GE(numa_node_number, 0);
+
     umf_os_memory_provider_params_t os_memory_provider_params =
         UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
 
@@ -147,22 +149,22 @@ TEST_P(testNumaOnAllNodes, checkNumaNodesAllocations) {
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(ptr, nullptr);
 
-    // This pointer must point to an initialized value before retrieving a number of
-    // the numa node that the pointer was allocated on (calling get_mempolicy).
+    // 'ptr' must point to an initialized value before retrieving its numa node
     memset(ptr, 0xFF, alloc_size);
     int retrieved_numa_node_number = getNumaNodeByPtr(ptr);
     ASSERT_EQ(retrieved_numa_node_number, numa_node_number);
 }
 
-// Test for allocations on numa nodes with mode preferred. It runs for all available
-// numa nodes obtained from the get_available_numa_nodes_numbers() function.
-TEST_P(testNumaOnAllNodes, checkModePreferred) {
-    int numa_node_number = GetParam();
+// Test for allocations on numa nodes with mode preferred. It will be executed
+// on each of the available numa nodes.
+TEST_P(testNumaOnEachNode, checkModePreferred) {
+    unsigned numa_node_number = GetParam();
     umf_os_memory_provider_params_t os_memory_provider_params =
         UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
-    os_memory_provider_params.maxnode = numa_node_number + 1;
+
+    os_memory_provider_params.numa_list = &numa_node_number;
     numa_bitmask_setbit(nodemask, numa_node_number);
-    os_memory_provider_params.nodemask = nodemask->maskp;
+    os_memory_provider_params.numa_list_len = 1;
     os_memory_provider_params.numa_mode = UMF_NUMA_MODE_PREFERRED;
     initOsProvider(os_memory_provider_params);
 
@@ -172,100 +174,17 @@ TEST_P(testNumaOnAllNodes, checkModePreferred) {
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(ptr, nullptr);
 
-    // This pointer must point to an initialized value before retrieving a number of
-    // the numa node that the pointer was allocated on (calling get_mempolicy).
-    memset(ptr, 0xFF, alloc_size);
-    int retrieved_numa_node_number = getNumaNodeByPtr(ptr);
-    ASSERT_EQ(retrieved_numa_node_number, numa_node_number);
-}
-
-// Test for allocation on numa node with mode preferred and an empty nodeset.
-// For the empty nodeset the memory is allocated on the node of the CPU that
-// triggered the allocation. This test will be executed on all available cpus
-// on which the process can run.
-TEST_P(testNumaOnAllCpus, checkModePreferredEmptyNodeset) {
-    int cpu = GetParam();
-    umf_os_memory_provider_params_t os_memory_provider_params =
-        UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
-    os_memory_provider_params.numa_mode = UMF_NUMA_MODE_PREFERRED;
-    initOsProvider(os_memory_provider_params);
-
-    umf_result_t umf_result;
-    umf_result =
-        umfMemoryProviderAlloc(os_memory_provider, alloc_size, 0, &ptr);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(ptr, nullptr);
-
-    cpu_set_t *mask = CPU_ALLOC(CPU_SETSIZE);
-    CPU_ZERO(mask);
-
-    CPU_SET(cpu, mask);
-    int ret = sched_setaffinity(0, sizeof(cpu_set_t), mask);
-    UT_ASSERTeq(ret, 0);
-
-    int numa_node_number = numa_node_of_cpu(cpu);
-
-    // This pointer must point to an initialized value before retrieving a number of
-    // the numa node that the pointer was allocated on (calling get_mempolicy).
-    memset(ptr, 0xFF, alloc_size);
-    int retrieved_numa_node_number = getNumaNodeByPtr(ptr);
-    ASSERT_EQ(retrieved_numa_node_number, numa_node_number);
-    CPU_FREE(mask);
-}
-
-// Test for allocation on numa node with local mode enabled. The memory is
-// allocated on the node of the CPU that triggered the allocation.
-TEST_F(testNuma, checkModeLocal) {
-    umf_os_memory_provider_params_t os_memory_provider_params =
-        UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
-    os_memory_provider_params.numa_mode = UMF_NUMA_MODE_LOCAL;
-    initOsProvider(os_memory_provider_params);
-
-    umf_result_t umf_result;
-    umf_result =
-        umfMemoryProviderAlloc(os_memory_provider, alloc_size, 0, &ptr);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(ptr, nullptr);
-
-    int cpu = sched_getcpu();
-    int numa_node_number = numa_node_of_cpu(cpu);
-
-    // This pointer must point to an initialized value before retrieving a number of
-    // the numa node that the pointer was allocated on (calling get_mempolicy).
+    // 'ptr' must point to an initialized value before retrieving its numa node
     memset(ptr, 0xFF, alloc_size);
     int retrieved_numa_node_number = getNumaNodeByPtr(ptr);
     ASSERT_EQ(retrieved_numa_node_number, numa_node_number);
 }
 
 // Test for allocation on numa node with default mode enabled.
-// Since no policy is set by the set_mempolicy function, it should
-// default to the system-wide default policy, which allocates pages
-// on the node of the CPU that triggers the allocation.
-TEST_F(testNuma, checkModeDefault) {
-    umf_os_memory_provider_params_t os_memory_provider_params =
-        UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
-    initOsProvider(os_memory_provider_params);
-
-    umf_result_t umf_result;
-    umf_result =
-        umfMemoryProviderAlloc(os_memory_provider, alloc_size, 0, &ptr);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(ptr, nullptr);
-
-    int cpu = sched_getcpu();
-    int numa_node_number = numa_node_of_cpu(cpu);
-
-    // This pointer must point to an initialized value before retrieving a number of
-    // the numa node that the pointer was allocated on (calling get_mempolicy).
-    memset(ptr, 0xFF, alloc_size);
-    int retrieved_numa_node_number = getNumaNodeByPtr(ptr);
-    ASSERT_EQ(retrieved_numa_node_number, numa_node_number);
-}
-
-// Test for allocation on numa node with default mode enabled.
-// Since the bind mode is set by setmempolicy, it should fall back to it.
-TEST_F(testNuma, checkModeDefaultSetMempolicy) {
-    int numa_node_number = get_available_numa_nodes_numbers()[0];
+// We explicitly set the bind mode (via set_mempolicy) so it should fall back to it.
+// It will be executed on each of the available numa nodes.
+TEST_P(testNumaOnEachNode, checkModeDefaultSetMempolicy) {
+    unsigned numa_node_number = GetParam();
     numa_bitmask_setbit(nodemask, numa_node_number);
     umf_os_memory_provider_params_t os_memory_provider_params =
         UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
@@ -280,8 +199,136 @@ TEST_F(testNuma, checkModeDefaultSetMempolicy) {
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(ptr, nullptr);
 
-    // This pointer must point to an initialized value before retrieving a number of
-    // the numa node that the pointer was allocated on (calling get_mempolicy).
+    // 'ptr' must point to an initialized value before retrieving its numa node
+    memset(ptr, 0xFF, alloc_size);
+    int retrieved_numa_node_number = getNumaNodeByPtr(ptr);
+    ASSERT_EQ(retrieved_numa_node_number, numa_node_number);
+}
+
+// Test for allocations on a single numa node with interleave mode enabled.
+// It will be executed on each of the available numa nodes.
+TEST_P(testNumaOnEachNode, checkModeInterleaveSingleNode) {
+    unsigned numa_node_number = GetParam();
+
+    constexpr int pages_num = 1024;
+    size_t page_size = sysconf(_SC_PAGE_SIZE);
+    umf_os_memory_provider_params_t os_memory_provider_params =
+        UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
+
+    os_memory_provider_params.numa_list = &numa_node_number;
+    numa_bitmask_setbit(nodemask, numa_node_number);
+    os_memory_provider_params.numa_list_len = 1;
+    os_memory_provider_params.numa_mode = UMF_NUMA_MODE_INTERLEAVE;
+    initOsProvider(os_memory_provider_params);
+
+    umf_result_t umf_result;
+    umf_result = umfMemoryProviderAlloc(os_memory_provider,
+                                        pages_num * page_size, 0, &ptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(ptr, nullptr);
+
+    // 'ptr' must point to an initialized value before retrieving its numa node
+    memset(ptr, 0xFF, pages_num * page_size);
+    int retrieved_numa_node_number = getNumaNodeByPtr(ptr);
+    ASSERT_EQ(retrieved_numa_node_number, numa_node_number);
+}
+
+// Test for allocation on numa node with mode preferred and an empty nodeset.
+// For the empty nodeset the memory is allocated on the node of the CPU that
+// triggered the allocation. It will be executed on each available CPU.
+TEST_P(testNumaOnEachCpu, checkModePreferredEmptyNodeset) {
+    int cpu = GetParam();
+    ASSERT_GE(cpu, 0);
+
+    cpu_set_t *mask = CPU_ALLOC(CPU_SETSIZE);
+    CPU_ZERO(mask);
+
+    CPU_SET(cpu, mask);
+    int ret = sched_setaffinity(0, sizeof(cpu_set_t), mask);
+    UT_ASSERTeq(ret, 0);
+
+    umf_os_memory_provider_params_t os_memory_provider_params =
+        UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
+    os_memory_provider_params.numa_mode = UMF_NUMA_MODE_PREFERRED;
+    initOsProvider(os_memory_provider_params);
+
+    umf_result_t umf_result;
+    umf_result =
+        umfMemoryProviderAlloc(os_memory_provider, alloc_size, 0, &ptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(ptr, nullptr);
+
+    // Verify we're on the expected CPU
+    int cpu_check = sched_getcpu();
+    UT_ASSERTeq(cpu, cpu_check);
+
+    int numa_node_number = numa_node_of_cpu(cpu);
+    printf("Got CPU: %d, got numa node: %d\n", cpu, numa_node_number);
+
+    // 'ptr' must point to an initialized value before retrieving its numa node
+    memset(ptr, 0xFF, alloc_size);
+    int retrieved_numa_node_number = getNumaNodeByPtr(ptr);
+    ASSERT_EQ(retrieved_numa_node_number, numa_node_number);
+    CPU_FREE(mask);
+}
+
+// Test for allocation on numa node with local mode enabled. The memory is
+// allocated on the node of the CPU that triggered the allocation.
+// It will be executed on each available CPU.
+TEST_P(testNumaOnEachCpu, checkModeLocal) {
+    int cpu = GetParam();
+    cpu_set_t *mask = CPU_ALLOC(CPU_SETSIZE);
+    CPU_ZERO(mask);
+
+    CPU_SET(cpu, mask);
+    int ret = sched_setaffinity(0, sizeof(cpu_set_t), mask);
+    UT_ASSERTeq(ret, 0);
+
+    umf_os_memory_provider_params_t os_memory_provider_params =
+        UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
+    os_memory_provider_params.numa_mode = UMF_NUMA_MODE_LOCAL;
+    initOsProvider(os_memory_provider_params);
+
+    umf_result_t umf_result;
+    umf_result =
+        umfMemoryProviderAlloc(os_memory_provider, alloc_size, 0, &ptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(ptr, nullptr);
+
+    // Verify we're on the expected CPU
+    int cpu_check = sched_getcpu();
+    UT_ASSERTeq(cpu, cpu_check);
+
+    int numa_node_number = numa_node_of_cpu(cpu);
+    printf("Got CPU: %d, got numa node: %d\n", cpu, numa_node_number);
+
+    // 'ptr' must point to an initialized value before retrieving its numa node
+    memset(ptr, 0xFF, alloc_size);
+    int retrieved_numa_node_number = getNumaNodeByPtr(ptr);
+    ASSERT_EQ(retrieved_numa_node_number, numa_node_number);
+    CPU_FREE(mask);
+}
+
+// Test for allocation on numa node with default mode enabled.
+// Since no policy is set (via set_mempolicy) it should default to the system-wide
+// default policy - it allocates pages on the node of the CPU that triggered
+// the allocation.
+TEST_F(testNuma, checkModeDefault) {
+    umf_os_memory_provider_params_t os_memory_provider_params =
+        UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
+    initOsProvider(os_memory_provider_params);
+
+    umf_result_t umf_result;
+    umf_result =
+        umfMemoryProviderAlloc(os_memory_provider, alloc_size, 0, &ptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(ptr, nullptr);
+
+    int cpu = sched_getcpu();
+    int numa_node_number = numa_node_of_cpu(cpu);
+    printf("Got CPU: %d, got numa node: %d\n", cpu, numa_node_number);
+
+    // 'ptr' must point to an initialized value before retrieving its numa node
     memset(ptr, 0xFF, alloc_size);
     int retrieved_numa_node_number = getNumaNodeByPtr(ptr);
     ASSERT_EQ(retrieved_numa_node_number, numa_node_number);
@@ -294,9 +341,12 @@ TEST_F(testNuma, checkModeInterleave) {
     size_t page_size = sysconf(_SC_PAGE_SIZE);
     umf_os_memory_provider_params_t os_memory_provider_params =
         UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
-    os_memory_provider_params.maxnode = numa_max_node();
+
+    std::vector<unsigned> numa_nodes = get_available_numa_nodes();
     set_all_available_nodemask_bits(nodemask);
-    os_memory_provider_params.nodemask = nodemask->maskp;
+
+    os_memory_provider_params.numa_list = numa_nodes.data();
+    os_memory_provider_params.numa_list_len = numa_nodes.size();
     os_memory_provider_params.numa_mode = UMF_NUMA_MODE_INTERLEAVE;
     initOsProvider(os_memory_provider_params);
 
@@ -306,21 +356,16 @@ TEST_F(testNuma, checkModeInterleave) {
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(ptr, nullptr);
 
-    // This pointer must point to an initialized value before retrieving a number of
-    // the numa node that the pointer was allocated on (calling get_mempolicy).
+    // 'ptr' must point to an initialized value before retrieving its numa node
     memset(ptr, 0xFF, pages_num * page_size);
 
     // Test where each page will be allocated.
-    std::vector<int> numa_nodes_numbers = get_available_numa_nodes_numbers();
-    size_t index = 0;
-
-    for (size_t i = 0; i < (size_t)pages_num; i++) {
-        if (index == (size_t)numa_nodes_numbers.size()) {
-            index = 0;
-        }
-        ASSERT_EQ(numa_nodes_numbers[index],
+    // Get the first numa node for ptr; Each next page is expected to be on next nodes.
+    size_t index = getNumaNodeByPtr((char *)ptr);
+    for (size_t i = 1; i < (size_t)pages_num; i++) {
+        index = (index + 1) % numa_nodes.size();
+        ASSERT_EQ(numa_nodes[index],
                   getNumaNodeByPtr((char *)ptr + page_size * i));
-        index++;
     }
 
     bitmask *retrieved_nodemask = retrieve_nodemask(ptr);
@@ -329,43 +374,59 @@ TEST_F(testNuma, checkModeInterleave) {
     numa_bitmask_free(retrieved_nodemask);
 }
 
-// Test for allocations on a single numa node with interleave mode enabled.
-TEST_F(testNuma, checkModeInterleaveSingleNode) {
-    constexpr int pages_num = 1024;
-    size_t page_size = sysconf(_SC_PAGE_SIZE);
+// Test for allocations on all numa nodes with BIND mode.
+// According to mbind it should go to the closest node.
+TEST_F(testNuma, checkModeBindOnAllNodes) {
     umf_os_memory_provider_params_t os_memory_provider_params =
         UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
-    os_memory_provider_params.maxnode = numa_max_node();
-    std::vector<int> numa_nodes_numbers = get_available_numa_nodes_numbers();
-    numa_bitmask_setbit(nodemask, numa_nodes_numbers[0]);
-    os_memory_provider_params.nodemask = nodemask->maskp;
-    os_memory_provider_params.numa_mode = UMF_NUMA_MODE_INTERLEAVE;
+
+    std::vector<unsigned> numa_nodes = get_available_numa_nodes();
+
+    os_memory_provider_params.numa_list = numa_nodes.data();
+    os_memory_provider_params.numa_list_len = numa_nodes.size();
+    os_memory_provider_params.numa_mode = UMF_NUMA_MODE_BIND;
     initOsProvider(os_memory_provider_params);
 
     umf_result_t umf_result;
-    umf_result = umfMemoryProviderAlloc(os_memory_provider,
-                                        pages_num * page_size, 0, &ptr);
+    umf_result =
+        umfMemoryProviderAlloc(os_memory_provider, alloc_size, 0, &ptr);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(ptr, nullptr);
 
-    // This pointer must point to an initialized value before retrieving a number of
-    // the numa node that the pointer was allocated on (calling get_mempolicy).
-    memset(ptr, 0xFF, pages_num * page_size);
+    // 'ptr' must point to an initialized value before retrieving its numa node
+    memset(ptr, 0xFF, alloc_size);
+    unsigned retrieved_numa_node_number = (unsigned)getNumaNodeByPtr(ptr);
 
-    ASSERT_EQ(numa_nodes_numbers[0], getNumaNodeByPtr(ptr));
+    int read_cpu = sched_getcpu();
+    int read_numa_node = numa_node_of_cpu(read_cpu);
+    printf("Got CPU: %d, got numa node: %d\n", read_cpu, read_numa_node);
+
+    // Verify if numa node related to CPU triggering allocation is in the original list
+    size_t count = 0;
+    for (size_t i = 0; i < numa_nodes.size(); i++) {
+        if (retrieved_numa_node_number == numa_nodes[i]) {
+            count++;
+        }
+    }
+    ASSERT_EQ(count, 1);
+    // ... and it's the one which we expect
+    ASSERT_EQ(retrieved_numa_node_number, read_numa_node);
 }
 
-// Negative tests
+// Negative tests for policies with illegal arguments.
 
-// Test for allocation on numa node with local mode enabled when maxnode
-// and nodemask are set. For the local mode the maxnode and nodemask must be an empty set.
+// Local mode enabled when numa_list is set.
+// For the local mode the nodeset must be empty.
 TEST_F(testNuma, checkModeLocalIllegalArgSet) {
     umf_os_memory_provider_params_t os_memory_provider_params =
         UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
-    os_memory_provider_params.maxnode = numa_max_node();
-    set_all_available_nodemask_bits(nodemask);
-    os_memory_provider_params.nodemask = nodemask->maskp;
+
+    std::vector<unsigned> numa_nodes = get_available_numa_nodes();
+
+    os_memory_provider_params.numa_list = numa_nodes.data();
+    os_memory_provider_params.numa_list_len = numa_nodes.size();
     os_memory_provider_params.numa_mode = UMF_NUMA_MODE_LOCAL;
+
     umf_result_t umf_result;
     umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(),
                                          &os_memory_provider_params,
@@ -374,14 +435,17 @@ TEST_F(testNuma, checkModeLocalIllegalArgSet) {
     ASSERT_EQ(os_memory_provider, nullptr);
 }
 
-// Test for allocation on numa node with default mode enabled when maxnode
-// and nodemask are set. For the default mode the maxnode and nodemask must be an empty set.
+// Default mode enabled when numa_list is set.
+// For the default mode the nodeset must be empty.
 TEST_F(testNuma, checkModeDefaultIllegalArgSet) {
     umf_os_memory_provider_params_t os_memory_provider_params =
         UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
-    os_memory_provider_params.maxnode = numa_max_node();
-    set_all_available_nodemask_bits(nodemask);
-    os_memory_provider_params.nodemask = nodemask->maskp;
+
+    std::vector<unsigned> numa_nodes = get_available_numa_nodes();
+
+    os_memory_provider_params.numa_list = numa_nodes.data();
+    os_memory_provider_params.numa_list_len = numa_nodes.size();
+
     umf_result_t umf_result;
     umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(),
                                          &os_memory_provider_params,
@@ -390,13 +454,13 @@ TEST_F(testNuma, checkModeDefaultIllegalArgSet) {
     ASSERT_EQ(os_memory_provider, nullptr);
 }
 
-// Test for allocation on numa node with bind mode enabled when maxnode
-// and nodemask are unset. For the bind mode the maxnode and nodemask
-// must be a non-empty set.
+// Bind mode enabled when numa_list is not set.
+// For the bind mode the nodeset must be non-empty.
 TEST_F(testNuma, checkModeBindIllegalArgSet) {
     umf_os_memory_provider_params_t os_memory_provider_params =
         UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
     os_memory_provider_params.numa_mode = UMF_NUMA_MODE_BIND;
+
     umf_result_t umf_result;
     umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(),
                                          &os_memory_provider_params,
@@ -405,13 +469,13 @@ TEST_F(testNuma, checkModeBindIllegalArgSet) {
     ASSERT_EQ(os_memory_provider, nullptr);
 }
 
-// Test for allocation on numa node with interleave mode enabled when maxnode
-// and nodemask are unset. For the interleave mode the maxnode and nodemask
-// must be a non-empty set.
+// Interleave mode enabled numa_list is not set.
+// For the interleave mode the nodeset must be non-empty.
 TEST_F(testNuma, checkModeInterleaveIllegalArgSet) {
     umf_os_memory_provider_params_t os_memory_provider_params =
         UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
     os_memory_provider_params.numa_mode = UMF_NUMA_MODE_INTERLEAVE;
+
     umf_result_t umf_result;
     umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(),
                                          &os_memory_provider_params,
