@@ -78,6 +78,9 @@ typedef struct umf_os_memory_provider_params_t {
 
     /// Describes how node list is interpreted
     umf_numa_mode_t numa_mode;
+    /// part size for interleave mode - 0 means default (system specific)
+    /// It might be rounded up because of HW constraints
+    size_t part_size;
 } umf_os_memory_provider_params_t;
 
 /// @brief OS Memory Provider operation results
@@ -103,6 +106,7 @@ umfOsMemoryProviderParamsDefault(void) {
         NULL,                                       /* numa_list */
         0,                                          /* numa_list_len */
         UMF_NUMA_MODE_DEFAULT,                      /* numa_mode */
+        0                                           /* part_size */
     };
 
     return params;

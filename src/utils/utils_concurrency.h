@@ -70,6 +70,8 @@ static __inline unsigned char util_mssb_index(long long value) {
     InterlockedExchange64((LONG64 volatile *)object, (LONG64)desired)
 #define util_atomic_increment(object)                                          \
     InterlockedIncrement64((LONG64 volatile *)object)
+#define util_fetch_and_add64(ptr, value)                                       \
+    InterlockedExchangeAdd64((LONG64 *)(ptr), value)
 #else
 #define util_lssb_index(x) ((unsigned char)__builtin_ctzll(x))
 #define util_mssb_index(x) ((unsigned char)(63 - __builtin_clzll(x)))
@@ -87,6 +89,7 @@ static __inline unsigned char util_mssb_index(long long value) {
 
 #define util_atomic_increment(object)                                          \
     __atomic_add_fetch(object, 1, __ATOMIC_ACQ_REL)
+#define util_fetch_and_add64 __sync_fetch_and_add
 #endif
 
 #ifdef __cplusplus
