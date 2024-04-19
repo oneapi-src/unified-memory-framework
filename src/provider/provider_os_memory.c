@@ -196,9 +196,11 @@ static umf_result_t translate_params(umf_os_memory_provider_params_t *in_params,
     result = translate_numa_mode(in_params->numa_mode, emptyNodeset,
                                  &provider->numa_policy);
     if (result != UMF_RESULT_SUCCESS) {
-        LOG_ERR("incorrect NUMA mode: %u", in_params->numa_mode);
+        LOG_ERR("incorrect NUMA mode (%u) or wrong params",
+                in_params->numa_mode);
         return result;
     }
+    LOG_INFO("established HWLOC NUMA policy: %u", provider->numa_policy);
 
     provider->numa_flags = getHwlocMembindFlags(in_params->numa_mode);
 
@@ -247,13 +249,15 @@ static umf_result_t os_initialize(void *params, void **provider) {
 
     os_provider->nodeset_str_buf = umf_ba_global_alloc(NODESET_STR_BUF_LEN);
     if (!os_provider->nodeset_str_buf) {
-        LOG_INFO("Allocating memory for printing NUMA nodes failed");
+        LOG_INFO("allocating memory for printing NUMA nodes failed");
     } else {
         if (hwloc_bitmap_list_snprintf(os_provider->nodeset_str_buf,
                                        NODESET_STR_BUF_LEN,
                                        os_provider->nodeset)) {
             LOG_INFO("OS provider initialized with NUMA nodes: %s",
                      os_provider->nodeset_str_buf);
+        } else if (hwloc_bitmap_iszero(os_provider->nodeset)) {
+            LOG_INFO("OS provider initialized with empty NUMA nodeset");
         }
     }
 
