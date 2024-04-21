@@ -25,6 +25,11 @@ jobs:
     - name: Install qemu
       run: |
         sudo apt update && sudo apt install -y qemu-system genisoimage qemu-utils
+    - name: Install libvirt and script dependencies
+      run: |
+        sudo apt-get install -y libvirt-clients libvirt-daemon-system libvirt-daemon virtinst bridge-utils
+        pip install -r scripts/qemu/requirements.txt
+        sudo usermod -a -G kvm,libvirt $USER
     - name: Run ssh-keygen
       run: ssh-keygen -b 4096 -N '' -f ~/.ssh/id_rsa
     - name: Generate iso with user info
@@ -65,6 +70,9 @@ jobs:
       run: wget https://cloud-images.ubuntu.com/releases/lunar/release/ubuntu-23.04-server-cloudimg-amd64.img
     - name: Resize image
       run: qemu-img resize ./ubuntu-23.04-server-cloudimg-amd64.img +4G
+    - name: Print qemu args
+      run: |
+        echo `python3 scripts/qemu/qemu_config.py scripts/qemu/configs/default.xml | sed s/''\''/'/g`
     - name: Run qemu
       run: |
         sudo qemu-system-x86_64 \
@@ -73,35 +81,7 @@ jobs:
         -machine q35,usb=off,hmat=on \
         -enable-kvm \
         -net nic -net user,hostfwd=tcp::2222-:22 \
-        -m 3500M \
-        -smp 4 \
-        -object memory-backend-ram,size=1100M,id=ram0 \
-        -object memory-backend-ram,size=1200M,id=ram1 \
-        -object memory-backend-ram,size=1200M,id=ram2 \
-        -numa node,nodeid=0,memdev=ram0,cpus=0-1 \
-        -numa node,nodeid=1,memdev=ram1,cpus=2-3 \
-        -numa node,nodeid=2,memdev=ram2,initiator=0 \
-        -numa dist,src=0,dst=0,val=10 \
-        -numa dist,src=0,dst=1,val=20 \
-        -numa dist,src=0,dst=2,val=17 \
-        -numa dist,src=1,dst=0,val=20 \
-        -numa dist,src=1,dst=1,val=10 \
-        -numa dist,src=1,dst=2,val=28 \
-        -numa dist,src=2,dst=0,val=17 \
-        -numa dist,src=2,dst=1,val=28 \
-        -numa dist,src=2,dst=2,val=10 \
-        -numa hmat-lb,initiator=0,target=0,hierarchy=memory,data-type=access-latency,latency=10 \
-        -numa hmat-lb,initiator=0,target=0,hierarchy=memory,data-type=access-bandwidth,bandwidth=10485760 \
-        -numa hmat-lb,initiator=0,target=1,hierarchy=memory,data-type=access-latency,latency=20 \
-        -numa hmat-lb,initiator=0,target=1,hierarchy=memory,data-type=access-bandwidth,bandwidth=5242880 \
-        -numa hmat-lb,initiator=0,target=2,hierarchy=memory,data-type=access-latency,latency=16 \
-        -numa hmat-lb,initiator=0,target=2,hierarchy=memory,data-type=access-bandwidth,bandwidth=1048576 \
-        -numa hmat-lb,initiator=1,target=0,hierarchy=memory,data-type=access-latency,latency=20 \
-        -numa hmat-lb,initiator=1,target=0,hierarchy=memory,data-type=access-bandwidth,bandwidth=5242880 \
-        -numa hmat-lb,initiator=1,target=1,hierarchy=memory,data-type=access-latency,latency=10 \
-        -numa hmat-lb,initiator=1,target=1,hierarchy=memory,data-type=access-bandwidth,bandwidth=10485760 \
-        -numa hmat-lb,initiator=1,target=2,hierarchy=memory,data-type=access-latency,latency=27 \
-        -numa hmat-lb,initiator=1,target=2,hierarchy=memory,data-type=access-bandwidth,bandwidth=1048576 \
+        $(echo `python3 scripts/qemu/qemu_config.py scripts/qemu/configs/default.xml | sed s/''\''/'/g`) \
         -daemonize -display none
     - name: Run ssh keyscan
       run: |
