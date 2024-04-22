@@ -30,6 +30,9 @@ function system_info {
 	# source /opt/intel/oneapi/setvars.sh
 	# sycl-ls
 
+	echo "**********numactl topology**********"
+	numactl -H
+
 	echo "**********VGA info**********"
 	lspci | grep -i VGA
 
