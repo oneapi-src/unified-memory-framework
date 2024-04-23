@@ -44,6 +44,7 @@ Required packages:
 For development and contributions:
 - clang-format-15.0 (can be installed with `python -m pip install clang-format==15.0.7`)
 - cmake-format-0.6 (can be installed with `python -m pip install cmake-format==0.6.13`)
+- black (can be installed with `python -m pip install black==24.3.0`)
 
 For building tests, multithreaded benchmarks and Disjoint Pool:
 - C++ compiler with C++17 support
