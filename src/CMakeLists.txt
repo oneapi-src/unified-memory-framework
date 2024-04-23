@@ -114,8 +114,9 @@ if(UMF_BUILD_SHARED_LIBRARY)
         WINDOWS_DEF_FILE ${CMAKE_CURRENT_SOURCE_DIR}/libumf.def)
     set(UMF_PRIVATE_COMPILE_DEFINITIONS ${UMF_PRIVATE_COMPILE_DEFINITIONS}
                                         "UMF_SHARED_LIBRARY")
-    set_target_properties(umf PROPERTIES RUNTIME_OUTPUT_DIRECTORY
-                                         ${CMAKE_UMF_OUTPUT_DIRECTORY})
+    set_target_properties(
+        umf PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_UMF_OUTPUT_DIRECTORY}
+                       VERSION ${CMAKE_PROJECT_VERSION})
 else()
     add_umf_library(
         NAME umf
