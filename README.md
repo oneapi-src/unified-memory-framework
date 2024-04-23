@@ -229,6 +229,10 @@ In case of Linux it can be done without any code changes using the `LD_PRELOAD` 
 $ LD_PRELOAD=/usr/lib/libumf_proxy.so myprogram
 ```
 
+The memory used by the proxy memory allocator is mmap'ed:
+1) with the `MAP_PRIVATE` flag by default or
+2) with the `MAP_SHARED` flag only if the `UMF_PROXY` environment variable contains the `page.disposition=shared` string.
+
 #### Windows
 
 In case of Windows it requires:
