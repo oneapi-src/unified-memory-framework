@@ -14,12 +14,16 @@
 using umf_test::test;
 
 TEST_F(test, memoryProviderTrace) {
-    static std::unordered_map<std::string, size_t> calls;
-    auto trace = [](const char *name) { calls[name]++; };
+    using calls_type = std::unordered_map<std::string, size_t>;
+    calls_type calls;
+    auto trace = [](void *handler, const char *name) {
+        auto &calls = *static_cast<calls_type *>(handler);
+        calls[name]++;
+    };
 
-    auto nullProvider = umf_test::wrapProviderUnique(nullProviderCreate());
+    auto nullProvider = nullProviderCreate();
     auto tracingProvider = umf_test::wrapProviderUnique(
-        traceProviderCreate(nullProvider.get(), trace));
+        traceProviderCreate(nullProvider, true, &calls, trace));
 
     size_t call_count = 0;
 

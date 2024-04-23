@@ -11,7 +11,6 @@
 #include "pool_null.h"
 #include "pool_trace.h"
 #include "provider_null.h"
-#include "provider_trace.h"
 #include "umf/memory_pool.h"
 #include "umf/memory_provider.h"
 
@@ -44,9 +43,13 @@ umf_memory_provider_handle_t nullProviderCreate(void) {
 
 umf_memory_provider_handle_t
 traceProviderCreate(umf_memory_provider_handle_t hUpstreamProvider,
-                    void (*trace)(const char *)) {
-    umf_provider_trace_params_t params = {
-        .hUpstreamProvider = hUpstreamProvider, .trace = trace};
+                    bool own_upstream, void *trace_context,
+                    trace_handler_t trace_handler) {
+    umf_provider_trace_params_t params = {.hUpstreamProvider =
+                                              hUpstreamProvider,
+                                          .own_upstream = own_upstream,
+                                          .trace_context = trace_context,
+                                          .trace_handler = trace_handler};
 
     umf_memory_provider_handle_t hProvider;
     umf_result_t ret =
@@ -59,10 +62,11 @@ traceProviderCreate(umf_memory_provider_handle_t hUpstreamProvider,
 
 umf_memory_pool_handle_t
 tracePoolCreate(umf_memory_pool_handle_t hUpstreamPool,
-                umf_memory_provider_handle_t providerDesc,
-                void (*trace)(const char *)) {
+                umf_memory_provider_handle_t providerDesc, void *trace_context,
+                trace_handler_t trace_handler) {
     umf_pool_trace_params_t params = {.hUpstreamPool = hUpstreamPool,
-                                      .trace = trace};
+                                      .trace_context = trace_context,
+                                      .trace_handler = trace_handler};
 
     umf_memory_pool_handle_t hPool;
     umf_result_t ret =

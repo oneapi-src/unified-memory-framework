@@ -6,6 +6,7 @@
 #include "multithread_helpers.hpp"
 #include "pool.hpp"
 #include "provider.hpp"
+#include "test_helpers.h"
 
 #include <umf/ipc.h>
 #include <umf/memory_pool.h>
@@ -14,6 +15,7 @@
 #include <array>
 #include <atomic>
 #include <cstdlib>
+#include <cstring>
 #include <mutex>
 #include <numeric>
 #include <shared_mutex>
@@ -32,24 +34,12 @@ struct provider_mock_ipc : public umf_test::provider_base_t {
         const void *ptr;
         size_t size;
     };
-    struct stats {
-        std::atomic<size_t> getCount;
-        std::atomic<size_t> putCount;
-        std::atomic<size_t> openCount;
-        std::atomic<size_t> closeCount;
 
-        stats() : getCount(0), putCount(0), openCount(0), closeCount(0) {}
-    };
-
-    stats *stat = nullptr;
     umf_test::provider_malloc helper_prov;
     allocations_mutex_type alloc_mutex;
     allocations_map_type allocations;
 
-    umf_result_t initialize(stats *s) noexcept {
-        stat = s;
-        return UMF_RESULT_SUCCESS;
-    }
+    umf_result_t initialize(void *) noexcept { return UMF_RESULT_SUCCESS; }
     enum umf_result_t alloc(size_t size, size_t align, void **ptr) noexcept {
         auto ret = helper_prov.alloc(size, align, ptr);
         if (ret == UMF_RESULT_SUCCESS) {
@@ -74,32 +64,42 @@ struct provider_mock_ipc : public umf_test::provider_base_t {
     }
     enum umf_result_t get_ipc_handle(const void *ptr, size_t size,
                                      void *providerIpcData) noexcept {
-        ++stat->getCount;
         provider_ipc_data_t *ipcData =
             static_cast<provider_ipc_data_t *>(providerIpcData);
-        allocations_read_lock_type lock(alloc_mutex);
+        // we do not need lock for allocations map here, because we just read
+        // it. Inserts to allocations map are done in alloc() method that is
+        // called before get_ipc_handle is called inside a parallel region.
         auto it = allocations.find(ptr);
-        if (it == allocations.end()) {
+        if (it == allocations.end() || it->second != size) {
             // client tries to get handle for the pointer that does not match
             // with any of the base addresses allocated by the instance of
-            // the memory provider
+            // the memory provider. Or the size argument does not match
+            // the size of base allocation stored in the map
             return UMF_RESULT_ERROR_INVALID_ARGUMENT;
         }
-        (void)size;
         ipcData->ptr = ptr;
         ipcData->size = it->second; // size of the base allocation
         return UMF_RESULT_SUCCESS;
     }
     enum umf_result_t put_ipc_handle(void *providerIpcData) noexcept {
-        ++stat->putCount;
         (void)providerIpcData;
         return UMF_RESULT_SUCCESS;
     }
     enum umf_result_t open_ipc_handle(void *providerIpcData,
                                       void **ptr) noexcept {
-        ++stat->openCount;
         provider_ipc_data_t *ipcData =
             static_cast<provider_ipc_data_t *>(providerIpcData);
+
+        // we do not need lock for allocations map here, because we just read
+        // it. Inserts to allocations map are done in alloc() method that is
+        // called before get_ipc_handle is called inside a parallel region.
+        auto it = allocations.find(ipcData->ptr);
+        if (it == allocations.end() || it->second != ipcData->size) {
+            // Since test calls open_ipc_handle in the same pool we can use
+            // allocations map to validate the handle.
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        }
+
         void *mapping = std::malloc(ipcData->size);
         if (!mapping) {
             return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
@@ -113,7 +113,6 @@ struct provider_mock_ipc : public umf_test::provider_base_t {
     }
     enum umf_result_t close_ipc_handle(void *ptr, size_t size) noexcept {
         (void)size;
-        ++stat->closeCount;
         std::free(ptr);
         return UMF_RESULT_SUCCESS;
     }
@@ -138,14 +137,38 @@ struct umfIpcTest : umf_test::test {
             umfMemoryProviderCreate(&IPC_MOCK_PROVIDER_OPS, &stat, &hProvider);
         EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
 
-        ret = umfPoolCreate(umfProxyPoolOps(), hProvider, nullptr,
+        auto trace = [](void *trace_context, const char *name) {
+            stats_type *stat = static_cast<stats_type *>(trace_context);
+            if (std::strcmp(name, "get_ipc_handle") == 0) {
+                ++stat->getCount;
+            } else if (std::strcmp(name, "put_ipc_handle") == 0) {
+                ++stat->putCount;
+            } else if (std::strcmp(name, "open_ipc_handle") == 0) {
+                ++stat->openCount;
+            } else if (std::strcmp(name, "close_ipc_handle") == 0) {
+                ++stat->closeCount;
+            }
+        };
+
+        umf_memory_provider_handle_t hTraceProvider =
+            traceProviderCreate(hProvider, true, (void *)&stat, trace);
+
+        ret = umfPoolCreate(umfProxyPoolOps(), hTraceProvider, nullptr,
                             UMF_POOL_CREATE_FLAG_OWN_PROVIDER, &hPool);
         EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
 
         return umf::pool_unique_handle_t(hPool, &umfPoolDestroy);
     }
 
-    using stats_type = typename provider_mock_ipc::stats;
+    struct stats_type {
+        std::atomic<size_t> getCount;
+        std::atomic<size_t> putCount;
+        std::atomic<size_t> openCount;
+        std::atomic<size_t> closeCount;
+
+        stats_type() : getCount(0), putCount(0), openCount(0), closeCount(0) {}
+    };
+
     umf_memory_provider_ops_t IPC_MOCK_PROVIDER_OPS =
         umf::providerMakeCOps<provider_mock_ipc, stats_type>();
     umf::pool_unique_handle_t pool;
