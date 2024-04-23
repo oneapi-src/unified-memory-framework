@@ -111,6 +111,13 @@ void proxy_lib_create_common(void) {
         umfOsMemoryProviderParamsDefault();
     enum umf_result_t umf_result;
 
+#ifndef _WIN32
+    if (util_env_var_has_str("UMF_PROXY", "page.disposition=shared")) {
+        LOG_DEBUG("proxy_lib: using the MAP_SHARED visibility mode");
+        os_params.visibility = UMF_MEM_MAP_SHARED;
+    }
+#endif
+
     umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(), &os_params,
                                          &OS_memory_provider);
     if (umf_result != UMF_RESULT_SUCCESS) {
