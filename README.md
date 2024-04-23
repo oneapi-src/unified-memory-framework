@@ -237,3 +237,8 @@ In case of Windows it requires:
 
 All contributions to the UMF project are most welcome! Before submitting
 an issue or a Pull Request, please read [Contribution Guide](./CONTRIBUTING.md).
+
+## Logging
+
+To enable logging in UMF source files please follow the guide in the
+[web documentation](https://oneapi-src.github.io/unified-memory-framework/introduction.html#logging).
