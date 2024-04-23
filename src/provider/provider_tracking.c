@@ -35,8 +35,7 @@ static umf_result_t umfMemoryTrackerAdd(umf_memory_tracker_handle_t hTracker,
                                         const void *ptr, size_t size) {
     assert(ptr);
 
-    tracker_value_t *value =
-        (tracker_value_t *)umf_ba_alloc(hTracker->tracker_allocator);
+    tracker_value_t *value = umf_ba_alloc(hTracker->tracker_allocator);
     if (value == NULL) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
@@ -170,7 +169,7 @@ static umf_result_t trackingAllocationSplit(void *hProvider, void *ptr,
         (umf_tracking_memory_provider_t *)hProvider;
 
     tracker_value_t *splitValue =
-        (tracker_value_t *)umf_ba_alloc(provider->hTracker->tracker_allocator);
+        umf_ba_alloc(provider->hTracker->tracker_allocator);
     if (!splitValue) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
@@ -244,7 +243,7 @@ static umf_result_t trackingAllocationMerge(void *hProvider, void *lowPtr,
         (umf_tracking_memory_provider_t *)hProvider;
 
     tracker_value_t *mergedValue =
-        (tracker_value_t *)umf_ba_alloc(provider->hTracker->tracker_allocator);
+        umf_ba_alloc(provider->hTracker->tracker_allocator);
 
     if (!mergedValue) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
@@ -363,8 +362,7 @@ static umf_result_t trackingFree(void *hProvider, void *ptr, size_t size) {
 
 static umf_result_t trackingInitialize(void *params, void **ret) {
     umf_tracking_memory_provider_t *provider =
-        (umf_tracking_memory_provider_t *)umf_ba_global_alloc(
-            sizeof(umf_tracking_memory_provider_t));
+        umf_ba_global_alloc(sizeof(umf_tracking_memory_provider_t));
     if (!provider) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
@@ -511,8 +509,7 @@ static umf_result_t trackingGetIpcHandle(void *provider, const void *ptr,
             }
 
             size_t value_size = sizeof(ipc_cache_value_t) + ipcDataSize;
-            ipc_cache_value_t *cache_value =
-                (ipc_cache_value_t *)umf_ba_global_alloc(value_size);
+            ipc_cache_value_t *cache_value = umf_ba_global_alloc(value_size);
             if (!cache_value) {
                 LOG_ERR(
                     "tracking get ipc handle: failed to allocate cache_value");
@@ -676,8 +673,7 @@ void umfTrackingMemoryProviderGetUpstreamProvider(
 
 umf_memory_tracker_handle_t umfMemoryTrackerCreate(void) {
     umf_memory_tracker_handle_t handle =
-        (umf_memory_tracker_handle_t)umf_ba_global_alloc(
-            sizeof(struct umf_memory_tracker_t));
+        umf_ba_global_alloc(sizeof(struct umf_memory_tracker_t));
     if (!handle) {
         return NULL;
     }
