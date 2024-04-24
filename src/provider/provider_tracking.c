@@ -117,7 +117,7 @@ umf_result_t umfMemoryTrackerGetAllocInfo(const void *ptr,
     }
 
     pAllocInfo->base = (void *)rkey;
-    pAllocInfo->size = rvalue->size;
+    pAllocInfo->baseSize = rvalue->size;
     pAllocInfo->pool = rvalue->pool;
 
     return UMF_RESULT_SUCCESS;
@@ -577,7 +577,7 @@ static size_t getDataSizeFromIpcHandle(const void *providerIpcData) {
     // the Flexible Array Member of umf_ipc_data_t.
     umf_ipc_data_t *ipcUmfData =
         (umf_ipc_data_t *)((uint8_t *)providerIpcData - sizeof(umf_ipc_data_t));
-    return ipcUmfData->size;
+    return ipcUmfData->baseSize;
 }
 
 static umf_result_t trackingOpenIpcHandle(void *provider, void *providerIpcData,
