@@ -150,6 +150,35 @@ TEST_F(test, retrieveMemoryProvider) {
     ASSERT_EQ(retProvider, provider);
 }
 
+#ifdef UMF_ENABLE_POOL_TRACKING_TESTS
+TEST_F(test, BasicPoolByPtrTest) {
+    constexpr size_t SIZE = 4096 * 1024;
+
+    umf_memory_provider_handle_t provider;
+    umf_result_t ret =
+        umfMemoryProviderCreate(&MALLOC_PROVIDER_OPS, NULL, &provider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    auto pool =
+        wrapPoolUnique(createPoolChecked(umfProxyPoolOps(), provider, nullptr,
+                                         UMF_POOL_CREATE_FLAG_OWN_PROVIDER));
+    auto expected_pool = pool.get();
+    char *ptr = (char *)umfPoolMalloc(expected_pool, SIZE);
+    ASSERT_NE(ptr, nullptr);
+
+    auto ret_pool = umfPoolByPtr(ptr);
+    EXPECT_EQ(ret_pool, expected_pool);
+
+    ret_pool = umfPoolByPtr(ptr + SIZE);
+    EXPECT_EQ(ret_pool, nullptr);
+
+    ret_pool = umfPoolByPtr(ptr + SIZE - 1);
+    EXPECT_EQ(ret_pool, expected_pool);
+
+    ret = umfFree(ptr);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+}
+#endif /* UMF_ENABLE_POOL_TRACKING_TESTS */
+
 INSTANTIATE_TEST_SUITE_P(
     mallocPoolTest, umfPoolTest,
     ::testing::Values(poolCreateExtParams{&MALLOC_POOL_OPS, nullptr,

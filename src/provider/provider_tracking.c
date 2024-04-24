@@ -80,33 +80,29 @@ static umf_result_t umfMemoryTrackerRemove(umf_memory_tracker_handle_t hTracker,
 }
 
 umf_memory_pool_handle_t umfMemoryTrackerGetPool(const void *ptr) {
-    assert(ptr);
-
-    if (TRACKER == NULL) {
-        LOG_ERR("tracker is not created");
+    umf_alloc_info_t allocInfo = {0};
+    umf_result_t ret = umfMemoryTrackerGetAllocInfo(ptr, &allocInfo);
+    if (ret != UMF_RESULT_SUCCESS) {
         return NULL;
     }
 
-    if (TRACKER->map == NULL) {
-        LOG_ERR("tracker's map is not created");
-        return NULL;
-    }
-
-    uintptr_t rkey;
-    tracker_value_t *rvalue;
-    int found = critnib_find(TRACKER->map, (uintptr_t)ptr, FIND_LE,
-                             (void *)&rkey, (void **)&rvalue);
-    if (!found) {
-        return NULL;
-    }
-
-    return (rkey + rvalue->size >= (uintptr_t)ptr) ? rvalue->pool : NULL;
+    return allocInfo.pool;
 }
 
 umf_result_t umfMemoryTrackerGetAllocInfo(const void *ptr,
                                           umf_alloc_info_t *pAllocInfo) {
     assert(ptr);
     assert(pAllocInfo);
+
+    if (TRACKER == NULL) {
+        LOG_ERR("tracker is not created");
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
+
+    if (TRACKER->map == NULL) {
+        LOG_ERR("tracker's map is not created");
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
 
     uintptr_t rkey;
     tracker_value_t *rvalue;
