@@ -54,9 +54,11 @@ jobs:
       run: vcpkg install
       shell: pwsh # Specifies PowerShell as the shell for running the script.
 
+    # TODO: 'rm' is a workaround for https://github.com/actions/runner-images/issues/9733
     - name: Install apt packages
       if: matrix.os == 'ubuntu-latest'
       run: |
+        sudo rm /etc/apt/sources.list.d/microsoft-prod.list
         sudo apt-get update
         sudo apt-get install -y cmake clang libhwloc-dev libnuma-dev libjemalloc-dev libtbb-dev
 

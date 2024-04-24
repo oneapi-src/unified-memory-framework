@@ -25,9 +25,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
+      # TODO: 'rm' is a workaround for https://github.com/actions/runner-images/issues/9733
       - name: Install apt packages
         if: matrix.os == 'ubuntu-latest'
         run: |
+          sudo rm /etc/apt/sources.list.d/microsoft-prod.list
           sudo apt-get update
           sudo apt-get install -y cmake libhwloc-dev libnuma-dev libjemalloc-dev libtbb-dev
 

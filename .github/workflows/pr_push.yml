@@ -57,9 +57,11 @@ jobs:
       run: vcpkg install
       shell: pwsh # Specifies PowerShell as the shell for running the script.
 
+    # TODO: 'rm' is a workaround for https://github.com/actions/runner-images/issues/9733
     - name: Install apt packages
       if: matrix.os == 'ubuntu-latest'
       run: |
+        sudo rm /etc/apt/sources.list.d/microsoft-prod.list
         sudo apt-get update
         sudo apt-get install -y cmake libjemalloc-dev libhwloc-dev libnuma-dev libtbb-dev
 
@@ -99,8 +101,10 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
+    # TODO: 'rm' is a workaround for https://github.com/actions/runner-images/issues/9733
     - name: Install apt packages
       run: |
+        sudo rm /etc/apt/sources.list.d/microsoft-prod.list
         sudo apt-get update
         sudo apt-get install -y black cmake clang-format-15 cmake-format libhwloc-dev
 
@@ -131,8 +135,10 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
+    # TODO: 'rm' is a workaround for https://github.com/actions/runner-images/issues/9733
     - name: Install doxygen
       run: |
+        sudo rm /etc/apt/sources.list.d/microsoft-prod.list
         sudo apt-get update
         sudo apt-get install -y doxygen
 

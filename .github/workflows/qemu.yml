@@ -22,9 +22,14 @@ jobs:
         echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
         sudo udevadm control --reload-rules
         sudo udevadm trigger --name-match=kvm
+
+    # TODO: 'rm' is a workaround for https://github.com/actions/runner-images/issues/9733
     - name: Install qemu
       run: |
-        sudo apt update && sudo apt install -y qemu-system genisoimage qemu-utils
+        sudo rm /etc/apt/sources.list.d/microsoft-prod.list
+        sudo apt update
+        sudo apt install -y qemu-system genisoimage qemu-utils
+
     - name: Run ssh-keygen
       run: ssh-keygen -b 4096 -N '' -f ~/.ssh/id_rsa
     - name: Generate iso with user info
