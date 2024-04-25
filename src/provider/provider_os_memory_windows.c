@@ -115,3 +115,12 @@ size_t os_get_page_size(void) {
 void os_strerror(int errnum, char *buf, size_t buflen) {
     strerror_s(buf, buflen, errnum);
 }
+
+int os_getpid(void) { return GetCurrentProcessId(); }
+
+umf_result_t os_duplicate_fd(int pid, int fd_in, int *fd_out) {
+    (void)pid;                             // unused
+    (void)fd_in;                           // unused
+    (void)fd_out;                          // unused
+    return UMF_RESULT_ERROR_NOT_SUPPORTED; // unsupported
+}

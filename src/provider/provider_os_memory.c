@@ -720,6 +720,114 @@ static umf_result_t os_allocation_merge(void *provider, void *lowPtr,
     return UMF_RESULT_SUCCESS;
 }
 
+typedef struct os_ipc_data_t {
+    int pid;
+    int fd;
+    size_t fd_offset;
+    size_t size;
+} os_ipc_data_t;
+
+static umf_result_t os_get_ipc_handle_size(void *provider, size_t *size) {
+    (void)provider; // unused
+
+    if (size == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    *size = sizeof(os_ipc_data_t);
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t os_get_ipc_handle(void *provider, const void *ptr,
+                                      size_t size, void *providerIpcData) {
+    if (provider == NULL || ptr == NULL || providerIpcData == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
+    if (os_provider->fd <= 0) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    void *value = critnib_get(os_provider->fd_offset_map, (uintptr_t)ptr);
+    if (value == NULL) {
+        LOG_ERR("os_get_ipc_handle(): getting a value from the IPC cache "
+                "failed (addr=%p)",
+                ptr);
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    os_ipc_data_t *os_ipc_data = (os_ipc_data_t *)providerIpcData;
+    os_ipc_data->pid = os_getpid();
+    os_ipc_data->fd = os_provider->fd;
+    os_ipc_data->fd_offset = (size_t)value - 1;
+    os_ipc_data->size = size;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t os_put_ipc_handle(void *provider, void *providerIpcData) {
+    if (provider == NULL || providerIpcData == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
+    os_ipc_data_t *os_ipc_data = (os_ipc_data_t *)providerIpcData;
+
+    if (os_ipc_data->fd != os_provider->fd || os_ipc_data->pid != os_getpid()) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t os_open_ipc_handle(void *provider, void *providerIpcData,
+                                       void **ptr) {
+    if (provider == NULL || providerIpcData == NULL || ptr == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
+    os_ipc_data_t *os_ipc_data = (os_ipc_data_t *)providerIpcData;
+
+    int fd;
+    umf_result_t umf_result =
+        os_duplicate_fd(os_ipc_data->pid, os_ipc_data->fd, &fd);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        LOG_PERR("duplicating file descriptor failed");
+        return umf_result;
+    }
+
+    *ptr = os_mmap(NULL, os_ipc_data->size, os_provider->protection,
+                   os_provider->visibility, fd, os_ipc_data->fd_offset);
+    if (*ptr == NULL) {
+        os_store_last_native_error(UMF_OS_RESULT_ERROR_ALLOC_FAILED, errno);
+        LOG_PERR("memory mapping failed");
+        return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
+    }
+
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t os_close_ipc_handle(void *provider, void *ptr,
+                                        size_t size) {
+    if (provider == NULL || ptr == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    errno = 0;
+    int ret = os_munmap(ptr, size);
+    // ignore error when size == 0
+    if (ret && (size > 0)) {
+        os_store_last_native_error(UMF_OS_RESULT_ERROR_FREE_FAILED, errno);
+        LOG_PERR("memory unmapping failed");
+
+        return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
+    }
+
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_memory_provider_ops_t UMF_OS_MEMORY_PROVIDER_OPS = {
     .version = UMF_VERSION_CURRENT,
     .initialize = os_initialize,
@@ -734,11 +842,11 @@ static umf_memory_provider_ops_t UMF_OS_MEMORY_PROVIDER_OPS = {
     .ext.purge_force = os_purge_force,
     .ext.allocation_merge = os_allocation_merge,
     .ext.allocation_split = os_allocation_split,
-    .ipc.get_ipc_handle_size = NULL,
-    .ipc.get_ipc_handle = NULL,
-    .ipc.put_ipc_handle = NULL,
-    .ipc.open_ipc_handle = NULL,
-    .ipc.close_ipc_handle = NULL};
+    .ipc.get_ipc_handle_size = os_get_ipc_handle_size,
+    .ipc.get_ipc_handle = os_get_ipc_handle,
+    .ipc.put_ipc_handle = os_put_ipc_handle,
+    .ipc.open_ipc_handle = os_open_ipc_handle,
+    .ipc.close_ipc_handle = os_close_ipc_handle};
 
 umf_memory_provider_ops_t *umfOsMemoryProviderOps(void) {
     return &UMF_OS_MEMORY_PROVIDER_OPS;
