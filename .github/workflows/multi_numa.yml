@@ -1,0 +1,48 @@
+# Runs tests on multi-numa machine
+name: MultiNuma
+
+on: [workflow_call]
+
+permissions:
+  contents: read
+
+jobs:
+  multi_numa:
+    name: ${{matrix.os}}
+    # run only on upstream; forks will not have the HW
+    if: github.repository == 'oneapi-src/unified-memory-framework'
+
+    strategy:
+      matrix:
+        os: [ubuntu-22.04]
+    runs-on:  ["DSS-MULTI-NUMA", "DSS-${{matrix.os}}"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Get information about platform
+        run: .github/scripts/get_system_info.sh
+
+      - name: Configure build
+        run: >
+          cmake
+          -B ${{github.workspace}}/build
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_C_COMPILER=gcc
+          -DCMAKE_CXX_COMPILER=g++
+          -DUMF_BUILD_SHARED_LIBRARY=OFF
+          -DUMF_BUILD_BENCHMARKS=OFF
+          -DUMF_BUILD_TESTS=ON
+          -DUMF_DEVELOPER_MODE=ON
+          -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
+          -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
+          -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
+          -DUMF_ENABLE_POOL_TRACKING=ON
+
+      - name: Build UMF
+        run: cmake --build ${{github.workspace}}/build -j $(nproc)
+
+      - name: Run tests
+        working-directory: ${{github.workspace}}/build
+        run: ctest --output-on-failure --test-dir test

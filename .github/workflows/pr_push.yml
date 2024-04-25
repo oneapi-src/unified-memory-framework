@@ -167,3 +167,6 @@ jobs:
   Valgrind:
     needs: [Build]
     uses: ./.github/workflows/valgrind.yml
+  MultiNuma:
+    needs: [Build]
+    uses: ./.github/workflows/multi_numa.yml

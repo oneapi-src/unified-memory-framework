@@ -22,6 +22,8 @@ int getNumaNodeByPtr(void *ptr) {
     int retm =
         get_mempolicy(&nodeId, nullptr, 0, ptr, MPOL_F_ADDR | MPOL_F_NODE);
     UT_ASSERTeq(retm, 0);
+    UT_ASSERT(nodeId >= 0);
+
     return nodeId;
 }
 
