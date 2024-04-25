@@ -7,6 +7,7 @@
 
 import argparse
 import difflib
+from packaging.version import Version
 from pathlib import Path
 import platform
 import subprocess  # nosec B404
@@ -25,6 +26,7 @@ class UmfInstaller:
     build_type (str): Debug or Release build type passed to the script
     shared_library (bool): Determines if the UMF was built as a shared library
     pools (List[str]): A list of enabled pools during the UMF compilation
+    umf_version (Version): UMF version currently being built and installed
     match_list (List[str]): A list of relative paths of files that should be installed
     """
 
@@ -36,6 +38,7 @@ class UmfInstaller:
         build_type: str,
         shared_library: bool,
         pools: List[str],
+        umf_version: Version,
     ):
         self.workspace_dir = workspace_dir
         self.build_dir = build_dir
@@ -43,6 +46,7 @@ class UmfInstaller:
         self.build_type = build_type
         self.shared_library = shared_library
         self.pools = pools
+        self.umf_version = umf_version
         self.match_list = self._create_match_list()
 
     def _create_match_list(self) -> List[str]:
@@ -95,10 +99,33 @@ class UmfInstaller:
         ]
         for pool in self.pools:
             lib.append(f"lib/{lib_prefix}{pool}.{lib_ext_static}")
-        lib_ext = lib_ext_shared if self.shared_library else lib_ext_static
-        lib.append(f"lib/{lib_prefix}umf.{lib_ext}")
+        if self.shared_library:
+            lib.append(f"lib/{lib_prefix}umf.{lib_ext_shared}")
+
+            if platform.system() == "Linux":
+                lib.append(
+                    f"lib/{lib_prefix}umf.{lib_ext_shared}.{self.umf_version.major}"
+                )
+                lib.append(f"lib/{lib_prefix}umf.{lib_ext_shared}.{self.umf_version}")
+            elif platform.system() == "Darwin":  # MacOS
+                lib.append(
+                    f"lib/{lib_prefix}umf.{self.umf_version.major}.{lib_ext_shared}"
+                )
+                lib.append(f"lib/{lib_prefix}umf.{self.umf_version}.{lib_ext_shared}")
+        else:
+            lib.append(f"lib/{lib_prefix}umf.{lib_ext_static}")
+
         if is_umf_proxy:
             lib.append(f"lib/{lib_prefix}umf_proxy.{lib_ext_shared}")
+
+            if platform.system() == "Linux":
+                lib.append(
+                    f"lib/{lib_prefix}umf_proxy.{lib_ext_shared}.{self.umf_version.major}"
+                )
+            elif platform.system() == "Darwin":  # MacOS
+                lib.append(
+                    f"lib/{lib_prefix}umf_proxy.{self.umf_version.major}.{lib_ext_shared}"
+                )
 
         share = []
         share = [
@@ -155,9 +182,14 @@ class UmfInstaller:
             )
         ]
 
+        expected_files = [
+            str(entry)
+            for entry in sorted(self.match_list, key=lambda x: str(x).casefold())
+        ]
+
         diff = list(
             difflib.unified_diff(
-                self.match_list,
+                expected_files,
                 installed_files,
                 fromfile="Expected files",
                 tofile="Installed files",
@@ -252,6 +284,11 @@ class UmfInstallationTester:
             action="store_true",
             help="Add this argument if the UMF was built with Scalable Pool enabled",
         )
+        self.parser.add_argument(
+            "--umf-version",
+            action="store",
+            help="Current version of the UMF, e.g. 1.0.0",
+        )
         return self.parser.parse_args()
 
     def run(self) -> None:
@@ -269,6 +306,7 @@ class UmfInstallationTester:
             pools.append("jemalloc_pool")
         if self.args.scalable_pool:
             pools.append("scalable_pool")
+        umf_version = Version(self.args.umf_version)
 
         umf_installer = UmfInstaller(
             workspace_dir,
@@ -277,6 +315,7 @@ class UmfInstallationTester:
             self.args.build_type,
             self.args.shared_library,
             pools,
+            umf_version,
         )
 
         print("Installation test - BEGIN", flush=True)
