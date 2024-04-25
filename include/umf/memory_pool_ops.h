@@ -22,7 +22,7 @@ extern "C" {
 /// calls. Each memory pool implementation should initialize all function
 /// pointers.
 ///
-typedef struct umf_memory_pool_ops_t {
+struct umf_memory_pool_ops_t {
     /// Version of the ops structure.
     /// Should be initialized using UMF_VERSION_CURRENT.
     uint32_t version;
@@ -120,7 +120,7 @@ typedef struct umf_memory_pool_ops_t {
     ///         The value is undefined if the previous allocation was successful.
     ///
     umf_result_t (*get_last_allocation_error)(void *pool);
-} umf_memory_pool_ops_t;
+};
 
 #ifdef __cplusplus
 }
