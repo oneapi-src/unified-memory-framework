@@ -70,7 +70,7 @@ static umf_result_t umfMemoryTrackerRemove(umf_memory_tracker_handle_t hTracker,
 
     void *value = critnib_remove(hTracker->map, (uintptr_t)ptr);
     if (!value) {
-        LOG_ERR("umfMemoryTrackerRemove: Unknown Error");
+        LOG_ERR("umfMemoryTrackerRemove: pointer %p not found in the map", ptr);
         return UMF_RESULT_ERROR_UNKNOWN;
     }
 
