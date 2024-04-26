@@ -7,14 +7,14 @@ growing. To address the increasing demand, memory subsystem of modern server
 platforms is becoming heterogeneous. For example, High-Bandwidth Memory (HBM) 
 addresses throughput needs; the CXL protocol closes the capacity gap and tends 
 to improve memory utilization by memory pooling capabilities. Beyond CPU use 
-cases, there are GPU accelerators with their own memory on board. 
+cases, there are GPU accelerators with their own memory on board.
 
 Modern heterogeneous memory platforms present a range of opportunities. At the 
 same time, they introduce new challenges that could require software updates to 
 fully utilize the HW features. There are two main problems that modern 
 applications need to deal with. The first one is appropriate data placement and 
 data migration between different types of memory. The second one is how SW 
-should leverage different memory topologies. 
+should leverage different memory topologies.
 
 All applications can be divided into two big groups: enlightened and 
 unenlightened. Enlightened applications explicitly manage data allocation 
@@ -24,19 +24,15 @@ infrastructure. An underlying infrastructure refers not only to the OS with
 various memory tiering solutions to migrate memory pages between tiers, but 
 also middleware: frameworks and libraries.
 
-Please note that UMF is a Work-In-Progress! Read the disclaimer
-about that in the `README.md`_ file, before using our project.
-
-==============
- Architecture
-==============
+About UMF
+=========
 
 The Unified Memory Framework (`UMF`_) is a library for constructing allocators 
 and memory pools. It also contains broadly useful abstractions and utilities 
 for memory management. UMF allows users to create and manage multiple memory 
 pools characterized by different attributes, allowing certain allocation types 
 to be isolated from others and allocated using different hardware resources as 
-required. 
+required.
 
 A memory pool is a combination of a pool allocator instance and a memory 
 provider instance along with their properties and allocation policies. 
@@ -50,7 +46,18 @@ providers provided by UMF or create their own.
 
 The UMF library contains various pool allocators and memory providers but also 
 allows for the integration of external ones, giving users the flexibility to 
-either use existing solutions or provide their implementations. 
+either use existing solutions or provide their implementations.
+
+**Please note that UMF is a Work-In-Progress!** Read the disclaimer
+about that in the `README.md`_ file, before using our project.
+
+The repository for Unified Memory Framework can be found on GitHub:
+
+* `oneapi-src/unified-memory-framework <https://github.com/oneapi-src/unified-memory-framework>`_
+
+==============
+ Architecture
+==============
 
 Memory Providers
 ================
@@ -98,45 +105,6 @@ the :ref:`allocation API <allocation API>` as a first argument. There is also a 
 retrieve a memory pool from an existing memory pointer that points to a memory 
 previously allocated by UMF.
 
-Logging
----------------------
-
-Logging in UMF is handled by logger. There are several levels of logging: *debug*, *info*, *warning*, and *error*.
-The level of logging determines what messages will be printed, ie. the level set to *warning* means all messages at levels *warning* and *error* will be printed.
-
-By default, there is a guarantee that *error* messages are flushed immediately. One can change this behavior to flush on lower-level messages.
-
-Loggers redirect messages to *stdout*, *stderr*, or a file
-
-By default, only fatal messages are printed. To enable logger you have to set **UMF_LOG** environment variable which have following syntax for setting logger options:
-
-  "[level:debug|info|warning|error|fatal];[flush:debug|info|warning|error|fatal];[output:stdout|stderr|file,<path>];[timestamp:yes|no];[pid:yes|no]"
-
-  * level - a log level, meaning that only messages from this level and above are printed.
-            Possible values, from the lowest level to the highest one: *debug*, *info*, *warning*, *error*, *fatal*
-  * flush - a flush level, meaning that messages at this level and above are guaranteed to be flushed immediately,
-            possible values are the same as above,
-  * output - indicates where messages should be printed.
-             Possible values are: *stdout*, *stderr* and *file*,
-             when providing a *file* output option, a *<path>* is required
-  * timestamp - add a timestamp to log message
-  * pid - add thread and process ids to log message
-
-  .. note::
-    For output to file, a path to the file has to be provided after a comma, like in the example above. The path has to exist, file will be created if not existing. Path to the file should be no longer than 255 characters long.
-    The output parameter is required, all other logger options are optional. The defaults are set when options are not provided in the environment variable.
-    Options have to be separated with `;`, option names and their values with `:`. Additionally, when providing *file* output, the keyword *file* and a path to a file
-    have to be separated by `'`.
-
-An example of an environment variable for setting up logger with logging level set to *info*, flush level set to *warning*, and output set to
-the ``out.log`` file::
-
-  UMF_LOG="level:info;flush:warning;output:file,out.log"
-
-An example of an environment variable for setting up logger with logging level set to *warning* and output set to stdout::
-
-  UMF_LOGL="level:warning;output:stdout"
-
 Inter-Process Communication
 ===========================
 
@@ -158,5 +126,54 @@ When a client requests an IPC handle for a memory allocated by UMF, UMF does the
 Not every memory provider can and must support IPC operations. It is up to the memory provider implementation to decide if it supports IPC operations. 
 If the corresponding memory provider does not support IPC operations, UMF will return an error when a client requests an IPC handle for a memory object allocated by this memory provider.
 
+==============
+ Fundamentals
+==============
+
+The following section provides fundamentals of the project. More detailed information can be found in
+contributing guide and detailed API pages.
+
+The contribution guide can be found in the repository, in file: `CONTRIBUTING.md`_.
+
+Logging
+============
+
+Logging in UMF is handled by logger. There are several levels of logging: *debug*, *info*, *warning*, and *error*.
+The level of logging determines what messages will be printed, ie. the level set to *warning* means all messages at levels *warning* and *error* will be printed.
+
+By default, there is a guarantee that *error* messages are flushed immediately. One can change this behavior to flush on lower-level messages.
+
+Loggers redirect messages to *stdout*, *stderr*, or a file.
+
+By default, only fatal messages are printed. To enable logger you have to set **UMF_LOG** environment variable which have the following syntax for setting logger options::
+
+    UMF_LOG="[level:debug|info|warning|error|fatal];[flush:debug|info|warning|error|fatal];[output:stdout|stderr|file,<path>];[timestamp:yes|no];[pid:yes|no]"
+
+* level - a log level, meaning that only messages from this level and above are printed. Possible values, from the lowest level to the highest one: *debug*, *info*, *warning*, *error*, *fatal*.
+
+* flush - a flush level, meaning that messages at this level and above are guaranteed to be flushed immediately, possible values are the same as above.
+
+* output - indicates where messages should be printed. Possible values are: *stdout*, *stderr* and *file*, when providing a *file* output option, a *<path>* is required.
+
+* timestamp - add a timestamp to log message.
+
+* pid - add thread and process ids to log message.
+
+.. note::
+  For output to a file, a path to a file has to be provided after a comma, like in the example above. The path has to exist and should be no longer than 255 characters long. The file will be created if not existing.
+  The output parameter is required. All other logger options are optional. The defaults are set when options are not provided in the environment variable.
+  Options have to be separated with a semicolon (`;`), option names and their values with a colon (`:`). Additionally, when providing *file* output, the keyword *file* and a path to a file
+  have to be separated by a comma (`,`).
+
+An example of an environment variable for setting up logger with logging level set to *info*, flush level set to *warning*, and output set to
+the ``out.log`` file::
+
+  UMF_LOG="level:info;flush:warning;output:file,out.log"
+
+An example of an environment variable for setting up logger with logging level set to *warning* and output set to stdout::
+
+  UMF_LOG="level:warning;output:stdout"
+
 .. _UMF: https://github.com/oneapi-src/unified-memory-framework
+.. _CONTRIBUTING.md: https://github.com/oneapi-src/unified-memory-framework/blob/main/CONTRIBUTING.md
 .. _README.md: https://github.com/oneapi-src/unified-memory-framework/blob/main/README.md
