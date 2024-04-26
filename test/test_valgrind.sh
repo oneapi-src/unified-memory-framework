@@ -73,6 +73,7 @@ rm -f umf_test-*.log umf_test-*.err
 
 for test in $(ls -1 umf_test-*); do
 	[ ! -x $test ] && continue
+	echo "$test - starting ..."
 	echo -n "$test "
 	LOG=${test}.log
 	ERR=${test}.err
@@ -91,6 +92,9 @@ for test in $(ls -1 umf_test-*); do
 		;;
 	umf_test-memspace_highest_capacity)
 		FILTER='--gtest_filter="-*highestCapacityVerify*"'
+		;;
+	umf_test-provider_os_memory_multiple_numa_nodes)
+		FILTER='--gtest_filter="-testNumaNodesAllocations/testNumaOnEachNode*:testNumaNodesAllocationsAllCpus/testNumaOnEachCpu.checkModePreferredEmptyNodeset*:testNumaNodesAllocationsAllCpus/testNumaOnEachCpu.checkModeLocal*"'
 		;;
 	esac
 

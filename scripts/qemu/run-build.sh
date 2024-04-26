@@ -10,7 +10,7 @@ repo=$1
 branch=$2
 
 echo password | sudo -Sk apt update
-echo password | sudo -Sk apt install -y git cmake gcc g++ numactl libnuma-dev libhwloc-dev libjemalloc-dev libtbb-dev pkg-config
+echo password | sudo -Sk apt install -y git cmake gcc g++ numactl libnuma-dev libhwloc-dev libjemalloc-dev libtbb-dev pkg-config valgrind hwloc
 
 numactl -H
 
@@ -39,3 +39,7 @@ ctest --output-on-failure
 # run tests bound to a numa node
 numactl -N 0 ctest --output-on-failure
 numactl -N 1 ctest --output-on-failure
+
+# run tests under valgrind
+echo "Running tests under valgrind memcheck ..."
+../test/test_valgrind.sh .. . memcheck
