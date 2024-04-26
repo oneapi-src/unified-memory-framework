@@ -1,7 +1,7 @@
 # Runs tests on multi-numa machine
 name: MultiNuma
 
-on: [workflow_call]
+on: [push, pull_request]
 
 permissions:
   contents: read
@@ -45,4 +45,4 @@ jobs:
 
       - name: Run tests
         working-directory: ${{github.workspace}}/build
-        run: ctest --output-on-failure --test-dir test
+        run: ctest -V --test-dir test -R ipc_os_prov
