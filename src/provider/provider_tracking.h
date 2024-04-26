@@ -42,7 +42,7 @@ umf_memory_pool_handle_t umfMemoryTrackerGetPool(const void *ptr);
 
 typedef struct umf_alloc_info_t {
     void *base;
-    size_t size;
+    size_t baseSize;
     umf_memory_pool_handle_t pool;
 } umf_alloc_info_t;
 

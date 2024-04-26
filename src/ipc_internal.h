@@ -21,7 +21,7 @@ extern "C" {
 // providerIpcData is a Flexible Array Member because its size varies
 // depending on the provider.
 typedef struct umf_ipc_data_t {
-    size_t size; // size of base allocation
+    size_t baseSize; // size of base (coarse-grain) allocation
     uint64_t offset;
     char providerIpcData[];
 } umf_ipc_data_t;

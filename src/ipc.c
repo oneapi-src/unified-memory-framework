@@ -47,16 +47,16 @@ umf_result_t umfGetIPCHandle(const void *ptr, umf_ipc_handle_t *umfIPCHandle,
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    ret =
-        umfMemoryProviderGetIPCHandle(provider, allocInfo.base, allocInfo.size,
-                                      (void *)ipcData->providerIpcData);
+    ret = umfMemoryProviderGetIPCHandle(provider, allocInfo.base,
+                                        allocInfo.baseSize,
+                                        (void *)ipcData->providerIpcData);
     if (ret != UMF_RESULT_SUCCESS) {
         LOG_ERR("umfGetIPCHandle: failed to get IPC handle.");
         umf_ba_global_free(ipcData);
         return ret;
     }
 
-    ipcData->size = allocInfo.size;
+    ipcData->baseSize = allocInfo.baseSize;
     ipcData->offset = (uintptr_t)ptr - (uintptr_t)allocInfo.base;
 
     *umfIPCHandle = ipcData;
@@ -114,5 +114,5 @@ umf_result_t umfCloseIPCHandle(void *ptr) {
     umf_memory_provider_handle_t hProvider = allocInfo.pool->provider;
 
     return umfMemoryProviderCloseIPCHandle(hProvider, allocInfo.base,
-                                           allocInfo.size);
+                                           allocInfo.baseSize);
 }
