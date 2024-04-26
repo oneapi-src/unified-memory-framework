@@ -240,3 +240,35 @@ endif()
 if(UMF_ENABLE_POOL_TRACKING)
     add_umf_test(NAME ipc SRCS ipcAPI.cpp)
 endif()
+
+if(LINUX)
+    set(BASE_NAME ipc_os_prov)
+    set(TEST_NAME umf-${BASE_NAME})
+
+    foreach(loop_var IN ITEMS "producer" "consumer")
+        set(EXEC_NAME umf_test-${BASE_NAME}_${loop_var})
+        add_umf_executable(
+            NAME ${EXEC_NAME}
+            SRCS ${BASE_NAME}_${loop_var}.c
+            LIBS umf)
+
+        target_include_directories(
+            ${EXEC_NAME} PRIVATE ${UMF_CMAKE_SOURCE_DIR}/src/utils
+                                 ${UMF_CMAKE_SOURCE_DIR}/include)
+
+        target_link_directories(${EXEC_NAME} PRIVATE ${LIBHWLOC_LIBRARY_DIRS})
+    endforeach(loop_var)
+
+    file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/${BASE_NAME}.sh
+         DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+    add_test(
+        NAME ${TEST_NAME}
+        COMMAND ${BASE_NAME}.sh
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+    set_tests_properties(${TEST_NAME} PROPERTIES LABELS "umf")
+else()
+    message(
+        STATUS "IPC shared memory test is supported on Linux only - skipping")
+endif()
