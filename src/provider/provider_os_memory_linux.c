@@ -192,3 +192,49 @@ int os_purge(void *addr, size_t length, int advice) {
 void os_strerror(int errnum, char *buf, size_t buflen) {
     strerror_r(errnum, buf, buflen);
 }
+
+int os_getpid(void) { return getpid(); }
+
+umf_result_t os_duplicate_fd(int pid, int fd_in, int *fd_out) {
+// pidfd_getfd(2) is used to obtain a duplicate of another process's file descriptor.
+// Permission to duplicate another process's file descriptor
+// is governed by a ptrace access mode PTRACE_MODE_ATTACH_REALCREDS check (see ptrace(2))
+// that can be changed using the /proc/sys/kernel/yama/ptrace_scope interface.
+// pidfd_getfd(2) is supported since Linux 5.6
+// pidfd_open(2) is supported since Linux 5.3
+#if defined(__NR_pidfd_open) && defined(__NR_pidfd_getfd)
+    errno = 0;
+    int pid_fd = syscall(SYS_pidfd_open, pid, 0);
+    if (pid_fd == -1) {
+        LOG_PDEBUG("SYS_pidfd_open");
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
+
+    int fd_dup = syscall(SYS_pidfd_getfd, pid_fd, fd_in, 0);
+    close(pid_fd);
+    if (fd_dup == -1) {
+        LOG_PDEBUG("SYS_pidfd_getfd");
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
+
+    *fd_out = fd_dup;
+
+    return UMF_RESULT_SUCCESS;
+#else
+    // TODO: find another way to obtain a duplicate of another process's file descriptor
+    (void)pid;    // unused
+    (void)fd_in;  // unused
+    (void)fd_out; // unused
+    errno = ENOTSUP;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED; // unsupported
+#endif /* defined(__NR_pidfd_open) && defined(__NR_pidfd_getfd) */
+}
+
+umf_result_t os_close_fd(int fd) {
+    if (close(fd)) {
+        LOG_PERR("close() failed");
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
+
+    return UMF_RESULT_SUCCESS;
+}
