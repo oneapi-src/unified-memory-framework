@@ -151,7 +151,7 @@ TEST_P(testNumaOnEachNode, checkNumaNodesAllocations) {
     // 'ptr' must point to an initialized value before retrieving its numa node
     memset(ptr, 0xFF, alloc_size);
     int retrieved_numa_node_number = getNumaNodeByPtr(ptr);
-    ASSERT_EQ(retrieved_numa_node_number, numa_node_number);
+    EXPECT_EQ(retrieved_numa_node_number, numa_node_number);
 }
 
 // Test for allocations on numa nodes with mode preferred. It will be executed
@@ -176,7 +176,7 @@ TEST_P(testNumaOnEachNode, checkModePreferred) {
     // 'ptr' must point to an initialized value before retrieving its numa node
     memset(ptr, 0xFF, alloc_size);
     int retrieved_numa_node_number = getNumaNodeByPtr(ptr);
-    ASSERT_EQ(retrieved_numa_node_number, numa_node_number);
+    EXPECT_EQ(retrieved_numa_node_number, numa_node_number);
 }
 
 // Test for allocation on numa node with default mode enabled.
@@ -201,7 +201,7 @@ TEST_P(testNumaOnEachNode, checkModeDefaultSetMempolicy) {
     // 'ptr' must point to an initialized value before retrieving its numa node
     memset(ptr, 0xFF, alloc_size);
     int retrieved_numa_node_number = getNumaNodeByPtr(ptr);
-    ASSERT_EQ(retrieved_numa_node_number, numa_node_number);
+    EXPECT_EQ(retrieved_numa_node_number, numa_node_number);
 }
 
 // Test for allocations on a single numa node with interleave mode enabled.
@@ -228,7 +228,7 @@ TEST_P(testNumaOnEachNode, checkModeInterleaveSingleNode) {
     // 'ptr' must point to an initialized value before retrieving its numa node
     memset(ptr, 0xFF, pages_num * page_size);
     int retrieved_numa_node_number = getNumaNodeByPtr(ptr);
-    ASSERT_EQ(retrieved_numa_node_number, numa_node_number);
+    EXPECT_EQ(retrieved_numa_node_number, numa_node_number);
 }
 
 // Test for allocation on numa node with mode preferred and an empty nodeset.
@@ -243,6 +243,8 @@ TEST_P(testNumaOnEachCpu, checkModePreferredEmptyNodeset) {
 
     CPU_SET(cpu, mask);
     int ret = sched_setaffinity(0, sizeof(cpu_set_t), mask);
+    CPU_FREE(mask);
+
     UT_ASSERTeq(ret, 0);
 
     umf_os_memory_provider_params_t os_memory_provider_params =
@@ -266,8 +268,7 @@ TEST_P(testNumaOnEachCpu, checkModePreferredEmptyNodeset) {
     // 'ptr' must point to an initialized value before retrieving its numa node
     memset(ptr, 0xFF, alloc_size);
     int retrieved_numa_node_number = getNumaNodeByPtr(ptr);
-    ASSERT_EQ(retrieved_numa_node_number, numa_node_number);
-    CPU_FREE(mask);
+    EXPECT_EQ(retrieved_numa_node_number, numa_node_number);
 }
 
 // Test for allocation on numa node with local mode enabled. The memory is
@@ -280,6 +281,8 @@ TEST_P(testNumaOnEachCpu, checkModeLocal) {
 
     CPU_SET(cpu, mask);
     int ret = sched_setaffinity(0, sizeof(cpu_set_t), mask);
+    CPU_FREE(mask);
+
     UT_ASSERTeq(ret, 0);
 
     umf_os_memory_provider_params_t os_memory_provider_params =
@@ -303,8 +306,7 @@ TEST_P(testNumaOnEachCpu, checkModeLocal) {
     // 'ptr' must point to an initialized value before retrieving its numa node
     memset(ptr, 0xFF, alloc_size);
     int retrieved_numa_node_number = getNumaNodeByPtr(ptr);
-    ASSERT_EQ(retrieved_numa_node_number, numa_node_number);
-    CPU_FREE(mask);
+    EXPECT_EQ(retrieved_numa_node_number, numa_node_number);
 }
 
 // Test for allocation on numa node with default mode enabled.
@@ -329,7 +331,7 @@ TEST_F(testNuma, checkModeDefault) {
     // 'ptr' must point to an initialized value before retrieving its numa node
     memset(ptr, 0xFF, alloc_size);
     int retrieved_numa_node_number = getNumaNodeByPtr(ptr);
-    ASSERT_EQ(retrieved_numa_node_number, numa_node_number);
+    EXPECT_EQ(retrieved_numa_node_number, numa_node_number);
 }
 
 // Test for allocations on numa nodes with interleave mode enabled.
@@ -368,8 +370,9 @@ TEST_F(testNuma, checkModeInterleave) {
 
     bitmask *retrieved_nodemask = retrieve_nodemask(ptr);
     int ret = numa_bitmask_equal(retrieved_nodemask, nodemask);
-    ASSERT_EQ(ret, 1);
     numa_bitmask_free(retrieved_nodemask);
+
+    EXPECT_EQ(ret, 1);
 }
 
 // Test for allocations on all numa nodes with BIND mode.
@@ -406,9 +409,9 @@ TEST_F(testNuma, checkModeBindOnAllNodes) {
             count++;
         }
     }
-    ASSERT_EQ(count, 1);
+    EXPECT_EQ(count, 1);
     // ... and it's the one which we expect
-    ASSERT_EQ(retrieved_numa_node_number, read_numa_node);
+    EXPECT_EQ(retrieved_numa_node_number, read_numa_node);
 }
 
 // Negative tests for policies with illegal arguments.
