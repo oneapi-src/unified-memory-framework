@@ -4,12 +4,12 @@
 
 #include "base.hpp"
 #include "numa_helpers.h"
+#include "test_helpers.h"
 
 #include <numa.h>
 #include <numaif.h>
 #include <sched.h>
 
-#include "test_helpers.h"
 #include <umf/providers/provider_os_memory.h>
 
 static umf_os_memory_provider_params_t UMF_OS_MEMORY_PROVIDER_PARAMS_TEST =
@@ -138,7 +138,6 @@ TEST_P(testNumaOnEachNode, checkNumaNodesAllocations) {
         UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
 
     os_memory_provider_params.numa_list = &numa_node_number;
-    numa_bitmask_setbit(nodemask, numa_node_number);
     os_memory_provider_params.numa_list_len = 1;
     os_memory_provider_params.numa_mode = UMF_NUMA_MODE_BIND;
     initOsProvider(os_memory_provider_params);
@@ -216,7 +215,6 @@ TEST_P(testNumaOnEachNode, checkModeInterleaveSingleNode) {
         UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
 
     os_memory_provider_params.numa_list = &numa_node_number;
-    numa_bitmask_setbit(nodemask, numa_node_number);
     os_memory_provider_params.numa_list_len = 1;
     os_memory_provider_params.numa_mode = UMF_NUMA_MODE_INTERLEAVE;
     initOsProvider(os_memory_provider_params);
@@ -335,7 +333,7 @@ TEST_F(testNuma, checkModeDefault) {
 }
 
 // Test for allocations on numa nodes with interleave mode enabled.
-// The page allocations are interleaved across the set of nodes specified in nodemask.
+// The page allocations are interleaved across the set of all available nodes.
 TEST_F(testNuma, checkModeInterleave) {
     constexpr int pages_num = 1024;
     size_t page_size = sysconf(_SC_PAGE_SIZE);
