@@ -109,7 +109,9 @@ struct provider_mock_ipc : public umf_test::provider_base_t {
 static umf_memory_provider_ops_t IPC_MOCK_PROVIDER_OPS =
     umf::providerMakeCOps<provider_mock_ipc, void>();
 
+HostMemoryAccessor hostMemoryAccessor;
+
 INSTANTIATE_TEST_SUITE_P(umfIpcTestSuite, umfIpcTest,
-                         ::testing::Values(testParams{
+                         ::testing::Values(ipcTestParams{
                              umfProxyPoolOps(), nullptr, &IPC_MOCK_PROVIDER_OPS,
-                             nullptr}));
+                             nullptr, &hostMemoryAccessor}));
