@@ -364,7 +364,7 @@ TEST_F(umfLevelZeroProviderTest, basic) {
     ASSERT_EQ(alloc_props.type, ZE_MEMORY_TYPE_DEVICE);
 
     // check if the pattern was successfully applied
-    uint32_t *hostMemory = (uint32_t *)malloc(size);
+    uint32_t *hostMemory = (uint32_t *)calloc(1, size);
     CopyDeviceToHostMemory(hostMemory, ptr, size);
     for (size_t i = 0; i < size / sizeof(int); i++) {
         ASSERT_EQ(hostMemory[i], pattern);
