@@ -85,7 +85,8 @@ jobs:
       run: qemu-img resize ./ubuntu-23.04-server-cloudimg-amd64.img +4G
     - name: Print qemu args
       run: |
-        echo `python3 scripts/qemu/qemu_config.py scripts/qemu/configs/${{matrix.config}}.xml | sed s/''\''/'/g`
+        # notice: should be sedded, but it hides status
+        python3 scripts/qemu/qemu_config.py scripts/qemu/configs/${{matrix.config}}.xml
     - name: Run qemu
       run: |
         sudo qemu-system-x86_64 \
