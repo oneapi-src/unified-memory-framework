@@ -138,6 +138,13 @@ More detailed documentation is available here: https://oneapi-src.github.io/unif
 #### OS memory provider
 
 A memory provider that provides memory from an operating system.
+It supports two types of memory mappings
+1) private memory mapping (`UMF_MEM_MAP_PRIVATE`)
+2) shared memory mapping (`UMF_MEM_MAP_SHARED` - supported on Linux only yet)
+
+If the shared memory mapping is used then an anonymous file descriptor for memory mapping is created using:
+1) `memfd_secret()` syscall - (if it is implemented and) if the `UMF_MEM_FD_FUNC` environment variable does not contain the "memfd_create" string or
+2) `memfd_create()` syscall - otherwise (and if it is implemented).
 
 ##### Requirements
 

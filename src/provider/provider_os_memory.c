@@ -15,6 +15,7 @@
 #include <string.h>
 
 #include "base_alloc_global.h"
+#include "critnib.h"
 #include "provider_os_memory_internal.h"
 #include "utils_log.h"
 
@@ -26,6 +27,16 @@
 
 typedef struct os_memory_provider_t {
     unsigned protection; // combination of OS-specific protection flags
+    unsigned visibility; // memory visibility mode
+    int fd;              // file descriptor for memory mapping
+    size_t size_fd;      // size of file used for memory mapping
+    size_t max_size_fd;  // maximum size of file used for memory mapping
+    // A critnib map storing (ptr, fd_offset + 1) pairs. We add 1 to fd_offset
+    // in order to be able to store fd_offset equal 0, because
+    // critnib_get() returns value or NULL, so a value cannot equal 0.
+    // It is needed mainly in the get_ipc_handle and open_ipc_handle hooks
+    // to mmap a specific part of a file.
+    critnib *fd_offset_map;
 
     // NUMA config
     hwloc_bitmap_t nodeset;
@@ -191,6 +202,34 @@ static umf_result_t translate_params(umf_os_memory_provider_params_t *in_params,
         return result;
     }
 
+    result = os_translate_mem_visibility_flag(in_params->visibility,
+                                              &provider->visibility);
+    if (result != UMF_RESULT_SUCCESS) {
+        LOG_ERR("incorrect memory visibility flag: %u", in_params->visibility);
+        return result;
+    }
+
+    provider->fd = os_create_anonymous_fd(provider->visibility);
+    if (provider->fd == -1) {
+        LOG_ERR(
+            "creating an anonymous file descriptor for memory mapping failed");
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
+
+    provider->size_fd = 0; // will be increased during each allocation
+    provider->max_size_fd = get_max_file_size();
+
+    if (provider->fd > 0) {
+        int ret = os_set_file_size(provider->fd, provider->max_size_fd);
+        if (ret) {
+            LOG_ERR("setting file size %zu failed", provider->max_size_fd);
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        }
+    }
+
+    LOG_DEBUG("size of the memory mapped file set to %zu",
+              provider->max_size_fd);
+
     // NUMA config
     int emptyNodeset = in_params->numa_list_len == 0;
     result = translate_numa_mode(in_params->numa_mode, emptyNodeset,
@@ -217,6 +256,14 @@ static umf_result_t os_initialize(void *params, void **provider) {
 
     umf_os_memory_provider_params_t *in_params =
         (umf_os_memory_provider_params_t *)params;
+
+    if (in_params->visibility == UMF_MEM_MAP_SHARED &&
+        in_params->numa_mode != UMF_NUMA_MODE_DEFAULT) {
+        LOG_ERR("Unsupported NUMA mode for the UMF_MEM_MAP_SHARED memory "
+                "visibility mode (only the UMF_NUMA_MODE_DEFAULT is supported "
+                "for now)");
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
 
     os_memory_provider_t *os_provider =
         umf_ba_global_alloc(sizeof(os_memory_provider_t));
@@ -261,10 +308,19 @@ static umf_result_t os_initialize(void *params, void **provider) {
         }
     }
 
+    os_provider->fd_offset_map = critnib_new();
+    if (!os_provider->fd_offset_map) {
+        LOG_ERR("creating file descriptor offset map failed");
+        ret = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+        goto err_free_nodeset_str_buf;
+    }
+
     *provider = os_provider;
 
     return UMF_RESULT_SUCCESS;
 
+err_free_nodeset_str_buf:
+    umf_ba_global_free(os_provider->nodeset_str_buf);
 err_destroy_hwloc_topology:
     hwloc_topology_destroy(os_provider->topo);
 err_free_os_provider:
@@ -279,6 +335,9 @@ static void os_finalize(void *provider) {
     }
 
     os_memory_provider_t *os_provider = provider;
+
+    critnib_delete(os_provider->fd_offset_map);
+
     if (os_provider->nodeset_str_buf) {
         umf_ba_global_free(os_provider->nodeset_str_buf);
     }
@@ -334,7 +393,9 @@ static inline void assert_is_page_aligned(uintptr_t ptr, size_t page_size) {
 }
 
 static int os_mmap_aligned(void *hint_addr, size_t length, size_t alignment,
-                           size_t page_size, int prot, void **out_addr) {
+                           size_t page_size, int prot, int flag, int fd,
+                           size_t max_fd_size, void **out_addr,
+                           size_t *fd_size) {
     assert(out_addr);
 
     size_t extended_length = length;
@@ -347,8 +408,21 @@ static int os_mmap_aligned(void *hint_addr, size_t length, size_t alignment,
         extended_length += alignment;
     }
 
-    void *ptr = os_mmap(hint_addr, extended_length, prot);
+    size_t fd_offset = 0;
+
+    if (fd > 0) {
+        if (*fd_size + extended_length > max_fd_size) {
+            LOG_ERR("cannot grow a file size beyond %zu", max_fd_size);
+            return -1;
+        }
+
+        fd_offset = *fd_size;
+        *fd_size += extended_length;
+    }
+
+    void *ptr = os_mmap(hint_addr, extended_length, prot, flag, fd, fd_offset);
     if (ptr == NULL) {
+        LOG_PDEBUG("memory mapping failed");
         return -1;
     }
 
@@ -414,15 +488,17 @@ static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    int protection = os_provider->protection;
+    size_t fd_offset = os_provider->size_fd; // needed for critnib_insert()
 
     void *addr = NULL;
     errno = 0;
-    ret = os_mmap_aligned(NULL, size, alignment, page_size, protection, &addr);
+    ret = os_mmap_aligned(NULL, size, alignment, page_size,
+                          os_provider->protection, os_provider->visibility,
+                          os_provider->fd, os_provider->max_size_fd, &addr,
+                          &os_provider->size_fd);
     if (ret) {
         os_store_last_native_error(UMF_OS_RESULT_ERROR_ALLOC_FAILED, errno);
         LOG_PERR("memory allocation failed");
-
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
 
@@ -432,7 +508,6 @@ static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
         LOG_ERR("allocated address 0x%llx is not aligned to %zu (0x%zx) "
                 "bytes",
                 (unsigned long long)addr, alignment, alignment);
-
         goto err_unmap;
     }
 
@@ -463,6 +538,18 @@ static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
         }
     }
 
+    if (os_provider->fd > 0) {
+        // store (fd_offset + 1) to be able to store fd_offset == 0
+        ret =
+            critnib_insert(os_provider->fd_offset_map, (uintptr_t)addr,
+                           (void *)(uintptr_t)(fd_offset + 1), 0 /* update */);
+        if (ret) {
+            LOG_ERR("os_alloc(): inserting a value to the file descriptor "
+                    "offset map failed (addr=%p, offset=%zu)",
+                    addr, fd_offset);
+        }
+    }
+
     *resultPtr = addr;
 
     return UMF_RESULT_SUCCESS;
@@ -475,6 +562,12 @@ err_unmap:
 static umf_result_t os_free(void *provider, void *ptr, size_t size) {
     if (provider == NULL || ptr == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
+
+    if (os_provider->fd > 0) {
+        critnib_remove(os_provider->fd_offset_map, (uintptr_t)ptr);
     }
 
     errno = 0;
@@ -581,23 +674,59 @@ static const char *os_get_name(void *provider) {
     return "OS";
 }
 
+// This function is supposed to be thread-safe, so it should NOT be called concurrently
+// with os_allocation_merge() with the same pointer.
 static umf_result_t os_allocation_split(void *provider, void *ptr,
                                         size_t totalSize, size_t firstSize) {
-    (void)provider;
-    (void)ptr;
     (void)totalSize;
-    (void)firstSize;
-    // nop
+
+    os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
+    if (os_provider->fd <= 0) {
+        return UMF_RESULT_SUCCESS;
+    }
+
+    void *value = critnib_get(os_provider->fd_offset_map, (uintptr_t)ptr);
+    if (value == NULL) {
+        LOG_ERR("os_allocation_split(): getting a value from the file "
+                "descriptor offset map failed (addr=%p)",
+                ptr);
+        return UMF_RESULT_ERROR_UNKNOWN;
+    } else {
+        uintptr_t new_key = (uintptr_t)ptr + firstSize;
+        void *new_value = (void *)((uintptr_t)value + firstSize);
+        int ret = critnib_insert(os_provider->fd_offset_map, new_key, new_value,
+                                 0 /* update */);
+        if (ret) {
+            LOG_ERR("os_allocation_split(): inserting a value to the file "
+                    "descriptor offset map failed (addr=%p, offset=%zu)",
+                    (void *)new_key, (size_t)new_value - 1);
+            return UMF_RESULT_ERROR_UNKNOWN;
+        }
+    }
+
     return UMF_RESULT_SUCCESS;
 }
 
+// It should NOT be called concurrently with os_allocation_split() with the same pointer.
 static umf_result_t os_allocation_merge(void *provider, void *lowPtr,
                                         void *highPtr, size_t totalSize) {
-    (void)provider;
     (void)lowPtr;
-    (void)highPtr;
     (void)totalSize;
-    // nop
+
+    os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
+    if (os_provider->fd <= 0) {
+        return UMF_RESULT_SUCCESS;
+    }
+
+    void *value =
+        critnib_remove(os_provider->fd_offset_map, (uintptr_t)highPtr);
+    if (value == NULL) {
+        LOG_ERR("os_allocation_merge(): removing a value from the file "
+                "descriptor offset map failed (addr=%p)",
+                highPtr);
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
+
     return UMF_RESULT_SUCCESS;
 }
 

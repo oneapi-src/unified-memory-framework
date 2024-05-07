@@ -50,6 +50,8 @@ typedef struct umf_memory_provider_ext_ops_t {
     /// @brief Merges two coarse grain allocations into a single allocation that
     ///        can be managed (freed) as a whole.
     ///        allocation_split and allocation_merge should be both set or both NULL.
+    ///        allocation_merge should NOT be called concurrently with allocation_split()
+    ///        with the same pointer.
     /// @param hProvider handle to the memory provider
     /// @param lowPtr pointer to the first allocation
     /// @param highPtr pointer to the second allocation (should be > lowPtr)
@@ -64,6 +66,8 @@ typedef struct umf_memory_provider_ext_ops_t {
     /// @brief Splits a coarse grain allocation into 2 adjacent allocations that
     ///        can be managed (freed) separately.
     ///        allocation_split and allocation_merge should be both set or both NULL.
+    ///        allocation_split should NOT be called concurrently with allocation_merge()
+    ///        with the same pointer.
     /// @param hProvider handle to the memory provider
     /// @param ptr pointer to the beginning of the allocation
     /// @param totalSize total size of the allocation to be split
