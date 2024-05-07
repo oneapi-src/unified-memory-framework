@@ -66,6 +66,8 @@ set(UMF_SOURCES
 
 set(UMF_SOURCES_LINUX libumf_linux.c)
 
+set(UMF_SOURCES_MACOSX libumf_linux.c)
+
 set(UMF_SOURCES_WINDOWS libumf_windows.c)
 
 # Compile definitions for UMF library.
@@ -73,14 +75,19 @@ set(UMF_SOURCES_WINDOWS libumf_windows.c)
 # TODO: Cleanup the compile definitions across all the CMake files
 set(UMF_PRIVATE_COMPILE_DEFINITIONS "")
 
-set(UMF_SOURCES_LINUX
-    ${UMF_SOURCES_LINUX}
+set(UMF_SOURCES_COMMON_LINUX_MACOSX
     provider/provider_os_memory.c
-    provider/provider_os_memory_linux.c
+    provider/provider_os_memory_posix.c
     memory_targets/memory_target_numa.c
     memspaces/memspace_numa.c
     memspaces/memspace_host_all.c
     memspaces/memspace_highest_capacity.c)
+
+set(UMF_SOURCES_LINUX ${UMF_SOURCES_LINUX} ${UMF_SOURCES_COMMON_LINUX_MACOSX}
+                      provider/provider_os_memory_linux.c)
+
+set(UMF_SOURCES_MACOSX ${UMF_SOURCES_MACOSX} ${UMF_SOURCES_COMMON_LINUX_MACOSX}
+                       provider/provider_os_memory_macosx.c)
 
 set(UMF_SOURCES_WINDOWS ${UMF_SOURCES_WINDOWS} provider/provider_os_memory.c
                         provider/provider_os_memory_windows.c)
@@ -88,8 +95,6 @@ set(UMF_SOURCES_WINDOWS ${UMF_SOURCES_WINDOWS} provider/provider_os_memory.c
 set(UMF_LIBS ${UMF_LIBS} ${LIBHWLOC_LIBRARIES})
 set(UMF_PRIVATE_LIBRARY_DIRS ${UMF_PRIVATE_LIBRARY_DIRS}
                              ${LIBHWLOC_LIBRARY_DIRS})
-
-set(UMF_SOURCES_MACOSX ${UMF_SOURCES_MACOSX} ${UMF_SOURCES_LINUX})
 
 if(LINUX)
     set(UMF_SOURCES ${UMF_SOURCES} ${UMF_SOURCES_LINUX})
