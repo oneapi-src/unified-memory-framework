@@ -54,7 +54,36 @@ umf_result_t os_translate_mem_protection_flags(unsigned in_protection,
     return UMF_RESULT_ERROR_INVALID_ARGUMENT;
 }
 
-void *os_mmap(void *hint_addr, size_t length, int prot) {
+umf_result_t os_translate_mem_visibility_flag(umf_memory_visibility_t in_flag,
+                                              unsigned *out_flag) {
+    switch (in_flag) {
+    case UMF_MEM_MAP_PRIVATE:
+        *out_flag = 0; // ignored on Windows
+        return UMF_RESULT_SUCCESS;
+    case UMF_MEM_MAP_SHARED:
+        return UMF_RESULT_ERROR_NOT_SUPPORTED; // not supported on Windows yet
+    }
+    return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+}
+
+int os_create_anonymous_fd(unsigned translated_memory_flag) {
+    (void)translated_memory_flag; // unused
+    return 0;                     // ignored on Windows
+}
+
+size_t get_max_file_size(void) { return SIZE_MAX; }
+
+int os_set_file_size(int fd, size_t size) {
+    (void)fd;   // unused
+    (void)size; // unused
+    return 0;   // ignored on Windows
+}
+
+void *os_mmap(void *hint_addr, size_t length, int prot, int flag, int fd,
+              size_t fd_offset) {
+    (void)flag;      // ignored on Windows
+    (void)fd;        // ignored on Windows
+    (void)fd_offset; // ignored on Windows
     return VirtualAlloc(hint_addr, length, MEM_RESERVE | MEM_COMMIT, prot);
 }
 
@@ -85,4 +114,18 @@ size_t os_get_page_size(void) {
 
 void os_strerror(int errnum, char *buf, size_t buflen) {
     strerror_s(buf, buflen, errnum);
+}
+
+int os_getpid(void) { return GetCurrentProcessId(); }
+
+umf_result_t os_duplicate_fd(int pid, int fd_in, int *fd_out) {
+    (void)pid;                             // unused
+    (void)fd_in;                           // unused
+    (void)fd_out;                          // unused
+    return UMF_RESULT_ERROR_NOT_SUPPORTED; // unsupported
+}
+
+umf_result_t os_close_fd(int fd) {
+    (void)fd;                              // unused
+    return UMF_RESULT_ERROR_NOT_SUPPORTED; // unsupported
 }
