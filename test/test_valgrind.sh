@@ -100,7 +100,9 @@ for test in $(ls -1 umf_test-*); do
 
 	[ "$FILTER" != "" ] && echo -n "($FILTER) "
 
-	if ! HWLOC_CPUID_PATH=./cpuid valgrind $OPTION $OPT_SUP --gen-suppressions=all ./$test $FILTER >$LOG 2>&1; then
+	HWLOC_CPUID_PATH=./cpuid valgrind $OPTION -v $OPT_SUP --gen-suppressions=all ./$test $FILTER || echo "TEST FAILED!"
+
+	if ! HWLOC_CPUID_PATH=./cpuid valgrind $OPTION -v $OPT_SUP --gen-suppressions=all ./$test $FILTER >$LOG 2>&1; then
 		FAIL=1
 		echo "(valgrind FAILED) "
 		echo "Command: HWLOC_CPUID_PATH=./cpuid valgrind $OPTION $OPT_SUP --gen-suppressions=all ./$test $FILTER >$LOG 2>&1"
