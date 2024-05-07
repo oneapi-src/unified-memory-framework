@@ -75,7 +75,10 @@ function(add_umf_test)
         COMMAND ${TEST_TARGET_NAME}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
-    set_tests_properties(${TEST_NAME} PROPERTIES LABELS "umf")
+    set_tests_properties(
+        ${TEST_NAME} PROPERTIES
+        LABELS "umf" ENVIRONMENT
+               "UMF_LOG=level:debug\;flush:debug\;output:stdout")
 
     if(WINDOWS)
         # append PATH to DLLs
