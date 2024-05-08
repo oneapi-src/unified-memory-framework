@@ -17,6 +17,7 @@
 #include "base_alloc_global.h"
 #include "critnib.h"
 #include "provider_os_memory_internal.h"
+#include "utils_concurrency.h"
 #include "utils_log.h"
 
 #include <umf.h>
@@ -39,11 +40,14 @@ typedef struct os_memory_provider_t {
     critnib *fd_offset_map;
 
     // NUMA config
-    hwloc_bitmap_t nodeset;
+    hwloc_bitmap_t *nodeset;
+    unsigned nodeset_len;
     char *nodeset_str_buf;
     hwloc_membind_policy_t numa_policy;
     int numa_flags; // combination of hwloc flags
 
+    size_t part_size;
+    size_t alloc_sum; // sum of all allocations - used for manual interleaving
     hwloc_topology_t topo;
 } os_memory_provider_t;
 
@@ -92,30 +96,67 @@ static void os_store_last_native_error(int32_t native_error, int errno_value) {
     TLS_last_native_error.errno_value = errno_value;
 }
 
-static umf_result_t nodemask_to_hwloc_nodeset(const unsigned *nodelist,
-                                              unsigned long listsize,
-                                              hwloc_bitmap_t *out_nodeset) {
-    if (out_nodeset == NULL) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
+static umf_result_t initialize_nodeset(os_memory_provider_t *os_provider,
+                                       const unsigned *nodelist,
+                                       unsigned long listsize,
+                                       int is_separate_nodes) {
 
-    *out_nodeset = hwloc_bitmap_alloc();
-    if (!*out_nodeset) {
+    unsigned long array_size = (listsize && is_separate_nodes) ? listsize : 1;
+    os_provider->nodeset =
+        umf_ba_global_alloc(sizeof(*os_provider->nodeset) * array_size);
+
+    if (!os_provider->nodeset) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
+    hwloc_bitmap_t *out_nodeset = os_provider->nodeset;
+    os_provider->nodeset_len = array_size;
     if (listsize == 0) {
+        // Hwloc_set_area_membind fails if empty nodeset is passed so
+        // if no node is specified, just pass all available nodes.
+        // For modes where no node is needed, they will be ignored anyway.
+        out_nodeset[0] = hwloc_bitmap_dup(
+            hwloc_topology_get_complete_nodeset(os_provider->topo));
+        if (!out_nodeset[0]) {
+            goto err_free_list;
+        }
         return UMF_RESULT_SUCCESS;
     }
 
-    for (unsigned long i = 0; i < listsize; i++) {
-        if (hwloc_bitmap_set(*out_nodeset, nodelist[i])) {
-            hwloc_bitmap_free(*out_nodeset);
-            return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    for (unsigned long i = 0; i < array_size; i++) {
+        out_nodeset[i] = hwloc_bitmap_alloc();
+        if (!out_nodeset[i]) {
+            for (unsigned long j = 0; j < i; j++) {
+                hwloc_bitmap_free(out_nodeset[j]);
+            }
+            goto err_free_list;
+        }
+    }
+
+    if (is_separate_nodes) {
+        for (unsigned long i = 0; i < listsize; i++) {
+            if (hwloc_bitmap_set(out_nodeset[i], nodelist[i])) {
+                goto err_free_bitmaps;
+            }
+        }
+    } else {
+        for (unsigned long i = 0; i < listsize; i++) {
+            if (hwloc_bitmap_set(out_nodeset[0], nodelist[i])) {
+                goto err_free_bitmaps;
+            }
         }
     }
 
     return UMF_RESULT_SUCCESS;
+
+err_free_bitmaps:
+    for (unsigned long i = 0; i < array_size; i++) {
+        hwloc_bitmap_free(out_nodeset[i]);
+    }
+err_free_list:
+    umf_ba_global_free(*out_nodeset);
+    os_provider->nodeset_len = 0;
+    return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
 }
 
 umf_result_t os_translate_flags(unsigned in_flags, unsigned max,
@@ -143,49 +184,71 @@ umf_result_t os_translate_flags(unsigned in_flags, unsigned max,
     return UMF_RESULT_SUCCESS;
 }
 
-static umf_result_t translate_numa_mode(umf_numa_mode_t mode, int nodemaskEmpty,
-                                        hwloc_membind_policy_t *numa_policy) {
+static umf_result_t validate_numa_mode(umf_numa_mode_t mode,
+                                       int nodemaskEmpty) {
     switch (mode) {
     case UMF_NUMA_MODE_DEFAULT:
-        if (!nodemaskEmpty) {
-            // nodeset must be empty
-            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-        }
-        *numa_policy = HWLOC_MEMBIND_DEFAULT;
-        return UMF_RESULT_SUCCESS;
-    case UMF_NUMA_MODE_BIND:
-        if (nodemaskEmpty) {
-            // nodeset must not be empty
-            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-        }
-        *numa_policy = HWLOC_MEMBIND_BIND;
-        return UMF_RESULT_SUCCESS;
-    case UMF_NUMA_MODE_INTERLEAVE:
-        if (nodemaskEmpty) {
-            // nodeset must not be empty
-            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-        }
-        *numa_policy = HWLOC_MEMBIND_INTERLEAVE;
-        return UMF_RESULT_SUCCESS;
-    case UMF_NUMA_MODE_PREFERRED:
-        *numa_policy = HWLOC_MEMBIND_BIND;
-        return UMF_RESULT_SUCCESS;
     case UMF_NUMA_MODE_LOCAL:
         if (!nodemaskEmpty) {
             // nodeset must be empty
             return UMF_RESULT_ERROR_INVALID_ARGUMENT;
         }
-        *numa_policy = HWLOC_MEMBIND_BIND;
         return UMF_RESULT_SUCCESS;
+    case UMF_NUMA_MODE_BIND:
+    case UMF_NUMA_MODE_INTERLEAVE:
+        if (nodemaskEmpty) {
+            // nodeset must not be empty
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        }
+        return UMF_RESULT_SUCCESS;
+    case UMF_NUMA_MODE_PREFERRED:
+        return UMF_RESULT_SUCCESS;
+    default:
+        assert(0);
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
-    return UMF_RESULT_ERROR_INVALID_ARGUMENT;
 }
 
-static int getHwlocMembindFlags(umf_numa_mode_t mode) {
+static hwloc_membind_policy_t translate_numa_mode(umf_numa_mode_t mode,
+                                                  int dedicated_node_bind) {
+    switch (mode) {
+    case UMF_NUMA_MODE_DEFAULT:
+        return HWLOC_MEMBIND_DEFAULT;
+    case UMF_NUMA_MODE_BIND:
+        return HWLOC_MEMBIND_BIND;
+    case UMF_NUMA_MODE_INTERLEAVE:
+        // In manual mode, we manually implement interleaving,
+        // by binding memory to specific NUMA nodes.
+        if (dedicated_node_bind) {
+            return HWLOC_MEMBIND_BIND;
+        }
+        return HWLOC_MEMBIND_INTERLEAVE;
+    case UMF_NUMA_MODE_PREFERRED:
+        return HWLOC_MEMBIND_BIND;
+    case UMF_NUMA_MODE_LOCAL:
+        return HWLOC_MEMBIND_BIND;
+    }
+    assert(0);
+    return -1;
+}
+
+//return 1 if umf will bind memory directly to single NUMA node, based on internal algorithm
+//return 0 if umf will just set numa memory policy, and kernel will decide where to allocate memory
+static int dedicated_node_bind(umf_os_memory_provider_params_t *in_params) {
+    if (in_params->numa_mode == UMF_NUMA_MODE_INTERLEAVE) {
+        return in_params->part_size > 0;
+    }
+    return 0;
+}
+
+static int getHwlocMembindFlags(umf_numa_mode_t mode, int dedicated_node_bind) {
     /* UMF always operates on NUMA nodes */
     int flags = HWLOC_MEMBIND_BYNODESET;
     if (mode == UMF_NUMA_MODE_BIND) {
         /* HWLOC uses MPOL_PREFERRED[_MANY] unless HWLOC_MEMBIND_STRICT is specified */
+        flags |= HWLOC_MEMBIND_STRICT;
+    }
+    if (dedicated_node_bind) {
         flags |= HWLOC_MEMBIND_STRICT;
     }
     return flags;
@@ -232,8 +295,7 @@ static umf_result_t translate_params(umf_os_memory_provider_params_t *in_params,
 
     // NUMA config
     int emptyNodeset = in_params->numa_list_len == 0;
-    result = translate_numa_mode(in_params->numa_mode, emptyNodeset,
-                                 &provider->numa_policy);
+    result = validate_numa_mode(in_params->numa_mode, emptyNodeset);
     if (result != UMF_RESULT_SUCCESS) {
         LOG_ERR("incorrect NUMA mode (%u) or wrong params",
                 in_params->numa_mode);
@@ -241,10 +303,14 @@ static umf_result_t translate_params(umf_os_memory_provider_params_t *in_params,
     }
     LOG_INFO("established HWLOC NUMA policy: %u", provider->numa_policy);
 
-    provider->numa_flags = getHwlocMembindFlags(in_params->numa_mode);
-
-    return nodemask_to_hwloc_nodeset(
-        in_params->numa_list, in_params->numa_list_len, &provider->nodeset);
+    int is_dedicated_node_bind = dedicated_node_bind(in_params);
+    provider->numa_policy =
+        translate_numa_mode(in_params->numa_mode, is_dedicated_node_bind);
+    provider->numa_flags =
+        getHwlocMembindFlags(in_params->numa_mode, is_dedicated_node_bind);
+    provider->part_size = in_params->part_size;
+    return initialize_nodeset(provider, in_params->numa_list,
+                              in_params->numa_list_len, is_dedicated_node_bind);
 }
 
 static umf_result_t os_initialize(void *params, void **provider) {
@@ -298,13 +364,13 @@ static umf_result_t os_initialize(void *params, void **provider) {
     if (!os_provider->nodeset_str_buf) {
         LOG_INFO("allocating memory for printing NUMA nodes failed");
     } else {
-        if (hwloc_bitmap_list_snprintf(os_provider->nodeset_str_buf,
-                                       NODESET_STR_BUF_LEN,
-                                       os_provider->nodeset)) {
-            LOG_INFO("OS provider initialized with NUMA nodes: %s",
-                     os_provider->nodeset_str_buf);
-        } else if (hwloc_bitmap_iszero(os_provider->nodeset)) {
-            LOG_INFO("OS provider initialized with empty NUMA nodeset");
+        LOG_INFO("OS provider initialized with NUMA nodes:");
+        for (unsigned i = 0; i < os_provider->nodeset_len; i++) {
+            if (hwloc_bitmap_list_snprintf(os_provider->nodeset_str_buf,
+                                           NODESET_STR_BUF_LEN,
+                                           os_provider->nodeset[i])) {
+                LOG_INFO("%s", os_provider->nodeset_str_buf);
+            }
         }
     }
 
@@ -342,7 +408,10 @@ static void os_finalize(void *provider) {
         umf_ba_global_free(os_provider->nodeset_str_buf);
     }
 
-    hwloc_bitmap_free(os_provider->nodeset);
+    for (unsigned i = 0; i < os_provider->nodeset_len; i++) {
+        hwloc_bitmap_free(os_provider->nodeset[i]);
+    }
+    umf_ba_global_free(os_provider->nodeset);
     hwloc_topology_destroy(os_provider->topo);
     umf_ba_global_free(os_provider);
 }
@@ -464,6 +533,17 @@ static int os_mmap_aligned(void *hint_addr, size_t length, size_t alignment,
     return 0;
 }
 
+static int get_membind(os_memory_provider_t *provider, size_t size) {
+    if (provider->nodeset_len == 1) {
+        return 0;
+    }
+
+    assert(provider->part_size != 0);
+    size_t s = util_fetch_and_add64(&provider->alloc_sum, size);
+
+    return (s / provider->part_size) % provider->nodeset_len;
+}
+
 static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
                              void **resultPtr) {
     int ret;
@@ -512,31 +592,34 @@ static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
     }
 
     errno = 0;
-    if (hwloc_bitmap_iszero(os_provider->nodeset)) {
-        // Hwloc_set_area_membind fails if empty nodeset is passed so if no node is specified,
-        // just pass all available nodes. For modes where no node is needed, they will be
-        // ignored anyway.
-        hwloc_const_nodeset_t complete_nodeset =
-            hwloc_topology_get_complete_nodeset(os_provider->topo);
-        ret = hwloc_set_area_membind(os_provider->topo, addr, size,
-                                     complete_nodeset, os_provider->numa_policy,
-                                     os_provider->numa_flags);
-    } else {
-        ret = hwloc_set_area_membind(
-            os_provider->topo, addr, size, os_provider->nodeset,
-            os_provider->numa_policy, os_provider->numa_flags);
-    }
+    unsigned membind = get_membind(os_provider, ALIGN_UP(size, page_size));
+    size_t bind_size = os_provider->nodeset_len == 1
+                           ? size
+                           : ALIGN_UP(os_provider->part_size, page_size);
+    char *ptr_iter = addr;
 
-    if (ret) {
-        os_store_last_native_error(UMF_OS_RESULT_ERROR_BIND_FAILED, errno);
-        LOG_PERR("binding memory to NUMA node failed");
-        // TODO: (errno == 0) when hwloc_set_area_membind() fails on Windows - ignore this temporarily
-        if (errno != ENOSYS &&
-            errno != 0) { // ENOSYS - Function not implemented
-            // Do not error out if memory binding is not implemented at all (like in case of WSL on Windows).
-            goto err_unmap;
+    do {
+        size_t s = bind_size < size ? bind_size : size;
+        ret = hwloc_set_area_membind(
+            os_provider->topo, ptr_iter, s, os_provider->nodeset[membind++],
+            os_provider->numa_policy, os_provider->numa_flags);
+
+        size -= s;
+        ptr_iter += s;
+        membind %= os_provider->nodeset_len;
+        if (ret) {
+            os_store_last_native_error(UMF_OS_RESULT_ERROR_BIND_FAILED, errno);
+            LOG_PERR("binding memory to NUMA node failed");
+            // TODO: (errno == 0) when hwloc_set_area_membind() fails on Windows,
+            // ignore this temporarily
+            if (errno != ENOSYS &&
+                errno != 0) { // ENOSYS - Function not implemented
+                // Do not error out if memory binding is not implemented at all
+                // (like in case of WSL on Windows).
+                goto err_unmap;
+            }
         }
-    }
+    } while (size > 0);
 
     if (os_provider->fd > 0) {
         // store (fd_offset + 1) to be able to store fd_offset == 0

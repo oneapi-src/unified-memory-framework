@@ -375,6 +375,56 @@ TEST_F(testNuma, checkModeInterleave) {
     EXPECT_EQ(ret, 1);
 }
 
+// Test for allocations on numa nodes with interleave mode enabled and custom part size set.
+// The page allocations are interleaved across the set of nodes specified in nodemask.
+TEST_F(testNuma, checkModeInterleaveCustomPartSize) {
+    constexpr int part_num = 1024;
+    size_t page_size = sysconf(_SC_PAGE_SIZE);
+    size_t part_size = page_size * 100;
+    umf_os_memory_provider_params_t os_memory_provider_params =
+        UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
+
+    std::vector<unsigned> numa_nodes = get_available_numa_nodes();
+
+    os_memory_provider_params.numa_list = numa_nodes.data();
+    os_memory_provider_params.numa_list_len = numa_nodes.size();
+    os_memory_provider_params.numa_mode = UMF_NUMA_MODE_INTERLEAVE;
+    // part size do not need to be multiple of page size
+    os_memory_provider_params.part_size = part_size - 1;
+    initOsProvider(os_memory_provider_params);
+
+    size_t size = part_num * part_size;
+    umf_result_t umf_result;
+    umf_result = umfMemoryProviderAlloc(os_memory_provider, size, 0, &ptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(ptr, nullptr);
+
+    // 'ptr' must point to an initialized value before retrieving its numa node
+    memset(ptr, 0xFF, size);
+    // Test where each page will be allocated.
+    // Get the first numa node for ptr; Each next part is expected to be on next nodes.
+    size_t index = getNumaNodeByPtr((char *)ptr);
+    for (size_t i = 0; i < (size_t)part_num; i++) {
+        for (size_t j = 0; j < part_size; j += page_size) {
+            EXPECT_EQ(numa_nodes[index],
+                      getNumaNodeByPtr((char *)ptr + part_size * i + j))
+                << "for ptr " << ptr << " + " << part_size << " * " << i
+                << " + " << j;
+        }
+        index = (index + 1) % numa_nodes.size();
+    }
+    umfMemoryProviderFree(os_memory_provider, ptr, size);
+
+    // test allocation smaller then part size
+    size = part_size / 2 + 1;
+    umf_result = umfMemoryProviderAlloc(os_memory_provider, size, 0, &ptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(ptr, nullptr);
+    memset(ptr, 0xFF, size);
+    EXPECT_EQ(numa_nodes[index], getNumaNodeByPtr(ptr));
+    umfMemoryProviderFree(os_memory_provider, ptr, size);
+}
+
 // Test for allocations on all numa nodes with BIND mode.
 // According to mbind it should go to the closest node.
 TEST_F(testNuma, checkModeBindOnAllNodes) {

@@ -45,7 +45,7 @@ using providerCreateExtParams = std::tuple<umf_memory_provider_ops_t *, void *>;
 
 umf::provider_unique_handle_t
 providerCreateExt(providerCreateExtParams params) {
-    umf_memory_provider_handle_t hProvider;
+    umf_memory_provider_handle_t hProvider = nullptr;
     auto [provider_ops, provider_params] = params;
 
     auto ret =
