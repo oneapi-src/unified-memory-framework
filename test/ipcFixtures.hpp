@@ -19,10 +19,39 @@
 #include <numeric>
 #include <tuple>
 
-using testParams = std::tuple<umf_memory_pool_ops_t *, void *,
-                              umf_memory_provider_ops_t *, void *>;
+class MemoryAccessor {
+  public:
+    virtual void fill(void *ptr, size_t size, const void *pattern,
+                      size_t pattern_size) = 0;
+    virtual void copy(void *dst_ptr, void *src_ptr, size_t size) = 0;
+};
 
-struct umfIpcTest : umf_test::test, ::testing::WithParamInterface<testParams> {
+class HostMemoryAccessor : public MemoryAccessor {
+  public:
+    void fill(void *ptr, size_t size, const void *pattern,
+              size_t pattern_size) override {
+        assert(ptr != nullptr);
+        assert(pattern != nullptr);
+        assert(pattern_size > 0);
+        while (size) {
+            size_t copy_size = std::min(size, pattern_size);
+            std::memcpy(ptr, pattern, copy_size);
+            ptr = static_cast<char *>(ptr) + copy_size;
+            size -= copy_size;
+        }
+    }
+
+    void copy(void *dst_ptr, void *src_ptr, size_t size) override {
+        std::memcpy(dst_ptr, src_ptr, size);
+    }
+};
+
+using ipcTestParams =
+    std::tuple<umf_memory_pool_ops_t *, void *, umf_memory_provider_ops_t *,
+               void *, MemoryAccessor *>;
+
+struct umfIpcTest : umf_test::test,
+                    ::testing::WithParamInterface<ipcTestParams> {
     umfIpcTest() : pool(nullptr, nullptr) {}
     void SetUp() override {
         test::SetUp();
@@ -36,7 +65,7 @@ struct umfIpcTest : umf_test::test, ::testing::WithParamInterface<testParams> {
         //       from memoryPool.hpp
         umf_memory_provider_handle_t hProvider;
         umf_memory_pool_handle_t hPool;
-        auto [pool_ops, pool_params, provider_ops, provider_params] =
+        auto [pool_ops, pool_params, provider_ops, provider_params, accessor] =
             this->GetParam();
 
         auto ret =
@@ -63,6 +92,8 @@ struct umfIpcTest : umf_test::test, ::testing::WithParamInterface<testParams> {
                             UMF_POOL_CREATE_FLAG_OWN_PROVIDER, &hPool);
         EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
 
+        memAccessor = accessor;
+
         return umf::pool_unique_handle_t(hPool, &umfPoolDestroy);
     }
 
@@ -78,14 +109,17 @@ struct umfIpcTest : umf_test::test, ::testing::WithParamInterface<testParams> {
     umf::pool_unique_handle_t pool;
     static constexpr int NTHREADS = 10;
     stats_type stat;
+    MemoryAccessor *memAccessor = nullptr;
 };
 
 TEST_P(umfIpcTest, BasicFlow) {
     constexpr size_t SIZE = 100;
+    std::vector<int> expected_data(SIZE);
     int *ptr = (int *)umfPoolMalloc(pool.get(), SIZE * sizeof(int));
     EXPECT_NE(ptr, nullptr);
 
-    std::iota(ptr, ptr + SIZE, 0);
+    std::iota(expected_data.begin(), expected_data.end(), 0);
+    memAccessor->copy(ptr, expected_data.data(), SIZE * sizeof(int));
 
     umf_ipc_handle_t ipcHandleFull = nullptr;
     size_t handleFullSize = 0;
@@ -105,16 +139,20 @@ TEST_P(umfIpcTest, BasicFlow) {
     ret = umfOpenIPCHandle(pool.get(), ipcHandleHalf, &halfArray);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 
-    for (int i = 0; i < (int)SIZE; ++i) {
-        ASSERT_EQ(reinterpret_cast<int *>(fullArray)[i], i);
-    }
+    std::vector<int> actual_data(SIZE);
+    memAccessor->copy(actual_data.data(), fullArray, SIZE * sizeof(int));
+    ASSERT_TRUE(std::equal(expected_data.begin(), expected_data.end(),
+                           actual_data.begin()));
+
     // Close fullArray before reading halfArray
     ret = umfCloseIPCHandle(fullArray);
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
 
-    for (int i = 0; i < (int)SIZE / 2; ++i) {
-        ASSERT_EQ(reinterpret_cast<int *>(halfArray)[i], i + SIZE / 2);
-    }
+    actual_data.resize(SIZE / 2);
+    memAccessor->copy(actual_data.data(), halfArray, SIZE / 2 * sizeof(int));
+    ASSERT_TRUE(std::equal(expected_data.begin() + SIZE / 2,
+                           expected_data.end(), actual_data.begin()));
+
     ret = umfCloseIPCHandle(halfArray);
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
 
