@@ -34,7 +34,7 @@ jobs:
     - name: Install apt packages
       run: |
         apt-get update
-        apt-get install -y libnuma-dev libjemalloc-dev libtbb-dev libhwloc-dev
+        apt-get install -y libnuma-dev libjemalloc-dev libtbb-dev libhwloc-dev sudo
 
     - name: Configure build
       run: >
