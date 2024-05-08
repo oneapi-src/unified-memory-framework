@@ -268,12 +268,12 @@ TEST_P(umfProviderTest, free_size_0_ptr_not_null) {
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 }
 
-// other negative tests
-
 TEST_P(umfProviderTest, free_NULL) {
     umf_result_t umf_result = umfMemoryProviderFree(provider.get(), nullptr, 0);
-    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 }
+
+// other negative tests
 
 TEST_P(umfProviderTest, free_INVALID_POINTER_SIZE_GT_0) {
     umf_result_t umf_result =
