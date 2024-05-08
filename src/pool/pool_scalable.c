@@ -13,12 +13,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "umf/pools/pool_scalable.h"
 #include <umf/memory_pool.h>
 #include <umf/memory_pool_ops.h>
 #include <umf/memory_provider.h>
-
-#include <tbb/scalable_allocator.h>
+#include <umf/pools/pool_scalable.h>
 
 #include "base_alloc_global.h"
 #include "utils_common.h"
@@ -110,7 +108,9 @@ static int init_tbb_callbacks(tbb_callbacks_t *tbb_callbacks) {
     const char *lib_name = tbb_symbol[TBB_LIB_NAME];
     tbb_callbacks->lib_handle = util_open_library(lib_name, 0);
     if (!tbb_callbacks->lib_handle) {
-        LOG_ERR("%s not found.", lib_name);
+        LOG_ERR("%s required by Scalable Pool not found - install TBB malloc "
+                "or make sure it is in the default search paths.",
+                lib_name);
         return -1;
     }
 
@@ -196,7 +196,7 @@ static umf_result_t tbb_pool_initialize(umf_memory_provider_handle_t provider,
     pool_data->mem_provider = provider;
     ret = pool_data->tbb_callbacks.pool_create_v1((intptr_t)pool_data, &policy,
                                                   &(pool_data->tbb_pool));
-    if (ret != TBBMALLOC_OK) {
+    if (ret != 0 /* TBBMALLOC_OK */) {
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
 

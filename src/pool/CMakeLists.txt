@@ -51,23 +51,3 @@ if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
     add_library(${PROJECT_NAME}::jemalloc_pool ALIAS jemalloc_pool)
     install(TARGETS jemalloc_pool EXPORT ${PROJECT_NAME}-targets)
 endif()
-
-# libumf_pool_scalable
-if(UMF_BUILD_LIBUMF_POOL_SCALABLE)
-    if(LINUX)
-        set(LIBS_POOL_SCALABLE dl ${POOL_EXTRA_LIBS})
-    else()
-        set(LIBS_POOL_SCALABLE ${POOL_EXTRA_LIBS})
-    endif()
-
-    add_umf_library(
-        NAME scalable_pool
-        TYPE STATIC
-        SRCS pool_scalable.c ${POOL_EXTRA_SRCS}
-        LIBS ${LIBS_POOL_SCALABLE})
-    target_include_directories(scalable_pool PRIVATE ${TBB_INCLUDE_DIRS})
-    target_compile_definitions(scalable_pool
-                               PRIVATE ${POOL_COMPILE_DEFINITIONS})
-    add_library(${PROJECT_NAME}::scalable_pool ALIAS scalable_pool)
-    install(TARGETS scalable_pool EXPORT ${PROJECT_NAME}-targets)
-endif()

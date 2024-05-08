@@ -62,6 +62,7 @@ set(UMF_SOURCES
     provider/provider_tracking.c
     critnib/critnib.c
     pool/pool_proxy.c
+    pool/pool_scalable.c
     topology.c)
 
 set(UMF_SOURCES_LINUX libumf_linux.c)
@@ -98,6 +99,7 @@ set(UMF_PRIVATE_LIBRARY_DIRS ${UMF_PRIVATE_LIBRARY_DIRS}
 
 if(LINUX)
     set(UMF_SOURCES ${UMF_SOURCES} ${UMF_SOURCES_LINUX})
+    set(UMF_LIBS ${UMF_LIBS} dl)
 elseif(WINDOWS)
     set(UMF_SOURCES ${UMF_SOURCES} ${UMF_SOURCES_WINDOWS})
 elseif(MACOSX)

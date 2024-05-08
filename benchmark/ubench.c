@@ -9,6 +9,7 @@
 
 #include <umf/memory_pool.h>
 #include <umf/pools/pool_proxy.h>
+#include <umf/pools/pool_scalable.h>
 #include <umf/providers/provider_os_memory.h>
 
 #ifdef UMF_BUILD_LIBUMF_POOL_DISJOINT
@@ -17,10 +18,6 @@
 
 #ifdef UMF_BUILD_LIBUMF_POOL_JEMALLOC
 #include <umf/pools/pool_jemalloc.h>
-#endif
-
-#ifdef UMF_BUILD_LIBUMF_POOL_SCALABLE
-#include <umf/pools/pool_scalable.h>
 #endif
 
 #include <stdbool.h>
@@ -304,7 +301,7 @@ UBENCH_EX(simple, jemalloc_pool_with_os_memory_provider) {
 }
 #endif /* (defined UMF_BUILD_LIBUMF_POOL_JEMALLOC) */
 
-#if (defined UMF_BUILD_LIBUMF_POOL_SCALABLE)
+#if (defined UMF_POOL_SCALABLE_ENABLED)
 ////////////////// SCALABLE (TBB) POOL WITH OS MEMORY PROVIDER
 
 UBENCH_EX(simple, scalable_pool_with_os_memory_provider) {
@@ -340,6 +337,6 @@ UBENCH_EX(simple, scalable_pool_with_os_memory_provider) {
     umfMemoryProviderDestroy(os_memory_provider);
     free(array);
 }
-#endif /* (defined UMF_BUILD_LIBUMF_POOL_SCALABLE) */
+#endif /* (defined UMF_POOL_SCALABLE_ENABLED) */
 
 UBENCH_MAIN()

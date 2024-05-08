@@ -55,7 +55,6 @@ jobs:
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
         -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
-        -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
         -DUSE_ASAN=${{matrix.sanitizers.asan}}
         -DUSE_UBSAN=${{matrix.sanitizers.ubsan}}
         -DUSE_TSAN=${{matrix.sanitizers.tsan}}

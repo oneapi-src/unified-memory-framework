@@ -25,6 +25,7 @@ class UmfInstaller:
     install_dir (Path): Path to the installation directory, it has to be empty
     build_type (str): Debug or Release build type passed to the script
     shared_library (bool): Determines if the UMF was built as a shared library
+    proxy (bool): Determines whether the proxy library should be built together with the UMF library
     pools (List[str]): A list of enabled pools during the UMF compilation
     umf_version (Version): UMF version currently being built and installed
     match_list (List[str]): A list of relative paths of files that should be installed
@@ -37,6 +38,7 @@ class UmfInstaller:
         install_dir: Path,
         build_type: str,
         shared_library: bool,
+        proxy: bool,
         pools: List[str],
         umf_version: Version,
     ):
@@ -45,6 +47,7 @@ class UmfInstaller:
         self.install_dir = install_dir
         self.build_type = build_type
         self.shared_library = shared_library
+        self.proxy = proxy
         self.pools = pools
         self.umf_version = umf_version
         self.match_list = self._create_match_list()
@@ -70,15 +73,12 @@ class UmfInstaller:
             lib_ext_shared = "dylib"
             lib_prefix = "lib"
 
-        # Currently the proxy library uses and requires the scalable pool
-        is_umf_proxy = True if "scalable_pool" in self.pools else False
-
         bin = []
-        if platform.system() == "Windows" and (self.shared_library or is_umf_proxy):
+        if platform.system() == "Windows" and (self.shared_library or self.proxy):
             bin.append("bin")
             if self.shared_library:
                 bin.append("bin/umf.dll")
-            if is_umf_proxy:
+            if self.proxy:
                 bin.append("bin/umf_proxy.dll")
 
         include_dir = Path(self.workspace_dir, "include")
@@ -115,7 +115,7 @@ class UmfInstaller:
         else:
             lib.append(f"lib/{lib_prefix}umf.{lib_ext_static}")
 
-        if is_umf_proxy:
+        if self.proxy:
             lib.append(f"lib/{lib_prefix}umf_proxy.{lib_ext_shared}")
 
             if platform.system() == "Linux":
@@ -270,6 +270,11 @@ class UmfInstallationTester:
             help="Add this argument if the UMF was built as a shared library",
         )
         self.parser.add_argument(
+            "--proxy",
+            action="store_true",
+            help="Add this argument if the proxy library should be built together with the UMF library",
+        )
+        self.parser.add_argument(
             "--disjoint-pool",
             action="store_true",
             help="Add this argument if the UMF was built with Disjoint Pool enabled",
@@ -278,11 +283,6 @@ class UmfInstallationTester:
             "--jemalloc-pool",
             action="store_true",
             help="Add this argument if the UMF was built with Jemalloc Pool enabled",
-        )
-        self.parser.add_argument(
-            "--scalable-pool",
-            action="store_true",
-            help="Add this argument if the UMF was built with Scalable Pool enabled",
         )
         self.parser.add_argument(
             "--umf-version",
@@ -304,8 +304,7 @@ class UmfInstallationTester:
             pools.append("disjoint_pool")
         if self.args.jemalloc_pool:
             pools.append("jemalloc_pool")
-        if self.args.scalable_pool:
-            pools.append("scalable_pool")
+
         umf_version = Version(self.args.umf_version)
 
         umf_installer = UmfInstaller(
@@ -314,6 +313,7 @@ class UmfInstallationTester:
             install_dir,
             self.args.build_type,
             self.args.shared_library,
+            self.args.proxy,
             pools,
             umf_version,
         )

@@ -23,8 +23,8 @@ endif()
 add_umf_library(
     NAME umf_proxy
     TYPE SHARED
-    SRCS ${PROXY_SOURCES}
-    LIBS ${PROXY_LIBS}
+    SRCS ${BA_SOURCES} ${PROXY_SOURCES}
+    LIBS umf_utils ${PROXY_LIBS}
     LINUX_MAP_FILE ${CMAKE_CURRENT_SOURCE_DIR}/proxy_lib.map
     WINDOWS_DEF_FILE ${CMAKE_CURRENT_SOURCE_DIR}/proxy_lib.def)
 set_target_properties(umf_proxy PROPERTIES SOVERSION
