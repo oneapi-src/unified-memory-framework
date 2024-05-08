@@ -560,8 +560,12 @@ err_unmap:
 }
 
 static umf_result_t os_free(void *provider, void *ptr, size_t size) {
-    if (provider == NULL || ptr == NULL) {
+    if (provider == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (ptr == NULL) {
+        return UMF_RESULT_SUCCESS;
     }
 
     os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
