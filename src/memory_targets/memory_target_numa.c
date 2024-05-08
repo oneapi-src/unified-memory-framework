@@ -1,5 +1,4 @@
 /*
- *
  * Copyright (C) 2023-2024 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
@@ -11,7 +10,11 @@
 #include <hwloc.h>
 #include <stdlib.h>
 
-#include <umf/pools/pool_disjoint.h>
+#ifdef UMF_BUILD_LIBUMF_POOL_SCALABLE
+#include <umf/pools/pool_scalable.h>
+#endif
+
+#include <umf/pools/pool_proxy.h>
 #include <umf/providers/provider_os_memory.h>
 
 #include "../memory_pool_internal.h"
@@ -101,12 +104,31 @@ static umf_result_t numa_memory_provider_create_from_memspace(
 static umf_result_t numa_pool_create_from_memspace(
     umf_memspace_handle_t memspace, void **memTargets, size_t numTargets,
     umf_memspace_policy_handle_t policy, umf_memory_pool_handle_t *pool) {
-    (void)memspace;
-    (void)memTargets;
-    (void)numTargets;
-    (void)policy;
-    (void)pool;
-    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+
+    umf_memory_provider_handle_t numa_provider;
+    umf_result_t umf_result = numa_memory_provider_create_from_memspace(
+        memspace, memTargets, numTargets, policy, &numa_provider);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        return umf_result;
+    }
+
+    umf_memory_pool_handle_t numa_pool;
+
+#ifdef UMF_BUILD_LIBUMF_POOL_SCALABLE
+    umf_result = umfPoolCreate(umfScalablePoolOps(), numa_provider, NULL,
+                               UMF_POOL_CREATE_FLAG_OWN_PROVIDER, &numa_pool);
+#else
+    umf_result = UMF_RESULT_ERROR_NOT_SUPPORTED;
+#endif
+
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        umfMemoryProviderDestroy(numa_provider);
+        return umf_result;
+    }
+
+    *pool = numa_pool;
+
+    return umf_result;
 }
 
 static umf_result_t numa_clone(void *memTarget, void **outMemTarget) {
