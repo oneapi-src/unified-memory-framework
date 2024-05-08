@@ -4,8 +4,10 @@
 
 #include "memspaces/memspace_numa.h"
 #include "base.hpp"
+#include "malloc_compliance_tests.hpp"
 #include "memspace_helpers.hpp"
 #include "memspace_internal.h"
+#include "pool.hpp"
 
 #include <umf/providers/provider_os_memory.h>
 
@@ -65,3 +67,51 @@ TEST_F(memspaceNumaProviderTest, allocFree) {
     ret = umfMemoryProviderFree(hProvider, ptr, size);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 }
+
+/* malloc compliance tests of memspaceNumaPoolTest */
+
+TEST_F(memspaceNumaPoolTest, malloc_compliance) {
+    malloc_compliance_test(pool);
+}
+
+TEST_F(memspaceNumaPoolTest, calloc_compliance) {
+    if (!umf_test::isCallocSupported(pool)) {
+        GTEST_SKIP();
+    }
+
+    calloc_compliance_test(pool);
+}
+
+TEST_F(memspaceNumaPoolTest, realloc_compliance) {
+    if (!umf_test::isReallocSupported(pool)) {
+        GTEST_SKIP();
+    }
+
+    realloc_compliance_test(pool);
+}
+
+TEST_F(memspaceNumaPoolTest, free_compliance) { free_compliance_test(pool); }
+
+/* malloc compliance tests of memspaceHostAllPoolTest */
+
+TEST_F(memspaceHostAllPoolTest, malloc_compliance) {
+    malloc_compliance_test(pool);
+}
+
+TEST_F(memspaceHostAllPoolTest, calloc_compliance) {
+    if (!umf_test::isCallocSupported(pool)) {
+        GTEST_SKIP();
+    }
+
+    calloc_compliance_test(pool);
+}
+
+TEST_F(memspaceHostAllPoolTest, realloc_compliance) {
+    if (!umf_test::isReallocSupported(pool)) {
+        GTEST_SKIP();
+    }
+
+    realloc_compliance_test(pool);
+}
+
+TEST_F(memspaceHostAllPoolTest, free_compliance) { free_compliance_test(pool); }

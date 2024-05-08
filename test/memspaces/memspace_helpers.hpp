@@ -81,6 +81,26 @@ struct memspaceNumaProviderTest : ::memspaceNumaTest {
     umf_memory_provider_handle_t hProvider = nullptr;
 };
 
+struct memspaceNumaPoolTest : ::memspaceNumaTest {
+    void SetUp() override {
+        ::memspaceNumaTest::SetUp();
+
+        umf_result_t ret = umfPoolCreateFromMemspace(hMemspace, nullptr, &pool);
+        ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+        ASSERT_NE(pool, nullptr);
+    }
+
+    void TearDown() override {
+        ::memspaceNumaTest::TearDown();
+
+        if (pool != nullptr) {
+            umfPoolDestroy(pool);
+        }
+    }
+
+    umf_memory_pool_handle_t pool = nullptr;
+};
+
 struct memspaceHostAllTest : ::numaNodesTest {
     void SetUp() override {
         ::numaNodesTest::SetUp();
@@ -105,10 +125,32 @@ struct memspaceHostAllProviderTest : ::memspaceHostAllTest {
     void TearDown() override {
         ::memspaceHostAllTest::TearDown();
 
-        umfMemoryProviderDestroy(hProvider);
+        if (hProvider != nullptr) {
+            umfMemoryProviderDestroy(hProvider);
+        }
     }
 
     umf_memory_provider_handle_t hProvider = nullptr;
+};
+
+struct memspaceHostAllPoolTest : ::memspaceHostAllTest {
+    void SetUp() override {
+        ::memspaceHostAllTest::SetUp();
+
+        umf_result_t ret = umfPoolCreateFromMemspace(hMemspace, nullptr, &pool);
+        ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+        ASSERT_NE(pool, nullptr);
+    }
+
+    void TearDown() override {
+        ::memspaceHostAllTest::TearDown();
+
+        if (pool != nullptr) {
+            umfPoolDestroy(pool);
+        }
+    }
+
+    umf_memory_pool_handle_t pool = nullptr;
 };
 
 #endif /* UMF_MEMSPACE_HELPERS_HPP */

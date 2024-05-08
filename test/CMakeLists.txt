@@ -165,7 +165,7 @@ if(LINUX) # OS-specific functions are implemented only for Linux now
         LIBS ${UMF_UTILS_FOR_TEST} ${LIBNUMA_LIBRARIES})
     add_umf_test(
         NAME memspace_numa
-        SRCS memspaces/memspace_numa.cpp
+        SRCS memspaces/memspace_numa.cpp malloc_compliance_tests.cpp
         LIBS ${LIBNUMA_LIBRARIES})
     add_umf_test(
         NAME provider_os_memory_config
