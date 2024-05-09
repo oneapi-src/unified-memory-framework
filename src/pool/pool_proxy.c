@@ -11,8 +11,8 @@
 #include <umf/pools/pool_proxy.h>
 
 #include <assert.h>
-#include <stdlib.h>
 
+#include "base_alloc_global.h"
 #include "utils_common.h"
 
 static __TLS umf_result_t TLS_last_allocation_error;
@@ -26,8 +26,8 @@ proxy_pool_initialize(umf_memory_provider_handle_t hProvider, void *params,
                       void **ppPool) {
     (void)params; // unused
 
-    // TODO: use ba_alloc here
-    struct proxy_memory_pool *pool = malloc(sizeof(struct proxy_memory_pool));
+    struct proxy_memory_pool *pool =
+        umf_ba_global_alloc(sizeof(struct proxy_memory_pool));
     if (!pool) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
@@ -38,7 +38,7 @@ proxy_pool_initialize(umf_memory_provider_handle_t hProvider, void *params,
     return UMF_RESULT_SUCCESS;
 }
 
-static void proxy_pool_finalize(void *pool) { free(pool); }
+static void proxy_pool_finalize(void *pool) { umf_ba_global_free(pool); }
 
 static void *proxy_aligned_malloc(void *pool, size_t size, size_t alignment) {
     assert(pool);
