@@ -10,6 +10,70 @@
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
 
+# src version shows the current version, as reported by 'git describe', unless
+# 'git' is not available, then fall back to the top-level defined version
+function(set_source_version)
+    execute_process(
+        COMMAND git describe --always
+        OUTPUT_VARIABLE GIT_VERSION
+        WORKING_DIRECTORY ${UMF_CMAKE_SOURCE_DIR}
+        OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+
+    if(GIT_VERSION)
+        # 1.5.0 - we're on a tag
+        string(REGEX MATCHALL "\^([0-9]+\.[0-9]+\.[0-9]+)\$" MATCHES
+                     ${GIT_VERSION})
+        if(MATCHES)
+            set(UMF_SRC_VERSION
+                "${CMAKE_MATCH_1}"
+                PARENT_SCOPE)
+            return()
+        endif()
+
+        # 1.5.0-rc1 - we're on a RC tag
+        string(REGEX MATCHALL "\^([0-9]+\.[0-9]+\.[0-9]+\-rc[0-9]+)\$" MATCHES
+                     ${GIT_VERSION})
+        if(MATCHES)
+            set(UMF_SRC_VERSION
+                "${CMAKE_MATCH_1}"
+                PARENT_SCOPE)
+            return()
+        endif()
+
+        # 1.5.0-rc1-19-gb8f78a329 -> 1.5.0-rc1.git19.gb8f78a329
+        string(REGEX MATCHALL "([0-9.]*)-rc([0-9]*)-([0-9]*)-([0-9a-g]*)"
+                     MATCHES ${GIT_VERSION})
+        if(MATCHES)
+            set(UMF_SRC_VERSION
+                "${CMAKE_MATCH_1}-rc${CMAKE_MATCH_2}.git${CMAKE_MATCH_3}.${CMAKE_MATCH_4}"
+                PARENT_SCOPE)
+            return()
+        endif()
+
+        # 1.5.0-19-gb8f78a329 -> 1.5.0-git19.gb8f78a329
+        string(REGEX MATCHALL "([0-9.]*)-([0-9]*)-([0-9a-g]*)" MATCHES
+                     ${GIT_VERSION})
+        if(MATCHES)
+            set(UMF_SRC_VERSION
+                "${CMAKE_MATCH_1}-git${CMAKE_MATCH_2}.${CMAKE_MATCH_3}"
+                PARENT_SCOPE)
+            return()
+        endif()
+
+        # no full version is available (e.g. only a hash commit) or a pattern
+        # was not recognized
+        set(UMF_SRC_VERSION
+            "${CMAKE_PROJECT_VERSION}.git.${GIT_VERSION}"
+            PARENT_SCOPE)
+    else()
+        # git reported no version. Use version set up in the top-level CMake
+        # with a "devel" suffix
+        set(UMF_SRC_VERSION
+            "${CMAKE_PROJECT_VERSION}-devel"
+            PARENT_SCOPE)
+    endif()
+endfunction()
+
 # Sets ${ret} to version of program specified by ${name} in major.minor format
 function(get_program_version_major_minor name ret)
     execute_process(

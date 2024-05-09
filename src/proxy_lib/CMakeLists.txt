@@ -27,6 +27,8 @@ add_umf_library(
     LIBS ${PROXY_LIBS}
     LINUX_MAP_FILE ${CMAKE_CURRENT_SOURCE_DIR}/proxy_lib.map
     WINDOWS_DEF_FILE ${CMAKE_CURRENT_SOURCE_DIR}/proxy_lib.def)
+set_target_properties(umf_proxy PROPERTIES SOVERSION
+                                           ${CMAKE_PROJECT_VERSION_MAJOR})
 
 add_library(${PROJECT_NAME}::proxy ALIAS umf_proxy)
 
