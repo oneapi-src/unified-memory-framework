@@ -38,3 +38,36 @@ and build this example Level Zero development package should be installed.
 * Level Zero headers and libraries
 * compatible GPU with installed driver
 * set UMF_BUILD_GPU_EXAMPLES, UMF_BUILD_LIBUMF_POOL_DISJOINT, UMF_BUILD_LEVEL_ZERO_PROVIDER and UMF_ENABLE_POOL_TRACKING CMake configuration flags to ON
+
+## IPC example with shared memory
+This example also demonstrates how to use UMF IPC API. The example creates two
+processes: a producer and a consumer that communicate in the following way
+(the initial value N in the shared memory is quasi-random):
+- Consumer starts
+- Consumer creates a socket
+- Consumer listens for incoming connections
+- Producer starts
+- Producer's shared memory contains a number: N
+- Producer gets the IPC handle
+- Producer creates a socket
+- Producer connects to the consumer
+- Consumer connects at IP 127.0.0.1 and a port to the producer
+- Producer sends the size of the IPC handle to the consumer
+- Consumer receives the size of the IPC handle
+- Consumer sends the received size of the IPC handle as a confirmation back to the producer
+- Producer receives the confirmation from the consumer and verifies if it is correct
+- Producer sends the IPC handle to the consumer
+- Consumer receives the IPC handle from the producer
+- Consumer opens the IPC handle received from the producer
+- Consumer reads the number from the producer's shared memory: N
+- Consumer writes a new number directly to the producer's shared memory: N/2
+- Consumer sends a response message to the producer
+- Producer receives the response message from the consumer: "This is the consumer. I just wrote a new number directly into your shared memory!"
+- Producer verifies if the consumer wrote the correct value (the old one / 2) to the producer's shared memory: N/2
+- Consumer closes the IPC handle received from the producer
+- Producer puts the IPC handle
+- Consumer shuts down
+- Producer shuts down
+
+### Requirements
+* set UMF_BUILD_LIBUMF_POOL_SCALABLE CMake configuration flag to ON

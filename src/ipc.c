@@ -93,7 +93,8 @@ umf_result_t umfOpenIPCHandle(umf_memory_pool_handle_t hPool,
     umf_result_t ret = umfMemoryProviderOpenIPCHandle(
         hProvider, (void *)umfIPCHandle->providerIpcData, &base);
     if (ret != UMF_RESULT_SUCCESS) {
-        LOG_ERR("umfOpenIPCHandle: memory provider failed to IPC handle.");
+        LOG_ERR(
+            "umfOpenIPCHandle: memory provider failed to open the IPC handle.");
         return ret;
     }
     *ptr = (void *)((uintptr_t)base + umfIPCHandle->offset);
