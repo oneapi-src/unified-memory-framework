@@ -437,8 +437,13 @@ install(FILES ${CMAKE_SOURCE_DIR}/LICENSE.TXT
         DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/doc/${PROJECT_NAME}/")
 
 install(
-    FILES examples/basic/gpu_shared_memory.c examples/basic/utils_level_zero.h
-          examples/basic/basic.c examples/basic/ipc_level_zero.c
+    FILES examples/basic/gpu_shared_memory.c
+          examples/basic/utils_level_zero.h
+          examples/basic/basic.c
+          examples/basic/ipc_level_zero.c
+          examples/basic/ipc_shm_ipcapi.sh
+          examples/basic/ipc_shm_ipcapi_consumer.c
+          examples/basic/ipc_shm_ipcapi_producer.c
     DESTINATION "${CMAKE_INSTALL_DOCDIR}/examples")
 
 # Add the include directory and the headers target to the install.

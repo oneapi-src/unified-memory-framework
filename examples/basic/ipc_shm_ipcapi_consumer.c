@@ -12,43 +12,21 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <umf/ipc.h>
+#include <umf/memory_pool.h>
+#include <umf/pools/pool_scalable.h>
 #include <umf/providers/provider_os_memory.h>
 
 #define INET_ADDR "127.0.0.1"
-#define MSG_SIZE 256
-#define RECV_BUFF_SIZE 1024
+#define SEND_BUFF_SIZE 256
+#define RECV_BUFF_SIZE 32
 
 // consumer's response message
 #define CONSUMER_MSG                                                           \
     "This is the consumer. I just wrote a new number directly into your "      \
     "shared memory!"
 
-/*
-Generally communication between the producer and the consumer looks like:
-- Consumer starts
-- Consumer creates a socket
-- Consumer listens for incoming connections
-- Producer starts
-- Producer's shared memory contains a number: N
-- Producer gets the IPC handle
-- Producer creates a socket
-- Producer connects to the consumer
-- Consumer connects at IP 127.0.0.1 and a port to the producer
-- Producer sends the IPC handle to the consumer
-- Consumer receives the IPC handle from the producer
-- Consumer opens the IPC handle received from the producer
-- Consumer reads the number from the producer's shared memory: N
-- Consumer writes a new number directly to the producer's shared memory: N/2
-- Consumer sends a response message to the producer
-- Consumer closes the IPC handle received from the producer
-- Producer receives the response from the consumer: "This is the consumer. I just wrote a new number directly into your shared memory!"
-- Producer verifies the consumer wrote the correct value (the old one / 2) to the producer's shared memory: N/2
-- Producer puts the IPC handle
-- Consumer shuts down
-- Producer shuts down
-*/
-
-int consumer_connect(int port) {
+int consumer_connect_to_producer(int port) {
     struct sockaddr_in consumer_addr;
     struct sockaddr_in producer_addr;
     int producer_addr_len;
@@ -108,9 +86,9 @@ err_close_consumer_socket:
 }
 
 int main(int argc, char *argv[]) {
-    char consumer_message[MSG_SIZE];
+    char send_buffer[SEND_BUFF_SIZE];
     char recv_buffer[RECV_BUFF_SIZE];
-    int producer_socket = -1;
+    int producer_socket;
     int ret = -1;
 
     if (argc < 2) {
@@ -119,9 +97,6 @@ int main(int argc, char *argv[]) {
     }
 
     int port = atoi(argv[1]);
-
-    // zero the consumer_message buffer
-    memset(consumer_message, 0, sizeof(consumer_message));
 
     umf_memory_provider_handle_t OS_memory_provider = NULL;
     umf_os_memory_provider_params_t os_params;
@@ -139,39 +114,70 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    // get the size of the IPC handle
-    size_t IPC_handle_size;
-    umf_result =
-        umfMemoryProviderGetIPCHandleSize(OS_memory_provider, &IPC_handle_size);
+    umf_memory_pool_handle_t scalable_pool;
+    umf_result = umfPoolCreate(umfScalablePoolOps(), OS_memory_provider, NULL,
+                               0, &scalable_pool);
     if (umf_result != UMF_RESULT_SUCCESS) {
         fprintf(stderr,
-                "[consumer] ERROR: getting size of the IPC handle failed\n");
-        goto err_umfMemoryProviderDestroy;
+                "[producer] ERROR: creating jemalloc UMF pool failed\n");
+        goto err_destroy_OS_memory_provider;
     }
 
-    producer_socket = consumer_connect(port);
+    // connect to the producer
+    producer_socket = consumer_connect_to_producer(port);
     if (producer_socket < 0) {
-        goto err_umfMemoryProviderDestroy;
+        goto err_destroy_scalable_pool;
     }
 
-    // zero the receive buffer
     memset(recv_buffer, 0, RECV_BUFF_SIZE);
 
-    // receive a producer's message
+    // receive a size of the IPC handle from the producer's
     ssize_t len = recv(producer_socket, recv_buffer, RECV_BUFF_SIZE, 0);
     if (len < 0) {
-        fprintf(stderr, "[consumer] ERROR: recv() failed\n");
-        goto err_close_producer_socket;
-    }
-    if (len != IPC_handle_size) {
-        fprintf(stderr,
-                "[consumer] ERROR: recv() received a wrong number of bytes "
-                "(%zi != %zu expected)\n",
-                len, IPC_handle_size);
+        fprintf(
+            stderr,
+            "[consumer] ERROR: receiving a size of the IPC handle failed\n");
         goto err_close_producer_socket;
     }
 
-    void *IPC_handle = recv_buffer;
+    size_t size_IPC_handle = *(size_t *)recv_buffer;
+
+    fprintf(stderr,
+            "[consumer] Received %zu bytes - the size of the IPC handle: %zu "
+            "bytes\n",
+            len, size_IPC_handle);
+
+    // send received size to the producer as a confirmation
+    len = send(producer_socket, &size_IPC_handle, sizeof(size_IPC_handle), 0);
+    if (len < 0) {
+        fprintf(stderr, "[consumer] ERROR: sending confirmation failed\n");
+        goto err_close_producer_socket;
+    }
+
+    fprintf(stderr,
+            "[consumer] Sent a confirmation to the producer (%zu bytes)\n",
+            len);
+
+    // allocate memory for IPC handle
+    umf_ipc_handle_t IPC_handle = (umf_ipc_handle_t)calloc(1, size_IPC_handle);
+    if (IPC_handle == NULL) {
+        fprintf(stderr, "[consumer] ERROR: receiving the IPC handle failed\n");
+        goto err_close_producer_socket;
+    }
+
+    // receive the IPC handle from the producer's
+    len = recv(producer_socket, IPC_handle, size_IPC_handle, 0);
+    if (len < 0) {
+        fprintf(stderr, "[consumer] ERROR: receiving the IPC handle failed\n");
+        goto err_free_IPC_handle;
+    }
+    if (len < size_IPC_handle) {
+        fprintf(stderr,
+                "[consumer] ERROR: receiving the IPC handle failed - received "
+                "only %zu bytes (size of IPC handle is %zu bytes)\n",
+                len, size_IPC_handle);
+        goto err_free_IPC_handle;
+    }
 
     fprintf(
         stderr,
@@ -179,25 +185,23 @@ int main(int argc, char *argv[]) {
         len);
 
     void *SHM_ptr;
-    umf_result = umfMemoryProviderOpenIPCHandle(OS_memory_provider, IPC_handle,
-                                                &SHM_ptr);
+    umf_result = umfOpenIPCHandle(scalable_pool, IPC_handle, &SHM_ptr);
     if (umf_result == UMF_RESULT_ERROR_NOT_SUPPORTED) {
         fprintf(stderr,
                 "[consumer] SKIP: opening the IPC handle is not supported\n");
         ret = 1; // SKIP
 
-        // write the SKIP response to the consumer_message buffer
-        strcpy(consumer_message, "SKIP");
+        // write the SKIP response to the send_buffer buffer
+        strcpy(send_buffer, "SKIP");
 
         // send the SKIP response to the producer
-        send(producer_socket, consumer_message, strlen(consumer_message) + 1,
-             0);
+        send(producer_socket, send_buffer, strlen(send_buffer) + 1, 0);
 
-        goto err_close_producer_socket;
+        goto err_free_IPC_handle;
     }
     if (umf_result != UMF_RESULT_SUCCESS) {
         fprintf(stderr, "[consumer] ERROR: opening the IPC handle failed\n");
-        goto err_close_producer_socket;
+        goto err_free_IPC_handle;
     }
 
     fprintf(stderr,
@@ -220,24 +224,22 @@ int main(int argc, char *argv[]) {
             "memory: %llu\n",
             SHM_number_2);
 
-    // write the response to the consumer_message buffer
-    strcpy(consumer_message, CONSUMER_MSG);
+    // write the response to the send_buffer buffer
+    memset(send_buffer, 0, sizeof(send_buffer));
+    strcpy(send_buffer, CONSUMER_MSG);
 
     // send response to the producer
-    if (send(producer_socket, consumer_message, strlen(consumer_message) + 1,
-             0) < 0) {
+    if (send(producer_socket, send_buffer, strlen(send_buffer) + 1, 0) < 0) {
         fprintf(stderr, "[consumer] ERROR: send() failed\n");
-        goto err_closeIPCHandle;
+        goto err_CloseIPCHandle;
     }
 
     fprintf(stderr, "[consumer] Sent a response message to the producer\n");
 
     ret = 0; // SUCCESS
 
-err_closeIPCHandle:
-    // we do not know the exact size of the remote shared memory
-    umf_result = umfMemoryProviderCloseIPCHandle(OS_memory_provider, SHM_ptr,
-                                                 sizeof(unsigned long long));
+err_CloseIPCHandle:
+    umf_result = umfCloseIPCHandle(SHM_ptr);
     if (umf_result != UMF_RESULT_SUCCESS) {
         fprintf(stderr, "[consumer] ERROR: closing the IPC handle failed\n");
     }
@@ -245,10 +247,16 @@ err_closeIPCHandle:
     fprintf(stderr,
             "[consumer] Closed the IPC handle received from the producer\n");
 
+err_free_IPC_handle:
+    free(IPC_handle);
+
 err_close_producer_socket:
     close(producer_socket);
 
-err_umfMemoryProviderDestroy:
+err_destroy_scalable_pool:
+    umfPoolDestroy(scalable_pool);
+
+err_destroy_OS_memory_provider:
     umfMemoryProviderDestroy(OS_memory_provider);
 
     if (ret == 0) {
