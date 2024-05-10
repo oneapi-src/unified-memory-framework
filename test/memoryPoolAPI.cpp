@@ -150,7 +150,6 @@ TEST_F(test, retrieveMemoryProvider) {
     ASSERT_EQ(retProvider, provider);
 }
 
-#ifdef UMF_ENABLE_POOL_TRACKING_TESTS
 TEST_F(test, BasicPoolByPtrTest) {
     constexpr size_t SIZE = 4096 * 1024;
 
@@ -177,7 +176,6 @@ TEST_F(test, BasicPoolByPtrTest) {
     ret = umfFree(ptr);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 }
-#endif /* UMF_ENABLE_POOL_TRACKING_TESTS */
 
 INSTANTIATE_TEST_SUITE_P(
     mallocPoolTest, umfPoolTest,

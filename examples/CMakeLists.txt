@@ -2,7 +2,7 @@
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-if(UMF_BUILD_LIBUMF_POOL_SCALABLE AND UMF_ENABLE_POOL_TRACKING)
+if(UMF_BUILD_LIBUMF_POOL_SCALABLE)
     set(EXAMPLE_NAME umf_example_basic)
 
     add_umf_executable(
@@ -29,8 +29,10 @@ if(UMF_BUILD_LIBUMF_POOL_SCALABLE AND UMF_ENABLE_POOL_TRACKING)
                                                    "${DLL_PATH_LIST}")
     endif()
 else()
-    message(STATUS "Basic example requires UMF_BUILD_LIBUMF_POOL_SCALABLE and "
-                   "UMF_ENABLE_POOL_TRACKING to be turned ON - skipping")
+    message(
+        STATUS
+            "Basic example requires UMF_BUILD_LIBUMF_POOL_SCALABLE to be turned ON - skipping"
+    )
 endif()
 
 if(UMF_BUILD_GPU_EXAMPLES
@@ -73,7 +75,6 @@ endif()
 
 if(UMF_BUILD_GPU_EXAMPLES
    AND UMF_BUILD_LIBUMF_POOL_DISJOINT
-   AND UMF_ENABLE_POOL_TRACKING
    AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
     set(EXAMPLE_NAME umf_example_ipc_level_zero)
 
@@ -104,9 +105,8 @@ if(UMF_BUILD_GPU_EXAMPLES
 else()
     message(
         STATUS
-            "IPC Level 0 example requires UMF_BUILD_GPU_EXAMPLES, "
-            "UMF_BUILD_LEVEL_ZERO_PROVIDER, UMF_BUILD_LIBUMF_POOL_DISJOINT and "
-            "UMF_ENABLE_POOL_TRACKING to be turned ON - skipping")
+            "IPC Level 0 example requires UMF_BUILD_GPU_EXAMPLES, UMF_BUILD_LEVEL_ZERO_PROVIDER and UMF_BUILD_LIBUMF_POOL_DISJOINT to be turned ON - skipping"
+    )
 endif()
 
 if(LINUX AND UMF_BUILD_LIBUMF_POOL_SCALABLE)

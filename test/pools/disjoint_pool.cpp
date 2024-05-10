@@ -71,10 +71,6 @@ TEST_F(test, freeErrorPropagation) {
 }
 
 TEST_F(test, sharedLimits) {
-#if !UMF_ENABLE_POOL_TRACKING_TESTS
-    GTEST_SKIP() << "Pool Tracking needs to be enabled";
-#endif
-
     static size_t numAllocs = 0;
     static size_t numFrees = 0;
 

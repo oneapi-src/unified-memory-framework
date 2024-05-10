@@ -88,10 +88,6 @@ void umfPoolDestroy(umf_memory_pool_handle_t hPool) {
 }
 
 umf_result_t umfFree(void *ptr) {
-#ifndef UMF_ENABLE_POOL_TRACKING
-    return UMF_RESULT_ERROR_NOT_SUPPORTED;
-#endif
-
     umf_memory_pool_handle_t hPool = umfPoolByPtr(ptr);
     if (hPool) {
         return umfPoolFree(hPool, ptr);
@@ -124,11 +120,6 @@ umf_result_t umfPoolCreate(const umf_memory_pool_ops_t *ops,
                            umf_pool_create_flags_t flags,
                            umf_memory_pool_handle_t *hPool) {
     libumfInit();
-
-#ifndef UMF_ENABLE_POOL_TRACKING
-    // if tracking is not enabled during compilation, disable it for each pool here as well
-    flags |= UMF_POOL_CREATE_FLAG_DISABLE_TRACKING;
-#endif
 
     umf_result_t ret =
         umfPoolCreateInternal(ops, provider, params, flags, hPool);

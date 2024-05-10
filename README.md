@@ -114,7 +114,6 @@ List of options provided by CMake:
 | UMF_BUILD_BENCHMARKS | Build UMF benchmarks | ON/OFF | OFF |
 | UMF_BUILD_EXAMPLES | Build UMF examples | ON/OFF | ON |
 | UMF_BUILD_GPU_EXAMPLES | Build UMF GPU examples | ON/OFF | OFF |
-| UMF_ENABLE_POOL_TRACKING | Build UMF with pool tracking | ON/OFF | ON |
 | UMF_DEVELOPER_MODE | Treat warnings as errors and enables additional checks | ON/OFF | OFF |
 | UMF_FORMAT_CODE_STYLE | Add clang, cmake, and black -format-check and -format-apply targets to make | ON/OFF | OFF |
 | USE_ASAN | Enable AddressSanitizer checks | ON/OFF | OFF |

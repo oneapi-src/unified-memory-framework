@@ -45,7 +45,6 @@ jobs:
           -DUMF_FORMAT_CODE_STYLE=ON
           -DUMF_DEVELOPER_MODE=ON
           -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
-          -DUMF_ENABLE_POOL_TRACKING=ON
 
       - name: Build UMF
         run: cmake --build ${{github.workspace}}/build -j $(nproc)

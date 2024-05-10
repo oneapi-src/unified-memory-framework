@@ -82,11 +82,6 @@ function(add_umf_test)
         set_property(TEST ${TEST_NAME} PROPERTY ENVIRONMENT_MODIFICATION
                                                 "${DLL_PATH_LIST}")
     endif()
-
-    if(UMF_ENABLE_POOL_TRACKING)
-        target_compile_definitions(${TEST_TARGET_NAME}
-                                   PRIVATE UMF_ENABLE_POOL_TRACKING_TESTS=1)
-    endif()
 endfunction()
 
 add_subdirectory(common)
@@ -125,8 +120,7 @@ endif()
 
 if(UMF_BUILD_LIBUMF_POOL_DISJOINT
    AND UMF_BUILD_LIBUMF_POOL_JEMALLOC
-   AND UMF_BUILD_LIBUMF_POOL_SCALABLE
-   AND UMF_ENABLE_POOL_TRACKING)
+   AND UMF_BUILD_LIBUMF_POOL_SCALABLE)
     add_umf_test(
         NAME c_api_multi_pool
         SRCS c_api/multi_pool.c
@@ -237,9 +231,7 @@ if(UMF_PROXY_LIB_ENABLED AND UMF_BUILD_SHARED_LIBRARY)
                                PUBLIC UMF_PROXY_LIB_ENABLED=1)
 endif()
 
-if(UMF_ENABLE_POOL_TRACKING)
-    add_umf_test(NAME ipc SRCS ipcAPI.cpp)
-endif()
+add_umf_test(NAME ipc SRCS ipcAPI.cpp)
 
 if(LINUX)
     set(BASE_NAME ipc_os_prov)

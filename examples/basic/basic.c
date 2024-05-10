@@ -104,10 +104,6 @@ int main(void) {
            (void *)pool, (void *)check_provider);
 
     // Clean up.
-    // To free a pointer using the umfFree(ptr) function, ensure that memory tracking is enabled
-    // by setting the UMF_ENABLE_POOL_TRACKING option in the CMake configuration.
-    // If the memory tracking is disabled, you can call a different function:
-    // umfPoolFree(pool, ptr);
     umfFree(ptr);
     umfPoolDestroy(pool);
     umfMemoryProviderDestroy(provider);

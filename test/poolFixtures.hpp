@@ -355,7 +355,6 @@ TEST_P(umfMemTest, outOfMem) {
     }
 }
 
-#ifdef UMF_ENABLE_POOL_TRACKING_TESTS
 // TODO: add similar tests for realloc/aligned_alloc, etc.
 // TODO: add multithreaded tests
 TEST_P(umfMultiPoolTest, memoryTracking) {
@@ -392,7 +391,6 @@ TEST_P(umfMultiPoolTest, memoryTracking) {
         umfFree(std::get<0>(p));
     }
 }
-#endif /* UMF_ENABLE_POOL_TRACKING_TESTS */
 
 /* malloc compliance tests */
 
