@@ -220,6 +220,11 @@ using umfMemspaceHostAllGet.
 Memspace backed by all available NUMA nodes discovered on the platform sorted by capacity.
 Can be retrieved using umfMemspaceHighestCapacityGet.
 
+#### Highest bandwidth memspace
+
+Memspace backed by an aggregated list of NUMA nodes identified as highest bandwidth after selecting each available NUMA node as the initiator.
+Querying the bandwidth value requires HMAT support on the platform. Calling `umfMemspaceHighestBandwidthGet()` will return NULL if it's not supported.
+
 ### Proxy library
 
 UMF provides the UMF proxy library (`umf_proxy`) that makes it possible
