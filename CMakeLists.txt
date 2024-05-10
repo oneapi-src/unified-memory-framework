@@ -12,7 +12,7 @@ project(
 set(UMF_CMAKE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 list(APPEND CMAKE_MODULE_PATH "${UMF_CMAKE_SOURCE_DIR}/cmake")
-include(helpers)
+include(${UMF_CMAKE_SOURCE_DIR}/cmake/helpers.cmake)
 
 # CMAKE_PROJECT_VERSION[_MAJOR|_MINOR|_PATCH] variables are set via 'project'
 # command. They cannot contain any "pre-release" part, though. We use custom
