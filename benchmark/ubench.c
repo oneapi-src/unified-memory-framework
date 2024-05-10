@@ -125,6 +125,7 @@ static void *w_umfMemoryProviderAlloc(void *provider, size_t size,
         (umf_memory_provider_handle_t)provider;
     umf_result = umfMemoryProviderAlloc(hProvider, size, alignment, &ptr);
     if (umf_result != UMF_RESULT_SUCCESS || ptr == NULL) {
+        fprintf(stderr, "error: umfMemoryProviderAlloc() failed\n");
         exit(-1);
     }
 
@@ -137,6 +138,7 @@ static void w_umfMemoryProviderFree(void *provider, void *ptr, size_t size) {
         (umf_memory_provider_handle_t)provider;
     umf_result = umfMemoryProviderFree(hProvider, ptr, size);
     if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "error: umfMemoryProviderFree() failed\n");
         exit(-1);
     }
 }
@@ -150,6 +152,7 @@ UBENCH_EX(simple, os_memory_provider) {
                                          &UMF_OS_MEMORY_PROVIDER_PARAMS,
                                          &os_memory_provider);
     if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "error: umfMemoryProviderCreate() failed\n");
         exit(-1);
     }
 
@@ -177,6 +180,7 @@ static void w_umfPoolFree(void *provider, void *ptr, size_t size) {
     umf_memory_pool_handle_t hPool = (umf_memory_pool_handle_t)provider;
     umf_result = umfPoolFree(hPool, ptr);
     if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "error: umfPoolFree() failed\n");
         exit(-1);
     }
 }
@@ -192,6 +196,7 @@ UBENCH_EX(simple, proxy_pool_with_os_memory_provider) {
                                          &UMF_OS_MEMORY_PROVIDER_PARAMS,
                                          &os_memory_provider);
     if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "error: umfMemoryProviderCreate() failed\n");
         exit(-1);
     }
 
@@ -199,6 +204,7 @@ UBENCH_EX(simple, proxy_pool_with_os_memory_provider) {
     umf_result = umfPoolCreate(umfProxyPoolOps(), os_memory_provider, NULL, 0,
                                &proxy_pool);
     if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "error: umfPoolCreate() failed\n");
         exit(-1);
     }
 
@@ -227,6 +233,7 @@ UBENCH_EX(simple, disjoint_pool_with_os_memory_provider) {
                                          &UMF_OS_MEMORY_PROVIDER_PARAMS,
                                          &os_memory_provider);
     if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "error: umfMemoryProviderCreate() failed\n");
         exit(-1);
     }
 
@@ -241,6 +248,7 @@ UBENCH_EX(simple, disjoint_pool_with_os_memory_provider) {
     umf_result = umfPoolCreate(umfDisjointPoolOps(), os_memory_provider,
                                &disjoint_memory_pool_params, 0, &disjoint_pool);
     if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "error: umfPoolCreate() failed\n");
         exit(-1);
     }
 
@@ -270,6 +278,7 @@ UBENCH_EX(simple, jemalloc_pool_with_os_memory_provider) {
                                          &UMF_OS_MEMORY_PROVIDER_PARAMS,
                                          &os_memory_provider);
     if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "error: umfMemoryProviderCreate() failed\n");
         exit(-1);
     }
 
@@ -277,6 +286,7 @@ UBENCH_EX(simple, jemalloc_pool_with_os_memory_provider) {
     umf_result = umfPoolCreate(umfJemallocPoolOps(), os_memory_provider, NULL,
                                0, &jemalloc_pool);
     if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "error: umfPoolCreate() failed\n");
         exit(-1);
     }
 
@@ -306,6 +316,7 @@ UBENCH_EX(simple, scalable_pool_with_os_memory_provider) {
                                          &UMF_OS_MEMORY_PROVIDER_PARAMS,
                                          &os_memory_provider);
     if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "error: umfMemoryProviderCreate() failed\n");
         exit(-1);
     }
 
@@ -313,6 +324,7 @@ UBENCH_EX(simple, scalable_pool_with_os_memory_provider) {
     umf_result = umfPoolCreate(umfScalablePoolOps(), os_memory_provider, NULL,
                                0, &scalable_pool);
     if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "error: umfPoolCreate() failed\n");
         exit(-1);
     }
 
