@@ -60,7 +60,7 @@ static umf_result_t umfMemoryTrackerAdd(umf_memory_tracker_handle_t hTracker,
 }
 
 static umf_result_t umfMemoryTrackerRemove(umf_memory_tracker_handle_t hTracker,
-                                           const void *ptr) {
+                                           const void *ptr, size_t *size) {
     assert(ptr);
 
     // TODO: there is no support for removing partial ranges (or multiple entries
@@ -68,10 +68,14 @@ static umf_result_t umfMemoryTrackerRemove(umf_memory_tracker_handle_t hTracker,
     // Every umfMemoryTrackerAdd(..., ptr, ...) should have a corresponding
     // umfMemoryTrackerRemove call with the same ptr value.
 
-    void *value = critnib_remove(hTracker->map, (uintptr_t)ptr);
+    tracker_value_t *value = critnib_remove(hTracker->map, (uintptr_t)ptr);
     if (!value) {
         LOG_ERR("umfMemoryTrackerRemove: pointer %p not found in the map", ptr);
         return UMF_RESULT_ERROR_UNKNOWN;
+    }
+
+    if (size) {
+        *size = value->size;
     }
 
     umf_ba_free(hTracker->tracker_allocator, value);
@@ -318,13 +322,14 @@ static umf_result_t trackingFree(void *hProvider, void *ptr, size_t size) {
     umf_result_t ret;
     umf_tracking_memory_provider_t *p =
         (umf_tracking_memory_provider_t *)hProvider;
+    size_t saved_size = 0;
 
     // umfMemoryTrackerRemove should be called before umfMemoryProviderFree
     // to avoid a race condition. If the order would be different, other thread
     // could allocate the memory at address `ptr` before a call to umfMemoryTrackerRemove
     // resulting in inconsistent state.
     if (ptr) {
-        ret = umfMemoryTrackerRemove(p->hTracker, ptr);
+        ret = umfMemoryTrackerRemove(p->hTracker, ptr, &saved_size);
         if (ret != UMF_RESULT_SUCCESS) {
             // DO NOT return an error here, because the tracking provider
             // cannot change behaviour of the upstream provider.
@@ -341,6 +346,15 @@ static umf_result_t trackingFree(void *hProvider, void *ptr, size_t size) {
             LOG_ERR("tracking free: failed to put IPC handle");
         }
         umf_ba_global_free(value);
+    }
+
+    // umfMemoryProviderFree() should not be called with size == 0,
+    // so use the size saved in the tracking provider.
+    if (size == 0) {
+        size = saved_size;
+    }
+    if (saved_size) {
+        assert(size == saved_size);
     }
 
     ret = umfMemoryProviderFree(p->hUpstream, ptr, size);
@@ -608,7 +622,7 @@ static umf_result_t trackingCloseIpcHandle(void *provider, void *ptr,
     // could allocate the memory at address `ptr` before a call to umfMemoryTrackerRemove
     // resulting in inconsistent state.
     if (ptr) {
-        umf_result_t ret = umfMemoryTrackerRemove(p->hTracker, ptr);
+        umf_result_t ret = umfMemoryTrackerRemove(p->hTracker, ptr, NULL);
         if (ret != UMF_RESULT_SUCCESS) {
             // DO NOT return an error here, because the tracking provider
             // cannot change behaviour of the upstream provider.
