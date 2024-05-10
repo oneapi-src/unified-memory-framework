@@ -18,7 +18,8 @@ The Unified Memory Framework (UMF) is a library for constructing allocators and 
 **⚠️ Work-In-Progress disclaimer:**
 > Please note that this project is **pre-production software**, it should not be considered complete or fully functional.
 > It has not been fully tested yet (including security testing). It is not recommended to be used in production
-> as part of a larger system. It is not eligible for Intel® Bug Bounty Program.
+> as part of a larger system. Note that this warning is temporary - we plan to release a stable version within six months.
+> This project is not eligible for Intel® Bug Bounty Program.
 >
 > The API is not yet stable, may change without notice, and will not maintain backward compatibility.
 
