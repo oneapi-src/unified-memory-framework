@@ -405,7 +405,6 @@ static void check_if_tracker_is_empty(umf_memory_tracker_handle_t hTracker,
                         "left)",
                         n_items);
             }
-            assert(n_items == 0);
         }
     }
 }
