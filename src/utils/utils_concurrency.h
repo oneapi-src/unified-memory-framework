@@ -11,12 +11,20 @@
 #define UMF_UTILS_CONCURRENCY_H 1
 
 #include <stdio.h>
-#if defined(_WIN32)
+
+#ifdef _WIN32
 #include <windows.h>
 #else
 #include <pthread.h>
+
+#ifndef __cplusplus
 #include <stdatomic.h>
-#endif
+#else /* __cplusplus */
+#include <atomic>
+#define _Atomic(X) std::atomic<X>
+#endif /* __cplusplus */
+
+#endif /* _WIN32 */
 
 #include "utils_sanitizers.h"
 

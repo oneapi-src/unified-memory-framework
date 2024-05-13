@@ -22,6 +22,8 @@
 // TODO: replace with logger?
 #include <iostream>
 
+#include "provider/provider_tracking.h"
+
 #include "../cpp_helpers.hpp"
 #include "pool_disjoint.h"
 #include "umf.h"
@@ -404,7 +406,17 @@ static void *memoryProviderAlloc(umf_memory_provider_handle_t hProvider,
 
 static void memoryProviderFree(umf_memory_provider_handle_t hProvider,
                                void *ptr) {
-    auto ret = umfMemoryProviderFree(hProvider, ptr, 0);
+    size_t size = 0;
+
+    if (ptr) {
+        umf_alloc_info_t allocInfo = {0};
+        umf_result_t umf_result = umfMemoryTrackerGetAllocInfo(ptr, &allocInfo);
+        if (umf_result == UMF_RESULT_SUCCESS) {
+            size = allocInfo.baseSize;
+        }
+    }
+
+    auto ret = umfMemoryProviderFree(hProvider, ptr, size);
     if (ret != UMF_RESULT_SUCCESS) {
         throw MemoryProviderError{ret};
     }
