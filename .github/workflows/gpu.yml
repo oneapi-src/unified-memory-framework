@@ -40,7 +40,7 @@ jobs:
         if: matrix.os == 'Windows'
         run: >
           cmake
-          -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/../../../../vcpkg/scripts/buildsystems/vcpkg.cmake
+          -DCMAKE_PREFIX_PATH="${{github.workspace}}/../../../../vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/../../../../vcpkg/packages/tbb_x64-windows;${{github.workspace}}/../../../../vcpkg/packages/jemalloc_x64-windows"
           -B ${{github.workspace}}/build
           -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
           -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
