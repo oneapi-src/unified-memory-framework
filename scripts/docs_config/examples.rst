@@ -16,11 +16,6 @@ while the GPU shared uses Level Zero Memory Provider and Disjoint Pool.
 There are also other memory providers and pools available in the UMF.
 See `README`_ for more information.
 
-.. note::
-    There are some API functions that are supported only when the UMF is built
-    with the memory tracking enabled (UMF_ENABLE_POOL_TRACKING=ON). These functions
-    are explicitly described in this tutorial as requiring memory tracking.
-
 Basic
 ==============================================================================
 
@@ -112,12 +107,6 @@ Freeing memory is as easy as can be::
     umfFree(ptr);
     umfPoolDestroy(pool);
     umfMemoryProviderDestroy(provider);
-
-.. note::
-    To free a pointer using the :any:`umfFree` function, ensure that memory tracking is enabled
-    by setting the UMF_ENABLE_POOL_TRACKING option in the CMake configuration.
-    If the memory tracking is disabled, you should call a different function:
-    :any:`umfPoolFree`.
 
 GPU shared memory
 ==============================================================================

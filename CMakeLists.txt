@@ -39,7 +39,6 @@ option(UMF_BUILD_BENCHMARKS "Build UMF benchmarks" OFF)
 option(UMF_BUILD_BENCHMARKS_MT "Build UMF multithreaded benchmarks" OFF)
 option(UMF_BUILD_EXAMPLES "Build UMF examples" ON)
 option(UMF_BUILD_GPU_EXAMPLES "Build UMF GPU examples" OFF)
-option(UMF_ENABLE_POOL_TRACKING "Build UMF with pool tracking" ON)
 option(UMF_DEVELOPER_MODE "Enable developer checks, treats warnings as errors"
        OFF)
 option(UMF_FORMAT_CODE_STYLE

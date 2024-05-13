@@ -18,7 +18,6 @@ jobs:
       matrix:
         build_type: [Debug, Release]
         compiler: [{c: icx, cxx: icpx}]
-        pool_tracking: ['ON', 'OFF']
         shared_library: ['OFF']
     env:
       BUILD_DIR : "${{github.workspace}}/build/"
@@ -53,7 +52,6 @@ jobs:
         -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
         -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
-        -DUMF_ENABLE_POOL_TRACKING=${{matrix.pool_tracking}}
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
@@ -88,7 +86,6 @@ jobs:
         os: ['ubuntu-20.04', 'ubuntu-22.04']
         build_type: [Debug, Release]
         compiler: [{c: gcc, cxx: g++}]
-        pool_tracking: ['ON', 'OFF']
         shared_library: ['OFF']
         level_zero_provider: ['ON']
         include:
@@ -96,32 +93,27 @@ jobs:
             build_type: Release
             compiler: {c: gcc-7, cxx: g++-7}
             shared_library: 'OFF'
-            pool_tracking: 'ON'
             level_zero_provider: 'ON'
           - os: 'ubuntu-22.04'
             build_type: Release
             compiler: {c: clang, cxx: clang++}
             shared_library: 'OFF'
-            pool_tracking: 'ON'
             level_zero_provider: 'ON'
           - os: 'ubuntu-22.04'
             build_type: Release
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
-            pool_tracking: 'ON'
             level_zero_provider: 'ON'
           - os: 'ubuntu-22.04'
             build_type: Debug
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
-            pool_tracking: 'ON'
             level_zero_provider: 'ON'
           # test level_zero_provider='OFF'
           - os: 'ubuntu-22.04'
             build_type: Release
             compiler: {c: gcc, cxx: g++}
             shared_library: 'OFF'
-            pool_tracking: 'ON'
             level_zero_provider: 'OFF'
     env:
       BUILD_DIR : "${{github.workspace}}/build/"
@@ -154,7 +146,6 @@ jobs:
         -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
         -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=${{matrix.level_zero_provider}}
-        -DUMF_ENABLE_POOL_TRACKING=${{matrix.pool_tracking}}
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
@@ -192,27 +183,23 @@ jobs:
         os: ['windows-2019', 'windows-2022']
         build_type: [Debug, Release]
         compiler: [{c: cl, cxx: cl}]
-        pool_tracking: ['ON', 'OFF']
         shared_library: ['ON', 'OFF']
         level_zero_provider: ['ON']
         include:
           - os: 'windows-2022'
             build_type: Release
             compiler: {c: clang-cl, cxx: clang-cl}
-            pool_tracking: 'ON'
             shared_library: 'ON'
             level_zero_provider: 'ON'
             toolset: "-T ClangCL"
           - os: 'windows-2022'
             build_type: Release
             compiler: {c: cl, cxx: cl}
-            pool_tracking: 'ON'
             shared_library: 'ON'
             level_zero_provider: 'ON'
           - os: 'windows-2022'
             build_type: Release
             compiler: {c: cl, cxx: cl}
-            pool_tracking: 'ON'
             shared_library: 'ON'
             level_zero_provider: 'OFF'
 
@@ -242,7 +229,6 @@ jobs:
         -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
         -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
         -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
-        -DUMF_ENABLE_POOL_TRACKING=${{matrix.pool_tracking}}
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
@@ -298,7 +284,6 @@ jobs:
         -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
-        -DUMF_ENABLE_POOL_TRACKING=ON
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
         -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON

@@ -127,11 +127,6 @@ else()
         LIBS ${UMF_LIBS})
 endif()
 
-if(UMF_ENABLE_POOL_TRACKING)
-    set(UMF_PRIVATE_COMPILE_DEFINITIONS ${UMF_PRIVATE_COMPILE_DEFINITIONS}
-                                        "UMF_ENABLE_POOL_TRACKING")
-endif()
-
 target_link_directories(umf PRIVATE ${UMF_PRIVATE_LIBRARY_DIRS})
 
 target_compile_definitions(umf PRIVATE ${UMF_PRIVATE_COMPILE_DEFINITIONS})

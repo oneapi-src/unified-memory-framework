@@ -43,7 +43,6 @@ jobs:
         -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
         -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
-        -DUMF_ENABLE_POOL_TRACKING=ON
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
@@ -88,7 +87,6 @@ jobs:
         -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
         -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
-        -DUMF_ENABLE_POOL_TRACKING=ON
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
@@ -153,7 +151,6 @@ jobs:
         -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
         -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
         -DUMF_BUILD_SHARED_LIBRARY=OFF
-        -DUMF_ENABLE_POOL_TRACKING=OFF
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON

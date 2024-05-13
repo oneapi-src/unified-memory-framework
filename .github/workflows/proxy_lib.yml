@@ -42,7 +42,6 @@ jobs:
           -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
           -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
           -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
-          -DUMF_ENABLE_POOL_TRACKING=ON
           -DUMF_PROXY_LIB_BASED_ON_POOL=${{matrix.proxy_lib_pool}}
 
       - name: Build UMF

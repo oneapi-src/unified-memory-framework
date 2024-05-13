@@ -11,8 +11,7 @@ are used for this purpose.
 
 ### Requirements
 * libtbb-dev needed for Scalable Pool
-* set UMF_BUILD_LIBUMF_POOL_SCALABLE and UMF_ENABLE_POOL_TRACKING CMake
-configuration flags to ON
+* set UMF_BUILD_LIBUMF_POOL_SCALABLE CMake configuration flag to ON
 
 ## GPU shared memory
 
@@ -37,7 +36,7 @@ and build this example Level Zero development package should be installed.
 ### Requirements
 * Level Zero headers and libraries
 * compatible GPU with installed driver
-* set UMF_BUILD_GPU_EXAMPLES, UMF_BUILD_LIBUMF_POOL_DISJOINT, UMF_BUILD_LEVEL_ZERO_PROVIDER and UMF_ENABLE_POOL_TRACKING CMake configuration flags to ON
+* set UMF_BUILD_GPU_EXAMPLES, UMF_BUILD_LIBUMF_POOL_DISJOINT and UMF_BUILD_LEVEL_ZERO_PROVIDER CMake configuration flags to ON
 
 ## IPC example with shared memory
 This example also demonstrates how to use UMF IPC API. The example creates two
