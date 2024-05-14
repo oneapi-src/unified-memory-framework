@@ -265,7 +265,7 @@ TEST_P(umfProviderTest, get_name) {
 TEST_P(umfProviderTest, free_size_0_ptr_not_null) {
     umf_result_t umf_result =
         umfMemoryProviderFree(provider.get(), INVALID_PTR, 0);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC);
 }
 
 TEST_P(umfProviderTest, free_NULL) {
