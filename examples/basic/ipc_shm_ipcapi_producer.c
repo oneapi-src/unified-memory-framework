@@ -180,7 +180,7 @@ int main(int argc, char *argv[]) {
     memset(recv_buffer, 0, sizeof(recv_buffer));
 
     // receive the consumer's response
-    len = recv(producer_socket, recv_buffer, sizeof(recv_buffer), 0);
+    len = recv(producer_socket, recv_buffer, sizeof(recv_buffer) - 1, 0);
     if (len < 0) {
         fprintf(
             stderr,

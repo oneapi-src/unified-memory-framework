@@ -205,8 +205,8 @@ int main(int argc, char *argv[]) {
     memset(consumer_message, 0, sizeof(consumer_message));
 
     // receive the consumer's response
-    if (recv(producer_socket, consumer_message, sizeof(consumer_message), 0) <
-        0) {
+    if (recv(producer_socket, consumer_message, sizeof(consumer_message) - 1,
+             0) < 0) {
         fprintf(
             stderr,
             "[producer] ERROR: error while receiving the consumer's message\n");
