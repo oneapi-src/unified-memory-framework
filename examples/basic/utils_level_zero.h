@@ -10,7 +10,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef _WIN32
+#include <ze_api.h>
+#else
 #include <level_zero/ze_api.h>
+#endif
 
 static int init_level_zero() {
     ze_init_flag_t flags = ZE_INIT_FLAG_GPU_ONLY;

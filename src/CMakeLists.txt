@@ -111,7 +111,7 @@ if(UMF_BUILD_SHARED_LIBRARY)
         SRCS ${UMF_SOURCES}
         LIBS ${UMF_LIBS}
         LINUX_MAP_FILE ${CMAKE_CURRENT_SOURCE_DIR}/libumf.map
-        WINDOWS_DEF_FILE ${CMAKE_CURRENT_SOURCE_DIR}/libumf.def)
+        WINDOWS_DEF_FILE ${CMAKE_CURRENT_BINARY_DIR}/libumf.def)
     set(UMF_PRIVATE_COMPILE_DEFINITIONS ${UMF_PRIVATE_COMPILE_DEFINITIONS}
                                         "UMF_SHARED_LIBRARY")
     set_target_properties(
