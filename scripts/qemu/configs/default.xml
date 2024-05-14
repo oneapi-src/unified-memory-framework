@@ -2,6 +2,21 @@
 # Copyright (C) 2024 Intel Corporation.
 -->
 
+<!--
+
+Total Sockets: 2
+Total CPUs: 4
+Thread per CPU: 1
+Total Memory: 3500MiB
+HMAT: Enabled
+
+_______|_CORES_|____MEMORY____|______DISTANCES______|
+Cell 0 |   2   |   1100MiB    | 10, 20, 17          |
+Cell 1 |   2   |   1200MiB    | 20, 10, 28          |
+Cell 2 |   0   |   1200MiB    | 17, 28, 10          |
+
+-->
+
 <domain type='qemu'>
   <name>Default</name>
   <os>

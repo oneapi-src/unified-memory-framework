@@ -2,6 +2,22 @@
 # Copyright (C) 2021 - 2024 Intel Corporation.
 -->
 
+<!--
+
+Total Sockets: 2
+Total CPUs: 4
+Thread per CPU: 1
+Total Memory: 3840MiB
+HMAT: Enabled
+
+_______|_CORES_|____MEMORY____|______DISTANCES______|
+Cell 0 |   2   |   1024MiB    | 10, 20, 17, 28      |
+Cell 1 |   2   |   1024MiB    | 20, 10, 28, 17      |
+Cell 2 |   0   |   1792MiB    | 17, 28, 10, 28      |
+Cell 3 |   0   |   1792MiB    | 28, 17, 28, 10      |
+
+-->
+
 <domain type='qemu'>
   <name>Sockets2Var3HMAT</name>
   <os>

@@ -15,18 +15,18 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        config: ['default',
-                 'sock_2_var1_hmat',
-                 'sock_2_var2_hmat',
-                 'sock_2_var3_hmat',
-                 'sock_4_var1_hmat',
-                 'sock_4_var2_hmat']
-        # TODO: Add following
-        #'sock_2_var1'
-        #'sock_2_var2'
-        #'sock_2_var3'
-        #'sock_4_var1'
-        #'sock_4_var2'
+        config: [{name: 'default', hmat: 'on'},
+                 { name: 'sock_2_var1', hmat: 'off'},
+                 { name: 'sock_2_var1_hmat', hmat: 'on'},
+                 { name: 'sock_2_var2', hmat: 'off'},
+                 { name: 'sock_2_var2_hmat', hmat: 'on'},
+                 { name: 'sock_2_var3', hmat: 'off'},
+                 { name: 'sock_2_var3_hmat', hmat: 'on'},
+                 { name: 'sock_4_var1', hmat: 'off'},
+                 { name: 'sock_4_var1_hmat', hmat: 'on'},
+                 { name: 'sock_4_var2', hmat: 'off'},
+                 { name: 'sock_4_var2_hmat', hmat: 'on'}]
+
     steps:
     - name: Checkout
       uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -86,16 +86,16 @@ jobs:
     - name: Print qemu args
       run: |
         # notice: should be sedded, but it hides status
-        python3 scripts/qemu/qemu_config.py scripts/qemu/configs/${{matrix.config}}.xml
+        python3 scripts/qemu/qemu_config.py scripts/qemu/configs/${{matrix.config.name}}.xml
     - name: Run qemu
       run: |
         sudo qemu-system-x86_64 \
         -drive file=./ubuntu-23.04-server-cloudimg-amd64.img,format=qcow2,index=0,media=disk,id=hd \
         -cdrom ./ubuntu-cloud-init.iso \
-        -machine q35,usb=off,hmat=on \
+        -machine q35,usb=off,hmat=${{matrix.config.hmat}} \
         -enable-kvm \
         -net nic -net user,hostfwd=tcp::2222-:22 \
-        $(echo `python3 scripts/qemu/qemu_config.py scripts/qemu/configs/${{matrix.config}}.xml | sed s/''\''/'/g`) \
+        $(echo `python3 scripts/qemu/qemu_config.py scripts/qemu/configs/${{matrix.config.name}}.xml | sed s/''\''/'/g`) \
         -daemonize -display none
     - name: Run ssh keyscan
       run: |
