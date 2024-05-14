@@ -13,6 +13,7 @@
 #include <assert.h>
 
 #include "base_alloc_global.h"
+#include "provider/provider_tracking.h"
 #include "utils_common.h"
 
 static __TLS umf_result_t TLS_last_allocation_error;
@@ -91,9 +92,19 @@ static void *proxy_realloc(void *pool, void *ptr, size_t size) {
 
 static umf_result_t proxy_free(void *pool, void *ptr) {
     assert(pool);
+    size_t size = 0;
 
     struct proxy_memory_pool *hPool = (struct proxy_memory_pool *)pool;
-    return umfMemoryProviderFree(hPool->hProvider, ptr, 0);
+
+    if (ptr) {
+        umf_alloc_info_t allocInfo = {0};
+        umf_result_t umf_result = umfMemoryTrackerGetAllocInfo(ptr, &allocInfo);
+        if (umf_result == UMF_RESULT_SUCCESS) {
+            size = allocInfo.baseSize;
+        }
+    }
+
+    return umfMemoryProviderFree(hPool->hProvider, ptr, size);
 }
 
 static size_t proxy_malloc_usable_size(void *pool, void *ptr) {
