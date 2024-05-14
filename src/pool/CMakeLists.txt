@@ -15,8 +15,14 @@ if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
         TYPE STATIC
         SRCS pool_disjoint.cpp ${POOL_EXTRA_SRCS}
         LIBS ${POOL_EXTRA_LIBS})
+
     target_compile_definitions(disjoint_pool
                                PRIVATE ${POOL_COMPILE_DEFINITIONS})
+
+    if(WINDOWS)
+        target_compile_options(disjoint_pool PRIVATE /DWIN32_LEAN_AND_MEAN
+                                                     /DNOMINMAX)
+    endif()
 
     add_library(${PROJECT_NAME}::disjoint_pool ALIAS disjoint_pool)
 
