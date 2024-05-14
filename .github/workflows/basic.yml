@@ -42,6 +42,9 @@ jobs:
     - name: Install Python requirements
       run: python3 -m pip install -r third_party/requirements.txt
 
+    - name: Set ptrace value for IPC test
+      run: bash -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
+
     - name: Configure build
       run: >
         cmake
@@ -135,6 +138,9 @@ jobs:
 
     - name: Install libhwloc
       run: .github/scripts/install_hwloc.sh
+
+    - name: Set ptrace value for IPC test
+      run: sudo bash -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
 
     - name: Configure build
       run: >
