@@ -14,14 +14,13 @@
 #include "base_alloc_global.h"
 #include "memspace_numa.h"
 
-enum umf_result_t
-umfMemspaceCreateFromNumaArray(unsigned *nodeIds, size_t numIds,
-                               umf_memspace_handle_t *hMemspace) {
+umf_result_t umfMemspaceCreateFromNumaArray(unsigned *nodeIds, size_t numIds,
+                                            umf_memspace_handle_t *hMemspace) {
     if (!nodeIds || numIds == 0 || !hMemspace) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    enum umf_result_t ret = UMF_RESULT_SUCCESS;
+    umf_result_t ret = UMF_RESULT_SUCCESS;
     umf_memspace_handle_t memspace =
         umf_ba_global_alloc(sizeof(struct umf_memspace_t));
     if (!memspace) {

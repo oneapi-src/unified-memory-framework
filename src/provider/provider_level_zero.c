@@ -92,7 +92,7 @@ static void init_ze_global_state(void) {
     }
 }
 
-enum umf_result_t ze_memory_provider_initialize(void *params, void **provider) {
+umf_result_t ze_memory_provider_initialize(void *params, void **provider) {
     if (provider == NULL || params == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
@@ -128,9 +128,9 @@ void ze_memory_provider_finalize(void *provider) {
     umf_ba_global_free(provider);
 }
 
-static enum umf_result_t ze_memory_provider_alloc(void *provider, size_t size,
-                                                  size_t alignment,
-                                                  void **resultPtr) {
+static umf_result_t ze_memory_provider_alloc(void *provider, size_t size,
+                                             size_t alignment,
+                                             void **resultPtr) {
     assert(provider);
     assert(resultPtr);
 
@@ -185,8 +185,8 @@ static enum umf_result_t ze_memory_provider_alloc(void *provider, size_t size,
                : UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
 }
 
-static enum umf_result_t ze_memory_provider_free(void *provider, void *ptr,
-                                                 size_t bytes) {
+static umf_result_t ze_memory_provider_free(void *provider, void *ptr,
+                                            size_t bytes) {
     (void)bytes;
 
     assert(provider);
@@ -210,9 +210,9 @@ void ze_memory_provider_get_last_native_error(void *provider,
     *pError = 0;
 }
 
-static enum umf_result_t
-ze_memory_provider_get_min_page_size(void *provider, void *ptr,
-                                     size_t *pageSize) {
+static umf_result_t ze_memory_provider_get_min_page_size(void *provider,
+                                                         void *ptr,
+                                                         size_t *pageSize) {
     (void)provider;
     (void)ptr;
 
@@ -241,7 +241,7 @@ static umf_result_t ze_memory_provider_purge_force(void *provider, void *ptr,
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
-static enum umf_result_t
+static umf_result_t
 ze_memory_provider_get_recommended_page_size(void *provider, size_t size,
                                              size_t *pageSize) {
     (void)provider;
@@ -257,10 +257,10 @@ const char *ze_memory_provider_get_name(void *provider) {
     return "LEVEL_ZERO";
 }
 
-static enum umf_result_t ze_memory_provider_allocation_merge(void *hProvider,
-                                                             void *lowPtr,
-                                                             void *highPtr,
-                                                             size_t totalSize) {
+static umf_result_t ze_memory_provider_allocation_merge(void *hProvider,
+                                                        void *lowPtr,
+                                                        void *highPtr,
+                                                        size_t totalSize) {
     (void)hProvider;
     (void)lowPtr;
     (void)highPtr;

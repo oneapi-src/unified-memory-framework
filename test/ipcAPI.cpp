@@ -28,7 +28,7 @@ struct provider_mock_ipc : public umf_test::provider_base_t {
     allocations_mutex_type alloc_mutex;
     allocations_map_type allocations;
 
-    enum umf_result_t alloc(size_t size, size_t align, void **ptr) noexcept {
+    umf_result_t alloc(size_t size, size_t align, void **ptr) noexcept {
         auto ret = helper_prov.alloc(size, align, ptr);
         if (ret == UMF_RESULT_SUCCESS) {
             allocations_write_lock_type lock(alloc_mutex);
@@ -38,7 +38,7 @@ struct provider_mock_ipc : public umf_test::provider_base_t {
         }
         return ret;
     }
-    enum umf_result_t free(void *ptr, size_t size) noexcept {
+    umf_result_t free(void *ptr, size_t size) noexcept {
         allocations_write_lock_type lock(alloc_mutex);
         allocations.erase(ptr);
         lock.unlock();
@@ -46,12 +46,12 @@ struct provider_mock_ipc : public umf_test::provider_base_t {
         return ret;
     }
     const char *get_name() noexcept { return "mock_ipc"; }
-    enum umf_result_t get_ipc_handle_size(size_t *size) noexcept {
+    umf_result_t get_ipc_handle_size(size_t *size) noexcept {
         *size = sizeof(provider_ipc_data_t);
         return UMF_RESULT_SUCCESS;
     }
-    enum umf_result_t get_ipc_handle(const void *ptr, size_t size,
-                                     void *providerIpcData) noexcept {
+    umf_result_t get_ipc_handle(const void *ptr, size_t size,
+                                void *providerIpcData) noexcept {
         provider_ipc_data_t *ipcData =
             static_cast<provider_ipc_data_t *>(providerIpcData);
         // we do not need lock for allocations map here, because we just read
@@ -69,12 +69,11 @@ struct provider_mock_ipc : public umf_test::provider_base_t {
         ipcData->size = size; // size of the base allocation
         return UMF_RESULT_SUCCESS;
     }
-    enum umf_result_t put_ipc_handle(void *providerIpcData) noexcept {
+    umf_result_t put_ipc_handle(void *providerIpcData) noexcept {
         (void)providerIpcData;
         return UMF_RESULT_SUCCESS;
     }
-    enum umf_result_t open_ipc_handle(void *providerIpcData,
-                                      void **ptr) noexcept {
+    umf_result_t open_ipc_handle(void *providerIpcData, void **ptr) noexcept {
         provider_ipc_data_t *ipcData =
             static_cast<provider_ipc_data_t *>(providerIpcData);
 
@@ -99,7 +98,7 @@ struct provider_mock_ipc : public umf_test::provider_base_t {
 
         return UMF_RESULT_SUCCESS;
     }
-    enum umf_result_t close_ipc_handle(void *ptr, size_t size) noexcept {
+    umf_result_t close_ipc_handle(void *ptr, size_t size) noexcept {
         (void)size;
         std::free(ptr);
         return UMF_RESULT_SUCCESS;

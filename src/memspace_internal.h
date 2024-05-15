@@ -27,8 +27,8 @@ struct umf_memspace_t {
 ///
 /// \brief Clones memspace
 ///
-enum umf_result_t umfMemspaceClone(umf_memspace_handle_t hMemspace,
-                                   umf_memspace_handle_t *outHandle);
+umf_result_t umfMemspaceClone(umf_memspace_handle_t hMemspace,
+                              umf_memspace_handle_t *outHandle);
 
 typedef umf_result_t (*umfGetPropertyFn)(umf_memory_target_handle_t,
                                          uint64_t *);
@@ -36,8 +36,8 @@ typedef umf_result_t (*umfGetPropertyFn)(umf_memory_target_handle_t,
 ///
 /// \brief Sorts memspace by getProperty() in descending order
 ///
-enum umf_result_t umfMemspaceSortDesc(umf_memspace_handle_t hMemspace,
-                                      umfGetPropertyFn getProperty);
+umf_result_t umfMemspaceSortDesc(umf_memspace_handle_t hMemspace,
+                                 umfGetPropertyFn getProperty);
 
 ///
 /// \brief Destroys memspace
