@@ -14,28 +14,28 @@ find_file(LIBHWLOC_HEADER NAMES hwloc.h)
 get_filename_component(LIBHWLOC_INCLUDE_DIR ${LIBHWLOC_HEADER} DIRECTORY)
 set(LIBHWLOC_INCLUDE_DIRS ${LIBHWLOC_INCLUDE_DIR})
 
-if(LIBHWLOC_INCLUDE_DIR)
-    if(EXISTS "${LIBHWLOC_INCLUDE_DIR}/hwloc/autogen/config.h")
-        file(
-            STRINGS "${LIBHWLOC_INCLUDE_DIR}/hwloc/autogen/config.h"
-            LIBHWLOC_VERSION
-            REGEX
-                "#define[ \t]HWLOC_VERSION[ \t]\"([0-9]+.[0-9]+.[0-9]+(rc[0-9])?)(-git)?\""
-        )
-        string(
-            REGEX
-            REPLACE
-                "#define[ \t]HWLOC_VERSION[ \t]\"([0-9]+.[0-9]+.[0-9]+(rc[0-9])?)(-git)?\""
-                "\\1"
-                LIBHWLOC_VERSION
-                "${LIBHWLOC_VERSION}")
-    else()
-        message(
-            WARNING
-                "LIBHWLOC_INCLUDE_DIR found, but header with version info is missing"
-        )
-    endif()
-endif()
+set(HWLOC_VERSION_CODE
+    "
+#include <stdio.h>
+#include <stdlib.h>
+#include \"hwloc.h\"
+
+void main(int argc, char** argv) {
+    unsigned LIBHWLOC_API_PATCH = HWLOC_API_VERSION & 0xFF;
+    unsigned LIBHWLOC_API_MINOR = (HWLOC_API_VERSION >> 8) & 0xFF;
+    unsigned LIBHWLOC_API_MAJOR = (HWLOC_API_VERSION >> 16) & 0xFF;
+    printf(\"%d.%d.%d\", LIBHWLOC_API_MAJOR, LIBHWLOC_API_MINOR, LIBHWLOC_API_PATCH);
+}")
+
+set(HWLOC_VERSION_CODE_FILENAME "hwloc_get_version.c")
+file(WRITE "${CMAKE_BINARY_DIR}/${HWLOC_VERSION_CODE_FILENAME}"
+     "${HWLOC_VERSION_CODE}")
+
+try_run(
+    HWLOC_RUN_RESULT HWLOC_COMPILE_RESULT ${CMAKE_BINARY_DIR}
+    "${CMAKE_BINARY_DIR}/${HWLOC_VERSION_CODE_FILENAME}"
+    CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${LIBHWLOC_INCLUDE_DIR}"
+    RUN_OUTPUT_VARIABLE LIBHWLOC_API_VERSION)
 
 if(WINDOWS)
     find_file(LIBHWLOC_DLL NAMES "bin/hwloc-15.dll" "bin/libhwloc-15.dll")
@@ -48,18 +48,19 @@ if(LIBHWLOC_LIBRARY)
     message(STATUS "    LIBHWLOC_LIBRARIES = ${LIBHWLOC_LIBRARIES}")
     message(STATUS "    LIBHWLOC_INCLUDE_DIRS = ${LIBHWLOC_INCLUDE_DIRS}")
     message(STATUS "    LIBHWLOC_LIBRARY_DIRS = ${LIBHWLOC_LIBRARY_DIRS}")
-    message(STATUS "    LIBHWLOC_VERSION = ${LIBHWLOC_VERSION}")
+    message(STATUS "    LIBHWLOC_API_VERSION = ${LIBHWLOC_API_VERSION}")
     if(WINDOWS)
         message(STATUS "    LIBHWLOC_DLL_DIRS = ${LIBHWLOC_DLL_DIRS}")
     endif()
 
     if(LIBHWLOC_FIND_VERSION)
-        if(NOT LIBHWLOC_VERSION)
+        if(NOT LIBHWLOC_API_VERSION)
             message(FATAL_ERROR "Failed to retrieve libhwloc version")
-        elseif(NOT LIBHWLOC_VERSION VERSION_GREATER_EQUAL LIBHWLOC_FIND_VERSION)
+        elseif(NOT LIBHWLOC_API_VERSION VERSION_GREATER_EQUAL
+               LIBHWLOC_FIND_VERSION)
             message(
                 FATAL_ERROR
-                    "    Required version: ${LIBHWLOC_FIND_VERSION}, found ${LIBHWLOC_VERSION}"
+                    "    Required version: ${LIBHWLOC_FIND_VERSION}, found ${LIBHWLOC_API_VERSION}"
             )
         endif()
     endif()
