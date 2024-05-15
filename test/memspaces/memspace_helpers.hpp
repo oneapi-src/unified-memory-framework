@@ -44,7 +44,7 @@ struct memspaceNumaTest : ::numaNodesTest {
     void SetUp() override {
         ::numaNodesTest::SetUp();
 
-        enum umf_result_t ret = umfMemspaceCreateFromNumaArray(
+        umf_result_t ret = umfMemspaceCreateFromNumaArray(
             nodeIds.data(), nodeIds.size(), &hMemspace);
         ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
         ASSERT_NE(hMemspace, nullptr);

@@ -109,7 +109,7 @@ static __TLS int was_called_from_umfPool = 0;
 void proxy_lib_create_common(void) {
     umf_os_memory_provider_params_t os_params =
         umfOsMemoryProviderParamsDefault();
-    enum umf_result_t umf_result;
+    umf_result_t umf_result;
 
 #ifndef _WIN32
     if (util_env_var_has_str("UMF_PROXY", "page.disposition=shared")) {

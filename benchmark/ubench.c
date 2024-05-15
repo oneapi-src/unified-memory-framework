@@ -120,7 +120,7 @@ static umf_os_memory_provider_params_t UMF_OS_MEMORY_PROVIDER_PARAMS = {
 static void *w_umfMemoryProviderAlloc(void *provider, size_t size,
                                       size_t alignment) {
     void *ptr = NULL;
-    enum umf_result_t umf_result;
+    umf_result_t umf_result;
     umf_memory_provider_handle_t hProvider =
         (umf_memory_provider_handle_t)provider;
     umf_result = umfMemoryProviderAlloc(hProvider, size, alignment, &ptr);
@@ -133,7 +133,7 @@ static void *w_umfMemoryProviderAlloc(void *provider, size_t size,
 }
 
 static void w_umfMemoryProviderFree(void *provider, void *ptr, size_t size) {
-    enum umf_result_t umf_result;
+    umf_result_t umf_result;
     umf_memory_provider_handle_t hProvider =
         (umf_memory_provider_handle_t)provider;
     umf_result = umfMemoryProviderFree(hProvider, ptr, size);
@@ -146,7 +146,7 @@ static void w_umfMemoryProviderFree(void *provider, void *ptr, size_t size) {
 UBENCH_EX(simple, os_memory_provider) {
     alloc_t *array = alloc_array(N_ITERATIONS);
 
-    enum umf_result_t umf_result;
+    umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = NULL;
     umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(),
                                          &UMF_OS_MEMORY_PROVIDER_PARAMS,
@@ -176,7 +176,7 @@ static void *w_umfPoolMalloc(void *provider, size_t size, size_t alignment) {
 
 static void w_umfPoolFree(void *provider, void *ptr, size_t size) {
     (void)size; // unused
-    enum umf_result_t umf_result;
+    umf_result_t umf_result;
     umf_memory_pool_handle_t hPool = (umf_memory_pool_handle_t)provider;
     umf_result = umfPoolFree(hPool, ptr);
     if (umf_result != UMF_RESULT_SUCCESS) {
@@ -190,7 +190,7 @@ static void w_umfPoolFree(void *provider, void *ptr, size_t size) {
 UBENCH_EX(simple, proxy_pool_with_os_memory_provider) {
     alloc_t *array = alloc_array(N_ITERATIONS);
 
-    enum umf_result_t umf_result;
+    umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = NULL;
     umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(),
                                          &UMF_OS_MEMORY_PROVIDER_PARAMS,
@@ -227,7 +227,7 @@ UBENCH_EX(simple, proxy_pool_with_os_memory_provider) {
 UBENCH_EX(simple, disjoint_pool_with_os_memory_provider) {
     alloc_t *array = alloc_array(N_ITERATIONS);
 
-    enum umf_result_t umf_result;
+    umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = NULL;
     umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(),
                                          &UMF_OS_MEMORY_PROVIDER_PARAMS,
@@ -272,7 +272,7 @@ UBENCH_EX(simple, disjoint_pool_with_os_memory_provider) {
 UBENCH_EX(simple, jemalloc_pool_with_os_memory_provider) {
     alloc_t *array = alloc_array(N_ITERATIONS);
 
-    enum umf_result_t umf_result;
+    umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = NULL;
     umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(),
                                          &UMF_OS_MEMORY_PROVIDER_PARAMS,
@@ -310,7 +310,7 @@ UBENCH_EX(simple, jemalloc_pool_with_os_memory_provider) {
 UBENCH_EX(simple, scalable_pool_with_os_memory_provider) {
     alloc_t *array = alloc_array(N_ITERATIONS);
 
-    enum umf_result_t umf_result;
+    umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = NULL;
     umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(),
                                          &UMF_OS_MEMORY_PROVIDER_PARAMS,

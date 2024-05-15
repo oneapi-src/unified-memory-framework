@@ -34,7 +34,7 @@ TEST_F(numaNodesTest, memspaceGet) {
 
 TEST_F(memspaceHostAllTest, providerFromHostAllMemspace) {
     umf_memory_provider_handle_t hProvider = nullptr;
-    enum umf_result_t ret =
+    umf_result_t ret =
         umfMemoryProviderCreateFromMemspace(hMemspace, nullptr, &hProvider);
     UT_ASSERTeq(ret, UMF_RESULT_SUCCESS);
     UT_ASSERTne(hProvider, nullptr);
@@ -47,8 +47,7 @@ TEST_F(memspaceHostAllProviderTest, allocFree) {
     size_t size = SIZE_4K;
     size_t alignment = 0;
 
-    enum umf_result_t ret =
-        umfMemoryProviderAlloc(hProvider, size, alignment, &ptr);
+    umf_result_t ret = umfMemoryProviderAlloc(hProvider, size, alignment, &ptr);
     UT_ASSERTeq(ret, UMF_RESULT_SUCCESS);
     UT_ASSERTne(ptr, nullptr);
 

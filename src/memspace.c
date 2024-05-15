@@ -110,8 +110,8 @@ void umfMemspaceDestroy(umf_memspace_handle_t memspace) {
     umf_ba_global_free(memspace);
 }
 
-enum umf_result_t umfMemspaceClone(umf_memspace_handle_t hMemspace,
-                                   umf_memspace_handle_t *outHandle) {
+umf_result_t umfMemspaceClone(umf_memspace_handle_t hMemspace,
+                              umf_memspace_handle_t *outHandle) {
     if (!hMemspace || !outHandle) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
@@ -171,7 +171,7 @@ static int propertyCmp(const void *a, const void *b) {
     }
 }
 
-enum umf_result_t
+umf_result_t
 umfMemspaceSortDesc(umf_memspace_handle_t hMemspace,
                     umf_result_t (*getProperty)(umf_memory_target_handle_t node,
                                                 uint64_t *property)) {
