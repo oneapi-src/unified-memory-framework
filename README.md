@@ -117,6 +117,7 @@ List of options provided by CMake:
 | UMF_BUILD_GPU_EXAMPLES | Build UMF GPU examples | ON/OFF | OFF |
 | UMF_DEVELOPER_MODE | Treat warnings as errors and enables additional checks | ON/OFF | OFF |
 | UMF_FORMAT_CODE_STYLE | Add clang, cmake, and black -format-check and -format-apply targets to make | ON/OFF | OFF |
+| UMF_TESTS_FAIL_ON_SKIP | Treat skips in tests as fail | ON/OFF | OFF |
 | USE_ASAN | Enable AddressSanitizer checks | ON/OFF | OFF |
 | USE_UBSAN | Enable UndefinedBehaviorSanitizer checks | ON/OFF | OFF |
 | USE_TSAN | Enable ThreadSanitizer checks | ON/OFF | OFF |

@@ -38,6 +38,7 @@ jobs:
           -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
           -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
           -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
+          -DUMF_TESTS_FAIL_ON_SKIP=ON
 
       - name: Build UMF
         run: cmake --build ${{github.workspace}}/build -j $(nproc)
