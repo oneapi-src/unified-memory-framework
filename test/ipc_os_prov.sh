@@ -21,7 +21,7 @@ if [ -f $PTRACE_SCOPE_FILE ]; then
 	PTRACE_SCOPE_VAL=$(cat $PTRACE_SCOPE_FILE)
 	if [ $PTRACE_SCOPE_VAL -ne $VAL ]; then
 		echo "SKIP: ptrace_scope is not set to 0 (classic ptrace permissions) - skipping the test"
-		exit 125 # skip code defined in CMakeLists.txt
+		exit 1
 	fi
 fi
 

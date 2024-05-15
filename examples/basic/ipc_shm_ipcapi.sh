@@ -20,19 +20,8 @@ VAL=0
 if [ -f $PTRACE_SCOPE_FILE ]; then
 	PTRACE_SCOPE_VAL=$(cat $PTRACE_SCOPE_FILE)
 	if [ $PTRACE_SCOPE_VAL -ne $VAL ]; then
-		# check if sudo requires password
-		if ! timeout --kill-after=5s 3s sudo date; then
-			echo "ERROR: sudo requires password - cannot set ptrace_scope to 0"
-			exit 1
-		fi
-		echo "Setting ptrace_scope to 0 (classic ptrace permissions) ..."
-		echo "$ sudo bash -c \"echo $VAL > $PTRACE_SCOPE_FILE\""
-		sudo bash -c "echo $VAL > $PTRACE_SCOPE_FILE"
-	fi
-	PTRACE_SCOPE_VAL=$(cat $PTRACE_SCOPE_FILE)
-	if [ $PTRACE_SCOPE_VAL -ne $VAL ]; then
-		echo "SKIP: setting ptrace_scope to 0 (classic ptrace permissions) FAILED - skipping the test"
-		exit 0
+		echo "SKIP: ptrace_scope is not set to 0 (classic ptrace permissions) - skipping the test"
+		exit 1
 	fi
 fi
 
