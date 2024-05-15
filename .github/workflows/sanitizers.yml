@@ -81,6 +81,9 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y clang cmake libhwloc-dev libnuma-dev libjemalloc-dev libtbb-dev
 
+    - name: Set ptrace value for IPC test
+      run: sudo bash -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
+
     - name: Configure build
       run: >
         cmake
