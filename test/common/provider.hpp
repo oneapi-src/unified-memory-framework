@@ -94,6 +94,7 @@ typedef struct provider_base_t {
                                   [[maybe_unused]] size_t size) noexcept {
         return UMF_RESULT_ERROR_UNKNOWN;
     }
+    virtual ~provider_base_t() = default;
 } provider_base_t;
 
 umf_memory_provider_ops_t BASE_PROVIDER_OPS =
