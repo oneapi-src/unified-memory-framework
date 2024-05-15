@@ -34,6 +34,9 @@ jobs:
         apt-get update
         apt-get install -y cmake libnuma-dev libjemalloc-dev libtbb-dev libhwloc-dev sudo
 
+    - name: Set ptrace value for IPC test
+      run: bash -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
+
     - name: Configure build
       run: >
         cmake
@@ -78,6 +81,9 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y clang cmake libhwloc-dev libnuma-dev libjemalloc-dev libtbb-dev
+
+    - name: Set ptrace value for IPC test
+      run: sudo bash -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
 
     - name: Configure build
       run: >

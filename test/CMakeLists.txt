@@ -257,7 +257,9 @@ if(LINUX)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
     set_tests_properties(${TEST_NAME} PROPERTIES LABELS "umf")
-    set_tests_properties(${TEST_NAME} PROPERTIES SKIP_RETURN_CODE 125)
+    if(NOT UMF_TESTS_FAIL_ON_SKIP)
+        set_tests_properties(${TEST_NAME} PROPERTIES SKIP_RETURN_CODE 125)
+    endif()
 else()
     message(
         STATUS "IPC shared memory test is supported on Linux only - skipping")

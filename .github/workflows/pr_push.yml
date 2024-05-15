@@ -63,6 +63,10 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y cmake libjemalloc-dev libhwloc-dev libnuma-dev libtbb-dev
 
+    - name: Set ptrace value for IPC test (on Linux only)
+      if: matrix.os == 'ubuntu-latest'
+      run: sudo bash -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
+
     - name: Configure CMake
       run: >
         cmake

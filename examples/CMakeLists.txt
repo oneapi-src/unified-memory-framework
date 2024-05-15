@@ -137,10 +137,10 @@ if(LINUX AND UMF_BUILD_LIBUMF_POOL_SCALABLE)
         COMMAND ${BASE_NAME}.sh
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
-    set_tests_properties(
-        ${EXAMPLE_NAME} PROPERTIES
-        SKIP_RETURN_CODE 125
-        LABELS "example")
+    set_tests_properties(${EXAMPLE_NAME} PROPERTIES LABELS "example")
+    if(NOT UMF_TESTS_FAIL_ON_SKIP)
+        set_tests_properties(${EXAMPLE_NAME} PROPERTIES SKIP_RETURN_CODE 125)
+    endif()
 else()
     message(
         STATUS
