@@ -125,6 +125,10 @@ static umf_result_t numa_clone(void *memTarget, void **outMemTarget) {
 }
 
 static umf_result_t numa_get_capacity(void *memTarget, size_t *capacity) {
+    if (!memTarget || !capacity) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     hwloc_topology_t topology = umfGetTopology();
     if (!topology) {
         return UMF_RESULT_ERROR_NOT_SUPPORTED;
@@ -147,6 +151,10 @@ static umf_result_t numa_get_capacity(void *memTarget, size_t *capacity) {
 static umf_result_t numa_get_bandwidth(void *srcMemoryTarget,
                                        void *dstMemoryTarget,
                                        size_t *bandwidth) {
+    if (!srcMemoryTarget || !dstMemoryTarget || !bandwidth) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     hwloc_topology_t topology = umfGetTopology();
     if (!topology) {
         return UMF_RESULT_ERROR_NOT_SUPPORTED;

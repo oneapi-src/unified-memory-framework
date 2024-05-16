@@ -79,8 +79,10 @@ umf_result_t umfMemoryTargetClone(umf_memory_target_handle_t memoryTarget,
 
 umf_result_t umfMemoryTargetGetCapacity(umf_memory_target_handle_t memoryTarget,
                                         size_t *capacity) {
-    assert(memoryTarget);
-    assert(capacity);
+    if (!memoryTarget || !capacity) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     return memoryTarget->ops->get_capacity(memoryTarget->priv, capacity);
 }
 
@@ -88,9 +90,10 @@ umf_result_t
 umfMemoryTargetGetBandwidth(umf_memory_target_handle_t srcMemoryTarget,
                             umf_memory_target_handle_t dstMemoryTarget,
                             size_t *bandwidth) {
-    assert(srcMemoryTarget);
-    assert(dstMemoryTarget);
-    assert(bandwidth);
+    if (!srcMemoryTarget || !dstMemoryTarget || !bandwidth) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     return srcMemoryTarget->ops->get_bandwidth(
         srcMemoryTarget->priv, dstMemoryTarget->priv, bandwidth);
 }
