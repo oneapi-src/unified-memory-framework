@@ -217,6 +217,175 @@ static inline int find_gpu_device(ze_driver_handle_t driver,
     return ret;
 }
 
+int level_zero_fill(ze_context_handle_t context, ze_device_handle_t device,
+                    void *ptr, size_t size, const void *pattern,
+                    size_t pattern_size) {
+    int ret = 0;
+
+    ze_command_queue_desc_t commandQueueDesc = {
+        ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC,
+        NULL,
+        0,
+        0,
+        0,
+        ZE_COMMAND_QUEUE_MODE_DEFAULT,
+        ZE_COMMAND_QUEUE_PRIORITY_NORMAL};
+
+    ze_command_list_desc_t commandListDesc = {
+        ZE_STRUCTURE_TYPE_COMMAND_LIST_DESC, 0, 0,
+        ZE_COMMAND_LIST_FLAG_RELAXED_ORDERING};
+
+    ze_command_queue_handle_t hCommandQueue;
+    ze_result_t ze_result = zeCommandQueueCreate(
+        context, device, &commandQueueDesc, &hCommandQueue);
+    if (ze_result != ZE_RESULT_SUCCESS) {
+        fprintf(stderr, "zeCommandQueueCreate() failed!\n");
+        return -1;
+    }
+
+    ze_command_list_handle_t hCommandList;
+    ze_result =
+        zeCommandListCreate(context, device, &commandListDesc, &hCommandList);
+    if (ze_result != ZE_RESULT_SUCCESS) {
+        fprintf(stderr, "zeCommandListCreate() failed!\n");
+        ret = -1;
+        goto err_queue_destroy;
+    }
+
+    // fill memory with a pattern
+    ze_result = zeCommandListAppendMemoryFill(
+        hCommandList, ptr, pattern, pattern_size, size, NULL, 0, NULL);
+    if (ze_result != ZE_RESULT_SUCCESS) {
+        fprintf(stderr, "zeCommandListAppendMemoryFill() failed!\n");
+        ret = -1;
+        goto err_list_destroy;
+    }
+
+    // close and execute the command list
+    ze_result = zeCommandListClose(hCommandList);
+    if (ze_result != ZE_RESULT_SUCCESS) {
+        fprintf(stderr, "zeCommandListClose() failed!\n");
+        ret = -1;
+        goto err_list_destroy;
+    }
+
+    ze_result = zeCommandQueueExecuteCommandLists(hCommandQueue, 1,
+                                                  &hCommandList, NULL);
+    if (ze_result != ZE_RESULT_SUCCESS) {
+        fprintf(stderr, "zeCommandQueueExecuteCommandLists() failed!\n");
+        ret = -1;
+        goto err_list_destroy;
+    }
+
+    // sync
+    ze_result = zeCommandQueueSynchronize(hCommandQueue, UINT64_MAX);
+    if (ze_result != ZE_RESULT_SUCCESS) {
+        fprintf(stderr, "zeCommandQueueSynchronize() failed!\n");
+        ret = -1;
+        goto err_list_destroy;
+    }
+
+    // cleanup
+err_list_destroy:
+    ze_result = zeCommandListDestroy(hCommandList);
+    if (ze_result != ZE_RESULT_SUCCESS) {
+        fprintf(stderr, "zeCommandListDestroy() failed!\n");
+        ret = -1;
+    }
+
+err_queue_destroy:
+    ze_result = zeCommandQueueDestroy(hCommandQueue);
+    if (ze_result != ZE_RESULT_SUCCESS) {
+        fprintf(stderr, "zeCommandQueueDestroy() failed!\n");
+        ret = -1;
+    }
+
+    return ret;
+}
+
+int level_zero_copy(ze_context_handle_t context, ze_device_handle_t device,
+                    void *dst_ptr, void *src_ptr, size_t size) {
+    int ret = 0;
+    ze_command_queue_desc_t commandQueueDesc = {
+        ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC,
+        NULL,
+        0,
+        0,
+        0,
+        ZE_COMMAND_QUEUE_MODE_DEFAULT,
+        ZE_COMMAND_QUEUE_PRIORITY_NORMAL};
+
+    ze_command_list_desc_t commandListDesc = {
+        ZE_STRUCTURE_TYPE_COMMAND_LIST_DESC, 0, 0,
+        ZE_COMMAND_LIST_FLAG_RELAXED_ORDERING};
+
+    ze_command_queue_handle_t hCommandQueue;
+    ze_result_t ze_result = zeCommandQueueCreate(
+        context, device, &commandQueueDesc, &hCommandQueue);
+    if (ze_result != ZE_RESULT_SUCCESS) {
+        fprintf(stderr, "zeCommandQueueCreate() failed!\n");
+        return -1;
+    }
+
+    ze_command_list_handle_t hCommandList;
+    ze_result =
+        zeCommandListCreate(context, device, &commandListDesc, &hCommandList);
+    if (ze_result != ZE_RESULT_SUCCESS) {
+        fprintf(stderr, "zeCommandListCreate() failed!\n");
+        ret = -1;
+        goto err_queue_destroy;
+    }
+
+    // copy from device memory to host memory
+    ze_result = zeCommandListAppendMemoryCopy(hCommandList, dst_ptr, src_ptr,
+                                              size, NULL, 0, NULL);
+    if (ze_result != ZE_RESULT_SUCCESS) {
+        fprintf(stderr, "zeCommandListAppendMemoryCopy() failed!\n");
+        ret = -1;
+        goto err_list_destroy;
+    }
+
+    // close and execute the command list
+    ze_result = zeCommandListClose(hCommandList);
+    if (ze_result != ZE_RESULT_SUCCESS) {
+        fprintf(stderr, "zeCommandListClose() failed!\n");
+        ret = -1;
+        goto err_list_destroy;
+    }
+
+    ze_result = zeCommandQueueExecuteCommandLists(hCommandQueue, 1,
+                                                  &hCommandList, NULL);
+    if (ze_result != ZE_RESULT_SUCCESS) {
+        fprintf(stderr, "zeCommandQueueExecuteCommandLists() failed!\n");
+        ret = -1;
+        goto err_list_destroy;
+    }
+
+    ze_result = zeCommandQueueSynchronize(hCommandQueue, UINT64_MAX);
+    if (ze_result != ZE_RESULT_SUCCESS) {
+        fprintf(stderr, "zeCommandQueueSynchronize() failed!\n");
+        ret = -1;
+        goto err_list_destroy;
+    }
+
+    // cleanup
+err_list_destroy:
+    ze_result = zeCommandListDestroy(hCommandList);
+    if (ze_result != ZE_RESULT_SUCCESS) {
+        fprintf(stderr, "zeCommandListDestroy() failed!\n");
+        ret = -1;
+    }
+
+err_queue_destroy:
+    ze_result = zeCommandQueueDestroy(hCommandQueue);
+    if (ze_result != ZE_RESULT_SUCCESS) {
+        fprintf(stderr, "zeCommandQueueDestroy() failed!\n");
+        ret = -1;
+    }
+
+    return ret;
+}
+
 int create_context(ze_driver_handle_t driver, ze_context_handle_t *context) {
     ze_result_t ze_result;
     ze_context_desc_t ctxtDesc = {
