@@ -90,8 +90,6 @@ void os_strerror(int errnum, char *buf, size_t buflen) {
     strerror_r(errnum, buf, buflen);
 }
 
-int os_getpid(void) { return getpid(); }
-
 umf_result_t os_duplicate_fd(int pid, int fd_in, int *fd_out) {
 // pidfd_getfd(2) is used to obtain a duplicate of another process's file descriptor.
 // Permission to duplicate another process's file descriptor
