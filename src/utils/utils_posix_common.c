@@ -23,3 +23,5 @@ size_t util_get_page_size(void) {
     util_init_once(&Page_size_is_initialized, _util_get_page_size);
     return Page_size;
 }
+
+int utils_getpid(void) { return getpid(); }

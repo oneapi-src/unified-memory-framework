@@ -16,6 +16,7 @@
 #include "ipc_internal.h"
 #include "memory_pool_internal.h"
 #include "provider/provider_tracking.h"
+#include "utils_common.h"
 #include "utils_log.h"
 
 umf_result_t umfGetIPCHandle(const void *ptr, umf_ipc_handle_t *umfIPCHandle,
@@ -56,6 +57,7 @@ umf_result_t umfGetIPCHandle(const void *ptr, umf_ipc_handle_t *umfIPCHandle,
         return ret;
     }
 
+    ipcData->pid = utils_getpid();
     ipcData->baseSize = allocInfo.baseSize;
     ipcData->offset = (uintptr_t)ptr - (uintptr_t)allocInfo.base;
 

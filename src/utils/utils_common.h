@@ -71,6 +71,9 @@ size_t util_get_page_size(void);
 // align a pointer and a size
 void util_align_ptr_size(void **ptr, size_t *size, size_t alignment);
 
+// get the current process ID
+int utils_getpid(void);
+
 #ifdef __cplusplus
 }
 #endif

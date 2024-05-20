@@ -17,6 +17,7 @@
 #include "base_alloc_global.h"
 #include "critnib.h"
 #include "provider_os_memory_internal.h"
+#include "utils_common.h"
 #include "utils_concurrency.h"
 #include "utils_log.h"
 
@@ -854,7 +855,7 @@ static umf_result_t os_get_ipc_handle(void *provider, const void *ptr,
     }
 
     os_ipc_data_t *os_ipc_data = (os_ipc_data_t *)providerIpcData;
-    os_ipc_data->pid = os_getpid();
+    os_ipc_data->pid = utils_getpid();
     os_ipc_data->fd = os_provider->fd;
     os_ipc_data->fd_offset = (size_t)value - 1;
     os_ipc_data->size = size;
@@ -870,7 +871,8 @@ static umf_result_t os_put_ipc_handle(void *provider, void *providerIpcData) {
     os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
     os_ipc_data_t *os_ipc_data = (os_ipc_data_t *)providerIpcData;
 
-    if (os_ipc_data->fd != os_provider->fd || os_ipc_data->pid != os_getpid()) {
+    if (os_ipc_data->fd != os_provider->fd ||
+        os_ipc_data->pid != utils_getpid()) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
