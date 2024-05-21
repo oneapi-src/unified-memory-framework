@@ -16,7 +16,7 @@
 #include <level_zero/ze_api.h>
 #endif
 
-static int init_level_zero() {
+static int init_level_zero(void) {
     ze_init_flag_t flags = ZE_INIT_FLAG_GPU_ONLY;
     ze_result_t result = zeInit(flags);
     if (result != ZE_RESULT_SUCCESS) {
