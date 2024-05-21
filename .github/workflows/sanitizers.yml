@@ -10,65 +10,11 @@ permissions:
   contents: read
 
 jobs:
-  icx-build:
-    # TODO: we could merge ICX build with gcc/clang (using our dockers) Issue: #259
-    name: Intel C++ Compiler on Ubuntu
-    strategy:
-      matrix:
-        compiler: [{c: icx, cxx: icpx}]
-        # TSAN is mutually exclusive with other sanitizers
-        sanitizers: [{asan: ON, ubsan: ON, tsan: OFF}, {asan: OFF, ubsan: OFF, tsan: ON}]
-    runs-on: ubuntu-22.04
-    container:
-      image: intel/oneapi:latest
-      volumes:
-        - ${{github.workspace}}:${{github.workspace}}
-      options: "--privileged"
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-
-    - name: Install apt packages
-      run: |
-        apt-get update
-        apt-get install -y cmake libnuma-dev libjemalloc-dev libtbb-dev libhwloc-dev sudo
-
-    - name: Set ptrace value for IPC test
-      run: bash -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
-
-    - name: Configure build
-      run: >
-        cmake
-        -B ${{env.BUILD_DIR}}
-        -DCMAKE_BUILD_TYPE=Debug
-        -DUMF_BUILD_SHARED_LIBRARY=OFF
-        -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
-        -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
-        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
-        -DUMF_FORMAT_CODE_STYLE=OFF
-        -DUMF_DEVELOPER_MODE=ON
-        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
-        -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
-        -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
-        -DUSE_ASAN=${{matrix.sanitizers.asan}}
-        -DUSE_UBSAN=${{matrix.sanitizers.ubsan}}
-        -DUSE_TSAN=${{matrix.sanitizers.tsan}}
-        -DUMF_BUILD_EXAMPLES=ON
-        -DUMF_TESTS_FAIL_ON_SKIP=ON
-
-    - name: Build UMF
-      run: cmake --build ${{env.BUILD_DIR}} -j $(nproc)
-
-    - name: Run tests
-      working-directory: ${{env.BUILD_DIR}}
-      run: ctest --output-on-failure
-
   ubuntu-build:
-    name: gcc and clang on Ubuntu
+    name: Ubuntu
     strategy:
       matrix:
-        compiler: [{c: gcc, cxx: g++}, {c: clang, cxx: clang++}]
+        compiler: [{c: gcc, cxx: g++}, {c: clang, cxx: clang++}, {c: icx, cxx: icpx}]
         # TSAN is mutually exclusive with other sanitizers
         sanitizers: [{asan: ON, ubsan: ON, tsan: OFF}, {asan: OFF, ubsan: OFF, tsan: ON}]
     runs-on: ubuntu-22.04
@@ -82,11 +28,22 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y clang cmake libhwloc-dev libnuma-dev libjemalloc-dev libtbb-dev
 
+    - name: Install oneAPI basekit
+      if: matrix.compiler.cxx == 'icpx'
+      run: |
+        sudo apt-get install -y gpg-agent wget
+        wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
+        echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
+        sudo apt-get update
+        sudo apt-get install -y intel-oneapi-ippcp-devel intel-oneapi-ipp-devel intel-oneapi-common-oneapi-vars intel-oneapi-compiler-dpcpp-cpp
+
+
     - name: Set ptrace value for IPC test
       run: sudo bash -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
 
     - name: Configure build
       run: >
+        ${{ matrix.compiler.cxx == 'icpx' && '. /opt/intel/oneapi/setvars.sh &&' || ''}} 
         cmake
         -B ${{env.BUILD_DIR}}
         -DCMAKE_BUILD_TYPE=Debug
@@ -110,7 +67,9 @@ jobs:
 
     - name: Run tests
       working-directory: ${{env.BUILD_DIR}}
-      run: ctest --output-on-failure
+      run: > 
+        ${{ matrix.compiler.cxx == 'icpx' && '. /opt/intel/oneapi/setvars.sh &&' || ''}}
+        ctest --output-on-failure
 
   windows-build:
     name: cl and clang-cl on Windows

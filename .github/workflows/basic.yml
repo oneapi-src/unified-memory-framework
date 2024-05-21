@@ -11,78 +11,6 @@ env:
   UMF_VERSION: 0.1.0
 
 jobs:
-  icx-build:
-    # TODO: we could merge ICX build with gcc/clang (using our dockers) Issue: #259
-    name: Intel C++ Compiler
-    strategy:
-      matrix:
-        build_type: [Debug, Release]
-        compiler: [{c: icx, cxx: icpx}]
-        shared_library: ['OFF']
-    env:
-      BUILD_DIR : "${{github.workspace}}/build/"
-      INSTL_DIR : "${{github.workspace}}/../install-dir"
-
-    runs-on: ubuntu-22.04
-    container:
-      image: intel/oneapi:latest
-      volumes:
-        - ${{github.workspace}}:${{github.workspace}}
-      options: "--privileged"
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-
-    - name: Install apt packages
-      run: |
-        apt-get update
-        apt-get install -y libnuma-dev libjemalloc-dev libtbb-dev libhwloc-dev python3-pip sudo
-
-    - name: Install Python requirements
-      run: python3 -m pip install -r third_party/requirements.txt
-
-    - name: Set ptrace value for IPC test
-      run: bash -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
-
-    - name: Configure build
-      run: >
-        cmake
-        -B build
-        -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
-        -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
-        -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
-        -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
-        -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
-        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
-        -DUMF_FORMAT_CODE_STYLE=OFF
-        -DUMF_DEVELOPER_MODE=ON
-        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
-        -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
-        -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
-        -DUMF_BUILD_EXAMPLES=ON
-        -DUMF_TESTS_FAIL_ON_SKIP=ON
-
-    - name: Build UMF
-      run: cmake --build build -j $(nproc)
-
-    - name: Run tests
-      working-directory: ${{github.workspace}}/build
-      run: ctest --output-on-failure --test-dir test
-
-    - name: Test UMF installation and uninstallation
-      # The '--shared-library' parameter is added to the installation test when the UMF is built as a shared library
-      run: >
-        python3 ${{github.workspace}}/test/test_installation.py
-        --build-dir ${{env.BUILD_DIR}}
-        --install-dir ${{env.INSTL_DIR}}
-        --build-type ${{matrix.build_type}}
-        --disjoint-pool
-        --jemalloc-pool
-        --scalable-pool
-        --umf-version ${{env.UMF_VERSION}}
-        ${{ matrix.shared_library == 'ON' && '--shared-library' || ''}}
-
   ubuntu-build:
     name: Ubuntu
     strategy:
@@ -119,6 +47,12 @@ jobs:
             compiler: {c: gcc, cxx: g++}
             shared_library: 'OFF'
             level_zero_provider: 'OFF'
+          # test icx compiler
+          - os: 'ubuntu-22.04'
+            build_type: Release
+            compiler: {c: icx, cxx: icpx}
+            shared_library: 'ON'
+            level_zero_provider: 'ON'
     env:
       BUILD_DIR : "${{github.workspace}}/build/"
       INSTL_DIR : "${{github.workspace}}/../install-dir"
@@ -133,6 +67,15 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y clang cmake libnuma-dev libjemalloc-dev libtbb-dev
 
+    - name: Install oneAPI basekit
+      if: matrix.compiler.cxx == 'icpx'
+      run: |
+        sudo apt-get install -y gpg-agent wget
+        wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
+        echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
+        sudo apt-get update
+        sudo apt-get install -y intel-oneapi-ippcp-devel intel-oneapi-ipp-devel intel-oneapi-common-oneapi-vars intel-oneapi-compiler-dpcpp-cpp
+  
     - name: Install g++-7
       if: matrix.compiler.cxx == 'g++-7'
       run: sudo apt-get install -y ${{matrix.compiler.cxx}}
@@ -145,6 +88,7 @@ jobs:
 
     - name: Configure build
       run: >
+        ${{ matrix.compiler.cxx == 'icpx' && '. /opt/intel/oneapi/setvars.sh &&' || ''}} 
         cmake
         -B ${{env.BUILD_DIR}}
         -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
@@ -165,7 +109,9 @@ jobs:
 
     - name: Run tests
       working-directory: ${{env.BUILD_DIR}}
-      run: ctest --output-on-failure --test-dir test
+      run: >
+        ${{ matrix.compiler.cxx == 'icpx' && '. /opt/intel/oneapi/setvars.sh &&' || ''}} 
+        ctest --output-on-failure --test-dir test
 
     - name: Test UMF installation and uninstallation
       # The '--shared-library' parameter is added to the installation test when the UMF is built as a shared library
