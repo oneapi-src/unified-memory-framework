@@ -29,7 +29,8 @@ int create_level_zero_pool(ze_context_handle_t context,
     umf_result_t umf_result = umfMemoryProviderCreate(
         umfLevelZeroMemoryProviderOps(), &params, &provider);
     if (umf_result != UMF_RESULT_SUCCESS) {
-        fprintf(stderr, "Failed to create Level Zero memory provider!\n");
+        fprintf(stderr,
+                "ERROR: Failed to create Level Zero memory provider!\n");
         return -1;
     }
 
@@ -39,7 +40,7 @@ int create_level_zero_pool(ze_context_handle_t context,
     umf_result = umfPoolCreate(umfDisjointPoolOps(), provider, &disjoint_params,
                                flags, pool);
     if (umf_result != UMF_RESULT_SUCCESS) {
-        fprintf(stderr, "Failed to create pool!\n");
+        fprintf(stderr, "ERROR: Failed to create pool!\n");
         return -1;
     }
 
@@ -52,33 +53,35 @@ int main(void) {
     ze_device_handle_t device = NULL;
     ze_context_handle_t producer_context = NULL;
     ze_context_handle_t consumer_context = NULL;
+    const size_t BUFFER_SIZE = 1024;
+    const size_t BUFFER_PATTERN = 0x42;
     int ret = init_level_zero();
     if (ret != 0) {
-        fprintf(stderr, "Failed to init Level 0!\n");
+        fprintf(stderr, "ERROR: Failed to init Level 0!\n");
         return ret;
     }
 
     ret = find_driver_with_gpu(&driver_idx, &driver);
     if (ret || driver == NULL) {
-        fprintf(stderr, "Cannot find L0 driver with GPU device!\n");
+        fprintf(stderr, "ERROR: Cannot find L0 driver with GPU device!\n");
         return ret;
     }
 
     ret = create_context(driver, &producer_context);
     if (ret != 0) {
-        fprintf(stderr, "Failed to create L0 context!\n");
+        fprintf(stderr, "ERROR: Failed to create L0 context!\n");
         return ret;
     }
 
     ret = create_context(driver, &consumer_context);
     if (ret != 0) {
-        fprintf(stderr, "Failed to create L0 context!\n");
+        fprintf(stderr, "ERROR: Failed to create L0 context!\n");
         return ret;
     }
 
     ret = find_gpu_device(driver, &device);
     if (ret || device == NULL) {
-        fprintf(stderr, "Cannot find GPU device!\n");
+        fprintf(stderr, "ERROR: Cannot find GPU device!\n");
         return ret;
     }
 
@@ -86,26 +89,35 @@ int main(void) {
     umf_memory_pool_handle_t producer_pool = 0;
     ret = create_level_zero_pool(producer_context, device, &producer_pool);
     if (ret != 0) {
-        fprintf(stderr, "Failed to create producer pool!\n");
+        fprintf(stderr, "ERROR: Failed to create producer pool!\n");
         return ret;
     }
 
     fprintf(stdout, "Producer pool created.\n");
 
-    void *initial_buf = umfPoolMalloc(producer_pool, 1024);
+    void *initial_buf = umfPoolMalloc(producer_pool, BUFFER_SIZE);
     if (!initial_buf) {
-        fprintf(stderr, "Failed to allocate buffer from UMF pool!\n");
+        fprintf(stderr, "ERROR: Failed to allocate buffer from UMF pool!\n");
         return -1;
     }
 
     fprintf(stdout, "Buffer allocated from the producer pool.\n");
+
+    ret = level_zero_fill(producer_context, device, initial_buf, BUFFER_SIZE,
+                          &BUFFER_PATTERN, sizeof(BUFFER_PATTERN));
+    if (ret != 0) {
+        fprintf(stderr, "ERROR: Failed to fill the buffer with pattern!\n");
+        return ret;
+    }
+
+    fprintf(stdout, "Buffer filled with pattern.\n");
 
     umf_ipc_handle_t ipc_handle = NULL;
     size_t handle_size = 0;
     umf_result_t umf_result =
         umfGetIPCHandle(initial_buf, &ipc_handle, &handle_size);
     if (umf_result != UMF_RESULT_SUCCESS) {
-        fprintf(stderr, "Failed to get IPC handle!\n");
+        fprintf(stderr, "ERROR: Failed to get IPC handle!\n");
         return -1;
     }
 
@@ -115,7 +127,7 @@ int main(void) {
     umf_memory_pool_handle_t consumer_pool = 0;
     ret = create_level_zero_pool(consumer_context, device, &consumer_pool);
     if (ret != 0) {
-        fprintf(stderr, "Failed to create consumer pool!\n");
+        fprintf(stderr, "ERROR: Failed to create consumer pool!\n");
         return ret;
     }
 
@@ -124,19 +136,33 @@ int main(void) {
     void *mapped_buf = NULL;
     umf_result = umfOpenIPCHandle(consumer_pool, ipc_handle, &mapped_buf);
     if (umf_result != UMF_RESULT_SUCCESS) {
-        fprintf(stderr, "Failed to open IPC handle!\n");
+        fprintf(stderr, "ERROR: Failed to open IPC handle!\n");
         return -1;
     }
 
     fprintf(stdout, "IPC handle opened in the consumer pool.\n");
 
-    // Now we have two mappings (belongs to different Level Zero contexts) to the same physical memory region:
-    // * the initial mapping, pointed by initial_buf, we get by allocating memory from the producer pool.
-    // * the second mapping, pointed by mapped_buf, we get by opening the IPC handle in the consumer pool.
+    size_t *tmp_buf = malloc(BUFFER_SIZE);
+    ret = level_zero_copy(consumer_context, device, tmp_buf, mapped_buf,
+                          BUFFER_SIZE);
+    if (ret != 0) {
+        fprintf(stderr, "ERROR: Failed to copy mapped_buf to host!\n");
+        return ret;
+    }
+
+    // Verify the content of the buffer
+    for (size_t i = 0; i < BUFFER_SIZE / sizeof(BUFFER_PATTERN); ++i) {
+        if (tmp_buf[i] != BUFFER_PATTERN) {
+            fprintf(stderr, "ERROR: mapped_buf does not match initial_buf!\n");
+            return -1;
+        }
+    }
+
+    fprintf(stdout, "mapped_buf matches initial_buf.\n");
 
     umf_result = umfPutIPCHandle(ipc_handle);
     if (umf_result != UMF_RESULT_SUCCESS) {
-        fprintf(stderr, "Failed to put IPC handle!\n");
+        fprintf(stderr, "ERROR: Failed to put IPC handle!\n");
         return -1;
     }
 
@@ -144,7 +170,7 @@ int main(void) {
 
     umf_result = umfCloseIPCHandle(mapped_buf);
     if (umf_result != UMF_RESULT_SUCCESS) {
-        fprintf(stderr, "Failed to close IPC handle!\n");
+        fprintf(stderr, "ERROR: Failed to close IPC handle!\n");
         return -1;
     }
 
@@ -157,13 +183,13 @@ int main(void) {
 
     ret = destroy_context(producer_context);
     if (ret != 0) {
-        fprintf(stderr, "Failed to destroy L0 context!\n");
+        fprintf(stderr, "ERROR: Failed to destroy L0 context!\n");
         return ret;
     }
 
     ret = destroy_context(consumer_context);
     if (ret != 0) {
-        fprintf(stderr, "Failed to destroy L0 context!\n");
+        fprintf(stderr, "ERROR: Failed to destroy L0 context!\n");
         return ret;
     }
     return 0;
