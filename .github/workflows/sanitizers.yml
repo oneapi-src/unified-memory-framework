@@ -34,6 +34,9 @@ jobs:
         apt-get update
         apt-get install -y cmake libnuma-dev libjemalloc-dev libtbb-dev libhwloc-dev sudo
 
+    - name: Set ptrace value for IPC test
+      run: bash -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
+
     - name: Configure build
       run: >
         cmake
@@ -52,6 +55,7 @@ jobs:
         -DUSE_UBSAN=${{matrix.sanitizers.ubsan}}
         -DUSE_TSAN=${{matrix.sanitizers.tsan}}
         -DUMF_BUILD_EXAMPLES=ON
+        -DUMF_TESTS_FAIL_ON_SKIP=ON
 
     - name: Build UMF
       run: cmake --build ${{env.BUILD_DIR}} -j $(nproc)
@@ -78,6 +82,9 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y clang cmake libhwloc-dev libnuma-dev libjemalloc-dev libtbb-dev
 
+    - name: Set ptrace value for IPC test
+      run: sudo bash -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
+
     - name: Configure build
       run: >
         cmake
@@ -96,6 +103,7 @@ jobs:
         -DUSE_UBSAN=${{matrix.sanitizers.ubsan}}
         -DUSE_TSAN=${{matrix.sanitizers.tsan}}
         -DUMF_BUILD_EXAMPLES=ON
+        -DUMF_TESTS_FAIL_ON_SKIP=ON
 
     - name: Build UMF
       run: cmake --build ${{env.BUILD_DIR}} -j $(nproc)
@@ -157,6 +165,7 @@ jobs:
         -DUSE_ASAN=${{matrix.sanitizers.asan}}
         -DUMF_BUILD_EXAMPLES=ON
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
+        -DUMF_TESTS_FAIL_ON_SKIP=ON
 
     - name: Build UMF
       run: cmake --build ${{env.BUILD_DIR}} --config Debug -j $Env:NUMBER_OF_PROCESSORS

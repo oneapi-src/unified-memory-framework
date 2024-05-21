@@ -44,6 +44,8 @@ option(UMF_DEVELOPER_MODE "Enable developer checks, treats warnings as errors"
 option(UMF_FORMAT_CODE_STYLE
        "Add clang, cmake, and black -format-check and -format-apply targets"
        OFF)
+# Only a part of skips is treated as a failure now. TODO: extend to all tests
+option(UMF_TESTS_FAIL_ON_SKIP "Treat skips in tests as fail" OFF)
 option(USE_ASAN "Enable AddressSanitizer checks" OFF)
 option(USE_UBSAN "Enable UndefinedBehaviorSanitizer checks" OFF)
 option(USE_TSAN "Enable ThreadSanitizer checks" OFF)
@@ -58,6 +60,16 @@ set(UMF_PROXY_LIB_BASED_ON_POOL
           "A UMF pool the proxy library is based on (SCALABLE or JEMALLOC)")
 set_property(CACHE UMF_PROXY_LIB_BASED_ON_POOL
              PROPERTY STRINGS ${KNOWN_PROXY_LIB_POOLS})
+
+if(UMF_BUILD_TESTS
+   AND DEFINED ENV{CI}
+   AND NOT UMF_TESTS_FAIL_ON_SKIP)
+    message(
+        FATAL_ERROR
+            "Env variable 'CI' is set, tests are enabled, but UMF_TESTS_FAIL_ON_SKIP is not. "
+            "Please set UMF_TESTS_FAIL_ON_SKIP to ON in all CI workflows running tests."
+    )
+endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     set(LINUX TRUE)

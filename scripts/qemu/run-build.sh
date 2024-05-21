@@ -12,6 +12,9 @@ branch=$2
 echo password | sudo -Sk apt update
 echo password | sudo -Sk apt install -y git cmake gcc g++ numactl libnuma-dev libhwloc-dev libjemalloc-dev libtbb-dev pkg-config valgrind hwloc
 
+# Set ptrace value for IPC test
+echo password | sudo bash -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
+
 numactl -H
 
 git clone $repo umf

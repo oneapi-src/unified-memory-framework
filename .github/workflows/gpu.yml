@@ -57,6 +57,7 @@ jobs:
           -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
           -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
           -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
+          -DUMF_TESTS_FAIL_ON_SKIP=ON
       
       - name: Configure build for Ubuntu
         if: matrix.os == 'Ubuntu'
@@ -77,6 +78,7 @@ jobs:
           -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
           -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
           -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
+          -DUMF_TESTS_FAIL_ON_SKIP=ON
 
       - name: Build UMF
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -j ${{matrix.number_of_processors}}

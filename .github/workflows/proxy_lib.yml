@@ -27,6 +27,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y cmake libhwloc-dev libjemalloc-dev libtbb-dev
 
+      - name: Set ptrace value for IPC test
+        run: sudo bash -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
+
       - name: Configure build
         run: >
           cmake
@@ -42,6 +45,7 @@ jobs:
           -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
           -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
           -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
+          -DUMF_TESTS_FAIL_ON_SKIP=ON
           -DUMF_PROXY_LIB_BASED_ON_POOL=${{matrix.proxy_lib_pool}}
 
       - name: Build UMF
