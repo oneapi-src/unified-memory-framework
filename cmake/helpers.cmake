@@ -104,6 +104,12 @@ function(add_umf_target_compile_options name)
                 ${name} PRIVATE -Werror -fno-omit-frame-pointer
                                 -fstack-protector-strong)
         endif()
+        if(USE_GCOV)
+            if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+                message(FATAL_ERROR "To use gcov, the build type must be Debug")
+            endif()
+            target_compile_options(${name} PRIVATE --coverage)
+        endif()
     elseif(MSVC)
         target_compile_options(
             ${name}
@@ -121,6 +127,13 @@ function(add_umf_target_link_options name)
     if(NOT MSVC)
         if(NOT APPLE)
             target_link_options(${name} PRIVATE "LINKER:-z,relro,-z,now")
+            if(USE_GCOV)
+                if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+                    message(
+                        FATAL_ERROR "To use gcov, the build type must be Debug")
+                endif()
+                target_link_options(${name} PRIVATE --coverage)
+            endif()
         endif()
     elseif(MSVC)
         target_link_options(
