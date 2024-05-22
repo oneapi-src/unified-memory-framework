@@ -41,6 +41,8 @@ typedef struct umf_memory_target_ops_t {
     umf_result_t (*get_capacity)(void *memoryTarget, size_t *capacity);
     umf_result_t (*get_bandwidth)(void *srcMemoryTarget, void *dstMemoryTarget,
                                   size_t *bandwidth);
+    umf_result_t (*get_latency)(void *srcMemoryTarget, void *dstMemoryTarget,
+                                size_t *latency);
 } umf_memory_target_ops_t;
 
 #ifdef __cplusplus

@@ -167,13 +167,26 @@ static umf_result_t numa_get_capacity(void *memTarget, size_t *capacity) {
     return UMF_RESULT_SUCCESS;
 }
 
-static umf_result_t numa_get_bandwidth(void *srcMemoryTarget,
-                                       void *dstMemoryTarget,
-                                       size_t *bandwidth) {
-    if (!srcMemoryTarget || !dstMemoryTarget || !bandwidth) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
+typedef enum memattr_type_t {
+    MEMATTR_TYPE_BANDWIDTH,
+    MEMATTR_TYPE_LATENCY
+} memattr_type_t;
 
+static size_t memattr_get_worst_value(memattr_type_t type) {
+    switch (type) {
+    case MEMATTR_TYPE_BANDWIDTH:
+        return 0;
+    case MEMATTR_TYPE_LATENCY:
+        return SIZE_MAX;
+    default:
+        assert(0); // Should not be reachable
+        return 0;
+    }
+}
+
+static umf_result_t query_attribute_value(void *srcMemoryTarget,
+                                          void *dstMemoryTarget, size_t *value,
+                                          memattr_type_t type) {
     hwloc_topology_t topology = umfGetTopology();
     if (!topology) {
         return UMF_RESULT_ERROR_NOT_SUPPORTED;
@@ -195,23 +208,75 @@ static umf_result_t numa_get_bandwidth(void *srcMemoryTarget,
 
     // Given NUMA nodes aren't local, HWLOC returns an error in such case.
     if (!hwloc_bitmap_intersects(srcNumaNode->cpuset, dstNumaNode->cpuset)) {
-        *bandwidth = 0;
+        // Since we want to skip such query, we return the worst possible
+        // value for given memory attribute.
+        *value = memattr_get_worst_value(type);
         return UMF_RESULT_SUCCESS;
+    }
+
+    enum hwloc_memattr_id_e hwlocMemAttrType = INT_MAX;
+    switch (type) {
+    case MEMATTR_TYPE_BANDWIDTH:
+        hwlocMemAttrType = HWLOC_MEMATTR_ID_BANDWIDTH;
+        break;
+    case MEMATTR_TYPE_LATENCY:
+        hwlocMemAttrType = HWLOC_MEMATTR_ID_LATENCY;
+        break;
+    default:
+        assert(0); // Shouldn't be reachable.
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
     struct hwloc_location initiator = {.location.cpuset = srcNumaNode->cpuset,
                                        .type = HWLOC_LOCATION_TYPE_CPUSET};
-    hwloc_uint64_t value = 0;
-    int ret = hwloc_memattr_get_value(topology, HWLOC_MEMATTR_ID_BANDWIDTH,
-                                      dstNumaNode, &initiator, 0, &value);
+
+    hwloc_uint64_t memAttrValue = 0;
+    int ret = hwloc_memattr_get_value(topology, hwlocMemAttrType, dstNumaNode,
+                                      &initiator, 0, &memAttrValue);
     if (ret) {
-        LOG_ERR("Retrieving bandwidth for initiator node %u to node %u failed.",
-                srcNumaNode->os_index, dstNumaNode->os_index);
         return (errno == EINVAL) ? UMF_RESULT_ERROR_NOT_SUPPORTED
                                  : UMF_RESULT_ERROR_UNKNOWN;
     }
 
-    *bandwidth = value;
+    *value = memAttrValue;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t numa_get_bandwidth(void *srcMemoryTarget,
+                                       void *dstMemoryTarget,
+                                       size_t *bandwidth) {
+    if (!srcMemoryTarget || !dstMemoryTarget || !bandwidth) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    umf_result_t ret = query_attribute_value(srcMemoryTarget, dstMemoryTarget,
+                                             bandwidth, MEMATTR_TYPE_BANDWIDTH);
+    if (ret) {
+        LOG_ERR("Retrieving bandwidth for initiator node %u to node %u failed.",
+                ((struct numa_memory_target_t *)srcMemoryTarget)->physical_id,
+                ((struct numa_memory_target_t *)dstMemoryTarget)->physical_id);
+        return ret;
+    }
+
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t numa_get_latency(void *srcMemoryTarget,
+                                     void *dstMemoryTarget, size_t *latency) {
+    if (!srcMemoryTarget || !dstMemoryTarget || !latency) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    umf_result_t ret = query_attribute_value(srcMemoryTarget, dstMemoryTarget,
+                                             latency, MEMATTR_TYPE_LATENCY);
+    if (ret) {
+        LOG_ERR("Retrieving latency for initiator node %u to node %u failed.",
+                ((struct numa_memory_target_t *)srcMemoryTarget)->physical_id,
+                ((struct numa_memory_target_t *)dstMemoryTarget)->physical_id);
+        return ret;
+    }
+
     return UMF_RESULT_SUCCESS;
 }
 
@@ -223,5 +288,6 @@ struct umf_memory_target_ops_t UMF_MEMORY_TARGET_NUMA_OPS = {
     .clone = numa_clone,
     .get_capacity = numa_get_capacity,
     .get_bandwidth = numa_get_bandwidth,
+    .get_latency = numa_get_latency,
     .memory_provider_create_from_memspace =
         numa_memory_provider_create_from_memspace};

@@ -61,6 +61,11 @@ umf_memspace_handle_t umfMemspaceHighestCapacityGet(void);
 ///
 umf_memspace_handle_t umfMemspaceHighestBandwidthGet(void);
 
+/// \brief Retrieves predefined lowest latency memspace.
+/// \return lowest latency memspace handle on success or NULL on failure.
+///
+umf_memspace_handle_t umfMemspaceLowestLatencyGet(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -39,6 +39,10 @@ umf_result_t
 umfMemoryTargetGetBandwidth(umf_memory_target_handle_t srcMemoryTarget,
                             umf_memory_target_handle_t dstMemoryTarget,
                             size_t *bandwidth);
+umf_result_t
+umfMemoryTargetGetLatency(umf_memory_target_handle_t srcMemoryTarget,
+                          umf_memory_target_handle_t dstMemoryTarget,
+                          size_t *latency);
 
 #ifdef __cplusplus
 }
