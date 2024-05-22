@@ -10,6 +10,7 @@
     - [Extending public API](#extending-public-api)
     - [License](#license)
     - [Adding new dependency](#adding-new-dependency)
+- [Code coverage](#code-coverage)
 
 Below you'll find instructions on how to contribute to UMF, either with code changes
 or issues. All contributions are most welcome!
@@ -201,4 +202,21 @@ New dependency: dependency_name
 
 license: SPDX license tag
 origin: https://dependency_origin.com
+```
+
+## Code coverage
+
+After adding a new functionality add tests and check coverage before and after the change.
+To do this, enable coverage instrumentation by turning on the USE_GCOV flag in CMake.
+Coverage instrumentation feature is supported only by GCC and Clang.
+An example flow might look like the following:
+
+```bash
+$ cmake -B build -DUSE_GCOV=1 -DCMAKE_BUILD_TYPE=Debug
+$ cmake --build build -j
+$ cd build
+$ ctest
+$ apt install lcov
+$ lcov --capture --directory . --output-file coverage.info
+$ genhtml -o html_report coverage.info
 ```
