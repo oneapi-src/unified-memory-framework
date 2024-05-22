@@ -17,31 +17,6 @@
 #define SIZE_4K (4096UL)
 #define SIZE_4M (SIZE_4K * 1024UL)
 
-struct numaNodesTest : ::umf_test::test {
-    void SetUp() override {
-        ::umf_test::test::SetUp();
-
-        if (numa_available() == -1 || numa_all_nodes_ptr == nullptr) {
-            GTEST_FAIL() << "Failed to initialize libnuma";
-        }
-
-        int maxNode = numa_max_node();
-        if (maxNode < 0) {
-            GTEST_FAIL() << "No available numa nodes";
-        }
-
-        for (int i = 0; i <= maxNode; i++) {
-            if (numa_bitmask_isbitset(numa_all_nodes_ptr, i)) {
-                nodeIds.emplace_back(i);
-                maxNodeId = i;
-            }
-        }
-    }
-
-    std::vector<unsigned> nodeIds;
-    unsigned long maxNodeId = 0;
-};
-
 ///
 /// @brief Retrieves the memory policy information for \p ptr.
 /// @param ptr allocation pointer.

@@ -10,7 +10,7 @@
 #include <hwloc.h>
 #include <umf/memspace.h>
 
-static bool canQueryBandwidth(size_t nodeId) {
+static bool canQueryLatency(size_t nodeId) {
     hwloc_topology_t topology = nullptr;
     int ret = hwloc_topology_init(&topology);
     UT_ASSERTeq(ret, 0);
@@ -27,8 +27,8 @@ static bool canQueryBandwidth(size_t nodeId) {
     initiator.type = hwloc_location_type_alias::HWLOC_LOCATION_TYPE_CPUSET;
 
     hwloc_uint64_t value = 0;
-    ret = hwloc_memattr_get_value(topology, HWLOC_MEMATTR_ID_BANDWIDTH,
-                                  numaNode, &initiator, 0, &value);
+    ret = hwloc_memattr_get_value(topology, HWLOC_MEMATTR_ID_LATENCY, numaNode,
+                                  &initiator, 0, &value);
 
     hwloc_topology_destroy(topology);
     return (ret == 0);
@@ -36,11 +36,9 @@ static bool canQueryBandwidth(size_t nodeId) {
 
 INSTANTIATE_TEST_SUITE_P(memspaceLowestLatencyTest, memspaceGetTest,
                          ::testing::Values(memspaceGetParams{
-                             canQueryBandwidth,
-                             umfMemspaceHighestBandwidthGet}));
+                             canQueryLatency, umfMemspaceLowestLatencyGet}));
 
 INSTANTIATE_TEST_SUITE_P(memspaceLowestLatencyProviderTest,
                          memspaceProviderTest,
                          ::testing::Values(memspaceGetParams{
-                             canQueryBandwidth,
-                             umfMemspaceHighestBandwidthGet}));
+                             canQueryLatency, umfMemspaceLowestLatencyGet}));
