@@ -100,6 +100,9 @@ for test in $(ls -1 umf_test-*); do
 	umf_test-provider_os_memory_multiple_numa_nodes)
 		FILTER='--gtest_filter="-testNuma.checkModeInterleave*:testNumaNodesAllocations/testNumaOnEachNode.checkNumaNodesAllocations*:testNumaNodesAllocations/testNumaOnEachNode.checkModePreferred*:testNumaNodesAllocations/testNumaOnEachNode.checkModeInterleaveSingleNode*:testNumaNodesAllocationsAllCpus/testNumaOnEachCpu.checkModePreferredEmptyNodeset*:testNumaNodesAllocationsAllCpus/testNumaOnEachCpu.checkModeLocal*"'
 		;;
+	umf_test-memspace_highest_bandwidth)
+		FILTER='--gtest_filter="-*allocLocalMt*"'
+		;;
 	esac
 
 	[ "$FILTER" != "" ] && echo -n "($FILTER) "

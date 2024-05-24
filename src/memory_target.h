@@ -37,6 +37,10 @@ umf_result_t umfMemoryTargetClone(umf_memory_target_handle_t memoryTarget,
                                   umf_memory_target_handle_t *outHandle);
 umf_result_t umfMemoryTargetGetCapacity(umf_memory_target_handle_t memoryTarget,
                                         size_t *capacity);
+umf_result_t
+umfMemoryTargetGetBandwidth(umf_memory_target_handle_t srcMemoryTarget,
+                            umf_memory_target_handle_t dstMemoryTarget,
+                            size_t *bandwidth);
 
 #ifdef __cplusplus
 }

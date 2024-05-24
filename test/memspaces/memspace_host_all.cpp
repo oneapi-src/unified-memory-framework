@@ -16,6 +16,36 @@
 
 using umf_test::test;
 
+struct memspaceHostAllTest : ::numaNodesTest {
+    void SetUp() override {
+        ::numaNodesTest::SetUp();
+
+        hMemspace = umfMemspaceHostAllGet();
+        ASSERT_NE(hMemspace, nullptr);
+    }
+
+    umf_memspace_handle_t hMemspace = nullptr;
+};
+
+struct memspaceHostAllProviderTest : ::memspaceHostAllTest {
+    void SetUp() override {
+        ::memspaceHostAllTest::SetUp();
+
+        umf_result_t ret =
+            umfMemoryProviderCreateFromMemspace(hMemspace, nullptr, &hProvider);
+        ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+        ASSERT_NE(hProvider, nullptr);
+    }
+
+    void TearDown() override {
+        ::memspaceHostAllTest::TearDown();
+
+        umfMemoryProviderDestroy(hProvider);
+    }
+
+    umf_memory_provider_handle_t hProvider = nullptr;
+};
+
 TEST_F(numaNodesTest, memspaceGet) {
     umf_memspace_handle_t hMemspace = umfMemspaceHostAllGet();
     UT_ASSERTne(hMemspace, nullptr);
@@ -55,44 +85,6 @@ TEST_F(memspaceHostAllProviderTest, allocFree) {
 
     ret = umfMemoryProviderFree(hProvider, ptr, size);
     UT_ASSERTeq(ret, UMF_RESULT_SUCCESS);
-}
-
-///
-/// @brief Retrieves the memory policy information for \p ptr.
-/// @param ptr allocation pointer.
-/// @param maxNodeId maximum node id.
-/// @param mode [out] memory policy.
-/// @param boundNodeIds [out] node ids associated with the policy.
-/// @param allocNodeId [out] id of the node that allocated the memory.
-///
-static void getAllocationPolicy(void *ptr, unsigned long maxNodeId, int &mode,
-                                std::vector<size_t> &boundNodeIds,
-                                size_t &allocNodeId) {
-    const static unsigned bitsPerUlong = sizeof(unsigned long) * 8;
-
-    const unsigned nrUlongs = (maxNodeId + bitsPerUlong) / bitsPerUlong;
-    std::vector<unsigned long> memNodeMasks(nrUlongs, 0);
-
-    int memMode = -1;
-    // Get policy and the nodes associated with this policy.
-    int ret = get_mempolicy(&memMode, memNodeMasks.data(),
-                            nrUlongs * bitsPerUlong, ptr, MPOL_F_ADDR);
-    UT_ASSERTeq(ret, 0);
-    mode = memMode;
-
-    UT_ASSERTeq(boundNodeIds.size(), 0);
-    for (size_t i = 0; i <= maxNodeId; i++) {
-        const size_t memNodeMaskIdx = ((i + bitsPerUlong) / bitsPerUlong) - 1;
-        const auto &memNodeMask = memNodeMasks.at(memNodeMaskIdx);
-
-        if (memNodeMask && (1UL << (i % bitsPerUlong))) {
-            boundNodeIds.emplace_back(i);
-        }
-    }
-
-    // Get the node that allocated the memory at 'ptr'.
-    int nodeId = getNumaNodeByPtr(ptr);
-    allocNodeId = static_cast<size_t>(nodeId);
 }
 
 TEST_F(memspaceHostAllProviderTest, allocsSpreadAcrossAllNumaNodes) {

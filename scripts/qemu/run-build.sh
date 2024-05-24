@@ -39,7 +39,7 @@ make -j $(nproc)
 echo password | sudo sync;
 echo password | sudo sh -c "/usr/bin/echo 3 > /proc/sys/vm/drop_caches"
 
-ctest --output-on-failure
+ctest --verbose
 
 # run tests bound to a numa node
 numactl -N 0 ctest --output-on-failure
