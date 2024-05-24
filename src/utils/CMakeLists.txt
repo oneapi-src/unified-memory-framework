@@ -32,6 +32,7 @@ endif()
 if(LINUX OR MACOSX)
     set(UMF_UTILS_SOURCES ${UMF_UTILS_SOURCES_COMMON}
                           ${UMF_UTILS_SOURCES_POSIX})
+    set(UMF_UTILS_LIBS dl)
 elseif(WINDOWS)
     set(UMF_UTILS_SOURCES ${UMF_UTILS_SOURCES_COMMON}
                           ${UMF_UTILS_SOURCES_WINDOWS})
@@ -41,7 +42,8 @@ add_library(umf_utils INTERFACE)
 add_library(${PROJECT_NAME}::utils ALIAS umf_utils)
 
 target_sources(umf_utils INTERFACE ${UMF_UTILS_SOURCES})
-target_link_libraries(umf_utils INTERFACE ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(umf_utils INTERFACE ${CMAKE_THREAD_LIBS_INIT}
+                                          ${UMF_UTILS_LIBS})
 
 target_include_directories(
     umf_utils
