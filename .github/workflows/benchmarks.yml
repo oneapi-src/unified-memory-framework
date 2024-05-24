@@ -59,7 +59,6 @@ jobs:
           -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
           -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
           -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
-          -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
 
       - name: Build UMF on Linux
         if: matrix.os == 'ubuntu-latest'

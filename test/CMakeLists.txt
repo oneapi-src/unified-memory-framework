@@ -120,11 +120,11 @@ endif()
 
 if(UMF_BUILD_LIBUMF_POOL_DISJOINT
    AND UMF_BUILD_LIBUMF_POOL_JEMALLOC
-   AND UMF_BUILD_LIBUMF_POOL_SCALABLE)
+   AND UMF_POOL_SCALABLE_ENABLED)
     add_umf_test(
         NAME c_api_multi_pool
         SRCS c_api/multi_pool.c
-        LIBS disjoint_pool jemalloc_pool scalable_pool ${JEMALLOC_LIBRARIES})
+        LIBS disjoint_pool jemalloc_pool ${JEMALLOC_LIBRARIES})
 endif()
 
 if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
@@ -134,11 +134,9 @@ if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
         LIBS jemalloc_pool)
 endif()
 
-if(UMF_BUILD_LIBUMF_POOL_SCALABLE)
-    add_umf_test(
-        NAME scalable_pool
-        SRCS pools/scalable_pool.cpp malloc_compliance_tests.cpp
-        LIBS scalable_pool)
+if(UMF_POOL_SCALABLE_ENABLED)
+    add_umf_test(NAME scalable_pool SRCS pools/scalable_pool.cpp
+                                         malloc_compliance_tests.cpp)
 endif()
 
 if(LINUX) # OS-specific functions are implemented only for Linux now
@@ -216,14 +214,15 @@ add_umf_test(
 if(UMF_PROXY_LIB_ENABLED AND UMF_BUILD_SHARED_LIBRARY)
     add_umf_test(
         NAME proxy_lib_basic
-        SRCS test_proxy_lib.cpp
-        LIBS umf_proxy)
+        SRCS ${BA_SOURCES_FOR_TEST} test_proxy_lib.cpp
+        LIBS ${UMF_UTILS_FOR_TEST} umf_proxy)
 
     # the memoryPool test run with the proxy library
     add_umf_test(
         NAME proxy_lib_memoryPool
-        SRCS memoryPoolAPI.cpp malloc_compliance_tests.cpp
-        LIBS umf_proxy)
+        SRCS ${BA_SOURCES_FOR_TEST} memoryPoolAPI.cpp
+             malloc_compliance_tests.cpp
+        LIBS ${UMF_UTILS_FOR_TEST} umf_proxy)
     target_compile_definitions(umf_test-proxy_lib_memoryPool
                                PUBLIC UMF_PROXY_LIB_ENABLED=1)
 endif()

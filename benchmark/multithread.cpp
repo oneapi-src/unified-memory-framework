@@ -93,7 +93,7 @@ static void mt_alloc_free(poolCreateExtParams params,
 int main() {
     auto osParams = umfOsMemoryProviderParamsDefault();
 
-#if defined(UMF_BUILD_LIBUMF_POOL_SCALABLE)
+#if defined(UMF_POOL_SCALABLE_ENABLED)
 
     // Increase iterations for scalable pool since it runs much faster than the remaining
     // ones.

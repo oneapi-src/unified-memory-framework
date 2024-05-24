@@ -10,8 +10,7 @@ of a memory provider and a pool allocator. OS memory provider and Scalable pool
 are used for this purpose.
 
 ### Requirements
-* libtbb-dev needed for Scalable Pool
-* set UMF_BUILD_LIBUMF_POOL_SCALABLE CMake configuration flag to ON
+* libtbb-dev (libtbbmalloc.so.2) on Linux or tbb (tbbmalloc.dll) on Windows
 
 ## GPU shared memory
 
@@ -67,6 +66,3 @@ processes: a producer and a consumer that communicate in the following way
 - Producer puts the IPC handle
 - Consumer shuts down
 - Producer shuts down
-
-### Requirements
-* set UMF_BUILD_LIBUMF_POOL_SCALABLE CMake configuration flag to ON

@@ -84,6 +84,9 @@ UMF also provides multithreaded benchmarks that can be enabled by setting both
 `UMF_BUILD_BENCHMARKS` and `UMF_BUILD_BENCHMARKS_MT` CMake
 configuration flags to `ON`. Multithreaded benchmarks require a C++ support.
 
+The Scalable Pool requirements can be found in the relevant 'Memory Pool 
+managers' section below.
+
 ### Sanitizers
 
 List of sanitizers available on Linux:
@@ -109,7 +112,6 @@ List of options provided by CMake:
 | UMF_BUILD_LEVEL_ZERO_PROVIDER | Build Level Zero memory provider | ON/OFF | ON |
 | UMF_BUILD_LIBUMF_POOL_DISJOINT | Build the libumf_pool_disjoint static library | ON/OFF | OFF |
 | UMF_BUILD_LIBUMF_POOL_JEMALLOC | Build the libumf_pool_jemalloc static library | ON/OFF | OFF |
-| UMF_BUILD_LIBUMF_POOL_SCALABLE | Build the libumf_pool_scalable static library | ON/OFF | OFF |
 | UMF_BUILD_TESTS | Build UMF tests | ON/OFF | ON |
 | UMF_BUILD_GPU_TESTS | Build UMF GPU tests | ON/OFF | OFF |
 | UMF_BUILD_BENCHMARKS | Build UMF benchmarks | ON/OFF | OFF |
@@ -170,13 +172,13 @@ Additionally, required for tests:
 
 ### Memory pool managers
 
-#### proxy_pool (part of libumf)
+#### Proxy pool (part of libumf)
 
 This memory pool is distributed as part of libumf. It forwards all requests to the underlying
 memory provider. Currently umfPoolRealloc, umfPoolCalloc and umfPoolMallocUsableSize functions
 are not supported by the proxy pool.
 
-#### libumf_pool_disjoint
+#### Disjoint pool
 
 TODO: Add a description
 
@@ -184,9 +186,11 @@ TODO: Add a description
 
 To enable this feature, the `UMF_BUILD_LIBUMF_POOL_DISJOINT` option needs to be turned `ON`.
 
-#### libumf_pool_jemalloc
+#### Jemalloc pool
 
-libumf_pool_jemalloc is a [jemalloc](https://github.com/jemalloc/jemalloc)-based memory pool manager built as a separate static library.
+Jemalloc pool is a [jemalloc](https://github.com/jemalloc/jemalloc)-based memory 
+pool manager built as a separate static library: libjemalloc_pool.a on Linux and
+jemalloc_pool.lib on Windows.
 The `UMF_BUILD_LIBUMF_POOL_JEMALLOC` option has to be turned `ON` to build this library.
 
 ##### Requirements
@@ -195,15 +199,14 @@ The `UMF_BUILD_LIBUMF_POOL_JEMALLOC` option has to be turned `ON` to build this 
 2) Required packages:
    - libjemalloc-dev (Linux) or jemalloc (Windows)
 
-#### libumf_pool_scalable
+#### Scalable Pool (part of libumf)
 
-libumf_pool_scalable is a [oneTBB](https://github.com/oneapi-src/oneTBB)-based memory pool manager built as a separate static library.
-The `UMF_BUILD_LIBUMF_POOL_SCALABLE` option has to be turned `ON` to build this library.
+Scalable Pool is a [oneTBB](https://github.com/oneapi-src/oneTBB)-based memory pool manager.
+It is distributed as part of libumf. To use this pool, TBB must be installed in the system.
 
 ##### Requirements
 
-1) The `UMF_BUILD_LIBUMF_POOL_SCALABLE` option turned `ON`
-2) Required packages:
+Required packages:
    - libtbb-dev (libtbbmalloc.so.2) on Linux or tbb (tbbmalloc.dll) on Windows
 
 ### Memspaces (Linux-only)

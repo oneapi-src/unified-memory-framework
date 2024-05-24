@@ -31,8 +31,6 @@ option(UMF_BUILD_LIBUMF_POOL_DISJOINT
        "Build the libumf_pool_disjoint static library" OFF)
 option(UMF_BUILD_LIBUMF_POOL_JEMALLOC
        "Build the libumf_pool_jemalloc static library" OFF)
-option(UMF_BUILD_LIBUMF_POOL_SCALABLE
-       "Build the libumf_pool_scalable static library" OFF)
 option(UMF_BUILD_TESTS "Build UMF tests" ON)
 option(UMF_BUILD_GPU_TESTS "Build UMF GPU tests" OFF)
 option(UMF_BUILD_BENCHMARKS "Build UMF benchmarks" OFF)
@@ -199,14 +197,21 @@ endif()
 set(DLL_PATH_LIST
     "${DLL_PATH_LIST};PATH=path_list_append:${LIBHWLOC_LIBRARY_DIRS}/../bin")
 
-if(UMF_BUILD_LIBUMF_POOL_SCALABLE)
-    pkg_check_modules(TBB tbb)
-    if(NOT TBB_FOUND)
-        find_package(TBB REQUIRED tbb)
-    endif()
+pkg_check_modules(TBB tbb)
+if(NOT TBB_FOUND)
+    find_package(TBB OPTIONAL_COMPONENTS tbb)
+endif()
+if(TBB_FOUND OR TBB_LIBRARY_DIRS)
     # add PATH to DLL on Windows
     set(DLL_PATH_LIST
         "${DLL_PATH_LIST};PATH=path_list_append:${TBB_LIBRARY_DIRS}/../bin")
+    set(UMF_POOL_SCALABLE_ENABLED TRUE)
+else()
+    message(
+        STATUS
+            "Disabling tests and benchmarks that use the Scalable Pool because the TBB they require was not found."
+    )
+    set(UMF_POOL_SCALABLE_ENABLED FALSE)
 endif()
 
 if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
@@ -233,14 +238,14 @@ if(WINDOWS)
     )
 endif()
 if(UMF_PROXY_LIB_BASED_ON_POOL STREQUAL SCALABLE)
-    if(UMF_BUILD_LIBUMF_POOL_SCALABLE)
+    if(UMF_POOL_SCALABLE_ENABLED)
         set(UMF_PROXY_LIB_ENABLED ON)
         set(PROXY_LIB_USES_SCALABLE_POOL ON)
-        set(PROXY_LIBS scalable_pool umf)
+        set(PROXY_LIBS umf)
     else()
         message(
             STATUS
-                "Disabling the proxy library, because UMF_PROXY_LIB_BASED_ON_POOL==SCALABLE but UMF_BUILD_LIBUMF_POOL_SCALABLE is OFF"
+                "Disabling the proxy library, because UMF_PROXY_LIB_BASED_ON_POOL==SCALABLE but TBB was not found"
         )
     endif()
 elseif(UMF_PROXY_LIB_BASED_ON_POOL STREQUAL JEMALLOC)
