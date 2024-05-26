@@ -45,7 +45,8 @@ function(add_umf_benchmark)
         ${BENCH_NAME}
         PRIVATE ${UMF_CMAKE_SOURCE_DIR}/include
                 ${UMF_CMAKE_SOURCE_DIR}/src/utils
-                ${UMF_CMAKE_SOURCE_DIR}/test/common)
+                ${UMF_CMAKE_SOURCE_DIR}/test/common
+                ${UMF_CMAKE_SOURCE_DIR}/examples/basic)
 
     target_link_directories(${BENCH_NAME} PRIVATE ${ARG_LIBDIRS})
 
@@ -80,6 +81,13 @@ function(add_umf_benchmark)
         target_compile_definitions(${BENCH_NAME}
                                    PRIVATE UMF_POOL_SCALABLE_ENABLED=1)
     endif()
+    if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
+        target_compile_definitions(${BENCH_NAME}
+                                   PRIVATE UMF_BUILD_LEVEL_ZERO_PROVIDER=1)
+    endif()
+    if(UMF_BUILD_GPU_TESTS)
+        target_compile_definitions(${BENCH_NAME} PRIVATE UMF_BUILD_GPU_TESTS=1)
+    endif()
 endfunction()
 
 set(LIB_DIRS ${LIBHWLOC_LIBRARY_DIRS})
@@ -94,6 +102,9 @@ if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
 endif()
 if(LINUX)
     set(LIBS_OPTIONAL ${LIBS_OPTIONAL} m)
+endif()
+if(UMF_BUILD_GPU_TESTS)
+    set(LIBS_OPTIONAL ${LIBS_OPTIONAL} ze_loader)
 endif()
 
 # BENCHMARKS

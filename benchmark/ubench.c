@@ -7,9 +7,11 @@
  *
  */
 
+#include <umf/ipc.h>
 #include <umf/memory_pool.h>
 #include <umf/pools/pool_proxy.h>
 #include <umf/pools/pool_scalable.h>
+#include <umf/providers/provider_level_zero.h>
 #include <umf/providers/provider_os_memory.h>
 
 #ifdef UMF_BUILD_LIBUMF_POOL_DISJOINT
@@ -28,6 +30,10 @@
 
 #include "ubench.h"
 #include "utils_common.h"
+
+#if (defined UMF_BUILD_GPU_TESTS)
+#include "utils_level_zero.h"
+#endif
 
 // BENCHMARK CONFIG
 #define N_ITERATIONS 1000
@@ -338,5 +344,146 @@ UBENCH_EX(simple, scalable_pool_with_os_memory_provider) {
     free(array);
 }
 #endif /* (defined UMF_POOL_SCALABLE_ENABLED) */
+
+#if (defined UMF_BUILD_LIBUMF_POOL_DISJOINT &&                                 \
+     defined UMF_BUILD_LEVEL_ZERO_PROVIDER && defined UMF_BUILD_GPU_TESTS)
+static void do_ipc_get_put_benchmark(alloc_t *allocs, size_t num_allocs,
+                                     size_t repeats,
+                                     umf_ipc_handle_t *ipc_handles) {
+    for (size_t r = 0; r < repeats; ++r) {
+        for (size_t i = 0; i < num_allocs; ++i) {
+            size_t handle_size = 0;
+            umf_result_t res =
+                umfGetIPCHandle(allocs[i].ptr, &(ipc_handles[i]), &handle_size);
+            if (res != UMF_RESULT_SUCCESS) {
+                fprintf(stderr, "umfGetIPCHandle() failed\n");
+            }
+        }
+
+        for (size_t i = 0; i < num_allocs; ++i) {
+            umf_result_t res = umfPutIPCHandle(ipc_handles[i]);
+            if (res != UMF_RESULT_SUCCESS) {
+                fprintf(stderr, "umfPutIPCHandle() failed\n");
+            }
+        }
+    }
+}
+
+int create_level_zero_params(level_zero_memory_provider_params_t *params) {
+    uint32_t driver_idx = 0;
+    ze_driver_handle_t driver = NULL;
+    ze_context_handle_t context = NULL;
+    ze_device_handle_t device = NULL;
+
+    int ret = init_level_zero();
+    if (ret != 0) {
+        fprintf(stderr, "Failed to init Level 0!\n");
+        return ret;
+    }
+
+    ret = find_driver_with_gpu(&driver_idx, &driver);
+    if (ret || driver == NULL) {
+        fprintf(stderr, "Cannot find L0 driver with GPU device!\n");
+        return ret;
+    }
+
+    ret = create_context(driver, &context);
+    if (ret != 0) {
+        fprintf(stderr, "Failed to create L0 context!\n");
+        return ret;
+    }
+
+    ret = find_gpu_device(driver, &device);
+    if (ret || device == NULL) {
+        fprintf(stderr, "Cannot find GPU device!\n");
+        destroy_context(context);
+        return ret;
+    }
+
+    params->level_zero_context_handle = context;
+    params->level_zero_device_handle = device;
+    params->memory_type = UMF_MEMORY_TYPE_DEVICE;
+
+    return ret;
+}
+
+UBENCH_EX(ipc, disjoint_pool_with_level_zero_provider) {
+    const size_t BUFFER_SIZE = 100;
+    const size_t N_BUFFERS = 1000;
+    level_zero_memory_provider_params_t level_zero_params;
+
+    int ret = create_level_zero_params(&level_zero_params);
+    if (ret != 0) {
+        exit(-1);
+    }
+
+    alloc_t *allocs = alloc_array(N_BUFFERS);
+    if (allocs == NULL) {
+        fprintf(stderr, "error: alloc_array() failed\n");
+        goto err_destroy_context;
+    }
+
+    umf_ipc_handle_t *ipc_handles = calloc(N_BUFFERS, sizeof(umf_ipc_handle_t));
+    if (ipc_handles == NULL) {
+        fprintf(stderr, "error: calloc() failed\n");
+        goto err_free_allocs;
+    }
+
+    umf_result_t umf_result;
+    umf_memory_provider_handle_t provider = NULL;
+    umf_result = umfMemoryProviderCreate(umfLevelZeroMemoryProviderOps(),
+                                         &level_zero_params, &provider);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "error: umfMemoryProviderCreate() failed\n");
+        goto err_free_ipc_handles;
+    }
+
+    umf_disjoint_pool_params_t disjoint_params = {0};
+    disjoint_params.SlabMinSize = BUFFER_SIZE * 10;
+    disjoint_params.MaxPoolableSize = 4ull * 1024ull * 1024ull;
+    disjoint_params.Capacity = 64ull * 1024ull;
+    disjoint_params.MinBucketSize = 64;
+    umf_pool_create_flags_t flags = UMF_POOL_CREATE_FLAG_OWN_PROVIDER;
+    umf_memory_pool_handle_t pool;
+    umf_result = umfPoolCreate(umfDisjointPoolOps(), provider, &disjoint_params,
+                               flags, &pool);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "error: umfPoolCreate() failed\n");
+        umfMemoryProviderDestroy(provider);
+        goto err_free_ipc_handles;
+    }
+
+    for (size_t i = 0; i < N_BUFFERS; ++i) {
+        allocs[i].ptr = umfPoolMalloc(pool, BUFFER_SIZE);
+        if (allocs[i].ptr == NULL) {
+            goto err_buffer_destroy;
+        }
+        allocs[i].size = BUFFER_SIZE;
+    }
+
+    do_ipc_get_put_benchmark(allocs, N_BUFFERS, N_ITERATIONS,
+                             ipc_handles); // WARMUP
+
+    UBENCH_DO_BENCHMARK() {
+        do_ipc_get_put_benchmark(allocs, N_BUFFERS, N_ITERATIONS, ipc_handles);
+    }
+
+err_buffer_destroy:
+    for (size_t i = 0; i < N_BUFFERS; ++i) {
+        umfPoolFree(pool, allocs[i].ptr);
+    }
+
+    umfPoolDestroy(pool);
+
+err_free_ipc_handles:
+    free(ipc_handles);
+
+err_free_allocs:
+    free(allocs);
+
+err_destroy_context:
+    destroy_context(level_zero_params.level_zero_context_handle);
+}
+#endif /* (defined UMF_BUILD_LIBUMF_POOL_DISJOINT && defined UMF_BUILD_LEVEL_ZERO_PROVIDER && defined UMF_BUILD_GPU_TESTS) */
 
 UBENCH_MAIN()
