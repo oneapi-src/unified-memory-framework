@@ -25,3 +25,16 @@ size_t util_get_page_size(void) {
 }
 
 int utils_getpid(void) { return getpid(); }
+
+int utils_gettid(void) {
+#ifdef __APPLE__
+    uint64_t tid64;
+    pthread_threadid_np(NULL, &tid64);
+    return (int)tid64;
+#else
+    // Some older OSes does not have
+    // the gettid() function implemented,
+    // so let's use the syscall instead:
+    return syscall(SYS_gettid);
+#endif
+}
