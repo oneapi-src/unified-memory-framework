@@ -72,18 +72,8 @@ static void util_log_internal(util_log_level_t level, int perror,
         return;
     }
 
-#if defined(_WIN32)
-    DWORD pid = GetCurrentProcessId();
-    DWORD tid = GetCurrentThreadId();
-#elif defined(__APPLE__)
-    pid_t pid = getpid();
-    uint64_t tid64;
-    pthread_threadid_np(NULL, &tid64);
-    pid_t tid = (pid_t)tid64;
-#else
-    pid_t pid = getpid();
-    pid_t tid = gettid();
-#endif
+    int pid = utils_getpid();
+    int tid = utils_gettid();
 
     char buffer[LOG_MAX];
     char *b_pos = buffer;
