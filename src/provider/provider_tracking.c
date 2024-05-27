@@ -37,6 +37,8 @@ static umf_result_t umfMemoryTrackerAdd(umf_memory_tracker_handle_t hTracker,
 
     tracker_value_t *value = umf_ba_alloc(hTracker->tracker_allocator);
     if (value == NULL) {
+        LOG_ERR("failed to allocate tracker value, ptr=%p, size=%zu", ptr,
+                size);
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
@@ -46,8 +48,13 @@ static umf_result_t umfMemoryTrackerAdd(umf_memory_tracker_handle_t hTracker,
     int ret = critnib_insert(hTracker->map, (uintptr_t)ptr, value, 0);
 
     if (ret == 0) {
+        LOG_DEBUG("memory region is added, tracker=%p, ptr=%p, size=%zu",
+                  (void *)hTracker, ptr, size);
         return UMF_RESULT_SUCCESS;
     }
+
+    LOG_ERR("failed to insert tracker value, ret=%d, ptr=%p, size=%zu", ret,
+            ptr, size);
 
     umf_ba_free(hTracker->tracker_allocator, value);
 
@@ -55,7 +62,6 @@ static umf_result_t umfMemoryTrackerAdd(umf_memory_tracker_handle_t hTracker,
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    LOG_ERR("umfMemoryTrackerAdd: Unknown Error %d", ret);
     return UMF_RESULT_ERROR_UNKNOWN;
 }
 
@@ -70,7 +76,7 @@ static umf_result_t umfMemoryTrackerRemove(umf_memory_tracker_handle_t hTracker,
 
     void *value = critnib_remove(hTracker->map, (uintptr_t)ptr);
     if (!value) {
-        LOG_ERR("umfMemoryTrackerRemove: pointer %p not found in the map", ptr);
+        LOG_ERR("pointer %p not found in the map", ptr);
         return UMF_RESULT_ERROR_UNKNOWN;
     }
 
@@ -109,6 +115,9 @@ umf_result_t umfMemoryTrackerGetAllocInfo(const void *ptr,
     int found = critnib_find(TRACKER->map, (uintptr_t)ptr, FIND_LE,
                              (void *)&rkey, (void **)&rvalue);
     if (!found || (uintptr_t)ptr >= rkey + rvalue->size) {
+        LOG_WARN("pointer %p not found in the "
+                 "tracker, TRACKER=%p",
+                 ptr, (void *)TRACKER);
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -151,7 +160,9 @@ static umf_result_t trackingAlloc(void *hProvider, size_t size,
 
     umf_result_t ret2 = umfMemoryTrackerAdd(p->hTracker, p->pool, *ptr, size);
     if (ret2 != UMF_RESULT_SUCCESS) {
-        LOG_ERR("umfMemoryTrackerAdd failed: %d", ret2);
+        LOG_ERR("failed to add allocated region to the tracker, ptr = %p, size "
+                "= %zu, ret = %d",
+                *ptr, size, ret2);
     }
 
     return ret;
@@ -181,12 +192,13 @@ static umf_result_t trackingAllocationSplit(void *hProvider, void *ptr,
     tracker_value_t *value =
         (tracker_value_t *)critnib_get(provider->hTracker->map, (uintptr_t)ptr);
     if (!value) {
-        LOG_ERR("tracking split: no such value");
+        LOG_ERR("region for split is not found in the tracker");
         ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
         goto err;
     }
     if (value->size != totalSize) {
-        LOG_ERR("tracking split: %zu != %zu", value->size, totalSize);
+        LOG_ERR("tracked size %zu does not match requested size to split: %zu",
+                value->size, totalSize);
         ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
         goto err;
     }
@@ -194,7 +206,7 @@ static umf_result_t trackingAllocationSplit(void *hProvider, void *ptr,
     ret = umfMemoryProviderAllocationSplit(provider->hUpstream, ptr, totalSize,
                                            firstSize);
     if (ret != UMF_RESULT_SUCCESS) {
-        LOG_ERR("tracking split: umfMemoryProviderAllocationSplit failed");
+        LOG_ERR("upstream provider failed to split the region");
         goto err;
     }
 
@@ -206,7 +218,9 @@ static umf_result_t trackingAllocationSplit(void *hProvider, void *ptr,
     ret = umfMemoryTrackerAdd(provider->hTracker, provider->pool, highPtr,
                               secondSize);
     if (ret != UMF_RESULT_SUCCESS) {
-        LOG_ERR("tracking split: umfMemoryTrackerAdd failed");
+        LOG_ERR("failed to add split region to the tracker, ptr = %p, size "
+                "= %zu, ret = %d",
+                highPtr, secondSize, ret);
         // TODO: what now? should we rollback the split? This can only happen due to ENOMEM
         // so it's unlikely but probably the best solution would be to try to preallocate everything
         // (value and critnib nodes) before calling umfMemoryProviderAllocationSplit.
@@ -256,25 +270,24 @@ static umf_result_t trackingAllocationMerge(void *hProvider, void *lowPtr,
     tracker_value_t *lowValue = (tracker_value_t *)critnib_get(
         provider->hTracker->map, (uintptr_t)lowPtr);
     if (!lowValue) {
-        LOG_ERR("tracking merge: no left value");
+        LOG_ERR("no left value");
         ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
         goto err;
     }
     tracker_value_t *highValue = (tracker_value_t *)critnib_get(
         provider->hTracker->map, (uintptr_t)highPtr);
     if (!highValue) {
-        LOG_ERR("tracking merge: no right value");
+        LOG_ERR("no right value");
         ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
         goto err;
     }
     if (lowValue->pool != highValue->pool) {
-        LOG_ERR("tracking merge: pool mismatch");
+        LOG_ERR("pool mismatch");
         ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
         goto err;
     }
     if (lowValue->size + highValue->size != totalSize) {
-        LOG_ERR("tracking merge: lowValue->size + highValue->size != "
-                "totalSize");
+        LOG_ERR("lowValue->size + highValue->size != totalSize");
         ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
         goto err;
     }
@@ -282,7 +295,7 @@ static umf_result_t trackingAllocationMerge(void *hProvider, void *lowPtr,
     ret = umfMemoryProviderAllocationMerge(provider->hUpstream, lowPtr, highPtr,
                                            totalSize);
     if (ret != UMF_RESULT_SUCCESS) {
-        LOG_ERR("tracking merge: umfMemoryProviderAllocationMerge failed");
+        LOG_ERR("upstream provider failed to merge regions");
         goto err;
     }
 
@@ -328,7 +341,9 @@ static umf_result_t trackingFree(void *hProvider, void *ptr, size_t size) {
         if (ret != UMF_RESULT_SUCCESS) {
             // DO NOT return an error here, because the tracking provider
             // cannot change behaviour of the upstream provider.
-            // TODO: LOG
+            LOG_ERR("failed to remove the region from the tracker, ptr=%p, "
+                    "size=%zu, ret = %d",
+                    ptr, size, ret);
         }
     }
 
@@ -338,17 +353,21 @@ static umf_result_t trackingFree(void *hProvider, void *ptr, size_t size) {
         ret = umfMemoryProviderPutIPCHandle(p->hUpstream,
                                             cache_value->providerIpcData);
         if (ret != UMF_RESULT_SUCCESS) {
-            LOG_ERR("tracking free: failed to put IPC handle");
+            LOG_ERR("upstream provider is failed to put IPC handle, ptr=%p, "
+                    "size=%zu, ret = %d",
+                    ptr, size, ret);
         }
         umf_ba_global_free(value);
     }
 
     ret = umfMemoryProviderFree(p->hUpstream, ptr, size);
     if (ret != UMF_RESULT_SUCCESS) {
-        LOG_ERR("tracking free: umfMemoryProviderFree failed");
+        LOG_ERR("upstream provider is failed to free the memory");
         if (umfMemoryTrackerAdd(p->hTracker, p->pool, ptr, size) !=
             UMF_RESULT_SUCCESS) {
-            LOG_ERR("tracking free: umfMemoryTrackerAdd failed");
+            LOG_ERR(
+                "cannot add memory back to the tracker, ptr = %p, size = %zu",
+                ptr, size);
         }
         return ret;
     }
@@ -485,20 +504,18 @@ static umf_result_t trackingGetIpcHandle(void *provider, const void *ptr,
             ret = umfMemoryProviderGetIPCHandle(p->hUpstream, ptr, size,
                                                 providerIpcData);
             if (ret != UMF_RESULT_SUCCESS) {
-                LOG_ERR("tracking get ipc handle: "
-                        "umfMemoryProviderGetIPCHandle failed");
+                LOG_ERR("upstream provider is failed to get IPC handle");
                 return ret;
             }
 
             ret = umfMemoryProviderGetIPCHandleSize(p->hUpstream, &ipcDataSize);
             if (ret != UMF_RESULT_SUCCESS) {
-                LOG_ERR("tracking get ipc handle: "
-                        "umfMemoryProviderGetIPCHandleSize failed");
+                LOG_ERR("upstream provider is failed to get the size of IPC "
+                        "handle");
                 ret = umfMemoryProviderPutIPCHandle(p->hUpstream,
                                                     providerIpcData);
                 if (ret != UMF_RESULT_SUCCESS) {
-                    LOG_ERR("tracking get ipc handle: "
-                            "umfMemoryProviderPutIPCHandle failed");
+                    LOG_ERR("upstream provider is failed to put IPC handle");
                 }
                 return ret;
             }
@@ -506,13 +523,11 @@ static umf_result_t trackingGetIpcHandle(void *provider, const void *ptr,
             size_t value_size = sizeof(ipc_cache_value_t) + ipcDataSize;
             ipc_cache_value_t *cache_value = umf_ba_global_alloc(value_size);
             if (!cache_value) {
-                LOG_ERR(
-                    "tracking get ipc handle: failed to allocate cache_value");
+                LOG_ERR("failed to allocate cache_value");
                 ret = umfMemoryProviderPutIPCHandle(p->hUpstream,
                                                     providerIpcData);
                 if (ret != UMF_RESULT_SUCCESS) {
-                    LOG_ERR("tracking get ipc handle: "
-                            "umfMemoryProviderPutIPCHandle failed");
+                    LOG_ERR("upstream provider is failed to put IPC handle");
                 }
                 return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
             }
@@ -538,13 +553,11 @@ static umf_result_t trackingGetIpcHandle(void *provider, const void *ptr,
                 ret = umfMemoryProviderPutIPCHandle(p->hUpstream,
                                                     providerIpcData);
                 if (ret != UMF_RESULT_SUCCESS) {
-                    LOG_ERR("tracking get ipc handle: "
-                            "umfMemoryProviderPutIPCHandle failed");
+                    LOG_ERR("upstream provider is failed to put IPC handle");
                     return ret;
                 }
                 if (insRes == ENOMEM) {
-                    LOG_ERR(
-                        "tracking get ipc handle: insert to IPC cache failed");
+                    LOG_ERR("insert to IPC cache failed due to OOM");
                     return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
                 }
             }
@@ -585,13 +598,19 @@ static umf_result_t trackingOpenIpcHandle(void *provider, void *providerIpcData,
 
     ret = umfMemoryProviderOpenIPCHandle(p->hUpstream, providerIpcData, ptr);
     if (ret != UMF_RESULT_SUCCESS) {
+        LOG_ERR("upstream provider is failed to open IPC handle");
         return ret;
     }
     size_t bufferSize = getDataSizeFromIpcHandle(providerIpcData);
     ret = umfMemoryTrackerAdd(p->hTracker, p->pool, *ptr, bufferSize);
     if (ret != UMF_RESULT_SUCCESS) {
+        LOG_ERR("failed to add IPC region to the tracker, ptr=%p, size=%zu, "
+                "ret = %d",
+                *ptr, bufferSize, ret);
         if (umfMemoryProviderCloseIPCHandle(p->hUpstream, *ptr, bufferSize)) {
-            // TODO: LOG
+            LOG_ERR("upstream provider is failed to close IPC handle, ptr=%p, "
+                    "size=%zu",
+                    *ptr, bufferSize);
         }
     }
     return ret;
@@ -611,7 +630,9 @@ static umf_result_t trackingCloseIpcHandle(void *provider, void *ptr,
         if (ret != UMF_RESULT_SUCCESS) {
             // DO NOT return an error here, because the tracking provider
             // cannot change behaviour of the upstream provider.
-            LOG_ERR("tracking free: umfMemoryTrackerRemove failed");
+            LOG_ERR("failed to remove the region from the tracker, ptr=%p, "
+                    "size=%zu, ret = %d",
+                    ptr, size, ret);
         }
     }
     return umfMemoryProviderCloseIPCHandle(p->hUpstream, ptr, size);
@@ -645,13 +666,20 @@ umf_result_t umfTrackingMemoryProviderCreate(
     params.hUpstream = hUpstream;
     params.hTracker = TRACKER;
     if (!params.hTracker) {
+        LOG_ERR("failed, TRACKER is NULL");
         return UMF_RESULT_ERROR_UNKNOWN;
     }
     params.pool = hPool;
     params.ipcCache = critnib_new();
     if (!params.ipcCache) {
+        LOG_ERR("failed to create IPC cache");
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
+
+    LOG_DEBUG("upstream=%p, tracker=%p, "
+              "pool=%p, ipcCache=%p",
+              (void *)params.hUpstream, (void *)params.hTracker,
+              (void *)params.pool, (void *)params.ipcCache);
 
     return umfMemoryProviderCreate(&UMF_TRACKING_MEMORY_PROVIDER_OPS, &params,
                                    hTrackingProvider);
@@ -690,6 +718,9 @@ umf_memory_tracker_handle_t umfMemoryTrackerCreate(void) {
     if (!handle->map) {
         goto err_destroy_mutex;
     }
+
+    LOG_DEBUG("tracker created, handle=%p, segment map=%p", (void *)handle,
+              (void *)handle->map);
 
     return handle;
 

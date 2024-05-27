@@ -289,8 +289,7 @@ void umf_ba_destroy(umf_ba_pool_t *pool) {
 #ifndef NDEBUG
     ba_debug_checks(pool);
     if (pool->metadata.n_allocs) {
-        LOG_ERR("umf_ba_destroy(): pool->metadata.n_allocs = %zu",
-                pool->metadata.n_allocs);
+        LOG_ERR("pool->metadata.n_allocs = %zu", pool->metadata.n_allocs);
     }
 #endif /* NDEBUG */
 

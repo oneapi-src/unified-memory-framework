@@ -59,6 +59,7 @@ static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
     }
 
     *hPool = pool;
+    LOG_INFO("Memory pool created: %p", (void *)pool);
     return UMF_RESULT_SUCCESS;
 
 err_pool_init:
@@ -83,6 +84,9 @@ void umfPoolDestroy(umf_memory_pool_handle_t hPool) {
         // Destroy tracking provider.
         umfMemoryProviderDestroy(hPool->provider);
     }
+
+    LOG_INFO("Memory pool destroyed: %p", (void *)hPool);
+
     // TODO: this free keeps memory in base allocator, so it can lead to OOM in some scenarios (it should be optimized)
     umf_ba_global_free(hPool);
 }

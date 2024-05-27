@@ -25,7 +25,7 @@ umf_result_t umfGetIPCHandle(const void *ptr, umf_ipc_handle_t *umfIPCHandle,
     umf_alloc_info_t allocInfo;
     umf_result_t ret = umfMemoryTrackerGetAllocInfo(ptr, &allocInfo);
     if (ret != UMF_RESULT_SUCCESS) {
-        LOG_ERR("umfGetIPCHandle: cannot get alloc info for ptr = %p.", ptr);
+        LOG_ERR("cannot get alloc info for ptr = %p.", ptr);
         return ret;
     }
 
@@ -37,14 +37,14 @@ umf_result_t umfGetIPCHandle(const void *ptr, umf_ipc_handle_t *umfIPCHandle,
     size_t providerIPCHandleSize;
     ret = umfMemoryProviderGetIPCHandleSize(provider, &providerIPCHandleSize);
     if (ret != UMF_RESULT_SUCCESS) {
-        LOG_ERR("umfGetIPCHandle: cannot get IPC handle size.");
+        LOG_ERR("cannot get IPC handle size.");
         return ret;
     }
 
     ipcHandleSize = sizeof(umf_ipc_data_t) + providerIPCHandleSize;
     umf_ipc_data_t *ipcData = umf_ba_global_alloc(ipcHandleSize);
     if (!ipcData) {
-        LOG_ERR("umfGetIPCHandle: failed to allocate ipcData");
+        LOG_ERR("failed to allocate ipcData");
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
@@ -52,7 +52,7 @@ umf_result_t umfGetIPCHandle(const void *ptr, umf_ipc_handle_t *umfIPCHandle,
                                         allocInfo.baseSize,
                                         (void *)ipcData->providerIpcData);
     if (ret != UMF_RESULT_SUCCESS) {
-        LOG_ERR("umfGetIPCHandle: failed to get IPC handle.");
+        LOG_ERR("failed to get IPC handle.");
         umf_ba_global_free(ipcData);
         return ret;
     }
@@ -95,8 +95,7 @@ umf_result_t umfOpenIPCHandle(umf_memory_pool_handle_t hPool,
     umf_result_t ret = umfMemoryProviderOpenIPCHandle(
         hProvider, (void *)umfIPCHandle->providerIpcData, &base);
     if (ret != UMF_RESULT_SUCCESS) {
-        LOG_ERR(
-            "umfOpenIPCHandle: memory provider failed to open the IPC handle.");
+        LOG_ERR("memory provider failed to open the IPC handle.");
         return ret;
     }
     *ptr = (void *)((uintptr_t)base + umfIPCHandle->offset);
@@ -108,7 +107,7 @@ umf_result_t umfCloseIPCHandle(void *ptr) {
     umf_alloc_info_t allocInfo;
     umf_result_t ret = umfMemoryTrackerGetAllocInfo(ptr, &allocInfo);
     if (ret != UMF_RESULT_SUCCESS) {
-        LOG_ERR("umfCloseIPCHandle: cannot get alloc info for ptr = %p.", ptr);
+        LOG_ERR("cannot get alloc info for ptr = %p.", ptr);
         return ret;
     }
 

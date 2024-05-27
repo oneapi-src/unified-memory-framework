@@ -250,8 +250,7 @@ void umf_ba_linear_destroy(umf_ba_linear_pool_t *pool) {
 #ifndef NDEBUG
     _DEBUG_EXECUTE(ba_debug_checks(pool));
     if (pool->metadata.global_n_allocs) {
-        LOG_ERR("umf_ba_linear_destroy(): global_n_allocs = %zu",
-                pool->metadata.global_n_allocs);
+        LOG_ERR("global_n_allocs = %zu", pool->metadata.global_n_allocs);
     }
 #endif /* NDEBUG */
 

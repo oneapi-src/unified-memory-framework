@@ -18,6 +18,7 @@ FILE *mock_fopen(const char *filename, const char *mode) {
     return MOCK_FILE_PTR;
 }
 
+const std::string MOCK_FN_NAME = "MOCK_FUNCTION_NAME";
 std::string expected_message = "";
 FILE *expected_stream;
 int expect_fput_count = 0;
@@ -149,7 +150,8 @@ TEST_F(test, parseEnv_errors) {
     helper_checkConfig(&b, &loggerConfig);
     helper_log_init("_level:debug");
     helper_checkConfig(&b, &loggerConfig);
-    expected_message = "[ERROR UMF] Cannot open output file - path too long\n";
+    expected_message =
+        "[ERROR UMF] util_log_init: Cannot open output file - path too long\n";
     std::string test_env = "output:file," + std::string(300, 'x');
     helper_log_init(test_env.c_str());
 }
@@ -231,8 +233,8 @@ TEST_F(test, parseEnv) {
                             expect_fput_count = 1;
                             if (expected_filename.size() > MAX_FILE_PATH) {
                                 expected_message =
-                                    "[ERROR UMF] Cannot open output file - "
-                                    "path too long\n";
+                                    "[ERROR UMF] util_log_init: Cannot open "
+                                    "output file - path too long\n";
                             }
                         }
                         helper_log_init(envVar.c_str());
@@ -283,8 +285,10 @@ TEST_F(test, log_levels) {
                 expect_fput_count = 1;
                 expect_fflush_count = 1;
             }
-            expected_message = "[" + helper_log_str(j) + " UMF] example log\n";
-            helper_test_log((util_log_level_t)j, "%s", "example log");
+            expected_message = "[" + helper_log_str(j) + " UMF] " +
+                               MOCK_FN_NAME + ": example log\n";
+            helper_test_log((util_log_level_t)j, MOCK_FN_NAME.c_str(), "%s",
+                            "example log");
         }
     }
 }
@@ -293,11 +297,11 @@ TEST_F(test, log_outputs) {
     std::vector<FILE *> outs = {stdout, stderr, MOCK_FILE_PTR};
     expect_fput_count = 1;
     expect_fflush_count = 1;
-    expected_message = "[DEBUG UMF] example log\n";
+    expected_message = "[DEBUG UMF] " + MOCK_FN_NAME + ": example log\n";
     for (auto o : outs) {
         loggerConfig = {0, 0, LOG_DEBUG, LOG_DEBUG, o};
         expected_stream = o;
-        helper_test_log(LOG_DEBUG, "%s", "example log");
+        helper_test_log(LOG_DEBUG, MOCK_FN_NAME.c_str(), "%s", "example log");
     }
 }
 
@@ -312,8 +316,10 @@ TEST_F(test, flush_levels) {
             } else {
                 expect_fflush_count = 1;
             }
-            expected_message = "[" + helper_log_str(j) + " UMF] example log\n";
-            helper_test_log((util_log_level_t)j, "%s", "example log");
+            expected_message = "[" + helper_log_str(j) + " UMF] " +
+                               MOCK_FN_NAME + ": example log\n";
+            helper_test_log((util_log_level_t)j, MOCK_FN_NAME.c_str(), "%s",
+                            "example log");
         }
     }
 }
@@ -322,11 +328,15 @@ TEST_F(test, long_log) {
     expect_fput_count = 1;
     expect_fflush_count = 1;
     loggerConfig = {0, 0, LOG_DEBUG, LOG_DEBUG, stderr};
-    expected_message = "[DEBUG UMF] " + std::string(8191, 'x') + "\n";
-    helper_test_log(LOG_DEBUG, "%s", std::string(8191, 'x').c_str());
-    expected_message =
-        "[DEBUG UMF] " + std::string(8191, 'x') + "[truncated...]\n";
-    helper_test_log(LOG_DEBUG, "%s", std::string(8192, 'x').c_str());
+    expected_message = "[DEBUG UMF] " + MOCK_FN_NAME + ": " +
+                       std::string(8189 - MOCK_FN_NAME.size(), 'x') + "\n";
+    helper_test_log(LOG_DEBUG, MOCK_FN_NAME.c_str(), "%s",
+                    std::string(8189 - MOCK_FN_NAME.size(), 'x').c_str());
+    expected_message = "[DEBUG UMF] " + MOCK_FN_NAME + ": " +
+                       std::string(8189 - MOCK_FN_NAME.size(), 'x') +
+                       "[truncated...]\n";
+    helper_test_log(LOG_DEBUG, MOCK_FN_NAME.c_str(), "%s",
+                    std::string(8190 - MOCK_FN_NAME.size(), 'x').c_str());
 }
 
 TEST_F(test, timestamp_log) {
@@ -336,7 +346,7 @@ TEST_F(test, timestamp_log) {
     // TODO: for now we do not check output message,
     // as it requires more sophisticated message validation (a.k.a regrex)
     expected_message = "";
-    helper_test_log(LOG_DEBUG, "%s", "example log");
+    helper_test_log(LOG_DEBUG, MOCK_FN_NAME.c_str(), "%s", "example log");
 }
 
 TEST_F(test, pid_log) {
@@ -346,7 +356,7 @@ TEST_F(test, pid_log) {
     // TODO: for now we do not check output message,
     // as it requires more sophisticated message validation (a.k.a regrex)
     expected_message = "";
-    helper_test_log(LOG_DEBUG, "%s", "example log");
+    helper_test_log(LOG_DEBUG, MOCK_FN_NAME.c_str(), "%s", "example log");
 }
 
 TEST_F(test, log_fatal) {
@@ -355,9 +365,9 @@ TEST_F(test, log_fatal) {
     expect_fput_count = 1;
     expect_fflush_count = 1;
 
-    expected_message = "[FATAL UMF] example log\n";
+    expected_message = "[FATAL UMF] " + MOCK_FN_NAME + ": example log\n";
     strerror_ret_static = 0;
-    helper_test_log(LOG_FATAL, "%s", "example log");
+    helper_test_log(LOG_FATAL, MOCK_FN_NAME.c_str(), "%s", "example log");
 }
 
 TEST_F(test, log_macros) {
@@ -366,35 +376,35 @@ TEST_F(test, log_macros) {
     expect_fflush_count = 1;
     loggerConfig = {0, 0, LOG_DEBUG, LOG_DEBUG, stderr};
 
-    expected_message = "[DEBUG UMF] example log\n";
+    expected_message = "[DEBUG UMF] TestBody: example log\n";
     fput_count = 0;
     fflush_count = 0;
     LOG_DEBUG("example log");
     EXPECT_EQ(fput_count, expect_fput_count);
     EXPECT_EQ(fflush_count, expect_fflush_count);
 
-    expected_message = "[INFO  UMF] example log\n";
+    expected_message = "[INFO  UMF] TestBody: example log\n";
     fput_count = 0;
     fflush_count = 0;
     LOG_INFO("example log");
     EXPECT_EQ(fput_count, expect_fput_count);
     EXPECT_EQ(fflush_count, expect_fflush_count);
 
-    expected_message = "[WARN  UMF] example log\n";
+    expected_message = "[WARN  UMF] TestBody: example log\n";
     fput_count = 0;
     fflush_count = 0;
     LOG_WARN("example log");
     EXPECT_EQ(fput_count, expect_fput_count);
     EXPECT_EQ(fflush_count, expect_fflush_count);
 
-    expected_message = "[ERROR UMF] example log\n";
+    expected_message = "[ERROR UMF] TestBody: example log\n";
     fput_count = 0;
     fflush_count = 0;
     LOG_ERR("example log");
     EXPECT_EQ(fput_count, expect_fput_count);
     EXPECT_EQ(fflush_count, expect_fflush_count);
 
-    expected_message = "[FATAL UMF] example log\n";
+    expected_message = "[FATAL UMF] TestBody: example log\n";
     fput_count = 0;
     fflush_count = 0;
     LOG_FATAL("example log");
@@ -418,11 +428,12 @@ TEST_F(test, plog_basic) {
     expect_fput_count = 1;
     expect_fflush_count = 1;
 
-    expected_message = "[DEBUG UMF] example log: test error\n";
+    expected_message =
+        "[DEBUG UMF] " + MOCK_FN_NAME + ": example log: test error\n";
     strerror_ret_static = 1;
-    helper_test_plog(LOG_DEBUG, "%s", "example log");
+    helper_test_plog(LOG_DEBUG, MOCK_FN_NAME.c_str(), "%s", "example log");
     strerror_ret_static = 0;
-    helper_test_plog(LOG_DEBUG, "%s", "example log");
+    helper_test_plog(LOG_DEBUG, MOCK_FN_NAME.c_str(), "%s", "example log");
 }
 
 TEST_F(test, plog_invalid) {
@@ -433,11 +444,12 @@ TEST_F(test, plog_invalid) {
     expect_fput_count = 1;
     expect_fflush_count = 1;
 
-    expected_message = "[DEBUG UMF] example log: unknown error\n";
+    expected_message =
+        "[DEBUG UMF] " + MOCK_FN_NAME + ": example log: unknown error\n";
     strerror_ret_static = 1;
-    helper_test_plog(LOG_DEBUG, "%s", "example log");
+    helper_test_plog(LOG_DEBUG, MOCK_FN_NAME.c_str(), "%s", "example log");
     strerror_ret_static = 0;
-    helper_test_plog(LOG_DEBUG, "%s", "example log");
+    helper_test_plog(LOG_DEBUG, MOCK_FN_NAME.c_str(), "%s", "example log");
 }
 
 TEST_F(test, plog_long_message) {
@@ -449,12 +461,16 @@ TEST_F(test, plog_long_message) {
     strerr = "test error";
     errno = 1;
 
-    expected_message = "[DEBUG UMF] " + std::string(8180, 'x') + ": test err" +
-                       "o[truncated...]\n";
-    helper_test_plog(LOG_DEBUG, "%s", std::string(8180, 'x').c_str());
-    expected_message =
-        "[DEBUG UMF] " + std::string(8191, 'x') + "[truncated...]\n";
-    helper_test_plog(LOG_DEBUG, "%s", std::string(8192, 'x').c_str());
+    expected_message = "[DEBUG UMF] " + MOCK_FN_NAME + ": " +
+                       std::string(8178 - MOCK_FN_NAME.length(), 'x') +
+                       ": test err" + "o[truncated...]\n";
+    helper_test_plog(LOG_DEBUG, MOCK_FN_NAME.c_str(), "%s",
+                     std::string(8178 - MOCK_FN_NAME.length(), 'x').c_str());
+    expected_message = "[DEBUG UMF] " + MOCK_FN_NAME + ": " +
+                       std::string(8189 - MOCK_FN_NAME.length(), 'x') +
+                       "[truncated...]\n";
+    helper_test_plog(LOG_DEBUG, MOCK_FN_NAME.c_str(), "%s",
+                     std::string(8190 - MOCK_FN_NAME.length(), 'x').c_str());
 }
 
 TEST_F(test, plog_long_error) {
@@ -468,14 +484,15 @@ TEST_F(test, plog_long_error) {
     errno = 1;
 #ifdef WIN32
     /* On windows limit is shorter, and there is no truncated detection*/
-    expected_message =
-        "[DEBUG UMF] example log: " + std::string(79, 'x') + "\n";
+    expected_message = "[DEBUG UMF] " + MOCK_FN_NAME +
+                       ": example log: " + std::string(79, 'x') + "\n";
 #else
-    expected_message = "[DEBUG UMF] example log: " + std::string(1023, 'x') +
+    expected_message = "[DEBUG UMF] " + MOCK_FN_NAME +
+                       ": example log: " + std::string(1023, 'x') +
                        "[truncated...]\n";
 #endif
     strerror_ret_static = 0;
-    helper_test_plog(LOG_DEBUG, "%s", "example log");
+    helper_test_plog(LOG_DEBUG, MOCK_FN_NAME.c_str(), "%s", "example log");
     strerr = NULL; // do not use tmp.c_str() beyond its scope
 }
 
@@ -487,35 +504,35 @@ TEST_F(test, log_pmacros) {
     errno = 1;
     strerr = "test error";
 
-    expected_message = "[DEBUG UMF] example log: test error\n";
+    expected_message = "[DEBUG UMF] TestBody: example log: test error\n";
     fput_count = 0;
     fflush_count = 0;
     LOG_PDEBUG("example log");
     EXPECT_EQ(fput_count, expect_fput_count);
     EXPECT_EQ(fflush_count, expect_fflush_count);
 
-    expected_message = "[INFO  UMF] example log: test error\n";
+    expected_message = "[INFO  UMF] TestBody: example log: test error\n";
     fput_count = 0;
     fflush_count = 0;
     LOG_PINFO("example log");
     EXPECT_EQ(fput_count, expect_fput_count);
     EXPECT_EQ(fflush_count, expect_fflush_count);
 
-    expected_message = "[WARN  UMF] example log: test error\n";
+    expected_message = "[WARN  UMF] TestBody: example log: test error\n";
     fput_count = 0;
     fflush_count = 0;
     LOG_PWARN("example log");
     EXPECT_EQ(fput_count, expect_fput_count);
     EXPECT_EQ(fflush_count, expect_fflush_count);
 
-    expected_message = "[ERROR UMF] example log: test error\n";
+    expected_message = "[ERROR UMF] TestBody: example log: test error\n";
     fput_count = 0;
     fflush_count = 0;
     LOG_PERR("example log");
     EXPECT_EQ(fput_count, expect_fput_count);
     EXPECT_EQ(fflush_count, expect_fflush_count);
 
-    expected_message = "[FATAL UMF] example log: test error\n";
+    expected_message = "[FATAL UMF] TestBody: example log: test error\n";
     fput_count = 0;
     fflush_count = 0;
     LOG_PFATAL("example log");
