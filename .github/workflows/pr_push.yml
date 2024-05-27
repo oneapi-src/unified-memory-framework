@@ -98,7 +98,6 @@ jobs:
       run: >
         cmake
         -B ${{github.workspace}}/build
-        -DUMF_BUILD_LIBUMF_POOL_SCALABLE=ON
         -DUMF_BUILD_SHARED_LIBRARY=ON
         -DUMF_TESTS_FAIL_ON_SKIP=ON
         ${{matrix.extra_build_options}}
