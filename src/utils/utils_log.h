@@ -45,8 +45,6 @@ void util_plog(util_log_level_t level, const char *format, ...)
     __attribute__((format(printf, 2, 3)));
 #endif
 
-void util_log_init(void);
-
 #ifdef __cplusplus
 }
 #endif
