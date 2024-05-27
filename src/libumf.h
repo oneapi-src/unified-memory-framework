@@ -17,6 +17,8 @@ extern "C" {
 // initializes runtime state needed by the library (needed mostly for static libaries on windows)
 void libumfInit(void);
 
+int umf_is_destroyed(void);
+
 #ifdef __cplusplus
 }
 #endif

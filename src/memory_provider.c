@@ -195,6 +195,10 @@ umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
 }
 
 void umfMemoryProviderDestroy(umf_memory_provider_handle_t hProvider) {
+    if (umf_is_destroyed() || umf_ba_is_destroyed()) {
+        return;
+    }
+
     hProvider->ops.finalize(hProvider->provider_priv);
     umf_ba_global_free(hProvider);
 }

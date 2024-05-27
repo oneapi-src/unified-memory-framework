@@ -33,6 +33,8 @@ void __attribute__((destructor)) umfDestroy(void) {
     umfDestroyTopology();
 }
 
+int umf_is_destroyed(void) { return (TRACKER == NULL); }
+
 void libumfInit(void) {
     // do nothing, additional initialization not needed
 }

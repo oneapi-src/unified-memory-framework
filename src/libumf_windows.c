@@ -23,8 +23,11 @@ static void umfCreate(void) {
 
 static void umfDestroy(void) {
     umfMemoryTrackerDestroy(TRACKER);
+    TRACKER = NULL;
     umf_ba_destroy_global();
 }
+
+int umf_is_destroyed(void) { return (TRACKER == NULL); }
 
 #if defined(UMF_SHARED_LIBRARY)
 BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {

@@ -71,6 +71,10 @@ err_provider_create:
 }
 
 void umfPoolDestroy(umf_memory_pool_handle_t hPool) {
+    if (umf_is_destroyed() || umf_ba_is_destroyed()) {
+        return;
+    }
+
     hPool->ops.finalize(hPool->pool_priv);
     if (hPool->flags & UMF_POOL_CREATE_FLAG_OWN_PROVIDER) {
         // Destroy associated memory provider.

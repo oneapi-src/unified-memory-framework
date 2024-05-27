@@ -47,6 +47,8 @@ void umf_ba_destroy_global(void) {
     }
 }
 
+int umf_ba_is_destroyed(void) { return (BASE_ALLOC.ac[0] == NULL); }
+
 static void umf_ba_create_global(void) {
     for (int i = 0; i < NUM_ALLOCATION_CLASSES; i++) {
         // allocation classes need to be powers of 2

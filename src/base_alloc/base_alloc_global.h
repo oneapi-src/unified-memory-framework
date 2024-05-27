@@ -19,6 +19,7 @@ void umf_ba_global_free(void *ptr);
 void umf_ba_destroy_global(void);
 size_t umf_ba_global_malloc_usable_size(void *ptr);
 void *umf_ba_global_aligned_alloc(size_t size, size_t alignment);
+int umf_ba_is_destroyed(void);
 
 #ifdef __cplusplus
 }
