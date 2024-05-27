@@ -175,6 +175,10 @@ if(LINUX) # OS-specific functions are implemented only for Linux now
         NAME memspace_highest_bandwidth
         SRCS memspaces/memspace_highest_bandwidth.cpp
         LIBS ${UMF_UTILS_FOR_TEST} ${LIBNUMA_LIBRARIES} ${LIBHWLOC_LIBRARIES})
+    add_umf_test(
+        NAME mempolicy
+        SRCS memspaces/mempolicy.cpp
+        LIBS ${LIBNUMA_LIBRARIES})
 endif()
 
 if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_LEVEL_ZERO_PROVIDER)

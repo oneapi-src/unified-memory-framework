@@ -18,6 +18,7 @@
 #include "base_alloc.h"
 #include "base_alloc_global.h"
 #include "memory_target_numa.h"
+#include "mempolicy_internal.h"
 #include "topology.h"
 #include "utils_log.h"
 
@@ -48,10 +49,9 @@ static void numa_finalize(void *memTarget) { umf_ba_global_free(memTarget); }
 
 static umf_result_t numa_memory_provider_create_from_memspace(
     umf_memspace_handle_t memspace, void **memTargets, size_t numTargets,
-    umf_memspace_policy_handle_t policy,
+    umf_const_mempolicy_handle_t policy,
     umf_memory_provider_handle_t *provider) {
-    // TODO: apply policy
-    (void)policy;
+
     struct numa_memory_target_t **numaTargets =
         (struct numa_memory_target_t **)memTargets;
 
@@ -70,6 +70,26 @@ static umf_result_t numa_memory_provider_create_from_memspace(
     }
 
     umf_os_memory_provider_params_t params = umfOsMemoryProviderParamsDefault();
+
+    if (policy) {
+        switch (policy->type) {
+        case UMF_MEMPOLICY_INTERLEAVE:
+            params.numa_mode = UMF_NUMA_MODE_INTERLEAVE;
+            params.part_size = policy->ops.part_size;
+            break;
+        case UMF_MEMPOLICY_BIND:
+            params.numa_mode = UMF_NUMA_MODE_BIND;
+            break;
+        case UMF_MEMPOLICY_PREFERRED:
+            params.numa_mode = UMF_NUMA_MODE_PREFERRED;
+            break;
+        default:
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        }
+    } else {
+        params.numa_mode = UMF_NUMA_MODE_BIND;
+    }
+
     params.numa_list =
         umf_ba_global_alloc(sizeof(*params.numa_list) * numNodesProvider);
 
@@ -82,7 +102,6 @@ static umf_result_t numa_memory_provider_create_from_memspace(
     }
 
     params.numa_list_len = numNodesProvider;
-    params.numa_mode = UMF_NUMA_MODE_BIND;
 
     umf_memory_provider_handle_t numaProvider = NULL;
     int ret = umfMemoryProviderCreate(umfOsMemoryProviderOps(), &params,
@@ -101,7 +120,7 @@ static umf_result_t numa_memory_provider_create_from_memspace(
 
 static umf_result_t numa_pool_create_from_memspace(
     umf_memspace_handle_t memspace, void **memTargets, size_t numTargets,
-    umf_memspace_policy_handle_t policy, umf_memory_pool_handle_t *pool) {
+    umf_const_mempolicy_handle_t policy, umf_memory_pool_handle_t *pool) {
     (void)memspace;
     (void)memTargets;
     (void)numTargets;

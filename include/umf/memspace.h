@@ -13,7 +13,7 @@
 #include <umf/base.h>
 #include <umf/memory_pool.h>
 #include <umf/memory_provider.h>
-#include <umf/memspace_policy.h>
+#include <umf/mempolicy.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,7 +29,7 @@ typedef struct umf_memspace_t *umf_memspace_handle_t;
 /// \return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 ///
 umf_result_t umfPoolCreateFromMemspace(umf_memspace_handle_t hMemspace,
-                                       umf_memspace_policy_handle_t hPolicy,
+                                       umf_const_mempolicy_handle_t hPolicy,
                                        umf_memory_pool_handle_t *hPool);
 
 ///
@@ -41,7 +41,7 @@ umf_result_t umfPoolCreateFromMemspace(umf_memspace_handle_t hMemspace,
 ///
 umf_result_t
 umfMemoryProviderCreateFromMemspace(umf_memspace_handle_t hMemspace,
-                                    umf_memspace_policy_handle_t hPolicy,
+                                    umf_const_mempolicy_handle_t hPolicy,
                                     umf_memory_provider_handle_t *hProvider);
 
 ///

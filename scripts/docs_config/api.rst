@@ -104,7 +104,18 @@ TODO: Add general information about memspaces.
 Memspace
 ------------------------------------------
 .. doxygenfile:: memspace.h
-    :sections: define enum typedef func var
+    :sections: define enum typedef func
+
+Mempolicy             
+==========================================
+
+TODO: Add general information about mempolicies.
+
+Mempolicy
+------------------------------------------
+.. doxygenfile:: mempolicy.h
+    :sections: define enum typedef func
+
 
 Inter-Process Communication
 ==========================================

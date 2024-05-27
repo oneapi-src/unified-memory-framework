@@ -10,8 +10,6 @@
 #ifndef UMF_MEMORY_TARGET_OPS_H
 #define UMF_MEMORY_TARGET_OPS_H 1
 
-#include <stdbool.h>
-
 #include <umf/base.h>
 #include <umf/memspace.h>
 
@@ -33,11 +31,11 @@ typedef struct umf_memory_target_ops_t {
 
     umf_result_t (*pool_create_from_memspace)(
         umf_memspace_handle_t memspace, void **memoryTargets, size_t numTargets,
-        umf_memspace_policy_handle_t policy, umf_memory_pool_handle_t *pool);
+        umf_const_mempolicy_handle_t policy, umf_memory_pool_handle_t *pool);
 
     umf_result_t (*memory_provider_create_from_memspace)(
         umf_memspace_handle_t memspace, void **memoryTargets, size_t numTargets,
-        umf_memspace_policy_handle_t policy,
+        umf_const_mempolicy_handle_t policy,
         umf_memory_provider_handle_t *provider);
 
     umf_result_t (*get_capacity)(void *memoryTarget, size_t *capacity);
