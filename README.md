@@ -125,6 +125,7 @@ List of options provided by CMake:
 | USE_TSAN | Enable ThreadSanitizer checks | ON/OFF | OFF |
 | USE_MSAN | Enable MemorySanitizer checks | ON/OFF | OFF |
 | USE_VALGRIND | Enable Valgrind instrumentation | ON/OFF | OFF |
+| USE_GCOV | Enable gcov support (Linux only) | ON/OFF | OFF |
 
 ## Architecture: memory pools and providers
 
