@@ -117,7 +117,7 @@ else()
 endif()
 
 if(LINUX)
-    set(BASE_NAME ipc_shm_ipcapi)
+    set(BASE_NAME ipc_ipcapi)
     set(EXAMPLE_NAME umf_example_${BASE_NAME})
 
     foreach(loop_var IN ITEMS "producer" "consumer")

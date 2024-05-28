@@ -10,7 +10,7 @@
 # port should be a number from the range <1024, 65535>
 PORT=$(( 1024 + ( $$ % ( 65535 - 1024 ))))
 
-# The ipc_shm_ipcapi example requires using pidfd_getfd(2)
+# The ipc_ipcapi example requires using pidfd_getfd(2)
 # to obtain a duplicate of another process's file descriptor.
 # Permission to duplicate another process's file descriptor
 # is governed by a ptrace access mode PTRACE_MODE_ATTACH_REALCREDS check (see ptrace(2))
@@ -27,11 +27,11 @@ fi
 
 UMF_LOG_VAL="level:debug;flush:debug;output:stderr;pid:yes"
 
-echo "Starting ipc_shm_ipcapi CONSUMER on port $PORT ..."
-UMF_LOG=$UMF_LOG_VAL ./umf_example_ipc_shm_ipcapi_consumer $PORT &
+echo "Starting ipc_ipcapi CONSUMER on port $PORT ..."
+UMF_LOG=$UMF_LOG_VAL ./umf_example_ipc_ipcapi_consumer $PORT &
 
 echo "Waiting 1 sec ..."
 sleep 1
 
-echo "Starting ipc_shm_ipcapi PRODUCER on port $PORT ..."
-UMF_LOG=$UMF_LOG_VAL ./umf_example_ipc_shm_ipcapi_producer $PORT
+echo "Starting ipc_ipcapi PRODUCER on port $PORT ..."
+UMF_LOG=$UMF_LOG_VAL ./umf_example_ipc_ipcapi_producer $PORT
