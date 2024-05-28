@@ -186,12 +186,18 @@ if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
         SRCS providers/provider_level_zero.cpp
         LIBS ${UMF_UTILS_FOR_TEST} ze_loader)
 
+    target_include_directories(umf_test-provider_level_zero
+                               PRIVATE ${LEVEL_ZERO_INCLUDE_DIRS})
+
     add_umf_test(
         NAME provider_level_zero_dlopen
         SRCS providers/provider_level_zero.cpp
         LIBS ${UMF_UTILS_FOR_TEST})
     target_compile_definitions(umf_test-provider_level_zero_dlopen
                                PUBLIC USE_DLOPEN=1)
+
+    target_include_directories(umf_test-provider_level_zero_dlopen
+                               PRIVATE ${LEVEL_ZERO_INCLUDE_DIRS})
 endif()
 
 if(UMF_BUILD_SHARED_LIBRARY)
