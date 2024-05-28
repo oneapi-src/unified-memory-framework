@@ -10,9 +10,6 @@
 #include <stddef.h>
 #include <string.h>
 
-// Level Zero API
-#include <ze_api.h>
-
 #include <umf.h>
 #include <umf/memory_provider_ops.h>
 #include <umf/providers/provider_level_zero.h>
@@ -24,6 +21,7 @@
 #include "utils_load_library.h"
 #include "utils_log.h"
 #include "utils_sanitizers.h"
+#include "ze_api.h"
 
 typedef struct ze_memory_provider_t {
     ze_context_handle_t context;

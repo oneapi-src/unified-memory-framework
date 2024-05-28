@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// To use the Level Zero API, the Level Zero SDK has to be installed
+// on the system
 #ifdef _WIN32
 #include <ze_api.h>
 #else

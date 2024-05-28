@@ -52,9 +52,8 @@ if(UMF_BUILD_GPU_EXAMPLES
         LIBS disjoint_pool ze_loader umf)
 
     target_include_directories(
-        ${EXAMPLE_NAME}
-        PRIVATE ${LEVEL_ZERO_INCLUDE_DIRS} ${UMF_CMAKE_SOURCE_DIR}/src/utils
-                ${UMF_CMAKE_SOURCE_DIR}/include)
+        ${EXAMPLE_NAME} PRIVATE ${UMF_CMAKE_SOURCE_DIR}/src/utils
+                                ${UMF_CMAKE_SOURCE_DIR}/include)
 
     target_link_directories(${EXAMPLE_NAME} PRIVATE ${LIBHWLOC_LIBRARY_DIRS})
 
