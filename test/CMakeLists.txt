@@ -249,9 +249,8 @@ endif()
 
 add_umf_test(NAME ipc SRCS ipcAPI.cpp)
 
-if(LINUX)
-    set(BASE_NAME ipc_os_prov)
-    set(TEST_NAME umf-${BASE_NAME})
+function(build_umf_ipc_test name)
+    set(BASE_NAME ${name})
 
     foreach(loop_var IN ITEMS "producer" "consumer")
         set(EXEC_NAME umf_test-${BASE_NAME}_${loop_var})
@@ -266,19 +265,28 @@ if(LINUX)
 
         target_link_directories(${EXEC_NAME} PRIVATE ${LIBHWLOC_LIBRARY_DIRS})
     endforeach(loop_var)
+endfunction()
 
-    file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/${BASE_NAME}.sh
+function(add_umf_ipc_test script)
+    set(TEST_NAME umf-${script})
+
+    file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/${script}.sh
          DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
     add_test(
         NAME ${TEST_NAME}
-        COMMAND ${BASE_NAME}.sh
+        COMMAND ${script}.sh
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
     set_tests_properties(${TEST_NAME} PROPERTIES LABELS "umf")
     if(NOT UMF_TESTS_FAIL_ON_SKIP)
         set_tests_properties(${TEST_NAME} PROPERTIES SKIP_RETURN_CODE 125)
     endif()
+endfunction()
+
+if(LINUX)
+    build_umf_ipc_test(ipc_os_prov)
+    add_umf_ipc_test(ipc_os_prov)
 else()
     message(
         STATUS "IPC shared memory test is supported on Linux only - skipping")
