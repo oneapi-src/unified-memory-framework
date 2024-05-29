@@ -116,8 +116,8 @@ else()
     )
 endif()
 
-if(LINUX)
-    set(BASE_NAME ipc_ipcapi)
+function(build_umf_ipc_example name)
+    set(BASE_NAME ${name})
     set(EXAMPLE_NAME umf_example_${BASE_NAME})
 
     foreach(loop_var IN ITEMS "producer" "consumer")
@@ -133,19 +133,28 @@ if(LINUX)
 
         target_link_directories(${EX_NAME} PRIVATE ${LIBHWLOC_LIBRARY_DIRS})
     endforeach(loop_var)
+endfunction()
 
-    file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/basic/${BASE_NAME}.sh
+function(add_umf_ipc_example script)
+    set(EXAMPLE_NAME umf_example_${script})
+
+    file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/basic/${script}.sh
          DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
     add_test(
         NAME ${EXAMPLE_NAME}
-        COMMAND ${BASE_NAME}.sh
+        COMMAND ${script}.sh
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
     set_tests_properties(${EXAMPLE_NAME} PROPERTIES LABELS "example")
     if(NOT UMF_TESTS_FAIL_ON_SKIP)
         set_tests_properties(${EXAMPLE_NAME} PROPERTIES SKIP_RETURN_CODE 125)
     endif()
+endfunction()
+
+if(LINUX)
+    build_umf_ipc_example(ipc_ipcapi)
+    add_umf_ipc_example(ipc_ipcapi)
 else()
     message(
         STATUS
