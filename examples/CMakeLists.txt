@@ -154,7 +154,7 @@ endfunction()
 
 if(LINUX)
     build_umf_ipc_example(ipc_ipcapi)
-    add_umf_ipc_example(ipc_ipcapi)
+    add_umf_ipc_example(ipc_ipcapi_anon_fd)
 else()
     message(
         STATUS
