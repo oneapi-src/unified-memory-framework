@@ -286,7 +286,7 @@ endfunction()
 
 if(LINUX)
     build_umf_ipc_test(ipc_os_prov)
-    add_umf_ipc_test(ipc_os_prov)
+    add_umf_ipc_test(ipc_os_prov_anon_fd)
 else()
     message(
         STATUS "IPC shared memory test is supported on Linux only - skipping")
