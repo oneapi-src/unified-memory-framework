@@ -64,7 +64,8 @@ static const char *level_to_str(util_log_level_t l) {
 }
 
 static void util_log_internal(util_log_level_t level, int perror,
-                              const char *format, va_list args) {
+                              const char *func, const char *format,
+                              va_list args) {
     if (!loggerConfig.output && level != LOG_FATAL) {
         return; //logger not enabled
     }
@@ -79,7 +80,13 @@ static void util_log_internal(util_log_level_t level, int perror,
     char *b_pos = buffer;
     int b_size = sizeof(buffer);
 
-    int tmp = vsnprintf(buffer, sizeof(buffer), format, args);
+    int tmp = snprintf(b_pos, b_size, "%s: ", func);
+    ASSERT(tmp > 0);
+
+    b_pos += (int)tmp;
+    b_size -= (int)tmp;
+
+    tmp = vsnprintf(b_pos, b_size, format, args);
     ASSERT(tmp > 0);
 
     b_pos += (int)tmp;
@@ -182,17 +189,19 @@ static void util_log_internal(util_log_level_t level, int perror,
     }
 }
 
-void util_log(util_log_level_t level, const char *format, ...) {
+void util_log(util_log_level_t level, const char *func, const char *format,
+              ...) {
     va_list args;
     va_start(args, format);
-    util_log_internal(level, 0, format, args);
+    util_log_internal(level, 0, func, format, args);
     va_end(args);
 }
 
-void util_plog(util_log_level_t level, const char *format, ...) {
+void util_plog(util_log_level_t level, const char *func, const char *format,
+               ...) {
     va_list args;
     va_start(args, format);
-    util_log_internal(level, 1, format, args);
+    util_log_internal(level, 1, func, format, args);
     va_end(args);
 }
 
