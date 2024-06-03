@@ -52,7 +52,7 @@ static umf_result_t memoryTargetHandlesToPriv(umf_memspace_handle_t memspace,
 }
 
 umf_result_t umfPoolCreateFromMemspace(umf_memspace_handle_t memspace,
-                                       umf_memspace_policy_handle_t policy,
+                                       umf_const_mempolicy_handle_t policy,
                                        umf_memory_pool_handle_t *pool) {
     if (!memspace || !pool) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
@@ -77,7 +77,7 @@ umf_result_t umfPoolCreateFromMemspace(umf_memspace_handle_t memspace,
 
 umf_result_t
 umfMemoryProviderCreateFromMemspace(umf_memspace_handle_t memspace,
-                                    umf_memspace_policy_handle_t policy,
+                                    umf_const_mempolicy_handle_t policy,
                                     umf_memory_provider_handle_t *provider) {
     if (!memspace || !provider) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;

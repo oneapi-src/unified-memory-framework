@@ -16,8 +16,6 @@
 extern "C" {
 #endif
 
-#include "base_alloc.h"
-
 struct umf_memory_target_ops_t;
 typedef struct umf_memory_target_ops_t umf_memory_target_ops_t;
 

@@ -58,6 +58,7 @@ set(UMF_SOURCES
     memory_provider.c
     memory_provider_get_last_failed.c
     memory_target.c
+    mempolicy.c
     memspace.c
     provider/provider_tracking.c
     critnib/critnib.c

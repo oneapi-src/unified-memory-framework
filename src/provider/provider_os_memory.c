@@ -27,31 +27,6 @@
 
 #define NODESET_STR_BUF_LEN 1024
 
-typedef struct os_memory_provider_t {
-    unsigned protection; // combination of OS-specific protection flags
-    unsigned visibility; // memory visibility mode
-    int fd;              // file descriptor for memory mapping
-    size_t size_fd;      // size of file used for memory mapping
-    size_t max_size_fd;  // maximum size of file used for memory mapping
-    // A critnib map storing (ptr, fd_offset + 1) pairs. We add 1 to fd_offset
-    // in order to be able to store fd_offset equal 0, because
-    // critnib_get() returns value or NULL, so a value cannot equal 0.
-    // It is needed mainly in the get_ipc_handle and open_ipc_handle hooks
-    // to mmap a specific part of a file.
-    critnib *fd_offset_map;
-
-    // NUMA config
-    hwloc_bitmap_t *nodeset;
-    unsigned nodeset_len;
-    char *nodeset_str_buf;
-    hwloc_membind_policy_t numa_policy;
-    int numa_flags; // combination of hwloc flags
-
-    size_t part_size;
-    size_t alloc_sum; // sum of all allocations - used for manual interleaving
-    hwloc_topology_t topo;
-} os_memory_provider_t;
-
 #define TLS_MSG_BUF_LEN 1024
 
 typedef struct os_last_native_error_t {
