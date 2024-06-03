@@ -5,16 +5,16 @@
 #ifdef _WIN32
 //workaround for std::numeric_limits on windows
 #define NOMINMAX
-#include <ze_api.h>
-#else
-#include <level_zero/ze_api.h>
 #endif
-#include "ipcFixtures.hpp"
-#include "pool.hpp"
-#include "umf/providers/provider_level_zero.h"
-#include "utils_load_library.h"
 
 #include <mutex>
+
+#include <umf/providers/provider_level_zero.h>
+
+#include "ipcFixtures.hpp"
+#include "pool.hpp"
+#include "utils_load_library.h"
+#include "ze_api.h"
 
 using umf_test::test;
 using namespace umf_test;
