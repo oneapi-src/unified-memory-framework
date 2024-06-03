@@ -74,6 +74,9 @@ void util_align_ptr_size(void **ptr, size_t *size, size_t alignment);
 // get the current process ID
 int utils_getpid(void);
 
+// get the current thread ID
+int utils_gettid(void);
+
 #ifdef __cplusplus
 }
 #endif

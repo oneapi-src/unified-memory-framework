@@ -93,14 +93,18 @@ add_umf_test(NAME memoryProvider SRCS memoryProviderAPI.cpp)
 if(UMF_BUILD_SHARED_LIBRARY)
     # if build as shared library, utils symbols won't be visible in tests
     set(UMF_UTILS_FOR_TEST umf_utils)
+    if(LINUX OR MACOSX)
+        set(UMF_UTILS_SOURCES
+            ../src/utils/utils_common.c ../src/utils/utils_posix_common.c
+            ../src/utils/utils_posix_concurrency.c)
+    elseif(WINDOWS)
+        set(UMF_UTILS_SOURCES
+            ../src/utils/utils_common.c ../src/utils/utils_windows_common.c
+            ../src/utils/utils_windows_concurrency.c)
+    endif()
 endif()
 
-if(UMF_BUILD_SHARED_LIBRARY)
-    add_umf_test(NAME logger SRCS utils/utils_log.cpp
-                                  ../src/utils/utils_common.c)
-else()
-    add_umf_test(NAME logger SRCS utils/utils_log.cpp)
-endif()
+add_umf_test(NAME logger SRCS utils/utils_log.cpp ${UMF_UTILS_SOURCES})
 
 add_umf_test(
     NAME utils_common
