@@ -223,8 +223,7 @@ TEST_P(umfIpcTest, BasicFlow) {
     pool.reset(nullptr);
     EXPECT_EQ(stat.getCount, 1);
     EXPECT_EQ(stat.putCount, stat.getCount);
-    // TODO: enale check below once cache for open IPC handles is implemented
-    // EXPECT_EQ(stat.openCount, 1);
+    EXPECT_EQ(stat.openCount, 1);
     EXPECT_EQ(stat.closeCount, stat.openCount);
 }
 
