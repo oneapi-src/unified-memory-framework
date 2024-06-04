@@ -19,6 +19,7 @@
 
 #include "base_alloc.h"
 #include "critnib.h"
+#include "ipc_cache.h"
 #include "utils_concurrency.h"
 
 #ifdef __cplusplus
