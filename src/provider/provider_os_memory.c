@@ -331,6 +331,13 @@ static umf_result_t os_initialize(void *params, void **provider) {
         goto err_destroy_hwloc_topology;
     }
 
+    os_provider->fd_offset_map = critnib_new();
+    if (!os_provider->fd_offset_map) {
+        LOG_ERR("creating file descriptor offset map failed");
+        ret = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+        goto err_destroy_hwloc_topology;
+    }
+
     ret = translate_params(in_params, os_provider);
     if (ret != UMF_RESULT_SUCCESS) {
         goto err_destroy_hwloc_topology;
@@ -350,19 +357,10 @@ static umf_result_t os_initialize(void *params, void **provider) {
         }
     }
 
-    os_provider->fd_offset_map = critnib_new();
-    if (!os_provider->fd_offset_map) {
-        LOG_ERR("creating file descriptor offset map failed");
-        ret = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-        goto err_free_nodeset_str_buf;
-    }
-
     *provider = os_provider;
 
     return UMF_RESULT_SUCCESS;
 
-err_free_nodeset_str_buf:
-    umf_ba_global_free(os_provider->nodeset_str_buf);
 err_destroy_hwloc_topology:
     hwloc_topology_destroy(os_provider->topo);
 err_free_os_provider:
