@@ -14,6 +14,11 @@ set(UMF_CMAKE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 list(APPEND CMAKE_MODULE_PATH "${UMF_CMAKE_SOURCE_DIR}/cmake")
 include(${UMF_CMAKE_SOURCE_DIR}/cmake/helpers.cmake)
 
+include(CTest)
+include(CMakePackageConfigHelpers)
+include(GNUInstallDirs)
+find_package(PkgConfig)
+
 # CMAKE_PROJECT_VERSION[_MAJOR|_MINOR|_PATCH] variables are set via 'project'
 # command. They cannot contain any "pre-release" part, though. We use custom
 # "UMF_SRC_VERSION" to store more accurate (source) version - this var should be
@@ -39,6 +44,8 @@ option(UMF_BUILD_EXAMPLES "Build UMF examples" ON)
 option(UMF_BUILD_FUZZTESTS "Build UMF fuzz tests" OFF)
 option(UMF_BUILD_GPU_EXAMPLES "Build UMF GPU examples" OFF)
 option(UMF_DEVELOPER_MODE "Enable additional developer checks" OFF)
+option(UMF_LINK_HWLOC_STATICALLY
+       "Link UMF with HWLOC library statically (Windows+Release only)" OFF)
 option(UMF_FORMAT_CODE_STYLE
        "Add clang, cmake, and black -format-check and -format-apply targets"
        OFF)
@@ -81,6 +88,44 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(OS_NAME "macosx")
 else()
     message(FATAL_ERROR "Unknown OS type")
+endif()
+
+if(NOT UMF_LINK_HWLOC_STATICALLY)
+    pkg_check_modules(LIBHWLOC hwloc>=2.3.0)
+    if(NOT LIBHWLOC_FOUND)
+        find_package(LIBHWLOC 2.3.0 REQUIRED hwloc)
+    endif()
+    # add PATH to DLL on Windows
+    set(DLL_PATH_LIST
+        "${DLL_PATH_LIST};PATH=path_list_append:${LIBHWLOC_LIBRARY_DIRS}/../bin"
+    )
+else()
+    if(NOT WINDOWS)
+        message(FATAL_ERROR "hwloc can be statically linked only on Windows")
+    endif()
+    include(FetchContent)
+    set(HWLOC_ENABLE_TESTING OFF)
+    set(HWLOC_SKIP_LSTOPO ON)
+    set(HWLOC_SKIP_TOOLS ON)
+    FetchContent_Declare(
+        hwloc_targ
+        GIT_REPOSITORY "https://github.com/open-mpi/hwloc.git"
+        GIT_TAG hwloc-2.10.0
+        SOURCE_SUBDIR contrib/windows-cmake/ FIND_PACKAGE_ARGS)
+
+    FetchContent_GetProperties(hwloc_targ)
+    if(NOT hwloc_targ_POPULATED)
+        FetchContent_MakeAvailable(hwloc_targ)
+    endif()
+
+    set(LIBHWLOC_INCLUDE_DIRS
+        ${hwloc_targ_SOURCE_DIR}/include;${hwloc_targ_BINARY_DIR}/include)
+    set(LIBHWLOC_LIBRARY_DIRS
+        ${hwloc_targ_BINARY_DIR}/Release;${hwloc_targ_BINARY_DIR}/Debug)
+
+    message(STATUS "    LIBHWLOC_LIBRARIES = ${LIBHWLOC_LIBRARIES}")
+    message(STATUS "    LIBHWLOC_INCLUDE_DIRS = ${LIBHWLOC_INCLUDE_DIRS}")
+    message(STATUS "    LIBHWLOC_LIBRARY_DIRS = ${LIBHWLOC_LIBRARY_DIRS}")
 endif()
 
 # This build type check is not possible on Windows when CMAKE_BUILD_TYPE is not
@@ -129,11 +174,6 @@ foreach(option_name ${OPTIONS_REQUIRING_CXX})
         break()
     endif()
 endforeach()
-
-include(CTest)
-include(CMakePackageConfigHelpers)
-include(GNUInstallDirs)
-find_package(PkgConfig)
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -186,7 +226,8 @@ if(WINDOWS)
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
     # set PATH to DLLs on Windows
     set(DLL_PATH_LIST
-        "PATH=path_list_append:${PROJECT_BINARY_DIR}/bin/$<CONFIG>")
+        "${DLL_PATH_LIST};PATH=path_list_append:${PROJECT_BINARY_DIR}/bin/$<CONFIG>"
+    )
     # add path to the proxy lib DLL
     set(DLL_PATH_LIST
         "${DLL_PATH_LIST};PATH=path_list_append:${PROJECT_BINARY_DIR}/src/proxy_lib"
@@ -196,14 +237,6 @@ if(WINDOWS)
         "${DLL_PATH_LIST};PATH=path_list_append:${PROJECT_BINARY_DIR}/src/proxy_lib/$<CONFIG>"
     )
 endif()
-
-pkg_check_modules(LIBHWLOC hwloc>=2.3.0)
-if(NOT LIBHWLOC_FOUND)
-    find_package(LIBHWLOC 2.3.0 REQUIRED hwloc)
-endif()
-# add PATH to DLL on Windows
-set(DLL_PATH_LIST
-    "${DLL_PATH_LIST};PATH=path_list_append:${LIBHWLOC_LIBRARY_DIRS}/../bin")
 
 pkg_check_modules(TBB tbb)
 if(NOT TBB_FOUND)
@@ -240,10 +273,17 @@ if(WINDOWS)
     # In MSVC builds, there is no way to determine the actual build type during
     # the CMake configuration step. Therefore, this message is printed in all
     # MSVC builds.
-    message(
-        STATUS
-            "The proxy library will be built, however it is supported only in the Release build on Windows"
-    )
+    if(UMF_LINK_HWLOC_STATICALLY)
+        message(
+            STATUS
+                "The proxy library will be disabled - static linkage with hwloc is not supported yet"
+        )
+    else()
+        message(
+            STATUS
+                "The proxy library will be built, however it is supported only in the Release build on Windows"
+        )
+    endif()
 endif()
 if(UMF_PROXY_LIB_BASED_ON_POOL STREQUAL SCALABLE)
     if(UMF_POOL_SCALABLE_ENABLED)
