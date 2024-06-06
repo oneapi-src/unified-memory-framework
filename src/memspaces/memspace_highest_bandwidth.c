@@ -95,10 +95,6 @@ static void umfMemspaceHighestBandwidthInit(void) {
             ret);
         assert(ret == UMF_RESULT_ERROR_NOT_SUPPORTED);
     }
-
-#if defined(_WIN32) && !defined(UMF_SHARED_LIBRARY)
-    atexit(umfMemspaceHighestBandwidthDestroy);
-#endif
 }
 
 umf_memspace_handle_t umfMemspaceHighestBandwidthGet(void) {

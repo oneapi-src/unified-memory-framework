@@ -39,10 +39,6 @@ static void umfCreateTopology(void) {
         hwloc_topology_destroy(topology);
         topology = NULL;
     }
-
-#if defined(_WIN32) && !defined(UMF_SHARED_LIBRARY)
-    atexit(umfDestroyTopology);
-#endif
 }
 
 hwloc_topology_t umfGetTopology(void) {

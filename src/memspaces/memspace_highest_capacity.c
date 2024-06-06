@@ -67,10 +67,6 @@ static void umfMemspaceHighestCapacityInit(void) {
         umfMemspaceHighestCapacityCreate(&UMF_MEMSPACE_HIGHEST_CAPACITY);
     assert(ret == UMF_RESULT_SUCCESS);
     (void)ret;
-
-#if defined(_WIN32) && !defined(UMF_SHARED_LIBRARY)
-    atexit(umfMemspaceHostAllDestroy);
-#endif
 }
 
 umf_memspace_handle_t umfMemspaceHighestCapacityGet(void) {

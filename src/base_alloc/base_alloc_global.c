@@ -67,10 +67,6 @@ static void umf_ba_create_global(void) {
 
     size_t smallestSize = BASE_ALLOC.ac_sizes[0];
     BASE_ALLOC.smallest_ac_size_log2 = log2Utils(smallestSize);
-
-#if defined(_WIN32) && !defined(UMF_SHARED_LIBRARY)
-    atexit(umf_ba_destroy_global);
-#endif
 }
 
 // returns index of the allocation class for a given size

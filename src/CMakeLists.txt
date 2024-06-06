@@ -53,6 +53,7 @@ set(BA_SOURCES
 
 set(UMF_SOURCES
     ${BA_SOURCES}
+    libumf.c
     ipc.c
     memory_pool.c
     memory_provider.c

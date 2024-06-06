@@ -7,31 +7,17 @@
  *
  */
 
-#include <stdlib.h>
 #include <windows.h>
 
-#include "base_alloc_global.h"
-#include "provider_tracking.h"
-#include "utils_log.h"
+#include <umf.h>
 
-umf_memory_tracker_handle_t TRACKER = NULL;
+#if defined(UMF_SHARED_LIBRARY) /* SHARED LIBRARY */
 
-static void umfCreate(void) {
-    util_log_init();
-    TRACKER = umfMemoryTrackerCreate();
-}
-
-static void umfDestroy(void) {
-    umfMemoryTrackerDestroy(TRACKER);
-    umf_ba_destroy_global();
-}
-
-#if defined(UMF_SHARED_LIBRARY)
 BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
-    if (fdwReason == DLL_PROCESS_DETACH) {
-        umfDestroy();
-    } else if (fdwReason == DLL_PROCESS_ATTACH) {
-        umfCreate();
+    if (fdwReason == DLL_PROCESS_ATTACH) {
+        (void)umfInit();
+    } else if (fdwReason == DLL_PROCESS_DETACH) {
+        umfTearDown();
     }
     return TRUE;
 }
@@ -39,17 +25,20 @@ BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
 void libumfInit(void) {
     // do nothing, additional initialization not needed
 }
-#else
+
+#else /* STATIC LIBRARY */
+
 INIT_ONCE init_once_flag = INIT_ONCE_STATIC_INIT;
 
 BOOL CALLBACK initOnceCb(PINIT_ONCE InitOnce, PVOID Parameter,
                          PVOID *lpContext) {
-    umfCreate();
-    atexit(umfDestroy);
-    return TRACKER ? TRUE : FALSE;
+    int ret = umfInit();
+    atexit(umfTearDown);
+    return (ret == 0) ? TRUE : FALSE;
 }
 
 void libumfInit(void) {
     InitOnceExecuteOnce(&init_once_flag, initOnceCb, NULL, NULL);
 }
+
 #endif
