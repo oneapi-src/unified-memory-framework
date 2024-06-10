@@ -10,6 +10,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "base_alloc.h"
 #include "base_alloc_global.h"
@@ -45,6 +46,10 @@ void umf_ba_destroy_global(void) {
             BASE_ALLOC.ac[i] = NULL;
         }
     }
+
+    // portable version of "ba_is_initialized = UTIL_ONCE_FLAG_INIT;"
+    static UTIL_ONCE_FLAG is_initialized = UTIL_ONCE_FLAG_INIT;
+    memcpy(&ba_is_initialized, &is_initialized, sizeof(ba_is_initialized));
 }
 
 static void umf_ba_create_global(void) {

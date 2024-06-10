@@ -73,6 +73,11 @@ void umfMemspaceHostAllDestroy(void) {
     if (UMF_MEMSPACE_HOST_ALL) {
         umfMemspaceDestroy(UMF_MEMSPACE_HOST_ALL);
         UMF_MEMSPACE_HOST_ALL = NULL;
+
+        // portable version of "UMF_MEMSPACE_HOST_ALL_INITIALIZED = UTIL_ONCE_FLAG_INIT;"
+        static UTIL_ONCE_FLAG is_initialized = UTIL_ONCE_FLAG_INIT;
+        memcpy(&UMF_MEMSPACE_HOST_ALL_INITIALIZED, &is_initialized,
+               sizeof(UMF_MEMSPACE_HOST_ALL_INITIALIZED));
     }
 }
 

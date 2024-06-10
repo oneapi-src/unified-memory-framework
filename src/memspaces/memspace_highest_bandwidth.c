@@ -78,6 +78,11 @@ void umfMemspaceHighestBandwidthDestroy(void) {
     if (UMF_MEMSPACE_HIGHEST_BANDWIDTH) {
         umfMemspaceDestroy(UMF_MEMSPACE_HIGHEST_BANDWIDTH);
         UMF_MEMSPACE_HIGHEST_BANDWIDTH = NULL;
+
+        // portable version of "UMF_MEMSPACE_HBW_INITIALIZED = UTIL_ONCE_FLAG_INIT;"
+        static UTIL_ONCE_FLAG is_initialized = UTIL_ONCE_FLAG_INIT;
+        memcpy(&UMF_MEMSPACE_HBW_INITIALIZED, &is_initialized,
+               sizeof(UMF_MEMSPACE_HBW_INITIALIZED));
     }
 }
 
