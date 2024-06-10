@@ -41,6 +41,7 @@ typedef struct os_memory_provider_t {
     critnib *fd_offset_map;
 
     // NUMA config
+    umf_numa_mode_t mode;
     hwloc_bitmap_t *nodeset;
     unsigned nodeset_len;
     char *nodeset_str_buf;
@@ -49,6 +50,14 @@ typedef struct os_memory_provider_t {
 
     size_t part_size;
     size_t alloc_sum; // sum of all allocations - used for manual interleaving
+
+    struct {
+        unsigned weight;
+        hwloc_bitmap_t target;
+    } *partitions;
+    unsigned partitions_len;
+    size_t partitions_weight_sum;
+
     hwloc_topology_t topo;
 } os_memory_provider_t;
 

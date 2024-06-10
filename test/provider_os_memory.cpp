@@ -178,6 +178,32 @@ TEST_F(test, create_WRONG_NUMA_MODE_INTERLEAVE) {
     ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 }
 
+TEST_F(test, create_WRONG_NUMA_MODE_SPLIT) {
+    auto ret = create_os_provider_with_mode(UMF_NUMA_MODE_SPLIT, nullptr, 0);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, create_ZERO_WEIGHT_PARTITION) {
+    umf_numa_split_partition_t p = {0, 0};
+    umf_result_t umf_result;
+    umf_memory_provider_handle_t os_memory_provider = nullptr;
+    umf_os_memory_provider_params_t os_memory_provider_params =
+        umfOsMemoryProviderParamsDefault();
+
+    os_memory_provider_params.numa_mode = UMF_NUMA_MODE_SPLIT;
+    os_memory_provider_params.numa_list = &valid_list;
+    os_memory_provider_params.numa_list_len = valid_list_len;
+    os_memory_provider_params.partitions = &p;
+    os_memory_provider_params.partitions_len = 1;
+
+    umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(),
+                                         &os_memory_provider_params,
+                                         &os_memory_provider);
+
+    EXPECT_EQ(os_memory_provider, nullptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
 // positive tests using test_alloc_free_success
 
 auto defaultParams = umfOsMemoryProviderParamsDefault();

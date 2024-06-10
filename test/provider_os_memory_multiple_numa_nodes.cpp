@@ -6,8 +6,10 @@
 #include "numa_helpers.h"
 #include "test_helpers.h"
 
+#include <algorithm>
 #include <numa.h>
 #include <numaif.h>
+#include <random>
 #include <sched.h>
 
 #include <umf/providers/provider_os_memory.h>
@@ -422,6 +424,181 @@ TEST_F(testNuma, checkModeInterleaveCustomPartSize) {
     ASSERT_NE(ptr, nullptr);
     memset(ptr, 0xFF, size);
     EXPECT_EQ(numa_nodes[index], getNumaNodeByPtr(ptr));
+    umfMemoryProviderFree(os_memory_provider, ptr, size);
+}
+
+using numaSplitOut = std::vector<std::vector<unsigned>>;
+
+// Input for Numa split test - in the following format
+// <numa nodes required, number of pages to allocate, input partitions, expected bind of pages >
+using numaSplitArg =
+    std::tuple<unsigned, size_t, std::vector<umf_numa_split_partition_t>,
+               numaSplitOut>;
+
+numaSplitOut mergeOutVec(std::initializer_list<numaSplitOut> vecs) {
+    size_t size = 0;
+    for (numaSplitOut v : vecs) {
+        size += v.size();
+    }
+    numaSplitOut ret;
+    ret.reserve(size);
+    for (numaSplitOut v : vecs) {
+        ret.insert(ret.end(), v.begin(), v.end());
+    }
+    return ret;
+}
+
+struct testNumaSplit : testNuma, testing::WithParamInterface<numaSplitArg> {
+    static std::vector<numaSplitArg> getTestInput() {
+        std::vector<numaSplitArg> ret;
+        std::vector<umf_numa_split_partition_t> in = {{2, 0},  {4, 1}, {1, 2},
+                                                      {10, 1}, {1, 2}, {17, 0}};
+        auto out = mergeOutVec({numaSplitOut(2, {0}),
+                                numaSplitOut(4, {1}),
+                                {{2}},
+                                numaSplitOut(10, {1}),
+                                {{2}},
+                                numaSplitOut(17, {0})});
+
+        ret.push_back({3, 35, in, out});
+
+        out = mergeOutVec({{{0}, {0, 1}},
+                           numaSplitOut(3, {1}),
+                           {{1, 2}, {1, 2}},
+                           numaSplitOut(8, {1}),
+                           {{0, 1, 2}},
+                           numaSplitOut(15, {0})});
+
+        ret.push_back({3, 31, in, out});
+
+        in = {{31, 1}, {17, 1}, {14, 2}, {19, 0}, {8, 2}, {5, 1}, {15, 2}};
+        out = mergeOutVec({
+            numaSplitOut(28, {1}),
+            {{1, 2}},
+            numaSplitOut(7, {2}),
+            {{0, 2}},
+            numaSplitOut(11, {0}),
+            {{0, 2}},
+            numaSplitOut(4, {2}),
+            {{1, 2}},
+            numaSplitOut(2, {1}),
+            {{1, 2}},
+            numaSplitOut(8, {2}),
+        });
+
+        ret.push_back({3, 65, in, out});
+
+        out = {{0, 1, 2}};
+        ret.push_back({3, 1, in, out});
+
+        out = {{1}, {0, 1, 2}, {0, 1, 2}};
+        ret.push_back({3, 3, in, out});
+
+        in = {{1, 0}, {1, 2}};
+        out = {{0}, {2}};
+        ret.push_back({3, 2, in, out});
+
+        in = {{1, 0}, {UINT32_MAX, 1}};
+        out = {{0, 1}, {1}};
+        ret.push_back({3, 2, in, out});
+
+        in = {};
+        out = {{0}, {0, 1}, {1}, {1, 2}, {2}};
+        ret.push_back({3, 5, in, out});
+        out = {{0}, {0}, {0, 1}, {1}, {1}};
+        ret.push_back({2, 5, in, out});
+
+        std::vector<unsigned> numa_nodes = get_available_numa_nodes();
+
+        std::vector<umf_numa_split_partition_t> in1, in2, in3;
+
+        for (unsigned i = 0; i < numa_nodes.size(); i++) {
+            numaSplitOut out1, out2, out3;
+            std::vector<umf_numa_split_partition_t> in1, in2, in3;
+            in1 = {};
+            out1 = {{}};
+            for (unsigned j = 0; j <= i; j++) {
+                in2.push_back({42, j});
+                in3.push_back({j + 1, j});
+                out1[0].push_back(j);
+                out2.push_back({j});
+                out3 = mergeOutVec({out3, numaSplitOut(j + 1, {j})});
+            }
+            unsigned z = i + 1;
+            ret.push_back({z, 1, in1, out1});
+            ret.push_back({z, z, in2, out2});
+            ret.push_back({z, z * (z - 1) / 2 + z, in3, out3});
+        }
+        return ret;
+    }
+};
+
+INSTANTIATE_TEST_SUITE_P(checkModeSplit, testNumaSplit,
+                         ::testing::ValuesIn(testNumaSplit::getTestInput()));
+
+// positive test for numa mode split
+TEST_P(testNumaSplit, checkModeSplit) {
+    auto param = GetParam();
+    size_t page_size = sysconf(_SC_PAGE_SIZE);
+    auto [required_numa_nodes, pages, in, out] = param;
+
+    umf_os_memory_provider_params_t os_memory_provider_params =
+        UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
+
+    std::vector<unsigned> numa_nodes = get_available_numa_nodes();
+
+    if (numa_nodes.size() < required_numa_nodes) {
+        GTEST_SKIP_("Not enough numa nodes");
+    }
+
+    ASSERT_EQ(out.size(), pages)
+        << "Wrong test input - out array size doesn't match page count";
+
+    auto v = numa_nodes;
+    // If input partitions are not defined then partitions are created based on numa_list order.
+    // Do not shuffle them in this case, as this test require deterministic binds
+    if (in.size() != 0) {
+        std::mt19937 g(0);
+        std::shuffle(v.begin(), v.begin() + required_numa_nodes, g);
+    }
+
+    os_memory_provider_params.numa_list = v.data();
+    os_memory_provider_params.numa_list_len = required_numa_nodes;
+    os_memory_provider_params.numa_mode = UMF_NUMA_MODE_SPLIT;
+
+    os_memory_provider_params.partitions = in.data();
+    os_memory_provider_params.partitions_len = in.size();
+    initOsProvider(os_memory_provider_params);
+
+    size_t size = page_size * pages;
+    umf_result_t umf_result;
+    umf_result = umfMemoryProviderAlloc(os_memory_provider, size, 0, &ptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(ptr, nullptr);
+
+    struct bitmask *nodemask = numa_allocate_nodemask();
+
+    // 'ptr' must point to an initialized value before retrieving its numa node
+    memset(ptr, 0xFF, size);
+    // Test where each page will be allocated.
+    size_t index = 0;
+    for (auto x : out) {
+        numa_bitmask_clearall(nodemask);
+
+        // Query the memory policy for the specific address
+        get_mempolicy(NULL, nodemask->maskp, nodemask->size,
+                      (char *)ptr + page_size * index++, MPOL_F_ADDR);
+
+        std::vector<unsigned> bindNodes;
+        for (unsigned i = 0; i < nodemask->size; i++) {
+            if (numa_bitmask_isbitset(nodemask, i)) {
+                bindNodes.push_back(i);
+            }
+        }
+
+        EXPECT_EQ(x, bindNodes) << "index:" << index - 1;
+    }
+    numa_free_nodemask(nodemask);
     umfMemoryProviderFree(os_memory_provider, ptr, size);
 }
 

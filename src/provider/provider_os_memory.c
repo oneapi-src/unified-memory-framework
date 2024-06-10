@@ -172,6 +172,7 @@ static umf_result_t validate_numa_mode(umf_numa_mode_t mode,
         return UMF_RESULT_SUCCESS;
     case UMF_NUMA_MODE_BIND:
     case UMF_NUMA_MODE_INTERLEAVE:
+    case UMF_NUMA_MODE_SPLIT:
         if (nodemaskEmpty) {
             // nodeset must not be empty
             return UMF_RESULT_ERROR_INVALID_ARGUMENT;
@@ -191,6 +192,7 @@ static hwloc_membind_policy_t translate_numa_mode(umf_numa_mode_t mode,
     case UMF_NUMA_MODE_DEFAULT:
         return HWLOC_MEMBIND_DEFAULT;
     case UMF_NUMA_MODE_BIND:
+    case UMF_NUMA_MODE_SPLIT:
         return HWLOC_MEMBIND_BIND;
     case UMF_NUMA_MODE_INTERLEAVE:
         // In manual mode, we manually implement interleaving,
@@ -213,6 +215,9 @@ static hwloc_membind_policy_t translate_numa_mode(umf_numa_mode_t mode,
 static int dedicated_node_bind(umf_os_memory_provider_params_t *in_params) {
     if (in_params->numa_mode == UMF_NUMA_MODE_INTERLEAVE) {
         return in_params->part_size > 0;
+    }
+    if (in_params->numa_mode == UMF_NUMA_MODE_SPLIT) {
+        return 1;
     }
     return 0;
 }
@@ -327,6 +332,84 @@ err_close_file:
     return result;
 }
 
+static umf_result_t
+validatePartitions(umf_os_memory_provider_params_t *params) {
+
+    if (params->partitions_len == 0) {
+        return UMF_RESULT_SUCCESS;
+    }
+    for (unsigned i = 0; i < params->partitions_len; i++) {
+        int found = 0;
+        if (params->partitions[i].weight == 0) {
+            LOG_ERR("partition weight cannot be zero");
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        }
+        for (unsigned j = 0; j < params->numa_list_len; j++) {
+            if (params->numa_list[j] == params->partitions[i].target) {
+                found = 1;
+                break;
+            }
+        }
+        if (!found) {
+            LOG_ERR("partition target %u, not found in numa_list",
+                    params->partitions[i].target);
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        }
+    }
+
+    return UMF_RESULT_SUCCESS;
+}
+
+static void free_bitmaps(os_memory_provider_t *provider) {
+    for (unsigned i = 0; i < provider->nodeset_len; i++) {
+        hwloc_bitmap_free(provider->nodeset[i]);
+    }
+    umf_ba_global_free(provider->nodeset);
+}
+
+static umf_result_t
+initializePartitions(os_memory_provider_t *provider,
+                     umf_os_memory_provider_params_t *in_params) {
+    if (provider->mode != UMF_NUMA_MODE_SPLIT) {
+        return UMF_RESULT_SUCCESS;
+    }
+
+    provider->partitions_len = in_params->partitions_len
+                                   ? in_params->partitions_len
+                                   : in_params->numa_list_len;
+
+    provider->partitions = umf_ba_global_alloc(sizeof(*provider->partitions) *
+                                               provider->partitions_len);
+
+    if (!provider->partitions) {
+        LOG_ERR("allocating memory for partitions failed");
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+    if (in_params->partitions_len == 0) {
+        for (unsigned i = 0; i < provider->partitions_len; i++) {
+            provider->partitions[i].weight = 1;
+            provider->partitions[i].target = provider->nodeset[i];
+        }
+        provider->partitions_weight_sum = provider->partitions_len;
+    } else {
+        provider->partitions_weight_sum = 0;
+        for (unsigned i = 0; i < in_params->partitions_len; i++) {
+            provider->partitions[i].weight = in_params->partitions[i].weight;
+            for (unsigned j = 0; j < in_params->numa_list_len; j++) {
+                if (in_params->numa_list[j] ==
+                    in_params->partitions[i].target) {
+                    provider->partitions[i].target = provider->nodeset[j];
+                    break;
+                }
+            }
+
+            provider->partitions_weight_sum += in_params->partitions[i].weight;
+        }
+    }
+
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_result_t translate_params(umf_os_memory_provider_params_t *in_params,
                                      os_memory_provider_t *provider) {
     umf_result_t result;
@@ -353,14 +436,24 @@ static umf_result_t translate_params(umf_os_memory_provider_params_t *in_params,
                 in_params->numa_mode);
         return result;
     }
-    LOG_INFO("established HWLOC NUMA policy: %u", provider->numa_policy);
+
+    result = validatePartitions(in_params);
+
+    if (result != UMF_RESULT_SUCCESS) {
+        return result;
+    }
 
     int is_dedicated_node_bind = dedicated_node_bind(in_params);
     provider->numa_policy =
         translate_numa_mode(in_params->numa_mode, is_dedicated_node_bind);
+
+    LOG_INFO("established HWLOC NUMA policy: %u", provider->numa_policy);
+
     provider->numa_flags =
         getHwlocMembindFlags(in_params->numa_mode, is_dedicated_node_bind);
+    provider->mode = in_params->numa_mode;
     provider->part_size = in_params->part_size;
+
     result =
         initialize_nodeset(provider, in_params->numa_list,
                            in_params->numa_list_len, is_dedicated_node_bind);
@@ -368,6 +461,8 @@ static umf_result_t translate_params(umf_os_memory_provider_params_t *in_params,
         LOG_ERR("error while initializing a nodeset");
         return result;
     }
+
+    initializePartitions(provider, in_params);
 
     return UMF_RESULT_SUCCESS;
 }
@@ -414,14 +509,21 @@ static umf_result_t os_initialize(void *params, void **provider) {
         goto err_destroy_hwloc_topology;
     }
 
+    os_provider->fd_offset_map = critnib_new();
+    if (!os_provider->fd_offset_map) {
+        LOG_ERR("creating file descriptor offset map failed");
+        ret = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+        goto err_destroy_hwloc_topology;
+    }
+
     ret = translate_params(in_params, os_provider);
     if (ret != UMF_RESULT_SUCCESS) {
-        goto err_destroy_hwloc_topology;
+        goto err_destroy_critnib;
     }
 
     ret = create_fd_for_mmap(in_params, os_provider);
     if (ret != UMF_RESULT_SUCCESS) {
-        goto err_destroy_hwloc_topology;
+        goto err_destroy_bitmaps;
     }
 
     os_provider->nodeset_str_buf = umf_ba_global_alloc(NODESET_STR_BUF_LEN);
@@ -438,22 +540,14 @@ static umf_result_t os_initialize(void *params, void **provider) {
         }
     }
 
-    os_provider->fd_offset_map = critnib_new();
-    if (!os_provider->fd_offset_map) {
-        LOG_ERR("creating file descriptor offset map failed");
-        ret = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-        goto err_free_nodeset_str_buf;
-    }
-
     *provider = os_provider;
 
     return UMF_RESULT_SUCCESS;
 
-err_free_nodeset_str_buf:
-    umf_ba_global_free(os_provider->nodeset_str_buf);
-    if (os_provider->fd > 0) {
-        (void)os_close_fd(os_provider->fd);
-    }
+err_destroy_bitmaps:
+    free_bitmaps(os_provider);
+err_destroy_critnib:
+    critnib_delete(os_provider->fd_offset_map);
 err_destroy_hwloc_topology:
     hwloc_topology_destroy(os_provider->topo);
 err_free_os_provider:
@@ -471,14 +565,11 @@ static void os_finalize(void *provider) {
 
     critnib_delete(os_provider->fd_offset_map);
 
+    free_bitmaps(os_provider);
+
     if (os_provider->nodeset_str_buf) {
         umf_ba_global_free(os_provider->nodeset_str_buf);
     }
-
-    for (unsigned i = 0; i < os_provider->nodeset_len; i++) {
-        hwloc_bitmap_free(os_provider->nodeset[i]);
-    }
-    umf_ba_global_free(os_provider->nodeset);
     hwloc_topology_destroy(os_provider->topo);
     umf_ba_global_free(os_provider);
 }
@@ -600,15 +691,179 @@ static int os_mmap_aligned(void *hint_addr, size_t length, size_t alignment,
     return 0;
 }
 
-static int get_membind(os_memory_provider_t *provider, size_t size) {
-    if (provider->nodeset_len == 1) {
-        return 0;
+/// membbind_t - a memory binding iterator
+typedef struct membind_t {
+    /// Bitmap representing the set of nodes to which memory will be bound
+    hwloc_bitmap_t bitmap;
+    /// Size of the memory bound to the current node
+    size_t bind_size;
+    /// Address of the memory for next bind
+    char *addr;
+    /// Total size of memory allocation left to bind
+    size_t alloc_size;
+
+    /// Current node index
+    unsigned node;
+
+    /// Size of a single memory page
+    size_t page_size;
+
+    /// Remainder from the division used to distribute pages across nodes
+    size_t rest;
+
+    /// Number of pages to allocate
+    size_t pages;
+
+    /// Pages left to bind in current node
+    size_t leftover_bind;
+} membind_t;
+
+/// Advances the memory binding configuration for the next set of pages
+/// If we have to bind bytes which belongs to single page to mutiliple nodes,
+/// we will bind it to all nodes that those bytes belongs to - and lets kernel decide where to allocate it.
+static void nextBind(os_memory_provider_t *provider, membind_t *membind) {
+
+    // If all nodes have been processed.
+    if (membind->node == provider->partitions_len) {
+        // if alloc_size is not 0, it means that something is wrong
+        assert(membind->alloc_size == 0);
+        return;
     }
 
-    assert(provider->part_size != 0);
-    size_t s = util_fetch_and_add64(&provider->alloc_sum, size);
+    // Reset the bitmap for next binding
+    hwloc_bitmap_zero(membind->bitmap);
 
-    return (s / provider->part_size) % provider->nodeset_len;
+    // Flag to check if binding crosses partition boundaries
+    int bind_border_page = 0;
+    if (membind->leftover_bind != 0) {
+        // if we have more than a page leftover from previous bind
+        hwloc_bitmap_or(membind->bitmap, membind->bitmap,
+                        provider->partitions[membind->node].target);
+    } else if (membind->rest != 0) {
+        // if we have less than a page leftover to bind from previous bind
+        hwloc_bitmap_or(membind->bitmap, membind->bitmap,
+                        provider->partitions[membind->node].target);
+        membind->node++;
+        bind_border_page = 1;
+    }
+
+    size_t bind = membind->leftover_bind;
+    size_t rest = membind->rest;
+
+    // Determine the number of pages to bind for the current node based on weight
+    while (bind == 0) {
+        // Count next "ideal" bind size
+        // It will be equal to (bind + rest/weight_sum) * page_size
+        bind = membind->pages * provider->partitions[membind->node].weight /
+               provider->partitions_weight_sum;
+        rest += membind->pages * provider->partitions[membind->node].weight %
+                provider->partitions_weight_sum;
+
+        // Adjust binding if the remainder exceeds the total weight sum
+        if (rest >= provider->partitions_weight_sum) {
+            bind++;
+            rest -= provider->partitions_weight_sum;
+        }
+
+        // Update the bitmap to include the current node's target
+        hwloc_bitmap_or(membind->bitmap, membind->bitmap,
+                        provider->partitions[membind->node].target);
+
+        // If the current node has to bind less than a page
+        // we will bind next page to multiple nodes
+        if (bind == 0) {
+            membind->node++;
+            assert(membind->node < provider->partitions_len);
+            bind_border_page = 1;
+        }
+    }
+
+    // Update bind size and remainder based on whether the binding crossed a partition boundary
+    if (bind_border_page) {
+        // this means that next page belongs to multiple nodes.
+        // in this case we have to bind this page separately, and
+        // process rest of the pages in the next iteration
+        membind->bind_size = membind->page_size;
+        membind->leftover_bind = bind - 1;
+        membind->rest = rest;
+    } else {
+        membind->bind_size = membind->page_size * bind;
+        membind->rest = rest;
+        membind->leftover_bind = 0;
+    }
+    // if processing this node is finished move to next one
+    if (membind->rest == 0 && membind->leftover_bind == 0) {
+        membind->node++;
+    }
+}
+
+/// Initialize membind iterator
+static membind_t membindFirst(os_memory_provider_t *provider, void *addr,
+                              size_t size, size_t page_size) {
+
+    membind_t membind;
+    memset(&membind, 0, sizeof(membind));
+
+    membind.alloc_size = ALIGN_UP(size, page_size);
+    membind.page_size = page_size;
+    membind.addr = addr;
+    membind.pages = membind.alloc_size / membind.page_size;
+    if (provider->nodeset_len == 1) {
+        membind.bind_size = ALIGN_UP(size, membind.page_size);
+        membind.bitmap = provider->nodeset[0];
+        return membind;
+    }
+
+    if (provider->mode == UMF_NUMA_MODE_INTERLEAVE) {
+        assert(provider->part_size != 0);
+        size_t s = util_fetch_and_add64(&provider->alloc_sum, size);
+        membind.node = (s / provider->part_size) % provider->nodeset_len;
+        membind.bitmap = provider->nodeset[membind.node];
+        membind.bind_size = ALIGN_UP(provider->part_size, membind.page_size);
+        if (membind.bind_size > membind.alloc_size) {
+            membind.bind_size = membind.alloc_size;
+        }
+    }
+
+    if (provider->mode == UMF_NUMA_MODE_SPLIT) {
+        membind.bitmap = hwloc_bitmap_alloc();
+        if (!membind.bitmap) {
+            LOG_ERR("Allocation of hwloc_bitmap failed");
+            return membind;
+        }
+        nextBind(provider, &membind);
+    }
+
+    return membind;
+}
+
+static membind_t membindNext(os_memory_provider_t *provider,
+                             membind_t membind) {
+    membind.alloc_size -= membind.bind_size;
+    membind.addr += membind.bind_size;
+    if (membind.alloc_size == 0) {
+        membind.bind_size = 0;
+        if (provider->mode == UMF_NUMA_MODE_SPLIT &&
+            provider->nodeset_len != 1) {
+            hwloc_bitmap_free(membind.bitmap);
+        }
+        return membind;
+    }
+    assert(provider->nodeset_len != 1);
+
+    if (provider->mode == UMF_NUMA_MODE_INTERLEAVE) {
+        membind.node++;
+        membind.node %= provider->nodeset_len;
+        membind.bitmap = provider->nodeset[membind.node];
+        membind.bind_size = ALIGN_UP(provider->part_size, membind.page_size);
+        if (membind.bind_size > membind.alloc_size) {
+            membind.bind_size = membind.alloc_size;
+        }
+    }
+    if (provider->mode == UMF_NUMA_MODE_SPLIT) {
+        nextBind(provider, &membind);
+    }
+    return membind;
 }
 
 static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
@@ -660,22 +915,18 @@ static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
 
     // Bind memory to NUMA nodes if numa_policy is other than DEFAULT
     if (os_provider->numa_policy != HWLOC_MEMBIND_DEFAULT) {
-        errno = 0;
-        unsigned membind = get_membind(os_provider, ALIGN_UP(size, page_size));
-        size_t bind_size = os_provider->nodeset_len == 1
-                               ? size
-                               : ALIGN_UP(os_provider->part_size, page_size);
-        char *ptr_iter = addr;
+        membind_t membind = membindFirst(os_provider, addr, size, page_size);
+        if (membind.bitmap == NULL) {
+            goto err_unmap;
+        }
 
         do {
-            size_t s = bind_size < size ? bind_size : size;
-            ret = hwloc_set_area_membind(
-                os_provider->topo, ptr_iter, s, os_provider->nodeset[membind++],
-                os_provider->numa_policy, os_provider->numa_flags);
+            errno = 0;
+            ret = hwloc_set_area_membind(os_provider->topo, membind.addr,
+                                         membind.bind_size, membind.bitmap,
+                                         os_provider->numa_policy,
+                                         os_provider->numa_flags);
 
-            size -= s;
-            ptr_iter += s;
-            membind %= os_provider->nodeset_len;
             if (ret) {
                 os_store_last_native_error(UMF_OS_RESULT_ERROR_BIND_FAILED,
                                            errno);
@@ -689,7 +940,8 @@ static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
                     goto err_unmap;
                 }
             }
-        } while (size > 0);
+            membind = membindNext(os_provider, membind);
+        } while (membind.alloc_size > 0);
     }
 
     if (os_provider->fd > 0) {
