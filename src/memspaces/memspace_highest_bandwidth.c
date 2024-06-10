@@ -78,6 +78,11 @@ void umfMemspaceHighestBandwidthDestroy(void) {
     if (UMF_MEMSPACE_HIGHEST_BANDWIDTH) {
         umfMemspaceDestroy(UMF_MEMSPACE_HIGHEST_BANDWIDTH);
         UMF_MEMSPACE_HIGHEST_BANDWIDTH = NULL;
+
+        // portable version of "UMF_MEMSPACE_HBW_INITIALIZED = UTIL_ONCE_FLAG_INIT;"
+        static UTIL_ONCE_FLAG is_initialized = UTIL_ONCE_FLAG_INIT;
+        memcpy(&UMF_MEMSPACE_HBW_INITIALIZED, &is_initialized,
+               sizeof(UMF_MEMSPACE_HBW_INITIALIZED));
     }
 }
 
@@ -90,10 +95,6 @@ static void umfMemspaceHighestBandwidthInit(void) {
             ret);
         assert(ret == UMF_RESULT_ERROR_NOT_SUPPORTED);
     }
-
-#if defined(_WIN32) && !defined(UMF_SHARED_LIBRARY)
-    atexit(umfMemspaceHighestBandwidthDestroy);
-#endif
 }
 
 umf_memspace_handle_t umfMemspaceHighestBandwidthGet(void) {

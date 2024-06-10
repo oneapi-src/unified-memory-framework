@@ -54,6 +54,11 @@ void umfMemspaceHighestCapacityDestroy(void) {
     if (UMF_MEMSPACE_HIGHEST_CAPACITY) {
         umfMemspaceDestroy(UMF_MEMSPACE_HIGHEST_CAPACITY);
         UMF_MEMSPACE_HIGHEST_CAPACITY = NULL;
+
+        // portable version of "UMF_MEMSPACE_HIGHEST_CAPACITY_INITIALIZED = UTIL_ONCE_FLAG_INIT;"
+        static UTIL_ONCE_FLAG is_initialized = UTIL_ONCE_FLAG_INIT;
+        memcpy(&UMF_MEMSPACE_HIGHEST_CAPACITY_INITIALIZED, &is_initialized,
+               sizeof(UMF_MEMSPACE_HIGHEST_CAPACITY_INITIALIZED));
     }
 }
 
@@ -62,10 +67,6 @@ static void umfMemspaceHighestCapacityInit(void) {
         umfMemspaceHighestCapacityCreate(&UMF_MEMSPACE_HIGHEST_CAPACITY);
     assert(ret == UMF_RESULT_SUCCESS);
     (void)ret;
-
-#if defined(_WIN32) && !defined(UMF_SHARED_LIBRARY)
-    atexit(umfMemspaceHostAllDestroy);
-#endif
 }
 
 umf_memspace_handle_t umfMemspaceHighestCapacityGet(void) {

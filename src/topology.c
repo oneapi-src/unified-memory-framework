@@ -19,6 +19,11 @@ static UTIL_ONCE_FLAG topology_initialized = UTIL_ONCE_FLAG_INIT;
 void umfDestroyTopology(void) {
     if (topology) {
         hwloc_topology_destroy(topology);
+
+        // portable version of "topology_initialized = UTIL_ONCE_FLAG_INIT;"
+        static UTIL_ONCE_FLAG is_initialized = UTIL_ONCE_FLAG_INIT;
+        memcpy(&topology_initialized, &is_initialized,
+               sizeof(topology_initialized));
     }
 }
 
@@ -34,10 +39,6 @@ static void umfCreateTopology(void) {
         hwloc_topology_destroy(topology);
         topology = NULL;
     }
-
-#if defined(_WIN32) && !defined(UMF_SHARED_LIBRARY)
-    atexit(umfDestroyTopology);
-#endif
 }
 
 hwloc_topology_t umfGetTopology(void) {

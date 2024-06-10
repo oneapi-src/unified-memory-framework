@@ -279,3 +279,14 @@ else()
     message(
         STATUS "IPC shared memory test is supported on Linux only - skipping")
 endif()
+
+if(LINUX
+   AND UMF_BUILD_SHARED_LIBRARY
+   AND UMF_POOL_SCALABLE_ENABLED)
+    add_umf_test(NAME init_teardown SRCS test_init_teardown.c)
+    # append LD_LIBRARY_PATH to the libumf
+    set_property(
+        TEST umf-init_teardown
+        PROPERTY ENVIRONMENT_MODIFICATION
+                 "LD_LIBRARY_PATH=path_list_append:${CMAKE_BINARY_DIR}/lib")
+endif()
