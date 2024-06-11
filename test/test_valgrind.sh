@@ -103,6 +103,9 @@ for test in $(ls -1 umf_test-*); do
 	umf_test-memspace_highest_bandwidth)
 		FILTER='--gtest_filter="-*allocLocalMt*"'
 		;;
+	umf_test-memspace_lowest_latency)
+		FILTER='--gtest_filter="-*allocLocalMt*"'
+		;;
 	esac
 
 	[ "$FILTER" != "" ] && echo -n "($FILTER) "

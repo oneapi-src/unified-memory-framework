@@ -34,6 +34,7 @@ void umfTearDown(void) {
         umfMemspaceHostAllDestroy();
         umfMemspaceHighestCapacityDestroy();
         umfMemspaceHighestBandwidthDestroy();
+        umfMemspaceLowestLatencyDestroy();
         umfDestroyTopology();
 #endif
         // make sure TRACKER is not used after being destroyed

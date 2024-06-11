@@ -229,6 +229,11 @@ Can be retrieved using umfMemspaceHighestCapacityGet.
 Memspace backed by an aggregated list of NUMA nodes identified as highest bandwidth after selecting each available NUMA node as the initiator.
 Querying the bandwidth value requires HMAT support on the platform. Calling `umfMemspaceHighestBandwidthGet()` will return NULL if it's not supported.
 
+#### Lowest latency memspace
+
+Memspace backed by an aggregated list of NUMA nodes identified as lowest latency after selecting each available NUMA node as the initiator.
+Querying the latency value requires HMAT support on the platform. Calling `umfMemspaceLowestLatencyGet()` will return NULL if it's not supported.
+
 ### Proxy library
 
 UMF provides the UMF proxy library (`umf_proxy`) that makes it possible

@@ -4,6 +4,7 @@
 
 #include "memspaces/memspace_numa.h"
 #include "base.hpp"
+#include "memspace_fixtures.hpp"
 #include "memspace_helpers.hpp"
 #include "memspace_internal.h"
 

@@ -162,22 +162,26 @@ if(LINUX) # OS-specific functions are implemented only for Linux now
     add_umf_test(
         NAME memspace_numa
         SRCS memspaces/memspace_numa.cpp
-        LIBS ${LIBNUMA_LIBRARIES})
+        LIBS ${LIBNUMA_LIBRARIES} ${LIBHWLOC_LIBRARIES})
     add_umf_test(
         NAME provider_os_memory_config
         SRCS provider_os_memory_config.cpp
-        LIBS ${UMF_UTILS_FOR_TEST} ${LIBNUMA_LIBRARIES})
+        LIBS ${UMF_UTILS_FOR_TEST} ${LIBNUMA_LIBRARIES} ${LIBHWLOC_LIBRARIES})
     add_umf_test(
         NAME memspace_host_all
         SRCS memspaces/memspace_host_all.cpp
-        LIBS ${UMF_UTILS_FOR_TEST} ${LIBNUMA_LIBRARIES})
+        LIBS ${UMF_UTILS_FOR_TEST} ${LIBNUMA_LIBRARIES} ${LIBHWLOC_LIBRARIES})
     add_umf_test(
         NAME memspace_highest_capacity
         SRCS memspaces/memspace_highest_capacity.cpp
-        LIBS ${UMF_UTILS_FOR_TEST} ${LIBNUMA_LIBRARIES})
+        LIBS ${UMF_UTILS_FOR_TEST} ${LIBNUMA_LIBRARIES} ${LIBHWLOC_LIBRARIES})
     add_umf_test(
         NAME memspace_highest_bandwidth
         SRCS memspaces/memspace_highest_bandwidth.cpp
+        LIBS ${UMF_UTILS_FOR_TEST} ${LIBNUMA_LIBRARIES} ${LIBHWLOC_LIBRARIES})
+    add_umf_test(
+        NAME memspace_lowest_latency
+        SRCS memspaces/memspace_lowest_latency.cpp
         LIBS ${UMF_UTILS_FOR_TEST} ${LIBNUMA_LIBRARIES} ${LIBHWLOC_LIBRARIES})
     add_umf_test(
         NAME mempolicy

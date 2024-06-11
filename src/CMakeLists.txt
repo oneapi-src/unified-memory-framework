@@ -85,7 +85,8 @@ set(UMF_SOURCES_COMMON_LINUX_MACOSX
     memspaces/memspace_numa.c
     memspaces/memspace_host_all.c
     memspaces/memspace_highest_capacity.c
-    memspaces/memspace_highest_bandwidth.c)
+    memspaces/memspace_highest_bandwidth.c
+    memspaces/memspace_lowest_latency.c)
 
 set(UMF_SOURCES_LINUX ${UMF_SOURCES_LINUX} ${UMF_SOURCES_COMMON_LINUX_MACOSX}
                       provider/provider_os_memory_linux.c)

@@ -97,3 +97,15 @@ umfMemoryTargetGetBandwidth(umf_memory_target_handle_t srcMemoryTarget,
     return srcMemoryTarget->ops->get_bandwidth(
         srcMemoryTarget->priv, dstMemoryTarget->priv, bandwidth);
 }
+
+umf_result_t
+umfMemoryTargetGetLatency(umf_memory_target_handle_t srcMemoryTarget,
+                          umf_memory_target_handle_t dstMemoryTarget,
+                          size_t *latency) {
+    if (!srcMemoryTarget || !dstMemoryTarget || !latency) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    return srcMemoryTarget->ops->get_latency(srcMemoryTarget->priv,
+                                             dstMemoryTarget->priv, latency);
+}
