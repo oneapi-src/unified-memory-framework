@@ -92,7 +92,7 @@ static __inline unsigned char util_mssb_index(long long value) {
 #define util_atomic_store_release(object, desired)                             \
     do {                                                                       \
         __atomic_store_n(object, desired, memory_order_release);               \
-        utils_annotate_release((void *)dst);                                   \
+        utils_annotate_release((void *)object);                                \
     } while (0)
 
 #define util_atomic_increment(object)                                          \
