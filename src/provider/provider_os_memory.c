@@ -567,35 +567,39 @@ static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
         goto err_unmap;
     }
 
-    errno = 0;
-    unsigned membind = get_membind(os_provider, ALIGN_UP(size, page_size));
-    size_t bind_size = os_provider->nodeset_len == 1
-                           ? size
-                           : ALIGN_UP(os_provider->part_size, page_size);
-    char *ptr_iter = addr;
+    // Bind memory to NUMA nodes if numa_policy is other than DEFAULT
+    if (os_provider->numa_policy != HWLOC_MEMBIND_DEFAULT) {
+        errno = 0;
+        unsigned membind = get_membind(os_provider, ALIGN_UP(size, page_size));
+        size_t bind_size = os_provider->nodeset_len == 1
+                               ? size
+                               : ALIGN_UP(os_provider->part_size, page_size);
+        char *ptr_iter = addr;
 
-    do {
-        size_t s = bind_size < size ? bind_size : size;
-        ret = hwloc_set_area_membind(
-            os_provider->topo, ptr_iter, s, os_provider->nodeset[membind++],
-            os_provider->numa_policy, os_provider->numa_flags);
+        do {
+            size_t s = bind_size < size ? bind_size : size;
+            ret = hwloc_set_area_membind(
+                os_provider->topo, ptr_iter, s, os_provider->nodeset[membind++],
+                os_provider->numa_policy, os_provider->numa_flags);
 
-        size -= s;
-        ptr_iter += s;
-        membind %= os_provider->nodeset_len;
-        if (ret) {
-            os_store_last_native_error(UMF_OS_RESULT_ERROR_BIND_FAILED, errno);
-            LOG_PERR("binding memory to NUMA node failed");
-            // TODO: (errno == 0) when hwloc_set_area_membind() fails on Windows,
-            // ignore this temporarily
-            if (errno != ENOSYS &&
-                errno != 0) { // ENOSYS - Function not implemented
-                // Do not error out if memory binding is not implemented at all
-                // (like in case of WSL on Windows).
-                goto err_unmap;
+            size -= s;
+            ptr_iter += s;
+            membind %= os_provider->nodeset_len;
+            if (ret) {
+                os_store_last_native_error(UMF_OS_RESULT_ERROR_BIND_FAILED,
+                                           errno);
+                LOG_PERR("binding memory to NUMA node failed");
+                // TODO: (errno == 0) when hwloc_set_area_membind() fails on Windows,
+                // ignore this temporarily
+                if (errno != ENOSYS &&
+                    errno != 0) { // ENOSYS - Function not implemented
+                    // Do not error out if memory binding is not implemented at all
+                    // (like in case of WSL on Windows).
+                    goto err_unmap;
+                }
             }
-        }
-    } while (size > 0);
+        } while (size > 0);
+    }
 
     if (os_provider->fd > 0) {
         // store (fd_offset + 1) to be able to store fd_offset == 0

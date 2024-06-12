@@ -87,21 +87,33 @@ static umf_result_t numa_memory_provider_create_from_memspace(
             return UMF_RESULT_ERROR_INVALID_ARGUMENT;
         }
     } else {
-        params.numa_mode = UMF_NUMA_MODE_BIND;
+        if (memspace == umfMemspaceHostAllGet()) {
+            // For the default memspace, we use the default mode without any
+            // call to mbind
+            params.numa_mode = UMF_NUMA_MODE_DEFAULT;
+        } else {
+            params.numa_mode = UMF_NUMA_MODE_BIND;
+        }
     }
 
-    params.numa_list =
-        umf_ba_global_alloc(sizeof(*params.numa_list) * numNodesProvider);
+    if (memspace == umfMemspaceHostAllGet() && policy == NULL) {
+        // For default memspace with default policy we use all numa nodes so
+        // simply left numa list empty
+        params.numa_list_len = 0;
+        params.numa_list = NULL;
+    } else {
+        params.numa_list =
+            umf_ba_global_alloc(sizeof(*params.numa_list) * numNodesProvider);
 
-    if (!params.numa_list) {
-        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+        if (!params.numa_list) {
+            return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+        }
+
+        for (size_t i = 0; i < numNodesProvider; i++) {
+            params.numa_list[i] = numaTargets[i]->physical_id;
+        }
+        params.numa_list_len = numNodesProvider;
     }
-
-    for (size_t i = 0; i < numNodesProvider; i++) {
-        params.numa_list[i] = numaTargets[i]->physical_id;
-    }
-
-    params.numa_list_len = numNodesProvider;
 
     umf_memory_provider_handle_t numaProvider = NULL;
     int ret = umfMemoryProviderCreate(umfOsMemoryProviderOps(), &params,
