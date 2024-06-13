@@ -287,7 +287,10 @@ endif()
 if(LINUX
    AND UMF_BUILD_SHARED_LIBRARY
    AND UMF_POOL_SCALABLE_ENABLED)
-    add_umf_test(NAME init_teardown SRCS test_init_teardown.c)
+    add_umf_test(
+        NAME init_teardown
+        SRCS test_init_teardown.c
+        LIBS dl)
     # append LD_LIBRARY_PATH to the libumf
     set_property(
         TEST umf-init_teardown
