@@ -14,7 +14,7 @@ jobs:
       VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
     strategy:
       matrix:
-        os: ['ubuntu-latest']
+        os: ['ubuntu-latest', 'windows-latest']
         include: 
           # Windows doesn't recognize 'CMAKE_BUILD_TYPE', it uses '--config' param in build command to determine the build type
           - os: ubuntu-latest

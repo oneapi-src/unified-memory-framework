@@ -103,16 +103,16 @@ jobs:
         ${{matrix.extra_build_options}}
 
     - name: Build
-      run: cmake --build ${{github.workspace}}/build --config Debug -j
+      run: cmake --build ${{github.workspace}}/build --config Release -j
 
     - name: Run examples
       working-directory: ${{github.workspace}}/build
-      run: ctest --output-on-failure --test-dir examples -C Debug
+      run: ctest --output-on-failure --test-dir examples -C Release
 
     - name: Run tests
       if: matrix.build_tests == 'ON'
       working-directory: ${{github.workspace}}/build
-      run: ctest --output-on-failure --test-dir test -C Debug
+      run: ctest --output-on-failure --test-dir test -C Release
 
   CodeStyle:
     name: Coding style
