@@ -23,12 +23,16 @@ typedef enum umf_purge_advise_t {
     UMF_PURGE_FORCE,
 } umf_purge_advise_t;
 
+#define NAME_MAX 255
+
 typedef struct os_memory_provider_t {
     unsigned protection; // combination of OS-specific protection flags
     unsigned visibility; // memory visibility mode
-    int fd;              // file descriptor for memory mapping
-    size_t size_fd;      // size of file used for memory mapping
-    size_t max_size_fd;  // maximum size of file used for memory mapping
+    // a name of a shared memory file (valid only in case of the shared memory visibility)
+    char shm_name[NAME_MAX];
+    int fd;             // file descriptor for memory mapping
+    size_t size_fd;     // size of file used for memory mapping
+    size_t max_size_fd; // maximum size of file used for memory mapping
     // A critnib map storing (ptr, fd_offset + 1) pairs. We add 1 to fd_offset
     // in order to be able to store fd_offset equal 0, because
     // critnib_get() returns value or NULL, so a value cannot equal 0.
@@ -59,9 +63,17 @@ umf_result_t os_translate_mem_protection_flags(unsigned in_protection,
 umf_result_t os_translate_mem_visibility_flag(umf_memory_visibility_t in_flag,
                                               unsigned *out_flag);
 
-int os_create_anonymous_fd(unsigned translated_memory_flag);
+int os_create_anonymous_fd(void);
+
+int os_shm_create(const char *shm_name, size_t size);
+
+int os_shm_open(const char *shm_name);
+
+int os_shm_unlink(const char *shm_name);
 
 size_t get_max_file_size(void);
+
+int os_get_file_size(int fd, size_t *size);
 
 int os_set_file_size(int fd, size_t size);
 

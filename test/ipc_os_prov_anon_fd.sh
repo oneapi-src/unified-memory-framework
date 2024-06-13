@@ -7,6 +7,8 @@
 
 #!/bin/bash
 
+set -e
+
 # port should be a number from the range <1024, 65535>
 PORT=$(( 1024 + ( $$ % ( 65535 - 1024 ))))
 

@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
     int ret = -1;
 
     if (argc < 2) {
-        fprintf(stderr, "Usage: %s port\n", argv[0]);
+        fprintf(stderr, "usage: %s <port> [shm_name]\n", argv[0]);
         return -1;
     }
 
@@ -96,6 +96,9 @@ int main(int argc, char *argv[]) {
 
     os_params = umfOsMemoryProviderParamsDefault();
     os_params.visibility = UMF_MEM_MAP_SHARED;
+    if (argc >= 3) {
+        os_params.shm_name = argv[2];
+    }
 
     // create OS memory provider
     umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(), &os_params,

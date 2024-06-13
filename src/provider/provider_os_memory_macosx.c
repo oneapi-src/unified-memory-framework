@@ -24,10 +24,34 @@ umf_result_t os_translate_mem_visibility_flag(umf_memory_visibility_t in_flag,
     return UMF_RESULT_ERROR_INVALID_ARGUMENT;
 }
 
+// create a shared memory file
+int os_shm_create(const char *shm_name, size_t size) {
+    (void)shm_name; // unused
+    (void)size;     // unused
+    return 0;       // ignored on MacOSX
+}
+
+// open a shared memory file
+int os_shm_open(const char *shm_name) {
+    (void)shm_name; // unused
+    return 0;       // ignored on MacOSX
+}
+
+// unlink a shared memory file
+int os_shm_unlink(const char *shm_name) {
+    (void)shm_name; // unused
+    return 0;       // ignored on MacOSX
+}
+
 // create an anonymous file descriptor
-int os_create_anonymous_fd(unsigned translated_memory_flag) {
-    (void)translated_memory_flag; // unused
-    return 0;                     // ignored on MacOSX
+int os_create_anonymous_fd(void) {
+    return 0; // ignored on MacOSX
+}
+
+int os_get_file_size(int fd, size_t *size) {
+    (void)fd;   // unused
+    (void)size; // unused
+    return -1;  // not supported on MacOSX
 }
 
 int os_set_file_size(int fd, size_t size) {

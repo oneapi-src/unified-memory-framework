@@ -230,6 +230,103 @@ static int getHwlocMembindFlags(umf_numa_mode_t mode, int dedicated_node_bind) {
     return flags;
 }
 
+static int validate_and_copy_shm_name(const char *in_shm_name,
+                                      char out_shm_name[NAME_MAX]) {
+    // shm_name must not contain any slashes
+    if (strchr(in_shm_name, '/')) {
+        LOG_ERR("name of a shared memory file must not contain any slashes: %s",
+                in_shm_name);
+        return -1;
+    }
+
+    // (- 2) because there should be a room for the initial slash ('/')
+    // that we will add at the beginning and the terminating null byte ('\0')
+    size_t max_len = NAME_MAX - 2;
+
+    if (strlen(in_shm_name) > max_len) {
+        LOG_ERR("name of a shared memory file is longer than %zu bytes",
+                max_len);
+        return -1;
+    }
+
+    out_shm_name[0] = '/'; // the initial slash
+    strncpy(&out_shm_name[1], in_shm_name, max_len);
+    out_shm_name[NAME_MAX - 1] = '\0'; // the terminating null byte
+
+    return 0;
+}
+
+static umf_result_t
+create_fd_for_mmap(umf_os_memory_provider_params_t *in_params,
+                   os_memory_provider_t *provider) {
+    umf_result_t result;
+
+    // size_fd will be increased during each allocation if (provider->fd > 0)
+    provider->size_fd = 0;
+    provider->shm_name[0] = '\0'; // zero shm_name
+
+    if (in_params->visibility != UMF_MEM_MAP_SHARED) {
+        provider->fd = -1;
+        provider->max_size_fd = 0;
+        return UMF_RESULT_SUCCESS;
+    }
+
+    /* visibility == UMF_MEM_MAP_SHARED */
+
+    provider->max_size_fd = get_max_file_size();
+
+    if (in_params->shm_name) {
+        if (validate_and_copy_shm_name(in_params->shm_name,
+                                       provider->shm_name)) {
+            LOG_ERR("invalid name of a shared memory file: %s",
+                    in_params->shm_name);
+            return -1;
+        }
+
+        /* create a new shared memory file */
+        provider->fd =
+            os_shm_create(in_params->shm_name, provider->max_size_fd);
+        if (provider->fd == -1) {
+            LOG_ERR("creating a shared memory file /dev/shm/%s of size %zu for "
+                    "memory mapping failed",
+                    in_params->shm_name, provider->max_size_fd);
+            provider->shm_name[0] = '\0'; // zero shm_name
+            return -1;
+        }
+
+        LOG_DEBUG("created the shared memory file /dev/shm/%s of size %zu",
+                  in_params->shm_name, provider->max_size_fd);
+
+        return UMF_RESULT_SUCCESS;
+    }
+
+    provider->fd = os_create_anonymous_fd();
+    if (provider->fd <= 0) {
+        LOG_ERR(
+            "creating an anonymous file descriptor for memory mapping failed");
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
+
+    int ret = os_set_file_size(provider->fd, provider->max_size_fd);
+    if (ret) {
+        LOG_ERR("setting size %zu of an anonymous file failed",
+                provider->max_size_fd);
+        result = UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        goto err_close_file;
+    }
+
+    LOG_DEBUG("size of the anonymous file set to %zu", provider->max_size_fd);
+
+    return UMF_RESULT_SUCCESS;
+
+err_close_file:
+    if (provider->fd > 0) {
+        (void)os_close_fd(provider->fd);
+    }
+
+    return result;
+}
+
 static umf_result_t translate_params(umf_os_memory_provider_params_t *in_params,
                                      os_memory_provider_t *provider) {
     umf_result_t result;
@@ -248,27 +345,6 @@ static umf_result_t translate_params(umf_os_memory_provider_params_t *in_params,
         return result;
     }
 
-    provider->fd = os_create_anonymous_fd(provider->visibility);
-    if (provider->fd == -1) {
-        LOG_ERR(
-            "creating an anonymous file descriptor for memory mapping failed");
-        return UMF_RESULT_ERROR_UNKNOWN;
-    }
-
-    provider->size_fd = 0; // will be increased during each allocation
-    provider->max_size_fd = get_max_file_size();
-
-    if (provider->fd > 0) {
-        int ret = os_set_file_size(provider->fd, provider->max_size_fd);
-        if (ret) {
-            LOG_ERR("setting file size %zu failed", provider->max_size_fd);
-            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-        }
-    }
-
-    LOG_DEBUG("size of the memory mapped file set to %zu",
-              provider->max_size_fd);
-
     // NUMA config
     int emptyNodeset = in_params->numa_list_len == 0;
     result = validate_numa_mode(in_params->numa_mode, emptyNodeset);
@@ -285,8 +361,15 @@ static umf_result_t translate_params(umf_os_memory_provider_params_t *in_params,
     provider->numa_flags =
         getHwlocMembindFlags(in_params->numa_mode, is_dedicated_node_bind);
     provider->part_size = in_params->part_size;
-    return initialize_nodeset(provider, in_params->numa_list,
-                              in_params->numa_list_len, is_dedicated_node_bind);
+    result =
+        initialize_nodeset(provider, in_params->numa_list,
+                           in_params->numa_list_len, is_dedicated_node_bind);
+    if (result != UMF_RESULT_SUCCESS) {
+        LOG_ERR("error while initializing a nodeset");
+        return result;
+    }
+
+    return UMF_RESULT_SUCCESS;
 }
 
 static umf_result_t os_initialize(void *params, void **provider) {
@@ -336,6 +419,11 @@ static umf_result_t os_initialize(void *params, void **provider) {
         goto err_destroy_hwloc_topology;
     }
 
+    ret = create_fd_for_mmap(in_params, os_provider);
+    if (ret != UMF_RESULT_SUCCESS) {
+        goto err_destroy_hwloc_topology;
+    }
+
     os_provider->nodeset_str_buf = umf_ba_global_alloc(NODESET_STR_BUF_LEN);
     if (!os_provider->nodeset_str_buf) {
         LOG_INFO("allocating memory for printing NUMA nodes failed");
@@ -363,6 +451,9 @@ static umf_result_t os_initialize(void *params, void **provider) {
 
 err_free_nodeset_str_buf:
     umf_ba_global_free(os_provider->nodeset_str_buf);
+    if (os_provider->fd > 0) {
+        (void)os_close_fd(os_provider->fd);
+    }
 err_destroy_hwloc_topology:
     hwloc_topology_destroy(os_provider->topo);
 err_free_os_provider:
@@ -801,16 +892,24 @@ typedef struct os_ipc_data_t {
     int fd;
     size_t fd_offset;
     size_t size;
+    char shm_name[NAME_MAX]; // optional - can be used or not (see below)
 } os_ipc_data_t;
 
 static umf_result_t os_get_ipc_handle_size(void *provider, size_t *size) {
-    (void)provider; // unused
-
-    if (size == NULL) {
+    if (provider == NULL || size == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    *size = sizeof(os_ipc_data_t);
+    os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
+
+    if (os_provider->shm_name[0]) {
+        // os_ipc_data_t->shm_name will be used
+        *size = sizeof(os_ipc_data_t);
+    } else {
+        // os_ipc_data_t->shm_name will NOT be used
+        *size = sizeof(os_ipc_data_t) - NAME_MAX;
+    }
+
     return UMF_RESULT_SUCCESS;
 }
 
@@ -835,9 +934,14 @@ static umf_result_t os_get_ipc_handle(void *provider, const void *ptr,
 
     os_ipc_data_t *os_ipc_data = (os_ipc_data_t *)providerIpcData;
     os_ipc_data->pid = utils_getpid();
-    os_ipc_data->fd = os_provider->fd;
     os_ipc_data->fd_offset = (size_t)value - 1;
     os_ipc_data->size = size;
+    if (os_provider->shm_name[0]) {
+        strncpy(os_ipc_data->shm_name, os_provider->shm_name, NAME_MAX - 1);
+        os_ipc_data->shm_name[NAME_MAX - 1] = '\0';
+    } else {
+        os_ipc_data->fd = os_provider->fd;
+    }
 
     return UMF_RESULT_SUCCESS;
 }
@@ -850,9 +954,18 @@ static umf_result_t os_put_ipc_handle(void *provider, void *providerIpcData) {
     os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
     os_ipc_data_t *os_ipc_data = (os_ipc_data_t *)providerIpcData;
 
-    if (os_ipc_data->fd != os_provider->fd ||
-        os_ipc_data->pid != utils_getpid()) {
+    if (os_ipc_data->pid != utils_getpid()) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (os_provider->shm_name[0]) {
+        if (strncmp(os_ipc_data->shm_name, os_provider->shm_name, NAME_MAX)) {
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        }
+    } else {
+        if (os_ipc_data->fd != os_provider->fd) {
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        }
     }
 
     return UMF_RESULT_SUCCESS;
@@ -869,11 +982,21 @@ static umf_result_t os_open_ipc_handle(void *provider, void *providerIpcData,
     umf_result_t ret = UMF_RESULT_SUCCESS;
     int fd;
 
-    umf_result_t umf_result =
-        os_duplicate_fd(os_ipc_data->pid, os_ipc_data->fd, &fd);
-    if (umf_result != UMF_RESULT_SUCCESS) {
-        LOG_PERR("duplicating file descriptor failed");
-        return umf_result;
+    if (os_provider->shm_name[0]) {
+        fd = os_shm_open(os_provider->shm_name);
+        if (fd <= 0) {
+            LOG_PERR("opening a shared memory file (%s) failed",
+                     os_provider->shm_name);
+            return UMF_RESULT_ERROR_UNKNOWN;
+        }
+        (void)os_shm_unlink(os_provider->shm_name);
+    } else {
+        umf_result_t umf_result =
+            os_duplicate_fd(os_ipc_data->pid, os_ipc_data->fd, &fd);
+        if (umf_result != UMF_RESULT_SUCCESS) {
+            LOG_PERR("duplicating file descriptor failed");
+            return umf_result;
+        }
     }
 
     *ptr = os_mmap(NULL, os_ipc_data->size, os_provider->protection,

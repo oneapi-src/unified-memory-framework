@@ -66,12 +66,36 @@ umf_result_t os_translate_mem_visibility_flag(umf_memory_visibility_t in_flag,
     return UMF_RESULT_ERROR_INVALID_ARGUMENT;
 }
 
-int os_create_anonymous_fd(unsigned translated_memory_flag) {
-    (void)translated_memory_flag; // unused
-    return 0;                     // ignored on Windows
+// create a shared memory file
+int os_shm_create(const char *shm_name, size_t size) {
+    (void)shm_name; // unused
+    (void)size;     // unused
+    return 0;       // ignored on Windows
+}
+
+// open a shared memory file
+int os_shm_open(const char *shm_name) {
+    (void)shm_name; // unused
+    return 0;       // ignored on Windows
+}
+
+// unlink a shared memory file
+int os_shm_unlink(const char *shm_name) {
+    (void)shm_name; // unused
+    return 0;       // ignored on Windows
+}
+
+int os_create_anonymous_fd(void) {
+    return 0; // ignored on Windows
 }
 
 size_t get_max_file_size(void) { return SIZE_MAX; }
+
+int os_get_file_size(int fd, size_t *size) {
+    (void)fd;   // unused
+    (void)size; // unused
+    return -1;  // not supported on Windows
+}
 
 int os_set_file_size(int fd, size_t size) {
     (void)fd;   // unused

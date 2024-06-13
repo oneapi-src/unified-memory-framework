@@ -155,9 +155,10 @@ endfunction()
 if(LINUX)
     build_umf_ipc_example(ipc_ipcapi)
     add_umf_ipc_example(ipc_ipcapi_anon_fd)
+    add_umf_ipc_example(ipc_ipcapi_shm)
 else()
     message(
         STATUS
-            "IPC shared memory example with UMF pool API is supported on Linux only - skipping"
+            "IPC examples with UMF pool API are supported on Linux only - skipping"
     )
 endif()

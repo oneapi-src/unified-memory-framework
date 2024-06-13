@@ -69,6 +69,8 @@ typedef struct umf_os_memory_provider_params_t {
     unsigned protection;
     /// memory visibility mode
     umf_memory_visibility_t visibility;
+    /// (optional) a name of a shared memory file (valid only in case of the shared memory visibility)
+    char *shm_name;
 
     // NUMA config
     /// ordered list of numa nodes
@@ -103,10 +105,11 @@ umfOsMemoryProviderParamsDefault(void) {
     umf_os_memory_provider_params_t params = {
         UMF_PROTECTION_READ | UMF_PROTECTION_WRITE, /* protection */
         UMF_MEM_MAP_PRIVATE,                        /* visibility mode */
-        NULL,                                       /* numa_list */
-        0,                                          /* numa_list_len */
-        UMF_NUMA_MODE_DEFAULT,                      /* numa_mode */
-        0                                           /* part_size */
+        NULL, /* (optional) a name of a shared memory file (valid only in case of the shared memory visibility) */
+        NULL, /* numa_list */
+        0,    /* numa_list_len */
+        UMF_NUMA_MODE_DEFAULT, /* numa_mode */
+        0                      /* part_size */
     };
 
     return params;
