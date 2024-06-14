@@ -479,9 +479,10 @@ install(
           examples/basic/utils_level_zero.h
           examples/basic/basic.c
           examples/basic/ipc_level_zero.c
-          examples/basic/ipc_shm_ipcapi.sh
-          examples/basic/ipc_shm_ipcapi_consumer.c
-          examples/basic/ipc_shm_ipcapi_producer.c
+          examples/basic/ipc_ipcapi_anon_fd.sh
+          examples/basic/ipc_ipcapi_consumer.c
+          examples/basic/ipc_ipcapi_producer.c
+          examples/basic/ipc_ipcapi_shm.sh
     DESTINATION "${CMAKE_INSTALL_DOCDIR}/examples")
 
 # Add the include directory and the headers target to the install.
