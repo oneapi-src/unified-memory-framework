@@ -2,15 +2,49 @@
 name: Nightly
 
 # This job is run at 00:00 UTC every day or on demand.
-on:
-  workflow_dispatch:
-  schedule:
-    - cron:  '0 0 * * *'
+on: [workflow_call]
 
 permissions:
   contents: read
 
 jobs:
+  fuzz-test:
+      name: Fuzz test
+      strategy:
+        fail-fast: false
+        matrix:
+          build_type: [Debug, Release]
+          compiler: [{c: clang, cxx: clang++}]
+      
+      runs-on: ubuntu-latest
+
+      steps:
+      - name: Checkout repository
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Install apt packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake hwloc libhwloc-dev libnuma-dev libtbb-dev
+
+      - name: Configure CMake
+        run: >
+          cmake
+          -B ${{github.workspace}}/build
+          -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+          -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
+          -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
+          -DUMF_TESTS_FAIL_ON_SKIP=ON
+          -DUMF_DEVELOPER_MODE=ON
+          -DUMF_BUILD_FUZZTESTS=ON
+
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --verbose -j$(nproc)
+
+      - name: Fuzz long test
+        working-directory: ${{github.workspace}}/build
+        run: ctest -C ${{matrix.build_type}} --output-on-failure --verbose -L "fuzz-long"
+
   valgrind:
     name: Valgrind
     strategy:
