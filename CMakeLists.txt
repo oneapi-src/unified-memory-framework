@@ -36,6 +36,7 @@ option(UMF_BUILD_GPU_TESTS "Build UMF GPU tests" OFF)
 option(UMF_BUILD_BENCHMARKS "Build UMF benchmarks" OFF)
 option(UMF_BUILD_BENCHMARKS_MT "Build UMF multithreaded benchmarks" OFF)
 option(UMF_BUILD_EXAMPLES "Build UMF examples" ON)
+option(UMF_BUILD_FUZZTESTS "Build UMF fuzz tests" OFF)
 option(UMF_BUILD_GPU_EXAMPLES "Build UMF GPU examples" OFF)
 option(UMF_DEVELOPER_MODE "Enable developer checks, treats warnings as errors"
        OFF)
@@ -163,6 +164,13 @@ if(USE_MSAN)
     message(WARNING "MemorySanitizer requires instrumented libraries to "
                     "prevent reporting false-positives")
     add_sanitizer_flag(memory)
+endif()
+# Fuzzer instrumentation for the whole library
+if(UMF_BUILD_FUZZTESTS
+   AND CMAKE_CXX_COMPILER_ID MATCHES "Clang"
+   AND LINUX)
+    add_compile_options("-fsanitize=fuzzer-no-link")
+    add_link_options("-fsanitize=fuzzer-no-link")
 endif()
 
 # A header only library to specify include directories in transitive
