@@ -112,10 +112,30 @@ void proxy_lib_create_common(void) {
     umf_result_t umf_result;
 
 #ifndef _WIN32
-    if (util_env_var_has_str("UMF_PROXY", "page.disposition=shared")) {
-        LOG_DEBUG("proxy_lib: using the MAP_SHARED visibility mode");
+#define NAME_MAX 255
+    char shm_name[NAME_MAX];
+
+    if (util_env_var_has_str("UMF_PROXY", "page.disposition=shared-fd")) {
+        LOG_DEBUG("proxy_lib: using the MAP_SHARED visibility mode with the "
+                  "file descriptor duplication");
         os_params.visibility = UMF_MEM_MAP_SHARED;
+        os_params.shm_name = NULL;
+
+    } else if (util_env_var_has_str("UMF_PROXY",
+                                    "page.disposition=shared-shm")) {
+        LOG_DEBUG("proxy_lib: using the MAP_SHARED visibility mode with the "
+                  "named shared memory");
+        os_params.visibility = UMF_MEM_MAP_SHARED;
+
+        memset(shm_name, 0, NAME_MAX);
+        sprintf(shm_name, "umf_proxy_lib_shm_pid_%i", utils_getpid());
+        os_params.shm_name = shm_name;
+
+        LOG_DEBUG("proxy_lib: using the MAP_SHARED visibility mode with the "
+                  "named shared memory: %s",
+                  os_params.shm_name);
     }
+#undef NAME_MAX
 #endif
 
     umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(), &os_params,

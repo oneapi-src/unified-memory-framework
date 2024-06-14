@@ -256,7 +256,9 @@ $ LD_PRELOAD=/usr/lib/libumf_proxy.so myprogram
 
 The memory used by the proxy memory allocator is mmap'ed:
 1) with the `MAP_PRIVATE` flag by default or
-2) with the `MAP_SHARED` flag only if the `UMF_PROXY` environment variable contains the `page.disposition=shared` string.
+2) with the `MAP_SHARED` flag if the `UMF_PROXY` environment variable contains one of two following strings: `page.disposition=shared-shm` or `page.disposition=shared-fd`. These two options differ in a mechanism used during IPC:
+   - `page.disposition=shared-shm` - IPC uses the named shared memory. An SHM name is generated using the `umf_proxy_lib_shm_pid_$PID` pattern, where `$PID` is the PID of the process. It creates the `/dev/shm/umf_proxy_lib_shm_pid_$PID` file.
+   - `page.disposition=shared-fd` - IPC uses the file descriptor duplication. It requires using `pidfd_getfd(2)` to obtain a duplicate of another process's file descriptor. Permission to duplicate another process's file descriptor is governed by a ptrace access mode `PTRACE_MODE_ATTACH_REALCREDS` check (see `ptrace(2)`) that can be changed using the `/proc/sys/kernel/yama/ptrace_scope` interface. `pidfd_getfd(2)` is supported since Linux 5.6.
 
 #### Windows
 
