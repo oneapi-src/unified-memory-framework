@@ -20,7 +20,8 @@ FILE *mock_fopen(const char *filename, const char *mode) {
 
 const std::string MOCK_FN_NAME = "MOCK_FUNCTION_NAME";
 std::string expected_message = "";
-FILE *expected_stream;
+// The "Logging output not set - logging disabled" message is printed to stderr.
+FILE *expected_stream = stderr;
 int expect_fput_count = 0;
 int fput_count = 0;
 

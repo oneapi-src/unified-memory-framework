@@ -26,6 +26,8 @@
 #include <string.h>
 #include <time.h>
 
+#include "umf.h"
+
 #include "utils_assert.h"
 #include "utils_common.h"
 #include "utils_log.h"
@@ -290,8 +292,11 @@ void util_log_init(void) {
         loggerConfig.flushLevel = LOG_FATAL;
     }
 
+    int umf_ver = umfGetCurrentVersion();
     LOG_INFO(
-        "Logger enabled (level: %s, flush: %s, pid: %s, timestamp: %s)",
+        "Logger enabled (umf_version: %i.%i, level: %s, flush: %s, pid: %s, "
+        "timestamp: %s)",
+        UMF_MAJOR_VERSION(umf_ver), UMF_MINOR_VERSION(umf_ver),
         level_to_str(loggerConfig.level), level_to_str(loggerConfig.flushLevel),
         bool_to_str(loggerConfig.pid), bool_to_str(loggerConfig.timestamp));
 }
