@@ -32,6 +32,10 @@ int umfInit(void);
 ///        It must be called just before dlclose() and it is not required in other scenarios.
 void umfTearDown(void);
 
+///
+/// @brief Get the current version of the UMF headers defined by UMF_VERSION_CURRENT.
+int umfGetCurrentVersion(void);
+
 #ifdef __cplusplus
 }
 #endif
