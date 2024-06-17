@@ -45,3 +45,5 @@ void umfTearDown(void) {
         umf_ba_destroy_global();
     }
 }
+
+int umfGetCurrentVersion(void) { return UMF_VERSION_CURRENT; }
