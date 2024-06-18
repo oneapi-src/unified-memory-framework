@@ -251,7 +251,8 @@ void util_log_init(void) {
         }
     } else {
         loggerConfig.output = stderr;
-        LOG_ERR("Logging output not set - logging disabled");
+        LOG_ERR("Logging output not set - logging disabled (UMF_LOG = \"%s\")",
+                envVar);
         loggerConfig.output = NULL;
         return;
     }

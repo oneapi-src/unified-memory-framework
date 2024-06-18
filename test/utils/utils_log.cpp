@@ -19,8 +19,9 @@ FILE *mock_fopen(const char *filename, const char *mode) {
 }
 
 const std::string MOCK_FN_NAME = "MOCK_FUNCTION_NAME";
-std::string expected_message = "";
-// The "Logging output not set - logging disabled" message is printed to stderr.
+std::string expected_message = "[ERROR UMF] util_log_init: Logging output not "
+                               "set - logging disabled (UMF_LOG = \"\")\n";
+// The expected_message (above) is printed to stderr.
 FILE *expected_stream = stderr;
 int expect_fput_count = 0;
 int fput_count = 0;
