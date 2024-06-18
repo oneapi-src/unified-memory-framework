@@ -201,6 +201,7 @@ static umf_result_t query_attribute_value(void *srcMemoryTarget,
                                           memattr_type_t type) {
     hwloc_topology_t topology = umfGetTopology();
     if (!topology) {
+        LOG_PERR("Retrieving cached topology failed");
         return UMF_RESULT_ERROR_NOT_SUPPORTED;
     }
 
@@ -208,6 +209,7 @@ static umf_result_t query_attribute_value(void *srcMemoryTarget,
         topology, HWLOC_OBJ_NUMANODE,
         ((struct numa_memory_target_t *)srcMemoryTarget)->physical_id);
     if (!srcNumaNode) {
+        LOG_PERR("Getting HWLOC object by type failed");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -215,6 +217,7 @@ static umf_result_t query_attribute_value(void *srcMemoryTarget,
         topology, HWLOC_OBJ_NUMANODE,
         ((struct numa_memory_target_t *)dstMemoryTarget)->physical_id);
     if (!dstNumaNode) {
+        LOG_PERR("Getting HWLOC object by type failed");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -222,6 +225,8 @@ static umf_result_t query_attribute_value(void *srcMemoryTarget,
     if (!hwloc_bitmap_intersects(srcNumaNode->cpuset, dstNumaNode->cpuset)) {
         // Since we want to skip such query, we return the worst possible
         // value for given memory attribute.
+        LOG_PDEBUG("Testing whether two bitmaps intersect failed, using the "
+                   "worst value");
         *value = memattr_get_worst_value(type);
         return UMF_RESULT_SUCCESS;
     }
@@ -246,6 +251,8 @@ static umf_result_t query_attribute_value(void *srcMemoryTarget,
     int ret = hwloc_memattr_get_value(topology, hwlocMemAttrType, dstNumaNode,
                                       &initiator, 0, &memAttrValue);
     if (ret) {
+        LOG_PERR("Getting an attribute value for a specific target NUMA node "
+                 "failed");
         return (errno == EINVAL) ? UMF_RESULT_ERROR_NOT_SUPPORTED
                                  : UMF_RESULT_ERROR_UNKNOWN;
     }

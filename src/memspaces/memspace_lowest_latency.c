@@ -86,8 +86,9 @@ static void umfMemspaceLowestLatencyInit(void) {
     umf_result_t ret =
         umfMemspaceLowestLatencyCreate(&UMF_MEMSPACE_LOWEST_LATENCY);
     if (ret != UMF_RESULT_SUCCESS) {
-        LOG_ERR("Creating the lowest latency memspace failed with a %u error\n",
-                ret);
+        LOG_ERR(
+            "Creating the lowest latency memspace failed with the error: %u",
+            ret);
         assert(ret == UMF_RESULT_ERROR_NOT_SUPPORTED);
     }
 
