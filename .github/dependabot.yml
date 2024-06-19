@@ -5,5 +5,8 @@ updates:
     directory: "/third_party" # Location of package manifests
     schedule:
       interval: "daily"
-    # Run only required security updates
-    open-pull-requests-limit: 0
+    groups:
+      pip-dependencies:
+        applies-to: version-updates
+        patterns:
+          - "*"
