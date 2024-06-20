@@ -325,7 +325,7 @@ create_fd_for_mmap(umf_os_memory_provider_params_t *in_params,
 
 err_close_file:
     if (provider->fd > 0) {
-        (void)os_close_fd(provider->fd);
+        (void)utils_close_fd(provider->fd);
     }
 
     return result;
@@ -1247,7 +1247,7 @@ static umf_result_t os_open_ipc_handle(void *provider, void *providerIpcData,
         (void)os_shm_unlink(os_provider->shm_name);
     } else {
         umf_result_t umf_result =
-            os_duplicate_fd(os_ipc_data->pid, os_ipc_data->fd, &fd);
+            utils_duplicate_fd(os_ipc_data->pid, os_ipc_data->fd, &fd);
         if (umf_result != UMF_RESULT_SUCCESS) {
             LOG_PERR("duplicating file descriptor failed");
             return umf_result;
@@ -1262,7 +1262,7 @@ static umf_result_t os_open_ipc_handle(void *provider, void *providerIpcData,
         ret = UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
 
-    (void)os_close_fd(fd);
+    (void)utils_close_fd(fd);
 
     return ret;
 }

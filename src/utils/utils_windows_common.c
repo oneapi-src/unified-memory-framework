@@ -12,6 +12,7 @@
 #include <processenv.h>
 #include <processthreadsapi.h>
 
+#include "utils_common.h"
 #include "utils_concurrency.h"
 
 #define BUFFER_SIZE 1024
@@ -33,3 +34,15 @@ size_t util_get_page_size(void) {
 int utils_getpid(void) { return GetCurrentProcessId(); }
 
 int utils_gettid(void) { return GetCurrentThreadId(); }
+
+int utils_close_fd(int fd) {
+    (void)fd; // unused
+    return -1;
+}
+
+umf_result_t utils_duplicate_fd(int pid, int fd_in, int *fd_out) {
+    (void)pid;    // unused
+    (void)fd_in;  // unused
+    (void)fd_out; // unused
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
