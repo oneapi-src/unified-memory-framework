@@ -57,11 +57,25 @@ typedef enum umf_numa_mode_t {
     /// fulfilled, memory will be allocated from other nodes.
     UMF_NUMA_MODE_PREFERRED,
 
+    /// Allocation will be split evenly across nodes specified in nodemask.
+    /// umf_numa_split_partition_t can be passed in umf_os_memory_provider_params_t structure
+    /// to specify other distribution.
+    UMF_NUMA_MODE_SPLIT,
     /// The memory is allocated on the node of the CPU that triggered the
     /// allocation. If this mode is specified, nodemask must be NULL and
     /// maxnode must be 0.
     UMF_NUMA_MODE_LOCAL, // TODO: should this be a hint or strict policy?
 } umf_numa_mode_t;
+
+/// @brief This structure specifies a user-defined page distribution
+/// within a single allocation in UMF_NUMA_MODE_SPLIT mode.
+typedef struct umf_numa_split_partition_t {
+    /// The weight of the partition, representing the proportion of
+    /// the allocation that should be assigned to this NUMA node.
+    unsigned weight;
+    /// The NUMA node where the pages assigned to this partition will be bound.
+    unsigned target;
+} umf_numa_split_partition_t;
 
 /// @brief Memory provider settings struct
 typedef struct umf_os_memory_provider_params_t {
@@ -83,6 +97,11 @@ typedef struct umf_os_memory_provider_params_t {
     /// part size for interleave mode - 0 means default (system specific)
     /// It might be rounded up because of HW constraints
     size_t part_size;
+
+    /// ordered list of the partitions for the split mode
+    umf_numa_split_partition_t *partitions;
+    /// len of the partitions array
+    unsigned partitions_len;
 } umf_os_memory_provider_params_t;
 
 /// @brief OS Memory Provider operation results
@@ -109,8 +128,9 @@ umfOsMemoryProviderParamsDefault(void) {
         NULL, /* numa_list */
         0,    /* numa_list_len */
         UMF_NUMA_MODE_DEFAULT, /* numa_mode */
-        0                      /* part_size */
-    };
+        0,                     /* part_size */
+        NULL,                  /* partitions */
+        0};                    /* partitions_len*/
 
     return params;
 }
