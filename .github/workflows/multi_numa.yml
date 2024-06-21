@@ -14,7 +14,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-22.04]
+        os: [ubuntu-22.04, rhel-9.1]
     runs-on:  ["DSS-MULTI-NUMA", "DSS-${{matrix.os}}"]
 
     steps:
@@ -43,5 +43,17 @@ jobs:
         run: cmake --build ${{github.workspace}}/build -j $(nproc)
 
       - name: Run tests
+        if: matrix.os != 'rhel-9.1'
         working-directory: ${{github.workspace}}/build
         run: ctest --output-on-failure --test-dir test
+
+        # On RHEL, hwloc version is just a little too low.
+        # Skip some tests until we upgrade hwloc and update CMake to properly handle local hwloc installation.
+        # TODO: fix issue #560
+      - name: Run tests (on RHEL)
+        if: matrix.os == 'rhel-9.1'
+        working-directory: ${{github.workspace}}/build
+        run: |
+          ctest --output-on-failure --test-dir test -E "umf-provider_os_memory_multiple_numa_nodes"
+          ./test/umf_test-provider_os_memory_multiple_numa_nodes \
+            --gtest_filter="-*checkModeLocal/*:*checkModePreferredEmptyNodeset/*:testNuma.checkModeInterleave"
