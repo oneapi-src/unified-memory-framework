@@ -567,6 +567,10 @@ static void os_finalize(void *provider) {
 
     free_bitmaps(os_provider);
 
+    if (os_provider->partitions) {
+        umf_ba_global_free(os_provider->partitions);
+    }
+
     if (os_provider->nodeset_str_buf) {
         umf_ba_global_free(os_provider->nodeset_str_buf);
     }
