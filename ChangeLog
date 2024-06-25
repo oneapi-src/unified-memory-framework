@@ -1,7 +1,24 @@
-<day of week> <month> <day> 2024 <Author> <author@intel.com>
+Tue Jun 25 2024 Łukasz Stolarczuk <lukasz.stolarczuk@intel.com>
 
-	* Version 0.1.0
+	* Version 0.1.0-rc1
 
-	This is the first release of Unified Memory Framework project.
+	This is the first release of Unified Memory Framework (UMF) project.
 
-	...
+	UMF is a library for constructing allocators and memory pools. It also contains
+	broadly useful abstractions and utilities for memory management. UMF allows
+	users to create and manage multiple memory pools characterized by different
+	attributes, allowing certain allocation types to be isolated from others and
+	allocated using different hardware resources as required.
+
+	Documentation of UMF, including API description, architecture, and examples
+	can be found: https://oneapi-src.github.io/unified-memory-framework
+
+	Features:
+	- Level Zero memory provider
+	- OS memory provider
+	- Jemalloc pool (based on jemalloc)
+	- Scalable pool (based on oneTBB)
+	- Disjoint pool
+	- Proxy pool
+	- Single-threaded micro benchmark based on ubench and custom multi-threaded benchmark
+	- Examples
