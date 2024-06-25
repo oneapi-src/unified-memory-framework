@@ -20,7 +20,7 @@ struct memspaceHighestCapacityProviderTest : ::numaNodesTest {
     void SetUp() override {
         ::numaNodesTest::SetUp();
 
-        umf_memspace_handle_t hMemspace = umfMemspaceHighestCapacityGet();
+        umf_const_memspace_handle_t hMemspace = umfMemspaceHighestCapacityGet();
         UT_ASSERTne(hMemspace, nullptr);
 
         umf_result_t ret =

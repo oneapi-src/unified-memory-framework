@@ -27,7 +27,7 @@ struct umf_memspace_t {
 ///
 /// \brief Clones memspace
 ///
-umf_result_t umfMemspaceClone(umf_memspace_handle_t hMemspace,
+umf_result_t umfMemspaceClone(umf_const_memspace_handle_t hMemspace,
                               umf_memspace_handle_t *outHandle);
 
 typedef umf_result_t (*umfGetPropertyFn)(umf_memory_target_handle_t,
@@ -47,15 +47,9 @@ typedef umf_result_t (*umfGetTargetFn)(umf_memory_target_handle_t initiator,
 ///
 /// \brief Filters the targets using getTarget() to create a new memspace
 ///
-umf_result_t umfMemspaceFilter(umf_memspace_handle_t hMemspace,
+umf_result_t umfMemspaceFilter(umf_const_memspace_handle_t hMemspace,
                                umfGetTargetFn getTarget,
                                umf_memspace_handle_t *filteredMemspace);
-
-///
-/// \brief Destroys memspace
-/// \param hMemspace handle to memspace
-///
-void umfMemspaceDestroy(umf_memspace_handle_t hMemspace);
 
 void umfMemspaceHostAllDestroy(void);
 void umfMemspaceHighestCapacityDestroy(void);
