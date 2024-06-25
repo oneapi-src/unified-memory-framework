@@ -19,7 +19,13 @@ extern "C" {
 typedef struct umf_mempolicy_t {
     umf_mempolicy_membind_t type;
     union {
-        size_t part_size;
+        struct {
+            size_t part_size;
+        } interleave;
+        struct {
+            umf_mempolicy_split_partition_t *part;
+            size_t part_len;
+        } split;
     } ops;
 } umf_mempolicy_t;
 

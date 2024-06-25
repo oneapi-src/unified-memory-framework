@@ -56,6 +56,8 @@ extern "C" {
         }                                                                      \
     } while (0)
 
+#define COMPILE_ERROR_ON(cond) ((void)sizeof(char[(cond) ? -1 : 1]))
+
 #ifdef __cplusplus
 }
 #endif

@@ -25,8 +25,20 @@ typedef enum umf_mempolicy_membind_t {
     /// Bind memory to namespace
     UMF_MEMPOLICY_BIND,
     /// Prefer memory from namespace but fallback to other memory if not available
-    UMF_MEMPOLICY_PREFERRED
+    UMF_MEMPOLICY_PREFERRED,
+    /// Allocation will be split evenly across nodes specified in nodemask.
+    /// umf_mempolicy_split_partition_t can be used to specify different distribution.
+    UMF_MEMPOLICY_SPLIT
 } umf_mempolicy_membind_t;
+
+/// user defined partition for UMF_MEMPOLICY_SPLIT mode
+typedef struct umf_mempolicy_split_partition_t {
+    /// The weight of the partition, representing the proportion of
+    /// the allocation that should be assigned to this NUMA node.
+    unsigned weight;
+    /// The NUMA node where the pages assigned to this partition will be bound.
+    unsigned target;
+} umf_mempolicy_split_partition_t;
 
 ///
 /// @brief Creates a new memory policy
@@ -52,6 +64,18 @@ umf_result_t umfMempolicyDestroy(umf_mempolicy_handle_t hPolicy);
 ///
 umf_result_t umfMempolicySetInterleavePartSize(umf_mempolicy_handle_t hPolicy,
                                                size_t partSize);
+
+///
+/// @brief Sets custom split partitions
+/// @param hPolicy handle to memory policy
+/// @param partList ordered array of partitions
+/// @param partListLen length of the partList array
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+///
+umf_result_t
+umfMempolicySetCustomSplitPartitions(umf_mempolicy_handle_t hPolicy,
+                                     umf_mempolicy_split_partition_t *partList,
+                                     size_t partListLen);
 #ifdef __cplusplus
 }
 #endif

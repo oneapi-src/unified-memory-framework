@@ -25,8 +25,11 @@ umf_result_t umfMempolicyCreate(umf_mempolicy_membind_t bind,
 
     (*policy)->type = bind;
     if (bind == UMF_MEMPOLICY_INTERLEAVE) {
-        (*policy)->ops.part_size = 0;
+        (*policy)->ops.interleave.part_size = 0;
+    } else if (bind == UMF_MEMPOLICY_SPLIT) {
+        (*policy)->ops.split.part_len = 0;
     }
+
     return UMF_RESULT_SUCCESS;
 }
 
@@ -45,6 +48,22 @@ umf_result_t umfMempolicySetInterleavePartSize(umf_mempolicy_handle_t policy,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    policy->ops.part_size = partSize;
+    policy->ops.interleave.part_size = partSize;
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t
+umfMempolicySetCustomSplitPartitions(umf_mempolicy_handle_t policy,
+                                     umf_mempolicy_split_partition_t *partList,
+                                     size_t partListLen) {
+    if (policy == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    if (policy->type != UMF_MEMPOLICY_SPLIT) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    policy->ops.split.part = partList;
+    policy->ops.split.part_len = partListLen;
     return UMF_RESULT_SUCCESS;
 }

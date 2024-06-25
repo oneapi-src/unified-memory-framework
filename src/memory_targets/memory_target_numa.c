@@ -20,6 +20,7 @@
 #include "memory_target_numa.h"
 #include "mempolicy_internal.h"
 #include "topology.h"
+#include "utils_assert.h"
 #include "utils_log.h"
 
 struct numa_memory_target_t {
@@ -75,13 +76,32 @@ static umf_result_t numa_memory_provider_create_from_memspace(
         switch (policy->type) {
         case UMF_MEMPOLICY_INTERLEAVE:
             params.numa_mode = UMF_NUMA_MODE_INTERLEAVE;
-            params.part_size = policy->ops.part_size;
+            params.part_size = policy->ops.interleave.part_size;
             break;
         case UMF_MEMPOLICY_BIND:
             params.numa_mode = UMF_NUMA_MODE_BIND;
             break;
         case UMF_MEMPOLICY_PREFERRED:
             params.numa_mode = UMF_NUMA_MODE_PREFERRED;
+            break;
+        case UMF_MEMPOLICY_SPLIT:
+            params.numa_mode = UMF_NUMA_MODE_SPLIT;
+
+            // compile time check to ensure we can just cast
+            // umf_mempolicy_split_partition_t to
+            // umf_numa_split_partition_t
+            COMPILE_ERROR_ON(sizeof(umf_mempolicy_split_partition_t) !=
+                             sizeof(umf_numa_split_partition_t));
+            COMPILE_ERROR_ON(
+                offsetof(umf_mempolicy_split_partition_t, weight) !=
+                offsetof(umf_numa_split_partition_t, weight));
+            COMPILE_ERROR_ON(
+                offsetof(umf_mempolicy_split_partition_t, target) !=
+                offsetof(umf_numa_split_partition_t, target));
+
+            params.partitions =
+                (umf_numa_split_partition_t *)policy->ops.split.part;
+            params.partitions_len = policy->ops.split.part_len;
             break;
         default:
             return UMF_RESULT_ERROR_INVALID_ARGUMENT;
