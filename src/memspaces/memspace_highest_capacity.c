@@ -8,7 +8,6 @@
  */
 
 #include <assert.h>
-#include <hwloc.h>
 #include <stdlib.h>
 
 #include "base_alloc_global.h"

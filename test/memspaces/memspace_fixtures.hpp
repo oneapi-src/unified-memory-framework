@@ -4,16 +4,16 @@
 
 #ifndef UMF_MEMSPACE_FIXTURES_HPP
 #define UMF_MEMSPACE_FIXTURES_HPP
+#include <numa.h>
+#include <numaif.h>
+#include <thread>
+
+#include <umf/memspace.h>
 
 #include "base.hpp"
 #include "memspace_helpers.hpp"
 #include "test_helpers.h"
-
-#include <hwloc.h>
-#include <numa.h>
-#include <numaif.h>
-#include <thread>
-#include <umf/memspace.h>
+#include "umf_hwloc.h"
 
 #define SIZE_4K (4096UL)
 #define SIZE_4M (SIZE_4K * 1024UL)

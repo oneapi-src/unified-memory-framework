@@ -42,6 +42,9 @@ int util_mutex_unlock(os_mutex_t *mutex) {
 
 static BOOL CALLBACK initOnceCb(PINIT_ONCE InitOnce, PVOID Parameter,
                                 PVOID *lpContext) {
+    (void)InitOnce;  // unused
+    (void)lpContext; // unused
+
     void (*onceCb)(void) = (void (*)(void))(Parameter);
     onceCb();
     return TRUE;

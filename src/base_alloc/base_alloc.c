@@ -219,6 +219,12 @@ void *umf_ba_alloc(umf_ba_pool_t *pool) {
     // we'll mark the memory as undefined
     utils_annotate_memory_defined(chunk, sizeof(*chunk));
 
+    // check if the free list is not empty
+    if (pool->metadata.free_list == NULL) {
+        LOG_ERR("base_alloc: Free list should not be empty before new alloc");
+        return NULL;
+    }
+
     pool->metadata.free_list = pool->metadata.free_list->next;
     pool->metadata.n_allocs++;
 #ifndef NDEBUG

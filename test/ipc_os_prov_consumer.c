@@ -161,11 +161,13 @@ int main(int argc, char *argv[]) {
     memset(recv_buffer, 0, RECV_BUFF_SIZE);
 
     // receive a producer's message
-    ssize_t len = recv(producer_socket, recv_buffer, RECV_BUFF_SIZE, 0);
-    if (len < 0) {
+    ssize_t recv_len = recv(producer_socket, recv_buffer, RECV_BUFF_SIZE, 0);
+    if (recv_len < 0) {
         fprintf(stderr, "[consumer] ERROR: recv() failed\n");
         goto err_close_producer_socket;
     }
+    size_t len = (size_t)recv_len;
+
     if (len != IPC_handle_size) {
         fprintf(stderr,
                 "[consumer] ERROR: recv() received a wrong number of bytes "

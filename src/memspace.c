@@ -265,7 +265,7 @@ umf_result_t umfMemspaceFilter(umf_memspace_handle_t hMemspace,
     }
 
     size_t cloneIdx = 0;
-    for (size_t cloneIdx = 0; cloneIdx < newMemspace->size; cloneIdx++) {
+    for (cloneIdx = 0; cloneIdx < newMemspace->size; cloneIdx++) {
         ret = umfMemoryTargetClone(uniqueBestNodes[cloneIdx],
                                    &newMemspace->nodes[cloneIdx]);
         if (ret != UMF_RESULT_SUCCESS) {

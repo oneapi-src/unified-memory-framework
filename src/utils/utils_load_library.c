@@ -47,7 +47,7 @@ void *util_get_symbol_addr(void *handle, const char *symbol,
         }
         handle = GetModuleHandle(libname);
     }
-    return GetProcAddress((HMODULE)handle, symbol);
+    return (void *)GetProcAddress((HMODULE)handle, symbol);
 }
 
 #else /* Linux */

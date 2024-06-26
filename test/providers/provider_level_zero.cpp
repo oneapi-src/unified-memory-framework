@@ -443,7 +443,8 @@ TEST_P(umfLevelZeroProviderTest, basic) {
 
 level_zero_memory_provider_params_t
 CreateLevelZeroProviderParams(umf_usm_memory_type_t memory_type) {
-    level_zero_memory_provider_params_t params = {0};
+    level_zero_memory_provider_params_t params = {NULL, NULL,
+                                                  UMF_MEMORY_TYPE_UNKNOWN};
     ze_driver_handle_t hDriver;
     ze_device_handle_t hDevice;
     ze_context_handle_t hContext;

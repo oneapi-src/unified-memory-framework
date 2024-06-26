@@ -135,13 +135,14 @@ int main(int argc, char *argv[]) {
     memset(recv_buffer, 0, RECV_BUFF_SIZE);
 
     // receive a size of the IPC handle from the producer's
-    ssize_t len = recv(producer_socket, recv_buffer, RECV_BUFF_SIZE, 0);
-    if (len < 0) {
+    ssize_t recv_len = recv(producer_socket, recv_buffer, RECV_BUFF_SIZE, 0);
+    if (recv_len < 0) {
         fprintf(
             stderr,
             "[consumer] ERROR: receiving a size of the IPC handle failed\n");
         goto err_close_producer_socket;
     }
+    size_t len = (size_t)recv_len;
 
     size_t size_IPC_handle = *(size_t *)recv_buffer;
 
@@ -151,11 +152,13 @@ int main(int argc, char *argv[]) {
             len, size_IPC_handle);
 
     // send received size to the producer as a confirmation
-    len = send(producer_socket, &size_IPC_handle, sizeof(size_IPC_handle), 0);
-    if (len < 0) {
+    recv_len =
+        send(producer_socket, &size_IPC_handle, sizeof(size_IPC_handle), 0);
+    if (recv_len < 0) {
         fprintf(stderr, "[consumer] ERROR: sending confirmation failed\n");
         goto err_close_producer_socket;
     }
+    len = (size_t)recv_len;
 
     fprintf(stderr,
             "[consumer] Sent a confirmation to the producer (%zu bytes)\n",
@@ -169,11 +172,13 @@ int main(int argc, char *argv[]) {
     }
 
     // receive the IPC handle from the producer's
-    len = recv(producer_socket, IPC_handle, size_IPC_handle, 0);
-    if (len < 0) {
+    recv_len = recv(producer_socket, IPC_handle, size_IPC_handle, 0);
+    if (recv_len < 0) {
         fprintf(stderr, "[consumer] ERROR: receiving the IPC handle failed\n");
         goto err_free_IPC_handle;
     }
+    len = (size_t)recv_len;
+
     if (len < size_IPC_handle) {
         fprintf(stderr,
                 "[consumer] ERROR: receiving the IPC handle failed - received "

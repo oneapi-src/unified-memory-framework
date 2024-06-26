@@ -97,7 +97,7 @@ static umf_result_t proxy_free(void *pool, void *ptr) {
     struct proxy_memory_pool *hPool = (struct proxy_memory_pool *)pool;
 
     if (ptr) {
-        umf_alloc_info_t allocInfo = {0};
+        umf_alloc_info_t allocInfo = {NULL, 0, NULL};
         umf_result_t umf_result = umfMemoryTrackerGetAllocInfo(ptr, &allocInfo);
         if (umf_result == UMF_RESULT_SUCCESS) {
             size = allocInfo.baseSize;

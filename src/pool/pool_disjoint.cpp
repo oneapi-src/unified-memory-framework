@@ -409,7 +409,7 @@ static void memoryProviderFree(umf_memory_provider_handle_t hProvider,
     size_t size = 0;
 
     if (ptr) {
-        umf_alloc_info_t allocInfo = {0};
+        umf_alloc_info_t allocInfo = {NULL, 0, NULL};
         umf_result_t umf_result = umfMemoryTrackerGetAllocInfo(ptr, &allocInfo);
         if (umf_result == UMF_RESULT_SUCCESS) {
             size = allocInfo.baseSize;
@@ -916,16 +916,15 @@ std::size_t DisjointPool::AllocImpl::sizeToIdx(size_t Size) {
 
     auto isPowerOf2 = 0 == (Size & (Size - 1));
     auto largerThanHalfwayBetweenPowersOf2 =
-        !isPowerOf2 & bool((Size - 1) & (uint64_t(1) << (position - 1)));
-    auto index = (position - MinBucketSizeExp) * 2 + !isPowerOf2 +
-                 largerThanHalfwayBetweenPowersOf2;
+        !isPowerOf2 && bool((Size - 1) & (uint64_t(1) << (position - 1)));
+    auto index = (position - MinBucketSizeExp) * 2 + (int)(!isPowerOf2) +
+                 (int)largerThanHalfwayBetweenPowersOf2;
 
     return index;
 }
 
 Bucket &DisjointPool::AllocImpl::findBucket(size_t Size) {
     auto calculatedIdx = sizeToIdx(Size);
-    assert(calculatedIdx >= 0);
     assert((*(Buckets[calculatedIdx])).getSize() >= Size);
     if (calculatedIdx > 0) {
         assert((*(Buckets[calculatedIdx - 1])).getSize() < Size);
@@ -1096,7 +1095,7 @@ DisjointPool::~DisjointPool() {
                 std::cout << "Current Pool Size "
                           << impl->getLimits()->TotalSize.load() << std::endl;
                 std::cout << "Suggested Setting=;"
-                          << std::string(1, tolower(name[0]))
+                          << std::string(1, (char)tolower(name[0]))
                           << std::string(name + 1) << ":" << HighBucketSize
                           << "," << HighPeakSlabsInUse << ",64K" << std::endl;
             }

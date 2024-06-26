@@ -9,7 +9,6 @@
 
 #include <assert.h>
 #include <ctype.h>
-#include <hwloc.h>
 #include <stdlib.h>
 
 #include "base_alloc_global.h"

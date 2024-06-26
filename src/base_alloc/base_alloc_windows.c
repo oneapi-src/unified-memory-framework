@@ -16,7 +16,10 @@ void *ba_os_alloc(size_t size) {
     return VirtualAlloc(NULL, size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 }
 
-void ba_os_free(void *ptr, size_t size) { VirtualFree(ptr, 0, MEM_RELEASE); }
+void ba_os_free(void *ptr, size_t size) {
+    (void)size; // unused
+    VirtualFree(ptr, 0, MEM_RELEASE);
+}
 
 static void _ba_os_init_page_size(void) {
     SYSTEM_INFO SystemInfo;

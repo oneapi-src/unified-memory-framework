@@ -20,10 +20,11 @@ int create_level_zero_pool(ze_context_handle_t context,
                            ze_device_handle_t device,
                            umf_memory_pool_handle_t *pool) {
     // setup params
-    level_zero_memory_provider_params_t params = {0};
+    level_zero_memory_provider_params_t params;
     params.level_zero_context_handle = context;
     params.level_zero_device_handle = device;
     params.memory_type = UMF_MEMORY_TYPE_DEVICE;
+
     // create Level Zero provider
     umf_memory_provider_handle_t provider = 0;
     umf_result_t umf_result = umfMemoryProviderCreate(

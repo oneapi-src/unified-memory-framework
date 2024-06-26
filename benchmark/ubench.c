@@ -7,6 +7,12 @@
  *
  */
 
+#include <stdbool.h>
+
+#ifndef _WIN32
+#include <unistd.h>
+#endif
+
 #include <umf/ipc.h>
 #include <umf/memory_pool.h>
 #include <umf/pools/pool_proxy.h>
@@ -22,19 +28,28 @@
 #include <umf/pools/pool_jemalloc.h>
 #endif
 
-#include <stdbool.h>
-
-#ifndef _WIN32
-#include <unistd.h>
-#endif
-
-#include "ubench.h"
 #include "utils_common.h"
 
 #if (defined UMF_BUILD_GPU_TESTS)
 #include "utils_level_zero.h"
 #endif
 
+// NOTE: with strict compilation flags, ubench compilation throws some
+// warnings. We disable them here because we do not want to change the ubench
+// code.
+
+// disable warning 6308:'realloc' might return null pointer: assigning null
+// pointer to 'failed_benchmarks', which is passed as an argument to 'realloc',
+// will cause the original memory block to be leaked.
+// disable warning 6001: Using uninitialized memory
+// '*ubench_state.benchmarks.name'.
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 6308)
+#pragma warning(disable : 6001)
+#endif // _MSC_VER
+
+#include "ubench.h"
 // BENCHMARK CONFIG
 #define N_ITERATIONS 1000
 #define ALLOC_SIZE (util_get_page_size())
@@ -63,7 +78,7 @@ static void do_benchmark(alloc_t *array, size_t iters, malloc_t malloc_f,
     int i = 0;
     do {
         array[i].ptr = malloc_f(provider, Alloc_size, 0);
-    } while (array[i++].ptr != NULL && i < iters);
+    } while (array[i++].ptr != NULL && i < (int)iters);
 
     while (--i >= 0) {
         free_f(provider, array[i].ptr, Alloc_size);
@@ -110,14 +125,18 @@ UBENCH_EX(simple, glibc_malloc) {
 
 static umf_os_memory_provider_params_t UMF_OS_MEMORY_PROVIDER_PARAMS = {
     /* .protection = */ UMF_PROTECTION_READ | UMF_PROTECTION_WRITE,
-    /* .visibility */ UMF_MEM_MAP_PRIVATE,
+    /* .visibility = */ UMF_MEM_MAP_PRIVATE,
+    /* .shm_name = */ NULL,
 
     // NUMA config
-    /* .nodemask = */ NULL,
-    /* .maxnode = */ 0,
-    /* .numa_mode = */ UMF_NUMA_MODE_DEFAULT,
+    /* .numa_list = */ NULL,
+    /* .numa_list_len = */ 0,
 
-    // others
+    /* .numa_mode = */ UMF_NUMA_MODE_DEFAULT,
+    /* .part_size = */ 0,
+
+    /* .partitions = */ NULL,
+    /* .partitions_len = */ 0,
 };
 
 static void *w_umfMemoryProviderAlloc(void *provider, size_t size,
@@ -487,3 +506,7 @@ err_destroy_context:
 #endif /* (defined UMF_BUILD_LIBUMF_POOL_DISJOINT && defined UMF_BUILD_LEVEL_ZERO_PROVIDER && defined UMF_BUILD_GPU_TESTS) */
 
 UBENCH_MAIN()
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif // _MSC_VER

@@ -48,6 +48,14 @@ SOFTWARE.
 #include <stdlib.h>
 #endif // _WIN32
 
+// disable warning 28251: "Inconsistent annotation for 'new': this instance
+// has no annotations." because different Win SDKs use slightly different
+// definitions of new
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 28251)
+#endif // _MSC_VER
+
 static inline void *internal_aligned_alloc(size_t alignment, size_t size) {
 #ifdef _WIN32
     return _aligned_malloc(size, alignment);
@@ -75,10 +83,18 @@ void operator delete(void *p, const std::nothrow_t &) noexcept { free(p); }
 void operator delete[](void *p, const std::nothrow_t &) noexcept { free(p); }
 
 decl_new(n) void *operator new(std::size_t n) noexcept(false) {
-    return malloc(n);
+    void *ptr = malloc(n);
+    if (ptr == nullptr) {
+        throw std::bad_alloc();
+    }
+    return ptr;
 }
 decl_new(n) void *operator new[](std::size_t n) noexcept(false) {
-    return malloc(n);
+    void *ptr = malloc(n);
+    if (ptr == nullptr) {
+        throw std::bad_alloc();
+    }
+    return ptr;
 }
 
 decl_new_nothrow(n) void *operator new(std::size_t n,
@@ -134,10 +150,18 @@ void operator delete[](void *p, std::align_val_t al,
 }
 
 void *operator new(std::size_t n, std::align_val_t al) noexcept(false) {
-    return internal_aligned_alloc(static_cast<size_t>(al), n);
+    void *ptr = internal_aligned_alloc(static_cast<size_t>(al), n);
+    if (ptr == nullptr) {
+        throw std::bad_alloc();
+    }
+    return ptr;
 }
 void *operator new[](std::size_t n, std::align_val_t al) noexcept(false) {
-    return internal_aligned_alloc(static_cast<size_t>(al), n);
+    void *ptr = internal_aligned_alloc(static_cast<size_t>(al), n);
+    if (ptr == nullptr) {
+        throw std::bad_alloc();
+    }
+    return ptr;
 }
 void *operator new(std::size_t n, std::align_val_t al,
                    const std::nothrow_t &) noexcept {
@@ -147,6 +171,11 @@ void *operator new[](std::size_t n, std::align_val_t al,
                      const std::nothrow_t &) noexcept {
     return internal_aligned_alloc(static_cast<size_t>(al), n);
 }
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif // _MSC_VER
+
 #endif // (__cplusplus > 201402L || defined(__cpp_aligned_new))
 #endif // defined(__cplusplus)
 

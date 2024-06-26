@@ -197,9 +197,9 @@ int umf_ba_linear_free(umf_ba_linear_pool_t *pool, void *ptr) {
         if ((pool->metadata.pool_n_allocs == 0) && pool->next_pool &&
             (pool->metadata.pool_size > page_size)) {
             // we can free the first (main) pool except of the first page containing the metadata
-            void *ptr = (char *)pool + page_size;
+            void *pool_ptr = (char *)pool + page_size;
             size_t size = pool->metadata.pool_size - page_size;
-            ba_os_free(ptr, size);
+            ba_os_free(pool_ptr, size);
             // update pool_size
             pool->metadata.pool_size = page_size;
         }
@@ -222,9 +222,9 @@ int umf_ba_linear_free(umf_ba_linear_pool_t *pool, void *ptr) {
                 assert(prev_pool->next_pool == next_pool);
                 prev_pool->next_pool = next_pool->next_pool;
                 _DEBUG_EXECUTE(pool->metadata.n_pools--);
-                void *ptr = next_pool;
+                void *next_pool_ptr = next_pool;
                 size_t size = next_pool->pool_size;
-                ba_os_free(ptr, size);
+                ba_os_free(next_pool_ptr, size);
             }
             _DEBUG_EXECUTE(ba_debug_checks(pool));
             util_mutex_unlock(&pool->metadata.lock);

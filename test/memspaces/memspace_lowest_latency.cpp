@@ -2,13 +2,12 @@
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
+#include <umf/memspace.h>
+
 #include "memspace_fixtures.hpp"
 #include "memspace_helpers.hpp"
 #include "memspace_internal.h"
 #include "test_helpers.h"
-
-#include <hwloc.h>
-#include <umf/memspace.h>
 
 static bool canQueryLatency(size_t nodeId) {
     hwloc_topology_t topology = nullptr;

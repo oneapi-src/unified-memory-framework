@@ -92,17 +92,20 @@ function(add_umf_target_compile_options name)
             ${name}
             PRIVATE -fPIC
                     -Wall
+                    -Wextra
+                    -Werror
                     -Wpedantic
                     -Wempty-body
                     -Wunused-parameter
+                    -Wformat
+                    -Wformat-security
                     $<$<CXX_COMPILER_ID:GNU>:-fdiagnostics-color=auto>)
         if(CMAKE_BUILD_TYPE STREQUAL "Release")
             target_compile_definitions(${name} PRIVATE -D_FORTIFY_SOURCE=2)
         endif()
         if(UMF_DEVELOPER_MODE)
-            target_compile_options(
-                ${name} PRIVATE -Werror -fno-omit-frame-pointer
-                                -fstack-protector-strong)
+            target_compile_options(${name} PRIVATE -fno-omit-frame-pointer
+                                                   -fstack-protector-strong)
         endif()
         if(USE_GCOV)
             if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -113,12 +116,26 @@ function(add_umf_target_compile_options name)
     elseif(MSVC)
         target_compile_options(
             ${name}
-            PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/MP> # clang-cl.exe does not
-                                                   # support /MP
-                    /W3 /MD$<$<CONFIG:Debug>:d> /GS)
-
-        if(UMF_DEVELOPER_MODE)
-            target_compile_options(${name} PRIVATE /WX /GS)
+            PRIVATE /MD$<$<CONFIG:Debug>:d>
+                    $<$<CONFIG:Release>:/sdl>
+                    /analyze
+                    /DYNAMICBASE
+                    /W4
+                    /WX
+                    /Gy
+                    /GS
+                    # disable warning 6326: Potential comparison of a constant
+                    # with another constant
+                    /wd6326
+                    # disable 4200 warning: nonstandard extension used:
+                    # zero-sized array in struct/union
+                    /wd4200)
+        if(${CMAKE_C_COMPILER_ID} MATCHES "MSVC")
+            target_compile_options(
+                ${name}
+                PRIVATE # below flags are not recognized by Clang
+                        /MP $<$<CONFIG:Release>:/LTCG>
+                        $<$<CONFIG:Release>:/NXCOMPAT>)
         endif()
     endif()
 endfunction()

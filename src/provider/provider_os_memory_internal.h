@@ -8,10 +8,10 @@
 #ifndef UMF_OS_MEMORY_PROVIDER_INTERNAL_H
 #define UMF_OS_MEMORY_PROVIDER_INTERNAL_H
 
-#include <hwloc.h>
 #include <umf/providers/provider_os_memory.h>
 
 #include "critnib.h"
+#include "umf_hwloc.h"
 #include "utils_common.h"
 
 #ifdef __cplusplus

@@ -83,8 +83,8 @@ static const char *tbb_symbol[TBB_POOL_SYMBOLS_MAX] = {
     "?pool_realloc@rml@@YAPEAXPEAVMemoryPool@1@PEAX_K@Z",
     "?pool_aligned_malloc@rml@@YAPEAXPEAVMemoryPool@1@_K1@Z",
     "?pool_free@rml@@YA_NPEAVMemoryPool@1@PEAX@Z",
-    "?pool_create_v1@rml@@YA?AW4MemPoolError@1@_JPEBUMemPoolPolicy@1@"
-    "PEAPEAVMemoryPool@1@@Z",
+    ("?pool_create_v1@rml@@YA?AW4MemPoolError@1@_JPEBUMemPoolPolicy@1@"
+     "PEAPEAVMemoryPool@1@@Z"),
     "?pool_destroy@rml@@YA_NPEAVMemoryPool@1@@Z",
     "?pool_identify@rml@@YAPEAVMemoryPool@1@PEAX@Z",
     "?pool_msize@rml@@YA_KPEAVMemoryPool@1@PEAX@Z"

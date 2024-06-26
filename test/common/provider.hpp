@@ -13,8 +13,6 @@
 #include <umf/base.h>
 #include <umf/memory_provider.h>
 
-#include <gtest/gtest.h>
-
 #include "base.hpp"
 #include "cpp_helpers.hpp"
 #include "test_helpers.h"
@@ -138,8 +136,8 @@ umf_memory_provider_ops_t MALLOC_PROVIDER_OPS =
 struct provider_mock_out_of_mem : public provider_base_t {
     provider_malloc helper_prov;
     int allocNum = 0;
-    umf_result_t initialize(int *allocNum) noexcept {
-        this->allocNum = *allocNum;
+    umf_result_t initialize(int *inAllocNum) noexcept {
+        allocNum = *inAllocNum;
         return UMF_RESULT_SUCCESS;
     }
     umf_result_t alloc(size_t size, size_t align, void **ptr) noexcept {

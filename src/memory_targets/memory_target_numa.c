@@ -8,7 +8,6 @@
  */
 
 #include <assert.h>
-#include <hwloc.h>
 #include <stdlib.h>
 
 #include <umf/pools/pool_disjoint.h>

@@ -7,9 +7,8 @@
  *
  */
 
-#include <hwloc.h>
-
 #include "base_alloc_global.h"
+#include "umf_hwloc.h"
 #include "utils_concurrency.h"
 #include "utils_log.h"
 

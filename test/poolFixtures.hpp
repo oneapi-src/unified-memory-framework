@@ -75,9 +75,9 @@ struct umfMemTest
     void SetUp() override {
         test::SetUp();
 
-        auto [params, expectedRecycledPoolAllocs] = this->GetParam();
+        auto [params, expRecycledPoolAllocs] = this->GetParam();
         pool = poolCreateExtUnique(params);
-        this->expectedRecycledPoolAllocs = expectedRecycledPoolAllocs;
+        expectedRecycledPoolAllocs = expRecycledPoolAllocs;
     }
 
     void TearDown() override { test::TearDown(); }
@@ -163,8 +163,9 @@ TEST_P(umfPoolTest, pow2AlignedAlloc) {
 #ifdef _WIN32
     // TODO: implement support for windows
     GTEST_SKIP();
-#endif
+#else
     pow2AlignedAllocHelper(pool.get());
+#endif
 }
 
 TEST_P(umfPoolTest, freeNullptr) {
@@ -175,24 +176,23 @@ TEST_P(umfPoolTest, freeNullptr) {
 
 TEST_P(umfPoolTest, multiThreadedMallocFree) {
     static constexpr size_t allocSize = 64;
-    auto poolMalloc = [](size_t allocSize, umf_memory_pool_handle_t pool) {
+    auto poolMalloc = [](size_t inAllocSize, umf_memory_pool_handle_t inPool) {
         std::vector<void *> allocations;
         for (size_t i = 0; i <= 10; ++i) {
-            allocations.emplace_back(umfPoolMalloc(pool, allocSize));
-            if (allocSize > 0) {
+            allocations.emplace_back(umfPoolMalloc(inPool, inAllocSize));
+            if (inAllocSize > 0) {
                 ASSERT_NE(allocations.back(), nullptr);
             }
         }
 
         for (auto allocation : allocations) {
-            umfPoolFree(pool, allocation);
+            umfPoolFree(inPool, allocation);
         }
     };
 
     std::vector<std::thread> threads;
     for (int i = 0; i < NTHREADS; i++) {
         threads.emplace_back(poolMalloc, allocSize, pool.get());
-        ;
     }
 
     for (auto &thread : threads) {
@@ -204,10 +204,9 @@ TEST_P(umfPoolTest, multiThreadedpow2AlignedAlloc) {
 #ifdef _WIN32
     // TODO: implement support for windows
     GTEST_SKIP();
-#endif
-
-    auto poolpow2AlignedAlloc = [](umf_memory_pool_handle_t pool) {
-        pow2AlignedAllocHelper(pool);
+#else
+    auto poolpow2AlignedAlloc = [](umf_memory_pool_handle_t inPool) {
+        pow2AlignedAllocHelper(inPool);
     };
 
     std::vector<std::thread> threads;
@@ -218,6 +217,7 @@ TEST_P(umfPoolTest, multiThreadedpow2AlignedAlloc) {
     for (auto &thread : threads) {
         thread.join();
     }
+#endif
 }
 
 TEST_P(umfPoolTest, multiThreadedReallocFree) {
@@ -227,10 +227,10 @@ TEST_P(umfPoolTest, multiThreadedReallocFree) {
     static constexpr size_t allocSize = 64;
     static constexpr size_t multiplier = 3;
     auto poolRealloc = [](size_t allocSize, size_t multiplier,
-                          umf_memory_pool_handle_t pool) {
+                          umf_memory_pool_handle_t inPool) {
         std::vector<void *> allocations;
         for (size_t i = 0; i <= 10; ++i) {
-            allocations.emplace_back(umfPoolMalloc(pool, allocSize));
+            allocations.emplace_back(umfPoolMalloc(inPool, allocSize));
             if (allocSize > 0) {
                 ASSERT_NE(allocations.back(), nullptr);
             }
@@ -238,8 +238,8 @@ TEST_P(umfPoolTest, multiThreadedReallocFree) {
 
         for (auto allocation : allocations) {
             auto *ptr =
-                umfPoolRealloc(pool, allocation, allocSize * multiplier);
-            umfPoolFree(pool, ptr);
+                umfPoolRealloc(inPool, allocation, allocSize * multiplier);
+            umfPoolFree(inPool, ptr);
         }
     };
 
@@ -259,17 +259,17 @@ TEST_P(umfPoolTest, multiThreadedCallocFree) {
     }
     static constexpr size_t num = 10;
     auto poolCalloc = [](size_t num, size_t size,
-                         umf_memory_pool_handle_t pool) {
+                         umf_memory_pool_handle_t inPool) {
         std::vector<void *> allocations;
         for (size_t i = 0; i <= 10; ++i) {
-            allocations.emplace_back(umfPoolCalloc(pool, num, size));
+            allocations.emplace_back(umfPoolCalloc(inPool, num, size));
             if (num * size > 0) {
                 ASSERT_NE(allocations.back(), nullptr);
             }
         }
 
         for (auto allocation : allocations) {
-            umfPoolFree(pool, allocation);
+            umfPoolFree(inPool, allocation);
         }
     };
 
@@ -284,17 +284,17 @@ TEST_P(umfPoolTest, multiThreadedCallocFree) {
 }
 
 TEST_P(umfPoolTest, multiThreadedMallocFreeRandomSizes) {
-    auto poolMalloc = [](size_t allocSize, umf_memory_pool_handle_t pool) {
+    auto poolMalloc = [](size_t allocSize, umf_memory_pool_handle_t inPool) {
         std::vector<void *> allocations;
         for (size_t i = 0; i <= 10; ++i) {
-            allocations.emplace_back(umfPoolMalloc(pool, allocSize));
+            allocations.emplace_back(umfPoolMalloc(inPool, allocSize));
             if (allocSize > 0) {
                 ASSERT_NE(allocations.back(), nullptr);
             }
         }
 
         for (auto allocation : allocations) {
-            umfPoolFree(pool, allocation);
+            umfPoolFree(inPool, allocation);
         }
     };
 
@@ -321,9 +321,7 @@ TEST_P(umfMemTest, outOfMem) {
                 UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY) {
             break;
         }
-        if (allocSize > 0) {
-            ASSERT_NE(allocations.back(), nullptr);
-        }
+        ASSERT_NE(allocations.back(), nullptr);
     }
 
     // next part of the test- freeing some memory to allocate it again (as the memory
@@ -333,10 +331,7 @@ TEST_P(umfMemTest, outOfMem) {
     // remove last nullptr from the allocations vector
     ASSERT_EQ(allocations.back(), nullptr);
     allocations.pop_back();
-
-    if (allocSize > 0) {
-        ASSERT_NE(allocations.back(), nullptr);
-    }
+    ASSERT_NE(allocations.back(), nullptr);
 
     for (int i = 0; i < expectedRecycledPoolAllocs; i++) {
         umfPoolFree(hPool, allocations.back());
@@ -345,9 +340,7 @@ TEST_P(umfMemTest, outOfMem) {
 
     for (int i = 0; i < expectedRecycledPoolAllocs; i++) {
         allocations.emplace_back(umfPoolMalloc(hPool, allocSize));
-        if (allocSize > 0) {
-            ASSERT_NE(allocations.back(), nullptr);
-        }
+        ASSERT_NE(allocations.back(), nullptr);
     }
 
     for (auto allocation : allocations) {
