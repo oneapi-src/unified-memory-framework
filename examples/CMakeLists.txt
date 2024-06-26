@@ -33,12 +33,12 @@ if(UMF_POOL_SCALABLE_ENABLED)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
     set_tests_properties(${EXAMPLE_NAME} PROPERTIES LABELS "example")
-endif()
 
-if(WINDOWS)
-    # append PATH to DLLs
-    set_property(TEST ${EXAMPLE_NAME} PROPERTY ENVIRONMENT_MODIFICATION
-                                               "${DLL_PATH_LIST}")
+    if(WINDOWS)
+        # append PATH to DLLs
+        set_property(TEST ${EXAMPLE_NAME} PROPERTY ENVIRONMENT_MODIFICATION
+                                                   "${DLL_PATH_LIST}")
+    endif()
 endif()
 
 if(UMF_BUILD_GPU_EXAMPLES
