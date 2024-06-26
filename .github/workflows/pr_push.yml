@@ -104,6 +104,7 @@ jobs:
         -DUMF_BUILD_EXAMPLES=ON
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
         -DUMF_TESTS_FAIL_ON_SKIP=ON
+        -DUMF_BUILD_SHARED_LIBRARY=ON
         ${{matrix.extra_build_options}}
 
     - name: Configure CMake (simple)
@@ -126,6 +127,16 @@ jobs:
       if: matrix.build_tests == 'ON'
       working-directory: ${{github.workspace}}/build
       run: ctest --output-on-failure --test-dir test -C Release
+
+    - name: check /DEPENDENTLOADFLAG (Windows only)
+      if: matrix.os == 'windows-latest'
+      run: ${{github.workspace}}/.github/scripts/check_dll_flags.ps1 ${{github.workspace}}/build/bin/Release/umf.dll
+      shell: pwsh
+
+    - name: check /DEPENDENTLOADFLAG in umf_proxy.dll
+      if: matrix.os == 'windows-latest'
+      run: ${{github.workspace}}/.github/scripts/check_dll_flags.ps1 ${{github.workspace}}/build/src/proxy_lib/Release/umf_proxy.dll
+      shell: pwsh
 
   CodeStyle:
     name: Coding style

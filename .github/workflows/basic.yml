@@ -148,7 +148,7 @@ jobs:
     name: Windows
     env:
       VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
-      BUILD_DIR : "${{github.workspace}}/build/${{matrix.build_type}}"
+      BUILD_DIR : "${{github.workspace}}/build/"
       INSTL_DIR : "${{github.workspace}}/../install-dir"
     strategy:
       matrix:
@@ -227,11 +227,21 @@ jobs:
         --proxy
         --umf-version ${{env.UMF_VERSION}}
         ${{ matrix.shared_library == 'ON' && '--shared-library' || ''}}
+        
+    - name: check /DEPENDENTLOADFLAG in umf.dll
+      if: ${{matrix.shared_library == 'ON' && matrix.compiler.cxx == 'cl'}}
+      run: ${{github.workspace}}/.github/scripts/check_dll_flags.ps1 ${{github.workspace}}/build/bin/${{matrix.build_type}}/umf.dll
+      shell: pwsh
+
+    - name: check /DEPENDENTLOADFLAG in umf_proxy.dll
+      if: ${{matrix.compiler.cxx == 'cl'}}
+      run: ${{github.workspace}}/.github/scripts/check_dll_flags.ps1 ${{github.workspace}}/build/src/proxy_lib/${{matrix.build_type}}/umf_proxy.dll
+      shell: pwsh
 
   windows-dynamic_build_hwloc:
     name: "Windows dynamic UMF + static hwloc"
     env:
-      BUILD_DIR : "${{github.workspace}}/build/${{matrix.build_type}}"
+      BUILD_DIR : "${{github.workspace}}/build"
     strategy:
       matrix:
         build_type: [Release]
@@ -263,10 +273,16 @@ jobs:
       working-directory: ${{env.BUILD_DIR}}
       run: ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
 
+      # we check umf.dll only here - note that the proxy library is disabled in
+      # this configuration
+    - name: check /DEPENDENTLOADFLAG in umf.dll
+      run: ${{github.workspace}}/.github/scripts/check_dll_flags.ps1 ${{github.workspace}}/build/bin/${{matrix.build_type}}/umf.dll
+      shell: pwsh
+
   windows-static_build_hwloc:
     name: "Windows static UMF + static hwloc"
     env:
-      BUILD_DIR : "${{github.workspace}}/build/${{matrix.build_type}}"
+      BUILD_DIR : "${{github.workspace}}/build"
     strategy:
       matrix:
         build_type: [Release]
