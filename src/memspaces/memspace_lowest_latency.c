@@ -15,7 +15,6 @@
 #include "base_alloc_global.h"
 #include "memory_target_numa.h"
 #include "memspace_internal.h"
-#include "memspace_numa.h"
 #include "topology.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
@@ -52,7 +51,7 @@ umfMemspaceLowestLatencyCreate(umf_memspace_handle_t *hMemspace) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    umf_memspace_handle_t hostAllMemspace = umfMemspaceHostAllGet();
+    umf_const_memspace_handle_t hostAllMemspace = umfMemspaceHostAllGet();
     if (!hostAllMemspace) {
         return UMF_RESULT_ERROR_UNKNOWN;
     }
@@ -97,7 +96,7 @@ static void umfMemspaceLowestLatencyInit(void) {
 #endif
 }
 
-umf_memspace_handle_t umfMemspaceLowestLatencyGet(void) {
+umf_const_memspace_handle_t umfMemspaceLowestLatencyGet(void) {
     util_init_once(&UMF_MEMSPACE_LOWEST_LATENCY_INITIALIZED,
                    umfMemspaceLowestLatencyInit);
     return UMF_MEMSPACE_LOWEST_LATENCY;

@@ -12,7 +12,6 @@
 #include "../memory_targets/memory_target_numa.h"
 #include "../memspace_internal.h"
 #include "base_alloc_global.h"
-#include "memspace_numa.h"
 
 umf_result_t umfMemspaceCreateFromNumaArray(unsigned *nodeIds, size_t numIds,
                                             umf_memspace_handle_t *hMemspace) {

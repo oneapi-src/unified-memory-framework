@@ -7,7 +7,6 @@
 
 #include "base.hpp"
 #include "memspace_internal.h"
-#include "memspaces/memspace_numa.h"
 #include "test_helpers.h"
 
 #include <numa.h>

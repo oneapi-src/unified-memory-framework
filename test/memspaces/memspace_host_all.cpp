@@ -27,7 +27,7 @@ struct memspaceHostAllTest : ::numaNodesTest {
         ASSERT_NE(hMemspace, nullptr);
     }
 
-    umf_memspace_handle_t hMemspace = nullptr;
+    umf_const_memspace_handle_t hMemspace = nullptr;
 };
 
 struct memspaceHostAllProviderTest : ::memspaceHostAllTest {
@@ -50,7 +50,7 @@ struct memspaceHostAllProviderTest : ::memspaceHostAllTest {
 };
 
 TEST_F(numaNodesTest, memspaceGet) {
-    umf_memspace_handle_t hMemspace = umfMemspaceHostAllGet();
+    umf_const_memspace_handle_t hMemspace = umfMemspaceHostAllGet();
     UT_ASSERTne(hMemspace, nullptr);
 
     // Confirm that the HOST ALL memspace is composed of all available NUMA nodes.
@@ -95,7 +95,7 @@ TEST_F(memspaceHostAllProviderTest, hostAllDefaults) {
     // default parameters based on default memspace (HostAll) uses the fast,
     // default kernel path (no mbind).
 
-    umf_memspace_handle_t hMemspace = umfMemspaceHostAllGet();
+    umf_const_memspace_handle_t hMemspace = umfMemspaceHostAllGet();
     UT_ASSERTne(hMemspace, nullptr);
 
     umf_memory_provider_handle_t hProvider = nullptr;

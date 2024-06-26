@@ -18,7 +18,8 @@
 #include "memspace_internal.h"
 
 #ifndef NDEBUG
-static umf_result_t verifyMemTargetsTypes(umf_memspace_handle_t memspace) {
+static umf_result_t
+verifyMemTargetsTypes(umf_const_memspace_handle_t memspace) {
     assert(memspace);
     if (memspace->size == 0) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
@@ -35,8 +36,9 @@ static umf_result_t verifyMemTargetsTypes(umf_memspace_handle_t memspace) {
 }
 #endif
 
-static umf_result_t memoryTargetHandlesToPriv(umf_memspace_handle_t memspace,
-                                              void ***pPrivs) {
+static umf_result_t
+memoryTargetHandlesToPriv(umf_const_memspace_handle_t memspace,
+                          void ***pPrivs) {
     assert(memspace);
     void **privs = umf_ba_global_alloc(sizeof(void *) * memspace->size);
     if (privs == NULL) {
@@ -51,7 +53,7 @@ static umf_result_t memoryTargetHandlesToPriv(umf_memspace_handle_t memspace,
     return UMF_RESULT_SUCCESS;
 }
 
-umf_result_t umfPoolCreateFromMemspace(umf_memspace_handle_t memspace,
+umf_result_t umfPoolCreateFromMemspace(umf_const_memspace_handle_t memspace,
                                        umf_const_mempolicy_handle_t policy,
                                        umf_memory_pool_handle_t *pool) {
     if (!memspace || !pool) {
@@ -76,7 +78,7 @@ umf_result_t umfPoolCreateFromMemspace(umf_memspace_handle_t memspace,
 }
 
 umf_result_t
-umfMemoryProviderCreateFromMemspace(umf_memspace_handle_t memspace,
+umfMemoryProviderCreateFromMemspace(umf_const_memspace_handle_t memspace,
                                     umf_const_mempolicy_handle_t policy,
                                     umf_memory_provider_handle_t *provider) {
     if (!memspace || !provider) {
@@ -110,7 +112,7 @@ void umfMemspaceDestroy(umf_memspace_handle_t memspace) {
     umf_ba_global_free(memspace);
 }
 
-umf_result_t umfMemspaceClone(umf_memspace_handle_t hMemspace,
+umf_result_t umfMemspaceClone(umf_const_memspace_handle_t hMemspace,
                               umf_memspace_handle_t *outHandle) {
     if (!hMemspace || !outHandle) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
@@ -209,7 +211,7 @@ umfMemspaceSortDesc(umf_memspace_handle_t hMemspace,
     return UMF_RESULT_SUCCESS;
 }
 
-umf_result_t umfMemspaceFilter(umf_memspace_handle_t hMemspace,
+umf_result_t umfMemspaceFilter(umf_const_memspace_handle_t hMemspace,
                                umfGetTargetFn getTarget,
                                umf_memspace_handle_t *filteredMemspace) {
     if (!hMemspace || !getTarget) {

@@ -50,7 +50,7 @@ struct numaNodesTest : ::umf_test::test {
 };
 
 using isQuerySupportedFunc = bool (*)(size_t);
-using memspaceGetFunc = umf_memspace_handle_t (*)();
+using memspaceGetFunc = umf_const_memspace_handle_t (*)();
 using memspaceGetParams = std::tuple<isQuerySupportedFunc, memspaceGetFunc>;
 
 struct memspaceGetTest : ::numaNodesTest,
@@ -68,7 +68,7 @@ struct memspaceGetTest : ::numaNodesTest,
         ASSERT_NE(hMemspace, nullptr);
     }
 
-    umf_memspace_handle_t hMemspace = nullptr;
+    umf_const_memspace_handle_t hMemspace = nullptr;
 };
 
 struct memspaceProviderTest : ::memspaceGetTest {

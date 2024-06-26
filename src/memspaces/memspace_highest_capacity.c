@@ -14,7 +14,6 @@
 #include "base_alloc_global.h"
 #include "memory_target_numa.h"
 #include "memspace_internal.h"
-#include "memspace_numa.h"
 #include "topology.h"
 #include "utils_concurrency.h"
 
@@ -24,7 +23,7 @@ umfMemspaceHighestCapacityCreate(umf_memspace_handle_t *hMemspace) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    umf_memspace_handle_t hostAllMemspace = umfMemspaceHostAllGet();
+    umf_const_memspace_handle_t hostAllMemspace = umfMemspaceHostAllGet();
     if (!hostAllMemspace) {
         return UMF_RESULT_ERROR_UNKNOWN;
     }
@@ -69,7 +68,7 @@ static void umfMemspaceHighestCapacityInit(void) {
     (void)ret;
 }
 
-umf_memspace_handle_t umfMemspaceHighestCapacityGet(void) {
+umf_const_memspace_handle_t umfMemspaceHighestCapacityGet(void) {
     util_init_once(&UMF_MEMSPACE_HIGHEST_CAPACITY_INITIALIZED,
                    umfMemspaceHighestCapacityInit);
     return UMF_MEMSPACE_HIGHEST_CAPACITY;

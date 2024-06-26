@@ -49,7 +49,7 @@ static umf_result_t numa_initialize(void *params, void **memTarget) {
 static void numa_finalize(void *memTarget) { umf_ba_global_free(memTarget); }
 
 static umf_result_t numa_memory_provider_create_from_memspace(
-    umf_memspace_handle_t memspace, void **memTargets, size_t numTargets,
+    umf_const_memspace_handle_t memspace, void **memTargets, size_t numTargets,
     umf_const_mempolicy_handle_t policy,
     umf_memory_provider_handle_t *provider) {
 
@@ -151,7 +151,7 @@ static umf_result_t numa_memory_provider_create_from_memspace(
 }
 
 static umf_result_t numa_pool_create_from_memspace(
-    umf_memspace_handle_t memspace, void **memTargets, size_t numTargets,
+    umf_const_memspace_handle_t memspace, void **memTargets, size_t numTargets,
     umf_const_mempolicy_handle_t policy, umf_memory_pool_handle_t *pool) {
     (void)memspace;
     (void)memTargets;
