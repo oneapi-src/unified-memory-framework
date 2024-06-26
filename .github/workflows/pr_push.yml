@@ -141,7 +141,9 @@ jobs:
       run: cmake --build build --target clang-format-check
 
     - name: Check CMake formatting
-      run: cmake --build build --target cmake-format-check
+      run: |
+        cmake --build build --target cmake-format-apply
+        git diff --exit-code
 
     - name: Check Python formatting
       run: cmake --build build --target black-format-check
