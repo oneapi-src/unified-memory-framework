@@ -165,6 +165,13 @@ if(USE_MSAN)
                     "prevent reporting false-positives")
     add_sanitizer_flag(memory)
 endif()
+# Fuzzer instrumentation for the whole library
+if(UMF_BUILD_FUZZTESTS
+   AND CMAKE_CXX_COMPILER_ID MATCHES "Clang"
+   AND LINUX)
+    add_compile_options("-fsanitize=fuzzer-no-link")
+    add_link_options("-fsanitize=fuzzer-no-link")
+endif()
 
 # A header only library to specify include directories in transitive
 # dependencies.
