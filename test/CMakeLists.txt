@@ -311,13 +311,15 @@ if(LINUX)
         ipc_os_prov_consumer
         SRCS
         ipc_os_prov_consumer.c
-        common/ipc_common.c)
+        common/ipc_common.c
+        common/ipc_os_prov_common.c)
     build_umf_test(
         NAME
         ipc_os_prov_producer
         SRCS
         ipc_os_prov_producer.c
-        common/ipc_common.c)
+        common/ipc_common.c
+        common/ipc_os_prov_common.c)
     add_umf_ipc_test(TEST ipc_os_prov_anon_fd)
     add_umf_ipc_test(TEST ipc_os_prov_shm)
 else()

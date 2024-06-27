@@ -8,8 +8,6 @@
 #ifndef IPC_COMMON_H
 #define IPC_COMMON_H
 
-#include <stdlib.h>
-
 #include <umf/memory_provider.h>
 
 // pointer to the function that returns void and accept two int values
@@ -25,7 +23,5 @@ int run_producer(int port, umf_memory_provider_ops_t *provider_ops,
 int run_consumer(int port, umf_memory_provider_ops_t *provider_ops,
                  void *provider_params, memcopy_callback_t memcopy_callback,
                  void *memcopy_ctx);
-
-void memcopy(void *dst, const void *src, size_t size, void *context);
 
 #endif // IPC_COMMON_H

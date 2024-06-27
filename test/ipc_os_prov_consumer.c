@@ -11,6 +11,7 @@
 #include <umf/providers/provider_os_memory.h>
 
 #include "ipc_common.h"
+#include "ipc_os_prov_common.h"
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {

@@ -473,8 +473,3 @@ err_umfMemoryProviderDestroy:
 
     return ret;
 }
-
-void memcopy(void *dst, const void *src, size_t size, void *context) {
-    (void)context;
-    memcpy(dst, src, size);
-}
