@@ -14,12 +14,11 @@
 #include <malloc/malloc.h>
 #else
 #include <malloc.h>
+#include <stdlib.h>
 #endif
+
 #include <umf/base.h>
 #include <umf/memory_provider.h>
-
-#include <gtest/gtest.h>
-#include <stdlib.h>
 
 #include "base.hpp"
 #include "cpp_helpers.hpp"
@@ -124,6 +123,9 @@ struct malloc_pool : public pool_base_t {
     }
     void *aligned_malloc(size_t size, size_t alignment) noexcept {
 #ifdef _WIN32
+        (void)size;      // unused
+        (void)alignment; // unused
+
         // we could use _aligned_malloc but it requires using _aligned_free...
         return nullptr;
 #else

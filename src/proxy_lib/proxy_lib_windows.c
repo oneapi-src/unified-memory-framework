@@ -16,6 +16,9 @@ static void proxy_lib_create(void) { proxy_lib_create_common(); }
 static void proxy_lib_destroy(void) { proxy_lib_destroy_common(); }
 
 BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
+    (void)hinstDLL;    // unused
+    (void)lpvReserved; // unused
+
     if (fdwReason == DLL_PROCESS_DETACH) {
         proxy_lib_destroy();
     } else if (fdwReason == DLL_PROCESS_ATTACH) {

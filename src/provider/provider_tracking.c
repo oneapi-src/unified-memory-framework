@@ -86,7 +86,7 @@ static umf_result_t umfMemoryTrackerRemove(umf_memory_tracker_handle_t hTracker,
 }
 
 umf_memory_pool_handle_t umfMemoryTrackerGetPool(const void *ptr) {
-    umf_alloc_info_t allocInfo = {0};
+    umf_alloc_info_t allocInfo = {NULL, 0, NULL};
     umf_result_t ret = umfMemoryTrackerGetAllocInfo(ptr, &allocInfo);
     if (ret != UMF_RESULT_SUCCESS) {
         return NULL;

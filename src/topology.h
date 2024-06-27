@@ -10,7 +10,7 @@
 #ifndef UMF_TOPOLOGY_H
 #define UMF_TOPOLOGY_H 1
 
-#include <hwloc.h>
+#include "umf_hwloc.h"
 
 #ifdef __cplusplus
 extern "C" {

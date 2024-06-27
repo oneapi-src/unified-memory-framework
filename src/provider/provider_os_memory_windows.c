@@ -122,7 +122,19 @@ int os_purge(void *addr, size_t length, int advice) {
     // If VirtualFree() succeeds, the return value is nonzero.
     // If VirtualFree() fails, the return value is 0 (zero).
     (void)advice; // unused
+
+    // temporarily disable the C6250 warning as we intentionally use the
+    // MEM_DECOMMIT flag only
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 6250)
+#endif // _MSC_VER
+
     return (VirtualFree(addr, length, MEM_DECOMMIT) == 0);
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif // _MSC_VER
 }
 
 static void _os_get_page_size(void) {

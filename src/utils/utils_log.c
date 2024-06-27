@@ -65,6 +65,14 @@ static const char *level_to_str(util_log_level_t l) {
     }
 }
 
+// disable warning 6262: "function uses '17368' bytes of stack. Consider moving
+// some data to heap", since we use such large buffers intentionally to fit all
+// the data
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 6262)
+#endif // _MSC_VER
+
 static void util_log_internal(util_log_level_t level, int perror,
                               const char *func, const char *format,
                               va_list args) {
@@ -190,6 +198,10 @@ static void util_log_internal(util_log_level_t level, int perror,
         fflush(out);
     }
 }
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif // _MSC_VER
 
 void util_log(util_log_level_t level, const char *func, const char *format,
               ...) {

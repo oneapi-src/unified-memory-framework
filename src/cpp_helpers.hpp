@@ -108,8 +108,8 @@ template <typename T> umf_memory_provider_ops_t providerOpsBase() {
 template <typename T, typename ParamType> umf_memory_pool_ops_t poolMakeCOps() {
     umf_memory_pool_ops_t ops = detail::poolOpsBase<T>();
 
-    ops.initialize = [](umf_memory_provider_handle_t provider, void *params,
-                        void **obj) {
+    ops.initialize = [](umf_memory_provider_handle_t provider,
+                        [[maybe_unused]] void *params, void **obj) {
         try {
             *obj = new T;
         } catch (...) {
@@ -137,7 +137,7 @@ template <typename T, typename ParamType>
 umf_memory_provider_ops_t providerMakeCOps() {
     umf_memory_provider_ops_t ops = detail::providerOpsBase<T>();
 
-    ops.initialize = [](void *params, void **obj) {
+    ops.initialize = []([[maybe_unused]] void *params, void **obj) {
         try {
             *obj = new T;
         } catch (...) {
