@@ -115,7 +115,7 @@ if(UMF_BUILD_SHARED_LIBRARY)
         NAME umf
         TYPE SHARED
         SRCS ${UMF_SOURCES}
-        LIBS ${UMF_LIBS}
+        LIBS ${UMF_LIBS} hwloc
         LINUX_MAP_FILE ${CMAKE_CURRENT_SOURCE_DIR}/libumf.map
         WINDOWS_DEF_FILE ${CMAKE_CURRENT_BINARY_DIR}/libumf.def)
     set(UMF_PRIVATE_COMPILE_DEFINITIONS ${UMF_PRIVATE_COMPILE_DEFINITIONS}
@@ -131,6 +131,10 @@ else()
         TYPE STATIC
         SRCS ${UMF_SOURCES}
         LIBS ${UMF_LIBS})
+endif()
+
+if(UMF_LINK_HWLOC_STATICALLY)
+    add_dependencies(umf hwloc)
 endif()
 
 target_link_directories(umf PRIVATE ${UMF_PRIVATE_LIBRARY_DIRS})
@@ -176,6 +180,6 @@ install(TARGETS umf EXPORT ${PROJECT_NAME}-targets)
 
 add_subdirectory(pool)
 
-if(UMF_PROXY_LIB_ENABLED)
+if(UMF_PROXY_LIB_ENABLED AND NOT UMF_LINK_HWLOC_STATICALLY)
     add_subdirectory(proxy_lib)
 endif()

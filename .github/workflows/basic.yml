@@ -228,6 +228,76 @@ jobs:
         --umf-version ${{env.UMF_VERSION}}
         ${{ matrix.shared_library == 'ON' && '--shared-library' || ''}}
 
+  windows-dynamic_build_hwloc:
+    name: "Windows dynamic UMF + static hwloc"
+    env:
+      BUILD_DIR : "${{github.workspace}}/build/${{matrix.build_type}}"
+    strategy:
+      matrix:
+        build_type: [Release]
+
+    runs-on: 'windows-2022'
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+    - name: Configure build
+      run: >
+        cmake
+        -B ${{env.BUILD_DIR}}
+        -DUMF_BUILD_SHARED_LIBRARY=ON
+        -DUMF_BUILD_EXAMPLES=OFF
+        -DUMF_FORMAT_CODE_STYLE=OFF
+        -DUMF_DEVELOPER_MODE=ON
+        -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
+        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=OFF
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
+        -DUMF_TESTS_FAIL_ON_SKIP=ON
+        -DUMF_LINK_HWLOC_STATICALLY=ON
+
+    - name: Build UMF
+      run: cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j $Env:NUMBER_OF_PROCESSORS
+
+    - name: Run tests
+      working-directory: ${{env.BUILD_DIR}}
+      run: ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
+
+  windows-static_build_hwloc:
+    name: "Windows static UMF + static hwloc"
+    env:
+      BUILD_DIR : "${{github.workspace}}/build/${{matrix.build_type}}"
+    strategy:
+      matrix:
+        build_type: [Release]
+
+    runs-on: 'windows-2022'
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+    - name: Configure build
+      run: >
+        cmake
+        -B ${{env.BUILD_DIR}}
+        -DUMF_BUILD_SHARED_LIBRARY=OFF
+        -DUMF_BUILD_EXAMPLES=OFF
+        -DUMF_FORMAT_CODE_STYLE=OFF
+        -DUMF_DEVELOPER_MODE=ON
+        -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
+        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=OFF
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
+        -DUMF_TESTS_FAIL_ON_SKIP=ON
+        -DUMF_LINK_HWLOC_STATICALLY=ON
+
+    - name: Build UMF
+      run: cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j $Env:NUMBER_OF_PROCESSORS
+
+    - name: Run tests
+      working-directory: ${{env.BUILD_DIR}}
+      run: ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
+
   macos-build:
     name: MacOS
     strategy:

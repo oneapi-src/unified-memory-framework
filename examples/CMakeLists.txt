@@ -18,7 +18,7 @@ set(EXAMPLE_NAME umf_example_basic)
 add_umf_executable(
     NAME ${EXAMPLE_NAME}
     SRCS basic/basic.c
-    LIBS umf)
+    LIBS umf hwloc)
 
 target_include_directories(
     ${EXAMPLE_NAME} PRIVATE ${UMF_CMAKE_SOURCE_DIR}/src/utils
