@@ -23,12 +23,9 @@ enable_testing()
 
 set(UMF_TEST_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
-function(add_umf_test)
-    # Parameters:
-    #
-    # * NAME - a name of the test
-    # * SRCS - source files
-    # * LIBS - libraries to be linked with
+function(build_umf_test)
+    # Parameters: * NAME - a name of the test * SRCS - source files * LIBS -
+    # libraries to be linked with
     set(oneValueArgs NAME)
     set(multiValueArgs SRCS LIBS)
     cmake_parse_arguments(
@@ -69,6 +66,30 @@ function(add_umf_test)
                 ${UMF_CMAKE_SOURCE_DIR}/src/utils
                 ${UMF_TEST_DIR}/common
                 ${UMF_TEST_DIR})
+endfunction()
+
+function(add_umf_test)
+    # Parameters: * NAME - a name of the test * SRCS - source files * LIBS -
+    # libraries to be linked with
+    set(oneValueArgs NAME)
+    set(multiValueArgs SRCS LIBS)
+    cmake_parse_arguments(
+        ARG
+        ""
+        "${oneValueArgs}"
+        "${multiValueArgs}"
+        ${ARGN})
+
+    build_umf_test(
+        NAME
+        ${ARG_NAME}
+        SRCS
+        ${ARG_SRCS}
+        LIBS
+        ${ARG_LIBS})
+
+    set(TEST_NAME umf-${ARG_NAME})
+    set(TEST_TARGET_NAME umf_test-${ARG_NAME})
 
     add_test(
         NAME ${TEST_NAME}
@@ -252,33 +273,30 @@ endif()
 
 add_umf_test(NAME ipc SRCS ipcAPI.cpp)
 
-function(build_umf_ipc_test name)
-    set(BASE_NAME ${name})
+function(add_umf_ipc_test)
+    # Parameters: * TEST - a name of the test * SRC_DIR - source files directory
+    # path
+    set(oneValueArgs TEST SRC_DIR)
+    cmake_parse_arguments(
+        ARG
+        ""
+        "${oneValueArgs}"
+        ""
+        ${ARGN})
 
-    foreach(loop_var IN ITEMS "producer" "consumer")
-        set(EXEC_NAME umf_test-${BASE_NAME}_${loop_var})
-        add_umf_executable(
-            NAME ${EXEC_NAME}
-            SRCS ${BASE_NAME}_${loop_var}.c
-            LIBS umf)
+    set(TEST_NAME umf-${ARG_TEST})
 
-        target_include_directories(
-            ${EXEC_NAME} PRIVATE ${UMF_CMAKE_SOURCE_DIR}/src/utils
-                                 ${UMF_CMAKE_SOURCE_DIR}/include)
+    if(DEFINED ARG_SRC_DIR)
+        set(SRC_DIR ${ARG_SRC_DIR})
+    else()
+        set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+    endif()
 
-        target_link_directories(${EXEC_NAME} PRIVATE ${LIBHWLOC_LIBRARY_DIRS})
-    endforeach(loop_var)
-endfunction()
-
-function(add_umf_ipc_test script)
-    set(TEST_NAME umf-${script})
-
-    file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/${script}.sh
-         DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+    file(COPY ${SRC_DIR}/${ARG_TEST}.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
     add_test(
         NAME ${TEST_NAME}
-        COMMAND ${script}.sh
+        COMMAND ${ARG_TEST}.sh
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
     set_tests_properties(${TEST_NAME} PROPERTIES LABELS "umf")
@@ -288,9 +306,20 @@ function(add_umf_ipc_test script)
 endfunction()
 
 if(LINUX)
-    build_umf_ipc_test(ipc_os_prov)
-    add_umf_ipc_test(ipc_os_prov_anon_fd)
-    add_umf_ipc_test(ipc_os_prov_shm)
+    build_umf_test(
+        NAME
+        ipc_os_prov_consumer
+        SRCS
+        ipc_os_prov_consumer.c
+        common/ipc_common.c)
+    build_umf_test(
+        NAME
+        ipc_os_prov_producer
+        SRCS
+        ipc_os_prov_producer.c
+        common/ipc_common.c)
+    add_umf_ipc_test(TEST ipc_os_prov_anon_fd)
+    add_umf_ipc_test(TEST ipc_os_prov_shm)
 else()
     message(STATUS "IPC tests are supported on Linux only - skipping")
 endif()
