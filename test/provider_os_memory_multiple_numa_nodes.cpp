@@ -558,7 +558,7 @@ TEST_P(testNumaSplit, checkModeSplit) {
     ASSERT_EQ(out.size(), pages)
         << "Wrong test input - out array size doesn't match page count";
 
-    auto v = numa_nodes;
+    auto &v = numa_nodes;
     // If input partitions are not defined then partitions are created based on numa_list order.
     // Do not shuffle them in this case, as this test require deterministic binds
     if (in.size() != 0) {
@@ -586,7 +586,7 @@ TEST_P(testNumaSplit, checkModeSplit) {
     memset(ptr, 0xFF, size);
     // Test where each page will be allocated.
     size_t index = 0;
-    for (auto x : out) {
+    for (auto &x : out) {
         numa_bitmask_clearall(nodemask);
 
         // Query the memory policy for the specific address
