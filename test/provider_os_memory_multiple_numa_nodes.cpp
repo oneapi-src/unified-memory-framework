@@ -586,7 +586,7 @@ TEST_P(testNumaSplit, checkModeSplit) {
     memset(ptr, 0xFF, size);
     // Test where each page will be allocated.
     size_t index = 0;
-    for (auto x : out) {
+    for (const auto &x : out) {
         numa_bitmask_clearall(nodemask);
 
         // Query the memory policy for the specific address
