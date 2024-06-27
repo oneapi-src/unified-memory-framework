@@ -158,6 +158,8 @@ function(add_umf_target_link_options name)
             PRIVATE
             /DYNAMICBASE
             /HIGHENTROPYVA
+            $<$<C_COMPILER_ID:MSVC>:/DEPENDENTLOADFLAG:0x2000>
+            $<$<CXX_COMPILER_ID:MSVC>:/DEPENDENTLOADFLAG:0x2000>
             /NXCOMPAT)
     endif()
 endfunction()
