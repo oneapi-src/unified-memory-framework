@@ -12,7 +12,17 @@
 #pragma warning(disable : 4100)
 #endif // _MSC_VER
 
+// disable warning "unused parameter" thrown in hwloc.h
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif // defined(__GNUC__) || defined(__clang__)
+
 #include <hwloc.h>
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif // defined(__GNUC__) || defined(__clang__)
 
 #if defined(_MSC_VER)
 #pragma warning(pop)
