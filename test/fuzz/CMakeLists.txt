@@ -23,4 +23,4 @@ target_include_directories(${TEST_TARGET_NAME}
                            PRIVATE ${UMF_CMAKE_SOURCE_DIR}/include)
 target_link_directories(${TEST_TARGET_NAME} PRIVATE ${LIBHWLOC_LIBRARY_DIRS})
 
-add_fuzz_test(basic_long fuzz-long -max_total_time=600 -seed=1)
+add_fuzz_test(basic_long fuzz-long -max_total_time=600)
