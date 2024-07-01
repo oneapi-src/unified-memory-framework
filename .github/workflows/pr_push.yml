@@ -1,7 +1,11 @@
 # Checks required for a PR to merge. This workflow mostly call other workflows.
 name: PR/push
 
-on: [push, pull_request]
+on:
+  push:
+    branches-ignore:
+      - 'dependabot/**'
+  pull_request:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}

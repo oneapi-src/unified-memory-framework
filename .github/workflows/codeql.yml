@@ -5,7 +5,11 @@ name: CodeQL
 # "PR/push" workflow. For some reason permissions weren't properly set
 # or recognized (by Scorecard). If Scorecard changes its behavior we can
 # go back to use 'workflow_call' trigger.
-on: [push, pull_request]
+on:
+  push:
+    branches-ignore:
+      - 'dependabot/**'
+  pull_request:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
