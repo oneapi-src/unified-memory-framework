@@ -14,6 +14,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <umf/base.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -76,6 +78,12 @@ int utils_getpid(void);
 
 // get the current thread ID
 int utils_gettid(void);
+
+// close file descriptor
+int utils_close_fd(int fd);
+
+// obtain a duplicate of another process's file descriptor
+umf_result_t utils_duplicate_fd(int pid, int fd_in, int *fd_out);
 
 #ifdef __cplusplus
 }

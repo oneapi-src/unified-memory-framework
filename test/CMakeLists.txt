@@ -219,14 +219,14 @@ if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
     # dlopen)
     add_umf_test(
         NAME provider_level_zero
-        SRCS providers/provider_level_zero.cpp
+        SRCS providers/provider_level_zero.cpp providers/level_zero_helpers.cpp
         LIBS ${UMF_UTILS_FOR_TEST} ze_loader)
     target_include_directories(umf_test-provider_level_zero
                                PRIVATE ${LEVEL_ZERO_INCLUDE_DIRS})
 
     add_umf_test(
         NAME provider_level_zero_dlopen
-        SRCS providers/provider_level_zero.cpp
+        SRCS providers/provider_level_zero.cpp providers/level_zero_helpers.cpp
         LIBS ${UMF_UTILS_FOR_TEST})
     target_compile_definitions(umf_test-provider_level_zero_dlopen
                                PUBLIC USE_DLOPEN=1)
@@ -322,6 +322,35 @@ if(LINUX)
         common/ipc_os_prov_common.c)
     add_umf_ipc_test(TEST ipc_os_prov_anon_fd)
     add_umf_ipc_test(TEST ipc_os_prov_shm)
+    if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
+        build_umf_test(
+            NAME
+            ipc_level_zero_prov_consumer
+            SRCS
+            providers/ipc_level_zero_prov_consumer.c
+            common/ipc_common.c
+            providers/ipc_level_zero_prov_common.c
+            providers/level_zero_helpers.cpp
+            LIBS
+            ze_loader
+            ${UMF_UTILS_FOR_TEST})
+        build_umf_test(
+            NAME
+            ipc_level_zero_prov_producer
+            SRCS
+            providers/ipc_level_zero_prov_producer.c
+            common/ipc_common.c
+            providers/ipc_level_zero_prov_common.c
+            providers/level_zero_helpers.cpp
+            LIBS
+            ze_loader
+            ${UMF_UTILS_FOR_TEST})
+        target_include_directories(umf_test-ipc_level_zero_prov_producer
+                                   PRIVATE ${LEVEL_ZERO_INCLUDE_DIRS})
+        target_include_directories(umf_test-ipc_level_zero_prov_consumer
+                                   PRIVATE ${LEVEL_ZERO_INCLUDE_DIRS})
+        add_umf_ipc_test(TEST ipc_level_zero_prov SRC_DIR providers)
+    endif()
 else()
     message(STATUS "IPC tests are supported on Linux only - skipping")
 endif()

@@ -285,11 +285,16 @@ static umf_result_t ze_memory_provider_allocation_split(void *provider,
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
+typedef struct ze_ipc_data_t {
+    int pid;
+    ze_ipc_mem_handle_t ze_handle;
+} ze_ipc_data_t;
+
 static umf_result_t ze_memory_provider_get_ipc_handle_size(void *provider,
                                                            size_t *size) {
     (void)provider;
     ASSERT(size != NULL);
-    *size = sizeof(ze_ipc_mem_handle_t);
+    *size = sizeof(ze_ipc_data_t);
     return UMF_RESULT_SUCCESS;
 }
 
@@ -301,16 +306,18 @@ static umf_result_t ze_memory_provider_get_ipc_handle(void *provider,
     ASSERT(providerIpcData != NULL);
     (void)size;
     ze_result_t ze_result;
-    ze_ipc_mem_handle_t *ze_ipc_handle = (ze_ipc_mem_handle_t *)providerIpcData;
+    ze_ipc_data_t *ze_ipc_data = (ze_ipc_data_t *)providerIpcData;
     struct ze_memory_provider_t *ze_provider =
         (struct ze_memory_provider_t *)provider;
 
-    ze_result =
-        g_ze_ops.zeMemGetIpcHandle(ze_provider->context, ptr, ze_ipc_handle);
+    ze_result = g_ze_ops.zeMemGetIpcHandle(ze_provider->context, ptr,
+                                           &ze_ipc_data->ze_handle);
     if (ze_result != ZE_RESULT_SUCCESS) {
         LOG_ERR("zeMemGetIpcHandle() failed.");
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
+
+    ze_ipc_data->pid = utils_getpid();
 
     return UMF_RESULT_SUCCESS;
 }
@@ -322,7 +329,7 @@ static umf_result_t ze_memory_provider_put_ipc_handle(void *provider,
     ze_result_t ze_result;
     struct ze_memory_provider_t *ze_provider =
         (struct ze_memory_provider_t *)provider;
-    ze_ipc_mem_handle_t *ze_ipc_handle = (ze_ipc_mem_handle_t *)providerIpcData;
+    ze_ipc_data_t *ze_ipc_data = (ze_ipc_data_t *)providerIpcData;
 
     if (g_ze_ops.zeMemPutIpcHandle == NULL) {
         // g_ze_ops.zeMemPutIpcHandle can be NULL because it was introduced
@@ -331,8 +338,8 @@ static umf_result_t ze_memory_provider_put_ipc_handle(void *provider,
         return UMF_RESULT_SUCCESS;
     }
 
-    ze_result =
-        g_ze_ops.zeMemPutIpcHandle(ze_provider->context, *ze_ipc_handle);
+    ze_result = g_ze_ops.zeMemPutIpcHandle(ze_provider->context,
+                                           ze_ipc_data->ze_handle);
     if (ze_result != ZE_RESULT_SUCCESS) {
         LOG_ERR("zeMemPutIpcHandle() failed.");
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
@@ -347,12 +354,29 @@ static umf_result_t ze_memory_provider_open_ipc_handle(void *provider,
     ASSERT(providerIpcData != NULL);
     ASSERT(ptr != NULL);
     ze_result_t ze_result;
-    ze_ipc_mem_handle_t *ze_ipc_handle = (ze_ipc_mem_handle_t *)providerIpcData;
+    ze_ipc_data_t *ze_ipc_data = (ze_ipc_data_t *)providerIpcData;
     struct ze_memory_provider_t *ze_provider =
         (struct ze_memory_provider_t *)provider;
+    int fd_local = -1;
+    ze_ipc_mem_handle_t ze_ipc_handle = ze_ipc_data->ze_handle;
+
+    if (ze_ipc_data->pid != utils_getpid()) {
+        int fd_remote = -1;
+        memcpy(&fd_remote, &ze_ipc_handle, sizeof(fd_remote));
+        umf_result_t umf_result =
+            utils_duplicate_fd(ze_ipc_data->pid, fd_remote, &fd_local);
+        if (umf_result != UMF_RESULT_SUCCESS) {
+            LOG_PERR("duplicating file descriptor failed");
+            return umf_result;
+        }
+        memcpy(&ze_ipc_handle, &fd_local, sizeof(fd_local));
+    }
 
     ze_result = g_ze_ops.zeMemOpenIpcHandle(
-        ze_provider->context, ze_provider->device, *ze_ipc_handle, 0, ptr);
+        ze_provider->context, ze_provider->device, ze_ipc_handle, 0, ptr);
+    if (fd_local != -1) {
+        (void)utils_close_fd(fd_local);
+    }
     if (ze_result != ZE_RESULT_SUCCESS) {
         LOG_ERR("zeMemOpenIpcHandle() failed.");
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;

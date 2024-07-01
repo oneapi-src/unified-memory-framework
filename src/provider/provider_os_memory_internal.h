@@ -97,10 +97,6 @@ size_t os_get_page_size(void);
 
 void os_strerror(int errnum, char *buf, size_t buflen);
 
-umf_result_t os_duplicate_fd(int pid, int fd_in, int *fd_out);
-
-umf_result_t os_close_fd(int fd);
-
 #ifdef __cplusplus
 }
 #endif
