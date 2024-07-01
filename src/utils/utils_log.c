@@ -133,7 +133,7 @@ static void util_log_internal(util_log_level_t level, int perror,
             char err_buff[1024]; // max size according to manpage.
             int saveno = errno;
             errno = 0;
-            char *err = strerror_r(saveno, err_buff, sizeof(err_buff));
+            const char *err = strerror_r(saveno, err_buff, sizeof(err_buff));
             if (errno == ERANGE) {
                 postfix = "[truncated...]";
             }

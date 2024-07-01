@@ -583,8 +583,9 @@ static size_t getDataSizeFromIpcHandle(const void *providerIpcData) {
     // by umf_ipc_data_t. We use this trick to get pointer to
     // umf_ipc_data_t data because the providerIpcData is
     // the Flexible Array Member of umf_ipc_data_t.
-    umf_ipc_data_t *ipcUmfData =
-        (umf_ipc_data_t *)((uint8_t *)providerIpcData - sizeof(umf_ipc_data_t));
+    const umf_ipc_data_t *ipcUmfData =
+        (const umf_ipc_data_t *)((const uint8_t *)providerIpcData -
+                                 sizeof(umf_ipc_data_t));
     return ipcUmfData->baseSize;
 }
 

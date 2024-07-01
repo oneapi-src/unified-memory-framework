@@ -87,7 +87,14 @@ int os_purge(void *addr, size_t length, int advice) {
 }
 
 void os_strerror(int errnum, char *buf, size_t buflen) {
-    strerror_r(errnum, buf, buflen);
+// 'strerror_r' implementation is XSI-compliant (returns 0 on success)
+#if (_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && !_GNU_SOURCE
+    if (strerror_r(errnum, buf, buflen)) {
+#else // 'strerror_r' implementation is GNU-specific (returns pointer on success)
+    if (!strerror_r(errnum, buf, buflen)) {
+#endif
+        LOG_PERR("Retrieving error code description failed");
+    }
 }
 
 umf_result_t os_duplicate_fd(int pid, int fd_in, int *fd_out) {
