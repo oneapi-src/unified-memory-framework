@@ -5,6 +5,10 @@ updates:
     directory: "/third_party" # Location of package manifests
     schedule:
       interval: "daily"
+    ignore:
+      - dependency-name: "clang-format"
+      - dependency-name: "cmake-format"
+      - dependency-name: "black"
     groups:
       pip-dependencies:
         applies-to: version-updates
