@@ -56,6 +56,13 @@ function(build_umf_test)
         SRCS ${ARG_SRCS}
         LIBS ${TEST_LIBS})
 
+    if(NOT MSVC)
+        # Suppress 'cast discards const qualifier' warnings. Parametrized GTEST
+        # tests retrieve arguments using 'GetParam()', which applies a 'const'
+        # qualifier often discarded in the test scenarios.
+        target_compile_options(${TEST_TARGET_NAME} PRIVATE -Wno-cast-qual)
+    endif()
+
     target_link_directories(${TEST_TARGET_NAME} PRIVATE ${LIB_DIRS})
 
     target_include_directories(
