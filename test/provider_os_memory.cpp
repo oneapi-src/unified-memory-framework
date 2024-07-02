@@ -260,6 +260,12 @@ TEST_P(umfProviderTest, alloc_WRONG_SIZE) {
                        UMF_OS_RESULT_ERROR_ALLOC_FAILED);
 }
 
+TEST_P(umfProviderTest, alloc_MAX_SIZE) {
+    test_alloc_failure(provider.get(), SIZE_MAX, 0,
+                       UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC,
+                       UMF_OS_RESULT_ERROR_ALLOC_FAILED);
+}
+
 // other positive tests
 
 TEST_P(umfProviderTest, get_min_page_size) {
