@@ -133,13 +133,15 @@ class UmfInstaller:
             "share/doc",
             "share/doc/umf",
         ]
+
         examples_dir = Path(self.workspace_dir, "examples")
-        examples_dirs = [dir for dir in examples_dir.iterdir() if dir.is_dir()]
-        examples = [
-            f"share/doc/umf/examples/{file_path.name}"
-            for example_dir in examples_dirs
-            for file_path in example_dir.iterdir()
+        examples_files = [
+            str(entry.relative_to(self.workspace_dir))
+            for entry in sorted(
+                examples_dir.rglob("*"), key=lambda x: str(x).casefold()
+            )
         ]
+        examples = [f"share/doc/umf/" + file for file in examples_files]
         examples = sorted(examples)
         examples.insert(0, "share/doc/umf/examples")
         share.extend(examples)
