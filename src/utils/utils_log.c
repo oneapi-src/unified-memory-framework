@@ -254,6 +254,16 @@ void util_log_init(void) {
 
         memcpy(file, arg, len);
         file[len] = '\0';
+
+        // for security reasons check if we don't open a symlink file
+        if (util_is_symlink(file)) {
+            loggerConfig.output = stderr;
+            LOG_ERR("Output file %s exists and is a symlink - logging disabled",
+                    file);
+            loggerConfig.output = NULL;
+            return;
+        }
+
         loggerConfig.output = fopen(file, "w+");
         if (!loggerConfig.output) {
             loggerConfig.output = stderr;

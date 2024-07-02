@@ -29,8 +29,10 @@ extern "C" {
         expression;                                                            \
     } while (0)
 
-#define ALIGN_UP(value, align) (((value) + (align)-1) & ~((align)-1))
-#define ALIGN_DOWN(value, align) ((value) & ~((align)-1))
+#ifndef ALIGN_UP
+#define ALIGN_UP(value, align) (((value) + (align) - 1) & ~((align) - 1))
+#define ALIGN_DOWN(value, align) ((value) & ~((align) - 1))
+#endif
 
 #define VALGRIND_ANNOTATE_NEW_MEMORY(p, s) DO_WHILE_EMPTY
 #define VALGRIND_HG_DRD_DISABLE_CHECKING(p, s) DO_WHILE_EMPTY
@@ -84,6 +86,9 @@ int utils_close_fd(int fd);
 
 // obtain a duplicate of another process's file descriptor
 umf_result_t utils_duplicate_fd(int pid, int fd_in, int *fd_out);
+
+// checks whether the path points to a symlink
+int util_is_symlink(const char *path);
 
 #ifdef __cplusplus
 }
