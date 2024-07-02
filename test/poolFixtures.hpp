@@ -98,6 +98,13 @@ TEST_P(umfPoolTest, allocFree) {
     umfPoolFree(pool.get(), ptr);
 }
 
+TEST_P(umfPoolTest, allocMaxSize) {
+    auto *ptr = umfPoolMalloc(pool.get(), SIZE_MAX);
+    ASSERT_EQ(ptr, nullptr);
+    ASSERT_EQ(umfPoolGetLastAllocationError(pool.get()),
+              UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY);
+}
+
 TEST_P(umfPoolTest, allocFreeNonAlignedSizes) {
     for (const auto &allocSize : nonAlignedAllocSizes) {
         auto *ptr = umfPoolMalloc(pool.get(), allocSize);
