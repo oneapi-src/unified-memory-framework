@@ -774,3 +774,21 @@ TEST_F(testNuma, checkModeInterleaveIllegalArgSet) {
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
     ASSERT_EQ(os_memory_provider, nullptr);
 }
+
+// Interleave mode set with SIZE_MAX part size
+TEST_F(testNuma, maxPartSize) {
+    std::vector<unsigned> numa_nodes = get_available_numa_nodes();
+
+    umf_os_memory_provider_params_t os_memory_provider_params =
+        UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
+    os_memory_provider_params.numa_mode = UMF_NUMA_MODE_INTERLEAVE;
+    os_memory_provider_params.part_size = SIZE_MAX;
+    os_memory_provider_params.numa_list = numa_nodes.data();
+    os_memory_provider_params.numa_list_len = numa_nodes.size();
+
+    auto res = umfMemoryProviderCreate(umfOsMemoryProviderOps(),
+                                       &os_memory_provider_params,
+                                       &os_memory_provider);
+    ASSERT_EQ(res, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    ASSERT_EQ(os_memory_provider, nullptr);
+}

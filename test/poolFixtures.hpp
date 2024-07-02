@@ -451,4 +451,9 @@ TEST_P(umfPoolTest, realloc_compliance) {
 
 TEST_P(umfPoolTest, free_compliance) { free_compliance_test(pool.get()); }
 
+TEST_P(umfPoolTest, allocMaxSize) {
+    auto *ptr = umfPoolMalloc(pool.get(), SIZE_MAX);
+    ASSERT_EQ(ptr, nullptr);
+}
+
 #endif /* UMF_TEST_POOL_FIXTURES_HPP */
