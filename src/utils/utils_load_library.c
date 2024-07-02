@@ -24,12 +24,18 @@
 
 #endif
 
+#include "utils_common.h"
 #include "utils_load_library.h"
 
 #ifdef _WIN32
 
 void *util_open_library(const char *filename, int userFlags) {
     (void)userFlags; //unused for win
+
+    if (util_is_symlink(filename)) {
+        return NULL;
+    }
+
     return LoadLibrary(TEXT(filename));
 }
 
@@ -53,6 +59,10 @@ void *util_get_symbol_addr(void *handle, const char *symbol,
 #else /* Linux */
 
 void *util_open_library(const char *filename, int userFlags) {
+    if (util_is_symlink(filename)) {
+        return NULL;
+    }
+
     int dlopenFlags = RTLD_LAZY;
     if (userFlags & UMF_UTIL_OPEN_LIBRARY_GLOBAL) {
         dlopenFlags |= RTLD_GLOBAL;

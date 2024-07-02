@@ -10,7 +10,9 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <sys/syscall.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include "utils_common.h"
@@ -103,4 +105,9 @@ umf_result_t utils_duplicate_fd(int pid, int fd_in, int *fd_out) {
 
     return UMF_RESULT_SUCCESS;
 #endif
+}
+
+int util_is_symlink(const char *path) {
+    struct stat st;
+    return lstat(path, &st) == 0 && S_ISLNK(st.st_mode);
 }
