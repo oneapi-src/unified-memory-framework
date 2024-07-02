@@ -34,17 +34,3 @@ cmake .. \
     -DUMF_BUILD_EXAMPLES=ON
 
 make -j $(nproc)
-
-# Drop caches, restores free memory on NUMA nodes
-echo password | sudo sync;
-echo password | sudo sh -c "/usr/bin/echo 3 > /proc/sys/vm/drop_caches"
-
-ctest --verbose
-
-# run tests bound to a numa node
-numactl -N 0 ctest --output-on-failure
-numactl -N 1 ctest --output-on-failure
-
-# run tests under valgrind
-echo "Running tests under valgrind memcheck ..."
-../test/test_valgrind.sh .. . memcheck

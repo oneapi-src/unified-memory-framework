@@ -4,7 +4,7 @@ name: Qemu
 on: workflow_call
 
 env:
-  CI_BRANCH : "${{ github.head_ref || github.ref_name }}"
+  CI_BRANCH: "${{ github.head_ref || github.ref_name }}"
 
 permissions:
   contents: read
@@ -13,19 +13,6 @@ jobs:
   qemu-build:
     name: Qemu
     runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        config: [{name: 'default', hmat: 'on'},
-                 { name: 'sock_2_var1', hmat: 'off'},
-                 { name: 'sock_2_var1_hmat', hmat: 'on'},
-                 { name: 'sock_2_var2', hmat: 'off'},
-                 { name: 'sock_2_var2_hmat', hmat: 'on'},
-                 { name: 'sock_2_var3', hmat: 'off'},
-                 { name: 'sock_2_var3_hmat', hmat: 'on'},
-                 { name: 'sock_4_var1', hmat: 'off'},
-                 { name: 'sock_4_var1_hmat', hmat: 'on'},
-                 { name: 'sock_4_var2', hmat: 'off'},
-                 { name: 'sock_4_var2_hmat', hmat: 'on'}]
 
     steps:
     - name: Checkout
@@ -83,33 +70,10 @@ jobs:
       run: wget https://cloud-images.ubuntu.com/releases/lunar/release/ubuntu-23.04-server-cloudimg-amd64.img
     - name: Resize image
       run: qemu-img resize ./ubuntu-23.04-server-cloudimg-amd64.img +4G
-    - name: Print qemu args
+    - name: Build
       run: |
-        # notice: should be sedded, but it hides status
-        python3 scripts/qemu/qemu_config.py scripts/qemu/configs/${{matrix.config.name}}.xml
-    - name: Run qemu
-      run: |
-        sudo qemu-system-x86_64 \
-        -drive file=./ubuntu-23.04-server-cloudimg-amd64.img,format=qcow2,index=0,media=disk,id=hd \
-        -cdrom ./ubuntu-cloud-init.iso \
-        -machine q35,usb=off,hmat=${{matrix.config.hmat}} \
-        -enable-kvm \
-        -net nic -net user,hostfwd=tcp::2222-:22 \
-        $(echo `python3 scripts/qemu/qemu_config.py scripts/qemu/configs/${{matrix.config.name}}.xml | sed s/''\''/'/g`) \
-        -daemonize -display none
-    - name: Run ssh keyscan
-      run: |
-        set +e
-        ssh-keyscan -p 2222 -H 127.0.0.1 >> ~/.ssh/known_hosts
-        while [ $? -ne 0 ]
-        do
-          echo "Trying to connect..."
-          ps -aux | grep qemu
-          sleep 5
-          ssh-keyscan -p 2222 -H 127.0.0.1 >> ~/.ssh/known_hosts
-        done
-    - name: Run build on qemu
-      run: |
+        scripts/qemu/start_qemu.sh scripts/qemu/configs/default.xml
+
         if [ ${{ github.event_name }} = 'pull_request' ]; then
             CI_REPO="${{ github.event.pull_request.head.repo.full_name }}"
         else
@@ -117,4 +81,28 @@ jobs:
         fi
 
         scp -P 2222 ${{github.workspace}}/scripts/qemu/run-build.sh cxltest@127.0.0.1:/home/cxltest
+        scp -P 2222 ${{github.workspace}}/scripts/qemu/run-tests.sh cxltest@127.0.0.1:/home/cxltest
         ssh cxltest@127.0.0.1 -p 2222 -t "bash /home/cxltest/run-build.sh https://github.com/$CI_REPO ${{env.CI_BRANCH}}"
+
+        ssh cxltest@127.0.0.1 -p 2222 -t "sudo shutdown -h now"
+
+    - name: Run tests
+      run: |
+        for config_file in scripts/qemu/configs/*.xml; do
+          config_name=$(basename $config_file .xml)
+
+          while ps -aux | grep qemu-system-x86_64 | grep -q -v grep; do
+            echo "Waiting for QEMU to shut down..."
+            sleep 5
+          done
+          scripts/qemu/start_qemu.sh $config_file
+          
+          if [ ${{ github.event_name }} = 'pull_request' ]; then
+            CI_REPO="${{ github.event.pull_request.head.repo.full_name }}"
+          else
+            CI_REPO="$GITHUB_REPOSITORY"
+          fi
+
+          ssh cxltest@127.0.0.1 -p 2222 -t "bash /home/cxltest/run-tests.sh"
+          ssh cxltest@127.0.0.1 -p 2222 -t "sudo shutdown -h now"
+        done
