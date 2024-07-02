@@ -200,6 +200,9 @@ jobs:
   Sanitizers:
     needs: [Spellcheck, FastBuild, CodeStyle]
     uses: ./.github/workflows/sanitizers.yml
+  Qemu:
+    needs: [Spellcheck, FastBuild, CodeStyle]
+    uses: ./.github/workflows/qemu.yml
   Benchmarks:
     needs: [Build]
     uses: ./.github/workflows/benchmarks.yml
@@ -209,9 +212,6 @@ jobs:
   GPU:
     needs: [Build]
     uses: ./.github/workflows/gpu.yml
-  Qemu:
-    needs: [Build]
-    uses: ./.github/workflows/qemu.yml
   Valgrind:
     needs: [Build]
     uses: ./.github/workflows/valgrind.yml
