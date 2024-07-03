@@ -46,7 +46,7 @@ function(add_umf_benchmark)
         PRIVATE ${UMF_CMAKE_SOURCE_DIR}/include
                 ${UMF_CMAKE_SOURCE_DIR}/src/utils
                 ${UMF_CMAKE_SOURCE_DIR}/test/common
-                ${UMF_CMAKE_SOURCE_DIR}/examples/basic)
+                ${UMF_CMAKE_SOURCE_DIR}/examples/common)
 
     target_link_directories(${BENCH_NAME} PRIVATE ${ARG_LIBDIRS})
 

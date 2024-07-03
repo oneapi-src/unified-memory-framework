@@ -48,12 +48,14 @@ if(UMF_BUILD_GPU_EXAMPLES
 
     add_umf_executable(
         NAME ${EXAMPLE_NAME}
-        SRCS basic/gpu_shared_memory.c
+        SRCS gpu_shared_memory/gpu_shared_memory.c
         LIBS disjoint_pool ze_loader umf)
 
     target_include_directories(
-        ${EXAMPLE_NAME} PRIVATE ${UMF_CMAKE_SOURCE_DIR}/src/utils
-                                ${UMF_CMAKE_SOURCE_DIR}/include)
+        ${EXAMPLE_NAME}
+        PRIVATE ${UMF_CMAKE_SOURCE_DIR}/src/utils
+                ${UMF_CMAKE_SOURCE_DIR}/include
+                ${UMF_CMAKE_SOURCE_DIR}/examples/common)
 
     target_link_directories(${EXAMPLE_NAME} PRIVATE ${LIBHWLOC_LIBRARY_DIRS})
 
@@ -87,13 +89,14 @@ if(UMF_BUILD_GPU_EXAMPLES
 
     add_umf_executable(
         NAME ${EXAMPLE_NAME}
-        SRCS basic/ipc_level_zero.c
+        SRCS ipc_level_zero/ipc_level_zero.c
         LIBS disjoint_pool ze_loader umf)
 
     target_include_directories(
         ${EXAMPLE_NAME}
         PRIVATE ${LEVEL_ZERO_INCLUDE_DIRS} ${UMF_CMAKE_SOURCE_DIR}/src/utils
-                ${UMF_CMAKE_SOURCE_DIR}/include)
+                ${UMF_CMAKE_SOURCE_DIR}/include
+                ${UMF_CMAKE_SOURCE_DIR}/examples/common)
 
     target_link_directories(${EXAMPLE_NAME} PRIVATE ${LIBHWLOC_LIBRARY_DIRS})
 
@@ -124,7 +127,7 @@ function(build_umf_ipc_example name)
         set(EX_NAME ${EXAMPLE_NAME}_${loop_var})
         add_umf_executable(
             NAME ${EX_NAME}
-            SRCS basic/${BASE_NAME}_${loop_var}.c
+            SRCS ipc_ipcapi/${BASE_NAME}_${loop_var}.c
             LIBS umf)
 
         target_include_directories(
@@ -138,7 +141,7 @@ endfunction()
 function(add_umf_ipc_example script)
     set(EXAMPLE_NAME umf_example_${script})
 
-    file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/basic/${script}.sh
+    file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/ipc_ipcapi/${script}.sh
          DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
     add_test(
