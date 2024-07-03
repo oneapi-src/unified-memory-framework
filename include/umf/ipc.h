@@ -20,6 +20,14 @@ extern "C" {
 typedef struct umf_ipc_data_t *umf_ipc_handle_t;
 
 ///
+/// @brief Returns the size of IPC handles for the specified pool.
+/// @param hPool [in] Pool handle
+/// @param size [out] size of IPC handle in bytes.
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+umf_result_t umfPoolGetIPCHandleSize(umf_memory_pool_handle_t hPool,
+                                     size_t *size);
+
+///
 /// @brief Creates an IPC handle for the specified UMF allocation.
 /// @param ptr pointer to the allocated memory.
 /// @param ipcHandle [out] returned IPC handle.

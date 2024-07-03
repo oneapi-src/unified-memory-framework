@@ -19,6 +19,36 @@
 #include "utils_common.h"
 #include "utils_log.h"
 
+umf_result_t umfPoolGetIPCHandleSize(umf_memory_pool_handle_t hPool,
+                                     size_t *size) {
+    umf_result_t ret = UMF_RESULT_SUCCESS;
+    if (hPool == NULL) {
+        LOG_ERR("pool handle is NULL.");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (size == NULL) {
+        LOG_ERR("size is NULL.");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    // We cannot use umfPoolGetMemoryProvider function because it returns
+    // upstream provider but we need tracking one
+    umf_memory_provider_handle_t hProvider = hPool->provider;
+    assert(hProvider);
+
+    size_t providerIPCHandleSize;
+    ret = umfMemoryProviderGetIPCHandleSize(hProvider, &providerIPCHandleSize);
+    if (ret != UMF_RESULT_SUCCESS) {
+        LOG_ERR("cannot get IPC handle size.");
+        return ret;
+    }
+
+    *size = sizeof(umf_ipc_data_t) + providerIPCHandleSize;
+
+    return ret;
+}
+
 umf_result_t umfGetIPCHandle(const void *ptr, umf_ipc_handle_t *umfIPCHandle,
                              size_t *size) {
     size_t ipcHandleSize = 0;
@@ -29,24 +59,22 @@ umf_result_t umfGetIPCHandle(const void *ptr, umf_ipc_handle_t *umfIPCHandle,
         return ret;
     }
 
-    // We cannot use umfPoolGetMemoryProvider function because it returns
-    // upstream provider but we need tracking one
-    umf_memory_provider_handle_t provider = allocInfo.pool->provider;
-    assert(provider);
-
-    size_t providerIPCHandleSize;
-    ret = umfMemoryProviderGetIPCHandleSize(provider, &providerIPCHandleSize);
+    ret = umfPoolGetIPCHandleSize(allocInfo.pool, &ipcHandleSize);
     if (ret != UMF_RESULT_SUCCESS) {
         LOG_ERR("cannot get IPC handle size.");
         return ret;
     }
 
-    ipcHandleSize = sizeof(umf_ipc_data_t) + providerIPCHandleSize;
     umf_ipc_data_t *ipcData = umf_ba_global_alloc(ipcHandleSize);
     if (!ipcData) {
         LOG_ERR("failed to allocate ipcData");
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
+
+    // We cannot use umfPoolGetMemoryProvider function because it returns
+    // upstream provider but we need tracking one
+    umf_memory_provider_handle_t provider = allocInfo.pool->provider;
+    assert(provider);
 
     ret = umfMemoryProviderGetIPCHandle(provider, allocInfo.base,
                                         allocInfo.baseSize,

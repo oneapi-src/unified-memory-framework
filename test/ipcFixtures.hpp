@@ -112,6 +112,13 @@ struct umfIpcTest : umf_test::test,
     MemoryAccessor *memAccessor = nullptr;
 };
 
+TEST_P(umfIpcTest, GetIPCHandleSize) {
+    size_t size = 0;
+    umf_result_t ret = umfPoolGetIPCHandleSize(pool.get(), &size);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+    EXPECT_GT(size, 0);
+}
+
 TEST_P(umfIpcTest, BasicFlow) {
     constexpr size_t SIZE = 100;
     std::vector<int> expected_data(SIZE);
