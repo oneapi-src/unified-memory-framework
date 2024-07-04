@@ -3,7 +3,6 @@
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-set -x
 set -e
 
 repo=$1
@@ -11,11 +10,6 @@ branch=$2
 
 echo password | sudo -Sk apt update
 echo password | sudo -Sk apt install -y git cmake gcc g++ numactl libnuma-dev libhwloc-dev libjemalloc-dev libtbb-dev pkg-config valgrind hwloc
-
-# Set ptrace value for IPC test
-echo password | sudo bash -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
-
-numactl -H
 
 git clone $repo umf
 cd umf
@@ -31,20 +25,7 @@ cmake .. \
     -DUMF_DEVELOPER_MODE=ON \
     -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON \
     -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON \
-    -DUMF_BUILD_EXAMPLES=ON
+    -DUMF_BUILD_EXAMPLES=ON \
+    -DUMF_TESTS_FAIL_ON_SKIP=ON
 
 make -j $(nproc)
-
-# Drop caches, restores free memory on NUMA nodes
-echo password | sudo sync;
-echo password | sudo sh -c "/usr/bin/echo 3 > /proc/sys/vm/drop_caches"
-
-ctest --verbose
-
-# run tests bound to a numa node
-numactl -N 0 ctest --output-on-failure
-numactl -N 1 ctest --output-on-failure
-
-# run tests under valgrind
-echo "Running tests under valgrind memcheck ..."
-../test/test_valgrind.sh .. . memcheck
