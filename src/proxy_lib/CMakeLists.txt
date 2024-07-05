@@ -16,6 +16,11 @@ if(LINUX)
     set(PROXY_SOURCES ${PROXY_SOURCES} ${PROXY_SOURCES_LINUX})
 elseif(WINDOWS)
     set(PROXY_SOURCES ${PROXY_SOURCES} ${PROXY_SOURCES_WINDOWS})
+
+    # Add resource file needed for Windows to fill metadata in binary files
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/proxy_lib.rc.in"
+                   "${CMAKE_CURRENT_BINARY_DIR}/proxy_lib.rc" IMMEDIATE @ONLY)
+    set(PROXY_SOURCES ${PROXY_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/proxy_lib.rc)
 elseif(MACOSX)
     set(PROXY_SOURCES ${PROXY_SOURCES} ${PROXY_SOURCES_MACOSX})
 endif()

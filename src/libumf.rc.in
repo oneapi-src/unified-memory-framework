@@ -1,0 +1,47 @@
+// Copyright (c) 2024 Intel Corporation
+//
+// Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+
+#include <winresrc.h>
+
+#include "umf/base.h"
+
+#define UMF_VERNUMBERS @CMAKE_PROJECT_VERSION_MAJOR@,@CMAKE_PROJECT_VERSION_MINOR@,@CMAKE_PROJECT_VERSION_PATCH@,0
+#define UMF_VERSION "@CMAKE_PROJECT_VERSION_MAJOR@.@CMAKE_PROJECT_VERSION_MINOR@"
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION UMF_VERNUMBERS
+ PRODUCTVERSION UMF_VERNUMBERS
+ FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
+#ifdef _DEBUG
+ FILEFLAGS VS_FF_DEBUG
+#else
+ FILEFLAGS 0
+#endif
+ FILEOS VOS__WINDOWS32
+ FILETYPE VFT_DLL
+ FILESUBTYPE 0
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0" // U.S. English, Unicode (0x04b0 == 1200)
+        BEGIN
+            VALUE "CompanyName", "Intel Corporation\0"
+            VALUE "FileDescription", "Unified Memory Framework (UMF) library\0"
+            VALUE "FileVersion", UMF_VERSION "\0"
+            VALUE "LegalCopyright", "Copyright 2024, Intel Corporation. All rights reserved.\0"
+            VALUE "LegalTrademarks", "\0"
+            VALUE "OriginalFilename", "umf.dll\0"
+            VALUE "ProductName", "Unified Memory Framework (UMF)\0"
+            VALUE "ProductVersion", UMF_VERSION "\0"
+            VALUE "PrivateBuild", "\0"
+            VALUE "SpecialBuild", "\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
