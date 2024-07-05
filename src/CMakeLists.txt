@@ -10,6 +10,11 @@ if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
     set(LEVEL_ZERO_LOADER_REPO "https://github.com/oneapi-src/level-zero.git")
     set(LEVEL_ZERO_LOADER_TAG v1.16.1)
 
+    message(
+        STATUS
+            "Installing level-zero ${LEVEL_ZERO_LOADER_TAG} from ${LEVEL_ZERO_LOADER_REPO} ..."
+    )
+
     FetchContent_Declare(
         level-zero-loader
         GIT_REPOSITORY ${LEVEL_ZERO_LOADER_REPO}
