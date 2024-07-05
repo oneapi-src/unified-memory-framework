@@ -155,10 +155,19 @@ void *umf_ba_global_aligned_alloc(size_t size, size_t alignment) {
         return NULL;
     }
 
+    if (size > SIZE_MAX - ALLOC_METADATA_SIZE) {
+        LOG_ERR("base_alloc: allocation size (%zu) too large.", size);
+        return NULL;
+    }
+
     // for metadata
     size += ALLOC_METADATA_SIZE;
 
     if (alignment > ALLOC_METADATA_SIZE) {
+        if (size > SIZE_MAX - alignment) {
+            LOG_ERR("base_alloc: allocation size (%zu) too large.", size);
+            return NULL;
+        }
         size += alignment;
     }
 

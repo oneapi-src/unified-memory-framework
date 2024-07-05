@@ -341,6 +341,22 @@ validatePartitions(umf_os_memory_provider_params_t *params) {
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t os_get_min_page_size(void *provider, void *ptr,
+                                         size_t *page_size);
+
+static umf_result_t validatePartSize(os_memory_provider_t *provider,
+                                     umf_os_memory_provider_params_t *params) {
+    size_t page_size;
+    os_get_min_page_size(provider, NULL, &page_size);
+    if (ALIGN_UP(params->part_size, page_size) < params->part_size) {
+        LOG_ERR("partition size (%zu) is too big, cannot align with a page "
+                "size (%zu)",
+                params->part_size, page_size);
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    return UMF_RESULT_SUCCESS;
+}
+
 static void free_bitmaps(os_memory_provider_t *provider) {
     for (unsigned i = 0; i < provider->nodeset_len; i++) {
         hwloc_bitmap_free(provider->nodeset[i]);
@@ -425,6 +441,14 @@ static umf_result_t translate_params(umf_os_memory_provider_params_t *in_params,
 
     if (result != UMF_RESULT_SUCCESS) {
         return result;
+    }
+
+    if (in_params->numa_mode == UMF_NUMA_MODE_INTERLEAVE) {
+        result = validatePartSize(provider, in_params);
+        if (result != UMF_RESULT_SUCCESS) {
+            LOG_ERR("incorrect partition size: %zu", in_params->part_size);
+            return result;
+        }
     }
 
     int is_dedicated_node_bind = dedicated_node_bind(in_params);
@@ -573,9 +597,6 @@ static void os_finalize(void *provider) {
     hwloc_topology_destroy(os_provider->topo);
     umf_ba_global_free(os_provider);
 }
-
-static umf_result_t os_get_min_page_size(void *provider, void *ptr,
-                                         size_t *page_size);
 
 // TODO: this function should be re-enabled when CTL is implemented
 #if 0
