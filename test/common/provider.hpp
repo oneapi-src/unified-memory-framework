@@ -106,6 +106,10 @@ struct provider_malloc : public provider_base_t {
             align = 8;
         }
 
+        if (SIZE_MAX - size < align) {
+            return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+        }
+
         // aligned_malloc returns a valid pointer despite not meeting the
         // requirement of 'size' being multiple of 'align' even though the
         // documentation says that it has to. AddressSanitizer returns an
