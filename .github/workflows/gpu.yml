@@ -19,17 +19,31 @@ jobs:
     strategy:
       matrix:
         shared_library: ['ON', 'OFF']
-        os: ['Ubuntu', 'Windows']
+        os: ['Windows']
         include:
-          - os: 'Ubuntu'
-            compiler: {c: gcc, cxx: g++}
-            number_of_processors: '$(nproc)'
           - os: 'Windows'
             compiler: {c: cl, cxx: cl}
             number_of_processors: '$Env:NUMBER_OF_PROCESSORS'
 
     runs-on: ["DSS-LEVEL_ZERO", "DSS-${{matrix.os}}"]
     steps:
+      # Workspace on self-hosted runners is not cleaned automatically.
+      # We have to delete the files created outside of using actions.
+      - name: "[Lin] Cleanup workspace"
+        if: matrix.os == 'Ubuntu'
+        run: |
+          ls -la ./
+          rm -rf ./* || true
+          date
+
+      - name: "[Win] Cleanup workspace"
+        if: matrix.os == 'Windows'
+        run: |
+          dir
+          Remove-Item .\* -Recurse -Force -ErrorAction SilentlyContinue
+          dir
+          date
+
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 

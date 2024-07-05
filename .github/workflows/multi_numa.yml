@@ -18,6 +18,14 @@ jobs:
     runs-on:  ["DSS-MULTI-NUMA", "DSS-${{matrix.os}}"]
 
     steps:
+      # Workspace on self-hosted runners is not cleaned automatically.
+      # We have to delete the files created outside of using actions.
+      - name: Cleanup workspace
+        if: always()
+        run: |
+          ls -la ./
+          rm -rf ./* || true
+
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
