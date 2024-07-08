@@ -106,6 +106,11 @@ if(LINUX)
     set(UMF_LIBS ${UMF_LIBS} dl rt) # librt for shm_open()
 elseif(WINDOWS)
     set(UMF_SOURCES ${UMF_SOURCES} ${UMF_SOURCES_WINDOWS})
+
+    # Add resource file needed for Windows to fill metadata in binary files
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libumf.rc.in"
+                   "${CMAKE_CURRENT_BINARY_DIR}/libumf.rc" IMMEDIATE @ONLY)
+    set(UMF_SOURCES ${UMF_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/libumf.rc)
 elseif(MACOSX)
     set(UMF_SOURCES ${UMF_SOURCES} ${UMF_SOURCES_MACOSX})
 endif()
