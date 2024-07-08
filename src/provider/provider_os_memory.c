@@ -580,7 +580,7 @@ static void os_finalize(void *provider) {
 static umf_result_t os_get_min_page_size(void *provider, void *ptr,
                                          size_t *page_size);
 
-// TODO: this function should be reenabled when CTL is implemented
+// TODO: this function should be re-enabled when CTL is implemented
 #if 0
 static void print_numa_nodes(os_memory_provider_t *os_provider, void *addr,
                              size_t size) {

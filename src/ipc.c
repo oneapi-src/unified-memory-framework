@@ -104,7 +104,7 @@ umf_result_t umfPutIPCHandle(umf_ipc_handle_t umfIPCHandle) {
     //       to upstream memory provider when umfMemoryProviderFree is called.
     //       To support incapsulation we should not take into account
     //       implementation details of tracking memory provider and find the
-    //       approrpiate pool, get memory provider of that pool and call
+    //       appropriate pool, get memory provider of that pool and call
     //       umfMemoryProviderPutIPCHandle(hProvider,
     //                                     umfIPCHandle->providerIpcData);
     umf_ba_global_free(umfIPCHandle);

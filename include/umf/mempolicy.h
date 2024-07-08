@@ -22,9 +22,9 @@ typedef const struct umf_mempolicy_t *umf_const_mempolicy_handle_t;
 typedef enum umf_mempolicy_membind_t {
     /// Interleave memory from all memory in memspace
     UMF_MEMPOLICY_INTERLEAVE,
-    /// Bind memory to namespace
+    /// Bind memory to memspace
     UMF_MEMPOLICY_BIND,
-    /// Prefer memory from namespace but fallback to other memory if not available
+    /// Prefer memory from memspace but fallback to other memory if not available
     UMF_MEMPOLICY_PREFERRED,
     /// Allocation will be split evenly across nodes specified in nodemask.
     /// umf_mempolicy_split_partition_t can be used to specify different distribution.

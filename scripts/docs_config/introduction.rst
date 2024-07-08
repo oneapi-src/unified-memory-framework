@@ -139,7 +139,7 @@ Logging
 ============
 
 Logging in UMF is handled by logger. There are several levels of logging: *debug*, *info*, *warning*, and *error*.
-The level of logging determines what messages will be printed, ie. the level set to *warning* means all messages at levels *warning* and *error* will be printed.
+The level of logging determines what messages will be printed, i.e. the level set to *warning* means all messages at levels *warning* and *error* will be printed.
 
 By default, there is a guarantee that *error* messages are flushed immediately. One can change this behavior to flush on lower-level messages.
 
