@@ -1103,17 +1103,17 @@ static umf_result_t os_allocation_split(void *provider, void *ptr,
                 "descriptor offset map failed (addr=%p)",
                 ptr);
         return UMF_RESULT_ERROR_UNKNOWN;
-    } else {
-        uintptr_t new_key = (uintptr_t)ptr + firstSize;
-        void *new_value = (void *)((uintptr_t)value + firstSize);
-        int ret = critnib_insert(os_provider->fd_offset_map, new_key, new_value,
-                                 0 /* update */);
-        if (ret) {
-            LOG_ERR("os_allocation_split(): inserting a value to the file "
-                    "descriptor offset map failed (addr=%p, offset=%zu)",
-                    (void *)new_key, (size_t)new_value - 1);
-            return UMF_RESULT_ERROR_UNKNOWN;
-        }
+    }
+
+    uintptr_t new_key = (uintptr_t)ptr + firstSize;
+    void *new_value = (void *)((uintptr_t)value + firstSize);
+    int ret = critnib_insert(os_provider->fd_offset_map, new_key, new_value,
+                             0 /* update */);
+    if (ret) {
+        LOG_ERR("os_allocation_split(): inserting a value to the file "
+                "descriptor offset map failed (addr=%p, offset=%zu)",
+                (void *)new_key, (size_t)new_value - 1);
+        return UMF_RESULT_ERROR_UNKNOWN;
     }
 
     return UMF_RESULT_SUCCESS;
