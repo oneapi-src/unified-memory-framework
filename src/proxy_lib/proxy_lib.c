@@ -107,6 +107,7 @@ static __TLS int was_called_from_umfPool = 0;
 /*****************************************************************************/
 
 void proxy_lib_create_common(void) {
+    util_log_init();
     umf_os_memory_provider_params_t os_params =
         umfOsMemoryProviderParamsDefault();
     umf_result_t umf_result;
