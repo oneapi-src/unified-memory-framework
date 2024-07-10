@@ -375,3 +375,63 @@ if(LINUX
         PROPERTY ENVIRONMENT_MODIFICATION
                  "LD_LIBRARY_PATH=path_list_append:${CMAKE_BINARY_DIR}/lib")
 endif()
+
+# Tests of examples as standalone projects. TODO: enable this for Windows (maybe
+# replace test_examples.sh with CMake script?)
+if(LINUX
+   AND UMF_BUILD_SHARED_LIBRARY
+   AND NOT
+       (USE_ASAN
+        OR USE_UBSAN
+        OR USE_TSAN
+        OR USE_MSAN))
+    set(EXAMPLES "")
+    if(UMF_POOL_SCALABLE_ENABLED)
+        set(EXAMPLES ${EXAMPLES} basic)
+    else()
+        message(
+            STATUS
+                "The basic example requires TBB to be installed and added to the default library search path - skipping"
+        )
+    endif()
+
+    if(UMF_BUILD_GPU_EXAMPLES
+       AND UMF_BUILD_LIBUMF_POOL_DISJOINT
+       AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
+        set(EXAMPLES ${EXAMPLES} gpu_shared_memory)
+    else()
+        message(
+            STATUS
+                "GPU shared memory example requires UMF_BUILD_GPU_EXAMPLES, "
+                "UMF_BUILD_LEVEL_ZERO_PROVIDER and UMF_BUILD_LIBUMF_POOL_DISJOINT "
+                "to be turned ON - skipping")
+    endif()
+
+    if(UMF_BUILD_GPU_EXAMPLES
+       AND UMF_BUILD_LIBUMF_POOL_DISJOINT
+       AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
+        set(EXAMPLES ${EXAMPLES} ipc_level_zero)
+    else()
+        message(
+            STATUS
+                "IPC Level 0 example requires UMF_BUILD_GPU_EXAMPLES, UMF_BUILD_LEVEL_ZERO_PROVIDER and UMF_BUILD_LIBUMF_POOL_DISJOINT to be turned ON - skipping"
+        )
+    endif()
+
+    if(LINUX AND UMF_POOL_SCALABLE_ENABLED)
+        set(EXAMPLES ${EXAMPLES} ipc_ipcapi)
+    else()
+        message(
+            STATUS
+                "IPC examples with UMF pool API are supported on Linux with TBB installed only - skipping"
+        )
+    endif()
+
+    add_test(
+        NAME umf_standalone_examples
+        COMMAND
+            ${UMF_CMAKE_SOURCE_DIR}/test/test_examples.sh
+            ${UMF_CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
+            ${CMAKE_BINARY_DIR}/install ${EXAMPLES}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+endif()
