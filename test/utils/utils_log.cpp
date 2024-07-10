@@ -14,7 +14,7 @@ int fopen_count = 0;
 FILE *mock_fopen(const char *filename, const char *mode) {
     fopen_count++;
     EXPECT_STREQ(filename, expected_filename.c_str());
-    EXPECT_STREQ(mode, "w+");
+    EXPECT_STREQ(mode, "a");
     return MOCK_FILE_PTR;
 }
 

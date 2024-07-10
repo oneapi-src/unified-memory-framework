@@ -254,10 +254,10 @@ void util_log_init(void) {
 
         memcpy(file, arg, len);
         file[len] = '\0';
-        loggerConfig.output = fopen(file, "w+");
+        loggerConfig.output = fopen(file, "a");
         if (!loggerConfig.output) {
             loggerConfig.output = stderr;
-            LOG_ERR("Cannot open output file %s - logging disabled", file);
+            LOG_PERR("Cannot open output file %s - logging disabled", file);
             loggerConfig.output = NULL;
             return;
         }
