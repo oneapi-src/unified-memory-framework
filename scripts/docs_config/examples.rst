@@ -111,14 +111,14 @@ Freeing memory is as easy as can be::
 GPU shared memory
 ==============================================================================
 
-You can find the full example code in the `examples/basic/gpu_shared_memory.c`_ file
+You can find the full example code in the `examples/gpu_shared_memory/gpu_shared_memory.c`_ file
 in the UMF repository.
 
 TODO
 
 IPC example with Level Zero Memory Provider
 ==============================================================================
-The full code of the example is in the `examples/basic/ipc_level_zero.c`_ file in the UMF repository.
+The full code of the example is in the `examples/ipc_level_zero/ipc_level_zero.c`_ file in the UMF repository.
 The example demonstrates how to use UMF :ref:`IPC API <ipc-api>`. For demonstration purpose the example uses
 Level Zero memory provider to instantiate a pool. But the same flow will work with any memory provider that
 supports IPC capabilities.
@@ -193,8 +193,8 @@ function is called on the consumer side. The memory mappings on the consumer sid
 the :any:`umfCloseIPCHandle` function is called.
 
 .. _examples/basic/basic.c: https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/basic/basic.c
-.. _examples/basic/gpu_shared_memory.c: https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/basic/gpu_shared_memory.c
-.. _examples/basic/ipc_level_zero.c: https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/basic/ipc_level_zero.c
+.. _examples/gpu_shared_memory/gpu_shared_memory.c: https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/gpu_shared_memory/gpu_shared_memory.c
+.. _examples/ipc_level_zero/ipc_level_zero.c: https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/ipc_level_zero/ipc_level_zero.c
 .. _README: https://github.com/oneapi-src/unified-memory-framework/blob/main/README.md#memory-pool-managers
 .. _umf/ipc.h: https://github.com/oneapi-src/unified-memory-framework/blob/main/include/umf/ipc.h
 .. _provider_os_memory.h: https://github.com/oneapi-src/unified-memory-framework/blob/main/include/umf/providers/provider_os_memory.h
