@@ -146,6 +146,7 @@ class UmfInstaller:
         examples.insert(0, "share/doc/umf/examples")
         share.extend(examples)
         share.append("share/doc/umf/LICENSE.TXT")
+        share.append("share/doc/umf/third-party-programs.txt")
 
         all_files = bin + include + lib + share
         if platform.system() == "Windows":

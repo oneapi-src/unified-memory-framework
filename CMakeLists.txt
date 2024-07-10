@@ -519,6 +519,7 @@ endif()
 # Configure make install/uninstall and packages
 # --------------------------------------------------------------------------- #
 install(FILES ${CMAKE_SOURCE_DIR}/LICENSE.TXT
+              ${CMAKE_SOURCE_DIR}/third-party-programs.txt
         DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/doc/${PROJECT_NAME}/")
 
 install(DIRECTORY examples DESTINATION "${CMAKE_INSTALL_DOCDIR}")
