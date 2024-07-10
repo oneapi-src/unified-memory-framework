@@ -116,7 +116,7 @@ typedef struct umf_memory_pool_ops_t {
     ///
     /// * The implementation of this function *should* be lock-free.
     /// @param pool pointer to the memory pool for which the last allocation error is returned
-    /// @return Error code desciribng the failure of the last failed allocation operation.
+    /// @return Error code describing the failure of the last failed allocation operation.
     ///         The value is undefined if the previous allocation was successful.
     ///
     umf_result_t (*get_last_allocation_error)(void *pool);

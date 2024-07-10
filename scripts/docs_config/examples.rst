@@ -85,7 +85,7 @@ the :any:`umfPoolCreate` function::
     umfPoolCreate(pool_ops, provider, pool_params, flags, &pool);
 
 The ``pool`` has been created, we can allocate some memory now
-with ie. :any:`umfPoolCalloc`::
+with i.e. :any:`umfPoolCalloc`::
 
     size_t num = 1;
     alloc_size = 128;
@@ -169,7 +169,7 @@ to another process it can be opened by the :any:`umfOpenIPCHandle` function.
     void *mapped_buf = NULL;
     umf_result = umfOpenIPCHandle(consumer_pool, ipc_handle, &mapped_buf);
 
-The :any:`umfOpenIPCHandle` function requires the memory pool handle and the IPC handle as input parameters. It mapps
+The :any:`umfOpenIPCHandle` function requires the memory pool handle and the IPC handle as input parameters. It maps
 the handle to the current process address space and returns the pointer to the same memory region that was allocated
 in the producer process.
 
