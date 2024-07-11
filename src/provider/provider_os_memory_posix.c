@@ -16,6 +16,7 @@
 
 #include "provider_os_memory_internal.h"
 #include "utils_log.h"
+#include "utils_sanitizers.h"
 
 // maximum value of the off_t type
 #define OFF_T_MAX                                                              \
@@ -74,11 +75,20 @@ void *os_mmap(void *hint_addr, size_t length, int prot, int flag, int fd,
     if (ptr == MAP_FAILED) {
         return NULL;
     }
-
+    // this should be unnecessary but pairs of mmap/munmap do not reset
+    // asan's user-poisoning flags, leading to invalid error reports
+    // Bug 81619: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=81619
+    utils_annotate_memory_defined(ptr, length);
     return ptr;
 }
 
-int os_munmap(void *addr, size_t length) { return munmap(addr, length); }
+int os_munmap(void *addr, size_t length) {
+    // this should be unnecessary but pairs of mmap/munmap do not reset
+    // asan's user-poisoning flags, leading to invalid error reports
+    // Bug 81619: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=81619
+    utils_annotate_memory_defined(addr, length);
+    return munmap(addr, length);
+}
 
 size_t os_get_page_size(void) { return sysconf(_SC_PAGE_SIZE); }
 

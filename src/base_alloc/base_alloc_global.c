@@ -195,14 +195,12 @@ void umf_ba_global_free(void *ptr) {
 
     int ac_index = size_to_idx(total_size);
     if (ac_index >= NUM_ALLOCATION_CLASSES) {
-        utils_annotate_memory_inaccessible(ptr, total_size);
         ba_os_free(ptr, total_size);
         return;
     }
 
     if (!BASE_ALLOC.ac[ac_index]) {
         // if creating ac failed, memory must have been allocated by os
-        utils_annotate_memory_inaccessible(ptr, total_size);
         ba_os_free(ptr, total_size);
         return;
     }
