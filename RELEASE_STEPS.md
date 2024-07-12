@@ -40,7 +40,7 @@ Do changes for a release:
 - Add an entry to ChangeLog, remember to change the day of the week in the release date
   - For major releases mention API and ABI compatibility with the previous release
 - Update project's version in a few places:
-  - Set the new $VERSION in `project` function in the top-level `CMakeLists.txt`
+  - For major and minor releases: `UMF_VERSION_CURRENT` in `include/umf/base.h` (the API version)
   - `release` variable in `scripts/docs_config/conf.py` (for docs)
   - `UMF_VERSION` variable in `.github/workflows/basic.yml` (for installation test)
 - For major releases update ABI version in `.map` and `.def` files

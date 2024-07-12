@@ -305,20 +305,18 @@ void util_log_init(void) {
         loggerConfig.flushLevel = LOG_FATAL;
     }
 
-#ifdef UMF_SRC_VERSION
+#ifdef UMF_VERSION
 // convert a define to a C string
 #define STR_(X) #X
 #define STR(X) STR_(X)
-#define STR_UMF_SRC_VERSION "src version: " STR(UMF_SRC_VERSION) ", "
-#else /* !UMF_SRC_VERSION */
-#define STR_UMF_SRC_VERSION ""
-#endif /* !UMF_SRC_VERSION */
+#define STR_UMF_VERSION "UMF version: " STR(UMF_VERSION) ", "
+#else /* !UMF_VERSION */
+#error "UMF_VERSION not defined!"
+#endif /* !UMF_VERSION */
 
-    int umf_ver = umfGetCurrentVersion();
     LOG_INFO(
-        "Logger enabled (umf version: %i.%i, " STR_UMF_SRC_VERSION
+        "Logger enabled (" STR_UMF_VERSION
         "level: %s, flush: %s, pid: %s, timestamp: %s)",
-        UMF_MAJOR_VERSION(umf_ver), UMF_MINOR_VERSION(umf_ver),
         level_to_str(loggerConfig.level), level_to_str(loggerConfig.flushLevel),
         bool_to_str(loggerConfig.pid), bool_to_str(loggerConfig.timestamp));
 }
