@@ -81,7 +81,7 @@ set(UMF_SOURCES_WINDOWS libumf_windows.c)
 # Compile definitions for UMF library.
 #
 # TODO: Cleanup the compile definitions across all the CMake files
-set(UMF_PRIVATE_COMPILE_DEFINITIONS "-DUMF_SRC_VERSION=${UMF_SRC_VERSION}")
+set(UMF_PRIVATE_COMPILE_DEFINITIONS UMF_SRC_VERSION=${UMF_SRC_VERSION})
 
 set(UMF_SOURCES_COMMON_LINUX_MACOSX
     provider/provider_os_memory.c
