@@ -6,6 +6,10 @@ on: workflow_call
 permissions:
   contents: read
 
+env:
+  BUILD_DIR : "${{github.workspace}}/build"
+  INSTL_DIR : "${{github.workspace}}/../install-dir"
+
 jobs:
   proxy-ubuntu:
     name: Ubuntu
@@ -33,7 +37,8 @@ jobs:
       - name: Configure build
         run: >
           cmake
-          -B ${{github.workspace}}/build
+          -B ${{env.BUILD_DIR}}
+          -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
           -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
           -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
           -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
@@ -48,20 +53,20 @@ jobs:
           -DUMF_PROXY_LIB_BASED_ON_POOL=${{matrix.proxy_lib_pool}}
 
       - name: Build UMF
-        run: cmake --build ${{github.workspace}}/build -j $(nproc)
+        run: cmake --build ${{env.BUILD_DIR}} -j $(nproc)
 
       - name: Run "ctest --output-on-failure" with proxy library
-        working-directory: ${{github.workspace}}/build
+        working-directory: ${{env.BUILD_DIR}}
         run: LD_PRELOAD=./lib/libumf_proxy.so ctest --output-on-failure
 
       - name: Run "./test/umf_test-memoryPool" with proxy library
-        working-directory: ${{github.workspace}}/build
+        working-directory: ${{env.BUILD_DIR}}
         run: LD_PRELOAD=./lib/libumf_proxy.so ./test/umf_test-memoryPool
 
       - name: Run "/usr/bin/ls" with proxy library
-        working-directory: ${{github.workspace}}/build
+        working-directory: ${{env.BUILD_DIR}}
         run: LD_PRELOAD=./lib/libumf_proxy.so /usr/bin/ls
 
       - name: Run "/usr/bin/date" with proxy library
-        working-directory: ${{github.workspace}}/build
+        working-directory: ${{env.BUILD_DIR}}
         run: LD_PRELOAD=./lib/libumf_proxy.so /usr/bin/date

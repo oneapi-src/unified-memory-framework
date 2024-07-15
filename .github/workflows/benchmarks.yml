@@ -6,11 +6,14 @@ on: workflow_call
 permissions:
   contents: read
 
+env:
+  BUILD_DIR : "${{github.workspace}}/build"
+  INSTL_DIR : "${{github.workspace}}/../install-dir"
+
 jobs:
   benchmarks:
     name: Benchmarks
     env:
-      BUILD_DIR : "${{github.workspace}}/build/"
       VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
     strategy:
       matrix:
@@ -49,6 +52,7 @@ jobs:
           cmake
           -B ${{env.BUILD_DIR}}
           ${{matrix.extra_build_option}}
+          -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
           -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
           -DUMF_BUILD_SHARED_LIBRARY=ON
           -DUMF_BUILD_BENCHMARKS=ON

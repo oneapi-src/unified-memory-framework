@@ -18,6 +18,10 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  BUILD_DIR : "${{github.workspace}}/build"
+  INSTL_DIR : "${{github.workspace}}/../install-dir"
+
 jobs:
   analyze:
     name: Analyze
@@ -50,7 +54,7 @@ jobs:
       uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
       with:
         vcpkgGitCommitId: 3dd44b931481d7a8e9ba412621fa810232b66289
-        vcpkgDirectory: ${{github.workspace}}/build/vcpkg
+        vcpkgDirectory: ${{env.BUILD_DIR}}/vcpkg
         vcpkgJsonGlob: '**/vcpkg.json'
 
     - name: Install dependencies
@@ -70,8 +74,9 @@ jobs:
     - name: Configure CMake
       run: >
         cmake
-        -B ${{github.workspace}}/build
+        -B ${{env.BUILD_DIR}}
         ${{matrix.extra_build_option}}
+        -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
         -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
@@ -80,7 +85,7 @@ jobs:
         -DUMF_TESTS_FAIL_ON_SKIP=ON
 
     - name: Build
-      run: cmake --build ${{github.workspace}}/build --config Release -j
+      run: cmake --build ${{env.BUILD_DIR}} --config Release -j
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@b7bf0a3ed3ecfa44160715d7c442788f65f0f923 # v3.23.2
