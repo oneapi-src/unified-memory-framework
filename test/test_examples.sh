@@ -47,7 +47,6 @@ cd ${BUILD_DIR}
 echo "DIR=$(pwd)"
 
 set -x
-cmake .. -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR"
 make -j$(nproc) install
 set +x
 
