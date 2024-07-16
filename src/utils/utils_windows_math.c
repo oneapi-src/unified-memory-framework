@@ -8,19 +8,7 @@
  */
 
 #include "utils_math.h"
-
-// disable warning 28251: "inconsistent annotation for function" thrown in
-// intrin.h, as we do not want to modify this file
-#if defined(_MSC_VER)
-#pragma warning(push)
-#pragma warning(disable : 28251)
-#endif // _MSC_VER
-
-#include <intrin.h>
-
-#if defined(_MSC_VER)
-#pragma warning(pop)
-#endif // _MSC_VER
+#include "utils_windows_intrin.h"
 
 #pragma intrinsic(_BitScanReverse)
 

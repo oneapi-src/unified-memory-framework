@@ -14,6 +14,10 @@
 
 #ifdef _WIN32
 #include <windows.h>
+
+#include "utils_windows_intrin.h"
+
+#pragma intrinsic(_BitScanForward64)
 #else
 #include <pthread.h>
 
