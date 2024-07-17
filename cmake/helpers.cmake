@@ -77,6 +77,9 @@ function(set_version_variables)
         WORKING_DIRECTORY ${UMF_CMAKE_SOURCE_DIR}
         OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
 
+    # XXX temp change, to simulate release:
+    set(GIT_VERSION "v0.9.0-rc1")
+
     if(NOT GIT_VERSION)
         # no git or it reported no version. Use default ver: "0.0.0"
         return()
