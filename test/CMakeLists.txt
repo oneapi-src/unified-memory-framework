@@ -431,7 +431,7 @@ if(LINUX
         NAME umf_standalone_examples
         COMMAND
             ${UMF_CMAKE_SOURCE_DIR}/test/test_examples.sh
-            ${UMF_CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
-            ${CMAKE_BINARY_DIR}/install ${EXAMPLES}
+            ${UMF_CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR} ${CMAKE_INSTALL_PREFIX}
+            ${EXAMPLES}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 endif()

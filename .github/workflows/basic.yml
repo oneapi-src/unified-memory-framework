@@ -9,6 +9,8 @@ permissions:
 env:
   # for installation testing - it should match with version set in CMake
   UMF_VERSION: 0.1.0
+  BUILD_DIR : "${{github.workspace}}/build"
+  INSTL_DIR : "${{github.workspace}}/../install-dir"
 
 jobs:
   ubuntu-build:
@@ -67,9 +69,6 @@ jobs:
             shared_library: 'ON'
             level_zero_provider: 'ON'
             install_tbb: 'OFF'
-    env:
-      BUILD_DIR : "${{github.workspace}}/build/"
-      INSTL_DIR : "${{github.workspace}}/../install-dir"
     runs-on: ${{matrix.os}}
 
     steps:
@@ -131,6 +130,9 @@ jobs:
         ${{ matrix.compiler.cxx == 'icpx' && '. /opt/intel/oneapi/setvars.sh &&' || ''}} 
         ctest --output-on-failure --test-dir test
 
+    - name: Remove the installation directory
+      run: rm -rf ${{env.INSTL_DIR}}
+
     - name: Test UMF installation and uninstallation
       # The '--shared-library' parameter is added to the installation test when the UMF is built as a shared library
       run: >
@@ -148,8 +150,6 @@ jobs:
     name: Windows
     env:
       VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
-      BUILD_DIR : "${{github.workspace}}/build/"
-      INSTL_DIR : "${{github.workspace}}/../install-dir"
     strategy:
       matrix:
         os: ['windows-2019', 'windows-2022']
@@ -185,7 +185,7 @@ jobs:
       uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
       with:
         vcpkgGitCommitId: 3dd44b931481d7a8e9ba412621fa810232b66289
-        vcpkgDirectory: ${{github.workspace}}/build/vcpkg
+        vcpkgDirectory: ${{env.BUILD_DIR}}/vcpkg
         vcpkgJsonGlob: '**/vcpkg.json'
 
     - name: Install dependencies
@@ -197,6 +197,7 @@ jobs:
         cmake
         -B ${{env.BUILD_DIR}}
         ${{matrix.toolset}}
+        -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
         -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
         -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
         -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
@@ -230,18 +231,16 @@ jobs:
         
     - name: check /DEPENDENTLOADFLAG in umf.dll
       if: ${{matrix.shared_library == 'ON' && matrix.compiler.cxx == 'cl'}}
-      run: ${{github.workspace}}/.github/scripts/check_dll_flags.ps1 ${{github.workspace}}/build/bin/${{matrix.build_type}}/umf.dll
+      run: ${{github.workspace}}/.github/scripts/check_dll_flags.ps1 ${{env.BUILD_DIR}}/bin/${{matrix.build_type}}/umf.dll
       shell: pwsh
 
     - name: check /DEPENDENTLOADFLAG in umf_proxy.dll
       if: ${{matrix.compiler.cxx == 'cl'}}
-      run: ${{github.workspace}}/.github/scripts/check_dll_flags.ps1 ${{github.workspace}}/build/src/proxy_lib/${{matrix.build_type}}/umf_proxy.dll
+      run: ${{github.workspace}}/.github/scripts/check_dll_flags.ps1 ${{env.BUILD_DIR}}/src/proxy_lib/${{matrix.build_type}}/umf_proxy.dll
       shell: pwsh
 
   windows-dynamic_build_hwloc:
     name: "Windows dynamic UMF + static hwloc"
-    env:
-      BUILD_DIR : "${{github.workspace}}/build"
     strategy:
       matrix:
         build_type: [Release]
@@ -256,6 +255,7 @@ jobs:
       run: >
         cmake
         -B ${{env.BUILD_DIR}}
+        -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
         -DUMF_BUILD_SHARED_LIBRARY=ON
         -DUMF_BUILD_EXAMPLES=OFF
         -DUMF_FORMAT_CODE_STYLE=OFF
@@ -276,13 +276,11 @@ jobs:
       # we check umf.dll only here - note that the proxy library is disabled in
       # this configuration
     - name: check /DEPENDENTLOADFLAG in umf.dll
-      run: ${{github.workspace}}/.github/scripts/check_dll_flags.ps1 ${{github.workspace}}/build/bin/${{matrix.build_type}}/umf.dll
+      run: ${{github.workspace}}/.github/scripts/check_dll_flags.ps1 ${{env.BUILD_DIR}}/bin/${{matrix.build_type}}/umf.dll
       shell: pwsh
 
   windows-static_build_hwloc:
     name: "Windows static UMF + static hwloc"
-    env:
-      BUILD_DIR : "${{github.workspace}}/build"
     strategy:
       matrix:
         build_type: [Release]
@@ -297,6 +295,7 @@ jobs:
       run: >
         cmake
         -B ${{env.BUILD_DIR}}
+        -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
         -DUMF_BUILD_SHARED_LIBRARY=OFF
         -DUMF_BUILD_EXAMPLES=OFF
         -DUMF_FORMAT_CODE_STYLE=OFF
@@ -320,8 +319,6 @@ jobs:
       matrix:
         os: ['macos-12', 'macos-13']
     env:
-      BUILD_DIR : "${{github.workspace}}/build/"
-      INSTL_DIR : "${{github.workspace}}/../install-dir"
       BUILD_TYPE : "Release"
     runs-on: ${{matrix.os}}
 
@@ -339,6 +336,7 @@ jobs:
       run: >
         cmake
         -B ${{env.BUILD_DIR}}
+        -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
         -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
