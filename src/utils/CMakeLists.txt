@@ -54,8 +54,8 @@ target_include_directories(
 if(USE_VALGRIND)
     set(UMF_UTILS_INTERFACE_DEFS "UMF_VG_ENABLED=1")
 endif()
-if(WINDOWS)
-    set(UMF_UTILS_INTERFACE_DEFS ${UMF_UTILS_INTERFACE_DEFS}
-                                 "UMF_VERSION=${UMF_VERSION}")
-endif()
+
+set(UMF_UTILS_INTERFACE_DEFS ${UMF_UTILS_INTERFACE_DEFS}
+                             ${UMF_COMMON_COMPILE_DEFINITIONS})
+
 target_compile_definitions(umf_utils INTERFACE ${UMF_UTILS_INTERFACE_DEFS})

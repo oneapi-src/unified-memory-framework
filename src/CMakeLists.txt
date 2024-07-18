@@ -4,6 +4,11 @@
 
 include(${UMF_CMAKE_SOURCE_DIR}/cmake/helpers.cmake)
 
+# Compile definitions for UMF library.
+#
+# TODO: Cleanup the compile definitions across all the CMake files
+set(UMF_COMMON_COMPILE_DEFINITIONS UMF_VERSION=${UMF_VERSION})
+
 if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
     include(FetchContent)
 
@@ -78,11 +83,6 @@ set(UMF_SOURCES_MACOSX libumf_linux.c)
 
 set(UMF_SOURCES_WINDOWS libumf_windows.c)
 
-# Compile definitions for UMF library.
-#
-# TODO: Cleanup the compile definitions across all the CMake files
-set(UMF_PRIVATE_COMPILE_DEFINITIONS UMF_VERSION=${UMF_VERSION})
-
 set(UMF_SOURCES_COMMON_LINUX_MACOSX
     provider/provider_os_memory.c
     provider/provider_os_memory_posix.c
@@ -128,8 +128,8 @@ if(UMF_BUILD_SHARED_LIBRARY)
         LIBS ${UMF_LIBS} hwloc
         LINUX_MAP_FILE ${CMAKE_CURRENT_SOURCE_DIR}/libumf.map
         WINDOWS_DEF_FILE ${CMAKE_CURRENT_BINARY_DIR}/libumf.def)
-    set(UMF_PRIVATE_COMPILE_DEFINITIONS ${UMF_PRIVATE_COMPILE_DEFINITIONS}
-                                        "UMF_SHARED_LIBRARY")
+    set(UMF_COMMON_COMPILE_DEFINITIONS ${UMF_COMMON_COMPILE_DEFINITIONS}
+                                       "UMF_SHARED_LIBRARY")
     set_target_properties(
         umf
         PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_UMF_OUTPUT_DIRECTORY}
@@ -149,7 +149,7 @@ endif()
 
 target_link_directories(umf PRIVATE ${UMF_PRIVATE_LIBRARY_DIRS})
 
-target_compile_definitions(umf PRIVATE ${UMF_PRIVATE_COMPILE_DEFINITIONS})
+target_compile_definitions(umf PRIVATE ${UMF_COMMON_COMPILE_DEFINITIONS})
 
 if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
     target_sources(umf PRIVATE provider/provider_level_zero.c)
