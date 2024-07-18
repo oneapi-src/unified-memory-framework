@@ -3,31 +3,34 @@
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 cmake_minimum_required(VERSION 3.14.0 FATAL_ERROR)
-project(
-    umf
-    VERSION 0.1.0
-    LANGUAGES C)
-
 # needed when UMF is used as an external project
 set(UMF_CMAKE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 list(APPEND CMAKE_MODULE_PATH "${UMF_CMAKE_SOURCE_DIR}/cmake")
-include(${UMF_CMAKE_SOURCE_DIR}/cmake/helpers.cmake)
+include(helpers)
+
+# We use semver aligned version, set via git tags. We parse git output to
+# establih the version of UMF to be used in CMake, Win dll's, and within the
+# code (e.g. in logger). We have 3-component releases (e.g. 1.5.1) plus release
+# candidates and git info. Function below sets all variables related to version.
+set_version_variables()
+message(STATUS "UMF version: ${UMF_VERSION}")
+
+# version we set in CMake is abbreviated just to major.minor.patch
+project(
+    umf
+    VERSION ${UMF_CMAKE_VERSION}
+    LANGUAGES C)
+
+if(CMAKE_PROJECT_VERSION_PATCH GREATER 0)
+    # set extra variable for Windows dll metadata
+    set(UMF_VERSION_BUGFIX 1)
+endif()
 
 include(CTest)
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 find_package(PkgConfig)
-
-# CMAKE_PROJECT_VERSION[_MAJOR|_MINOR|_PATCH] variables are set via 'project'
-# command. They cannot contain any "pre-release" part, though. We use custom
-# "UMF_SRC_VERSION" to store more accurate (source) version - this var should be
-# used, e.g., for creating packages.
-set_source_version()
-message(
-    STATUS
-        "UMF version: ${CMAKE_PROJECT_VERSION} (source version: ${UMF_SRC_VERSION})"
-)
 
 # Build Options
 option(UMF_BUILD_SHARED_LIBRARY "Build UMF as shared library" OFF)

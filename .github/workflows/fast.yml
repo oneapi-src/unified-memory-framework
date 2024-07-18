@@ -59,6 +59,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      with:
+        fetch-depth: 0
 
     - name: Initialize vcpkg
       if: matrix.os == 'windows-latest'
@@ -139,3 +141,11 @@ jobs:
       if: matrix.os == 'windows-latest'
       run: ${{github.workspace}}/.github/scripts/check_dll_flags.ps1 ${{env.BUILD_DIR}}/src/proxy_lib/Release/umf_proxy.dll
       shell: pwsh
+
+    # TODO: We could add some script to verify metadata of dll's (selected fields, perhaps)
+    # ref. https://superuser.com/questions/381276/what-are-some-nice-command-line-ways-to-inspect-dll-exe-details
+    - name: Print metadata of our dll's
+      if: matrix.os == 'windows-latest'
+      run: |
+        get-command ${{github.workspace}}/build/bin/Release/umf.dll | format-list
+        get-command ${{github.workspace}}/build/src/proxy_lib/Release/umf_proxy.dll | format-list

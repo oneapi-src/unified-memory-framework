@@ -52,5 +52,10 @@ target_include_directories(
               $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 
 if(USE_VALGRIND)
-    target_compile_definitions(umf_utils INTERFACE UMF_VG_ENABLED=1)
+    set(UMF_UTILS_INTERFACE_DEFS "UMF_VG_ENABLED=1")
 endif()
+
+set(UMF_UTILS_INTERFACE_DEFS ${UMF_UTILS_INTERFACE_DEFS}
+                             ${UMF_COMMON_COMPILE_DEFINITIONS})
+
+target_compile_definitions(umf_utils INTERFACE ${UMF_UTILS_INTERFACE_DEFS})

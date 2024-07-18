@@ -10,68 +10,158 @@
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
 
-# src version shows the current version, as reported by 'git describe', unless
-# 'git' is not available, then fall back to the top-level defined version
-function(set_source_version)
+# This function establishes version variables based on the git describe output.
+# If there's no git available in the system, the version will be set to "0.0.0".
+# If git reports only a hash, the version will be set to "0.0.0.git.<hash>".
+# Otherwise we'll use 3-component version: major.minor.patch, just for CMake's
+# sake. A few extra variables will be set for Win dll metadata.
+#
+# Important note: CMake does not support rc or git information. According to
+# semver rules, 1.5.1-rc1 should be less than 1.5.1, but it seems hard to
+# achieve such comparison in CMake. So, for CMake's sake we only set 3-component
+# version in variable "UMF_CMAKE_VERSION", ignoring the rc and git information.
+# It's only used to set SOVERSION and creating "umf-config.cmake" file.
+#
+# For Windows versioning in dll metadata, we use 4-component version plus a few
+# additional variables. REVISION has to be an integer and is calculated as:
+# REVISION = rc_no * 1000 + git_commit_no (commits count after the last release)
+#
+# For all other usages (beside CMake and Win dll), we use semver aligned version
+# "UMF_VERSION", which is in line with our tags (e.g. "1.5.0-rc2").
+#
+# Example parsing of git output:
+# cmake-format: off
+# +-----------------------+-------+-------+-------+----------+--------+---------+------------+
+# |               \ CMake:| Major | Minor | Patch |          |        |         |            |
+# +-----------------------+-------+-------+-------+----------+--------+---------+------------+
+# | git describe  \ Win32:| MAJOR | MINOR | BUILD | REVISION | BUGFIX | PRIVATE | PRERELEASE |
+# +-----------------------+-------+-------+-------+----------+--------+---------+------------+
+# | 1.5.0-rc2-0-gb8f7a32  | 1     | 5     | 0     | 2000     |        |         |   true     |
+# | 1.5.0-rc2             | 1     | 5     | 0     | 2000     |        |         |   true     |
+# | 1.5.0-rc3-6-gb8f7a32  | 1     | 5     | 0     | 3006     |        |   true  |   true     |
+# | 1.5.0-0-gb8f7a32      | 1     | 5     | 0     | 0        |        |         |            |
+# | 1.5.0                 | 1     | 5     | 0     | 0        |        |         |            |
+# | 1.5.0-6-123345678     | 1     | 5     | 0     | 6        |        |   true  |            |
+# | 1.5.2-rc1-0-gb8f7a32  | 1     | 5     | 2     | 1000     |   true |         |   true     |
+# | 1.5.2-rc4-6-gb8f7a32  | 1     | 5     | 2     | 4006     |   true |   true  |   true     |
+# | 1.5.2-0-gb8f7a32      | 1     | 5     | 2     | 0        |   true |         |            |
+# | 1.5.2-6-gb8f7a32      | 1     | 5     | 2     | 6        |   true |   true  |            |
+# | gb8f7a32              | 0     | 0     | 0     | 0        |        |   true  |            |
+# | ? (no git)            | 0     | 0     | 0     | 0        |        |   true  |            |
+# +-----------------------+-------+-------+-------+----------+--------+---------+------------+
+# cmake-format: on
+function(set_version_variables)
+    # default values
+    set(UMF_VERSION_PRERELEASE
+        0
+        PARENT_SCOPE)
+    set(UMF_VERSION_PRIVATE
+        1
+        PARENT_SCOPE)
+    set(UMF_VERSION_BUGFIX
+        0
+        PARENT_SCOPE)
+    set(UMF_VERSION_REVISION
+        0
+        PARENT_SCOPE)
+    set(UMF_CMAKE_VERSION
+        "0.0.0"
+        PARENT_SCOPE)
+    set(UMF_VERSION
+        "0.0.0"
+        PARENT_SCOPE)
+
     execute_process(
         COMMAND git describe --always
         OUTPUT_VARIABLE GIT_VERSION
         WORKING_DIRECTORY ${UMF_CMAKE_SOURCE_DIR}
         OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
 
-    if(GIT_VERSION)
-        # 1.5.0 - we're on a tag
-        string(REGEX MATCHALL "\^([0-9]+\.[0-9]+\.[0-9]+)\$" MATCHES
-                     ${GIT_VERSION})
-        if(MATCHES)
-            set(UMF_SRC_VERSION
-                "${CMAKE_MATCH_1}"
-                PARENT_SCOPE)
-            return()
-        endif()
-
-        # 1.5.0-rc1 - we're on a RC tag
-        string(REGEX MATCHALL "\^([0-9]+\.[0-9]+\.[0-9]+\-rc[0-9]+)\$" MATCHES
-                     ${GIT_VERSION})
-        if(MATCHES)
-            set(UMF_SRC_VERSION
-                "${CMAKE_MATCH_1}"
-                PARENT_SCOPE)
-            return()
-        endif()
-
-        # 1.5.0-rc1-19-gb8f78a329 -> 1.5.0-rc1.git19.gb8f78a329
-        string(REGEX MATCHALL "([0-9.]*)-rc([0-9]*)-([0-9]*)-([0-9a-g]*)"
-                     MATCHES ${GIT_VERSION})
-        if(MATCHES)
-            set(UMF_SRC_VERSION
-                "${CMAKE_MATCH_1}-rc${CMAKE_MATCH_2}.git${CMAKE_MATCH_3}.${CMAKE_MATCH_4}"
-                PARENT_SCOPE)
-            return()
-        endif()
-
-        # 1.5.0-19-gb8f78a329 -> 1.5.0-git19.gb8f78a329
-        string(REGEX MATCHALL "([0-9.]*)-([0-9]*)-([0-9a-g]*)" MATCHES
-                     ${GIT_VERSION})
-        if(MATCHES)
-            set(UMF_SRC_VERSION
-                "${CMAKE_MATCH_1}-git${CMAKE_MATCH_2}.${CMAKE_MATCH_3}"
-                PARENT_SCOPE)
-            return()
-        endif()
-
-        # no full version is available (e.g. only a hash commit) or a pattern
-        # was not recognized
-        set(UMF_SRC_VERSION
-            "${CMAKE_PROJECT_VERSION}.git.${GIT_VERSION}"
-            PARENT_SCOPE)
-    else()
-        # git reported no version. Use version set up in the top-level CMake
-        # with a "devel" suffix
-        set(UMF_SRC_VERSION
-            "${CMAKE_PROJECT_VERSION}-devel"
-            PARENT_SCOPE)
+    if(NOT GIT_VERSION)
+        # no git or it reported no version. Use default ver: "0.0.0"
+        return()
     endif()
+
+    # v1.5.0 - we're exactly on a tag -> UMF ver: "1.5.0"
+    string(REGEX MATCHALL "\^v([0-9]+\.[0-9]+\.[0-9]+)\$" MATCHES
+                 ${GIT_VERSION})
+    if(MATCHES)
+        set(UMF_VERSION
+            "${CMAKE_MATCH_1}"
+            PARENT_SCOPE)
+        set(UMF_CMAKE_VERSION
+            "${CMAKE_MATCH_1}"
+            PARENT_SCOPE)
+        set(UMF_VERSION_PRIVATE
+            0
+            PARENT_SCOPE)
+        return()
+    endif()
+
+    # v1.5.0-rc1 - we're on a RC tag -> UMF ver: "1.5.0-rc1"
+    string(REGEX MATCHALL "\^v([0-9]+\.[0-9]+\.[0-9]+)-rc([0-9]+)\$" MATCHES
+                 ${GIT_VERSION})
+    if(MATCHES)
+        set(UMF_VERSION
+            "${CMAKE_MATCH_1}-rc${CMAKE_MATCH_2}"
+            PARENT_SCOPE)
+        set(UMF_CMAKE_VERSION
+            "${CMAKE_MATCH_1}"
+            PARENT_SCOPE)
+        math(EXPR revision "${CMAKE_MATCH_2} * 1000")
+        set(UMF_VERSION_REVISION
+            ${revision}
+            PARENT_SCOPE)
+        set(UMF_VERSION_PRERELEASE
+            1
+            PARENT_SCOPE)
+        set(UMF_VERSION_PRIVATE
+            0
+            PARENT_SCOPE)
+        return()
+    endif()
+
+    # v1.5.0-rc1-19-gb8f7a32 -> UMF ver: "1.5.0-rc1.git19.gb8f7a32"
+    string(REGEX MATCHALL "v([0-9.]*)-rc([0-9]*)-([0-9]*)-([0-9a-g]*)" MATCHES
+                 ${GIT_VERSION})
+    if(MATCHES)
+        set(UMF_VERSION
+            "${CMAKE_MATCH_1}-rc${CMAKE_MATCH_2}.git${CMAKE_MATCH_3}.${CMAKE_MATCH_4}"
+            PARENT_SCOPE)
+        set(UMF_CMAKE_VERSION
+            "${CMAKE_MATCH_1}"
+            PARENT_SCOPE)
+        math(EXPR revision "${CMAKE_MATCH_2} * 1000 + ${CMAKE_MATCH_3}")
+        set(UMF_VERSION_REVISION
+            ${revision}
+            PARENT_SCOPE)
+        set(UMF_VERSION_PRERELEASE
+            1
+            PARENT_SCOPE)
+        return()
+    endif()
+
+    # v1.5.0-19-gb8f7a32 -> UMF ver: "1.5.0-git19.gb8f7a32"
+    string(REGEX MATCHALL "v([0-9.]*)-([0-9]*)-([0-9a-g]*)" MATCHES
+                 ${GIT_VERSION})
+    if(MATCHES)
+        set(UMF_VERSION
+            "${CMAKE_MATCH_1}-git${CMAKE_MATCH_2}.${CMAKE_MATCH_3}"
+            PARENT_SCOPE)
+        set(UMF_CMAKE_VERSION
+            "${CMAKE_MATCH_1}"
+            PARENT_SCOPE)
+        set(UMF_VERSION_REVISION
+            ${CMAKE_MATCH_2}
+            PARENT_SCOPE)
+        return()
+    endif()
+
+    # no full version is available (e.g. only a hash commit) or a pattern was
+    # not recognized -> UMF ver: "0.0.0.git.<hash>"
+    set(UMF_VERSION
+        "0.0.0.git.${GIT_VERSION}"
+        PARENT_SCOPE)
 endfunction()
 
 # Sets ${ret} to version of program specified by ${name} in major.minor format
