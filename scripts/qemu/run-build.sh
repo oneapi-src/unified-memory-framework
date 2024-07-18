@@ -8,8 +8,9 @@ set -e
 repo=$1
 branch=$2
 
-echo password | sudo -Sk apt update
-echo password | sudo -Sk apt install -y git cmake gcc g++ numactl libnuma-dev libhwloc-dev libjemalloc-dev libtbb-dev pkg-config valgrind hwloc
+echo password | sudo -Sk apt-get update
+echo password | sudo -Sk apt-get install -y git cmake gcc g++ pkg-config \
+    numactl libnuma-dev hwloc libhwloc-dev libjemalloc-dev libtbb-dev valgrind
 
 git clone $repo umf
 cd umf

@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-    - name: Checkout
+    - name: Checkout UMF
       uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       with:
         fetch-depth: 0
@@ -25,16 +25,20 @@ jobs:
         echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
         sudo udevadm control --reload-rules
         sudo udevadm trigger --name-match=kvm
-    - name: Install qemu
+
+    - name: Install dependencies
       run: |
-        sudo apt update && sudo apt install -y qemu-system genisoimage qemu-utils
-    - name: Install libvirt and script dependencies
-      run: |
-        sudo apt-get install -y libvirt-clients libvirt-daemon-system libvirt-daemon virtinst bridge-utils
+        sudo apt-get update
+        sudo apt-get install -y qemu-system genisoimage qemu-utils \
+          libvirt-clients libvirt-daemon-system libvirt-daemon virtinst bridge-utils
         pip install -r scripts/qemu/requirements.txt
-        sudo usermod -a -G kvm,libvirt $USER
+
+    - name: Add user to kvm group
+      run: sudo usermod -a -G kvm,libvirt $USER
+
     - name: Run ssh-keygen
       run: ssh-keygen -b 4096 -N '' -f ~/.ssh/id_rsa
+
     - name: Generate iso with user info
       run: |
         pub_key=$(cat ~/.ssh/id_rsa.pub)
@@ -69,11 +73,14 @@ jobs:
         EOF
 
         sudo -Sk genisoimage -output ubuntu-cloud-init.iso -volid cidata -joliet -rock ./user-data ./meta-data
+
     - name: Download ubuntu image
       run: wget https://cloud-images.ubuntu.com/releases/lunar/release/ubuntu-23.04-server-cloudimg-amd64.img
+
     - name: Resize image
       run: qemu-img resize ./ubuntu-23.04-server-cloudimg-amd64.img +4G
-    - name: Build
+
+    - name: Build UMF in QEMU
       run: |
         scripts/qemu/start_qemu.sh scripts/qemu/configs/default.xml
 
@@ -85,27 +92,22 @@ jobs:
 
         scp -P 2222 ${{github.workspace}}/scripts/qemu/run-build.sh cxltest@127.0.0.1:/home/cxltest
         scp -P 2222 ${{github.workspace}}/scripts/qemu/run-tests.sh cxltest@127.0.0.1:/home/cxltest
-        ssh cxltest@127.0.0.1 -p 2222 -t "bash /home/cxltest/run-build.sh https://github.com/$CI_REPO ${{env.CI_BRANCH}}"
 
+        ssh cxltest@127.0.0.1 -p 2222 -t "bash /home/cxltest/run-build.sh https://github.com/$CI_REPO ${{env.CI_BRANCH}}"
         ssh cxltest@127.0.0.1 -p 2222 -t "sudo shutdown -h now"
 
-    - name: Run tests
+    - name: Run tests in QEMU
       run: |
         for config_file in scripts/qemu/configs/*.xml; do
           config_name=$(basename $config_file .xml)
 
-          echo testing $config_name
           while ps -aux | grep qemu-system-x86_64 | grep -q -v grep; do
             echo "Waiting for QEMU to shut down..."
             sleep 5
           done
+
+          echo "\n ### Testing ${config_name} ###"
           scripts/qemu/start_qemu.sh $config_file
-          
-          if [ ${{ github.event_name }} = 'pull_request' ]; then
-            CI_REPO="${{ github.event.pull_request.head.repo.full_name }}"
-          else
-            CI_REPO="$GITHUB_REPOSITORY"
-          fi
 
           ssh cxltest@127.0.0.1 -p 2222 -t "bash /home/cxltest/run-tests.sh"
           ssh cxltest@127.0.0.1 -p 2222 -t "sudo shutdown -h now"

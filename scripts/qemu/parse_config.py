@@ -13,10 +13,13 @@ import os
 import psutil
 import shutil
 
-# If you want to manually run this script please install deps by: pip install -r requirements.txt
-# To get virsh please install libvirt-clients
+# This script parses the topology xml file and returns QEMU arguments.
 #
-# Enable verbose mode by using environment variable ENABLE_VERBOSE=1
+# Before running this script:
+# - install python deps for this script: pip install -r requirements.txt
+# - install 'libvirt-clients' package (for virsh)
+#
+# Enable verbose mode by setting environment variable: ENABLE_VERBOSE=1
 
 TopologyCfg = collections.namedtuple(
     "TopologyCfg", ["name", "hmat", "cpu_model", "cpu_options", "mem_options"]
@@ -27,7 +30,7 @@ verbose_mode = False
 
 def enable_verbose():
     """
-    Parse command line arguments
+    Check if env var ENABLE_VERBOSE is set and enable verbose mode
     """
     global verbose_mode
     verbose_mode = os.getenv("ENABLE_VERBOSE", False)
@@ -49,6 +52,9 @@ def parse_topology_xml(tpg_file_name: str) -> TopologyCfg:
         )
         result.check_returncode()
         libvirt_args = result.stdout.decode("utf-8").strip()
+
+        if verbose_mode != False:
+            print(f"\nFull libvirt_args: {libvirt_args}\n")
 
         tpg_cfg = {
             "name": re.search(r"guest=(\w+)", libvirt_args).group(1),
@@ -74,7 +80,7 @@ def parse_topology_xml(tpg_file_name: str) -> TopologyCfg:
     except subprocess.CalledProcessError:
         sys.exit(f"\n XML file: {tpg_file_name} error in virsh parsing")
     except Exception:
-        sys.exit(f"\n Provided file is missing or missing virsh.")
+        sys.exit(f"\n Provided file ({tpg_file_name}) is missing or missing virsh.")
     return tpg
 
 
@@ -89,7 +95,7 @@ def get_qemu_args(tpg_file_name: str) -> str:
 
 def calculate_memory(tpg: TopologyCfg) -> str:
     """
-    Memory used by QEMU
+    Total memory required by given QEMU config
     """
     if tpg.mem_options:
         mem_needed = 0
@@ -112,4 +118,6 @@ if __name__ == "__main__":
         tpg_file_name = sys.argv[1]
     else:
         sys.exit(f"\n Usage: {sys.argv[0]} <tpg_file_name>")
+
+    # Print QEMU arguments as a result of this script
     print(get_qemu_args(tpg_file_name))

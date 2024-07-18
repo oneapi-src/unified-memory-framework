@@ -23,4 +23,3 @@ numactl -N 1 ctest --output-on-failure
 # run tests under valgrind
 echo "Running tests under valgrind memcheck ..."
 ../test/test_valgrind.sh .. . memcheck
-
