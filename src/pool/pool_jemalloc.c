@@ -37,6 +37,8 @@
 typedef struct jemalloc_memory_pool_t {
     umf_memory_provider_handle_t provider;
     unsigned int arena_index; // index of jemalloc arena
+    // set to true if umfMemoryProviderFree() should never be called
+    bool disable_provider_free;
 } jemalloc_memory_pool_t;
 
 static __TLS umf_result_t TLS_last_allocation_error;
@@ -80,7 +82,9 @@ static void *arena_extent_alloc(extent_hooks_t *extent_hooks, void *new_addr,
     }
 
     if (new_addr != NULL && ptr != new_addr) {
-        umfMemoryProviderFree(pool->provider, ptr, size);
+        if (!pool->disable_provider_free) {
+            umfMemoryProviderFree(pool->provider, ptr, size);
+        }
         return NULL;
     }
 
@@ -114,6 +118,10 @@ static void arena_extent_destroy(extent_hooks_t *extent_hooks, void *addr,
 
     jemalloc_memory_pool_t *pool = get_pool_by_arena_index(arena_ind);
 
+    if (pool->disable_provider_free) {
+        return;
+    }
+
     umf_result_t ret;
     ret = umfMemoryProviderFree(pool->provider, addr, size);
     if (ret != UMF_RESULT_SUCCESS) {
@@ -135,6 +143,10 @@ static bool arena_extent_dalloc(extent_hooks_t *extent_hooks, void *addr,
     (void)committed;    // unused
 
     jemalloc_memory_pool_t *pool = get_pool_by_arena_index(arena_ind);
+
+    if (pool->disable_provider_free) {
+        return true; // opt-out from deallocation
+    }
 
     umf_result_t ret;
     ret = umfMemoryProviderFree(pool->provider, addr, size);
@@ -388,7 +400,9 @@ static umf_result_t op_initialize(umf_memory_provider_handle_t provider,
                                   void *params, void **out_pool) {
     assert(provider);
     assert(out_pool);
-    (void)params; // unused
+
+    umf_jemalloc_pool_params_t *je_params =
+        (umf_jemalloc_pool_params_t *)params;
 
     extent_hooks_t *pHooks = &arena_extent_hooks;
     size_t unsigned_size = sizeof(unsigned);
@@ -401,6 +415,12 @@ static umf_result_t op_initialize(umf_memory_provider_handle_t provider,
     }
 
     pool->provider = provider;
+
+    if (je_params) {
+        pool->disable_provider_free = je_params->disable_provider_free;
+    } else {
+        pool->disable_provider_free = false;
+    }
 
     unsigned arena_index;
     err = je_mallctl("arenas.create", (void *)&arena_index, &unsigned_size,
