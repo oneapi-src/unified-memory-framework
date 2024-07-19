@@ -58,7 +58,7 @@ set(UMF_SOURCES
     memory_pool.c
     memory_provider.c
     memory_provider_get_last_failed.c
-    memory_target.c
+    memtarget.c
     mempolicy.c
     memspace.c
     provider/provider_tracking.c
@@ -81,7 +81,7 @@ set(UMF_PRIVATE_COMPILE_DEFINITIONS "-DUMF_SRC_VERSION=${UMF_SRC_VERSION}")
 set(UMF_SOURCES_COMMON_LINUX_MACOSX
     provider/provider_os_memory.c
     provider/provider_os_memory_posix.c
-    memory_targets/memory_target_numa.c
+    memtargets/memtarget_numa.c
     memspaces/memspace_numa.c
     memspaces/memspace_host_all.c
     memspaces/memspace_highest_capacity.c
@@ -178,7 +178,7 @@ target_include_directories(
            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/critnib>
            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/provider>
            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/memspaces>
-           $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/memory_targets>
+           $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/memtargets>
            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 install(TARGETS umf EXPORT ${PROJECT_NAME}-targets)

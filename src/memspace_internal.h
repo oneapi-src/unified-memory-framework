@@ -13,7 +13,7 @@
 #include <umf/memspace.h>
 
 #include "base_alloc.h"
-#include "memory_target.h"
+#include "memtarget.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,7 +21,7 @@ extern "C" {
 
 struct umf_memspace_t {
     size_t size;
-    umf_memory_target_handle_t *nodes;
+    umf_memtarget_handle_t *nodes;
 };
 
 ///
@@ -30,8 +30,7 @@ struct umf_memspace_t {
 umf_result_t umfMemspaceClone(umf_const_memspace_handle_t hMemspace,
                               umf_memspace_handle_t *outHandle);
 
-typedef umf_result_t (*umfGetPropertyFn)(umf_memory_target_handle_t,
-                                         uint64_t *);
+typedef umf_result_t (*umfGetPropertyFn)(umf_memtarget_handle_t, uint64_t *);
 
 ///
 /// \brief Sorts memspace by getProperty() in descending order
@@ -39,10 +38,10 @@ typedef umf_result_t (*umfGetPropertyFn)(umf_memory_target_handle_t,
 umf_result_t umfMemspaceSortDesc(umf_memspace_handle_t hMemspace,
                                  umfGetPropertyFn getProperty);
 
-typedef umf_result_t (*umfGetTargetFn)(umf_memory_target_handle_t initiator,
-                                       umf_memory_target_handle_t *nodes,
+typedef umf_result_t (*umfGetTargetFn)(umf_memtarget_handle_t initiator,
+                                       umf_memtarget_handle_t *nodes,
                                        size_t numNodes,
-                                       umf_memory_target_handle_t *target);
+                                       umf_memtarget_handle_t *target);
 
 ///
 /// \brief Filters the targets using getTarget() to create a new memspace

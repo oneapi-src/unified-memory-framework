@@ -12,17 +12,17 @@
 #include <stdlib.h>
 
 #include "base_alloc_global.h"
-#include "memory_target_numa.h"
 #include "memspace_internal.h"
+#include "memtarget_numa.h"
 #include "topology.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
 #include "utils_log.h"
 
-static umf_result_t getBestBandwidthTarget(umf_memory_target_handle_t initiator,
-                                           umf_memory_target_handle_t *nodes,
+static umf_result_t getBestBandwidthTarget(umf_memtarget_handle_t initiator,
+                                           umf_memtarget_handle_t *nodes,
                                            size_t numNodes,
-                                           umf_memory_target_handle_t *target) {
+                                           umf_memtarget_handle_t *target) {
     size_t bestNodeIdx = 0;
     size_t bestBandwidth = 0;
     for (size_t nodeIdx = 0; nodeIdx < numNodes; nodeIdx++) {

@@ -12,20 +12,19 @@
 
 #include "base_alloc_global.h"
 #include "libumf.h"
-#include "memory_target.h"
-#include "memory_target_ops.h"
+#include "memtarget.h"
+#include "memtarget_ops.h"
 #include "utils_concurrency.h"
 
-umf_result_t umfMemoryTargetCreate(const umf_memory_target_ops_t *ops,
-                                   void *params,
-                                   umf_memory_target_handle_t *memoryTarget) {
+umf_result_t umfMemoryTargetCreate(const umf_memtarget_ops_t *ops, void *params,
+                                   umf_memtarget_handle_t *memoryTarget) {
     libumfInit();
     if (!ops || !memoryTarget) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    umf_memory_target_handle_t target =
-        umf_ba_global_alloc(sizeof(umf_memory_target_t));
+    umf_memtarget_handle_t target =
+        umf_ba_global_alloc(sizeof(umf_memtarget_t));
     if (!target) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
@@ -48,18 +47,18 @@ umf_result_t umfMemoryTargetCreate(const umf_memory_target_ops_t *ops,
     return UMF_RESULT_SUCCESS;
 }
 
-void umfMemoryTargetDestroy(umf_memory_target_handle_t memoryTarget) {
+void umfMemoryTargetDestroy(umf_memtarget_handle_t memoryTarget) {
     assert(memoryTarget);
     memoryTarget->ops->finalize(memoryTarget->priv);
     umf_ba_global_free(memoryTarget);
 }
 
-umf_result_t umfMemoryTargetClone(umf_memory_target_handle_t memoryTarget,
-                                  umf_memory_target_handle_t *outHandle) {
+umf_result_t umfMemoryTargetClone(umf_memtarget_handle_t memoryTarget,
+                                  umf_memtarget_handle_t *outHandle) {
     assert(memoryTarget);
     assert(outHandle);
 
-    *outHandle = umf_ba_global_alloc(sizeof(umf_memory_target_t));
+    *outHandle = umf_ba_global_alloc(sizeof(umf_memtarget_t));
     if (!*outHandle) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
@@ -77,7 +76,7 @@ umf_result_t umfMemoryTargetClone(umf_memory_target_handle_t memoryTarget,
     return UMF_RESULT_SUCCESS;
 }
 
-umf_result_t umfMemoryTargetGetCapacity(umf_memory_target_handle_t memoryTarget,
+umf_result_t umfMemoryTargetGetCapacity(umf_memtarget_handle_t memoryTarget,
                                         size_t *capacity) {
     if (!memoryTarget || !capacity) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
@@ -86,10 +85,9 @@ umf_result_t umfMemoryTargetGetCapacity(umf_memory_target_handle_t memoryTarget,
     return memoryTarget->ops->get_capacity(memoryTarget->priv, capacity);
 }
 
-umf_result_t
-umfMemoryTargetGetBandwidth(umf_memory_target_handle_t srcMemoryTarget,
-                            umf_memory_target_handle_t dstMemoryTarget,
-                            size_t *bandwidth) {
+umf_result_t umfMemoryTargetGetBandwidth(umf_memtarget_handle_t srcMemoryTarget,
+                                         umf_memtarget_handle_t dstMemoryTarget,
+                                         size_t *bandwidth) {
     if (!srcMemoryTarget || !dstMemoryTarget || !bandwidth) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
@@ -98,10 +96,9 @@ umfMemoryTargetGetBandwidth(umf_memory_target_handle_t srcMemoryTarget,
         srcMemoryTarget->priv, dstMemoryTarget->priv, bandwidth);
 }
 
-umf_result_t
-umfMemoryTargetGetLatency(umf_memory_target_handle_t srcMemoryTarget,
-                          umf_memory_target_handle_t dstMemoryTarget,
-                          size_t *latency) {
+umf_result_t umfMemoryTargetGetLatency(umf_memtarget_handle_t srcMemoryTarget,
+                                       umf_memtarget_handle_t dstMemoryTarget,
+                                       size_t *latency) {
     if (!srcMemoryTarget || !dstMemoryTarget || !latency) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
