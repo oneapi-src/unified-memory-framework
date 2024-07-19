@@ -9,7 +9,7 @@
 #include "umf/base.h"
 
 #define UMF_VERNUMBERS @CMAKE_PROJECT_VERSION_MAJOR@,@CMAKE_PROJECT_VERSION_MINOR@,@CMAKE_PROJECT_VERSION_PATCH@,@UMF_VERSION_REVISION@
-#define UMF_VERSION "@UMF_VERSION@"
+#define _UMF_VERSION "@UMF_VERSION@"
 
 #ifdef _DEBUG
 #define VERSION_DEBUG VS_FF_DEBUG
@@ -50,12 +50,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Intel Corporation\0"
             VALUE "FileDescription", "Unified Memory Framework (UMF) library\0"
-            VALUE "FileVersion", UMF_VERSION "\0"
+            VALUE "FileVersion", _UMF_VERSION "\0"
             VALUE "LegalCopyright", "Copyright 2024, Intel Corporation. All rights reserved.\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "umf.dll\0"
             VALUE "ProductName", "Unified Memory Framework (UMF)\0"
-            VALUE "ProductVersion", UMF_VERSION "\0"
+            VALUE "ProductVersion", _UMF_VERSION "\0"
             VALUE "PrivateBuild", "\0"
             VALUE "SpecialBuild", "\0"
         END
