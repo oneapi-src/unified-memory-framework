@@ -7,10 +7,11 @@
  *
  */
 
-#ifndef UMF_MEMTARGET_H
-#define UMF_MEMTARGET_H 1
+#ifndef UMF_MEMTARGET_INTERNAL_H
+#define UMF_MEMTARGET_INTERNAL_H 1
 
 #include <umf/base.h>
+#include <umf/memtarget.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -22,8 +23,6 @@ typedef struct umf_memtarget_t {
     const umf_memtarget_ops_t *ops;
     void *priv;
 } umf_memtarget_t;
-
-typedef umf_memtarget_t *umf_memtarget_handle_t;
 
 umf_result_t umfMemoryTargetCreate(const umf_memtarget_ops_t *ops, void *params,
                                    umf_memtarget_handle_t *memoryTarget);
@@ -44,4 +43,4 @@ umf_result_t umfMemoryTargetGetLatency(umf_memtarget_handle_t srcMemoryTarget,
 }
 #endif
 
-#endif /* UMF_MEMTARGET_H */
+#endif /* UMF_MEMTARGET_INTERNAL_H */

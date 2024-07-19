@@ -12,12 +12,11 @@
 
 #include <umf/base.h>
 #include <umf/memspace.h>
+#include <umf/memtarget.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-typedef struct umf_memtarget_t *umf_memtarget_handle_t;
 
 typedef struct umf_memtarget_ops_t {
     /// Version of the ops structure.

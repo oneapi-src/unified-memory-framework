@@ -12,7 +12,7 @@
 
 #include "base_alloc_global.h"
 #include "libumf.h"
-#include "memtarget.h"
+#include "memtarget_internal.h"
 #include "memtarget_ops.h"
 #include "utils_concurrency.h"
 

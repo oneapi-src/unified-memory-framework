@@ -13,7 +13,7 @@
 #include <umf.h>
 #include <umf/memspace.h>
 
-#include "../memtarget.h"
+#include "../memtarget_internal.h"
 #include "../memtarget_ops.h"
 
 #ifdef __cplusplus

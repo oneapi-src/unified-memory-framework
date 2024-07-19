@@ -13,7 +13,7 @@
 #include <umf/memspace.h>
 
 #include "base_alloc.h"
-#include "memtarget.h"
+#include "memtarget_internal.h"
 
 #ifdef __cplusplus
 extern "C" {

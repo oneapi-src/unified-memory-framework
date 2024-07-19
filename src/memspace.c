@@ -14,7 +14,7 @@
 
 #include "base_alloc_global.h"
 #include "memspace_internal.h"
-#include "memtarget.h"
+#include "memtarget_internal.h"
 #include "memtarget_ops.h"
 
 #ifndef NDEBUG
