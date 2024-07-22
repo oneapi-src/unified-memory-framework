@@ -165,3 +165,66 @@ else()
             "IPC examples with UMF pool API are supported on Linux only - skipping"
     )
 endif()
+
+if(LINUX)
+    set(EXAMPLE_NAME umf_example_memspace_numa)
+
+    add_umf_executable(
+        NAME ${EXAMPLE_NAME}
+        SRCS memspace/memspace_numa.c
+        LIBS umf hwloc numa)
+
+    target_include_directories(
+        ${EXAMPLE_NAME} PRIVATE ${UMF_CMAKE_SOURCE_DIR}/src/utils
+                                ${UMF_CMAKE_SOURCE_DIR}/include)
+
+    target_link_directories(${EXAMPLE_NAME} PRIVATE ${LIBHWLOC_LIBRARY_DIRS})
+
+    add_test(
+        NAME ${EXAMPLE_NAME}
+        COMMAND ${EXAMPLE_NAME}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+    set(EXAMPLE_NAME umf_example_memspace_hmat)
+
+    add_umf_executable(
+        NAME ${EXAMPLE_NAME}
+        SRCS memspace/memspace_hmat.c
+        LIBS umf hwloc numa)
+
+    target_include_directories(
+        ${EXAMPLE_NAME} PRIVATE ${UMF_CMAKE_SOURCE_DIR}/src/utils
+                                ${UMF_CMAKE_SOURCE_DIR}/include)
+
+    target_link_directories(${EXAMPLE_NAME} PRIVATE ${LIBHWLOC_LIBRARY_DIRS})
+
+    add_test(
+        NAME ${EXAMPLE_NAME}
+        COMMAND ${EXAMPLE_NAME}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+    set_tests_properties(${EXAMPLE_NAME} PROPERTIES SKIP_RETURN_CODE 125)
+    set(EXAMPLE_NAME umf_example_file_provider)
+
+    add_umf_executable(
+        NAME ${EXAMPLE_NAME}
+        SRCS custom_provider/file_provider.c
+        LIBS umf hwloc)
+
+    target_include_directories(
+        ${EXAMPLE_NAME} PRIVATE ${UMF_CMAKE_SOURCE_DIR}/src/utils
+                                ${UMF_CMAKE_SOURCE_DIR}/include)
+
+    target_link_directories(${EXAMPLE_NAME} PRIVATE ${LIBHWLOC_LIBRARY_DIRS})
+
+    add_test(
+        NAME ${EXAMPLE_NAME}
+        COMMAND ${EXAMPLE_NAME}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+else()
+    message(
+        STATUS "Memspace examples API are supported on Linux only - skipping")
+    message(
+        STATUS "File provider example is supported on Linux only - skipping")
+endif()
