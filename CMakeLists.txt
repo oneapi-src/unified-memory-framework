@@ -7,7 +7,8 @@ cmake_minimum_required(VERSION 3.14.0 FATAL_ERROR)
 set(UMF_CMAKE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 list(APPEND CMAKE_MODULE_PATH "${UMF_CMAKE_SOURCE_DIR}/cmake")
-include(helpers)
+# Use full path of the helpers module (to omit potential conflicts with others)
+include(${UMF_CMAKE_SOURCE_DIR}/cmake/helpers.cmake)
 
 # We use semver aligned version, set via git tags. We parse git output to
 # establih the version of UMF to be used in CMake, Win dll's, and within the
