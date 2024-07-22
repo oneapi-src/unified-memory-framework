@@ -28,7 +28,7 @@ static umf_result_t getBestLatencyTarget(umf_memtarget_handle_t initiator,
     for (size_t nodeIdx = 0; nodeIdx < numNodes; nodeIdx++) {
         size_t latency = SIZE_MAX;
         umf_result_t ret =
-            umfMemoryTargetGetLatency(initiator, nodes[nodeIdx], &latency);
+            umfMemtargetGetLatency(initiator, nodes[nodeIdx], &latency);
         if (ret) {
             return ret;
         }

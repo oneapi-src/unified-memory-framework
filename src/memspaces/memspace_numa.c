@@ -37,8 +37,8 @@ umf_result_t umfMemspaceCreateFromNumaArray(unsigned *nodeIds, size_t numIds,
     size_t nodeIdx;
     for (nodeIdx = 0; nodeIdx < numIds; nodeIdx++) {
         struct umf_numa_memtarget_config_t config = {nodeIds[nodeIdx]};
-        ret = umfMemoryTargetCreate(&UMF_MEMTARGET_NUMA_OPS, &config,
-                                    &memspace->nodes[nodeIdx]);
+        ret = umfMemtargetCreate(&UMF_MEMTARGET_NUMA_OPS, &config,
+                                 &memspace->nodes[nodeIdx]);
         if (ret) {
             goto err_target_create;
         }
@@ -51,7 +51,7 @@ umf_result_t umfMemspaceCreateFromNumaArray(unsigned *nodeIds, size_t numIds,
 err_target_create:
     umf_ba_global_free(memspace->nodes);
     for (size_t i = 0; i < nodeIdx; i++) {
-        umfMemoryTargetDestroy(memspace->nodes[i]);
+        umfMemtargetDestroy(memspace->nodes[i]);
     }
 err_nodes_alloc:
     umf_ba_global_free(memspace);

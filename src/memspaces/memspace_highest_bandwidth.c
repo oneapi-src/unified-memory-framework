@@ -28,7 +28,7 @@ static umf_result_t getBestBandwidthTarget(umf_memtarget_handle_t initiator,
     for (size_t nodeIdx = 0; nodeIdx < numNodes; nodeIdx++) {
         size_t bandwidth = 0;
         umf_result_t ret =
-            umfMemoryTargetGetBandwidth(initiator, nodes[nodeIdx], &bandwidth);
+            umfMemtargetGetBandwidth(initiator, nodes[nodeIdx], &bandwidth);
         if (ret) {
             return ret;
         }

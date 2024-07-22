@@ -24,20 +24,20 @@ typedef struct umf_memtarget_t {
     void *priv;
 } umf_memtarget_t;
 
-umf_result_t umfMemoryTargetCreate(const umf_memtarget_ops_t *ops, void *params,
-                                   umf_memtarget_handle_t *memoryTarget);
-void umfMemoryTargetDestroy(umf_memtarget_handle_t memoryTarget);
+umf_result_t umfMemtargetCreate(const umf_memtarget_ops_t *ops, void *params,
+                                umf_memtarget_handle_t *memoryTarget);
+void umfMemtargetDestroy(umf_memtarget_handle_t memoryTarget);
 
-umf_result_t umfMemoryTargetClone(umf_memtarget_handle_t memoryTarget,
-                                  umf_memtarget_handle_t *outHandle);
-umf_result_t umfMemoryTargetGetCapacity(umf_memtarget_handle_t memoryTarget,
-                                        size_t *capacity);
-umf_result_t umfMemoryTargetGetBandwidth(umf_memtarget_handle_t srcMemoryTarget,
-                                         umf_memtarget_handle_t dstMemoryTarget,
-                                         size_t *bandwidth);
-umf_result_t umfMemoryTargetGetLatency(umf_memtarget_handle_t srcMemoryTarget,
-                                       umf_memtarget_handle_t dstMemoryTarget,
-                                       size_t *latency);
+umf_result_t umfMemtargetClone(umf_memtarget_handle_t memoryTarget,
+                               umf_memtarget_handle_t *outHandle);
+umf_result_t umfMemtargetGetCapacity(umf_memtarget_handle_t memoryTarget,
+                                     size_t *capacity);
+umf_result_t umfMemtargetGetBandwidth(umf_memtarget_handle_t srcMemoryTarget,
+                                      umf_memtarget_handle_t dstMemoryTarget,
+                                      size_t *bandwidth);
+umf_result_t umfMemtargetGetLatency(umf_memtarget_handle_t srcMemoryTarget,
+                                    umf_memtarget_handle_t dstMemoryTarget,
+                                    size_t *latency);
 
 #ifdef __cplusplus
 }

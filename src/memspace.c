@@ -105,7 +105,7 @@ umfMemoryProviderCreateFromMemspace(umf_const_memspace_handle_t memspace,
 void umfMemspaceDestroy(umf_memspace_handle_t memspace) {
     assert(memspace);
     for (size_t i = 0; i < memspace->size; i++) {
-        umfMemoryTargetDestroy(memspace->nodes[i]);
+        umfMemtargetDestroy(memspace->nodes[i]);
     }
 
     umf_ba_global_free(memspace->nodes);
@@ -136,7 +136,7 @@ umf_result_t umfMemspaceClone(umf_const_memspace_handle_t hMemspace,
     umf_result_t ret;
 
     for (i = 0; i < clone->size; i++) {
-        ret = umfMemoryTargetClone(hMemspace->nodes[i], &clone->nodes[i]);
+        ret = umfMemtargetClone(hMemspace->nodes[i], &clone->nodes[i]);
         if (ret != UMF_RESULT_SUCCESS) {
             goto err;
         }
@@ -148,7 +148,7 @@ umf_result_t umfMemspaceClone(umf_const_memspace_handle_t hMemspace,
 err:
     while (i != 0) {
         i--;
-        umfMemoryTargetDestroy(clone->nodes[i]);
+        umfMemtargetDestroy(clone->nodes[i]);
     }
     umf_ba_global_free(clone->nodes);
     umf_ba_global_free(clone);
@@ -268,8 +268,8 @@ umf_result_t umfMemspaceFilter(umf_const_memspace_handle_t hMemspace,
 
     size_t cloneIdx = 0;
     for (cloneIdx = 0; cloneIdx < newMemspace->size; cloneIdx++) {
-        ret = umfMemoryTargetClone(uniqueBestNodes[cloneIdx],
-                                   &newMemspace->nodes[cloneIdx]);
+        ret = umfMemtargetClone(uniqueBestNodes[cloneIdx],
+                                &newMemspace->nodes[cloneIdx]);
         if (ret != UMF_RESULT_SUCCESS) {
             goto err_free_cloned_nodes;
         }
@@ -283,7 +283,7 @@ umf_result_t umfMemspaceFilter(umf_const_memspace_handle_t hMemspace,
 err_free_cloned_nodes:
     while (cloneIdx != 0) {
         cloneIdx--;
-        umfMemoryTargetDestroy(newMemspace->nodes[cloneIdx]);
+        umfMemtargetDestroy(newMemspace->nodes[cloneIdx]);
     }
     umf_ba_global_free(newMemspace->nodes);
 err_free_new_memspace:

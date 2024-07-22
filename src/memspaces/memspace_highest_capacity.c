@@ -34,7 +34,7 @@ umfMemspaceHighestCapacityCreate(umf_memspace_handle_t *hMemspace) {
     }
 
     ret = umfMemspaceSortDesc(highCapacityMemspace,
-                              (umfGetPropertyFn)&umfMemoryTargetGetCapacity);
+                              (umfGetPropertyFn)&umfMemtargetGetCapacity);
     if (ret != UMF_RESULT_SUCCESS) {
         return ret;
     }
