@@ -292,3 +292,19 @@ err_free_best_targets:
     umf_ba_global_free(uniqueBestNodes);
     return ret;
 }
+
+size_t umfMemspaceMemtargetNum(umf_const_memspace_handle_t hMemspace) {
+    if (!hMemspace) {
+        return 0;
+    }
+    return hMemspace->size;
+}
+
+umf_const_memtarget_handle_t
+umfMemspaceMemtargetGet(umf_const_memspace_handle_t hMemspace,
+                        unsigned targetNum) {
+    if (!hMemspace || targetNum >= hMemspace->size) {
+        return NULL;
+    }
+    return hMemspace->nodes[targetNum];
+}
