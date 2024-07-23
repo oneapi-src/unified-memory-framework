@@ -167,6 +167,8 @@ else()
 endif()
 
 if(LINUX)
+    set(UMF_TEST_SKIP_RETURN_CODE 125)
+
     set(EXAMPLE_NAME umf_example_memspace_numa)
 
     add_umf_executable(
@@ -175,8 +177,10 @@ if(LINUX)
         LIBS umf ${LIBHWLOC_LIBRARIES} numa)
 
     target_include_directories(
-        ${EXAMPLE_NAME} PRIVATE ${UMF_CMAKE_SOURCE_DIR}/src/utils
-                                ${UMF_CMAKE_SOURCE_DIR}/include)
+        ${EXAMPLE_NAME}
+        PRIVATE ${UMF_CMAKE_SOURCE_DIR}/src/utils
+                ${UMF_CMAKE_SOURCE_DIR}/include
+                ${UMF_CMAKE_SOURCE_DIR}/examples/common)
 
     target_link_directories(${EXAMPLE_NAME} PRIVATE ${LIBHWLOC_LIBRARY_DIRS})
 
@@ -184,6 +188,9 @@ if(LINUX)
         NAME ${EXAMPLE_NAME}
         COMMAND ${EXAMPLE_NAME}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+    set_tests_properties(${EXAMPLE_NAME} PROPERTIES
+                         SKIP_RETURN_CODE ${UMF_TEST_SKIP_RETURN_CODE})
 
     set(EXAMPLE_NAME umf_example_memspace_hmat)
 
@@ -193,8 +200,10 @@ if(LINUX)
         LIBS umf ${LIBHWLOC_LIBRARIES} numa)
 
     target_include_directories(
-        ${EXAMPLE_NAME} PRIVATE ${UMF_CMAKE_SOURCE_DIR}/src/utils
-                                ${UMF_CMAKE_SOURCE_DIR}/include)
+        ${EXAMPLE_NAME}
+        PRIVATE ${UMF_CMAKE_SOURCE_DIR}/src/utils
+                ${UMF_CMAKE_SOURCE_DIR}/include
+                ${UMF_CMAKE_SOURCE_DIR}/examples/common)
 
     target_link_directories(${EXAMPLE_NAME} PRIVATE ${LIBHWLOC_LIBRARY_DIRS})
 
@@ -203,7 +212,8 @@ if(LINUX)
         COMMAND ${EXAMPLE_NAME}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
-    set_tests_properties(${EXAMPLE_NAME} PROPERTIES SKIP_RETURN_CODE 125)
+    set_tests_properties(${EXAMPLE_NAME} PROPERTIES
+                         SKIP_RETURN_CODE ${UMF_TEST_SKIP_RETURN_CODE})
     set(EXAMPLE_NAME umf_example_file_provider)
 
     add_umf_executable(
