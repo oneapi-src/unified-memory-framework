@@ -13,6 +13,7 @@
 #include "critnib.h"
 #include "umf_hwloc.h"
 #include "utils_common.h"
+#include "utils_concurrency.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,6 +34,8 @@ typedef struct os_memory_provider_t {
     int fd;             // file descriptor for memory mapping
     size_t size_fd;     // size of file used for memory mapping
     size_t max_size_fd; // maximum size of file used for memory mapping
+    os_mutex_t lock_fd; // lock for updating file size
+
     // A critnib map storing (ptr, fd_offset + 1) pairs. We add 1 to fd_offset
     // in order to be able to store fd_offset equal 0, because
     // critnib_get() returns value or NULL, so a value cannot equal 0.
