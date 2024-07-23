@@ -317,6 +317,15 @@ static umf_result_t numa_get_latency(void *srcMemoryTarget,
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t numa_get_type(void *memTarget, umf_memtarget_type_t *type) {
+    if (!memTarget || !type) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    *type = UMF_MEMTARGET_TYPE_NUMA;
+    return UMF_RESULT_SUCCESS;
+}
+
 struct umf_memtarget_ops_t UMF_MEMTARGET_NUMA_OPS = {
     .version = UMF_VERSION_CURRENT,
     .initialize = numa_initialize,
@@ -326,5 +335,6 @@ struct umf_memtarget_ops_t UMF_MEMTARGET_NUMA_OPS = {
     .get_capacity = numa_get_capacity,
     .get_bandwidth = numa_get_bandwidth,
     .get_latency = numa_get_latency,
+    .get_type = numa_get_type,
     .memory_provider_create_from_memspace =
         numa_memory_provider_create_from_memspace};

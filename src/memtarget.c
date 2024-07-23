@@ -106,3 +106,12 @@ umf_result_t umfMemtargetGetLatency(umf_memtarget_handle_t srcMemoryTarget,
     return srcMemoryTarget->ops->get_latency(srcMemoryTarget->priv,
                                              dstMemoryTarget->priv, latency);
 }
+
+umf_result_t umfMemtargetGetType(umf_const_memtarget_handle_t memoryTarget,
+                                 umf_memtarget_type_t *type) {
+    if (!memoryTarget || !type) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    return memoryTarget->ops->get_type(memoryTarget->priv, type);
+}
