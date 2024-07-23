@@ -11,8 +11,8 @@
 #include <stdlib.h>
 
 #include "base_alloc_global.h"
-#include "memory_target_numa.h"
 #include "memspace_internal.h"
+#include "memtarget_numa.h"
 #include "topology.h"
 #include "utils_concurrency.h"
 

@@ -13,9 +13,9 @@
 #include <umf/memspace.h>
 
 #include "base_alloc_global.h"
-#include "memory_target.h"
-#include "memory_target_ops.h"
 #include "memspace_internal.h"
+#include "memtarget_internal.h"
+#include "memtarget_ops.h"
 
 #ifndef NDEBUG
 static umf_result_t
@@ -25,7 +25,7 @@ verifyMemTargetsTypes(umf_const_memspace_handle_t memspace) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    const struct umf_memory_target_ops_t *ops = memspace->nodes[0]->ops;
+    const struct umf_memtarget_ops_t *ops = memspace->nodes[0]->ops;
     for (size_t i = 1; i < memspace->size; i++) {
         if (memspace->nodes[i]->ops != ops) {
             return UMF_RESULT_ERROR_INVALID_ARGUMENT;
@@ -66,7 +66,7 @@ umf_result_t umfPoolCreateFromMemspace(umf_const_memspace_handle_t memspace,
         return ret;
     }
 
-    // TODO: for now, we only support memspaces that consist of memory_targets
+    // TODO: for now, we only support memspaces that consist of memtargets
     // of the same type. Fix this.
     assert(verifyMemTargetsTypes(memspace) == UMF_RESULT_SUCCESS);
     ret = memspace->nodes[0]->ops->pool_create_from_memspace(
@@ -91,7 +91,7 @@ umfMemoryProviderCreateFromMemspace(umf_const_memspace_handle_t memspace,
         return ret;
     }
 
-    // TODO: for now, we only support memspaces that consist of memory_targets
+    // TODO: for now, we only support memspaces that consist of memtargets
     // of the same type. Fix this.
     assert(verifyMemTargetsTypes(memspace) == UMF_RESULT_SUCCESS);
     ret = memspace->nodes[0]->ops->memory_provider_create_from_memspace(
@@ -105,7 +105,7 @@ umfMemoryProviderCreateFromMemspace(umf_const_memspace_handle_t memspace,
 void umfMemspaceDestroy(umf_memspace_handle_t memspace) {
     assert(memspace);
     for (size_t i = 0; i < memspace->size; i++) {
-        umfMemoryTargetDestroy(memspace->nodes[i]);
+        umfMemtargetDestroy(memspace->nodes[i]);
     }
 
     umf_ba_global_free(memspace->nodes);
@@ -126,7 +126,7 @@ umf_result_t umfMemspaceClone(umf_const_memspace_handle_t hMemspace,
 
     clone->size = hMemspace->size;
     clone->nodes =
-        umf_ba_global_alloc(sizeof(umf_memory_target_handle_t) * clone->size);
+        umf_ba_global_alloc(sizeof(umf_memtarget_handle_t) * clone->size);
     if (!clone->nodes) {
         umf_ba_global_free(clone);
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
@@ -136,7 +136,7 @@ umf_result_t umfMemspaceClone(umf_const_memspace_handle_t hMemspace,
     umf_result_t ret;
 
     for (i = 0; i < clone->size; i++) {
-        ret = umfMemoryTargetClone(hMemspace->nodes[i], &clone->nodes[i]);
+        ret = umfMemtargetClone(hMemspace->nodes[i], &clone->nodes[i]);
         if (ret != UMF_RESULT_SUCCESS) {
             goto err;
         }
@@ -148,21 +148,21 @@ umf_result_t umfMemspaceClone(umf_const_memspace_handle_t hMemspace,
 err:
     while (i != 0) {
         i--;
-        umfMemoryTargetDestroy(clone->nodes[i]);
+        umfMemtargetDestroy(clone->nodes[i]);
     }
     umf_ba_global_free(clone->nodes);
     umf_ba_global_free(clone);
     return ret;
 }
 
-struct memory_target_sort_entry {
+struct memtarget_sort_entry {
     uint64_t property;
-    umf_memory_target_handle_t node;
+    umf_memtarget_handle_t node;
 };
 
 static int propertyCmp(const void *a, const void *b) {
-    const struct memory_target_sort_entry *entryA = a;
-    const struct memory_target_sort_entry *entryB = b;
+    const struct memtarget_sort_entry *entryA = a;
+    const struct memtarget_sort_entry *entryB = b;
 
     if (entryA->property < entryB->property) {
         return 1;
@@ -175,14 +175,14 @@ static int propertyCmp(const void *a, const void *b) {
 
 umf_result_t
 umfMemspaceSortDesc(umf_memspace_handle_t hMemspace,
-                    umf_result_t (*getProperty)(umf_memory_target_handle_t node,
+                    umf_result_t (*getProperty)(umf_memtarget_handle_t node,
                                                 uint64_t *property)) {
     if (!hMemspace || !getProperty) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    struct memory_target_sort_entry *entries = umf_ba_global_alloc(
-        sizeof(struct memory_target_sort_entry) * hMemspace->size);
+    struct memtarget_sort_entry *entries = umf_ba_global_alloc(
+        sizeof(struct memtarget_sort_entry) * hMemspace->size);
     if (!entries) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
@@ -198,7 +198,7 @@ umfMemspaceSortDesc(umf_memspace_handle_t hMemspace,
         }
     }
 
-    qsort(entries, hMemspace->size, sizeof(struct memory_target_sort_entry),
+    qsort(entries, hMemspace->size, sizeof(struct memtarget_sort_entry),
           propertyCmp);
 
     // apply the order to the original array
@@ -218,7 +218,7 @@ umf_result_t umfMemspaceFilter(umf_const_memspace_handle_t hMemspace,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    umf_memory_target_handle_t *uniqueBestNodes =
+    umf_memtarget_handle_t *uniqueBestNodes =
         umf_ba_global_alloc(hMemspace->size * sizeof(*uniqueBestNodes));
     if (!uniqueBestNodes) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
@@ -228,7 +228,7 @@ umf_result_t umfMemspaceFilter(umf_const_memspace_handle_t hMemspace,
 
     size_t numUniqueBestNodes = 0;
     for (size_t nodeIdx = 0; nodeIdx < hMemspace->size; nodeIdx++) {
-        umf_memory_target_handle_t target = NULL;
+        umf_memtarget_handle_t target = NULL;
         ret = getTarget(hMemspace->nodes[nodeIdx], hMemspace->nodes,
                         hMemspace->size, &target);
         if (ret != UMF_RESULT_SUCCESS) {
@@ -268,8 +268,8 @@ umf_result_t umfMemspaceFilter(umf_const_memspace_handle_t hMemspace,
 
     size_t cloneIdx = 0;
     for (cloneIdx = 0; cloneIdx < newMemspace->size; cloneIdx++) {
-        ret = umfMemoryTargetClone(uniqueBestNodes[cloneIdx],
-                                   &newMemspace->nodes[cloneIdx]);
+        ret = umfMemtargetClone(uniqueBestNodes[cloneIdx],
+                                &newMemspace->nodes[cloneIdx]);
         if (ret != UMF_RESULT_SUCCESS) {
             goto err_free_cloned_nodes;
         }
@@ -283,7 +283,7 @@ umf_result_t umfMemspaceFilter(umf_const_memspace_handle_t hMemspace,
 err_free_cloned_nodes:
     while (cloneIdx != 0) {
         cloneIdx--;
-        umfMemoryTargetDestroy(newMemspace->nodes[cloneIdx]);
+        umfMemtargetDestroy(newMemspace->nodes[cloneIdx]);
     }
     umf_ba_global_free(newMemspace->nodes);
 err_free_new_memspace:

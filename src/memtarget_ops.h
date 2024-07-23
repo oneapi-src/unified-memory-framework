@@ -7,19 +7,18 @@
  *
  */
 
-#ifndef UMF_MEMORY_TARGET_OPS_H
-#define UMF_MEMORY_TARGET_OPS_H 1
+#ifndef UMF_MEMTARGET_OPS_H
+#define UMF_MEMTARGET_OPS_H 1
 
 #include <umf/base.h>
 #include <umf/memspace.h>
+#include <umf/memtarget.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef struct umf_memory_target_t *umf_memory_target_handle_t;
-
-typedef struct umf_memory_target_ops_t {
+typedef struct umf_memtarget_ops_t {
     /// Version of the ops structure.
     /// Should be initialized using UMF_VERSION_CURRENT
     uint32_t version;
@@ -44,10 +43,10 @@ typedef struct umf_memory_target_ops_t {
                                   size_t *bandwidth);
     umf_result_t (*get_latency)(void *srcMemoryTarget, void *dstMemoryTarget,
                                 size_t *latency);
-} umf_memory_target_ops_t;
+} umf_memtarget_ops_t;
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* #ifndef UMF_MEMORY_TARGET_OPS_H */
+#endif /* #ifndef UMF_MEMTARGET_OPS_H */

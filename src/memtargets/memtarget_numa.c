@@ -16,13 +16,13 @@
 #include "../memory_pool_internal.h"
 #include "base_alloc.h"
 #include "base_alloc_global.h"
-#include "memory_target_numa.h"
 #include "mempolicy_internal.h"
+#include "memtarget_numa.h"
 #include "topology.h"
 #include "utils_assert.h"
 #include "utils_log.h"
 
-struct numa_memory_target_t {
+struct numa_memtarget_t {
     unsigned physical_id;
 };
 
@@ -31,11 +31,11 @@ static umf_result_t numa_initialize(void *params, void **memTarget) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    struct umf_numa_memory_target_config_t *config =
-        (struct umf_numa_memory_target_config_t *)params;
+    struct umf_numa_memtarget_config_t *config =
+        (struct umf_numa_memtarget_config_t *)params;
 
-    struct numa_memory_target_t *numaTarget =
-        umf_ba_global_alloc(sizeof(struct numa_memory_target_t));
+    struct numa_memtarget_t *numaTarget =
+        umf_ba_global_alloc(sizeof(struct numa_memtarget_t));
     if (!numaTarget) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
@@ -52,8 +52,8 @@ static umf_result_t numa_memory_provider_create_from_memspace(
     umf_const_mempolicy_handle_t policy,
     umf_memory_provider_handle_t *provider) {
 
-    struct numa_memory_target_t **numaTargets =
-        (struct numa_memory_target_t **)memTargets;
+    struct numa_memtarget_t **numaTargets =
+        (struct numa_memtarget_t **)memTargets;
 
     size_t numNodesProvider;
 
@@ -161,10 +161,9 @@ static umf_result_t numa_pool_create_from_memspace(
 }
 
 static umf_result_t numa_clone(void *memTarget, void **outMemTarget) {
-    struct numa_memory_target_t *numaTarget =
-        (struct numa_memory_target_t *)memTarget;
-    struct numa_memory_target_t *newNumaTarget =
-        umf_ba_global_alloc(sizeof(struct numa_memory_target_t));
+    struct numa_memtarget_t *numaTarget = (struct numa_memtarget_t *)memTarget;
+    struct numa_memtarget_t *newNumaTarget =
+        umf_ba_global_alloc(sizeof(struct numa_memtarget_t));
     if (!newNumaTarget) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
@@ -185,7 +184,7 @@ static umf_result_t numa_get_capacity(void *memTarget, size_t *capacity) {
     }
 
     hwloc_obj_t numaNode = hwloc_get_numanode_obj_by_os_index(
-        topology, ((struct numa_memory_target_t *)memTarget)->physical_id);
+        topology, ((struct numa_memtarget_t *)memTarget)->physical_id);
     if (!numaNode) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
@@ -226,7 +225,7 @@ static umf_result_t query_attribute_value(void *srcMemoryTarget,
 
     hwloc_obj_t srcNumaNode = hwloc_get_obj_by_type(
         topology, HWLOC_OBJ_NUMANODE,
-        ((struct numa_memory_target_t *)srcMemoryTarget)->physical_id);
+        ((struct numa_memtarget_t *)srcMemoryTarget)->physical_id);
     if (!srcNumaNode) {
         LOG_PERR("Getting HWLOC object by type failed");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
@@ -234,7 +233,7 @@ static umf_result_t query_attribute_value(void *srcMemoryTarget,
 
     hwloc_obj_t dstNumaNode = hwloc_get_obj_by_type(
         topology, HWLOC_OBJ_NUMANODE,
-        ((struct numa_memory_target_t *)dstMemoryTarget)->physical_id);
+        ((struct numa_memtarget_t *)dstMemoryTarget)->physical_id);
     if (!dstNumaNode) {
         LOG_PERR("Getting HWLOC object by type failed");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
@@ -292,8 +291,8 @@ static umf_result_t numa_get_bandwidth(void *srcMemoryTarget,
                                              bandwidth, MEMATTR_TYPE_BANDWIDTH);
     if (ret) {
         LOG_ERR("Retrieving bandwidth for initiator node %u to node %u failed.",
-                ((struct numa_memory_target_t *)srcMemoryTarget)->physical_id,
-                ((struct numa_memory_target_t *)dstMemoryTarget)->physical_id);
+                ((struct numa_memtarget_t *)srcMemoryTarget)->physical_id,
+                ((struct numa_memtarget_t *)dstMemoryTarget)->physical_id);
         return ret;
     }
 
@@ -310,15 +309,15 @@ static umf_result_t numa_get_latency(void *srcMemoryTarget,
                                              latency, MEMATTR_TYPE_LATENCY);
     if (ret) {
         LOG_ERR("Retrieving latency for initiator node %u to node %u failed.",
-                ((struct numa_memory_target_t *)srcMemoryTarget)->physical_id,
-                ((struct numa_memory_target_t *)dstMemoryTarget)->physical_id);
+                ((struct numa_memtarget_t *)srcMemoryTarget)->physical_id,
+                ((struct numa_memtarget_t *)dstMemoryTarget)->physical_id);
         return ret;
     }
 
     return UMF_RESULT_SUCCESS;
 }
 
-struct umf_memory_target_ops_t UMF_MEMORY_TARGET_NUMA_OPS = {
+struct umf_memtarget_ops_t UMF_MEMTARGET_NUMA_OPS = {
     .version = UMF_VERSION_CURRENT,
     .initialize = numa_initialize,
     .finalize = numa_finalize,

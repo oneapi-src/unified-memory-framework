@@ -2,10 +2,10 @@
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-#include "memory_target_numa.h"
 #include "memspace_fixtures.hpp"
 #include "memspace_helpers.hpp"
 #include "memspace_internal.h"
+#include "memtarget_numa.h"
 #include "numa_helpers.h"
 #include "test_helpers.h"
 

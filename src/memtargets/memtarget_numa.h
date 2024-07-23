@@ -7,27 +7,27 @@
  *
  */
 
-#ifndef UMF_MEMORY_TARGET_NUMA_H
-#define UMF_MEMORY_TARGET_NUMA_H 1
+#ifndef UMF_MEMTARGET_NUMA_H
+#define UMF_MEMTARGET_NUMA_H 1
 
 #include <umf.h>
 #include <umf/memspace.h>
 
-#include "../memory_target.h"
-#include "../memory_target_ops.h"
+#include "../memtarget_internal.h"
+#include "../memtarget_ops.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct umf_numa_memory_target_config_t {
+struct umf_numa_memtarget_config_t {
     size_t physical_id;
 };
 
-extern struct umf_memory_target_ops_t UMF_MEMORY_TARGET_NUMA_OPS;
+extern struct umf_memtarget_ops_t UMF_MEMTARGET_NUMA_OPS;
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* UMF_MEMORY_TARGET_NUMA_H */
+#endif /* UMF_MEMTARGET_NUMA_H */

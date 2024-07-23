@@ -9,8 +9,8 @@
 
 #include <stdlib.h>
 
-#include "../memory_targets/memory_target_numa.h"
 #include "../memspace_internal.h"
+#include "../memtargets/memtarget_numa.h"
 #include "base_alloc_global.h"
 
 umf_result_t umfMemspaceCreateFromNumaArray(unsigned *nodeIds, size_t numIds,
@@ -27,8 +27,8 @@ umf_result_t umfMemspaceCreateFromNumaArray(unsigned *nodeIds, size_t numIds,
     }
 
     memspace->size = numIds;
-    memspace->nodes = umf_ba_global_alloc(memspace->size *
-                                          sizeof(umf_memory_target_handle_t));
+    memspace->nodes =
+        umf_ba_global_alloc(memspace->size * sizeof(umf_memtarget_handle_t));
     if (!memspace->nodes) {
         ret = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
         goto err_nodes_alloc;
@@ -36,9 +36,9 @@ umf_result_t umfMemspaceCreateFromNumaArray(unsigned *nodeIds, size_t numIds,
 
     size_t nodeIdx;
     for (nodeIdx = 0; nodeIdx < numIds; nodeIdx++) {
-        struct umf_numa_memory_target_config_t config = {nodeIds[nodeIdx]};
-        ret = umfMemoryTargetCreate(&UMF_MEMORY_TARGET_NUMA_OPS, &config,
-                                    &memspace->nodes[nodeIdx]);
+        struct umf_numa_memtarget_config_t config = {nodeIds[nodeIdx]};
+        ret = umfMemtargetCreate(&UMF_MEMTARGET_NUMA_OPS, &config,
+                                 &memspace->nodes[nodeIdx]);
         if (ret) {
             goto err_target_create;
         }
@@ -51,7 +51,7 @@ umf_result_t umfMemspaceCreateFromNumaArray(unsigned *nodeIds, size_t numIds,
 err_target_create:
     umf_ba_global_free(memspace->nodes);
     for (size_t i = 0; i < nodeIdx; i++) {
-        umfMemoryTargetDestroy(memspace->nodes[i]);
+        umfMemtargetDestroy(memspace->nodes[i]);
     }
 err_nodes_alloc:
     umf_ba_global_free(memspace);

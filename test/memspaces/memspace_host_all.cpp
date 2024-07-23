@@ -9,10 +9,10 @@
 
 #include <umf/memspace.h>
 
-#include "memory_target_numa.h"
 #include "memspace_fixtures.hpp"
 #include "memspace_helpers.hpp"
 #include "memspace_internal.h"
+#include "memtarget_numa.h"
 #include "numa_helpers.h"
 #include "test_helpers.h"
 #include "utils_sanitizers.h"
@@ -58,8 +58,8 @@ TEST_F(numaNodesTest, memspaceGet) {
     for (size_t i = 0; i < hMemspace->size; i++) {
         // NUMA memory target internally casts the config directly into priv.
         // TODO: Use the memory target API when it becomes available.
-        struct umf_numa_memory_target_config_t *numaTargetCfg =
-            (struct umf_numa_memory_target_config_t *)hMemspace->nodes[i]->priv;
+        struct umf_numa_memtarget_config_t *numaTargetCfg =
+            (struct umf_numa_memtarget_config_t *)hMemspace->nodes[i]->priv;
         UT_ASSERT(std::find(nodeIds.begin(), nodeIds.end(),
                             numaTargetCfg->physical_id) != nodeIds.end());
     }
