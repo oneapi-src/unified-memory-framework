@@ -31,6 +31,27 @@
 #include "utils_math.h"
 #include "utils_sanitizers.h"
 
+// Temporary solution for disabling memory poisoning. This is needed because
+// AddressSanitizer does not support memory poisoning for GPU allocations.
+// More info: https://github.com/oneapi-src/unified-memory-framework/issues/634
+#ifndef POISON_MEMORY
+#define POISON_MEMORY 0
+#endif
+
+static inline void annotate_memory_inaccessible([[maybe_unused]] void *ptr,
+                                                [[maybe_unused]] size_t size) {
+#ifdef POISON_MEMORY
+    utils_annotate_memory_inaccessible(ptr, size);
+#endif
+}
+
+static inline void annotate_memory_undefined([[maybe_unused]] void *ptr,
+                                             [[maybe_unused]] size_t size) {
+#ifdef POISON_MEMORY
+    utils_annotate_memory_undefined(ptr, size);
+#endif
+}
+
 typedef struct umf_disjoint_pool_shared_limits_t {
     size_t MaxSize;
     std::atomic<size_t> TotalSize;
@@ -400,7 +421,7 @@ static void *memoryProviderAlloc(umf_memory_provider_handle_t hProvider,
     if (ret != UMF_RESULT_SUCCESS) {
         throw MemoryProviderError{ret};
     }
-    utils_annotate_memory_inaccessible(ptr, size);
+    annotate_memory_inaccessible(ptr, size);
     return ptr;
 }
 
@@ -822,7 +843,7 @@ void *DisjointPool::AllocImpl::allocate(size_t Size, bool &FromPool) try {
     FromPool = false;
     if (Size > getParams().MaxPoolableSize) {
         Ptr = memoryProviderAlloc(getMemHandle(), Size);
-        utils_annotate_memory_undefined(Ptr, Size);
+        annotate_memory_undefined(Ptr, Size);
         return Ptr;
     }
 
@@ -839,7 +860,7 @@ void *DisjointPool::AllocImpl::allocate(size_t Size, bool &FromPool) try {
     }
 
     VALGRIND_DO_MEMPOOL_ALLOC(this, Ptr, Size);
-    utils_annotate_memory_undefined(Ptr, Bucket.getSize());
+    annotate_memory_undefined(Ptr, Bucket.getSize());
 
     return Ptr;
 } catch (MemoryProviderError &e) {
@@ -877,7 +898,7 @@ void *DisjointPool::AllocImpl::allocate(size_t Size, size_t Alignment,
     FromPool = false;
     if (AlignedSize > getParams().MaxPoolableSize) {
         Ptr = memoryProviderAlloc(getMemHandle(), Size, Alignment);
-        utils_annotate_memory_undefined(Ptr, Size);
+        annotate_memory_undefined(Ptr, Size);
         return Ptr;
     }
 
@@ -894,8 +915,7 @@ void *DisjointPool::AllocImpl::allocate(size_t Size, size_t Alignment,
     }
 
     VALGRIND_DO_MEMPOOL_ALLOC(this, AlignPtrUp(Ptr, Alignment), Size);
-    utils_annotate_memory_undefined(AlignPtrUp(Ptr, Alignment), Size);
-
+    annotate_memory_undefined(AlignPtrUp(Ptr, Alignment), Size);
     return AlignPtrUp(Ptr, Alignment);
 } catch (MemoryProviderError &e) {
     umf::getPoolLastStatusRef<DisjointPool>() = e.code;
@@ -962,8 +982,7 @@ void DisjointPool::AllocImpl::deallocate(void *Ptr, bool &ToPool) {
             }
 
             VALGRIND_DO_MEMPOOL_FREE(this, Ptr);
-            utils_annotate_memory_inaccessible(Ptr, Bucket.getSize());
-
+            annotate_memory_inaccessible(Ptr, Bucket.getSize());
             if (Bucket.getSize() <= Bucket.ChunkCutOff()) {
                 Bucket.freeChunk(Ptr, Slab, ToPool);
             } else {
