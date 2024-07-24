@@ -19,8 +19,13 @@ static UTIL_ONCE_FLAG Page_size_is_initialized = UTIL_ONCE_FLAG_INIT;
 static size_t Page_size;
 
 void *ba_os_alloc(size_t size) {
-    return mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS,
-                -1, 0);
+    void *ptr = mmap(NULL, size, PROT_READ | PROT_WRITE,
+                     MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    // this should be unnecessary but pairs of mmap/munmap do not reset
+    // asan's user-poisoning flags, leading to invalid error reports
+    // Bug 81619: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=81619
+    utils_annotate_memory_defined(ptr, size);
+    return ptr;
 }
 
 void ba_os_free(void *ptr, size_t size) {

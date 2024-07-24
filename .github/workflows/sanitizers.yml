@@ -72,9 +72,7 @@ jobs:
       working-directory: ${{env.BUILD_DIR}}
       run: > 
         ${{ matrix.compiler.cxx == 'icpx' && '. /opt/intel/oneapi/setvars.sh &&' || ''}}
-        GTEST_FILTER="-*umfProviderTest.alloc_page64_align_0*" ctest --output-on-failure
-      # TO DO: fix umf-provider_os_memory test for sanitizers
-      # issue 581: https://github.com/oneapi-src/unified-memory-framework/issues/581
+        ctest --output-on-failure
 
   windows-build:
     name: cl and clang-cl on Windows
