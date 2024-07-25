@@ -40,14 +40,14 @@
 
 static inline void annotate_memory_inaccessible([[maybe_unused]] void *ptr,
                                                 [[maybe_unused]] size_t size) {
-#ifdef POISON_MEMORY
+#if (POISON_MEMORY != 0)
     utils_annotate_memory_inaccessible(ptr, size);
 #endif
 }
 
 static inline void annotate_memory_undefined([[maybe_unused]] void *ptr,
                                              [[maybe_unused]] size_t size) {
-#ifdef POISON_MEMORY
+#if (POISON_MEMORY != 0)
     utils_annotate_memory_undefined(ptr, size);
 #endif
 }
