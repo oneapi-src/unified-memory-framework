@@ -14,6 +14,7 @@
 #include <umf/memory_pool.h>
 #include <umf/memory_provider.h>
 #include <umf/mempolicy.h>
+#include <umf/memtarget.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -83,6 +84,21 @@ umf_const_memspace_handle_t umfMemspaceHighestBandwidthGet(void);
 ///         failure (no HMAT support).
 ///
 umf_const_memspace_handle_t umfMemspaceLowestLatencyGet(void);
+
+/// \brief Returns number of memory targets in memspace.
+/// \param hMemspace handle to memspace
+/// \return number of memory targets in memspace
+///
+size_t umfMemspaceMemtargetNum(umf_const_memspace_handle_t hMemspace);
+
+/// \brief Returns memory target by index.
+/// \param hMemspace handle to memspace
+/// \param targetNum index of the memory target
+/// \return memory target handle on success or NULL on invalid input.
+///
+umf_const_memtarget_handle_t
+umfMemspaceMemtargetGet(umf_const_memspace_handle_t hMemspace,
+                        unsigned targetNum);
 
 #ifdef __cplusplus
 }

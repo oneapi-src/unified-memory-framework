@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2024 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -7,6 +7,7 @@
 #include "memspace_helpers.hpp"
 #include "memspace_internal.h"
 
+#include <umf/memspace.h>
 #include <umf/providers/provider_os_memory.h>
 
 struct memspaceNumaTest : ::numaNodesTest {
@@ -56,6 +57,10 @@ TEST_F(numaNodesTest, createDestroy) {
         nodeIds.data(), nodeIds.size(), &hMemspace);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
     ASSERT_NE(hMemspace, nullptr);
+    EXPECT_EQ(umfMemspaceMemtargetNum(hMemspace), nodeIds.size());
+    for (size_t i = 0; i < umfMemspaceMemtargetNum(hMemspace); ++i) {
+        EXPECT_NE(umfMemspaceMemtargetGet(hMemspace, i), nullptr);
+    }
 
     umfMemspaceDestroy(hMemspace);
 }
@@ -89,6 +94,22 @@ TEST_F(memspaceNumaTest, providerFromNumaMemspace) {
     ASSERT_NE(hProvider, nullptr);
 
     umfMemoryProviderDestroy(hProvider);
+}
+
+TEST_F(numaNodesTest, memtargetsInvalid) {
+    umf_memspace_handle_t hMemspace = nullptr;
+    EXPECT_EQ(umfMemspaceMemtargetNum(nullptr), 0);
+    EXPECT_EQ(umfMemspaceMemtargetGet(nullptr, 0), nullptr);
+
+    umf_result_t ret = umfMemspaceCreateFromNumaArray(
+        nodeIds.data(), nodeIds.size(), &hMemspace);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(hMemspace, nullptr);
+
+    ASSERT_EQ(umfMemspaceMemtargetNum(hMemspace), nodeIds.size());
+    EXPECT_EQ(umfMemspaceMemtargetGet(hMemspace, nodeIds.size()), nullptr);
+
+    umfMemspaceDestroy(hMemspace);
 }
 
 TEST_F(memspaceNumaProviderTest, allocFree) {
