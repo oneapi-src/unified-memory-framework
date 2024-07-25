@@ -116,6 +116,15 @@ Mempolicy
 .. doxygenfile:: mempolicy.h
     :sections: define enum typedef func
 
+Memtarget
+==========================================
+
+TODO: Add general information about memtarges.
+
+Memtarget
+------------------------------------------
+.. doxygenfile:: memtarget.h
+    :sections: define enum typedef func
 
 Inter-Process Communication
 ==========================================
