@@ -232,7 +232,6 @@ function(add_umf_target_compile_options name)
                     /analyze
                     /DYNAMICBASE
                     /W4
-                    /WX
                     /Gy
                     /GS
                     # disable warning 6326: Potential comparison of a constant
