@@ -48,8 +48,10 @@ option(UMF_BUILD_EXAMPLES "Build UMF examples" ON)
 option(UMF_BUILD_FUZZTESTS "Build UMF fuzz tests" OFF)
 option(UMF_BUILD_GPU_EXAMPLES "Build UMF GPU examples" OFF)
 option(UMF_DEVELOPER_MODE "Enable additional developer checks" OFF)
-option(UMF_LINK_HWLOC_STATICALLY
-       "Link UMF with HWLOC library statically (Windows+Release only)" OFF)
+option(
+    UMF_LINK_HWLOC_STATICALLY
+    "Link UMF with HWLOC library statically (supported for Linux, MacOS and Release build on Windows)"
+    OFF)
 option(UMF_FORMAT_CODE_STYLE
        "Add clang, cmake, and black -format-check and -format-apply targets"
        OFF)
@@ -110,10 +112,11 @@ if(NOT UMF_LINK_HWLOC_STATICALLY)
             "${DLL_PATH_LIST};PATH=path_list_append:${LIBHWLOC_LIBRARY_DIRS}/../bin"
         )
     endif()
-else()
-    if(NOT WINDOWS)
-        message(FATAL_ERROR "hwloc can be statically linked only on Windows")
-    endif()
+    # add PATH to DLL on Windows
+    set(DLL_PATH_LIST
+        "${DLL_PATH_LIST};PATH=path_list_append:${LIBHWLOC_LIBRARY_DIRS}/../bin"
+    )
+elseif(WINDOWS)
     include(FetchContent)
     set(HWLOC_ENABLE_TESTING OFF)
     set(HWLOC_SKIP_LSTOPO ON)
@@ -133,6 +136,55 @@ else()
         ${hwloc_targ_SOURCE_DIR}/include;${hwloc_targ_BINARY_DIR}/include)
     set(LIBHWLOC_LIBRARY_DIRS
         ${hwloc_targ_BINARY_DIR}/Release;${hwloc_targ_BINARY_DIR}/Debug)
+
+    message(STATUS "    LIBHWLOC_LIBRARIES = ${LIBHWLOC_LIBRARIES}")
+    message(STATUS "    LIBHWLOC_INCLUDE_DIRS = ${LIBHWLOC_INCLUDE_DIRS}")
+    message(STATUS "    LIBHWLOC_LIBRARY_DIRS = ${LIBHWLOC_LIBRARY_DIRS}")
+else()
+    include(FetchContent)
+    FetchContent_Declare(
+        hwloc_targ
+        GIT_REPOSITORY "https://github.com/open-mpi/hwloc.git"
+        GIT_TAG hwloc-2.10.0)
+
+    FetchContent_GetProperties(hwloc_targ)
+    if(NOT hwloc_targ_POPULATED)
+        FetchContent_MakeAvailable(hwloc_targ)
+    endif()
+
+    add_custom_command(
+        COMMAND ./autogen.sh
+        WORKING_DIRECTORY ${hwloc_targ_SOURCE_DIR}
+        OUTPUT ${hwloc_targ_SOURCE_DIR}/configure)
+    add_custom_command(
+        COMMAND
+            ./configure --prefix=${hwloc_targ_BINARY_DIR} --enable-static=yes
+            --enable-shared=no --disable-libxml2 --disable-levelzero
+            CFLAGS=-fPIC CXXFLAGS=-fPIC
+        WORKING_DIRECTORY ${hwloc_targ_SOURCE_DIR}
+        OUTPUT ${hwloc_targ_SOURCE_DIR}/Makefile
+        DEPENDS ${hwloc_targ_SOURCE_DIR}/configure)
+    add_custom_command(
+        COMMAND make
+        WORKING_DIRECTORY ${hwloc_targ_SOURCE_DIR}
+        OUTPUT ${hwloc_targ_SOURCE_DIR}/lib/libhwloc.la
+        DEPENDS ${hwloc_targ_SOURCE_DIR}/Makefile)
+    add_custom_command(
+        COMMAND make install
+        WORKING_DIRECTORY ${hwloc_targ_SOURCE_DIR}
+        OUTPUT ${hwloc_targ_BINARY_DIR}/lib/libhwloc.a
+        DEPENDS ${hwloc_targ_SOURCE_DIR}/lib/libhwloc.la)
+
+    add_custom_target(hwloc_prod
+                      DEPENDS ${hwloc_targ_BINARY_DIR}/lib/libhwloc.a)
+    add_library(hwloc INTERFACE)
+    target_link_libraries(hwloc
+                          INTERFACE ${hwloc_targ_BINARY_DIR}/lib/libhwloc.a)
+    add_dependencies(hwloc hwloc_prod)
+
+    set(LIBHWLOC_LIBRARY_DIRS ${hwloc_targ_BINARY_DIR}/lib)
+    set(LIBHWLOC_INCLUDE_DIRS ${hwloc_targ_BINARY_DIR}/include)
+    set(LIBHWLOC_LIBRARIES ${hwloc_targ_BINARY_DIR}/lib/libhwloc.a)
 
     message(STATUS "    LIBHWLOC_LIBRARIES = ${LIBHWLOC_LIBRARIES}")
     message(STATUS "    LIBHWLOC_INCLUDE_DIRS = ${LIBHWLOC_INCLUDE_DIRS}")

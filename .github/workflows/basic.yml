@@ -153,7 +153,7 @@ jobs:
         --build-type ${{matrix.build_type}}
         --disjoint-pool
         --jemalloc-pool
-        ${{ matrix.install_tbb == 'ON' &&  matrix.disable_hwloc != 'ON' && '--proxy' || '' }}
+        ${{ matrix.install_tbb == 'ON' && matrix.disable_hwloc != 'ON' && matrix.link_hwloc_statically != 'ON' && '--proxy' || '' }}
         --umf-version ${{env.UMF_VERSION}}
         ${{ matrix.shared_library == 'ON' && '--shared-library' || '' }}
 
@@ -349,7 +349,7 @@ jobs:
       run: python3 -m pip install -r third_party/requirements.txt
 
     - name: Install hwloc
-      run: brew install hwloc jemalloc tbb
+      run: brew install hwloc jemalloc tbb autoconf automake libtool
 
     - name: Configure build
       run: >
@@ -376,6 +376,6 @@ jobs:
         --build-type ${{env.BUILD_TYPE}}
         --disjoint-pool
         --jemalloc-pool
-        --proxy
+        ${{ matrix.link_hwloc_statically != 'ON' && '--proxy' || '' }}
         --umf-version ${{env.UMF_VERSION}}
         --shared-library

@@ -271,7 +271,8 @@ add_umf_test(
 # tests for the proxy library
 if(UMF_PROXY_LIB_ENABLED
    AND UMF_BUILD_SHARED_LIBRARY
-   AND NOT UMF_DISABLE_HWLOC)
+   AND NOT UMF_DISABLE_HWLOC
+   AND NOT UMF_LINK_HWLOC_STATICALLY)
     add_umf_test(
         NAME proxy_lib_basic
         SRCS ${BA_SOURCES_FOR_TEST} test_proxy_lib.cpp
