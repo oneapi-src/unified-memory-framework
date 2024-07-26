@@ -24,6 +24,7 @@ jobs:
         level_zero_provider: ['ON']
         install_tbb: ['ON']
         disable_hwloc: ['OFF']
+        link_hwloc_statically: ['OFF']
         include:
           - os: 'ubuntu-20.04'
             build_type: Release
@@ -71,12 +72,19 @@ jobs:
             level_zero_provider: 'ON'
             install_tbb: 'OFF'
           - os: 'ubuntu-22.04'
-            build_type: Release
+            build_type: Debug
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
             level_zero_provider: 'ON'
             install_tbb: 'ON'
             disable_hwloc: 'ON'
+          - os: 'ubuntu-22.04'
+            build_type: Release
+            compiler: {c: gcc, cxx: g++}
+            shared_library: 'ON'
+            level_zero_provider: 'ON'
+            install_tbb: 'ON'
+            link_hwloc_statically: 'ON'
     runs-on: ${{matrix.os}}
 
     steps:
@@ -131,6 +139,7 @@ jobs:
         -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
         -DUMF_TESTS_FAIL_ON_SKIP=ON
         -DUMF_DISABLE_HWLOC=${{matrix.disable_hwloc}}
+        -DUMF_LINK_HWLOC_STATICALLY=${{matrix.link_hwloc_statically}}
 
     - name: Build UMF
       run: cmake --build ${{env.BUILD_DIR}} -j $(nproc)
@@ -349,7 +358,7 @@ jobs:
       run: python3 -m pip install -r third_party/requirements.txt
 
     - name: Install hwloc
-      run: brew install hwloc jemalloc tbb autoconf automake libtool
+      run: brew install hwloc jemalloc tbb
 
     - name: Configure build
       run: >
@@ -376,6 +385,6 @@ jobs:
         --build-type ${{env.BUILD_TYPE}}
         --disjoint-pool
         --jemalloc-pool
-        ${{ matrix.link_hwloc_statically != 'ON' && '--proxy' || '' }}
+        --proxy
         --umf-version ${{env.UMF_VERSION}}
         --shared-library
