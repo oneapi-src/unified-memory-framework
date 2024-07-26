@@ -18,7 +18,7 @@ set(EXAMPLE_NAME umf_example_basic)
 add_umf_executable(
     NAME ${EXAMPLE_NAME}
     SRCS basic/basic.c
-    LIBS umf hwloc)
+    LIBS umf ${LIBHWLOC_LIBRARIES})
 
 target_include_directories(
     ${EXAMPLE_NAME} PRIVATE ${UMF_CMAKE_SOURCE_DIR}/src/utils
@@ -172,7 +172,7 @@ if(LINUX)
     add_umf_executable(
         NAME ${EXAMPLE_NAME}
         SRCS memspace/memspace_numa.c
-        LIBS umf hwloc numa)
+        LIBS umf ${LIBHWLOC_LIBRARIES} numa)
 
     target_include_directories(
         ${EXAMPLE_NAME} PRIVATE ${UMF_CMAKE_SOURCE_DIR}/src/utils
@@ -190,7 +190,7 @@ if(LINUX)
     add_umf_executable(
         NAME ${EXAMPLE_NAME}
         SRCS memspace/memspace_hmat.c
-        LIBS umf hwloc numa)
+        LIBS umf ${LIBHWLOC_LIBRARIES} numa)
 
     target_include_directories(
         ${EXAMPLE_NAME} PRIVATE ${UMF_CMAKE_SOURCE_DIR}/src/utils
@@ -209,7 +209,7 @@ if(LINUX)
     add_umf_executable(
         NAME ${EXAMPLE_NAME}
         SRCS custom_provider/file_provider.c
-        LIBS umf hwloc)
+        LIBS umf ${LIBHWLOC_LIBRARIES})
 
     target_include_directories(
         ${EXAMPLE_NAME} PRIVATE ${UMF_CMAKE_SOURCE_DIR}/src/utils

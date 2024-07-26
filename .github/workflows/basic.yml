@@ -23,6 +23,7 @@ jobs:
         shared_library: ['OFF']
         level_zero_provider: ['ON']
         install_tbb: ['ON']
+        disable_hwloc: ['OFF']
         include:
           - os: 'ubuntu-20.04'
             build_type: Release
@@ -69,6 +70,13 @@ jobs:
             shared_library: 'ON'
             level_zero_provider: 'ON'
             install_tbb: 'OFF'
+          - os: 'ubuntu-22.04'
+            build_type: Release
+            compiler: {c: gcc, cxx: g++}
+            shared_library: 'ON'
+            level_zero_provider: 'ON'
+            install_tbb: 'ON'
+            disable_hwloc: 'ON'
     runs-on: ${{matrix.os}}
 
     steps:
@@ -122,6 +130,7 @@ jobs:
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
         -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
         -DUMF_TESTS_FAIL_ON_SKIP=ON
+        -DUMF_DISABLE_HWLOC=${{matrix.disable_hwloc}}
 
     - name: Build UMF
       run: cmake --build ${{env.BUILD_DIR}} -j $(nproc)
@@ -144,7 +153,7 @@ jobs:
         --build-type ${{matrix.build_type}}
         --disjoint-pool
         --jemalloc-pool
-        ${{ matrix.install_tbb == 'ON' && '--proxy' || '' }}
+        ${{ matrix.install_tbb == 'ON' &&  matrix.disable_hwloc != 'ON' && '--proxy' || '' }}
         --umf-version ${{env.UMF_VERSION}}
         ${{ matrix.shared_library == 'ON' && '--shared-library' || '' }}
 
