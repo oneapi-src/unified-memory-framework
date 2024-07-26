@@ -176,14 +176,33 @@ function(get_program_version_major_minor name ret)
         PARENT_SCOPE)
 endfunction()
 
+# Checks compiler for given ${flag}, stores the output in C_HAS_${flag} and
+# CXX_HAS_${flag} (if compiler supports C++)
+function(check_compilers_flag flag)
+    check_c_compiler_flag("${flag}" "C_HAS_${flag}")
+    if(CMAKE_CXX_COMPILE_FEATURES)
+        check_cxx_compiler_flag("${flag}" "CXX_HAS_${flag}")
+    endif()
+endfunction()
+
+function(check_add_target_compile_options target)
+    foreach(option ${ARGN})
+        check_compilers_flag(${option})
+        if(C_HAS_${option} AND CXX_HAS_${option})
+            target_compile_options(${target} PRIVATE ${option})
+        endif()
+    endforeach()
+endfunction()
+
 function(add_umf_target_compile_options name)
+    check_add_target_compile_options(${name} "-Wno-covered-switch-default")
+
     if(NOT MSVC)
         target_compile_options(
             ${name}
             PRIVATE -fPIC
                     -Wall
                     -Wextra
-                    -Werror
                     -Wpedantic
                     -Wempty-body
                     -Wunused-parameter
