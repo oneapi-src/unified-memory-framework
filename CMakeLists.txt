@@ -124,7 +124,7 @@ if(NOT UMF_LINK_HWLOC_STATICALLY)
     set(DLL_PATH_LIST
         "${DLL_PATH_LIST};PATH=path_list_append:${LIBHWLOC_LIBRARY_DIRS}/../bin"
     )
-elseif(WINDOWS)
+elseif(WINDOWS AND NOT UMF_DISABLE_HWLOC)
     include(FetchContent)
     set(HWLOC_ENABLE_TESTING OFF)
     set(HWLOC_SKIP_LSTOPO ON)
@@ -151,7 +151,7 @@ elseif(WINDOWS)
     message(STATUS "    LIBHWLOC_LIBRARIES = ${LIBHWLOC_LIBRARIES}")
     message(STATUS "    LIBHWLOC_INCLUDE_DIRS = ${LIBHWLOC_INCLUDE_DIRS}")
     message(STATUS "    LIBHWLOC_LIBRARY_DIRS = ${LIBHWLOC_LIBRARY_DIRS}")
-else()
+elseif(NOT UMF_DISABLE_HWLOC)
     include(FetchContent)
     message(STATUS "Will fetch hwloc from ${UMF_HWLOC_REPO}")
 
