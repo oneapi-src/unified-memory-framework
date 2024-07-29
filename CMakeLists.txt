@@ -100,6 +100,14 @@ else()
     message(FATAL_ERROR "Unknown OS type")
 endif()
 
+if(NOT DEFINED UMF_HWLOC_REPO)
+    set(UMF_HWLOC_REPO "https://github.com/open-mpi/hwloc.git")
+endif()
+
+if(NOT DEFINED UMF_HWLOC_TAG)
+    set(UMF_HWLOC_TAG hwloc-2.10.0)
+endif()
+
 if(NOT UMF_LINK_HWLOC_STATICALLY)
     if(NOT UMF_DISABLE_HWLOC)
         pkg_check_modules(LIBHWLOC hwloc>=2.3.0)
@@ -121,10 +129,13 @@ elseif(WINDOWS)
     set(HWLOC_ENABLE_TESTING OFF)
     set(HWLOC_SKIP_LSTOPO ON)
     set(HWLOC_SKIP_TOOLS ON)
+
+    message(STATUS "Will fetch hwloc from ${UMF_HWLOC_REPO}")
+
     FetchContent_Declare(
         hwloc_targ
-        GIT_REPOSITORY "https://github.com/open-mpi/hwloc.git"
-        GIT_TAG hwloc-2.10.0
+        GIT_REPOSITORY ${UMF_HWLOC_REPO}
+        GIT_TAG ${UMF_HWLOC_TAG}
         SOURCE_SUBDIR contrib/windows-cmake/ FIND_PACKAGE_ARGS)
 
     FetchContent_GetProperties(hwloc_targ)
@@ -142,10 +153,12 @@ elseif(WINDOWS)
     message(STATUS "    LIBHWLOC_LIBRARY_DIRS = ${LIBHWLOC_LIBRARY_DIRS}")
 else()
     include(FetchContent)
+    message(STATUS "Will fetch hwloc from ${UMF_HWLOC_REPO}")
+
     FetchContent_Declare(
         hwloc_targ
-        GIT_REPOSITORY "https://github.com/open-mpi/hwloc.git"
-        GIT_TAG hwloc-2.10.0)
+        GIT_REPOSITORY ${UMF_HWLOC_REPO}
+        GIT_TAG ${UMF_HWLOC_TAG})
 
     FetchContent_GetProperties(hwloc_targ)
     if(NOT hwloc_targ_POPULATED)
