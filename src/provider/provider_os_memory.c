@@ -834,12 +834,12 @@ static membind_t membindFirst(os_memory_provider_t *provider, void *addr,
     membind_t membind;
     memset(&membind, 0, sizeof(membind));
 
-    membind.alloc_size = ALIGN_UP(size, page_size);
+    membind.alloc_size = size;
     membind.page_size = page_size;
     membind.addr = addr;
     membind.pages = membind.alloc_size / membind.page_size;
     if (provider->nodeset_len == 1) {
-        membind.bind_size = ALIGN_UP(size, membind.page_size);
+        membind.bind_size = size;
         membind.bitmap = provider->nodeset[0];
         return membind;
     }
@@ -945,7 +945,15 @@ static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
 
     // Bind memory to NUMA nodes if numa_policy is other than DEFAULT
     if (os_provider->numa_policy != HWLOC_MEMBIND_DEFAULT) {
-        membind_t membind = membindFirst(os_provider, addr, size, page_size);
+        size_t first_size = ALIGN_UP_SAFE(size, page_size);
+        if (first_size == 0) {
+            LOG_ERR("size is too big, page align failed");
+            (void)utils_munmap(addr, size);
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        }
+
+        membind_t membind =
+            membindFirst(os_provider, addr, first_size, page_size);
         if (membind.bitmap == NULL) {
             goto err_unmap;
         }

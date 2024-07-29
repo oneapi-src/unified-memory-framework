@@ -231,7 +231,7 @@ static inline void *ba_leak_realloc(void *ptr, size_t size, size_t max_size) {
 static inline void *ba_leak_aligned_alloc(size_t alignment, size_t size) {
     ba_leak_init_once();
     void *ptr = umf_ba_linear_alloc(Base_alloc_leak, size + alignment);
-    return (void *)ALIGN_UP((uintptr_t)ptr, alignment);
+    return (void *)ALIGN_UP_SAFE((uintptr_t)ptr, alignment);
 }
 
 static inline int ba_leak_free(void *ptr) {
