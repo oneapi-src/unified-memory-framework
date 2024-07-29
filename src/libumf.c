@@ -12,8 +12,10 @@
 #include "base_alloc_global.h"
 #include "memspace_internal.h"
 #include "provider_tracking.h"
-#include "topology.h"
 #include "utils_log.h"
+#if !defined(UMF_NO_HWLOC)
+#include "topology.h"
+#endif
 
 umf_memory_tracker_handle_t TRACKER = NULL;
 
@@ -30,7 +32,7 @@ int umfInit(void) {
 
 void umfTearDown(void) {
     if (util_fetch_and_add64(&umfRefCount, -1) == 1) {
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(UMF_NO_HWLOC)
         umfMemspaceHostAllDestroy();
         umfMemspaceHighestCapacityDestroy();
         umfMemspaceHighestBandwidthDestroy();

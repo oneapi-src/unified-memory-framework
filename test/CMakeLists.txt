@@ -152,26 +152,29 @@ endif()
 
 if(UMF_BUILD_LIBUMF_POOL_DISJOINT
    AND UMF_BUILD_LIBUMF_POOL_JEMALLOC
-   AND UMF_POOL_SCALABLE_ENABLED)
+   AND UMF_POOL_SCALABLE_ENABLED
+   AND (NOT UMF_DISABLE_HWLOC))
     add_umf_test(
         NAME c_api_multi_pool
         SRCS c_api/multi_pool.c
         LIBS disjoint_pool jemalloc_pool ${JEMALLOC_LIBRARIES})
 endif()
 
-if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
+if(UMF_BUILD_LIBUMF_POOL_JEMALLOC AND (NOT UMF_DISABLE_HWLOC))
     add_umf_test(
         NAME jemalloc_pool
         SRCS pools/jemalloc_pool.cpp malloc_compliance_tests.cpp
         LIBS jemalloc_pool)
 endif()
 
-if(UMF_POOL_SCALABLE_ENABLED)
+if(UMF_POOL_SCALABLE_ENABLED AND (NOT UMF_DISABLE_HWLOC))
     add_umf_test(NAME scalable_pool SRCS pools/scalable_pool.cpp
                                          malloc_compliance_tests.cpp)
 endif()
 
-if(LINUX) # OS-specific functions are implemented only for Linux now
+if(LINUX AND (NOT UMF_DISABLE_HWLOC)) # OS-specific functions are implemented
+                                      # only for
+    # Linux now
     if(PkgConfig_FOUND)
         pkg_check_modules(LIBNUMA numa)
     endif()
@@ -266,7 +269,9 @@ add_umf_test(
     LIBS ${UMF_UTILS_FOR_TEST})
 
 # tests for the proxy library
-if(UMF_PROXY_LIB_ENABLED AND UMF_BUILD_SHARED_LIBRARY)
+if(UMF_PROXY_LIB_ENABLED
+   AND UMF_BUILD_SHARED_LIBRARY
+   AND NOT UMF_DISABLE_HWLOC)
     add_umf_test(
         NAME proxy_lib_basic
         SRCS ${BA_SOURCES_FOR_TEST} test_proxy_lib.cpp
@@ -317,22 +322,24 @@ function(add_umf_ipc_test)
 endfunction()
 
 if(LINUX)
-    build_umf_test(
-        NAME
-        ipc_os_prov_consumer
-        SRCS
-        ipc_os_prov_consumer.c
-        common/ipc_common.c
-        common/ipc_os_prov_common.c)
-    build_umf_test(
-        NAME
-        ipc_os_prov_producer
-        SRCS
-        ipc_os_prov_producer.c
-        common/ipc_common.c
-        common/ipc_os_prov_common.c)
-    add_umf_ipc_test(TEST ipc_os_prov_anon_fd)
-    add_umf_ipc_test(TEST ipc_os_prov_shm)
+    if(NOT UMF_DISABLE_HWLOC)
+        build_umf_test(
+            NAME
+            ipc_os_prov_consumer
+            SRCS
+            ipc_os_prov_consumer.c
+            common/ipc_common.c
+            common/ipc_os_prov_common.c)
+        build_umf_test(
+            NAME
+            ipc_os_prov_producer
+            SRCS
+            ipc_os_prov_producer.c
+            common/ipc_common.c
+            common/ipc_os_prov_common.c)
+        add_umf_ipc_test(TEST ipc_os_prov_anon_fd)
+        add_umf_ipc_test(TEST ipc_os_prov_shm)
+    endif()
     if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
         build_umf_test(
             NAME
@@ -368,7 +375,8 @@ endif()
 
 if(LINUX
    AND UMF_BUILD_SHARED_LIBRARY
-   AND UMF_POOL_SCALABLE_ENABLED)
+   AND UMF_POOL_SCALABLE_ENABLED
+   AND NOT UMF_DISABLE_HWLOC)
     add_umf_test(
         NAME init_teardown
         SRCS test_init_teardown.c
@@ -431,11 +439,13 @@ if(LINUX
         )
     endif()
 
-    add_test(
-        NAME umf_standalone_examples
-        COMMAND
-            ${UMF_CMAKE_SOURCE_DIR}/test/test_examples.sh
-            ${UMF_CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR} ${CMAKE_INSTALL_PREFIX}
-            ${EXAMPLES}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    if(NOT UMF_DISABLE_HWLOC)
+        add_test(
+            NAME umf_standalone_examples
+            COMMAND
+                ${UMF_CMAKE_SOURCE_DIR}/test/test_examples.sh
+                ${UMF_CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
+                ${CMAKE_INSTALL_PREFIX} ${EXAMPLES}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    endif()
 endif()

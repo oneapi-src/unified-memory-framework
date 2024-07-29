@@ -61,6 +61,10 @@ option(USE_TSAN "Enable ThreadSanitizer checks" OFF)
 option(USE_MSAN "Enable MemorySanitizer checks" OFF)
 option(USE_VALGRIND "Enable Valgrind instrumentation" OFF)
 option(USE_GCOV "Enable gcov support" OFF)
+option(
+    UMF_DISABLE_HWLOC
+    "Disable features that requires hwloc (OS provider, memory targets, topolgy discovery)"
+    OFF)
 
 # set UMF_PROXY_LIB_BASED_ON_POOL to one of: SCALABLE or JEMALLOC
 set(KNOWN_PROXY_LIB_POOLS SCALABLE JEMALLOC)
@@ -95,14 +99,17 @@ else()
 endif()
 
 if(NOT UMF_LINK_HWLOC_STATICALLY)
-    pkg_check_modules(LIBHWLOC hwloc>=2.3.0)
-    if(NOT LIBHWLOC_FOUND)
-        find_package(LIBHWLOC 2.3.0 REQUIRED hwloc)
+    if(NOT UMF_DISABLE_HWLOC)
+        pkg_check_modules(LIBHWLOC hwloc>=2.3.0)
+        if(NOT LIBHWLOC_FOUND)
+            find_package(LIBHWLOC 2.3.0 REQUIRED hwloc)
+        endif()
+
+        # add PATH to DLL on Windows
+        set(DLL_PATH_LIST
+            "${DLL_PATH_LIST};PATH=path_list_append:${LIBHWLOC_LIBRARY_DIRS}/../bin"
+        )
     endif()
-    # add PATH to DLL on Windows
-    set(DLL_PATH_LIST
-        "${DLL_PATH_LIST};PATH=path_list_append:${LIBHWLOC_LIBRARY_DIRS}/../bin"
-    )
 else()
     if(NOT WINDOWS)
         message(FATAL_ERROR "hwloc can be statically linked only on Windows")
@@ -329,7 +336,11 @@ if(UMF_BUILD_BENCHMARKS)
 endif()
 
 if(UMF_BUILD_EXAMPLES)
-    add_subdirectory(examples)
+    if(NOT UMF_DISABLE_HWLOC)
+        add_subdirectory(examples)
+    else()
+        message(WARNING "Examples cannot be build - hwloc disabled")
+    endif()
 endif()
 
 # Conditional configuration for Level Zero provider
