@@ -417,3 +417,12 @@ macro(add_sanitizer_flag flag)
 
     set(CMAKE_REQUIRED_FLAGS ${SAVED_CMAKE_REQUIRED_FLAGS})
 endmacro()
+
+function(add_optional_symbol symbol)
+    set(UMF_OPTIONAL_SYMBOLS_WINDOWS
+        "${UMF_OPTIONAL_SYMBOLS_WINDOWS} \n    ${symbol}"
+        PARENT_SCOPE)
+    set(UMF_OPTIONAL_SYMBOLS_LINUX
+        "${UMF_OPTIONAL_SYMBOLS_LINUX} \n    ${symbol};"
+        PARENT_SCOPE)
+endfunction()

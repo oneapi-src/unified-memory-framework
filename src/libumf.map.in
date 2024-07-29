@@ -11,7 +11,6 @@ UMF_1.0 {
         umfFree;
         umfGetIPCHandle;
         umfGetLastFailedMemoryProvider;
-        umfLevelZeroMemoryProviderOps;
         umfMemoryTrackerGetAllocInfo;
         umfMemoryProviderAlloc;
         umfMemoryProviderAllocationMerge;
@@ -35,17 +34,11 @@ UMF_1.0 {
         umfMempolicyDestroy;
         umfMempolicySetCustomSplitPartitions;
         umfMempolicySetInterleavePartSize;
-        umfMemspaceCreateFromNumaArray;
         umfMemspaceDestroy;
         umfMemspaceMemtargetNum;
         umfMemspaceMemtargetGet;
-        umfMemspaceHighestBandwidthGet;
-        umfMemspaceHighestCapacityGet;
-        umfMemspaceHostAllGet;
-        umfMemspaceLowestLatencyGet;
         umfMemtargetGetType;
         umfOpenIPCHandle;
-        umfOsMemoryProviderOps;
         umfPoolAlignedMalloc;
         umfPoolByPtr;
         umfPoolCalloc;
@@ -62,6 +55,7 @@ UMF_1.0 {
         umfProxyPoolOps;
         umfPutIPCHandle;
         umfScalablePoolOps;
+        @UMF_OPTIONAL_SYMBOLS_LINUX@
     local:
         *;
 };

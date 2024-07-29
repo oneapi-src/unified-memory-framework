@@ -112,7 +112,28 @@ if(NOT UMF_DISABLE_HWLOC)
         provider/provider_os_memory_windows.c)
 
     set(UMF_LIBS ${UMF_LIBS} ${LIBHWLOC_LIBRARIES})
+
+    if(NOT WINDOWS)
+        add_optional_symbol(umfMemspaceCreateFromNumaArray)
+        add_optional_symbol(umfMemspaceHighestBandwidthGet)
+        add_optional_symbol(umfMemspaceHighestCapacityGet)
+        add_optional_symbol(umfMemspaceHostAllGet)
+        add_optional_symbol(umfMemspaceLowestLatencyGet)
+    endif()
 endif()
+
+if(WINDOWS)
+    message(STATUS "UMF_OPTIONAL_SYMBOLS: ${UMF_OPTIONAL_SYMBOLS_WINDOWS}")
+else()
+    message(STATUS "UMF_OPTIONAL_SYMBOLS: ${UMF_OPTIONAL_SYMBOLS_LINUX}")
+endif()
+
+# Configure the DEF file based on whether Level Zero provider is built
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libumf.def.in"
+               "${CMAKE_CURRENT_BINARY_DIR}/libumf.def" @ONLY)
+
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libumf.map.in"
+               "${CMAKE_CURRENT_BINARY_DIR}/libumf.map" @ONLY)
 
 set(UMF_PRIVATE_LIBRARY_DIRS ${UMF_PRIVATE_LIBRARY_DIRS}
                              ${LIBHWLOC_LIBRARY_DIRS})
@@ -140,7 +161,7 @@ if(UMF_BUILD_SHARED_LIBRARY)
         TYPE SHARED
         SRCS ${UMF_SOURCES}
         LIBS ${UMF_LIBS} ${HWLOC_LIB}
-        LINUX_MAP_FILE ${CMAKE_CURRENT_SOURCE_DIR}/libumf.map
+        LINUX_MAP_FILE ${CMAKE_CURRENT_BINARY_DIR}/libumf.map
         WINDOWS_DEF_FILE ${CMAKE_CURRENT_BINARY_DIR}/libumf.def)
     set(UMF_COMMON_COMPILE_DEFINITIONS ${UMF_COMMON_COMPILE_DEFINITIONS}
                                        "UMF_SHARED_LIBRARY")
