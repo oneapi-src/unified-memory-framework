@@ -834,12 +834,20 @@ static membind_t membindFirst(os_memory_provider_t *provider, void *addr,
     membind_t membind;
     memset(&membind, 0, sizeof(membind));
 
-    membind.alloc_size = ALIGN_UP(size, page_size);
+    membind.alloc_size = ALIGN_UP_SAFE(size, page_size);
+    if (membind.alloc_size == 0) {
+        LOG_ERR("size is too big, page align failed");
+        return membind;
+    }
     membind.page_size = page_size;
     membind.addr = addr;
     membind.pages = membind.alloc_size / membind.page_size;
     if (provider->nodeset_len == 1) {
-        membind.bind_size = ALIGN_UP(size, membind.page_size);
+        membind.bind_size = ALIGN_UP_SAFE(size, membind.page_size);
+        if (membind.bind_size == 0) {
+            LOG_ERR("size is too big, page align failed");
+            return membind;
+        }
         membind.bitmap = provider->nodeset[0];
         return membind;
     }
@@ -849,7 +857,12 @@ static membind_t membindFirst(os_memory_provider_t *provider, void *addr,
         size_t s = utils_fetch_and_add64(&provider->alloc_sum, size);
         membind.node = (s / provider->part_size) % provider->nodeset_len;
         membind.bitmap = provider->nodeset[membind.node];
-        membind.bind_size = ALIGN_UP(provider->part_size, membind.page_size);
+        membind.bind_size =
+            ALIGN_UP_SAFE(provider->part_size, membind.page_size);
+        if (membind.bind_size == 0) {
+            LOG_ERR("size is too big, page align failed");
+            return membind;
+        }
         if (membind.bind_size > membind.alloc_size) {
             membind.bind_size = membind.alloc_size;
         }
@@ -885,7 +898,12 @@ static membind_t membindNext(os_memory_provider_t *provider,
         membind.node++;
         membind.node %= provider->nodeset_len;
         membind.bitmap = provider->nodeset[membind.node];
-        membind.bind_size = ALIGN_UP(provider->part_size, membind.page_size);
+        membind.bind_size =
+            ALIGN_UP_SAFE(provider->part_size, membind.page_size);
+        if (membind.bind_size == 0) {
+            LOG_ERR("part_size is too big, page align failed");
+            return membind;
+        }
         if (membind.bind_size > membind.alloc_size) {
             membind.bind_size = membind.alloc_size;
         }
