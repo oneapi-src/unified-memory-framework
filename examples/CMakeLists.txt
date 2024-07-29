@@ -41,14 +41,16 @@ if(UMF_POOL_SCALABLE_ENABLED)
     endif()
 endif()
 
+# TODO add CUDA examples
+
 if(UMF_BUILD_GPU_EXAMPLES
    AND UMF_BUILD_LIBUMF_POOL_DISJOINT
    AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
-    set(EXAMPLE_NAME umf_example_gpu_shared_memory)
+    set(EXAMPLE_NAME umf_example_level_zero_shared_memory)
 
     add_umf_executable(
         NAME ${EXAMPLE_NAME}
-        SRCS gpu_shared_memory/gpu_shared_memory.c
+        SRCS level_zero_shared_memory/level_zero_shared_memory.c
         LIBS disjoint_pool ze_loader umf)
 
     target_include_directories(

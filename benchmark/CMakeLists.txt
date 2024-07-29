@@ -85,6 +85,10 @@ function(add_umf_benchmark)
         target_compile_definitions(${BENCH_NAME}
                                    PRIVATE UMF_BUILD_LEVEL_ZERO_PROVIDER=1)
     endif()
+    if(UMF_BUILD_CUDA_PROVIDER)
+        target_compile_definitions(${BENCH_NAME}
+                                   PRIVATE UMF_BUILD_CUDA_PROVIDER=1)
+    endif()
     if(UMF_BUILD_GPU_TESTS)
         target_compile_definitions(${BENCH_NAME} PRIVATE UMF_BUILD_GPU_TESTS=1)
     endif()

@@ -248,6 +248,27 @@ if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
                                PRIVATE ${LEVEL_ZERO_INCLUDE_DIRS})
 endif()
 
+if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_CUDA_PROVIDER)
+    # we have two test binaries here that use the same sources, but differ in
+    # the way they are linked to the CUDA (statically or at runtime using
+    # dlopen)
+    add_umf_test(
+        NAME provider_cuda
+        SRCS providers/provider_cuda.cpp providers/cuda_helpers.cpp
+        LIBS ${UMF_UTILS_FOR_TEST} cuda)
+    target_include_directories(umf_test-provider_cuda
+                               PRIVATE ${CUDA_INCLUDE_DIRS})
+
+    add_umf_test(
+        NAME provider_cuda_dlopen
+        SRCS providers/provider_cuda.cpp providers/cuda_helpers.cpp
+        LIBS ${UMF_UTILS_FOR_TEST})
+    target_compile_definitions(umf_test-provider_cuda_dlopen
+                               PUBLIC USE_DLOPEN=1)
+    target_include_directories(umf_test-provider_cuda_dlopen
+                               PRIVATE ${CUDA_INCLUDE_DIRS})
+endif()
+
 if(UMF_BUILD_SHARED_LIBRARY)
     # if build as shared library, ba symbols won't be visible in tests
     set(BA_SOURCES_FOR_TEST ${BA_SOURCES})
@@ -341,6 +362,9 @@ if(LINUX)
         add_umf_ipc_test(TEST ipc_os_prov_anon_fd)
         add_umf_ipc_test(TEST ipc_os_prov_shm)
     endif()
+
+    # TODO add IPC tests for CUDA
+
     if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
         build_umf_test(
             NAME
@@ -408,10 +432,11 @@ if(LINUX
         )
     endif()
 
+    # TODO
     if(UMF_BUILD_GPU_EXAMPLES
        AND UMF_BUILD_LIBUMF_POOL_DISJOINT
        AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
-        set(EXAMPLES ${EXAMPLES} gpu_shared_memory)
+        set(EXAMPLES ${EXAMPLES} level_zero_shared_memory)
     else()
         message(
             STATUS
@@ -420,6 +445,7 @@ if(LINUX
                 "to be turned ON - skipping")
     endif()
 
+    # TODO add IPC examples for CUDA
     if(UMF_BUILD_GPU_EXAMPLES
        AND UMF_BUILD_LIBUMF_POOL_DISJOINT
        AND UMF_BUILD_LEVEL_ZERO_PROVIDER)

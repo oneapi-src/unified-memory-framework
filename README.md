@@ -21,7 +21,7 @@ For a quick introduction to UMF usage, please see
 documentation, which includes the code of the
 [basic example](https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/basic/basic.c)
 and the more advanced one that allocates
-[USM memory from the GPU device](https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/basic/gpu_shared_memory.c)
+[USM memory from the Level Zero device](https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/level_zero_shared_memory/level_zero_shared_memory.c)
 using the Level Zero API and UMF Level Zero memory provider.
 
 ## Build
@@ -101,6 +101,7 @@ List of options provided by CMake:
 | - | - | - | - |
 | UMF_BUILD_SHARED_LIBRARY | Build UMF as shared library | ON/OFF | OFF |
 | UMF_BUILD_LEVEL_ZERO_PROVIDER | Build Level Zero memory provider | ON/OFF | ON |
+| UMF_BUILD_CUDA_PROVIDER | Build CUDA memory provider | ON/OFF | ON |
 | UMF_BUILD_LIBUMF_POOL_DISJOINT | Build the libumf_pool_disjoint static library | ON/OFF | OFF |
 | UMF_BUILD_LIBUMF_POOL_JEMALLOC | Build the libumf_pool_jemalloc static library | ON/OFF | OFF |
 | UMF_BUILD_TESTS | Build UMF tests | ON/OFF | ON |
@@ -171,6 +172,22 @@ Additionally, required for tests:
 4) System with Level Zero compatible GPU
 5) Required packages:
    - liblevel-zero-dev (Linux) or level-zero-sdk (Windows)
+
+#### CUDA memory provider
+
+A memory provider that provides memory from CUDA device.
+
+##### Requirements
+
+1) Linux or Windows OS
+2) The `UMF_BUILD_CUDA_PROVIDER` option turned `ON` (by default)
+
+Additionally, required for tests:
+
+3) The `UMF_BUILD_GPU_TESTS` option turned `ON`
+4) System with CUDA compatible GPU
+5) Required packages:
+   - nvidia-cuda-dev (Linux) or cuda-sdk (Windows)
 
 ### Memory pool managers
 
