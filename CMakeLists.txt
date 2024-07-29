@@ -36,6 +36,7 @@ find_package(PkgConfig)
 # Build Options
 option(UMF_BUILD_SHARED_LIBRARY "Build UMF as shared library" OFF)
 option(UMF_BUILD_LEVEL_ZERO_PROVIDER "Build Level Zero memory provider" ON)
+option(UMF_BUILD_CUDA_PROVIDER "Build CUDA memory provider" ON)
 option(UMF_BUILD_LIBUMF_POOL_DISJOINT
        "Build the libumf_pool_disjoint static library" OFF)
 option(UMF_BUILD_LIBUMF_POOL_JEMALLOC
@@ -407,6 +408,18 @@ else()
     )
 endif()
 
+if((UMF_BUILD_GPU_TESTS OR UMF_BUILD_GPU_EXAMPLES) AND UMF_BUILD_CUDA_PROVIDER)
+    find_package(CUDA REQUIRED cuda)
+    if(CUDA_LIBRARIES)
+        set(UMF_CUDA_ENABLED TRUE)
+    else()
+        message(
+            STATUS "Disabling tests and examples that use the CUDA provider "
+                   "because the CUDA libraries they require were not found.")
+    endif()
+    # TODO do the same for ze_loader
+endif()
+
 # set optional symbols for map/def files
 #
 # TODO: ref. #649
@@ -415,6 +428,11 @@ set(UMF_OPTIONAL_SYMBOLS_WINDOWS "")
 
 if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
     add_optional_symbol(umfLevelZeroMemoryProviderOps)
+endif()
+
+# Conditional configuration for CUDA provider
+if(UMF_BUILD_CUDA_PROVIDER)
+    add_optional_symbol(umfCUDAMemoryProviderOps)
 endif()
 
 if(NOT UMF_DISABLE_HWLOC)

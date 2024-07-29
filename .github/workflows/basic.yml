@@ -22,6 +22,7 @@ jobs:
         compiler: [{c: gcc, cxx: g++}]
         shared_library: ['OFF']
         level_zero_provider: ['ON']
+        cuda_provider: ['ON']
         install_tbb: ['ON']
         disable_hwloc: ['OFF']
         link_hwloc_statically: ['OFF']
@@ -31,6 +32,7 @@ jobs:
             compiler: {c: gcc-7, cxx: g++-7}
             shared_library: 'OFF'
             level_zero_provider: 'ON'
+            cuda_provider: 'ON'
             install_tbb: 'ON'
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
@@ -39,6 +41,7 @@ jobs:
             compiler: {c: clang, cxx: clang++}
             shared_library: 'OFF'
             level_zero_provider: 'ON'
+            cuda_provider: 'ON'
             install_tbb: 'ON'
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
@@ -47,6 +50,7 @@ jobs:
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
             level_zero_provider: 'ON'
+            cuda_provider: 'ON'
             install_tbb: 'ON'
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
@@ -55,15 +59,17 @@ jobs:
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
             level_zero_provider: 'ON'
+            cuda_provider: 'ON'
             install_tbb: 'ON'
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
-          # test level_zero_provider='OFF'
+          # test level_zero_provider='OFF' and cuda_provider='OFF'
           - os: 'ubuntu-22.04'
             build_type: Release
             compiler: {c: gcc, cxx: g++}
             shared_library: 'OFF'
             level_zero_provider: 'OFF'
+            cuda_provider: 'OFF'
             install_tbb: 'ON'
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
@@ -73,6 +79,7 @@ jobs:
             compiler: {c: icx, cxx: icpx}
             shared_library: 'ON'
             level_zero_provider: 'ON'
+            cuda_provider: 'ON'
             install_tbb: 'ON'
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
@@ -82,6 +89,7 @@ jobs:
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
             level_zero_provider: 'ON'
+            cuda_provider: 'ON'
             install_tbb: 'OFF'
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
@@ -90,6 +98,7 @@ jobs:
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
             level_zero_provider: 'ON'
+            cuda_provider: 'ON'
             install_tbb: 'ON'
             disable_hwloc: 'ON'
             link_hwloc_statically: 'OFF'
@@ -98,6 +107,7 @@ jobs:
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
             level_zero_provider: 'ON'
+            cuda_provider: 'ON'
             install_tbb: 'ON'
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'ON'
@@ -149,6 +159,7 @@ jobs:
         -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
         -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=${{matrix.level_zero_provider}}
+        -DUMF_BUILD_CUDA_PROVIDER=${{matrix.cuda_provider}}
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
@@ -195,23 +206,27 @@ jobs:
         compiler: [{c: cl, cxx: cl}]
         shared_library: ['ON', 'OFF']
         level_zero_provider: ['ON']
+        cuda_provider: ['ON']
         include:
           - os: 'windows-2022'
             build_type: Release
             compiler: {c: clang-cl, cxx: clang-cl}
             shared_library: 'ON'
             level_zero_provider: 'ON'
+            cuda_provider: 'ON'
             toolset: "-T ClangCL"
           - os: 'windows-2022'
             build_type: Release
             compiler: {c: cl, cxx: cl}
             shared_library: 'ON'
             level_zero_provider: 'ON'
+            cuda_provider: 'ON'
           - os: 'windows-2022'
             build_type: Release
             compiler: {c: cl, cxx: cl}
             shared_library: 'ON'
             level_zero_provider: 'OFF'
+            cuda_provider: 'OFF'
 
     runs-on: ${{matrix.os}}
 
@@ -247,6 +262,7 @@ jobs:
         -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=${{matrix.level_zero_provider}}
+        -DUMF_BUILD_CUDA_PROVIDER=${{matrix.cuda_provider}}
         -DUMF_TESTS_FAIL_ON_SKIP=ON
 
     - name: Build UMF
@@ -305,6 +321,7 @@ jobs:
         -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=OFF
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
+        -DUMF_BUILD_CUDA_PROVIDER=ON
         -DUMF_TESTS_FAIL_ON_SKIP=ON
         -DUMF_LINK_HWLOC_STATICALLY=ON
 
@@ -347,6 +364,7 @@ jobs:
         -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=OFF
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
+        -DUMF_BUILD_CUDA_PROVIDER=ON
         -DUMF_TESTS_FAIL_ON_SKIP=ON
         -DUMF_LINK_HWLOC_STATICALLY=ON
 

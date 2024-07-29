@@ -85,6 +85,10 @@ function(add_umf_benchmark)
         target_compile_definitions(${BENCH_NAME}
                                    PRIVATE UMF_BUILD_LEVEL_ZERO_PROVIDER=1)
     endif()
+    if(UMF_BUILD_CUDA_PROVIDER)
+        target_compile_definitions(${BENCH_NAME}
+                                   PRIVATE UMF_BUILD_CUDA_PROVIDER=1)
+    endif()
     if(UMF_BUILD_GPU_TESTS)
         target_compile_definitions(${BENCH_NAME} PRIVATE UMF_BUILD_GPU_TESTS=1)
     endif()
@@ -103,8 +107,9 @@ endif()
 if(LINUX)
     set(LIBS_OPTIONAL ${LIBS_OPTIONAL} m)
 endif()
-if(UMF_BUILD_GPU_TESTS)
+if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
     set(LIBS_OPTIONAL ${LIBS_OPTIONAL} ze_loader)
+    # TODO add CUDA
 endif()
 
 # BENCHMARKS

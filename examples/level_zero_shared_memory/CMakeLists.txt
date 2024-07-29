@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 cmake_minimum_required(VERSION 3.14.0 FATAL_ERROR)
-project(umf_example_gpu_shared_memory LANGUAGES C)
+project(umf_example_level_zero_shared_memory LANGUAGES C)
 enable_testing()
 
 set(UMF_EXAMPLE_DIR "${CMAKE_SOURCE_DIR}/..")
@@ -48,8 +48,8 @@ set(LEVEL_ZERO_INCLUDE_DIRS
 message(STATUS "Level Zero include directory: ${LEVEL_ZERO_INCLUDE_DIRS}")
 
 # build the example
-set(EXAMPLE_NAME umf_example_gpu_shared_memory)
-add_executable(${EXAMPLE_NAME} gpu_shared_memory.c)
+set(EXAMPLE_NAME umf_example_level_zero_shared_memory)
+add_executable(${EXAMPLE_NAME} level_zero_shared_memory.c)
 target_include_directories(${EXAMPLE_NAME} PRIVATE ${LIBUMF_INCLUDE_DIRS}
                                                    ${UMF_EXAMPLE_DIR}/common)
 target_link_directories(${EXAMPLE_NAME} PRIVATE ${LIBUMF_LIBRARY_DIRS}

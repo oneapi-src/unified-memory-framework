@@ -111,8 +111,8 @@ Freeing memory is as easy as can be::
 GPU shared memory
 ==============================================================================
 
-You can find the full example code in the `examples/gpu_shared_memory/gpu_shared_memory.c`_ file
-in the UMF repository.
+You can find the full example code in the `examples/level_zero_shared_memory/level_zero_shared_memory.c`_ file
+or `examples/cuda_shared_memory/cuda_shared_memory.c`_ file in the UMF repository.
 
 TODO
 
@@ -209,7 +209,8 @@ function is called on the consumer side. The memory mappings on the consumer sid
 the :any:`umfCloseIPCHandle` function is called.
 
 .. _examples/basic/basic.c: https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/basic/basic.c
-.. _examples/gpu_shared_memory/gpu_shared_memory.c: https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/gpu_shared_memory/gpu_shared_memory.c
+.. _examples/level_zero_shared_memory/level_zero_shared_memory.c: https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/level_zero_shared_memory/level_zero_shared_memory.c
+.. _examples/cuda_shared_memory/cuda_shared_memory.c: https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/cuda_shared_memory/cuda_shared_memory.c
 .. _examples/ipc_level_zero/ipc_level_zero.c: https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/ipc_level_zero/ipc_level_zero.c
 .. _examples/custom_provider/file_provider.c: https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/custom_provider/file_provider.c
 .. _examples/memspace: https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/memspace/

@@ -48,6 +48,32 @@ elseif(UMF_BUILD_LEVEL_ZERO_PROVIDER)
     message(STATUS "Level Zero include directory: ${LEVEL_ZERO_INCLUDE_DIRS}")
 endif()
 
+if(UMF_BUILD_CUDA_PROVIDER)
+    include(FetchContent)
+
+    set(CUDA_REPO
+        "https://gitlab.com/nvidia/headers/cuda-individual/cudart.git")
+    set(CUDA_TAG cuda-12.5.1)
+
+    message(STATUS "Fetching CUDA ${CUDA_TAG} from ${CUDA_REPO} ...")
+
+    FetchContent_Declare(
+        cuda-headers
+        GIT_REPOSITORY ${CUDA_REPO}
+        GIT_TAG ${CUDA_TAG}
+        EXCLUDE_FROM_ALL)
+
+    FetchContent_GetProperties(cuda-headers)
+    if(NOT cuda-headers_POPULATED)
+        FetchContent_Populate(cuda-headers)
+    endif()
+
+    set(CUDA_INCLUDE_DIRS
+        ${cuda-headers_SOURCE_DIR}
+        CACHE PATH "Path to CUDA headers")
+    message(STATUS "CUDA include directory: ${CUDA_INCLUDE_DIRS}")
+endif()
+
 add_subdirectory(utils)
 
 set(UMF_LIBS $<BUILD_INTERFACE:umf_utils>)
@@ -220,6 +246,12 @@ if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
                                 "UMF_BUILD_LEVEL_ZERO_PROVIDER=1")
 endif()
 
+if(UMF_BUILD_CUDA_PROVIDER)
+    target_sources(umf PRIVATE provider/provider_cuda.c)
+    set(UMF_COMPILE_DEFINITIONS ${UMF_COMPILE_DEFINITIONS}
+                                "UMF_BUILD_CUDA_PROVIDER=1")
+endif()
+
 add_library(${PROJECT_NAME}::umf ALIAS umf)
 
 if(LIBHWLOC_INCLUDE_DIRS)
@@ -228,6 +260,10 @@ endif()
 
 if(LEVEL_ZERO_INCLUDE_DIRS)
     target_include_directories(umf PRIVATE ${LEVEL_ZERO_INCLUDE_DIRS})
+endif()
+
+if(CUDA_INCLUDE_DIRS)
+    target_include_directories(umf PRIVATE ${CUDA_INCLUDE_DIRS})
 endif()
 
 target_include_directories(
