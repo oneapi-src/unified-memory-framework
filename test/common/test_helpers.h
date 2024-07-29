@@ -14,6 +14,7 @@
 #include <umf/memory_provider_ops.h>
 
 #include "provider_trace.h"
+#include "utils_common.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,10 +22,6 @@ extern "C" {
 
 // Needed for CI
 #define TEST_SKIP_ERROR_CODE 125
-
-#ifndef ALIGN_UP
-#define ALIGN_UP(value, align) (((value) + (align)-1) & ~((align)-1))
-#endif
 
 int bufferIsFilledWithChar(void *ptr, size_t size, char c);
 
