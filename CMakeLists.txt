@@ -390,6 +390,18 @@ else()
     )
 endif()
 
+set(UMF_OPTIONAL_SYMBOLS_LINUX "")
+set(UMF_OPTIONAL_SYMBOLS_WINDOWS "")
+
+# Conditional configuration for Level Zero provider
+if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
+    add_optional_symbol(umfLevelZeroMemoryProviderOps)
+endif()
+
+if(NOT UMF_DISABLE_HWLOC)
+    add_optional_symbol(umfOsMemoryProviderOps)
+endif()
+
 add_subdirectory(src)
 
 if(UMF_BUILD_TESTS)
@@ -407,17 +419,6 @@ if(UMF_BUILD_EXAMPLES)
         message(WARNING "Examples cannot be build - hwloc disabled")
     endif()
 endif()
-
-# Conditional configuration for Level Zero provider
-if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
-    set(OPTIONAL_SYMBOLS "umfLevelZeroMemoryProviderOps")
-else()
-    set(OPTIONAL_SYMBOLS "")
-endif()
-
-# Configure the DEF file based on whether Level Zero provider is built
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/libumf.def.in"
-               "${CMAKE_CURRENT_BINARY_DIR}/src/libumf.def" @ONLY)
 
 if(UMF_FORMAT_CODE_STYLE)
     find_program(CLANG_FORMAT NAMES clang-format-15 clang-format-15.0
@@ -599,8 +600,10 @@ endif()
 # Configure make install/uninstall and packages
 # --------------------------------------------------------------------------- #
 install(FILES ${CMAKE_SOURCE_DIR}/LICENSE.TXT
-              ${CMAKE_SOURCE_DIR}/third-party-programs.txt
         DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/doc/${PROJECT_NAME}/")
+install(
+    FILES ${CMAKE_SOURCE_DIR}/licensing/third-party-programs.txt
+    DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/doc/${PROJECT_NAME}/licensing/")
 
 install(DIRECTORY examples DESTINATION "${CMAKE_INSTALL_DOCDIR}")
 
