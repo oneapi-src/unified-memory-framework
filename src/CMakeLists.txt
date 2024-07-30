@@ -61,6 +61,8 @@ set(BA_SOURCES
     ${BA_SOURCES}
     PARENT_SCOPE)
 
+set(HWLOC_DEPENDENT_SOURCES topology.c)
+
 set(UMF_SOURCES
     ${BA_SOURCES}
     libumf.c
@@ -74,8 +76,11 @@ set(UMF_SOURCES
     provider/provider_tracking.c
     critnib/critnib.c
     pool/pool_proxy.c
-    pool/pool_scalable.c
-    topology.c)
+    pool/pool_scalable.c)
+
+if(NOT UMF_DISABLE_HWLOC)
+    set(UMF_SOURCES ${UMF_SOURCES} ${HWLOC_DEPENDENT_SOURCES})
+endif()
 
 set(UMF_SOURCES_LINUX libumf_linux.c)
 
@@ -93,16 +98,43 @@ set(UMF_SOURCES_COMMON_LINUX_MACOSX
     memspaces/memspace_highest_bandwidth.c
     memspaces/memspace_lowest_latency.c)
 
-set(UMF_SOURCES_LINUX ${UMF_SOURCES_LINUX} ${UMF_SOURCES_COMMON_LINUX_MACOSX}
-                      provider/provider_os_memory_linux.c)
+if(NOT UMF_DISABLE_HWLOC)
+    set(UMF_SOURCES_LINUX
+        ${UMF_SOURCES_LINUX} ${UMF_SOURCES_COMMON_LINUX_MACOSX}
+        provider/provider_os_memory_linux.c)
 
-set(UMF_SOURCES_MACOSX ${UMF_SOURCES_MACOSX} ${UMF_SOURCES_COMMON_LINUX_MACOSX}
-                       provider/provider_os_memory_macosx.c)
+    set(UMF_SOURCES_MACOSX
+        ${UMF_SOURCES_MACOSX} ${UMF_SOURCES_COMMON_LINUX_MACOSX}
+        provider/provider_os_memory_macosx.c)
 
-set(UMF_SOURCES_WINDOWS ${UMF_SOURCES_WINDOWS} provider/provider_os_memory.c
-                        provider/provider_os_memory_windows.c)
+    set(UMF_SOURCES_WINDOWS
+        ${UMF_SOURCES_WINDOWS} provider/provider_os_memory.c
+        provider/provider_os_memory_windows.c)
 
-set(UMF_LIBS ${UMF_LIBS} ${LIBHWLOC_LIBRARIES})
+    set(UMF_LIBS ${UMF_LIBS} ${LIBHWLOC_LIBRARIES})
+
+    if(NOT WINDOWS)
+        add_optional_symbol(umfMemspaceCreateFromNumaArray)
+        add_optional_symbol(umfMemspaceHighestBandwidthGet)
+        add_optional_symbol(umfMemspaceHighestCapacityGet)
+        add_optional_symbol(umfMemspaceHostAllGet)
+        add_optional_symbol(umfMemspaceLowestLatencyGet)
+    endif()
+endif()
+
+if(WINDOWS)
+    message(STATUS "UMF_OPTIONAL_SYMBOLS: ${UMF_OPTIONAL_SYMBOLS_WINDOWS}")
+else()
+    message(STATUS "UMF_OPTIONAL_SYMBOLS: ${UMF_OPTIONAL_SYMBOLS_LINUX}")
+endif()
+
+# Configure the DEF file based on whether Level Zero provider is built
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libumf.def.in"
+               "${CMAKE_CURRENT_BINARY_DIR}/libumf.def" @ONLY)
+
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libumf.map.in"
+               "${CMAKE_CURRENT_BINARY_DIR}/libumf.map" @ONLY)
+
 set(UMF_PRIVATE_LIBRARY_DIRS ${UMF_PRIVATE_LIBRARY_DIRS}
                              ${LIBHWLOC_LIBRARY_DIRS})
 
@@ -121,12 +153,15 @@ elseif(MACOSX)
 endif()
 
 if(UMF_BUILD_SHARED_LIBRARY)
+    if(NOT UMF_DISABLE_HWLOC)
+        set(HWLOC_LIB hwloc)
+    endif()
     add_umf_library(
         NAME umf
         TYPE SHARED
         SRCS ${UMF_SOURCES}
-        LIBS ${UMF_LIBS} hwloc
-        LINUX_MAP_FILE ${CMAKE_CURRENT_SOURCE_DIR}/libumf.map
+        LIBS ${UMF_LIBS} ${HWLOC_LIB}
+        LINUX_MAP_FILE ${CMAKE_CURRENT_BINARY_DIR}/libumf.map
         WINDOWS_DEF_FILE ${CMAKE_CURRENT_BINARY_DIR}/libumf.def)
     set(UMF_COMMON_COMPILE_DEFINITIONS ${UMF_COMMON_COMPILE_DEFINITIONS}
                                        "UMF_SHARED_LIBRARY")
@@ -141,6 +176,11 @@ else()
         TYPE STATIC
         SRCS ${UMF_SOURCES}
         LIBS ${UMF_LIBS})
+endif()
+
+if(UMF_DISABLE_HWLOC)
+    set(UMF_COMMON_COMPILE_DEFINITIONS ${UMF_COMMON_COMPILE_DEFINITIONS}
+                                       UMF_NO_HWLOC=1)
 endif()
 
 if(UMF_LINK_HWLOC_STATICALLY)
@@ -190,6 +230,8 @@ install(TARGETS umf EXPORT ${PROJECT_NAME}-targets)
 
 add_subdirectory(pool)
 
-if(UMF_PROXY_LIB_ENABLED AND NOT UMF_LINK_HWLOC_STATICALLY)
+if(UMF_PROXY_LIB_ENABLED
+   AND NOT UMF_LINK_HWLOC_STATICALLY
+   AND NOT UMF_DISABLE_HWLOC)
     add_subdirectory(proxy_lib)
 endif()

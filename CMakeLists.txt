@@ -7,7 +7,8 @@ cmake_minimum_required(VERSION 3.14.0 FATAL_ERROR)
 set(UMF_CMAKE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 list(APPEND CMAKE_MODULE_PATH "${UMF_CMAKE_SOURCE_DIR}/cmake")
-include(helpers)
+# Use full path of the helpers module (to omit potential conflicts with others)
+include(${UMF_CMAKE_SOURCE_DIR}/cmake/helpers.cmake)
 
 # We use semver aligned version, set via git tags. We parse git output to
 # establih the version of UMF to be used in CMake, Win dll's, and within the
@@ -47,8 +48,10 @@ option(UMF_BUILD_EXAMPLES "Build UMF examples" ON)
 option(UMF_BUILD_FUZZTESTS "Build UMF fuzz tests" OFF)
 option(UMF_BUILD_GPU_EXAMPLES "Build UMF GPU examples" OFF)
 option(UMF_DEVELOPER_MODE "Enable additional developer checks" OFF)
-option(UMF_LINK_HWLOC_STATICALLY
-       "Link UMF with HWLOC library statically (Windows+Release only)" OFF)
+option(
+    UMF_LINK_HWLOC_STATICALLY
+    "Link UMF with HWLOC library statically (supported for Linux, MacOS and Release build on Windows)"
+    OFF)
 option(UMF_FORMAT_CODE_STYLE
        "Add clang, cmake, and black -format-check and -format-apply targets"
        OFF)
@@ -60,6 +63,10 @@ option(USE_TSAN "Enable ThreadSanitizer checks" OFF)
 option(USE_MSAN "Enable MemorySanitizer checks" OFF)
 option(USE_VALGRIND "Enable Valgrind instrumentation" OFF)
 option(USE_GCOV "Enable gcov support" OFF)
+option(
+    UMF_DISABLE_HWLOC
+    "Disable features that requires hwloc (OS provider, memory targets, topolgy discovery)"
+    OFF)
 
 # set UMF_PROXY_LIB_BASED_ON_POOL to one of: SCALABLE or JEMALLOC
 set(KNOWN_PROXY_LIB_POOLS SCALABLE JEMALLOC)
@@ -93,27 +100,42 @@ else()
     message(FATAL_ERROR "Unknown OS type")
 endif()
 
+if(NOT DEFINED UMF_HWLOC_REPO)
+    set(UMF_HWLOC_REPO "https://github.com/open-mpi/hwloc.git")
+endif()
+
+if(NOT DEFINED UMF_HWLOC_TAG)
+    set(UMF_HWLOC_TAG hwloc-2.10.0)
+endif()
+
 if(NOT UMF_LINK_HWLOC_STATICALLY)
-    pkg_check_modules(LIBHWLOC hwloc>=2.3.0)
-    if(NOT LIBHWLOC_FOUND)
-        find_package(LIBHWLOC 2.3.0 REQUIRED hwloc)
+    if(NOT UMF_DISABLE_HWLOC)
+        pkg_check_modules(LIBHWLOC hwloc>=2.3.0)
+        if(NOT LIBHWLOC_FOUND)
+            find_package(LIBHWLOC 2.3.0 REQUIRED hwloc)
+        endif()
+
+        # add PATH to DLL on Windows
+        set(DLL_PATH_LIST
+            "${DLL_PATH_LIST};PATH=path_list_append:${LIBHWLOC_LIBRARY_DIRS}/../bin"
+        )
     endif()
     # add PATH to DLL on Windows
     set(DLL_PATH_LIST
         "${DLL_PATH_LIST};PATH=path_list_append:${LIBHWLOC_LIBRARY_DIRS}/../bin"
     )
-else()
-    if(NOT WINDOWS)
-        message(FATAL_ERROR "hwloc can be statically linked only on Windows")
-    endif()
+elseif(WINDOWS AND NOT UMF_DISABLE_HWLOC)
     include(FetchContent)
     set(HWLOC_ENABLE_TESTING OFF)
     set(HWLOC_SKIP_LSTOPO ON)
     set(HWLOC_SKIP_TOOLS ON)
+
+    message(STATUS "Will fetch hwloc from ${UMF_HWLOC_REPO}")
+
     FetchContent_Declare(
         hwloc_targ
-        GIT_REPOSITORY "https://github.com/open-mpi/hwloc.git"
-        GIT_TAG hwloc-2.10.0
+        GIT_REPOSITORY ${UMF_HWLOC_REPO}
+        GIT_TAG ${UMF_HWLOC_TAG}
         SOURCE_SUBDIR contrib/windows-cmake/ FIND_PACKAGE_ARGS)
 
     FetchContent_GetProperties(hwloc_targ)
@@ -125,6 +147,57 @@ else()
         ${hwloc_targ_SOURCE_DIR}/include;${hwloc_targ_BINARY_DIR}/include)
     set(LIBHWLOC_LIBRARY_DIRS
         ${hwloc_targ_BINARY_DIR}/Release;${hwloc_targ_BINARY_DIR}/Debug)
+
+    message(STATUS "    LIBHWLOC_LIBRARIES = ${LIBHWLOC_LIBRARIES}")
+    message(STATUS "    LIBHWLOC_INCLUDE_DIRS = ${LIBHWLOC_INCLUDE_DIRS}")
+    message(STATUS "    LIBHWLOC_LIBRARY_DIRS = ${LIBHWLOC_LIBRARY_DIRS}")
+elseif(NOT UMF_DISABLE_HWLOC)
+    include(FetchContent)
+    message(STATUS "Will fetch hwloc from ${UMF_HWLOC_REPO}")
+
+    FetchContent_Declare(
+        hwloc_targ
+        GIT_REPOSITORY ${UMF_HWLOC_REPO}
+        GIT_TAG ${UMF_HWLOC_TAG})
+
+    FetchContent_GetProperties(hwloc_targ)
+    if(NOT hwloc_targ_POPULATED)
+        FetchContent_MakeAvailable(hwloc_targ)
+    endif()
+
+    add_custom_command(
+        COMMAND ./autogen.sh
+        WORKING_DIRECTORY ${hwloc_targ_SOURCE_DIR}
+        OUTPUT ${hwloc_targ_SOURCE_DIR}/configure)
+    add_custom_command(
+        COMMAND
+            ./configure --prefix=${hwloc_targ_BINARY_DIR} --enable-static=yes
+            --enable-shared=no --disable-libxml2 --disable-levelzero
+            CFLAGS=-fPIC CXXFLAGS=-fPIC
+        WORKING_DIRECTORY ${hwloc_targ_SOURCE_DIR}
+        OUTPUT ${hwloc_targ_SOURCE_DIR}/Makefile
+        DEPENDS ${hwloc_targ_SOURCE_DIR}/configure)
+    add_custom_command(
+        COMMAND make
+        WORKING_DIRECTORY ${hwloc_targ_SOURCE_DIR}
+        OUTPUT ${hwloc_targ_SOURCE_DIR}/lib/libhwloc.la
+        DEPENDS ${hwloc_targ_SOURCE_DIR}/Makefile)
+    add_custom_command(
+        COMMAND make install
+        WORKING_DIRECTORY ${hwloc_targ_SOURCE_DIR}
+        OUTPUT ${hwloc_targ_BINARY_DIR}/lib/libhwloc.a
+        DEPENDS ${hwloc_targ_SOURCE_DIR}/lib/libhwloc.la)
+
+    add_custom_target(hwloc_prod
+                      DEPENDS ${hwloc_targ_BINARY_DIR}/lib/libhwloc.a)
+    add_library(hwloc INTERFACE)
+    target_link_libraries(hwloc
+                          INTERFACE ${hwloc_targ_BINARY_DIR}/lib/libhwloc.a)
+    add_dependencies(hwloc hwloc_prod)
+
+    set(LIBHWLOC_LIBRARY_DIRS ${hwloc_targ_BINARY_DIR}/lib)
+    set(LIBHWLOC_INCLUDE_DIRS ${hwloc_targ_BINARY_DIR}/include)
+    set(LIBHWLOC_LIBRARIES ${hwloc_targ_BINARY_DIR}/lib/libhwloc.a)
 
     message(STATUS "    LIBHWLOC_LIBRARIES = ${LIBHWLOC_LIBRARIES}")
     message(STATUS "    LIBHWLOC_INCLUDE_DIRS = ${LIBHWLOC_INCLUDE_DIRS}")
@@ -317,6 +390,18 @@ else()
     )
 endif()
 
+set(UMF_OPTIONAL_SYMBOLS_LINUX "")
+set(UMF_OPTIONAL_SYMBOLS_WINDOWS "")
+
+# Conditional configuration for Level Zero provider
+if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
+    add_optional_symbol(umfLevelZeroMemoryProviderOps)
+endif()
+
+if(NOT UMF_DISABLE_HWLOC)
+    add_optional_symbol(umfOsMemoryProviderOps)
+endif()
+
 add_subdirectory(src)
 
 if(UMF_BUILD_TESTS)
@@ -328,19 +413,12 @@ if(UMF_BUILD_BENCHMARKS)
 endif()
 
 if(UMF_BUILD_EXAMPLES)
-    add_subdirectory(examples)
+    if(NOT UMF_DISABLE_HWLOC)
+        add_subdirectory(examples)
+    else()
+        message(WARNING "Examples cannot be build - hwloc disabled")
+    endif()
 endif()
-
-# Conditional configuration for Level Zero provider
-if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
-    set(OPTIONAL_SYMBOLS "umfLevelZeroMemoryProviderOps")
-else()
-    set(OPTIONAL_SYMBOLS "")
-endif()
-
-# Configure the DEF file based on whether Level Zero provider is built
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/libumf.def.in"
-               "${CMAKE_CURRENT_BINARY_DIR}/src/libumf.def" @ONLY)
 
 if(UMF_FORMAT_CODE_STYLE)
     find_program(CLANG_FORMAT NAMES clang-format-15 clang-format-15.0
@@ -522,8 +600,10 @@ endif()
 # Configure make install/uninstall and packages
 # --------------------------------------------------------------------------- #
 install(FILES ${CMAKE_SOURCE_DIR}/LICENSE.TXT
-              ${CMAKE_SOURCE_DIR}/third-party-programs.txt
         DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/doc/${PROJECT_NAME}/")
+install(
+    FILES ${CMAKE_SOURCE_DIR}/licensing/third-party-programs.txt
+    DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/doc/${PROJECT_NAME}/licensing/")
 
 install(DIRECTORY examples DESTINATION "${CMAKE_INSTALL_DOCDIR}")
 

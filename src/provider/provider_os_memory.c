@@ -525,6 +525,14 @@ static umf_result_t os_initialize(void *params, void **provider) {
         goto err_destroy_bitmaps;
     }
 
+    if (os_provider->fd > 0) {
+        if (util_mutex_init(&os_provider->lock_fd) == NULL) {
+            LOG_ERR("initializing the file size lock failed");
+            ret = UMF_RESULT_ERROR_UNKNOWN;
+            goto err_destroy_bitmaps;
+        }
+    }
+
     os_provider->nodeset_str_buf = umf_ba_global_alloc(NODESET_STR_BUF_LEN);
     if (!os_provider->nodeset_str_buf) {
         LOG_INFO("allocating memory for printing NUMA nodes failed");
@@ -561,6 +569,10 @@ static void os_finalize(void *provider) {
     }
 
     os_memory_provider_t *os_provider = provider;
+
+    if (os_provider->fd > 0) {
+        util_mutex_destroy_not_free(&os_provider->lock_fd);
+    }
 
     critnib_delete(os_provider->fd_offset_map);
 
@@ -624,8 +636,9 @@ static inline void assert_is_page_aligned(uintptr_t ptr, size_t page_size) {
 
 static int os_mmap_aligned(void *hint_addr, size_t length, size_t alignment,
                            size_t page_size, int prot, int flag, int fd,
-                           size_t max_fd_size, void **out_addr,
-                           size_t *fd_size) {
+                           size_t max_fd_size, os_mutex_t *lock_fd,
+                           void **out_addr, size_t *fd_size,
+                           size_t *fd_offset) {
     assert(out_addr);
 
     size_t extended_length = length;
@@ -638,19 +651,26 @@ static int os_mmap_aligned(void *hint_addr, size_t length, size_t alignment,
         extended_length += alignment;
     }
 
-    size_t fd_offset = 0;
+    *fd_offset = 0;
 
     if (fd > 0) {
+        if (util_mutex_lock(lock_fd)) {
+            LOG_ERR("locking file size failed");
+            return -1;
+        }
+
         if (*fd_size + extended_length > max_fd_size) {
+            util_mutex_unlock(lock_fd);
             LOG_ERR("cannot grow a file size beyond %zu", max_fd_size);
             return -1;
         }
 
-        fd_offset = *fd_size;
+        *fd_offset = *fd_size;
         *fd_size += extended_length;
+        util_mutex_unlock(lock_fd);
     }
 
-    void *ptr = os_mmap(hint_addr, extended_length, prot, flag, fd, fd_offset);
+    void *ptr = os_mmap(hint_addr, extended_length, prot, flag, fd, *fd_offset);
     if (ptr == NULL) {
         LOG_PDEBUG("memory mapping failed");
         return -1;
@@ -893,17 +913,17 @@ static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    size_t fd_offset = os_provider->size_fd; // needed for critnib_insert()
+    size_t fd_offset; // needed for critnib_insert()
 
     void *addr = NULL;
     errno = 0;
-    ret = os_mmap_aligned(NULL, size, alignment, page_size,
-                          os_provider->protection, os_provider->visibility,
-                          os_provider->fd, os_provider->max_size_fd, &addr,
-                          &os_provider->size_fd);
+    ret = os_mmap_aligned(
+        NULL, size, alignment, page_size, os_provider->protection,
+        os_provider->visibility, os_provider->fd, os_provider->max_size_fd,
+        &os_provider->lock_fd, &addr, &os_provider->size_fd, &fd_offset);
     if (ret) {
-        os_store_last_native_error(UMF_OS_RESULT_ERROR_ALLOC_FAILED, errno);
-        LOG_PERR("memory allocation failed");
+        os_store_last_native_error(UMF_OS_RESULT_ERROR_ALLOC_FAILED, 0);
+        LOG_ERR("memory allocation failed");
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
 
