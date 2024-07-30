@@ -1,15 +1,14 @@
 # Unified Memory Framework
 
-[![Basic builds](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/basic.yml/badge.svg?branch=main)](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/basic.yml)
-[![CodeQL](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/codeql.yml)
-[![SpellCheck](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/spellcheck.yml/badge.svg?branch=main)](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/spellcheck.yml)
+[![PR/push](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/pr_push.yml/badge.svg?branch=main)](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/pr_push.yml)
 [![GitHubPages](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/docs.yml/badge.svg?branch=main)](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/docs.yml)
-[![Benchmarks](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/benchmarks.yml/badge.svg?branch=main)](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/benchmarks.yml)
 [![Nightly](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/nightly.yml/badge.svg?branch=main)](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/nightly.yml)
-[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/oneapi-src/unified-memory-framework/badge)](https://securityscorecards.dev/viewer/?uri=github.com/oneapi-src/unified-memory-framework)
+[![Bandit](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/bandit.yml/badge.svg?branch=main)](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/bandit.yml)
+[![CodeQL](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/codeql.yml)
 [![Coverity build](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/coverity.yml/badge.svg?branch=main)](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/coverity.yml)
 [![Coverity report](https://scan.coverity.com/projects/29761/badge.svg?flat=0)](https://scan.coverity.com/projects/oneapi-src-unified-memory-framework)
-[![Bandit](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/bandit.yml/badge.svg?branch=main)](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/bandit.yml)
+[![Trivy](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/trivy.yml/badge.svg)](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/trivy.yml)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/oneapi-src/unified-memory-framework/badge)](https://securityscorecards.dev/viewer/?uri=github.com/oneapi-src/unified-memory-framework)
 
 ## Introduction
 
@@ -120,6 +119,7 @@ List of options provided by CMake:
 | USE_VALGRIND | Enable Valgrind instrumentation | ON/OFF | OFF |
 | USE_GCOV | Enable gcov support (Linux only) | ON/OFF | OFF |
 | UMF_LINK_HWLOC_STATICALLY | Link UMF with HWLOC library statically (Windows+Release only) | ON/OFF | OFF |
+| UMF_DISABLE_HWLOC | Disable features that requires hwloc (OS provider, memory targets, topology discovery) | ON/OFF | OFF |
 
 ## Architecture: memory pools and providers
 
@@ -208,7 +208,7 @@ It is distributed as part of libumf. To use this pool, TBB must be installed in 
 
 ##### Requirements
 
-Required packages:
+Packages required for using this pool and executing tests/benchmarks (not required for build):
    - libtbb-dev (libtbbmalloc.so.2) on Linux or tbb (tbbmalloc.dll) on Windows
 
 ### Memspaces (Linux-only)

@@ -65,7 +65,7 @@ option(USE_VALGRIND "Enable Valgrind instrumentation" OFF)
 option(USE_GCOV "Enable gcov support" OFF)
 option(
     UMF_DISABLE_HWLOC
-    "Disable features that requires hwloc (OS provider, memory targets, topolgy discovery)"
+    "Disable features that requires hwloc (OS provider, memory targets, topology discovery)"
     OFF)
 
 # set UMF_PROXY_LIB_BASED_ON_POOL to one of: SCALABLE or JEMALLOC
