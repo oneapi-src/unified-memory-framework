@@ -2,8 +2,8 @@
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-#ifndef UMF_NUMA_HELPERS_H
-#define UMF_NUMA_HELPERS_H 1
+#ifndef UMF_TEST_NUMA_HELPERS_H
+#define UMF_TEST_NUMA_HELPERS_H 1
 
 #include <numa.h>
 #include <numaif.h>
@@ -31,4 +31,4 @@ int getNumaNodeByPtr(void *ptr) {
 }
 #endif
 
-#endif /* UMF_NUMA_HELPERS_H */
+#endif /* UMF_TEST_NUMA_HELPERS_H */

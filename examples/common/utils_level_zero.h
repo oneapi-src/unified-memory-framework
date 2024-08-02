@@ -7,6 +7,9 @@
  *
  */
 
+#ifndef UMF_EXAMPLE_UTILS_LEVEL_ZERO_H
+#define UMF_EXAMPLE_UTILS_LEVEL_ZERO_H
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -412,3 +415,5 @@ int destroy_context(ze_context_handle_t context) {
 
     return 0;
 }
+
+#endif // UMF_EXAMPLE_UTILS_LEVEL_ZERO_H

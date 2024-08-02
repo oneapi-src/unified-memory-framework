@@ -7,6 +7,9 @@
  *
  */
 
+#ifndef UMF_BENCH_MULTITHREAD_HPP
+#define UMF_BENCH_MULTITHREAD_HPP
+
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -87,3 +90,5 @@ template <typename T> double std_dev(const std::vector<T> &values) {
 }
 
 } // namespace umf_bench
+
+#endif /* UMF_BENCH_MULTITHREAD_HPP */

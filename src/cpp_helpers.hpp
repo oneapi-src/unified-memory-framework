@@ -7,8 +7,8 @@
  *
  */
 
-#ifndef UMF_HELPERS_H
-#define UMF_HELPERS_H 1
+#ifndef UMF_HELPERS_HPP
+#define UMF_HELPERS_HPP 1
 
 #include <umf/memory_pool.h>
 #include <umf/memory_pool_ops.h>
@@ -164,4 +164,4 @@ template <typename Type> umf_result_t &getPoolLastStatusRef() {
 
 } // namespace umf
 
-#endif /* UMF_HELPERS_H */
+#endif /* UMF_HELPERS_HPP */
