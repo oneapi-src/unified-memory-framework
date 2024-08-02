@@ -7,6 +7,9 @@
  *
  */
 
+#ifndef UMF_TEST_MULTITHREAD_HELPERS_HPP
+#define UMF_TEST_MULTITHREAD_HELPERS_HPP
+
 #include <condition_variable>
 #include <memory>
 #include <mutex>
@@ -84,3 +87,5 @@ struct syncthreads_barrier {
 };
 
 } // namespace umf_test
+
+#endif /* UMF_TEST_MULTITHREAD_HELPERS_HPP */

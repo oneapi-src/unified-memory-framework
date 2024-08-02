@@ -2,8 +2,8 @@
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-#ifndef UMF_MEMSPACE_HELPERS_HPP
-#define UMF_MEMSPACE_HELPERS_HPP
+#ifndef UMF_TEST_MEMSPACE_HELPERS_HPP
+#define UMF_TEST_MEMSPACE_HELPERS_HPP
 
 #include "base.hpp"
 #include "memspace_internal.h"
@@ -56,4 +56,4 @@ void getAllocationPolicy(void *ptr, unsigned long maxNodeId, int &mode,
     allocNodeId = static_cast<size_t>(nodeId);
 }
 
-#endif /* UMF_MEMSPACE_HELPERS_HPP */
+#endif /* UMF_TEST_MEMSPACE_HELPERS_HPP */
