@@ -57,12 +57,12 @@ option(UMF_FORMAT_CODE_STYLE
        OFF)
 # Only a part of skips is treated as a failure now. TODO: extend to all tests
 option(UMF_TESTS_FAIL_ON_SKIP "Treat skips in tests as fail" OFF)
-option(USE_ASAN "Enable AddressSanitizer checks" OFF)
-option(USE_UBSAN "Enable UndefinedBehaviorSanitizer checks" OFF)
-option(USE_TSAN "Enable ThreadSanitizer checks" OFF)
-option(USE_MSAN "Enable MemorySanitizer checks" OFF)
-option(USE_VALGRIND "Enable Valgrind instrumentation" OFF)
-option(USE_GCOV "Enable gcov support" OFF)
+option(UMF_USE_ASAN "Enable AddressSanitizer checks" OFF)
+option(UMF_USE_UBSAN "Enable UndefinedBehaviorSanitizer checks" OFF)
+option(UMF_USE_TSAN "Enable ThreadSanitizer checks" OFF)
+option(UMF_USE_MSAN "Enable MemorySanitizer checks" OFF)
+option(UMF_USE_VALGRIND "Enable Valgrind instrumentation" OFF)
+option(UMF_USE_GCOV "Enable gcov support" OFF)
 option(
     UMF_DISABLE_HWLOC
     "Disable features that requires hwloc (OS provider, memory targets, topolgy discovery)"
@@ -266,16 +266,16 @@ if(MSVC)
 endif()
 
 # Sanitizer flags
-if(USE_ASAN)
+if(UMF_USE_ASAN)
     add_sanitizer_flag(address)
 endif()
-if(USE_UBSAN)
+if(UMF_USE_UBSAN)
     add_sanitizer_flag(undefined)
 endif()
-if(USE_TSAN)
+if(UMF_USE_TSAN)
     add_sanitizer_flag(thread)
 endif()
-if(USE_MSAN)
+if(UMF_USE_MSAN)
     message(WARNING "MemorySanitizer requires instrumented libraries to "
                     "prevent reporting false-positives")
     add_sanitizer_flag(memory)
