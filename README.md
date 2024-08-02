@@ -112,12 +112,12 @@ List of options provided by CMake:
 | UMF_DEVELOPER_MODE | Enable additional developer checks | ON/OFF | OFF |
 | UMF_FORMAT_CODE_STYLE | Add clang, cmake, and black -format-check and -format-apply targets to make | ON/OFF | OFF |
 | UMF_TESTS_FAIL_ON_SKIP | Treat skips in tests as fail | ON/OFF | OFF |
-| USE_ASAN | Enable AddressSanitizer checks | ON/OFF | OFF |
-| USE_UBSAN | Enable UndefinedBehaviorSanitizer checks | ON/OFF | OFF |
-| USE_TSAN | Enable ThreadSanitizer checks | ON/OFF | OFF |
-| USE_MSAN | Enable MemorySanitizer checks | ON/OFF | OFF |
-| USE_VALGRIND | Enable Valgrind instrumentation | ON/OFF | OFF |
-| USE_GCOV | Enable gcov support (Linux only) | ON/OFF | OFF |
+| UMF_USE_ASAN | Enable AddressSanitizer checks | ON/OFF | OFF |
+| UMF_USE_UBSAN | Enable UndefinedBehaviorSanitizer checks | ON/OFF | OFF |
+| UMF_USE_TSAN | Enable ThreadSanitizer checks | ON/OFF | OFF |
+| UMF_USE_MSAN | Enable MemorySanitizer checks | ON/OFF | OFF |
+| UMF_USE_VALGRIND | Enable Valgrind instrumentation | ON/OFF | OFF |
+| UMF_USE_GCOV | Enable gcov support (Linux only) | ON/OFF | OFF |
 | UMF_LINK_HWLOC_STATICALLY | Link UMF with HWLOC library statically (Windows+Release only) | ON/OFF | OFF |
 | UMF_DISABLE_HWLOC | Disable features that requires hwloc (OS provider, memory targets, topology discovery) | ON/OFF | OFF |
 

@@ -13,11 +13,11 @@ set(UMF_UTILS_SOURCES_POSIX utils_posix_common.c utils_posix_concurrency.c
 set(UMF_UTILS_SOURCES_WINDOWS utils_windows_common.c
                               utils_windows_concurrency.c utils_windows_math.c)
 
-if(USE_VALGRIND)
-    if(USE_ASAN
-       OR USE_TSAN
-       OR USE_UBSAN
-       OR USE_MSAN)
+if(UMF_USE_VALGRIND)
+    if(UMF_USE_ASAN
+       OR UMF_USE_TSAN
+       OR UMF_USE_UBSAN
+       OR UMF_USE_MSAN)
         message(FATAL_ERROR "Cannot use valgrind and sanitizers together")
     endif()
 
@@ -51,7 +51,7 @@ target_include_directories(
               $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
               $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 
-if(USE_VALGRIND)
+if(UMF_USE_VALGRIND)
     set(UMF_UTILS_INTERFACE_DEFS "UMF_VG_ENABLED=1")
 endif()
 
