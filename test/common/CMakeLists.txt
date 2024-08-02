@@ -1,4 +1,4 @@
-# Copyright (C) 2023 Intel Corporation
+# Copyright (C) 2023-2024 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -10,8 +10,9 @@ set(COMMON_SOURCES
     provider_trace.c)
 
 add_umf_library(
-    NAME test_common
+    NAME umf_test_common
     TYPE STATIC
     SRCS ${COMMON_SOURCES})
 
-target_include_directories(test_common PRIVATE ${UMF_CMAKE_SOURCE_DIR}/include)
+target_include_directories(umf_test_common
+                           PRIVATE ${UMF_CMAKE_SOURCE_DIR}/include)
