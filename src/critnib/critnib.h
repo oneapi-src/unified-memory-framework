@@ -1,14 +1,14 @@
 /*
  *
- * Copyright (C) 2023 Intel Corporation
+ * Copyright (C) 2023-2024 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 
-#ifndef CRITNIB_H
-#define CRITNIB_H 1
+#ifndef UMF_CRITNIB_H
+#define UMF_CRITNIB_H 1
 
 #include <stdint.h>
 
@@ -44,4 +44,4 @@ void critnib_iter(critnib *c, uintptr_t min, uintptr_t max,
 }
 #endif
 
-#endif
+#endif // UMF_CRITNIB_H

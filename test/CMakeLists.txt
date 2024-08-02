@@ -45,7 +45,7 @@ function(build_umf_test)
     endif()
 
     set(TEST_LIBS
-        test_common
+        umf_test_common
         ${ARG_LIBS}
         GTest::gtest_main
         ${LIBS_OPTIONAL}
@@ -394,10 +394,10 @@ endif()
 if(LINUX
    AND UMF_BUILD_SHARED_LIBRARY
    AND NOT
-       (USE_ASAN
-        OR USE_UBSAN
-        OR USE_TSAN
-        OR USE_MSAN))
+       (UMF_USE_ASAN
+        OR UMF_USE_UBSAN
+        OR UMF_USE_TSAN
+        OR UMF_USE_MSAN))
     set(EXAMPLES "")
     if(UMF_POOL_SCALABLE_ENABLED)
         set(EXAMPLES ${EXAMPLES} basic)
