@@ -45,7 +45,7 @@ function(build_umf_test)
     endif()
 
     set(TEST_LIBS
-        test_common
+        umf_test_common
         ${ARG_LIBS}
         GTest::gtest_main
         ${LIBS_OPTIONAL}
