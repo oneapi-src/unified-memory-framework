@@ -52,6 +52,10 @@ option(
     UMF_LINK_HWLOC_STATICALLY
     "Link UMF with HWLOC library statically (supported for Linux, MacOS and Release build on Windows)"
     OFF)
+option(
+    UMF_DISABLE_HWLOC
+    "Disable features that requires hwloc (OS provider, memory targets, topology discovery)"
+    OFF)
 option(UMF_FORMAT_CODE_STYLE
        "Add clang, cmake, and black -format-check and -format-apply targets"
        OFF)
@@ -63,10 +67,6 @@ option(UMF_USE_TSAN "Enable ThreadSanitizer checks" OFF)
 option(UMF_USE_MSAN "Enable MemorySanitizer checks" OFF)
 option(UMF_USE_VALGRIND "Enable Valgrind instrumentation" OFF)
 option(UMF_USE_GCOV "Enable gcov support" OFF)
-option(
-    UMF_DISABLE_HWLOC
-    "Disable features that requires hwloc (OS provider, memory targets, topology discovery)"
-    OFF)
 
 # set UMF_PROXY_LIB_BASED_ON_POOL to one of: SCALABLE or JEMALLOC
 set(KNOWN_PROXY_LIB_POOLS SCALABLE JEMALLOC)
@@ -289,8 +289,7 @@ if(UMF_BUILD_FUZZTESTS
     add_link_options("-fsanitize=fuzzer-no-link")
 endif()
 
-# A header only library to specify include directories in transitive
-# dependencies.
+# A header-only lib to specify include directories in transitive dependencies
 add_library(umf_headers INTERFACE)
 
 # Alias target to support FetchContent.
@@ -343,7 +342,6 @@ if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
     )
 endif()
 
-# set UMF_PROXY_LIB_ENABLED
 if(WINDOWS)
     # TODO: enable the proxy library in the Debug build on Windows
     #
@@ -362,6 +360,7 @@ if(WINDOWS)
         )
     endif()
 endif()
+# set UMF_PROXY_LIB_ENABLED
 if(UMF_PROXY_LIB_BASED_ON_POOL STREQUAL SCALABLE)
     if(UMF_POOL_SCALABLE_ENABLED)
         set(UMF_PROXY_LIB_ENABLED ON)
@@ -391,10 +390,12 @@ else()
     )
 endif()
 
+# set optional symbols for map/def files
+#
+# TODO: ref. #649
 set(UMF_OPTIONAL_SYMBOLS_LINUX "")
 set(UMF_OPTIONAL_SYMBOLS_WINDOWS "")
 
-# Conditional configuration for Level Zero provider
 if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
     add_optional_symbol(umfLevelZeroMemoryProviderOps)
 endif()
@@ -551,12 +552,12 @@ if(UMF_FORMAT_CODE_STYLE)
 
         add_custom_target(
             black-format-check
-            COMMAND ${BLACK} --check --verbose ${CMAKE_SOURCE_DIR}
+            COMMAND ${BLACK} --check --verbose ${UMF_CMAKE_SOURCE_DIR}
             COMMENT "Check Python files formatting using black formatter")
 
         add_custom_target(
             black-format-apply
-            COMMAND ${BLACK} ${CMAKE_SOURCE_DIR}
+            COMMAND ${BLACK} ${UMF_CMAKE_SOURCE_DIR}
             COMMENT "Format Python files using black formatter")
     endif()
 
