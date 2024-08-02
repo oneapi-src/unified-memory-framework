@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  */
 
-#ifndef TEST_COMMON_LEVEL_ZERO_HELPERS_HPP
-#define TEST_COMMON_LEVEL_ZERO_HELPERS_HPP
+#ifndef UMF_TEST_LEVEL_ZERO_HELPERS_H
+#define UMF_TEST_LEVEL_ZERO_HELPERS_H
 
 #include <umf/providers/provider_level_zero.h>
 
@@ -45,4 +45,4 @@ create_level_zero_prov_params(umf_usm_memory_type_t memory_type);
 }
 #endif
 
-#endif // TEST_COMMON_LEVEL_ZERO_HELPERS_HPP
+#endif // UMF_TEST_LEVEL_ZERO_HELPERS_H

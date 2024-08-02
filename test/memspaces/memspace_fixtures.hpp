@@ -2,8 +2,9 @@
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-#ifndef UMF_MEMSPACE_FIXTURES_HPP
-#define UMF_MEMSPACE_FIXTURES_HPP
+#ifndef UMF_TEST_MEMSPACE_FIXTURES_HPP
+#define UMF_TEST_MEMSPACE_FIXTURES_HPP
+
 #include <numa.h>
 #include <numaif.h>
 #include <thread>
@@ -218,4 +219,4 @@ TEST_P(memspaceProviderTest, allocLocalMt) {
     }
 }
 
-#endif /* UMF_MEMSPACE_FIXTURES_HPP */
+#endif /* UMF_TEST_MEMSPACE_FIXTURES_HPP */

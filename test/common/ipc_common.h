@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  */
 
-#ifndef IPC_COMMON_H
-#define IPC_COMMON_H
+#ifndef UMF_TEST_IPC_COMMON_H
+#define UMF_TEST_IPC_COMMON_H
 
 #include <umf/memory_provider.h>
 
@@ -24,4 +24,4 @@ int run_consumer(int port, umf_memory_provider_ops_t *provider_ops,
                  void *provider_params, memcopy_callback_t memcopy_callback,
                  void *memcopy_ctx);
 
-#endif // IPC_COMMON_H
+#endif // UMF_TEST_IPC_COMMON_H
