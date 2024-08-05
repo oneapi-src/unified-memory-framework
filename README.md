@@ -112,6 +112,8 @@ List of options provided by CMake:
 | UMF_DEVELOPER_MODE | Enable additional developer checks | ON/OFF | OFF |
 | UMF_FORMAT_CODE_STYLE | Add clang, cmake, and black -format-check and -format-apply targets to make | ON/OFF | OFF |
 | UMF_TESTS_FAIL_ON_SKIP | Treat skips in tests as fail | ON/OFF | OFF |
+| UMF_TESTS_DEVDAX_PATH | Path of the devdax used in tests. The test is skipped if it is not set or empty. | path | "" |
+| UMF_TESTS_DEVDAX_SIZE | Size of the devdax used in tests. The test is skipped if it is not set or empty. | size | "" |
 | UMF_USE_ASAN | Enable AddressSanitizer checks | ON/OFF | OFF |
 | UMF_USE_UBSAN | Enable UndefinedBehaviorSanitizer checks | ON/OFF | OFF |
 | UMF_USE_TSAN | Enable ThreadSanitizer checks | ON/OFF | OFF |

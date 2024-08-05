@@ -100,6 +100,8 @@ size_t os_get_page_size(void);
 
 void os_strerror(int errnum, char *buf, size_t buflen);
 
+int os_devdax_open(const char *path);
+
 #ifdef __cplusplus
 }
 #endif

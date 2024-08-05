@@ -57,6 +57,18 @@ option(UMF_FORMAT_CODE_STYLE
        OFF)
 # Only a part of skips is treated as a failure now. TODO: extend to all tests
 option(UMF_TESTS_FAIL_ON_SKIP "Treat skips in tests as fail" OFF)
+set(UMF_TESTS_DEVDAX_PATH
+    ""
+    CACHE
+        PATH
+        "Path of the devdax used in tests. The test is skipped if it is not set or empty."
+)
+set(UMF_TESTS_DEVDAX_SIZE
+    ""
+    CACHE
+        STRING
+        "Size of the devdax used in tests. The test is skipped if it is not set or empty."
+)
 option(UMF_USE_ASAN "Enable AddressSanitizer checks" OFF)
 option(UMF_USE_UBSAN "Enable UndefinedBehaviorSanitizer checks" OFF)
 option(UMF_USE_TSAN "Enable ThreadSanitizer checks" OFF)
@@ -401,11 +413,20 @@ endif()
 
 if(NOT UMF_DISABLE_HWLOC)
     add_optional_symbol(umfOsMemoryProviderOps)
+    if(LINUX)
+        add_optional_symbol(umfDevDaxMemoryProviderOps)
+    endif()
 endif()
 
 add_subdirectory(src)
 
 if(UMF_BUILD_TESTS)
+    if(UMF_TESTS_DEVDAX_PATH OR UMF_TESTS_DEVDAX_SIZE)
+        message(
+            STATUS "UMF_TESTS_DEVDAX_PATH is set to: ${UMF_TESTS_DEVDAX_PATH}")
+        message(
+            STATUS "UMF_TESTS_DEVDAX_SIZE is set to: ${UMF_TESTS_DEVDAX_SIZE}")
+    endif()
     add_subdirectory(test)
 endif()
 

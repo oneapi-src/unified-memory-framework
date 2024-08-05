@@ -222,6 +222,21 @@ if(LINUX AND (NOT UMF_DISABLE_HWLOC)) # OS-specific functions are implemented
         NAME memtarget
         SRCS memspaces/memtarget.cpp
         LIBS ${LIBNUMA_LIBRARIES})
+    if(UMF_TESTS_DEVDAX_PATH AND UMF_TESTS_DEVDAX_SIZE)
+        add_umf_test(
+            NAME provider_devdax_memory
+            SRCS provider_devdax_memory.cpp
+            LIBS ${UMF_UTILS_FOR_TEST})
+        target_compile_definitions(
+            umf_test-provider_devdax_memory
+            PRIVATE UMF_TESTS_DEVDAX_PATH="${UMF_TESTS_DEVDAX_PATH}"
+                    UMF_TESTS_DEVDAX_SIZE=${UMF_TESTS_DEVDAX_SIZE})
+    else()
+        message(
+            STATUS
+                "UMF_TESTS_DEVDAX_PATH or UMF_TESTS_DEVDAX_SIZE is not set - skipping the devdax memory provider test"
+        )
+    endif()
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND UMF_BUILD_FUZZTESTS)
         add_subdirectory(fuzz)
     endif()
