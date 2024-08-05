@@ -6,10 +6,13 @@
 */
 
 #include <errno.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 #include <sys/syscall.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include <umf/providers/provider_os_memory.h>
@@ -105,4 +108,40 @@ void os_strerror(int errnum, char *buf, size_t buflen) {
 #endif
         LOG_PERR("Retrieving error code description failed");
     }
+}
+
+// open a devdax
+int os_devdax_open(const char *path) {
+    if (path == NULL) {
+        LOG_ERR("empty path");
+        return -1;
+    }
+
+    if (strstr(path, "/dev/dax") != path) {
+        LOG_ERR("path of the file \"%s\" does not start with \"/dev/dax\"",
+                path);
+        return -1;
+    }
+
+    int fd = open(path, O_RDWR);
+    if (fd == -1) {
+        LOG_PERR("cannot open the file: %s", path);
+        return -1;
+    }
+
+    struct stat statbuf;
+    int ret = stat(path, &statbuf);
+    if (ret) {
+        LOG_PERR("stat(%s) failed", path);
+        close(fd);
+        return -1;
+    }
+
+    if (!S_ISCHR(statbuf.st_mode)) {
+        LOG_ERR("file %s is not a character device", path);
+        close(fd);
+        return -1;
+    }
+
+    return fd;
 }
