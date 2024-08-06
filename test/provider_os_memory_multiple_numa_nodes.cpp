@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 #include "base.hpp"
-#include "numa_helpers.h"
+#include "numa_helpers.hpp"
 #include "test_helpers.h"
 
 #include <algorithm>
@@ -122,13 +122,9 @@ struct testNuma : testing::Test {
 };
 
 struct testNumaOnEachNode : testNuma, testing::WithParamInterface<unsigned> {};
-struct testNumaOnEachCpu : testNuma, testing::WithParamInterface<int> {};
 
 INSTANTIATE_TEST_SUITE_P(testNumaNodesAllocations, testNumaOnEachNode,
                          ::testing::ValuesIn(get_available_numa_nodes()));
-
-INSTANTIATE_TEST_SUITE_P(testNumaNodesAllocationsAllCpus, testNumaOnEachCpu,
-                         ::testing::ValuesIn(get_available_cpus()));
 
 // Test for allocations on numa nodes. It will be executed on each of
 // the available numa nodes.
@@ -152,8 +148,7 @@ TEST_P(testNumaOnEachNode, checkNumaNodesAllocations) {
 
     // 'ptr' must point to an initialized value before retrieving its numa node
     memset(ptr, 0xFF, alloc_size);
-    int retrieved_numa_node_number = getNumaNodeByPtr(ptr);
-    EXPECT_EQ(retrieved_numa_node_number, numa_node_number);
+    EXPECT_NODE_EQ(ptr, numa_node_number);
 }
 
 // Test for allocations on numa nodes with mode preferred. It will be executed
@@ -177,8 +172,7 @@ TEST_P(testNumaOnEachNode, checkModePreferred) {
 
     // 'ptr' must point to an initialized value before retrieving its numa node
     memset(ptr, 0xFF, alloc_size);
-    int retrieved_numa_node_number = getNumaNodeByPtr(ptr);
-    EXPECT_EQ(retrieved_numa_node_number, numa_node_number);
+    EXPECT_NODE_EQ(ptr, numa_node_number);
 }
 
 // Test for allocation on numa node with default mode enabled.
@@ -202,8 +196,7 @@ TEST_P(testNumaOnEachNode, checkModeDefaultSetMempolicy) {
 
     // 'ptr' must point to an initialized value before retrieving its numa node
     memset(ptr, 0xFF, alloc_size);
-    int retrieved_numa_node_number = getNumaNodeByPtr(ptr);
-    EXPECT_EQ(retrieved_numa_node_number, numa_node_number);
+    EXPECT_NODE_EQ(ptr, numa_node_number);
 }
 
 // Test for allocations on a single numa node with interleave mode enabled.
@@ -229,9 +222,13 @@ TEST_P(testNumaOnEachNode, checkModeInterleaveSingleNode) {
 
     // 'ptr' must point to an initialized value before retrieving its numa node
     memset(ptr, 0xFF, pages_num * page_size);
-    int retrieved_numa_node_number = getNumaNodeByPtr(ptr);
-    EXPECT_EQ(retrieved_numa_node_number, numa_node_number);
+    EXPECT_NODE_EQ(ptr, numa_node_number);
 }
+
+struct testNumaOnEachCpu : testNuma, testing::WithParamInterface<int> {};
+
+INSTANTIATE_TEST_SUITE_P(testNumaNodesAllocationsAllCpus, testNumaOnEachCpu,
+                         ::testing::ValuesIn(get_available_cpus()));
 
 // Test for allocation on numa node with mode preferred and an empty nodeset.
 // For the empty nodeset the memory is allocated on the node of the CPU that
@@ -269,8 +266,7 @@ TEST_P(testNumaOnEachCpu, checkModePreferredEmptyNodeset) {
 
     // 'ptr' must point to an initialized value before retrieving its numa node
     memset(ptr, 0xFF, alloc_size);
-    int retrieved_numa_node_number = getNumaNodeByPtr(ptr);
-    EXPECT_EQ(retrieved_numa_node_number, numa_node_number);
+    EXPECT_NODE_EQ(ptr, numa_node_number);
 }
 
 // Test for allocation on numa node with local mode enabled. The memory is
@@ -307,8 +303,7 @@ TEST_P(testNumaOnEachCpu, checkModeLocal) {
 
     // 'ptr' must point to an initialized value before retrieving its numa node
     memset(ptr, 0xFF, alloc_size);
-    int retrieved_numa_node_number = getNumaNodeByPtr(ptr);
-    EXPECT_EQ(retrieved_numa_node_number, numa_node_number);
+    EXPECT_NODE_EQ(ptr, numa_node_number);
 }
 
 // Test for allocation on numa node with default mode enabled.
@@ -332,8 +327,7 @@ TEST_F(testNuma, checkModeDefault) {
 
     // 'ptr' must point to an initialized value before retrieving its numa node
     memset(ptr, 0xFF, alloc_size);
-    int retrieved_numa_node_number = getNumaNodeByPtr(ptr);
-    EXPECT_EQ(retrieved_numa_node_number, numa_node_number);
+    EXPECT_NODE_EQ(ptr, numa_node_number);
 }
 
 // Test for allocations on numa nodes with interleave mode enabled.
@@ -363,11 +357,11 @@ TEST_F(testNuma, checkModeInterleave) {
 
     // Test where each page will be allocated.
     // Get the first numa node for ptr; Each next page is expected to be on next nodes.
-    size_t index = getNumaNodeByPtr((char *)ptr);
+    int index = 0;
+    ASSERT_NO_FATAL_FAILURE(getNumaNodeByPtr(ptr, &index));
     for (size_t i = 1; i < (size_t)pages_num; i++) {
         index = (index + 1) % numa_nodes.size();
-        ASSERT_EQ(numa_nodes[index],
-                  getNumaNodeByPtr((char *)ptr + page_size * i));
+        EXPECT_NODE_EQ((char *)ptr + page_size * i, numa_nodes[index]);
     }
 
     bitmask *retrieved_nodemask = retrieve_nodemask(ptr);
@@ -407,13 +401,11 @@ TEST_F(testNuma, checkModeInterleaveCustomPartSize) {
     memset(ptr, 0xFF, size);
     // Test where each page will be allocated.
     // Get the first numa node for ptr; Each next part is expected to be on next nodes.
-    size_t index = getNumaNodeByPtr((char *)ptr);
+    int index = 0;
+    ASSERT_NO_FATAL_FAILURE(getNumaNodeByPtr(ptr, &index));
     for (size_t i = 0; i < (size_t)part_num; i++) {
         for (size_t j = 0; j < part_size; j += page_size) {
-            EXPECT_EQ(numa_nodes[index],
-                      getNumaNodeByPtr((char *)ptr + part_size * i + j))
-                << "for ptr " << ptr << " + " << part_size << " * " << i
-                << " + " << j;
+            ASSERT_NODE_EQ((char *)ptr + part_size * i + j, numa_nodes[index]);
         }
         index = (index + 1) % numa_nodes.size();
     }
@@ -425,7 +417,7 @@ TEST_F(testNuma, checkModeInterleaveCustomPartSize) {
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(ptr, nullptr);
     memset(ptr, 0xFF, size);
-    EXPECT_EQ(numa_nodes[index], getNumaNodeByPtr(ptr));
+    EXPECT_NODE_EQ(ptr, numa_nodes[index]);
     umfMemoryProviderFree(os_memory_provider, ptr, size);
 }
 
@@ -627,7 +619,10 @@ TEST_F(testNuma, checkModeBindOnAllNodes) {
 
     // 'ptr' must point to an initialized value before retrieving its numa node
     memset(ptr, 0xFF, alloc_size);
-    unsigned retrieved_numa_node_number = (unsigned)getNumaNodeByPtr(ptr);
+
+    int node;
+    ASSERT_NO_FATAL_FAILURE(getNumaNodeByPtr(ptr, &node));
+    unsigned retrieved_numa_node_number = (unsigned)node;
 
     int read_cpu = sched_getcpu();
     int read_numa_node = numa_node_of_cpu(read_cpu);
