@@ -54,7 +54,7 @@ jobs:
             build_tests: 'ON'
             extra_build_options: '-DCMAKE_BUILD_TYPE=Release'
             simple_cmake: 'ON'
-    runs-on: ${{matrix.os}}
+    runs-on: ${{ (matrix.os == 'ubuntu-latest' && github.repository_owner == 'oneapi-src') && 'intel-ubuntu-22.04' || matrix.os }}
 
     steps:
     - name: Checkout repository

@@ -19,7 +19,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-    runs-on: ${{matrix.os}}
+    runs-on: ${{ (matrix.os == 'ubuntu-latest' && github.repository_owner == 'oneapi-src') && 'intel-ubuntu-22.04' || matrix.os }}
 
     steps:
     - name: Checkout repository

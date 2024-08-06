@@ -17,7 +17,7 @@ permissions:
 jobs:
   CodeStyle:
     name: Coding style
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.repository_owner == 'oneapi-src' && 'intel-ubuntu-22.04' || 'ubuntu-latest' }}
 
     steps:
     - name: Checkout repository
@@ -52,7 +52,7 @@ jobs:
 
   DocsBuild:
     name: Build docs
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.repository_owner == 'oneapi-src' && 'intel-ubuntu-22.04' || 'ubuntu-latest' }}
 
     steps:
     - name: Checkout repository
@@ -67,6 +67,9 @@ jobs:
 
     - name: Install pip requirements
       run: python3 -m pip install -r third_party/requirements.txt
+
+    - name: Setup PATH for python
+      run: echo "$HOME/.local/bin" >> $GITHUB_PATH
 
     - name: Build the documentation
       working-directory: scripts

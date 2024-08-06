@@ -9,7 +9,7 @@ permissions:
 jobs:
   analyze:
     name: Run spell check
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.repository_owner == 'oneapi-src' && 'intel-ubuntu-22.04' || 'ubuntu-latest' }}
 
     steps:
     - name: Checkout
