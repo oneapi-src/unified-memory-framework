@@ -16,11 +16,10 @@ jobs:
 
     strategy:
       matrix:
-        os: ['ubuntu-22.04']
         build_type: [Release, Debug]
         compiler: [{c: gcc, cxx: g++}]
         proxy_lib_pool: ['SCALABLE', 'JEMALLOC']
-    runs-on: ${{matrix.os}}
+    runs-on: ${{ github.repository_owner == 'oneapi-src' && 'intel-ubuntu-22.04' || 'ubuntu-22.04' }}
 
     steps:
       - name: Checkout
