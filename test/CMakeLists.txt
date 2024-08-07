@@ -356,6 +356,36 @@ if(LINUX)
         add_umf_ipc_test(TEST ipc_os_prov_anon_fd)
         add_umf_ipc_test(TEST ipc_os_prov_shm)
     endif()
+    if(UMF_TESTS_DEVDAX_PATH AND UMF_TESTS_DEVDAX_SIZE)
+        build_umf_test(
+            NAME
+            ipc_devdax_prov_consumer
+            SRCS
+            ipc_devdax_prov_consumer.c
+            common/ipc_common.c
+            common/ipc_os_prov_common.c)
+        build_umf_test(
+            NAME
+            ipc_devdax_prov_producer
+            SRCS
+            ipc_devdax_prov_producer.c
+            common/ipc_common.c
+            common/ipc_os_prov_common.c)
+        target_compile_definitions(
+            umf_test-ipc_devdax_prov_consumer
+            PRIVATE UMF_TESTS_DEVDAX_PATH="${UMF_TESTS_DEVDAX_PATH}"
+                    UMF_TESTS_DEVDAX_SIZE=${UMF_TESTS_DEVDAX_SIZE})
+        target_compile_definitions(
+            umf_test-ipc_devdax_prov_producer
+            PRIVATE UMF_TESTS_DEVDAX_PATH="${UMF_TESTS_DEVDAX_PATH}"
+                    UMF_TESTS_DEVDAX_SIZE=${UMF_TESTS_DEVDAX_SIZE})
+        add_umf_ipc_test(TEST ipc_devdax_prov)
+    else()
+        message(
+            STATUS
+                "UMF_TESTS_DEVDAX_PATH or UMF_TESTS_DEVDAX_SIZE is not set - skipping the IPC devdax memory provider test"
+        )
+    endif()
     if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
         build_umf_test(
             NAME
