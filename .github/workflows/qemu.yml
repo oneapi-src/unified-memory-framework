@@ -3,9 +3,6 @@ name: Qemu
 
 on: workflow_call
 
-env:
-  CI_BRANCH: "${{ github.head_ref || github.ref_name }}"
-
 permissions:
   contents: read
 
@@ -19,6 +16,7 @@ jobs:
       uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       with:
         fetch-depth: 0
+        path: umf
 
     - name: Enable KVM
       run: |
@@ -31,7 +29,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y qemu-system genisoimage qemu-utils \
           libvirt-clients libvirt-daemon-system libvirt-daemon virtinst bridge-utils
-        pip install -r scripts/qemu/requirements.txt
+        pip install -r umf/scripts/qemu/requirements.txt
 
     - name: Add user to kvm group
       run: sudo usermod -a -G kvm,libvirt $USER
@@ -82,24 +80,19 @@ jobs:
 
     - name: Build UMF in QEMU
       run: |
-        scripts/qemu/start_qemu.sh scripts/qemu/configs/default.xml
+        umf/scripts/qemu/start_qemu.sh default.xml
 
-        if [ ${{ github.event_name }} = 'pull_request' ]; then
-            CI_REPO="${{ github.event.pull_request.head.repo.full_name }}"
-        else
-            CI_REPO="$GITHUB_REPOSITORY"
-        fi
+        # Copy UMF repository's content into the home dir in QEMU
+        rsync -az -e "ssh -p 2222" ${{github.workspace}}/umf/ cxltest@127.0.0.1:/home/cxltest/
+        ssh cxltest@127.0.0.1 -p 2222 -t "sudo chown -R cxltest:users /home/cxltest"
 
-        scp -P 2222 ${{github.workspace}}/scripts/qemu/run-build.sh cxltest@127.0.0.1:/home/cxltest
-        scp -P 2222 ${{github.workspace}}/scripts/qemu/run-tests.sh cxltest@127.0.0.1:/home/cxltest
-
-        ssh cxltest@127.0.0.1 -p 2222 -t "bash /home/cxltest/run-build.sh https://github.com/$CI_REPO ${{env.CI_BRANCH}}"
+        ssh cxltest@127.0.0.1 -p 2222 -t "bash /home/cxltest/scripts/qemu/run-build.sh"
         ssh cxltest@127.0.0.1 -p 2222 -t "sudo shutdown -h now"
 
     - name: Run tests in QEMU
       run: |
-        for config_file in scripts/qemu/configs/*.xml; do
-          config_name=$(basename $config_file .xml)
+        for config_file in umf/scripts/qemu/configs/*.xml; do
+          config_name=$(basename $config_file)
 
           while ps -aux | grep qemu-system-x86_64 | grep -q -v grep; do
             echo "Waiting for QEMU to shut down..."
@@ -107,8 +100,8 @@ jobs:
           done
 
           echo "\n ### Testing ${config_name} ###"
-          scripts/qemu/start_qemu.sh $config_file
+          umf/scripts/qemu/start_qemu.sh ${config_name}
 
-          ssh cxltest@127.0.0.1 -p 2222 -t "bash /home/cxltest/run-tests.sh"
+          ssh cxltest@127.0.0.1 -p 2222 -t "bash /home/cxltest/scripts/qemu/run-tests.sh"
           ssh cxltest@127.0.0.1 -p 2222 -t "sudo shutdown -h now"
         done

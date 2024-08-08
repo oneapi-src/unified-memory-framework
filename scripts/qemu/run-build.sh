@@ -5,16 +5,9 @@
 
 set -e
 
-repo=$1
-branch=$2
-
 echo password | sudo -Sk apt-get update
 echo password | sudo -Sk apt-get install -y git cmake gcc g++ pkg-config \
     numactl libnuma-dev hwloc libhwloc-dev libjemalloc-dev libtbb-dev valgrind
-
-git clone $repo umf
-cd umf
-git checkout $branch
 
 mkdir build
 cd build

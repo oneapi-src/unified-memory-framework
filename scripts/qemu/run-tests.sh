@@ -13,7 +13,7 @@ echo password | sudo bash -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
 
 numactl -H
 
-cd umf/build
+cd build
 ctest --verbose
 
 # run tests bound to a numa node
