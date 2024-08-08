@@ -30,7 +30,7 @@ struct numaNodesTest : ::umf_test::test {
         ::umf_test::test::SetUp();
 
         if (numa_available() == -1 || numa_all_nodes_ptr == nullptr) {
-            GTEST_FAIL() << "Failed to initialize libnuma";
+            GTEST_SKIP() << "No available NUMA support; skipped";
         }
 
         int maxNode = numa_max_node();
@@ -58,6 +58,10 @@ struct memspaceGetTest : ::numaNodesTest,
                          ::testing::WithParamInterface<memspaceGetParams> {
     void SetUp() override {
         ::numaNodesTest::SetUp();
+
+        if (numa_available() == -1 || numa_all_nodes_ptr == nullptr) {
+            GTEST_SKIP() << "No available NUMA support; skipped";
+        }
 
         auto [isQuerySupported, memspaceGet] = this->GetParam();
 

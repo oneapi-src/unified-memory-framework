@@ -14,6 +14,10 @@ struct memspaceNumaTest : ::numaNodesTest {
     void SetUp() override {
         ::numaNodesTest::SetUp();
 
+        if (numa_available() == -1) {
+            GTEST_SKIP() << "NUMA not supported on this system; test skipped";
+        }
+
         umf_result_t ret = umfMemspaceCreateFromNumaArray(
             nodeIds.data(), nodeIds.size(), &hMemspace);
         ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
@@ -33,6 +37,10 @@ struct memspaceNumaTest : ::numaNodesTest {
 struct memspaceNumaProviderTest : ::memspaceNumaTest {
     void SetUp() override {
         ::memspaceNumaTest::SetUp();
+
+        if (numa_available() == -1) {
+            GTEST_SKIP() << "NUMA not supported on this system; test skipped";
+        }
 
         umf_result_t ret =
             umfMemoryProviderCreateFromMemspace(hMemspace, nullptr, &hProvider);

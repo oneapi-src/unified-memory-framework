@@ -15,8 +15,7 @@
 #include <stdio.h>
 #include <string.h>
 
-// Needed for CI
-#define test_skip_error_code 125
+#include "utils_examples.h"
 
 // Function to create a memory provider which allocates memory from the specified NUMA node
 int createMemoryProvider(umf_memory_provider_handle_t *hProvider,
@@ -63,13 +62,13 @@ int main(void) {
     // Check if NUMA is available
     if (numa_available() < 0) {
         fprintf(stderr, "NUMA is not available on this system.\n");
-        return -1;
+        return TEST_SKIP_ERROR_CODE;
     }
 
     // Create the memory provider that allocates memory from the highest bandwidth numa nodes
     ret = createMemoryProvider(&hProvider, umfMemspaceHighestBandwidthGet());
     if (ret != UMF_RESULT_SUCCESS) {
-        return ret == 1 ? test_skip_error_code : -1;
+        return ret == 1 ? TEST_SKIP_ERROR_CODE : -1;
     }
 
     // Allocate memory from the memory provider

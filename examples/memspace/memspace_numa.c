@@ -15,6 +15,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "utils_examples.h"
+
 // Function to create a memory provider which allocates memory from the specified NUMA node
 int createMemoryProvider(umf_memory_provider_handle_t *hProvider,
                          unsigned numa) {
@@ -65,7 +67,7 @@ int main(void) {
     // Check if NUMA is available
     if (numa_available() < 0) {
         fprintf(stderr, "NUMA is not available on this system.\n");
-        return -1;
+        return TEST_SKIP_ERROR_CODE;
     }
 
     // Create the memory provider that allocates memory from the specified NUMA node

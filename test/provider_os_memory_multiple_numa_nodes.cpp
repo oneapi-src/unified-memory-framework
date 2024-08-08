@@ -18,8 +18,9 @@ static umf_os_memory_provider_params_t UMF_OS_MEMORY_PROVIDER_PARAMS_TEST =
     umfOsMemoryProviderParamsDefault();
 
 std::vector<unsigned> get_available_numa_nodes() {
-    UT_ASSERTne(numa_available(), -1);
-    UT_ASSERTne(numa_all_nodes_ptr, nullptr);
+    if (numa_available() == -1 || numa_all_nodes_ptr == nullptr) {
+        return std::vector<unsigned>();
+    }
 
     std::vector<unsigned> available_numa_nodes;
     // Get all available NUMA nodes numbers.
@@ -57,9 +58,6 @@ std::vector<int> get_available_cpus() {
 }
 
 void set_all_available_nodemask_bits(bitmask *nodemask) {
-    UT_ASSERTne(numa_available(), -1);
-    UT_ASSERTne(numa_all_nodes_ptr, nullptr);
-
     numa_bitmask_clearall(nodemask);
 
     // Set all available NUMA nodes numbers.
@@ -123,6 +121,24 @@ struct testNuma : testing::Test {
 
 struct testNumaOnEachNode : testNuma, testing::WithParamInterface<unsigned> {};
 struct testNumaOnEachCpu : testNuma, testing::WithParamInterface<int> {};
+
+/*
+ - In case of the lack of support for NUMA on the system
+ get_available_numa_nodes() returns an empty vector<unsigned>
+ - Then in INSTANTIATE_TEST_SUITE_P an empty container is passed as the 3rd arg
+ (param_generator)
+ - Therefore INSTANTIATE_TEST_SUITE_P expands to nothing, which causes the test
+ to fail in the test suite GoogleTestVerification
+- GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(testNumaOnEachNode) allows the
+test suite testNumaOnEachNode to be uninstantiated, suppressing
+the test failure
+- Additionally, the fixture testNumaOnEachNode uses SetUp from testNuma before
+running every test, thus the test is eventually skipped when the lack of NUMA
+support is determined by numa_available()
+- (Therefore probably a vector with dummy values could be returned instead of
+using the macro)
+*/
+GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(testNumaOnEachNode);
 
 INSTANTIATE_TEST_SUITE_P(testNumaNodesAllocations, testNumaOnEachNode,
                          ::testing::ValuesIn(get_available_numa_nodes()));
