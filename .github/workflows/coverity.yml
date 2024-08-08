@@ -18,6 +18,8 @@ permissions:
 jobs:
   coverity:
     name: Coverity
+    # run only on upstream; forks do not know Username/Password
+    if: github.repository == 'oneapi-src/unified-memory-framework'
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
