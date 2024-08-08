@@ -56,9 +56,10 @@ def parse_topology_xml(tpg_file_name: str) -> TopologyCfg:
         if verbose_mode != False:
             print(f"\nFull libvirt_args: {libvirt_args}\n")
 
+        hmat_search = re.search(r"hmat=(\w+)", libvirt_args)
         tpg_cfg = {
             "name": re.search(r"guest=(\w+)", libvirt_args).group(1),
-            "hmat": "hmat=on" in libvirt_args,
+            "hmat": hmat_search.group(0) if hmat_search else "hmat=off",
             "cpu_model": re.search(r"cpu (\S+)", libvirt_args).group(1),
             "cpu_options": re.search("(?=-smp)(.*)threads=[0-9]+", libvirt_args).group(
                 0
@@ -89,7 +90,10 @@ def get_qemu_args(tpg_file_name: str) -> str:
     Get QEMU arguments from topology xml file
     """
     tpg = parse_topology_xml(tpg_file_name)
-    qemu_args = f"-name {tpg.name} {calculate_memory(tpg)} -cpu {tpg.cpu_model} {tpg.cpu_options} {tpg.mem_options}"
+    qemu_args = (
+        f"-machine q35,usb=off,{tpg.hmat} -name {tpg.name} "
+        f"{calculate_memory(tpg)} -cpu {tpg.cpu_model} {tpg.cpu_options} {tpg.mem_options}"
+    )
     return qemu_args
 
 
