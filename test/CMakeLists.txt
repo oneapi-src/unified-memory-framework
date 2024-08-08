@@ -221,7 +221,7 @@ if(LINUX AND (NOT UMF_DISABLE_HWLOC)) # OS-specific functions are implemented
     add_umf_test(
         NAME memtarget
         SRCS memspaces/memtarget.cpp
-        LIBS ${LIBNUMA_LIBRARIES})
+        LIBS ${LIBNUMA_LIBRARIES} ${LIBHWLOC_LIBRARIES})
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND UMF_BUILD_FUZZTESTS)
         add_subdirectory(fuzz)
     endif()

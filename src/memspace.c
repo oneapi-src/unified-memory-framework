@@ -173,10 +173,8 @@ static int propertyCmp(const void *a, const void *b) {
     }
 }
 
-umf_result_t
-umfMemspaceSortDesc(umf_memspace_handle_t hMemspace,
-                    umf_result_t (*getProperty)(umf_memtarget_handle_t node,
-                                                uint64_t *property)) {
+umf_result_t umfMemspaceSortDesc(umf_memspace_handle_t hMemspace,
+                                 umfGetPropertyFn getProperty) {
     if (!hMemspace || !getProperty) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }

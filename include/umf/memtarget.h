@@ -10,6 +10,7 @@
 #ifndef UMF_MEMTARGET_H
 #define UMF_MEMTARGET_H 1
 
+#include <stddef.h>
 #include <umf/base.h>
 
 #ifdef __cplusplus
@@ -30,6 +31,13 @@ typedef enum umf_memtarget_type_t {
 /// \return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 umf_result_t umfMemtargetGetType(umf_const_memtarget_handle_t hMemtarget,
                                  umf_memtarget_type_t *type);
+
+/// \brief Get size of the memory target in bytes.
+/// \param hMemtarget handle to the memory target
+/// \param capacity [out] capacity of the memory target
+/// \return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+umf_result_t umfMemtargetGetCapacity(umf_const_memtarget_handle_t hMemtarget,
+                                     size_t *capacity);
 
 #ifdef __cplusplus
 }
