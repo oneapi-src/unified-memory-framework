@@ -14,14 +14,6 @@
 extern "C" {
 #endif
 
-/// @brief USM memory allocation type
-typedef enum umf_usm_memory_type_t {
-    UMF_MEMORY_TYPE_UNKNOWN = 0, ///< The memory pointed to is of unknown type
-    UMF_MEMORY_TYPE_HOST,        ///< The memory pointed to is a host allocation
-    UMF_MEMORY_TYPE_DEVICE, ///< The memory pointed to is a device allocation
-    UMF_MEMORY_TYPE_SHARED, ///< The memory pointed to is a shared ownership allocation
-} umf_usm_memory_type_t;
-
 /// @brief Level Zero Memory Provider settings struct
 typedef struct level_zero_memory_provider_params_t {
     void *level_zero_context_handle;   ///< Handle to the Level Zero context
