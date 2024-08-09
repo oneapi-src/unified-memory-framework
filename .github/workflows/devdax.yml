@@ -1,0 +1,66 @@
+# This workflow builds and tests the devdax memory provider.
+# It requires a DAX device (e.g. /dev/dax0.0) configured in the OS.
+# This DAX device should be specified using DEVDAX_PATH and DEVDAX_SIZE
+# CI environment variables.
+
+name: DevDAX
+
+on: [workflow_call]
+
+permissions:
+  contents: read
+
+env:
+  DEVDAX_PATH : "/dev/dax0.0"
+  DEVDAX_SIZE : 1054867456
+  BUILD_DIR : "${{github.workspace}}/build"
+  INSTL_DIR : "${{github.workspace}}/../install-dir"
+
+jobs:
+  devdax:
+    name: Build
+    # run only on upstream; forks may not have a DAX device
+    if: github.repository == 'oneapi-src/unified-memory-framework'
+    strategy:
+      matrix:
+        os: ['Ubuntu']
+        build_type: [Debug]
+        shared_library: ['ON', 'OFF']
+        compiler: [{c: gcc, cxx: g++}]
+        number_of_processors: ['$(nproc)']
+
+    runs-on: ["DSS-DEVDAX", "DSS-${{matrix.os}}"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          fetch-depth: 0
+
+      - name: Configure build for Ubuntu
+        run: >
+          cmake
+          -B ${{env.BUILD_DIR}}
+          -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
+          -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+          -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
+          -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
+          -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
+          -DUMF_BUILD_BENCHMARKS=OFF
+          -DUMF_BUILD_TESTS=ON
+          -DUMF_BUILD_GPU_TESTS=OFF
+          -DUMF_BUILD_GPU_EXAMPLES=OFF
+          -DUMF_FORMAT_CODE_STYLE=OFF
+          -DUMF_DEVELOPER_MODE=ON
+          -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
+          -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
+          -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
+          -DUMF_TESTS_FAIL_ON_SKIP=ON
+          -DUMF_TESTS_DEVDAX_PATH=${{env.DEVDAX_PATH}}
+          -DUMF_TESTS_DEVDAX_SIZE=${{env.DEVDAX_SIZE}}
+
+      - name: Build UMF
+        run: cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j ${{matrix.number_of_processors}}
+
+      - name: Run only devdax tests
+        working-directory: ${{env.BUILD_DIR}}
+        run: ctest -C ${{matrix.build_type}} -R devdax -V

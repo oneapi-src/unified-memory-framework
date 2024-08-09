@@ -151,3 +151,10 @@ size_t os_get_page_size(void) {
 void os_strerror(int errnum, char *buf, size_t buflen) {
     strerror_s(buf, buflen, errnum);
 }
+
+// open a devdax
+int os_devdax_open(const char *path) {
+    (void)path; // unused
+
+    return -1;
+}

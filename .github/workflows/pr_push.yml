@@ -85,6 +85,9 @@ jobs:
     name: Basic builds
     needs: [FastBuild]
     uses: ./.github/workflows/basic.yml
+  DevDAX:
+    needs: [FastBuild]
+    uses: ./.github/workflows/devdax.yml
   Sanitizers:
     needs: [FastBuild]
     uses: ./.github/workflows/sanitizers.yml
