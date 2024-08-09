@@ -86,7 +86,7 @@ for test in $(ls -1 umf_test-*); do
 	case $test in
 	umf_test-ipc_os_prov_*)
 		echo "- SKIPPED"
-		continue; # skip it - this is a 2 processes test run using the ipc_os_prov_anon_fd.sh script
+		continue; # skip testing helper binaries used by the ipc_os_prov_* tests
 		;;
 	umf_test-memspace_host_all)
 		FILTER='--gtest_filter="-*allocsSpreadAcrossAllNumaNodes"'
