@@ -13,7 +13,7 @@
 #include "memspace_helpers.hpp"
 #include "memspace_internal.h"
 #include "memtarget_numa.h"
-#include "numa_helpers.h"
+#include "numa_helpers.hpp"
 #include "test_helpers.h"
 #include "utils_sanitizers.h"
 

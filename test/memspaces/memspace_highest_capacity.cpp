@@ -6,7 +6,7 @@
 #include "memspace_helpers.hpp"
 #include "memspace_internal.h"
 #include "memtarget_numa.h"
-#include "numa_helpers.h"
+#include "numa_helpers.hpp"
 #include "test_helpers.h"
 
 #include <numa.h>
@@ -60,7 +60,10 @@ TEST_F(memspaceHighestCapacityProviderTest, highestCapacityVerify) {
     memset(ptr, 0, alloc_size);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 
-    auto nodeId = getNumaNodeByPtr(ptr);
+    int nodeId;
+
+    ASSERT_NO_FATAL_FAILURE(getNumaNodeByPtr(ptr, &nodeId));
+
     ASSERT_TRUE(std::any_of(maxCapacityNodes.begin(), maxCapacityNodes.end(),
                             [nodeId](int node) { return nodeId == node; }));
 
