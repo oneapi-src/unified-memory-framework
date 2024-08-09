@@ -9,6 +9,7 @@
 [![Coverity report](https://scan.coverity.com/projects/29761/badge.svg?flat=0)](https://scan.coverity.com/projects/oneapi-src-unified-memory-framework)
 [![Trivy](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/trivy.yml/badge.svg)](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/trivy.yml)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/oneapi-src/unified-memory-framework/badge)](https://securityscorecards.dev/viewer/?uri=github.com/oneapi-src/unified-memory-framework)
+blabla
 
 ## Introduction
 
