@@ -44,11 +44,11 @@ jobs:
         cat > user-data << EOF
         #cloud-config
 
-        # Add a 'cxltest' user to the system with a password
+        # Add a 'testuser' user to the system with a password
         users:
           - default
-          - name: cxltest
-            gecos: CXL Test User
+          - name: testuser
+            gecos: Test User
             primary_group: wheel
             groups: users
             sudo: ALL=(ALL) NOPASSWD:ALL
@@ -61,13 +61,13 @@ jobs:
         chpasswd:
           list: |
             root:password
-            cxltest:password
+            testuser:password
           expire: False
         EOF
 
         cat > meta-data << EOF
-        instance-id: cxl-test
-        local-hostname: cxl-test
+        instance-id: qemu-test
+        local-hostname: qemu-test
         EOF
 
         sudo -Sk genisoimage -output ubuntu-cloud-init.iso -volid cidata -joliet -rock ./user-data ./meta-data
@@ -83,11 +83,11 @@ jobs:
         umf/scripts/qemu/start_qemu.sh default.xml
 
         # Copy UMF repository's content into the home dir in QEMU
-        rsync -az -e "ssh -p 2222" ${{github.workspace}}/umf/ cxltest@127.0.0.1:/home/cxltest/
-        ssh cxltest@127.0.0.1 -p 2222 -t "sudo chown -R cxltest:users /home/cxltest"
+        rsync -az -e "ssh -p 2222" ${{github.workspace}}/umf/ testuser@127.0.0.1:/home/testuser/
+        ssh testuser@127.0.0.1 -p 2222 -t "sudo chown -R testuser:users /home/testuser"
 
-        ssh cxltest@127.0.0.1 -p 2222 -t "bash /home/cxltest/scripts/qemu/run-build.sh"
-        ssh cxltest@127.0.0.1 -p 2222 -t "sudo shutdown -h now"
+        ssh testuser@127.0.0.1 -p 2222 -t "bash /home/testuser/scripts/qemu/run-build.sh"
+        ssh testuser@127.0.0.1 -p 2222 -t "sudo shutdown -h now"
 
     - name: Run tests in QEMU
       run: |
@@ -102,6 +102,6 @@ jobs:
           echo "\n ### Testing ${config_name} ###"
           umf/scripts/qemu/start_qemu.sh ${config_name}
 
-          ssh cxltest@127.0.0.1 -p 2222 -t "bash /home/cxltest/scripts/qemu/run-tests.sh"
-          ssh cxltest@127.0.0.1 -p 2222 -t "sudo shutdown -h now"
+          ssh testuser@127.0.0.1 -p 2222 -t "bash /home/testuser/scripts/qemu/run-tests.sh"
+          ssh testuser@127.0.0.1 -p 2222 -t "sudo shutdown -h now"
         done
