@@ -391,7 +391,13 @@ endif()
 
 # Tests of examples as standalone projects. TODO: enable this for Windows (maybe
 # replace test_examples.sh with CMake script?)
-if(LINUX
+#
+# XXX: This test is disabled as it is broken - it can silently install the
+# library without user consent, or it fails if there is no permission to do it.
+# https://github.com/oneapi-src/unified-memory-framework/issues/674
+#
+if(FALSE
+   AND LINUX
    AND UMF_BUILD_SHARED_LIBRARY
    AND NOT
        (UMF_USE_ASAN
