@@ -37,7 +37,7 @@ TEST_F(test, baseAllocMultiThreadedAllocMemset) {
 
         for (int i = 0; i < ITERATIONS; i++) {
             for (int k = 0; k < ALLOCATION_SIZE; k++) {
-                UT_ASSERTeq(*(ptrs[i].get() + k), ((i + TID) & 0xFF));
+                ASSERT_EQ(*(ptrs[i].get() + k), ((i + TID) & 0xFF));
             }
         }
     };

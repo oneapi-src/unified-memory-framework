@@ -31,5 +31,5 @@ TEST_F(test, proxyLibBasic) {
 #else
     size_t size = ::malloc_usable_size(ptr);
 #endif
-    UT_ASSERTeq(size, 0xDEADBEEF);
+    ASSERT_EQ(size, 0xDEADBEEF);
 }
