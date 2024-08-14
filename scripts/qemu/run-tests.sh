@@ -13,7 +13,7 @@ echo password | sudo bash -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
 
 numactl -H
 
-cd umf/build
+cd build
 ctest --verbose
 
 # run tests bound to a numa node
@@ -23,4 +23,3 @@ numactl -N 1 ctest --output-on-failure
 # run tests under valgrind
 echo "Running tests under valgrind memcheck ..."
 ../test/test_valgrind.sh .. . memcheck
-
