@@ -292,6 +292,22 @@ void free(void *ptr) {
     return;
 }
 
+// returns 1 if the pointer comes from UMF, 0 otherwise
+int proxy_lib_is_from_UMF(void *ptr) {
+    if (ba_leak_pool_contains_pointer(ptr)) {
+        return 1;
+    }
+
+    if (Proxy_pool) {
+        was_called_from_umfPool = 1;
+        void *pool = umfPoolByPtr(ptr);
+        was_called_from_umfPool = 0;
+        return pool ? 1 : 0;
+    }
+
+    return 0;
+}
+
 void *realloc(void *ptr, size_t size) {
     if (ptr == NULL) {
         return malloc(size);

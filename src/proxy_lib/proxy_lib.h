@@ -14,6 +14,7 @@ extern "C" {
 
 void proxy_lib_create_common(void);
 void proxy_lib_destroy_common(void);
+int proxy_lib_is_from_UMF(void *ptr);
 
 #ifdef __cplusplus
 }
