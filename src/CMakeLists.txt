@@ -128,7 +128,7 @@ else()
     message(STATUS "UMF_OPTIONAL_SYMBOLS: ${UMF_OPTIONAL_SYMBOLS_LINUX}")
 endif()
 
-# Configure the DEF file based on whether Level Zero provider is built
+# Configure map/def files with optional symbols
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libumf.def.in"
                "${CMAKE_CURRENT_BINARY_DIR}/libumf.def" @ONLY)
 
