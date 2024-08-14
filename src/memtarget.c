@@ -76,7 +76,7 @@ umf_result_t umfMemtargetClone(umf_memtarget_handle_t memoryTarget,
     return UMF_RESULT_SUCCESS;
 }
 
-umf_result_t umfMemtargetGetCapacity(umf_memtarget_handle_t memoryTarget,
+umf_result_t umfMemtargetGetCapacity(umf_const_memtarget_handle_t memoryTarget,
                                      size_t *capacity) {
     if (!memoryTarget || !capacity) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;

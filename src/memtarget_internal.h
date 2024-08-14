@@ -30,8 +30,7 @@ void umfMemtargetDestroy(umf_memtarget_handle_t memoryTarget);
 
 umf_result_t umfMemtargetClone(umf_memtarget_handle_t memoryTarget,
                                umf_memtarget_handle_t *outHandle);
-umf_result_t umfMemtargetGetCapacity(umf_memtarget_handle_t memoryTarget,
-                                     size_t *capacity);
+
 umf_result_t umfMemtargetGetBandwidth(umf_memtarget_handle_t srcMemoryTarget,
                                       umf_memtarget_handle_t dstMemoryTarget,
                                       size_t *bandwidth);
