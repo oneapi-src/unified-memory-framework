@@ -172,9 +172,9 @@ elseif(NOT UMF_DISABLE_HWLOC)
     add_custom_command(
         COMMAND
             ./configure --prefix=${hwloc_targ_BINARY_DIR} --enable-static=yes
-            --enable-shared=no --disable-libxml2 --disable-levelzero
-            --disable-opencl --disable-cuda --disable-nvml CFLAGS=-fPIC
-            CXXFLAGS=-fPIC
+            --enable-shared=no --disable-libxml2 --disable-pciaccess
+            --disable-levelzero --disable-opencl --disable-cuda --disable-nvml
+            CFLAGS=-fPIC CXXFLAGS=-fPIC
         WORKING_DIRECTORY ${hwloc_targ_SOURCE_DIR}
         OUTPUT ${hwloc_targ_SOURCE_DIR}/Makefile
         DEPENDS ${hwloc_targ_SOURCE_DIR}/configure)
