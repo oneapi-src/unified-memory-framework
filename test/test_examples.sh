@@ -5,7 +5,7 @@
 
 set -e
 
-WORKSPACE=$1
+SOURCE_DIR=$1
 BUILD_DIR=$2
 INSTALL_DIR=$3
 
@@ -13,7 +13,7 @@ echo "Running: $0 $*"
 
 function print_usage() {
 	echo "$(basename $0) - test all examples standalone"
-	echo "Usage: $(basename $0) <workspace_dir> <build_dir> <install_dir> <list-of-examples-to-run>"
+	echo "Usage: $(basename $0) <source_dir> <build_dir> <install_dir> <list-of-examples-to-run>"
 }
 
 if [ "$3" == "" ]; then
@@ -28,13 +28,13 @@ if [ "$4" == "" ]; then
 	exit 0
 fi
 
-if [ ! -f $WORKSPACE/README.md ]; then
-	echo -e "error: incorrect <workspace_dir>: $WORKSPACE\n"
+if [ ! -f $SOURCE_DIR/README.md ]; then
+	echo -e "error: incorrect <source_dir>: $SOURCE_DIR\n"
 	print_usage
 	exit 1
 fi
 
-WORKSPACE=$(realpath $WORKSPACE)
+SOURCE_DIR=$(realpath $SOURCE_DIR)
 BUILD_DIR=$(realpath $BUILD_DIR)
 INSTALL_DIR=$(realpath $INSTALL_DIR)
 
@@ -51,7 +51,7 @@ make -j$(nproc) install
 set +x
 
 for ex in $EXAMPLES; do
-	SRC_DIR="${WORKSPACE}/examples/$ex"
+	SRC_DIR="${SOURCE_DIR}/examples/$ex"
 	BLD_DIR="${BUILD_DIR}/examples-standalone/$ex"
 
 	if [ ! -d $SRC_DIR ]; then
