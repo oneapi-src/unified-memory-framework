@@ -168,8 +168,8 @@ if(UMF_BUILD_SHARED_LIBRARY)
     set_target_properties(
         umf
         PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_UMF_OUTPUT_DIRECTORY}
-                   VERSION ${CMAKE_PROJECT_VERSION}
-                   SOVERSION ${CMAKE_PROJECT_VERSION_MAJOR})
+                   VERSION ${PROJECT_VERSION}
+                   SOVERSION ${PROJECT_VERSION_MAJOR})
 else()
     add_umf_library(
         NAME umf

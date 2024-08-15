@@ -23,7 +23,7 @@ project(
     VERSION ${UMF_CMAKE_VERSION}
     LANGUAGES C)
 
-if(CMAKE_PROJECT_VERSION_PATCH GREATER 0)
+if(PROJECT_VERSION_PATCH GREATER 0)
     # set extra variable for Windows dll metadata
     set(UMF_VERSION_BUGFIX 1)
 endif()
