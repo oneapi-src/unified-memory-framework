@@ -108,8 +108,8 @@ TEST_P(memspaceGetTest, providerFromMemspace) {
     umf_memory_provider_handle_t hProvider = nullptr;
     umf_result_t ret =
         umfMemoryProviderCreateFromMemspace(hMemspace, nullptr, &hProvider);
-    UT_ASSERTeq(ret, UMF_RESULT_SUCCESS);
-    UT_ASSERTne(hProvider, nullptr);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(hProvider, nullptr);
 
     umfMemoryProviderDestroy(hProvider);
 }
@@ -120,15 +120,15 @@ TEST_P(memspaceProviderTest, allocFree) {
     size_t alignment = 0;
 
     umf_result_t ret = umfMemoryProviderAlloc(hProvider, size, alignment, &ptr);
-    UT_ASSERTeq(ret, UMF_RESULT_SUCCESS);
-    UT_ASSERTne(ptr, nullptr);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(ptr, nullptr);
 
     // Access the allocation, so that all the pages associated with it are
     // allocated on some NUMA node.
     memset(ptr, 0xFF, size);
 
     ret = umfMemoryProviderFree(hProvider, ptr, size);
-    UT_ASSERTeq(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 }
 
 static std::vector<int> getAllCpus() {
@@ -148,20 +148,20 @@ TEST_P(memspaceProviderTest, allocLocalMt) {
     auto pinAllocValidate = [&](umf_memory_provider_handle_t hProvider,
                                 int cpu) {
         hwloc_topology_t topology = NULL;
-        UT_ASSERTeq(hwloc_topology_init(&topology), 0);
-        UT_ASSERTeq(hwloc_topology_load(topology), 0);
+        ASSERT_EQ(hwloc_topology_init(&topology), 0);
+        ASSERT_EQ(hwloc_topology_load(topology), 0);
 
         // Pin current thread to the provided CPU.
         hwloc_cpuset_t pinCpuset = hwloc_bitmap_alloc();
-        UT_ASSERTeq(hwloc_bitmap_set(pinCpuset, cpu), 0);
-        UT_ASSERTeq(
-            hwloc_set_cpubind(topology, pinCpuset, HWLOC_CPUBIND_THREAD), 0);
+        ASSERT_EQ(hwloc_bitmap_set(pinCpuset, cpu), 0);
+        ASSERT_EQ(hwloc_set_cpubind(topology, pinCpuset, HWLOC_CPUBIND_THREAD),
+                  0);
 
         // Confirm that the thread is pinned to the provided CPU.
         hwloc_cpuset_t curCpuset = hwloc_bitmap_alloc();
-        UT_ASSERTeq(
-            hwloc_get_cpubind(topology, curCpuset, HWLOC_CPUBIND_THREAD), 0);
-        UT_ASSERT(hwloc_bitmap_isequal(curCpuset, pinCpuset));
+        ASSERT_EQ(hwloc_get_cpubind(topology, curCpuset, HWLOC_CPUBIND_THREAD),
+                  0);
+        ASSERT_TRUE(hwloc_bitmap_isequal(curCpuset, pinCpuset));
         hwloc_bitmap_free(curCpuset);
         hwloc_bitmap_free(pinCpuset);
 
@@ -172,8 +172,8 @@ TEST_P(memspaceProviderTest, allocLocalMt) {
 
         umf_result_t ret =
             umfMemoryProviderAlloc(hProvider, size, alignment, &ptr);
-        UT_ASSERTeq(ret, UMF_RESULT_SUCCESS);
-        UT_ASSERTne(ptr, nullptr);
+        ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+        ASSERT_NE(ptr, nullptr);
 
         // Access the allocation, so that all the pages associated with it are
         // allocated on some NUMA node.
@@ -194,20 +194,20 @@ TEST_P(memspaceProviderTest, allocLocalMt) {
         hwloc_location loc;
         loc.location.object = allocNodeObj,
         loc.type = hwloc_location_type_alias::HWLOC_LOCATION_TYPE_OBJECT;
-        UT_ASSERTeq(hwloc_get_local_numanode_objs(topology, &loc, &nNodes,
-                                                  localNodes.data(), 0),
-                    0);
-        UT_ASSERT(nNodes <= MAX_NODES);
+        ASSERT_EQ(hwloc_get_local_numanode_objs(topology, &loc, &nNodes,
+                                                localNodes.data(), 0),
+                  0);
+        ASSERT_LE(nNodes, MAX_NODES);
 
         // Confirm that the allocation from this thread was made to a local
         // NUMA node.
-        UT_ASSERT(std::any_of(localNodes.begin(), localNodes.end(),
-                              [&allocNodeObj](hwloc_obj_t node) {
-                                  return node == allocNodeObj;
-                              }));
+        ASSERT_TRUE(std::any_of(localNodes.begin(), localNodes.end(),
+                                [&allocNodeObj](hwloc_obj_t node) {
+                                    return node == allocNodeObj;
+                                }));
 
         ret = umfMemoryProviderFree(hProvider, ptr, size);
-        UT_ASSERTeq(ret, UMF_RESULT_SUCCESS);
+        ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 
         hwloc_topology_destroy(topology);
     };
