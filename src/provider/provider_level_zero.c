@@ -167,7 +167,7 @@ static umf_result_t ze_memory_provider_alloc(void *provider, size_t size,
             .pNext = NULL,
             .flags = 0};
         ze_device_mem_alloc_desc_t dev_desc = {
-            .stype = ZE_STRUCTURE_TYPE_HOST_MEM_ALLOC_DESC,
+            .stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC,
             .pNext = NULL,
             .flags = 0,
             .ordinal = 0 // TODO
