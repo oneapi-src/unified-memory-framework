@@ -129,6 +129,12 @@ elseif(WINDOWS AND NOT UMF_DISABLE_HWLOC)
     set(HWLOC_ENABLE_TESTING OFF)
     set(HWLOC_SKIP_LSTOPO ON)
     set(HWLOC_SKIP_TOOLS ON)
+    set(HWLOC_PATCH
+        git
+        apply
+        ${PROJECT_SOURCE_DIR}/cmake/fix_coverity_issues.patch
+        ||
+        true)
 
     message(STATUS "Will fetch hwloc from ${UMF_HWLOC_REPO}")
 
@@ -136,7 +142,8 @@ elseif(WINDOWS AND NOT UMF_DISABLE_HWLOC)
         hwloc_targ
         GIT_REPOSITORY ${UMF_HWLOC_REPO}
         GIT_TAG ${UMF_HWLOC_TAG}
-        SOURCE_SUBDIR contrib/windows-cmake/ FIND_PACKAGE_ARGS)
+        PATCH_COMMAND ${HWLOC_PATCH} SOURCE_SUBDIR contrib/windows-cmake/
+                      FIND_PACKAGE_ARGS)
 
     FetchContent_GetProperties(hwloc_targ)
     if(NOT hwloc_targ_POPULATED)
@@ -153,12 +160,20 @@ elseif(WINDOWS AND NOT UMF_DISABLE_HWLOC)
     message(STATUS "    LIBHWLOC_LIBRARY_DIRS = ${LIBHWLOC_LIBRARY_DIRS}")
 elseif(NOT UMF_DISABLE_HWLOC)
     include(FetchContent)
+    set(HWLOC_PATCH
+        git
+        apply
+        ${PROJECT_SOURCE_DIR}/cmake/fix_coverity_issues.patch
+        ||
+        true)
+
     message(STATUS "Will fetch hwloc from ${UMF_HWLOC_REPO}")
 
     FetchContent_Declare(
         hwloc_targ
         GIT_REPOSITORY ${UMF_HWLOC_REPO}
-        GIT_TAG ${UMF_HWLOC_TAG})
+        GIT_TAG ${UMF_HWLOC_TAG}
+        PATCH_COMMAND ${HWLOC_PATCH})
 
     FetchContent_GetProperties(hwloc_targ)
     if(NOT hwloc_targ_POPULATED)
