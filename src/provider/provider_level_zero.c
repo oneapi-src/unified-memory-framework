@@ -27,6 +27,9 @@ typedef struct ze_memory_provider_t {
     ze_context_handle_t context;
     ze_device_handle_t device;
     ze_memory_type_t memory_type;
+
+    ze_device_handle_t *resident_device_handles;
+    uint32_t resident_device_count;
 } ze_memory_provider_t;
 
 typedef struct ze_ops_t {
@@ -48,6 +51,9 @@ typedef struct ze_ops_t {
                                       ze_ipc_mem_handle_t,
                                       ze_ipc_memory_flags_t, void **);
     ze_result_t (*zeMemCloseIpcHandle)(ze_context_handle_t, void *);
+    ze_result_t (*zeContextMakeMemoryResident)(ze_context_handle_t,
+                                               ze_device_handle_t, void *,
+                                               size_t);
 } ze_ops_t;
 
 static ze_ops_t g_ze_ops;
@@ -78,11 +84,14 @@ static void init_ze_global_state(void) {
         util_get_symbol_addr(0, "zeMemOpenIpcHandle", lib_name);
     *(void **)&g_ze_ops.zeMemCloseIpcHandle =
         util_get_symbol_addr(0, "zeMemCloseIpcHandle", lib_name);
+    *(void **)&g_ze_ops.zeContextMakeMemoryResident =
+        util_get_symbol_addr(0, "zeContextMakeMemoryResident", lib_name);
 
     if (!g_ze_ops.zeMemAllocHost || !g_ze_ops.zeMemAllocDevice ||
         !g_ze_ops.zeMemAllocShared || !g_ze_ops.zeMemFree ||
         !g_ze_ops.zeMemGetIpcHandle || !g_ze_ops.zeMemOpenIpcHandle ||
-        !g_ze_ops.zeMemCloseIpcHandle) {
+        !g_ze_ops.zeMemCloseIpcHandle ||
+        !g_ze_ops.zeContextMakeMemoryResident) {
         // g_ze_ops.zeMemPutIpcHandle can be NULL because it was introduced
         // starting from Level Zero 1.6
         LOG_ERR("Required Level Zero symbols not found.");
@@ -179,6 +188,15 @@ static umf_result_t ze_memory_provider_alloc(void *provider, size_t size,
     }
     default:
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
+    }
+
+    for (uint32_t i = 0; i < ze_provider->resident_device_count; i++) {
+        ze_result = g_ze_ops.zeContextMakeMemoryResident(
+            ze_provider->context, ze_provider->resident_device_handles[i],
+            *resultPtr, size);
+        if (ze_result != ZE_RESULT_SUCCESS) {
+            break;
+        }
     }
 
     // TODO add error reporting
