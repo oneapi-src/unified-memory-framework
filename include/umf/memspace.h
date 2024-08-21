@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023 Intel Corporation
+ * Copyright (C) 2023-2024 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -85,6 +85,12 @@ umf_const_memspace_handle_t umfMemspaceHighestBandwidthGet(void);
 ///
 umf_const_memspace_handle_t umfMemspaceLowestLatencyGet(void);
 
+/// \brief Creates new empty memspace, which can be populated with umfMemspaceMemtargetAdd()
+/// \param hMemspace [out] handle to the newly created memspace
+/// \return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+///
+umf_result_t umfMemspaceNew(umf_memspace_handle_t *hMemspace);
+
 /// \brief Returns number of memory targets in memspace.
 /// \param hMemspace handle to memspace
 /// \return number of memory targets in memspace
@@ -99,6 +105,31 @@ size_t umfMemspaceMemtargetNum(umf_const_memspace_handle_t hMemspace);
 umf_const_memtarget_handle_t
 umfMemspaceMemtargetGet(umf_const_memspace_handle_t hMemspace,
                         unsigned targetNum);
+
+/// \brief Adds memory target to memspace.
+///
+/// \details
+/// This function duplicates the memory target and then adds it to the memspace.
+/// This means that original memtarget handle and the handle of the duplicated memtarget are different
+/// and you cannot use it interchangeably.
+/// You can use `umfMemspaceMemtargetGet()` to retrieve new handle.
+///
+/// \param hMemspace handle to memspace
+/// \param hMemtarget handle to memory target
+/// \return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+///
+umf_result_t umfMemspaceMemtargetAdd(umf_memspace_handle_t hMemspace,
+                                     umf_const_memtarget_handle_t hMemtarget);
+
+/// \brief Removes memory target from memspace.
+///
+/// \param hMemspace handle to memspace
+/// \param hMemtarget handle to memory target
+/// \return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+///
+umf_result_t
+umfMemspaceMemtargetRemove(umf_memspace_handle_t hMemspace,
+                           umf_const_memtarget_handle_t hMemtarget);
 
 #ifdef __cplusplus
 }

@@ -326,6 +326,20 @@ static umf_result_t numa_get_type(void *memTarget, umf_memtarget_type_t *type) {
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t numa_compare(void *memTarget, void *otherMemTarget,
+                                 int *result) {
+    if (!memTarget || !otherMemTarget || !result) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    struct numa_memtarget_t *numaTarget = (struct numa_memtarget_t *)memTarget;
+    struct numa_memtarget_t *otherNumaTarget =
+        (struct numa_memtarget_t *)otherMemTarget;
+
+    *result = numaTarget->physical_id != otherNumaTarget->physical_id;
+    return UMF_RESULT_SUCCESS;
+}
+
 struct umf_memtarget_ops_t UMF_MEMTARGET_NUMA_OPS = {
     .version = UMF_VERSION_CURRENT,
     .initialize = numa_initialize,
@@ -336,5 +350,6 @@ struct umf_memtarget_ops_t UMF_MEMTARGET_NUMA_OPS = {
     .get_bandwidth = numa_get_bandwidth,
     .get_latency = numa_get_latency,
     .get_type = numa_get_type,
+    .compare = numa_compare,
     .memory_provider_create_from_memspace =
         numa_memory_provider_create_from_memspace};

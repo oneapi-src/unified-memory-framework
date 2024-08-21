@@ -28,7 +28,7 @@ umf_result_t umfMemtargetCreate(const umf_memtarget_ops_t *ops, void *params,
                                 umf_memtarget_handle_t *memoryTarget);
 void umfMemtargetDestroy(umf_memtarget_handle_t memoryTarget);
 
-umf_result_t umfMemtargetClone(umf_memtarget_handle_t memoryTarget,
+umf_result_t umfMemtargetClone(umf_const_memtarget_handle_t memoryTarget,
                                umf_memtarget_handle_t *outHandle);
 
 umf_result_t umfMemtargetGetBandwidth(umf_memtarget_handle_t srcMemoryTarget,
@@ -38,6 +38,10 @@ umf_result_t umfMemtargetGetLatency(umf_memtarget_handle_t srcMemoryTarget,
                                     umf_memtarget_handle_t dstMemoryTarget,
                                     size_t *latency);
 
+/// return 0 if memtargets are equal, -1 if they are of different types,
+/// and 1 if they are different targets of the same type
+umf_result_t umfMemtargetCompare(umf_const_memtarget_handle_t a,
+                                 umf_const_memtarget_handle_t b, int *result);
 #ifdef __cplusplus
 }
 #endif
