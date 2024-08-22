@@ -24,7 +24,7 @@ TEST_F(test, baseAllocLinearAllocMoreThanPoolSize) {
 
     size_t new_size = 20 * 1024 * 1024; // = 20 MB
     void *ptr = umf_ba_linear_alloc(pool.get(), new_size);
-    UT_ASSERTne(ptr, NULL);
+    ASSERT_NE(ptr, nullptr);
     memset(ptr, 0, new_size);
 
     umf_ba_linear_free(pool.get(), ptr);
@@ -37,15 +37,14 @@ TEST_F(test, baseAllocLinearPoolContainsPointer) {
 
     size_t size = 16;
     void *ptr = umf_ba_linear_alloc(pool.get(), size);
-    UT_ASSERTne(ptr, NULL);
+    ASSERT_NE(ptr, nullptr);
     memset(ptr, 0, size);
-
     // assert pool contains pointer ptr
-    UT_ASSERTne(umf_ba_linear_pool_contains_pointer(pool.get(), ptr), 0);
+    ASSERT_NE(umf_ba_linear_pool_contains_pointer(pool.get(), ptr), 0);
 
     // assert pool does NOT contain pointer 0x0123
-    UT_ASSERTeq(umf_ba_linear_pool_contains_pointer(pool.get(), (void *)0x0123),
-                0);
+    ASSERT_EQ(umf_ba_linear_pool_contains_pointer(pool.get(), (void *)0x0123),
+              0);
 
     umf_ba_linear_free(pool.get(), ptr);
 }
@@ -78,14 +77,14 @@ TEST_F(test, baseAllocLinearMultiThreadedAllocMemset) {
                                            (rand() / (double)RAND_MAX));
             buffer[i].size = size;
             buffer[i].ptr = (unsigned char *)umf_ba_linear_alloc(pool, size);
-            UT_ASSERTne(buffer[i].ptr, NULL);
+            ASSERT_NE(buffer[i].ptr, nullptr);
             memset(buffer[i].ptr, (i + TID) & 0xFF, buffer[i].size);
         }
 
         for (int i = 0; i < ITERATIONS; i++) {
-            UT_ASSERTne(buffer[i].ptr, NULL);
+            ASSERT_NE(buffer[i].ptr, nullptr);
             for (size_t k = 0; k < buffer[i].size; k++) {
-                UT_ASSERTeq(*(buffer[i].ptr + k), (i + TID) & 0xFF);
+                ASSERT_EQ(*(buffer[i].ptr + k), (i + TID) & 0xFF);
             }
         }
 
