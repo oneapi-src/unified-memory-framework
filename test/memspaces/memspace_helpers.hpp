@@ -36,10 +36,10 @@ void getAllocationPolicy(void *ptr, unsigned long maxNodeId, int &mode,
     // Get policy and the nodes associated with this policy.
     int ret = get_mempolicy(&memMode, memNodeMasks.data(),
                             nrUlongs * bitsPerUlong, ptr, MPOL_F_ADDR);
-    UT_ASSERTeq(ret, 0);
+    ASSERT_EQ(ret, 0);
     mode = memMode;
 
-    UT_ASSERTeq(boundNodeIds.size(), 0);
+    ASSERT_EQ(boundNodeIds.size(), 0);
     for (size_t i = 0; i <= maxNodeId; i++) {
         const size_t memNodeMaskIdx = ((i + bitsPerUlong) / bitsPerUlong) - 1;
         const auto &memNodeMask = memNodeMasks.at(memNodeMaskIdx);
@@ -52,7 +52,7 @@ void getAllocationPolicy(void *ptr, unsigned long maxNodeId, int &mode,
     // Get the node that allocated the memory at 'ptr'.
     int nodeId = -1;
     ret = get_mempolicy(&nodeId, nullptr, 0, ptr, MPOL_F_ADDR | MPOL_F_NODE);
-    UT_ASSERTeq(ret, 0);
+    ASSERT_EQ(ret, 0);
     allocNodeId = static_cast<size_t>(nodeId);
 }
 
