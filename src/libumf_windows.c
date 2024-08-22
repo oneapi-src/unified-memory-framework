@@ -40,7 +40,6 @@ BOOL CALLBACK initOnceCb(PINIT_ONCE InitOnce, PVOID Parameter,
     (void)lpContext; // unused
 
     int ret = umfInit();
-    atexit(umfTearDown);
     return (ret == 0) ? TRUE : FALSE;
 }
 
