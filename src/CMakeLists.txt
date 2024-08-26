@@ -154,7 +154,7 @@ endif()
 
 if(UMF_BUILD_SHARED_LIBRARY)
     if(NOT UMF_DISABLE_HWLOC)
-        set(HWLOC_LIB hwloc)
+        set(HWLOC_LIB ${UMF_HWLOC_NAME})
     endif()
     add_umf_library(
         NAME umf
@@ -184,7 +184,7 @@ if(UMF_DISABLE_HWLOC)
 endif()
 
 if(UMF_LINK_HWLOC_STATICALLY)
-    add_dependencies(umf hwloc)
+    add_dependencies(umf ${UMF_HWLOC_NAME})
 endif()
 
 target_link_directories(umf PRIVATE ${UMF_PRIVATE_LIBRARY_DIRS})
