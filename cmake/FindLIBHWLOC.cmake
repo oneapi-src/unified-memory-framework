@@ -4,7 +4,7 @@
 
 message(STATUS "Checking for module 'libhwloc' using find_library()")
 
-find_library(LIBHWLOC_LIBRARY NAMES libhwloc hwloc)
+find_library(LIBHWLOC_LIBRARY NAMES ${UMF_HWLOC_NAME})
 set(LIBHWLOC_LIBRARIES ${LIBHWLOC_LIBRARY})
 
 get_filename_component(LIBHWLOC_LIB_DIR ${LIBHWLOC_LIBRARIES} DIRECTORY)
@@ -38,7 +38,8 @@ try_run(
     RUN_OUTPUT_VARIABLE LIBHWLOC_API_VERSION)
 
 if(WINDOWS)
-    find_file(LIBHWLOC_DLL NAMES "bin/hwloc-15.dll" "bin/libhwloc-15.dll")
+    find_file(LIBHWLOC_DLL NAMES "bin/${UMF_HWLOC_NAME}-15.dll"
+                                 "${UMF_HWLOC_NAME}-15.dll")
     get_filename_component(LIBHWLOC_DLL_DIR ${LIBHWLOC_DLL} DIRECTORY)
     set(LIBHWLOC_DLL_DIRS ${LIBHWLOC_DLL_DIR})
 endif()
