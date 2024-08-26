@@ -55,6 +55,10 @@ option(
 option(UMF_FORMAT_CODE_STYLE
        "Add clang, cmake, and black -format-check and -format-apply targets"
        OFF)
+set(UMF_HWLOC_NAME
+    "hwloc"
+    CACHE STRING "Custom name for hwloc library w/o extension")
+
 # Only a part of skips is treated as a failure now. TODO: extend to all tests
 option(UMF_TESTS_FAIL_ON_SKIP "Treat skips in tests as fail" OFF)
 option(UMF_USE_ASAN "Enable AddressSanitizer checks" OFF)
@@ -117,13 +121,11 @@ if(NOT UMF_LINK_HWLOC_STATICALLY)
 
         # add PATH to DLL on Windows
         set(DLL_PATH_LIST
-            "${DLL_PATH_LIST};PATH=path_list_append:${LIBHWLOC_DLL_DIRS}"
-        )
+            "${DLL_PATH_LIST};PATH=path_list_append:${LIBHWLOC_DLL_DIRS}")
     endif()
     # add PATH to DLL on Windows
     set(DLL_PATH_LIST
-        "${DLL_PATH_LIST};PATH=path_list_append:${LIBHWLOC_LIBRARY_DIRS}/../bin"
-    )
+        "${DLL_PATH_LIST};PATH=path_list_append:${LIBHWLOC_DLL_DIRS}")
 elseif(WINDOWS AND NOT UMF_DISABLE_HWLOC)
     include(FetchContent)
     set(HWLOC_ENABLE_TESTING OFF)
@@ -336,8 +338,7 @@ if(NOT TBB_FOUND)
 endif()
 if(TBB_FOUND OR TBB_LIBRARY_DIRS)
     # add PATH to DLL on Windows
-    set(DLL_PATH_LIST
-        "${DLL_PATH_LIST};PATH=path_list_append:${TBB_DLL_DIRS}")
+    set(DLL_PATH_LIST "${DLL_PATH_LIST};PATH=path_list_append:${TBB_DLL_DIRS}")
     set(UMF_POOL_SCALABLE_ENABLED TRUE)
 else()
     message(
@@ -354,8 +355,7 @@ if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
     endif()
     # add PATH to DLL on Windows
     set(DLL_PATH_LIST
-        "${DLL_PATH_LIST};PATH=path_list_append:${JEMALLOC_DLL_DIRS}"
-    )
+        "${DLL_PATH_LIST};PATH=path_list_append:${JEMALLOC_DLL_DIRS}")
 endif()
 
 # set UMF_PROXY_LIB_ENABLED
