@@ -70,18 +70,18 @@ jobs:
         vcpkgDirectory: ${{env.BUILD_DIR}}/vcpkg
         vcpkgJsonGlob: '**/vcpkg.json'
 
-    - name: Install dependencies
+    - name: Install dependencies (windows-latest)
       if: matrix.os == 'windows-latest'
       run: vcpkg install
       shell: pwsh # Specifies PowerShell as the shell for running the script.
 
-    - name: Install apt packages (ubuntu-latest)
+    - name: Install dependencies (ubuntu-latest)
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
         sudo apt-get install -y cmake libjemalloc-dev libhwloc-dev libnuma-dev libtbb-dev
 
-    - name: Install apt packages (ubuntu-20.04)
+    - name: Install dependencies (ubuntu-20.04)
       if: matrix.os == 'ubuntu-20.04'
       run: |
         sudo apt-get update
