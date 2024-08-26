@@ -28,7 +28,7 @@ else()
 endif()
 
 if(WINDOWS)
-    find_file(JEMALLOC_DLL NAMES "bin/jemalloc.dll")
+    find_file(JEMALLOC_DLL NAMES "bin/jemalloc.dll" "jemalloc.dll")
     get_filename_component(JEMALLOC_DLL_DIR ${JEMALLOC_DLL} DIRECTORY)
     set(JEMALLOC_DLL_DIRS ${JEMALLOC_DLL_DIR})
 endif()

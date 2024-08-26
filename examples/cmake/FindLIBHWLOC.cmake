@@ -38,7 +38,8 @@ try_run(
     RUN_OUTPUT_VARIABLE LIBHWLOC_API_VERSION)
 
 if(WINDOWS)
-    find_file(LIBHWLOC_DLL NAMES "bin/hwloc-15.dll" "bin/libhwloc-15.dll")
+    find_file(LIBHWLOC_DLL NAMES "bin/hwloc-15.dll" "bin/libhwloc-15.dll"
+                                 "hwloc-15.dll" "libhwloc-15.dll")
     get_filename_component(LIBHWLOC_DLL_DIR ${LIBHWLOC_DLL} DIRECTORY)
     set(LIBHWLOC_DLL_DIRS ${LIBHWLOC_DLL_DIR})
 endif()
