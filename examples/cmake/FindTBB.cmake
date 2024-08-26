@@ -26,7 +26,7 @@ else()
 endif()
 
 if(WINDOWS)
-    find_file(TBB_DLL NAMES "bin/tbbmalloc.dll")
+    find_file(TBB_DLL NAMES "bin/tbbmalloc.dll" "tbbmalloc.dll")
     get_filename_component(TBB_DLL_DIR ${TBB_DLL} DIRECTORY)
     set(TBB_DLL_DIRS ${TBB_DLL_DIR})
 endif()

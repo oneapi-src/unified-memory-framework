@@ -120,7 +120,7 @@ else()
 
         # add PATH to DLL on Windows
         set(DLL_PATH_LIST
-            "${DLL_PATH_LIST};PATH=path_list_append:${LIBHWLOC_LIBRARY_DIRS}/../bin"
+            "${DLL_PATH_LIST};PATH=path_list_append:${LIBHWLOC_DLL_DIRS}"
         )
     elseif(WINDOWS)
         include(FetchContent)
@@ -322,7 +322,7 @@ endif()
 if(TBB_FOUND OR TBB_LIBRARY_DIRS)
     # add PATH to DLL on Windows
     set(DLL_PATH_LIST
-        "${DLL_PATH_LIST};PATH=path_list_append:${TBB_LIBRARY_DIRS}/../bin")
+        "${DLL_PATH_LIST};PATH=path_list_append:${TBB_DLL_DIRS}")
     set(UMF_POOL_SCALABLE_ENABLED TRUE)
 else()
     message(
@@ -339,7 +339,7 @@ if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
     endif()
     # add PATH to DLL on Windows
     set(DLL_PATH_LIST
-        "${DLL_PATH_LIST};PATH=path_list_append:${JEMALLOC_LIBRARY_DIRS}/../bin"
+        "${DLL_PATH_LIST};PATH=path_list_append:${JEMALLOC_DLL_DIRS}"
     )
 endif()
 
