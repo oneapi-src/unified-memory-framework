@@ -4,12 +4,17 @@
 
 include(${UMF_CMAKE_SOURCE_DIR}/cmake/helpers.cmake)
 
+set(UMF_LEVEL_ZERO_INCLUDE_DIR
+    ""
+    CACHE FILEPATH "Directory containing the Level Zero Headers")
+
 # Compile definitions for UMF library.
 #
 # TODO: Cleanup the compile definitions across all the CMake files
 set(UMF_COMMON_COMPILE_DEFINITIONS UMF_VERSION=${UMF_VERSION})
 
-if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
+if(UMF_BUILD_LEVEL_ZERO_PROVIDER AND (UMF_BUILD_GPU_TESTS
+                                      OR (NOT UMF_LEVEL_ZERO_INCLUDE_DIR)))
     include(FetchContent)
 
     set(LEVEL_ZERO_LOADER_REPO "https://github.com/oneapi-src/level-zero.git")
@@ -34,6 +39,10 @@ if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
     set(LEVEL_ZERO_INCLUDE_DIRS
         ${level-zero-loader_SOURCE_DIR}/include
         CACHE PATH "Path to Level Zero Headers")
+    message(STATUS "Level Zero include directory: ${LEVEL_ZERO_INCLUDE_DIRS}")
+elseif(UMF_BUILD_LEVEL_ZERO_PROVIDER)
+    # Only header is needed to build UMF
+    set(LEVEL_ZERO_INCLUDE_DIRS ${UMF_LEVEL_ZERO_INCLUDE_DIR})
     message(STATUS "Level Zero include directory: ${LEVEL_ZERO_INCLUDE_DIRS}")
 endif()
 
