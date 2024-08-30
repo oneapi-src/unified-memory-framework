@@ -14,6 +14,8 @@
 
 namespace umf_test {
 
+#define IS_SKIPPED_OR_FAILED() (HasFatalFailure() || IsSkipped())
+
 #define NOEXCEPT_COND(cond, val, expected_val)                                                                   \
     try {                                                                                                        \
         cond(val, expected_val);                                                                                 \
