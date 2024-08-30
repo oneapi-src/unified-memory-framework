@@ -19,6 +19,89 @@
 using umf_test::test;
 using namespace umf_test;
 
+struct LevelZeroProviderInit
+    : public test,
+      public ::testing::WithParamInterface<umf_usm_memory_type_t> {};
+
+INSTANTIATE_TEST_SUITE_P(, LevelZeroProviderInit,
+                         ::testing::Values(UMF_MEMORY_TYPE_HOST,
+                                           UMF_MEMORY_TYPE_DEVICE,
+                                           UMF_MEMORY_TYPE_SHARED));
+
+TEST_P(LevelZeroProviderInit, FailNullContext) {
+    umf_memory_provider_ops_t *ops = umfLevelZeroMemoryProviderOps();
+    ASSERT_NE(ops, nullptr);
+
+    auto memory_type = GetParam();
+
+    level_zero_memory_provider_params_t params = {nullptr, nullptr, memory_type,
+                                                  nullptr, 0};
+
+    umf_memory_provider_handle_t provider = nullptr;
+    umf_result_t result = umfMemoryProviderCreate(ops, &params, &provider);
+    ASSERT_EQ(result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_P(LevelZeroProviderInit, FailNullDevice) {
+    if (GetParam() == UMF_MEMORY_TYPE_HOST) {
+        GTEST_SKIP() << "Host memory does not require device handle";
+    }
+
+    umf_memory_provider_ops_t *ops = umfLevelZeroMemoryProviderOps();
+    ASSERT_NE(ops, nullptr);
+
+    auto memory_type = GetParam();
+    auto params = create_level_zero_prov_params(memory_type);
+    params.level_zero_device_handle = nullptr;
+
+    umf_memory_provider_handle_t provider = nullptr;
+    umf_result_t result = umfMemoryProviderCreate(ops, &params, &provider);
+    ASSERT_EQ(result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, FailNonNullDevice) {
+    umf_memory_provider_ops_t *ops = umfLevelZeroMemoryProviderOps();
+    ASSERT_NE(ops, nullptr);
+
+    auto memory_type = UMF_MEMORY_TYPE_HOST;
+
+    // prepare params for device to get non-null device handle
+    auto params = create_level_zero_prov_params(UMF_MEMORY_TYPE_DEVICE);
+    params.memory_type = memory_type;
+
+    umf_memory_provider_handle_t provider = nullptr;
+    umf_result_t result = umfMemoryProviderCreate(ops, &params, &provider);
+    ASSERT_EQ(result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, FailMismatchedResidentHandlesCount) {
+    umf_memory_provider_ops_t *ops = umfLevelZeroMemoryProviderOps();
+    ASSERT_NE(ops, nullptr);
+
+    auto memory_type = UMF_MEMORY_TYPE_DEVICE;
+
+    auto params = create_level_zero_prov_params(memory_type);
+    params.resident_device_count = 99;
+
+    umf_memory_provider_handle_t provider = nullptr;
+    umf_result_t result = umfMemoryProviderCreate(ops, &params, &provider);
+    ASSERT_EQ(result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, FailMismatchedResidentHandlesPtr) {
+    umf_memory_provider_ops_t *ops = umfLevelZeroMemoryProviderOps();
+    ASSERT_NE(ops, nullptr);
+
+    auto memory_type = UMF_MEMORY_TYPE_DEVICE;
+
+    auto params = create_level_zero_prov_params(memory_type);
+    params.resident_device_handles = &params.level_zero_device_handle;
+
+    umf_memory_provider_handle_t provider = nullptr;
+    umf_result_t result = umfMemoryProviderCreate(ops, &params, &provider);
+    ASSERT_EQ(result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
 class LevelZeroMemoryAccessor : public MemoryAccessor {
   public:
     LevelZeroMemoryAccessor(ze_context_handle_t hContext,
@@ -61,7 +144,11 @@ struct umfLevelZeroProviderTest
         hDevice = (ze_device_handle_t)params.level_zero_device_handle;
         hContext = (ze_context_handle_t)params.level_zero_context_handle;
 
-        ASSERT_NE(hDevice, nullptr);
+        if (params.memory_type == UMF_MEMORY_TYPE_HOST) {
+            ASSERT_EQ(hDevice, nullptr);
+        } else {
+            ASSERT_NE(hDevice, nullptr);
+        }
         ASSERT_NE(hContext, nullptr);
 
         switch (params.memory_type) {

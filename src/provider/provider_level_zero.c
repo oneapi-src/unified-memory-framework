@@ -133,6 +133,20 @@ umf_result_t ze_memory_provider_initialize(void *params, void **provider) {
     level_zero_memory_provider_params_t *ze_params =
         (level_zero_memory_provider_params_t *)params;
 
+    if (!ze_params->level_zero_context_handle) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if ((ze_params->memory_type == UMF_MEMORY_TYPE_HOST) ==
+        (bool)ze_params->level_zero_device_handle) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if ((bool)ze_params->resident_device_count !=
+        (bool)ze_params->resident_device_handles) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     util_init_once(&ze_is_initialized, init_ze_global_state);
     if (Init_ze_global_state_failed) {
         LOG_ERR("Loading Level Zero symbols failed");
@@ -149,12 +163,17 @@ umf_result_t ze_memory_provider_initialize(void *params, void **provider) {
     ze_provider->device = ze_params->level_zero_device_handle;
     ze_provider->memory_type = (ze_memory_type_t)ze_params->memory_type;
 
-    umf_result_t ret = ze2umf_result(g_ze_ops.zeDeviceGetProperties(
-        ze_provider->device, &ze_provider->device_properties));
+    if (ze_provider->device) {
+        umf_result_t ret = ze2umf_result(g_ze_ops.zeDeviceGetProperties(
+            ze_provider->device, &ze_provider->device_properties));
 
-    if (ret != UMF_RESULT_SUCCESS) {
-        umf_ba_global_free(ze_provider);
-        return ret;
+        if (ret != UMF_RESULT_SUCCESS) {
+            umf_ba_global_free(ze_provider);
+            return ret;
+        }
+    } else {
+        memset(&ze_provider->device_properties, 0,
+               sizeof(ze_provider->device_properties));
     }
 
     *provider = ze_provider;
@@ -173,6 +192,18 @@ void ze_memory_provider_finalize(void *provider) {
     memcpy(&ze_is_initialized, &is_initialized, sizeof(ze_is_initialized));
 }
 
+static bool use_relaxed_allocation(ze_memory_provider_t *ze_provider,
+                                   size_t size) {
+    assert(ze_provider->device);
+    assert(ze_provider->device_properties.maxMemAllocSize > 0);
+    return size > ze_provider->device_properties.maxMemAllocSize;
+}
+
+static ze_relaxed_allocation_limits_exp_desc_t relaxed_device_allocation_desc =
+    {.stype = ZE_STRUCTURE_TYPE_RELAXED_ALLOCATION_LIMITS_EXP_DESC,
+     .pNext = NULL,
+     .flags = ZE_RELAXED_ALLOCATION_LIMITS_EXP_FLAG_MAX_SIZE};
+
 static umf_result_t ze_memory_provider_alloc(void *provider, size_t size,
                                              size_t alignment,
                                              void **resultPtr) {
@@ -180,16 +211,6 @@ static umf_result_t ze_memory_provider_alloc(void *provider, size_t size,
     assert(resultPtr);
 
     ze_memory_provider_t *ze_provider = (ze_memory_provider_t *)provider;
-
-    bool useRelaxedAllocationFlag =
-        size > ze_provider->device_properties.maxMemAllocSize;
-    ze_relaxed_allocation_limits_exp_desc_t relaxed_desc = {
-        .stype = ZE_STRUCTURE_TYPE_RELAXED_ALLOCATION_LIMITS_EXP_DESC,
-        .pNext = NULL,
-        .flags = 0};
-    if (useRelaxedAllocationFlag) {
-        relaxed_desc.flags = ZE_RELAXED_ALLOCATION_LIMITS_EXP_FLAG_MAX_SIZE;
-    }
 
     ze_result_t ze_result = ZE_RESULT_SUCCESS;
     switch (ze_provider->memory_type) {
@@ -204,8 +225,10 @@ static umf_result_t ze_memory_provider_alloc(void *provider, size_t size,
     }
     case UMF_MEMORY_TYPE_DEVICE: {
         ze_device_mem_alloc_desc_t dev_desc = {
-            .stype = ZE_STRUCTURE_TYPE_HOST_MEM_ALLOC_DESC,
-            .pNext = useRelaxedAllocationFlag ? &relaxed_desc : NULL,
+            .stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC,
+            .pNext = use_relaxed_allocation(ze_provider, size)
+                         ? &relaxed_device_allocation_desc
+                         : NULL,
             .flags = 0,
             .ordinal = 0 // TODO
         };
@@ -221,7 +244,9 @@ static umf_result_t ze_memory_provider_alloc(void *provider, size_t size,
             .flags = 0};
         ze_device_mem_alloc_desc_t dev_desc = {
             .stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC,
-            .pNext = useRelaxedAllocationFlag ? &relaxed_desc : NULL,
+            .pNext = use_relaxed_allocation(ze_provider, size)
+                         ? &relaxed_device_allocation_desc
+                         : NULL,
             .flags = 0,
             .ordinal = 0 // TODO
         };
