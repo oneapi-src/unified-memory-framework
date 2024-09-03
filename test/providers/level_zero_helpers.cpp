@@ -668,8 +668,8 @@ int init_level_zero() {
 
 level_zero_memory_provider_params_t
 create_level_zero_prov_params(umf_usm_memory_type_t memory_type) {
-    level_zero_memory_provider_params_t params = {NULL, NULL,
-                                                  UMF_MEMORY_TYPE_UNKNOWN};
+    level_zero_memory_provider_params_t params = {
+        NULL, NULL, UMF_MEMORY_TYPE_UNKNOWN, NULL, 0};
     uint32_t driver_idx = 0;
     ze_driver_handle_t hDriver;
     ze_device_handle_t hDevice;
@@ -701,7 +701,13 @@ create_level_zero_prov_params(umf_usm_memory_type_t memory_type) {
     }
 
     params.level_zero_context_handle = hContext;
-    params.level_zero_device_handle = hDevice;
+
+    if (memory_type == UMF_MEMORY_TYPE_HOST) {
+        params.level_zero_device_handle = NULL;
+    } else {
+        params.level_zero_device_handle = hDevice;
+    }
+
     params.memory_type = memory_type;
 
     return params;
