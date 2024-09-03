@@ -16,7 +16,6 @@
 
 #define INET_ADDR "127.0.0.1"
 #define MSG_SIZE 1024
-#define RECV_BUFF_SIZE 1024
 
 // consumer's response message
 #define CONSUMER_MSG                                                           \
@@ -111,7 +110,6 @@ int run_consumer(int port, umf_memory_provider_ops_t *provider_ops,
                  void *provider_params, memcopy_callback_t memcopy_callback,
                  void *memcopy_ctx) {
     char consumer_message[MSG_SIZE];
-    char recv_buffer[RECV_BUFF_SIZE];
     int producer_socket = -1;
     int ret = -1;
     umf_memory_provider_handle_t provider = NULL;
@@ -138,16 +136,20 @@ int run_consumer(int port, umf_memory_provider_ops_t *provider_ops,
         goto err_umfMemoryProviderDestroy;
     }
 
+    // allocate the zeroed receive buffer
+    char *recv_buffer = calloc(1, IPC_handle_size);
+    if (!recv_buffer) {
+        fprintf(stderr, "[consumer] ERROR: out of memory\n");
+        goto err_umfMemoryProviderDestroy;
+    }
+
     producer_socket = consumer_connect(port);
     if (producer_socket < 0) {
         goto err_umfMemoryProviderDestroy;
     }
 
-    // zero the receive buffer
-    memset(recv_buffer, 0, RECV_BUFF_SIZE);
-
     // receive a producer's message
-    ssize_t recv_len = recv(producer_socket, recv_buffer, RECV_BUFF_SIZE, 0);
+    ssize_t recv_len = recv(producer_socket, recv_buffer, IPC_handle_size, 0);
     if (recv_len < 0) {
         fprintf(stderr, "[consumer] ERROR: recv() failed\n");
         goto err_close_producer_socket;

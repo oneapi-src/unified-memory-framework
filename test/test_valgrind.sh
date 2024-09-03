@@ -88,6 +88,10 @@ for test in $(ls -1 umf_test-*); do
 		echo "- SKIPPED"
 		continue; # skip testing helper binaries used by the ipc_os_prov_* tests
 		;;
+	umf_test-ipc_devdax_prov_*)
+		echo "- SKIPPED"
+		continue; # skip testing helper binaries used by the ipc_devdax_prov_* tests
+		;;
 	umf_test-memspace_host_all)
 		FILTER='--gtest_filter="-*allocsSpreadAcrossAllNumaNodes"'
 		;;
