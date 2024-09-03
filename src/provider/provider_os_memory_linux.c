@@ -80,7 +80,8 @@ static int syscall_memfd_secret(void) {
     int fd = -1;
 #ifdef __NR_memfd_secret
     // SYS_memfd_secret is supported since Linux 5.14
-    fd = syscall(SYS_memfd_secret, 0);
+    // not using SYS_memfd_secret as SLES does not define it
+    fd = syscall(__NR_memfd_secret, 0);
     if (fd == -1) {
         LOG_PERR("memfd_secret() failed");
     }
@@ -95,7 +96,8 @@ static int syscall_memfd_create(void) {
     int fd = -1;
 #ifdef __NR_memfd_create
     // SYS_memfd_create is supported since Linux 3.17, glibc 2.27
-    fd = syscall(SYS_memfd_create, "anon_fd_name", 0);
+    // not using SYS_memfd_create for consistency with syscall_memfd_secret
+    fd = syscall(__NR_memfd_create, "anon_fd_name", 0);
     if (fd == -1) {
         LOG_PERR("memfd_create() failed");
     }
