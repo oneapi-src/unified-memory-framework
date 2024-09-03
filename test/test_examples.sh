@@ -5,40 +5,42 @@
 
 set -e
 
-WORKSPACE=$1
+SOURCE_DIR=$1
 BUILD_DIR=$2
 INSTALL_DIR=$3
+CMAKE_INSTALL_PREFIX=$4
 
 echo "Running: $0 $*"
 
 function print_usage() {
 	echo "$(basename $0) - test all examples standalone"
-	echo "Usage: $(basename $0) <workspace_dir> <build_dir> <install_dir> <list-of-examples-to-run>"
+	echo "Usage: $(basename $0) <source_dir> <build_dir> <install_dir> <CMAKE_INSTALL_PREFIX> <list-of-examples-to-run>"
 }
 
-if [ "$3" == "" ]; then
+if [ "$5" == "" ]; then
 	print_usage
 	echo -e "Error: too few arguments\n"
 	exit 1
 fi
 
-if [ "$4" == "" ]; then
-	print_usage
-	echo "No examples to run!"
-	exit 0
-fi
-
-if [ ! -f $WORKSPACE/README.md ]; then
-	echo -e "error: incorrect <workspace_dir>: $WORKSPACE\n"
+if [ ! -f $SOURCE_DIR/README.md ]; then
+	echo -e "error: incorrect <source_dir>: $SOURCE_DIR\n"
 	print_usage
 	exit 1
 fi
 
-WORKSPACE=$(realpath $WORKSPACE)
+mkdir -p ${INSTALL_DIR}/${CMAKE_INSTALL_PREFIX}
+
+SOURCE_DIR=$(realpath $SOURCE_DIR)
 BUILD_DIR=$(realpath $BUILD_DIR)
 INSTALL_DIR=$(realpath $INSTALL_DIR)
 
-shift 3
+echo "SOURCE_DIR=$SOURCE_DIR"
+echo "BUILD_DIR=$BUILD_DIR"
+echo "CMAKE_INSTALL_PREFIX=$CMAKE_INSTALL_PREFIX"
+echo "INSTALL_DIR=$INSTALL_DIR"
+
+shift 4
 EXAMPLES="$*"
 echo "Examples to run: $EXAMPLES"
 echo
@@ -46,12 +48,13 @@ echo
 cd ${BUILD_DIR}
 echo "DIR=$(pwd)"
 
+echo "Installing UMF into the directory: ${INSTALL_DIR}/${CMAKE_INSTALL_PREFIX}"
 set -x
-make -j$(nproc) install
+make DESTDIR=$INSTALL_DIR -j$(nproc) install
 set +x
 
 for ex in $EXAMPLES; do
-	SRC_DIR="${WORKSPACE}/examples/$ex"
+	SRC_DIR="${SOURCE_DIR}/examples/$ex"
 	BLD_DIR="${BUILD_DIR}/examples-standalone/$ex"
 
 	if [ ! -d $SRC_DIR ]; then
@@ -67,7 +70,7 @@ for ex in $EXAMPLES; do
 	rm -rf $BLD_DIR
 	mkdir -p $BLD_DIR
 	cd $BLD_DIR
-	CMAKE_PREFIX_PATH="$INSTALL_DIR" cmake $SRC_DIR
+	CMAKE_PREFIX_PATH="${INSTALL_DIR}/${CMAKE_INSTALL_PREFIX}" cmake $SRC_DIR
 	make -j$(nproc)
 	ctest --output-on-failure
 	set +x

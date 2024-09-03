@@ -440,13 +440,14 @@ if(LINUX
         )
     endif()
 
-    if(NOT UMF_DISABLE_HWLOC)
+    if(EXAMPLES AND NOT UMF_DISABLE_HWLOC)
         add_test(
             NAME umf_standalone_examples
             COMMAND
                 ${UMF_CMAKE_SOURCE_DIR}/test/test_examples.sh
                 ${UMF_CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
-                ${CMAKE_INSTALL_PREFIX} ${EXAMPLES}
+                ${CMAKE_CURRENT_BINARY_DIR}/umf_standalone_examples/install-dir
+                "${CMAKE_INSTALL_PREFIX}" ${EXAMPLES}
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
     endif()
 endif()
