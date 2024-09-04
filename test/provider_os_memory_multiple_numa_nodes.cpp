@@ -373,7 +373,7 @@ TEST_F(testNuma, checkModeInterleave) {
 
     // Test where each page will be allocated.
     // Get the first numa node for ptr; Each next page is expected to be on next nodes.
-    int index = 0;
+    int index = -1;
     ASSERT_NO_FATAL_FAILURE(getNumaNodeByPtr(ptr, &index));
     for (size_t i = 1; i < (size_t)pages_num; i++) {
         index = (index + 1) % numa_nodes.size();
@@ -417,7 +417,7 @@ TEST_F(testNuma, checkModeInterleaveCustomPartSize) {
     memset(ptr, 0xFF, size);
     // Test where each page will be allocated.
     // Get the first numa node for ptr; Each next part is expected to be on next nodes.
-    int index = 0;
+    int index = -1;
     ASSERT_NO_FATAL_FAILURE(getNumaNodeByPtr(ptr, &index));
     for (size_t i = 0; i < (size_t)part_num; i++) {
         for (size_t j = 0; j < part_size; j += page_size) {
@@ -636,7 +636,7 @@ TEST_F(testNuma, checkModeBindOnAllNodes) {
     // 'ptr' must point to an initialized value before retrieving its numa node
     memset(ptr, 0xFF, alloc_size);
 
-    int node;
+    int node = -1;
     ASSERT_NO_FATAL_FAILURE(getNumaNodeByPtr(ptr, &node));
     unsigned retrieved_numa_node_number = (unsigned)node;
 
