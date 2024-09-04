@@ -44,7 +44,7 @@ jobs:
           -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
           -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
           -DUMF_BUILD_SHARED_LIBRARY=ON
-          -DUMF_BUILD_BENCHMARKS=ON
+          -DUMF_BUILD_BENCHMARKS=OFF
           -DUMF_BUILD_TESTS=ON
           -DUMF_FORMAT_CODE_STYLE=OFF
           -DUMF_DEVELOPER_MODE=OFF
