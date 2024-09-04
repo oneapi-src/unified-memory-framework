@@ -28,7 +28,7 @@ set(LEVEL_ZERO_LOADER_TAG v1.16.1)
 
 message(
     STATUS
-        "Installing level-zero ${LEVEL_ZERO_LOADER_TAG} from ${LEVEL_ZERO_LOADER_REPO} ..."
+        "Fetching L0 loader (${LEVEL_ZERO_LOADER_TAG}) from ${LEVEL_ZERO_LOADER_REPO} ..."
 )
 
 FetchContent_Declare(

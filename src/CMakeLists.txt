@@ -6,13 +6,15 @@ include(${UMF_CMAKE_SOURCE_DIR}/cmake/helpers.cmake)
 
 set(UMF_LEVEL_ZERO_INCLUDE_DIR
     ""
-    CACHE FILEPATH "Directory containing the Level Zero Headers")
+    CACHE PATH "Directory containing the Level Zero Headers")
 
 # Compile definitions for UMF library.
 #
 # TODO: Cleanup the compile definitions across all the CMake files
 set(UMF_COMMON_COMPILE_DEFINITIONS UMF_VERSION=${UMF_VERSION})
 
+# Only fetch L0 loader if needed (L0 provider and GPU tests are ON), and not
+# already provided by the user (via setting UMF_LEVEL_ZERO_INCLUDE_DIR).
 if(UMF_BUILD_LEVEL_ZERO_PROVIDER AND (UMF_BUILD_GPU_TESTS
                                       OR (NOT UMF_LEVEL_ZERO_INCLUDE_DIR)))
     include(FetchContent)
@@ -22,7 +24,7 @@ if(UMF_BUILD_LEVEL_ZERO_PROVIDER AND (UMF_BUILD_GPU_TESTS
 
     message(
         STATUS
-            "Installing level-zero ${LEVEL_ZERO_LOADER_TAG} from ${LEVEL_ZERO_LOADER_REPO} ..."
+            "Fetching L0 loader (${LEVEL_ZERO_LOADER_TAG}) from ${LEVEL_ZERO_LOADER_REPO} ..."
     )
 
     FetchContent_Declare(
