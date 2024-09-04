@@ -24,7 +24,7 @@ endif()
 include(FetchContent)
 
 set(LEVEL_ZERO_LOADER_REPO "https://github.com/oneapi-src/level-zero.git")
-set(LEVEL_ZERO_LOADER_TAG v1.16.1)
+set(LEVEL_ZERO_LOADER_TAG v1.17.39)
 
 message(
     STATUS
