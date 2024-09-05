@@ -158,12 +158,14 @@ jobs:
         -DUMF_LINK_HWLOC_STATICALLY=${{matrix.link_hwloc_statically}}
 
     - name: Build UMF
-      run: cmake --build ${{env.BUILD_DIR}} -j $(nproc)
+      run: |
+        ${{ matrix.compiler.cxx == 'icpx' && '. /opt/intel/oneapi/setvars.sh' || true }}
+        cmake --build ${{env.BUILD_DIR}} -j $(nproc)
 
     - name: Run tests
       working-directory: ${{env.BUILD_DIR}}
-      run: >
-        ${{ matrix.compiler.cxx == 'icpx' && '. /opt/intel/oneapi/setvars.sh &&' || ''}} 
+      run: |
+        ${{ matrix.compiler.cxx == 'icpx' && '. /opt/intel/oneapi/setvars.sh' || true }}
         ctest --output-on-failure --test-dir test
 
     - name: Remove the installation directory
