@@ -17,7 +17,7 @@ function print_usage() {
 	echo "Usage: $(basename $0) <source_dir> <build_dir> <install_dir> <CMAKE_INSTALL_PREFIX> <list-of-examples-to-run>"
 }
 
-if [ "$5" == "" ]; then
+if [ "$5" = "" ]; then
 	print_usage
 	echo -e "Error: too few arguments\n"
 	exit 1

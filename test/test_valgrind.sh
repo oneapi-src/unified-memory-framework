@@ -20,7 +20,7 @@ if ! valgrind --version > /dev/null; then
 	exit 1
 fi
 
-if [ "$3" == "" ]; then
+if [ "$3" = "" ]; then
 	echo -e "error: too few arguments\n"
 	print_usage
 	exit 1
