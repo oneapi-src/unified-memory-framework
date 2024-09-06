@@ -136,7 +136,7 @@ elseif(WINDOWS AND NOT UMF_DISABLE_HWLOC)
         apply
         ${PROJECT_SOURCE_DIR}/cmake/fix_coverity_issues.patch
         ||
-        true)
+        (exit 0))
 
     message(STATUS "Will fetch hwloc from ${UMF_HWLOC_REPO}")
 
@@ -167,7 +167,7 @@ elseif(NOT UMF_DISABLE_HWLOC)
         apply
         ${PROJECT_SOURCE_DIR}/cmake/fix_coverity_issues.patch
         ||
-        true)
+        (exit 0))
 
     message(STATUS "Will fetch hwloc from ${UMF_HWLOC_REPO}")
 
