@@ -84,6 +84,7 @@ set(UMF_SOURCES
     memspace.c
     provider/provider_tracking.c
     critnib/critnib.c
+    ravl/ravl.c
     pool/pool_proxy.c
     pool/pool_scalable.c)
 
