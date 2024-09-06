@@ -5,6 +5,7 @@
 #ifndef UMF_TEST_MEMSPACE_FIXTURES_HPP
 #define UMF_TEST_MEMSPACE_FIXTURES_HPP
 
+#include <algorithm>
 #include <numa.h>
 #include <numaif.h>
 #include <thread>
