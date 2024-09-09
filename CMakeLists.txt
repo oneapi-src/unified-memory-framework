@@ -135,7 +135,7 @@ else()
             apply
             ${PROJECT_SOURCE_DIR}/cmake/fix_coverity_issues.patch
             ||
-            true)
+            (exit 0))
 
         message(
             STATUS
@@ -165,7 +165,7 @@ else()
             apply
             ${PROJECT_SOURCE_DIR}/cmake/fix_coverity_issues.patch
             ||
-            true)
+            (exit 0))
 
         message(
             STATUS
