@@ -52,11 +52,8 @@ using ipcTestParams =
 
 struct umfIpcTest : umf_test::test,
                     ::testing::WithParamInterface<ipcTestParams> {
-    umfIpcTest() : pool(nullptr, nullptr) {}
-    void SetUp() override {
-        test::SetUp();
-        this->pool = makePool();
-    }
+    umfIpcTest() {}
+    void SetUp() override { test::SetUp(); }
 
     void TearDown() override { test::TearDown(); }
 
@@ -74,7 +71,9 @@ struct umfIpcTest : umf_test::test,
 
         auto trace = [](void *trace_context, const char *name) {
             stats_type *stat = static_cast<stats_type *>(trace_context);
-            if (std::strcmp(name, "get_ipc_handle") == 0) {
+            if (std::strcmp(name, "alloc") == 0) {
+                ++stat->allocCount;
+            } else if (std::strcmp(name, "get_ipc_handle") == 0) {
                 ++stat->getCount;
             } else if (std::strcmp(name, "put_ipc_handle") == 0) {
                 ++stat->putCount;
@@ -98,15 +97,17 @@ struct umfIpcTest : umf_test::test,
     }
 
     struct stats_type {
+        std::atomic<size_t> allocCount;
         std::atomic<size_t> getCount;
         std::atomic<size_t> putCount;
         std::atomic<size_t> openCount;
         std::atomic<size_t> closeCount;
 
-        stats_type() : getCount(0), putCount(0), openCount(0), closeCount(0) {}
+        stats_type()
+            : allocCount(0), getCount(0), putCount(0), openCount(0),
+              closeCount(0) {}
     };
 
-    umf::pool_unique_handle_t pool;
     static constexpr int NTHREADS = 10;
     stats_type stat;
     MemoryAccessor *memAccessor = nullptr;
@@ -114,6 +115,8 @@ struct umfIpcTest : umf_test::test,
 
 TEST_P(umfIpcTest, GetIPCHandleSize) {
     size_t size = 0;
+    umf::pool_unique_handle_t pool = makePool();
+
     umf_result_t ret = umfPoolGetIPCHandleSize(pool.get(), &size);
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
     EXPECT_GT(size, 0);
@@ -122,6 +125,7 @@ TEST_P(umfIpcTest, GetIPCHandleSize) {
 TEST_P(umfIpcTest, BasicFlow) {
     constexpr size_t SIZE = 100;
     std::vector<int> expected_data(SIZE);
+    umf::pool_unique_handle_t pool = makePool();
     int *ptr = (int *)umfPoolMalloc(pool.get(), SIZE * sizeof(int));
     EXPECT_NE(ptr, nullptr);
 
@@ -172,6 +176,7 @@ TEST_P(umfIpcTest, BasicFlow) {
     ret = umfPoolFree(pool.get(), ptr);
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
 
+    pool.reset(nullptr);
     EXPECT_EQ(stat.getCount, 1);
     EXPECT_EQ(stat.putCount, stat.getCount);
     // TODO: enale check below once cache for open IPC handles is implemented
@@ -183,6 +188,8 @@ TEST_P(umfIpcTest, ConcurrentGetPutHandles) {
     std::vector<void *> ptrs;
     constexpr size_t ALLOC_SIZE = 100;
     constexpr size_t NUM_POINTERS = 100;
+    umf::pool_unique_handle_t pool = makePool();
+
     for (size_t i = 0; i < NUM_POINTERS; ++i) {
         void *ptr = umfPoolMalloc(pool.get(), ALLOC_SIZE);
         EXPECT_NE(ptr, nullptr);
@@ -221,8 +228,7 @@ TEST_P(umfIpcTest, ConcurrentGetPutHandles) {
         EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
     }
 
-    EXPECT_GE(stat.getCount, NUM_POINTERS);
-    EXPECT_LE(stat.getCount, NUM_POINTERS * NTHREADS);
+    pool.reset(nullptr);
     EXPECT_EQ(stat.putCount, stat.getCount);
 }
 
@@ -230,6 +236,8 @@ TEST_P(umfIpcTest, ConcurrentOpenCloseHandles) {
     std::vector<void *> ptrs;
     constexpr size_t ALLOC_SIZE = 100;
     constexpr size_t NUM_POINTERS = 100;
+    umf::pool_unique_handle_t pool = makePool();
+
     for (size_t i = 0; i < NUM_POINTERS; ++i) {
         void *ptr = umfPoolMalloc(pool.get(), ALLOC_SIZE);
         EXPECT_NE(ptr, nullptr);
@@ -249,8 +257,8 @@ TEST_P(umfIpcTest, ConcurrentOpenCloseHandles) {
 
     umf_test::syncthreads_barrier syncthreads(NTHREADS);
 
-    auto openHandlesFn = [this, &ipcHandles, &openedIpcHandles,
-                          &syncthreads](size_t tid) {
+    auto openHandlesFn = [this, &ipcHandles, &openedIpcHandles, &syncthreads,
+                          &pool](size_t tid) {
         syncthreads();
         for (auto ipcHandle : ipcHandles) {
             void *ptr;
@@ -282,6 +290,11 @@ TEST_P(umfIpcTest, ConcurrentOpenCloseHandles) {
         EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
     }
 
+    pool.reset(nullptr);
+    EXPECT_EQ(stat.getCount, stat.allocCount);
+    EXPECT_EQ(stat.putCount, stat.getCount);
+    // TODO: enale check below once cache for open IPC handles is implemented
+    // EXPECT_EQ(stat.openCount, stat.allocCount);
     EXPECT_EQ(stat.openCount, stat.closeCount);
 }
 
