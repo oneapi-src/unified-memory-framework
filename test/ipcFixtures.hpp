@@ -122,6 +122,31 @@ TEST_P(umfIpcTest, GetIPCHandleSize) {
     EXPECT_GT(size, 0);
 }
 
+TEST_P(umfIpcTest, GetIPCHandleInvalidArgs) {
+    constexpr size_t SIZE = 100;
+    umf_ipc_handle_t ipcHandle = nullptr;
+    size_t handleSize = 0;
+    umf_result_t ret = umfGetIPCHandle(nullptr, &ipcHandle, &handleSize);
+    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    void *ptr = (void *)0xBAD;
+    ret = umfGetIPCHandle(ptr, &ipcHandle, &handleSize);
+    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    umf::pool_unique_handle_t pool = makePool();
+    ptr = umfPoolMalloc(pool.get(), SIZE);
+    EXPECT_NE(ptr, nullptr);
+
+    ret = umfGetIPCHandle(ptr, nullptr, &handleSize);
+    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    ret = umfGetIPCHandle(ptr, &ipcHandle, nullptr);
+    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    ret = umfFree(ptr);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+}
+
 TEST_P(umfIpcTest, BasicFlow) {
     constexpr size_t SIZE = 100;
     std::vector<int> expected_data(SIZE);
