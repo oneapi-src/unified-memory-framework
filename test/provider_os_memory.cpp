@@ -43,17 +43,18 @@ static int compare_native_error_str(const char *message, int error) {
 
 using providerCreateExtParams = std::tuple<umf_memory_provider_ops_t *, void *>;
 
-umf::provider_unique_handle_t
-providerCreateExt(providerCreateExtParams params) {
+static void providerCreateExt(providerCreateExtParams params,
+                              umf::provider_unique_handle_t *handle) {
     umf_memory_provider_handle_t hProvider = nullptr;
     auto [provider_ops, provider_params] = params;
 
     auto ret =
         umfMemoryProviderCreate(provider_ops, provider_params, &hProvider);
-    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
-    EXPECT_NE(hProvider, nullptr);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(hProvider, nullptr);
 
-    return umf::provider_unique_handle_t(hProvider, &umfMemoryProviderDestroy);
+    *handle =
+        umf::provider_unique_handle_t(hProvider, &umfMemoryProviderDestroy);
 }
 
 struct umfProviderTest
@@ -61,10 +62,10 @@ struct umfProviderTest
       ::testing::WithParamInterface<providerCreateExtParams> {
     void SetUp() override {
         test::SetUp();
-        provider = providerCreateExt(this->GetParam());
+        providerCreateExt(this->GetParam(), &provider);
         umf_result_t umf_result =
             umfMemoryProviderGetMinPageSize(provider.get(), NULL, &page_size);
-        EXPECT_EQ(umf_result, UMF_RESULT_SUCCESS);
+        ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
         page_plus_64 = page_size + 64;
     }
