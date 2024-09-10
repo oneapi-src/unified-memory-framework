@@ -38,6 +38,7 @@
 #endif
 
 #include <assert.h>
+#include <limits.h>
 #include <stdio.h>
 
 #include <umf/memory_pool.h>
@@ -113,7 +114,6 @@ void proxy_lib_create_common(void) {
     umf_result_t umf_result;
 
 #ifndef _WIN32
-#define NAME_MAX 255
     char shm_name[NAME_MAX];
 
     if (util_env_var_has_str("UMF_PROXY", "page.disposition=shared-fd")) {
@@ -136,7 +136,6 @@ void proxy_lib_create_common(void) {
                   "named shared memory: %s",
                   os_params.shm_name);
     }
-#undef NAME_MAX
 #endif
 
     umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(), &os_params,
