@@ -253,7 +253,10 @@ static int ravl_node_rank(struct ravl_node *n) {
  */
 static int ravl_node_rank_difference_parent(struct ravl_node *p,
                                             struct ravl_node *n) {
-    return ravl_node_rank(p) - ravl_node_rank(n);
+    int rv = ravl_node_rank(p) - ravl_node_rank(n);
+    // assert to check integer overflow
+    assert(rv < ravl_node_rank(p));
+    return rv;
 }
 
 /*
@@ -330,6 +333,7 @@ static void ravl_balance(struct ravl *ravl, struct ravl_node *n) {
         ravl_rotate(ravl, z);
         ravl_node_promote(z);
         ravl_node_demote(n);
+        assert(y != NULL);
         ravl_node_demote(y);
     }
 }
