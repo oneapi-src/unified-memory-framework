@@ -164,9 +164,6 @@ void *umf_ba_global_aligned_alloc(size_t size, size_t alignment) {
 
     int ac_index = size_to_idx(size);
     if (ac_index >= NUM_ALLOCATION_CLASSES) {
-        LOG_WARN("base_alloc: allocation size (%zu) larger than the biggest "
-                 "allocation class. Falling back to OS memory allocation.",
-                 size);
         return add_metadata_and_align(ba_os_alloc(size), size, alignment);
     }
 
