@@ -8,6 +8,13 @@
 #ifndef UMF_OS_MEMORY_PROVIDER_INTERNAL_H
 #define UMF_OS_MEMORY_PROVIDER_INTERNAL_H
 
+#include <limits.h>
+
+#if defined(_WIN32) && !defined(NAME_MAX)
+#include <stdlib.h>
+#define NAME_MAX _MAX_FNAME
+#endif /* defined(_WIN32) && !defined(NAME_MAX) */
+
 #include <umf/providers/provider_os_memory.h>
 
 #include "critnib.h"
@@ -23,8 +30,6 @@ typedef enum umf_purge_advise_t {
     UMF_PURGE_LAZY,
     UMF_PURGE_FORCE,
 } umf_purge_advise_t;
-
-#define NAME_MAX 255
 
 typedef struct os_memory_provider_t {
     unsigned protection; // combination of OS-specific protection flags
