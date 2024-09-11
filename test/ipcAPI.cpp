@@ -25,8 +25,8 @@ struct provider_mock_ipc : public umf_test::provider_base_t {
     };
 
     umf_test::provider_malloc helper_prov;
-    allocations_mutex_type alloc_mutex;
-    allocations_map_type allocations;
+    static allocations_mutex_type alloc_mutex;
+    static allocations_map_type allocations;
 
     umf_result_t alloc(size_t size, size_t align, void **ptr) noexcept {
         auto ret = helper_prov.alloc(size, align, ptr);
@@ -104,6 +104,9 @@ struct provider_mock_ipc : public umf_test::provider_base_t {
         return UMF_RESULT_SUCCESS;
     }
 };
+
+provider_mock_ipc::allocations_mutex_type provider_mock_ipc::alloc_mutex;
+provider_mock_ipc::allocations_map_type provider_mock_ipc::allocations;
 
 static umf_memory_provider_ops_t IPC_MOCK_PROVIDER_OPS =
     umf::providerMakeCOps<provider_mock_ipc, void>();
