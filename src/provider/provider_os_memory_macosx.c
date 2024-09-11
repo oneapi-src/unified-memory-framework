@@ -59,3 +59,11 @@ int os_set_file_size(int fd, size_t size) {
     (void)size; // unused
     return 0;   // ignored on MacOSX
 }
+
+void *os_devdax_mmap(void *hint_addr, size_t length, int prot, int fd) {
+    (void)hint_addr; // unused
+    (void)length;    // unused
+    (void)prot;      // unused
+    (void)fd;        // unused
+    return NULL;     // not supported on Windows
+}

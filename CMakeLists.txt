@@ -419,6 +419,9 @@ endif()
 
 if(NOT UMF_DISABLE_HWLOC)
     add_optional_symbol(umfOsMemoryProviderOps)
+    if(LINUX)
+        add_optional_symbol(umfDevDaxMemoryProviderOps)
+    endif()
 endif()
 
 add_subdirectory(src)

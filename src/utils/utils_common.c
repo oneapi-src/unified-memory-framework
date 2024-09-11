@@ -75,3 +75,19 @@ const char *util_parse_var(const char *var, const char *option,
 
     return found;
 }
+
+int util_copy_path(const char *in_path, char out_path[], size_t path_max) {
+    // (- 1) because there should be a room for the terminating null byte ('\0')
+    size_t max_len = path_max - 1;
+
+    if (strlen(in_path) > max_len) {
+        LOG_ERR("path of the %s file is longer than %zu bytes", in_path,
+                max_len);
+        return -1;
+    }
+
+    strncpy(out_path, in_path, max_len);
+    out_path[path_max - 1] = '\0'; // the terminating null byte
+
+    return 0;
+}

@@ -172,6 +172,22 @@ Additionally, required for tests:
 5) Required packages:
    - liblevel-zero-dev (Linux) or level-zero-sdk (Windows)
 
+#### DevDax memory provider (Linux only)
+
+A memory provider that provides memory from a device DAX (a character device file /dev/daxX.Y).
+It can be used when large memory mappings are needed.
+
+The DevDax memory provider does not support the free operation
+(`umfMemoryProviderFree()` always returns `UMF_RESULT_ERROR_NOT_SUPPORTED`),
+so it should be used with a pool manager that will take over
+the managing of the provided memory - for example the jemalloc pool
+with the `disable_provider_free` parameter set to true.
+
+##### Requirements
+
+1) Linux OS
+2) A character device file /dev/daxX.Y created in the OS.
+
 ### Memory pool managers
 
 #### Proxy pool (part of libumf)
