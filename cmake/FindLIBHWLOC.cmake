@@ -67,7 +67,8 @@ if(LIBHWLOC_LIBRARY)
     endif()
 else()
     set(MSG_NOT_FOUND
-        "libhwloc NOT found (set CMAKE_PREFIX_PATH to point the location)")
+        "libhwloc NOT found (set CMAKE_PREFIX_PATH to point the location or disable with -DUMF_DISABLE_HWLOC=ON)"
+    )
     if(LIBHWLOC_FIND_REQUIRED)
         message(FATAL_ERROR ${MSG_NOT_FOUND})
     else()
