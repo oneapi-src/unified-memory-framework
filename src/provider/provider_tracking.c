@@ -622,7 +622,7 @@ static umf_result_t trackingCloseIpcHandle(void *provider, void *ptr,
     umf_tracking_memory_provider_t *p =
         (umf_tracking_memory_provider_t *)provider;
 
-    // umfMemoryTrackerRemove should be called before umfMemoryProviderFree
+    // umfMemoryTrackerRemove should be called before umfMemoryProviderCloseIPCHandle
     // to avoid a race condition. If the order would be different, other thread
     // could allocate the memory at address `ptr` before a call to umfMemoryTrackerRemove
     // resulting in inconsistent state.
