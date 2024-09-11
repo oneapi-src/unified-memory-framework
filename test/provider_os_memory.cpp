@@ -5,8 +5,10 @@
 #include "base.hpp"
 
 #include "cpp_helpers.hpp"
+#include "ipcFixtures.hpp"
 
 #include <umf/memory_provider.h>
+#include <umf/pools/pool_disjoint.h>
 #include <umf/providers/provider_os_memory.h>
 
 using umf_test::test;
@@ -327,3 +329,34 @@ TEST_P(umfProviderTest, purge_force_INVALID_POINTER) {
     verify_last_native_error(provider.get(),
                              UMF_OS_RESULT_ERROR_PURGE_FORCE_FAILED);
 }
+
+GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(umfIpcTest);
+
+umf_os_memory_provider_params_t osMemoryProviderParamsShared() {
+    auto params = umfOsMemoryProviderParamsDefault();
+    params.visibility = UMF_MEM_MAP_SHARED;
+    return params;
+}
+auto os_params = osMemoryProviderParamsShared();
+
+HostMemoryAccessor hostAccessor;
+
+umf_disjoint_pool_params_t disjointPoolParams() {
+    umf_disjoint_pool_params_t params = umfDisjointPoolParamsDefault();
+    params.SlabMinSize = 4096;
+    params.MaxPoolableSize = 4096;
+    params.Capacity = 4;
+    params.MinBucketSize = 64;
+    return params;
+}
+umf_disjoint_pool_params_t disjointParams = disjointPoolParams();
+
+static std::vector<ipcTestParams> ipcTestParamsList = {
+#if (defined UMF_POOL_DISJOINT_ENABLED)
+    {umfDisjointPoolOps(), &disjointParams, umfOsMemoryProviderOps(),
+     &os_params, &hostAccessor},
+#endif
+};
+
+INSTANTIATE_TEST_SUITE_P(osProviderTest, umfIpcTest,
+                         ::testing::ValuesIn(ipcTestParamsList));

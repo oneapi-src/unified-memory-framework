@@ -91,6 +91,9 @@ for test in $(ls -1 umf_test-*); do
 	umf_test-memspace_host_all)
 		FILTER='--gtest_filter="-*allocsSpreadAcrossAllNumaNodes"'
 		;;
+	umf_test-provider_os_memory)
+		FILTER='--gtest_filter="-osProviderTest/umfIpcTest*"'
+		;;
 	umf_test-provider_os_memory_config)
 		FILTER='--gtest_filter="-*protection_flag_none:*protection_flag_read:*providerConfigTestNumaMode*"'
 		;;

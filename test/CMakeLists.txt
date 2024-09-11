@@ -186,6 +186,12 @@ if(LINUX AND (NOT UMF_DISABLE_HWLOC)) # OS-specific functions are implemented
         NAME provider_os_memory
         SRCS provider_os_memory.cpp
         LIBS ${UMF_UTILS_FOR_TEST})
+    if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
+        target_compile_definitions(umf_test-provider_os_memory
+                                   PRIVATE UMF_POOL_DISJOINT_ENABLED=1)
+        target_link_libraries(umf_test-provider_os_memory PRIVATE disjoint_pool)
+    endif()
+
     add_umf_test(
         NAME provider_os_memory_multiple_numa_nodes
         SRCS provider_os_memory_multiple_numa_nodes.cpp

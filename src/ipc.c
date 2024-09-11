@@ -51,6 +51,11 @@ umf_result_t umfPoolGetIPCHandleSize(umf_memory_pool_handle_t hPool,
 
 umf_result_t umfGetIPCHandle(const void *ptr, umf_ipc_handle_t *umfIPCHandle,
                              size_t *size) {
+    if (ptr == NULL || umfIPCHandle == NULL || size == NULL) {
+        LOG_ERR("invalid argument.");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     size_t ipcHandleSize = 0;
     umf_alloc_info_t allocInfo;
     umf_result_t ret = umfMemoryTrackerGetAllocInfo(ptr, &allocInfo);
