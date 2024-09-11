@@ -255,7 +255,8 @@ static int ravl_node_rank_difference_parent(struct ravl_node *p,
                                             struct ravl_node *n) {
     int rv = ravl_node_rank(p) - ravl_node_rank(n);
     // assert to check integer overflow
-    assert(rv < ravl_node_rank(p));
+    // ravl_node_rank(x) is >= -1
+    assert(rv <= ravl_node_rank(p) + 1);
     return rv;
 }
 
