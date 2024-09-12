@@ -89,10 +89,11 @@ $ cmake --build build --target format-apply
 # Remember to review introduced changes
 ```
 
-If you wish to use only `clang-format`, or `cmake-format`, or `black`, you can execute the corresponding
-`clang-format-check` and `clang-format-apply` for C/C++ source files, or `cmake-format-check` and
-`cmake-format-apply` for CMake files, or `black-format-check` and `black-format-apply` for Python
-source files, respectively.
+**NOTE**: The `format-check` and `format-apply` targets are only available if all of `clang-format`,
+`cmake-format` and `black` are installed. Otherwise you can use them separately with:
+- `clang-format-check` and `clang-format-apply` for C/C++ source files 
+- `cmake-format-check` and `cmake-format-apply` for CMake files
+- `black-format-check` and `black-format-apply` for Python source files
 
 **NOTE**: We use specific versions of formatting tools to ensure consistency across the project. The required versions are:
 - clang-format version **15.0**, which can be installed with the command: `python -m pip install clang-format==15.0.7`.
