@@ -44,7 +44,7 @@ std::vector<int> get_available_cpus() {
     int ret = sched_getaffinity(0, sizeof(cpu_set_t), mask);
 
     if (ret != 0) {
-        available_cpus.emplace_back(-__LINE__);
+        available_cpus.emplace_back(-1);
         CPU_FREE(mask);
 
         return available_cpus;
@@ -98,17 +98,17 @@ struct testNuma : testing::Test {
     std::pair<int, bitmask *> retrieve_nodemask(void *addr) {
         struct bitmask *retrieved_nodemask = numa_allocate_nodemask();
 
-        if (nodemask == nullptr){
-            return std::make_pair(__LINE__, nodemask);
+        if (nodemask == nullptr) {
+            return std::make_pair(-1, nodemask);
         }
-        
+
         int ret = get_mempolicy(nullptr, retrieved_nodemask->maskp,
                                 nodemask->size, addr, MPOL_F_ADDR);
 
         if (ret != 0) {
-            return std::make_pair(__LINE__, retrieved_nodemask);
+            return std::make_pair(-1, retrieved_nodemask);
         }
-        
+
         return std::pair(0, retrieved_nodemask);
     }
 
@@ -263,10 +263,10 @@ struct testNumaOnEachCpu : testNuma, testing::WithParamInterface<int> {
         int cpuNumber = this->GetParam();
 
         if (cpuNumber < 0) {
-            GTEST_FAIL() << "ret is not equal to 0 in " << __FILE__ << ": " << -cpuNumber;
+            GTEST_FAIL() << "get_available_cpus(): sched_getaffinity() return "
+                            "value is not equal to 0";
         }
     }
-
 };
 
 INSTANTIATE_TEST_SUITE_P(testNumaNodesAllocationsAllCpus, testNumaOnEachCpu,
@@ -302,7 +302,6 @@ TEST_P(testNumaOnEachCpu, checkModePreferredEmptyNodeset) {
     // Verify we're on the expected CPU
     int cpu_check = sched_getcpu();
     ASSERT_EQ(cpu, cpu_check);
-    
 
     int numa_node_number = numa_node_of_cpu(cpu);
     printf("Got CPU: %d, got numa node: %d\n", cpu, numa_node_number);
@@ -418,14 +417,14 @@ TEST_F(testNuma, checkModeInterleave) {
         EXPECT_NODE_EQ((char *)ptr + page_size * i, numa_nodes[index]);
     }
 
-    // bitmask *retrieved_nodemask = retrieve_nodemask(ptr);
-    auto[fileLine, retrieved_nodemask] =  retrieve_nodemask(ptr);
+    auto [fileLine, retrieved_nodemask] = retrieve_nodemask(ptr);
     if (fileLine != 0) {
         if (retrieved_nodemask == nullptr) {
-            GTEST_FAIL() << "retrieved_nodemask is nullptr " << __FILE__ << ": " << fileLine;
-        }
-        else {
-            GTEST_FAIL() << "ret is not equal to 0 " << __FILE__ << ": " << fileLine;
+            GTEST_FAIL() << "retrieve_nodemask(): numa_allocate_nodemask() "
+                            "returned nullptr";
+        } else {
+            GTEST_FAIL() << "retrieve_nodemask(): get_mempolicy() return value "
+                            "is not equal to 0";
         }
     }
     int ret = numa_bitmask_equal(retrieved_nodemask, nodemask);
