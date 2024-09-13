@@ -20,8 +20,6 @@
 extern "C" {
 #endif
 
-#define NAME_MAX 255
-
 #define DO_WHILE_EMPTY                                                         \
     do {                                                                       \
     } while (0)
