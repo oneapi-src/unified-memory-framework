@@ -97,6 +97,8 @@ int os_set_file_size(int fd, size_t size);
 void *os_mmap(void *hint_addr, size_t length, int prot, int flag, int fd,
               size_t fd_offset);
 
+void *os_devdax_mmap(void *hint_addr, size_t length, int prot, int fd);
+
 int os_munmap(void *addr, size_t length);
 
 int os_purge(void *addr, size_t length, int advice);
@@ -104,6 +106,8 @@ int os_purge(void *addr, size_t length, int advice);
 size_t os_get_page_size(void);
 
 void os_strerror(int errnum, char *buf, size_t buflen);
+
+int os_devdax_open(const char *path);
 
 #ifdef __cplusplus
 }

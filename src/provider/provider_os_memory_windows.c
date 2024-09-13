@@ -111,6 +111,14 @@ void *os_mmap(void *hint_addr, size_t length, int prot, int flag, int fd,
     return VirtualAlloc(hint_addr, length, MEM_RESERVE | MEM_COMMIT, prot);
 }
 
+void *os_devdax_mmap(void *hint_addr, size_t length, int prot, int fd) {
+    (void)hint_addr; // unused
+    (void)length;    // unused
+    (void)prot;      // unused
+    (void)fd;        // unused
+    return NULL;     // not supported on Windows
+}
+
 int os_munmap(void *addr, size_t length) {
     // If VirtualFree() succeeds, the return value is nonzero.
     // If VirtualFree() fails, the return value is 0 (zero).
@@ -150,4 +158,11 @@ size_t os_get_page_size(void) {
 
 void os_strerror(int errnum, char *buf, size_t buflen) {
     strerror_s(buf, buflen, errnum);
+}
+
+// open a devdax
+int os_devdax_open(const char *path) {
+    (void)path; // unused
+
+    return -1;
 }

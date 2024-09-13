@@ -228,6 +228,10 @@ if(LINUX AND (NOT UMF_DISABLE_HWLOC)) # OS-specific functions are implemented
         NAME memtarget
         SRCS memspaces/memtarget.cpp
         LIBS ${LIBNUMA_LIBRARIES} ${LIBHWLOC_LIBRARIES})
+    add_umf_test(
+        NAME provider_devdax_memory
+        SRCS provider_devdax_memory.cpp
+        LIBS ${UMF_UTILS_FOR_TEST})
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND UMF_BUILD_FUZZTESTS)
         add_subdirectory(fuzz)
     endif()
@@ -346,6 +350,22 @@ if(LINUX)
             common/ipc_os_prov_common.c)
         add_umf_ipc_test(TEST ipc_os_prov_anon_fd)
         add_umf_ipc_test(TEST ipc_os_prov_shm)
+
+        build_umf_test(
+            NAME
+            ipc_devdax_prov_consumer
+            SRCS
+            ipc_devdax_prov_consumer.c
+            common/ipc_common.c
+            common/ipc_os_prov_common.c)
+        build_umf_test(
+            NAME
+            ipc_devdax_prov_producer
+            SRCS
+            ipc_devdax_prov_producer.c
+            common/ipc_common.c
+            common/ipc_os_prov_common.c)
+        add_umf_ipc_test(TEST ipc_devdax_prov)
     endif()
     if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
         build_umf_test(

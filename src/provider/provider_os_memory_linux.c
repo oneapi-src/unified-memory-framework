@@ -154,3 +154,27 @@ int os_set_file_size(int fd, size_t size) {
     }
     return ret;
 }
+
+/*
+ * MMap a /dev/dax device.
+ * First try to mmap with (MAP_SHARED_VALIDATE | MAP_SYNC) flags
+ * which allows flushing from the user-space. If MAP_SYNC fails
+ * try to mmap with MAP_SHARED flag (without MAP_SYNC).
+ */
+void *os_devdax_mmap(void *hint_addr, size_t length, int prot, int fd) {
+    void *ptr =
+        os_mmap(hint_addr, length, prot, MAP_SHARED_VALIDATE | MAP_SYNC, fd, 0);
+    if (ptr) {
+        LOG_DEBUG(
+            "devdax mapped with the (MAP_SHARED_VALIDATE | MAP_SYNC) flags");
+        return ptr;
+    }
+
+    ptr = os_mmap(hint_addr, length, prot, MAP_SHARED, fd, 0);
+    if (ptr) {
+        LOG_DEBUG("devdax mapped with the MAP_SHARED flag");
+        return ptr;
+    }
+
+    return NULL;
+}

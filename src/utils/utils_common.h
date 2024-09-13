@@ -20,6 +20,8 @@
 extern "C" {
 #endif
 
+#define NAME_MAX 255
+
 #define DO_WHILE_EMPTY                                                         \
     do {                                                                       \
     } while (0)
@@ -84,6 +86,8 @@ int utils_close_fd(int fd);
 
 // obtain a duplicate of another process's file descriptor
 umf_result_t utils_duplicate_fd(int pid, int fd_in, int *fd_out);
+
+int util_copy_path(const char *in_path, char out_path[], size_t path_max);
 
 #ifdef __cplusplus
 }
