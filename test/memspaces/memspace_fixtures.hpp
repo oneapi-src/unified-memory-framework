@@ -184,7 +184,8 @@ TEST_P(memspaceProviderTest, allocLocalMt) {
         int mode = -1;
         std::vector<size_t> boundNodeIds;
         size_t allocNodeId = SIZE_MAX;
-        getAllocationPolicy(ptr, maxNodeId, mode, boundNodeIds, allocNodeId);
+        ASSERT_NO_FATAL_FAILURE(getAllocationPolicy(ptr, maxNodeId, mode,
+                                                    boundNodeIds, allocNodeId));
 
         // Get the CPUs associated with the specified NUMA node.
         hwloc_obj_t allocNodeObj =
