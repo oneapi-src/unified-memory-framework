@@ -67,3 +67,11 @@ void *os_devdax_mmap(void *hint_addr, size_t length, int prot, int fd) {
     (void)fd;        // unused
     return NULL;     // not supported on Windows
 }
+
+int os_fallocate(int fd, long offset, long len) {
+    (void)fd;     // unused
+    (void)offset; // unused
+    (void)len;    // unused
+
+    return -1;
+}

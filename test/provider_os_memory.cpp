@@ -6,6 +6,7 @@
 
 #include "cpp_helpers.hpp"
 #include "ipcFixtures.hpp"
+#include "test_helpers.h"
 
 #include <umf/memory_provider.h>
 #include <umf/pools/pool_disjoint.h>
@@ -14,9 +15,6 @@
 using umf_test::test;
 
 #define INVALID_PTR ((void *)0x01)
-
-#define ASSERT_IS_ALIGNED(ptr, alignment)                                      \
-    ASSERT_EQ(((uintptr_t)ptr % alignment), 0)
 
 typedef enum purge_t {
     PURGE_NONE = 0,

@@ -102,6 +102,7 @@ set(UMF_SOURCES_WINDOWS libumf_windows.c)
 
 set(UMF_SOURCES_COMMON_LINUX_MACOSX
     provider/provider_devdax_memory.c
+    provider/provider_file_memory.c
     provider/provider_os_memory.c
     provider/provider_os_memory_posix.c
     memtargets/memtarget_numa.c

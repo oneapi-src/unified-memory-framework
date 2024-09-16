@@ -188,6 +188,21 @@ with the `disable_provider_free` parameter set to true.
 1) Linux OS
 2) A character device file /dev/daxX.Y created in the OS.
 
+#### File memory provider (Linux only yet)
+
+A memory provider that provides memory by mapping a regular, extendable file.
+
+The file memory provider does not support the free operation
+(`umfMemoryProviderFree()` always returns `UMF_RESULT_ERROR_NOT_SUPPORTED`),
+so it should be used with a pool manager that will take over
+the managing of the provided memory - for example the jemalloc pool
+with the `disable_provider_free` parameter set to true.
+
+##### Requirements
+
+1) Linux OS
+2) A length of a path of a file to be mapped can be `PATH_MAX` (4096) characters at most.
+
 ### Memory pool managers
 
 #### Proxy pool (part of libumf)

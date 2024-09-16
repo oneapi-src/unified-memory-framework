@@ -150,8 +150,11 @@ int os_set_file_size(int fd, size_t size) {
     errno = 0;
     int ret = ftruncate(fd, size);
     if (ret) {
-        LOG_PERR("ftruncate(%i, %zu) failed", fd, size);
+        LOG_PERR("setting size %zu of a file failed", size);
+    } else {
+        LOG_DEBUG("set size of a file to %zu bytes", size);
     }
+
     return ret;
 }
 
@@ -177,4 +180,8 @@ void *os_devdax_mmap(void *hint_addr, size_t length, int prot, int fd) {
     }
 
     return NULL;
+}
+
+int os_fallocate(int fd, long offset, long len) {
+    return posix_fallocate(fd, offset, len);
 }

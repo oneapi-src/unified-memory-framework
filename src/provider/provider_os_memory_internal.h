@@ -109,6 +109,12 @@ void os_strerror(int errnum, char *buf, size_t buflen);
 
 int os_devdax_open(const char *path);
 
+int os_file_open(const char *path);
+
+int os_file_open_or_create(const char *path);
+
+int os_fallocate(int fd, long offset, long len);
+
 #ifdef __cplusplus
 }
 #endif
