@@ -373,8 +373,19 @@ TEST_F(testNuma, checkModeInterleave) {
 
     // Test where each page will be allocated.
     // Get the first numa node for ptr; Each next page is expected to be on next nodes.
+    int node = -1;
+    ASSERT_NO_FATAL_FAILURE(getNumaNodeByPtr(ptr, &node));
+    ASSERT_GE(node, 0);
     int index = -1;
-    ASSERT_NO_FATAL_FAILURE(getNumaNodeByPtr(ptr, &index));
+    for (size_t i = 0; i < numa_nodes.size(); i++) {
+        if (numa_nodes[i] == (unsigned)node) {
+            index = i;
+            break;
+        }
+    }
+    ASSERT_GE(index, 0);
+    ASSERT_LT(index, numa_nodes.size());
+
     for (size_t i = 1; i < (size_t)pages_num; i++) {
         index = (index + 1) % numa_nodes.size();
         EXPECT_NODE_EQ((char *)ptr + page_size * i, numa_nodes[index]);
@@ -417,8 +428,19 @@ TEST_F(testNuma, checkModeInterleaveCustomPartSize) {
     memset(ptr, 0xFF, size);
     // Test where each page will be allocated.
     // Get the first numa node for ptr; Each next part is expected to be on next nodes.
+    int node = -1;
+    ASSERT_NO_FATAL_FAILURE(getNumaNodeByPtr(ptr, &node));
+    ASSERT_GE(node, 0);
     int index = -1;
-    ASSERT_NO_FATAL_FAILURE(getNumaNodeByPtr(ptr, &index));
+    for (size_t i = 0; i < numa_nodes.size(); i++) {
+        if (numa_nodes[i] == (unsigned)node) {
+            index = i;
+            break;
+        }
+    }
+    ASSERT_GE(index, 0);
+    ASSERT_LT(index, numa_nodes.size());
+
     for (size_t i = 0; i < (size_t)part_num; i++) {
         for (size_t j = 0; j < part_size; j += page_size) {
             ASSERT_NODE_EQ((char *)ptr + part_size * i + j, numa_nodes[index]);
