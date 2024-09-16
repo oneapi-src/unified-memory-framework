@@ -446,7 +446,7 @@ static umf_result_t devdax_open_ipc_handle(void *provider,
 
     umf_result_t ret = UMF_RESULT_SUCCESS;
     int fd = os_devdax_open(devdax_provider->path);
-    if (fd <= 0) {
+    if (fd == -1) {
         LOG_PERR("opening a devdax (%s) failed", devdax_provider->path);
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
