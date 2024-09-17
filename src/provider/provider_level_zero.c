@@ -69,7 +69,7 @@ static void store_last_native_error(int32_t native_error) {
     TLS_last_native_error = native_error;
 }
 
-umf_result_t ze2umf_result(ze_result_t result) {
+static umf_result_t ze2umf_result(ze_result_t result) {
     switch (result) {
     case ZE_RESULT_SUCCESS:
         return UMF_RESULT_SUCCESS;
@@ -125,7 +125,8 @@ static void init_ze_global_state(void) {
     }
 }
 
-umf_result_t ze_memory_provider_initialize(void *params, void **provider) {
+static umf_result_t ze_memory_provider_initialize(void *params,
+                                                  void **provider) {
     if (provider == NULL || params == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
@@ -181,8 +182,7 @@ umf_result_t ze_memory_provider_initialize(void *params, void **provider) {
     return UMF_RESULT_SUCCESS;
 }
 
-void ze_memory_provider_finalize(void *provider) {
-    assert(provider);
+static void ze_memory_provider_finalize(void *provider) {
 
     util_init_once(&ze_is_initialized, init_ze_global_state);
     umf_ba_global_free(provider);
@@ -285,11 +285,10 @@ static umf_result_t ze_memory_provider_free(void *provider, void *ptr,
     return ze2umf_result(ze_result);
 }
 
-void ze_memory_provider_get_last_native_error(void *provider,
-                                              const char **ppMessage,
-                                              int32_t *pError) {
+static void ze_memory_provider_get_last_native_error(void *provider,
+                                                     const char **ppMessage,
+                                                     int32_t *pError) {
     (void)provider;
-    (void)ppMessage;
 
     assert(pError);
 
@@ -338,7 +337,7 @@ ze_memory_provider_get_recommended_page_size(void *provider, size_t size,
     return UMF_RESULT_SUCCESS;
 }
 
-const char *ze_memory_provider_get_name(void *provider) {
+static const char *ze_memory_provider_get_name(void *provider) {
     (void)provider;
     return "LEVEL_ZERO";
 }
