@@ -121,35 +121,72 @@ TEST_F(memspaceHostAllProviderTest, hostAllDefaults) {
     ASSERT_NE(ptr2, nullptr);
     memset(ptr2, 0xFF, size);
 
-    // Compare UMF and kernel default allocation policy
-    struct bitmask *nodemask1 = numa_allocate_nodemask();
-    struct bitmask *nodemask2 = numa_allocate_nodemask();
-    int memMode1 = -1, memMode2 = -1;
+    EXPECT_NODE_EQ(ptr1, ptr2);
+    EXPECT_BIND_MODE_EQ(ptr1, ptr2);
+    EXPECT_BIND_MASK_EQ(ptr1, ptr2);
 
-    int ret2 = get_mempolicy(&memMode1, nodemask1->maskp, nodemask1->size, ptr1,
-                             MPOL_F_ADDR);
-    ASSERT_EQ(ret2, 0);
-    ret2 = get_mempolicy(&memMode2, nodemask2->maskp, nodemask2->size, ptr2,
-                         MPOL_F_ADDR);
-    ASSERT_EQ(ret2, 0);
-    ASSERT_EQ(memMode1, memMode2);
-    ASSERT_EQ(nodemask1->size, nodemask2->size);
-    ASSERT_EQ(numa_bitmask_equal(nodemask1, nodemask2), 1);
-
-    int nodeId1 = -1, nodeId2 = -1;
-    ret2 = get_mempolicy(&nodeId1, nullptr, 0, ptr1, MPOL_F_ADDR | MPOL_F_NODE);
-    ASSERT_EQ(ret2, 0);
-    ret2 = get_mempolicy(&nodeId2, nullptr, 0, ptr2, MPOL_F_ADDR | MPOL_F_NODE);
-    ASSERT_EQ(ret2, 0);
-    ASSERT_EQ(nodeId1, nodeId2);
-
-    numa_free_nodemask(nodemask2);
-    numa_free_nodemask(nodemask1);
-
-    ret2 = munmap(ptr2, size);
-    ASSERT_EQ(ret2, 0);
+    auto ret2 = munmap(ptr2, size);
+    UT_ASSERTeq(ret2, 0);
 
     ret = umfMemoryProviderFree(hProvider, ptr1, size);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
     umfMemoryProviderDestroy(hProvider);
+}
+
+TEST_F(memspaceHostAllProviderTest, HostAllVsCopy) {
+    umf_memspace_handle_t hMemspaceCopy = nullptr;
+    auto ret = umfMemspaceNew(&hMemspaceCopy);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(hMemspaceCopy, nullptr);
+
+    for (size_t i = 0; i < umfMemspaceMemtargetNum(hMemspace); ++i) {
+        auto target = umfMemspaceMemtargetGet(hMemspace, i);
+        ASSERT_NE(target, nullptr);
+
+        ret = umfMemspaceMemtargetAdd(hMemspaceCopy, target);
+        ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    }
+
+    ASSERT_EQ(umfMemspaceMemtargetNum(hMemspace),
+              umfMemspaceMemtargetNum(hMemspaceCopy));
+
+    umf_memory_provider_handle_t hProvider1, hProvider2;
+    ret = umfMemoryProviderCreateFromMemspace(hMemspace, nullptr, &hProvider1);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(hProvider1, nullptr);
+
+    ret = umfMemoryProviderCreateFromMemspace(hMemspaceCopy, nullptr,
+                                              &hProvider2);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(hProvider2, nullptr);
+
+    void *ptr1, *ptr2;
+    ret = umfMemoryProviderAlloc(hProvider1, SIZE_4K, 0, &ptr1);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(ptr1, nullptr);
+
+    ret = umfMemoryProviderAlloc(hProvider2, SIZE_4K, 0, &ptr2);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    memset(ptr1, 0xFF, SIZE_4K);
+    memset(ptr2, 0xFF, SIZE_4K);
+
+    ASSERT_NODE_EQ(ptr1, ptr2);
+    // HostAll memspace bind memory in the unique way (MPOL_DEFAULT),
+    // but this works only for this specific memspaces, but not for it's copies.
+    ASSERT_BIND_MASK_NE(ptr1, ptr2);
+    ASSERT_BIND_MODE_NE(ptr1, ptr2);
+
+    ASSERT_BIND_MODE_EQ(ptr1, MPOL_DEFAULT);
+    ASSERT_BIND_MODE_EQ(ptr2, MPOL_BIND);
+
+    ret = umfMemoryProviderFree(hProvider1, ptr1, SIZE_4K);
+    UT_ASSERTeq(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfMemoryProviderFree(hProvider2, ptr2, SIZE_4K);
+    UT_ASSERTeq(ret, UMF_RESULT_SUCCESS);
+
+    umfMemoryProviderDestroy(hProvider1);
+    umfMemoryProviderDestroy(hProvider2);
+    umfMemspaceDestroy(hMemspaceCopy);
 }

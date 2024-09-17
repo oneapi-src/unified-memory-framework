@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023 Intel Corporation
+ * Copyright (C) 2023-2024 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -45,6 +45,8 @@ typedef struct umf_memtarget_ops_t {
                                 size_t *latency);
 
     umf_result_t (*get_type)(void *memoryTarget, umf_memtarget_type_t *type);
+    umf_result_t (*compare)(void *memTarget, void *otherMemTarget, int *result);
+
 } umf_memtarget_ops_t;
 
 #ifdef __cplusplus

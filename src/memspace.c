@@ -16,6 +16,7 @@
 #include "memspace_internal.h"
 #include "memtarget_internal.h"
 #include "memtarget_ops.h"
+#include "utils_log.h"
 
 #ifndef NDEBUG
 static umf_result_t
@@ -60,6 +61,10 @@ umf_result_t umfPoolCreateFromMemspace(umf_const_memspace_handle_t memspace,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
+    if (memspace->size == 0) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     void **privs = NULL;
     umf_result_t ret = memoryTargetHandlesToPriv(memspace, &privs);
     if (ret != UMF_RESULT_SUCCESS) {
@@ -85,6 +90,10 @@ umfMemoryProviderCreateFromMemspace(umf_const_memspace_handle_t memspace,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
+    if (memspace->size == 0) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     void **privs = NULL;
     umf_result_t ret = memoryTargetHandlesToPriv(memspace, &privs);
     if (ret != UMF_RESULT_SUCCESS) {
@@ -100,6 +109,25 @@ umfMemoryProviderCreateFromMemspace(umf_const_memspace_handle_t memspace,
     umf_ba_global_free(privs);
 
     return ret;
+}
+
+umf_result_t umfMemspaceNew(umf_memspace_handle_t *hMemspace) {
+    if (!hMemspace) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    umf_memspace_handle_t memspace =
+        umf_ba_global_alloc(sizeof(struct umf_memspace_t));
+    if (!memspace) {
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    memspace->size = 0;
+    memspace->nodes = NULL;
+
+    *hMemspace = memspace;
+
+    return UMF_RESULT_SUCCESS;
 }
 
 void umfMemspaceDestroy(umf_memspace_handle_t memspace) {
@@ -305,4 +333,96 @@ umfMemspaceMemtargetGet(umf_const_memspace_handle_t hMemspace,
         return NULL;
     }
     return hMemspace->nodes[targetNum];
+}
+
+umf_result_t umfMemspaceMemtargetAdd(umf_memspace_handle_t hMemspace,
+                                     umf_const_memtarget_handle_t hMemtarget) {
+    if (!hMemspace || !hMemtarget) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    for (size_t i = 0; i < hMemspace->size; i++) {
+        int cmp;
+        umf_result_t ret =
+            umfMemtargetCompare(hMemspace->nodes[i], hMemtarget, &cmp);
+        if (ret != UMF_RESULT_SUCCESS) {
+            return ret;
+        }
+
+        if (cmp == 0) {
+            LOG_ERR("Memory target already exists in the memspace");
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        } else if (cmp < 0) {
+            LOG_ERR("You can't mix different memory target types in the same "
+                    "memspace");
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        }
+    }
+
+    umf_memtarget_handle_t *newNodes =
+        umf_ba_global_alloc(sizeof(*newNodes) * (hMemspace->size + 1));
+    if (!newNodes) {
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    for (size_t i = 0; i < hMemspace->size; i++) {
+        newNodes[i] = hMemspace->nodes[i];
+    }
+    umf_memtarget_t *hMemtargetClone;
+
+    umf_result_t ret = umfMemtargetClone(hMemtarget, &hMemtargetClone);
+    if (ret != UMF_RESULT_SUCCESS) {
+        umf_ba_global_free(newNodes);
+        return ret;
+    }
+    newNodes[hMemspace->size++] = hMemtargetClone;
+
+    umf_ba_global_free(hMemspace->nodes);
+    hMemspace->nodes = newNodes;
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t
+umfMemspaceMemtargetRemove(umf_memspace_handle_t hMemspace,
+                           umf_const_memtarget_handle_t hMemtarget) {
+    if (!hMemspace || !hMemtarget) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    unsigned i;
+    for (i = 0; i < hMemspace->size; i++) {
+        int cmp;
+        umf_result_t ret =
+            umfMemtargetCompare(hMemspace->nodes[i], hMemtarget, &cmp);
+
+        if (ret != UMF_RESULT_SUCCESS) {
+            return ret;
+        }
+
+        if (cmp == 0) {
+            break;
+        }
+    }
+
+    if (i == hMemspace->size) {
+        LOG_ERR("Memory target not found in the memspace");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    umf_memtarget_handle_t *newNodes =
+        umf_ba_global_alloc(sizeof(*newNodes) * (hMemspace->size - 1));
+    if (!newNodes) {
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    for (unsigned j = 0, z = 0; j < hMemspace->size; j++) {
+        if (j != i) {
+            newNodes[z++] = hMemspace->nodes[j];
+        }
+    }
+
+    umfMemtargetDestroy(hMemspace->nodes[i]);
+    umf_ba_global_free(hMemspace->nodes);
+    hMemspace->nodes = newNodes;
+    hMemspace->size--;
+    return UMF_RESULT_SUCCESS;
 }

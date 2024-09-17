@@ -225,6 +225,10 @@ if(LINUX AND (NOT UMF_DISABLE_HWLOC)) # OS-specific functions are implemented
         SRCS memspaces/mempolicy.cpp
         LIBS ${LIBNUMA_LIBRARIES})
     add_umf_test(
+        NAME memspace
+        SRCS memspaces/memspace.cpp
+        LIBS ${LIBNUMA_LIBRARIES})
+    add_umf_test(
         NAME memtarget
         SRCS memspaces/memtarget.cpp
         LIBS ${LIBNUMA_LIBRARIES} ${LIBHWLOC_LIBRARIES})

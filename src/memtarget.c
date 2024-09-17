@@ -53,7 +53,7 @@ void umfMemtargetDestroy(umf_memtarget_handle_t memoryTarget) {
     umf_ba_global_free(memoryTarget);
 }
 
-umf_result_t umfMemtargetClone(umf_memtarget_handle_t memoryTarget,
+umf_result_t umfMemtargetClone(umf_const_memtarget_handle_t memoryTarget,
                                umf_memtarget_handle_t *outHandle) {
     assert(memoryTarget);
     assert(outHandle);
@@ -114,4 +114,34 @@ umf_result_t umfMemtargetGetType(umf_const_memtarget_handle_t memoryTarget,
     }
 
     return memoryTarget->ops->get_type(memoryTarget->priv, type);
+}
+
+umf_result_t umfMemtargetCompare(umf_const_memtarget_handle_t a,
+                                 umf_const_memtarget_handle_t b, int *result) {
+    umf_memtarget_type_t typeA, typeB;
+    umf_result_t ret = umfMemtargetGetType(a, &typeA);
+    if (ret != UMF_RESULT_SUCCESS) {
+        return ret;
+    }
+
+    ret = umfMemtargetGetType(b, &typeB);
+    if (ret != UMF_RESULT_SUCCESS) {
+        return ret;
+    }
+
+    if (typeA != typeB) {
+        *result = -1;
+        return UMF_RESULT_SUCCESS;
+    }
+
+    ret = a->ops->compare(a->priv, b->priv, result);
+    if (ret != UMF_RESULT_SUCCESS) {
+        return ret;
+    }
+
+    if (*result) {
+        *result = 1;
+    }
+
+    return UMF_RESULT_SUCCESS;
 }
