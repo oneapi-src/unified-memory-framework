@@ -19,9 +19,6 @@ using umf_test::test;
 
 #define INVALID_PTR ((void *)0x01)
 
-#define ASSERT_IS_ALIGNED(ptr, alignment)                                      \
-    ASSERT_EQ(((uintptr_t)ptr % alignment), 0)
-
 typedef enum purge_t {
     PURGE_NONE = 0,
     PURGE_LAZY = 1,

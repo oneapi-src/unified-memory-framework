@@ -145,3 +145,36 @@ int os_devdax_open(const char *path) {
 
     return fd;
 }
+
+// open a file
+int os_file_open(const char *path) {
+    if (!path) {
+        LOG_ERR("empty path");
+        return -1;
+    }
+
+    int fd = open(path, O_RDWR);
+    if (fd == -1) {
+        LOG_PERR("cannot open the file: %s", path);
+    }
+
+    return fd;
+}
+
+// open a file or create
+int os_file_open_or_create(const char *path) {
+    if (!path) {
+        LOG_ERR("empty path");
+        return -1;
+    }
+
+    int fd = open(path, O_RDWR | O_CREAT, 0600);
+    if (fd == -1) {
+        LOG_PERR("cannot open/create the file: %s", path);
+        return -1;
+    }
+
+    LOG_DEBUG("opened/created the file: %s", path);
+
+    return fd;
+}

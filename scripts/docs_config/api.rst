@@ -104,6 +104,14 @@ A memory provider that provides memory from a device DAX (a character device fil
 .. doxygenfile:: provider_devdax_memory.h
     :sections: define enum typedef func var
 
+File Memory Provider
+------------------------------------------
+
+A memory provider that provides memory by mapping a regular, extendable file.
+
+.. doxygenfile:: provider_file_memory.h
+    :sections: define enum typedef func var
+
 Memspace
 ==========================================
 

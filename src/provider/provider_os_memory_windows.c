@@ -166,3 +166,25 @@ int os_devdax_open(const char *path) {
 
     return -1;
 }
+
+// open a file
+int os_file_open(const char *path) {
+    (void)path; // unused
+
+    return -1;
+}
+
+// open a file or create
+int os_file_open_or_create(const char *path) {
+    (void)path; // unused
+
+    return -1;
+}
+
+int os_fallocate(int fd, long offset, long len) {
+    (void)fd;     // unused
+    (void)offset; // unused
+    (void)len;    // unused
+
+    return -1;
+}
