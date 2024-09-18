@@ -29,8 +29,13 @@ extern "C" {
         expression;                                                            \
     } while (0)
 
-#define ALIGN_UP(value, align) (((value) + (align)-1) & ~((align)-1))
-#define ALIGN_DOWN(value, align) ((value) & ~((align)-1))
+#define ALIGN_UP(value, align) ((value + align - 1) & ~(align - 1))
+#define ALIGN_UP_SAFE(value, alignment)                                        \
+    ((alignment == 0) ? (value)                                                \
+                      : ((value + alignment - 1) < value                       \
+                             ? 0                                               \
+                             : ((value + alignment - 1) & ~(alignment - 1))))
+#define ALIGN_DOWN(value, align) (value & ~(align - 1))
 
 #define VALGRIND_ANNOTATE_NEW_MEMORY(p, s) DO_WHILE_EMPTY
 #define VALGRIND_HG_DRD_DISABLE_CHECKING(p, s) DO_WHILE_EMPTY

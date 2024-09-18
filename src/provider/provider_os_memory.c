@@ -359,6 +359,22 @@ validatePartitions(umf_os_memory_provider_params_t *params) {
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t os_get_min_page_size(void *provider, void *ptr,
+                                         size_t *page_size);
+
+static umf_result_t validatePartSize(os_memory_provider_t *provider,
+                                     umf_os_memory_provider_params_t *params) {
+    size_t page_size;
+    os_get_min_page_size(provider, NULL, &page_size);
+    if (ALIGN_UP(params->part_size, page_size) < params->part_size) {
+        LOG_ERR("partition size (%zu) is too big, cannot align with a page "
+                "size (%zu)",
+                params->part_size, page_size);
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    return UMF_RESULT_SUCCESS;
+}
+
 static void free_bitmaps(os_memory_provider_t *provider) {
     for (unsigned i = 0; i < provider->nodeset_len; i++) {
         hwloc_bitmap_free(provider->nodeset[i]);
@@ -440,6 +456,14 @@ static umf_result_t translate_params(umf_os_memory_provider_params_t *in_params,
 
     if (result != UMF_RESULT_SUCCESS) {
         return result;
+    }
+
+    if (in_params->numa_mode == UMF_NUMA_MODE_INTERLEAVE) {
+        result = validatePartSize(provider, in_params);
+        if (result != UMF_RESULT_SUCCESS) {
+            LOG_ERR("incorrect partition size: %zu", in_params->part_size);
+            return result;
+        }
     }
 
     int is_dedicated_node_bind = dedicated_node_bind(in_params);
@@ -827,12 +851,20 @@ static membind_t membindFirst(os_memory_provider_t *provider, void *addr,
     membind_t membind;
     memset(&membind, 0, sizeof(membind));
 
-    membind.alloc_size = ALIGN_UP(size, page_size);
+    membind.alloc_size = ALIGN_UP_SAFE(size, page_size);
+    if (membind.alloc_size == 0) {
+        LOG_ERR("size is too big, page align failed");
+        return membind;
+    }
     membind.page_size = page_size;
     membind.addr = addr;
     membind.pages = membind.alloc_size / membind.page_size;
     if (provider->nodeset_len == 1) {
-        membind.bind_size = ALIGN_UP(size, membind.page_size);
+        membind.bind_size = ALIGN_UP_SAFE(size, membind.page_size);
+        if (membind.bind_size == 0) {
+            LOG_ERR("size is too big, page align failed");
+            return membind;
+        }
         membind.bitmap = provider->nodeset[0];
         return membind;
     }
@@ -842,7 +874,12 @@ static membind_t membindFirst(os_memory_provider_t *provider, void *addr,
         size_t s = util_fetch_and_add64(&provider->alloc_sum, size);
         membind.node = (s / provider->part_size) % provider->nodeset_len;
         membind.bitmap = provider->nodeset[membind.node];
-        membind.bind_size = ALIGN_UP(provider->part_size, membind.page_size);
+        membind.bind_size =
+            ALIGN_UP_SAFE(provider->part_size, membind.page_size);
+        if (membind.bind_size == 0) {
+            LOG_ERR("size is too big, page align failed");
+            return membind;
+        }
         if (membind.bind_size > membind.alloc_size) {
             membind.bind_size = membind.alloc_size;
         }
@@ -878,7 +915,12 @@ static membind_t membindNext(os_memory_provider_t *provider,
         membind.node++;
         membind.node %= provider->nodeset_len;
         membind.bitmap = provider->nodeset[membind.node];
-        membind.bind_size = ALIGN_UP(provider->part_size, membind.page_size);
+        membind.bind_size =
+            ALIGN_UP_SAFE(provider->part_size, membind.page_size);
+        if (membind.bind_size == 0) {
+            LOG_ERR("part_size is too big, page align failed");
+            return membind;
+        }
         if (membind.bind_size > membind.alloc_size) {
             membind.bind_size = membind.alloc_size;
         }

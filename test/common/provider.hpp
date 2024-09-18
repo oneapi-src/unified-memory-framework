@@ -108,7 +108,10 @@ struct provider_malloc : public provider_base_t {
         // requirement of 'size' being multiple of 'align' even though the
         // documentation says that it has to. AddressSanitizer returns an
         // error because of this issue.
-        size_t aligned_size = ALIGN_UP(size, align);
+        size_t aligned_size = ALIGN_UP_SAFE(size, align);
+        if (!aligned_size) {
+            return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+        }
 
 #ifdef _WIN32
         *ptr = _aligned_malloc(aligned_size, align);
