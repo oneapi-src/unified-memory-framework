@@ -69,7 +69,7 @@ static void store_last_native_error(int32_t native_error) {
     TLS_last_native_error = native_error;
 }
 
-umf_result_t ze2umf_result(ze_result_t result) {
+static umf_result_t ze2umf_result(ze_result_t result) {
     switch (result) {
     case ZE_RESULT_SUCCESS:
         return UMF_RESULT_SUCCESS;
@@ -125,7 +125,8 @@ static void init_ze_global_state(void) {
     }
 }
 
-umf_result_t ze_memory_provider_initialize(void *params, void **provider) {
+static umf_result_t ze_memory_provider_initialize(void *params,
+                                                  void **provider) {
     if (provider == NULL || params == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
@@ -181,8 +182,11 @@ umf_result_t ze_memory_provider_initialize(void *params, void **provider) {
     return UMF_RESULT_SUCCESS;
 }
 
-void ze_memory_provider_finalize(void *provider) {
-    assert(provider);
+static void ze_memory_provider_finalize(void *provider) {
+    if (provider == NULL) {
+        ASSERT(0);
+        return;
+    }
 
     util_init_once(&ze_is_initialized, init_ze_global_state);
     umf_ba_global_free(provider);
@@ -194,8 +198,10 @@ void ze_memory_provider_finalize(void *provider) {
 
 static bool use_relaxed_allocation(ze_memory_provider_t *ze_provider,
                                    size_t size) {
+    assert(ze_provider);
     assert(ze_provider->device);
     assert(ze_provider->device_properties.maxMemAllocSize > 0);
+
     return size > ze_provider->device_properties.maxMemAllocSize;
 }
 
@@ -207,8 +213,9 @@ static ze_relaxed_allocation_limits_exp_desc_t relaxed_device_allocation_desc =
 static umf_result_t ze_memory_provider_alloc(void *provider, size_t size,
                                              size_t alignment,
                                              void **resultPtr) {
-    assert(provider);
-    assert(resultPtr);
+    if (provider == NULL || resultPtr == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
 
     ze_memory_provider_t *ze_provider = (ze_memory_provider_t *)provider;
 
@@ -256,7 +263,10 @@ static umf_result_t ze_memory_provider_alloc(void *provider, size_t size,
         break;
     }
     default:
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        // this shouldn't happen as we check the memory_type settings during
+        // the initialization
+        LOG_ERR("unsupported USM memory type");
+        return UMF_RESULT_ERROR_UNKNOWN;
     }
 
     if (ze_result != ZE_RESULT_SUCCESS) {
@@ -279,19 +289,28 @@ static umf_result_t ze_memory_provider_free(void *provider, void *ptr,
                                             size_t bytes) {
     (void)bytes;
 
-    assert(provider);
+    if (provider == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (ptr == NULL) {
+        return UMF_RESULT_SUCCESS;
+    }
+
     ze_memory_provider_t *ze_provider = (ze_memory_provider_t *)provider;
     ze_result_t ze_result = g_ze_ops.zeMemFree(ze_provider->context, ptr);
     return ze2umf_result(ze_result);
 }
 
-void ze_memory_provider_get_last_native_error(void *provider,
-                                              const char **ppMessage,
-                                              int32_t *pError) {
+static void ze_memory_provider_get_last_native_error(void *provider,
+                                                     const char **ppMessage,
+                                                     int32_t *pError) {
     (void)provider;
-    (void)ppMessage;
 
-    assert(pError);
+    if (ppMessage == NULL || pError == NULL) {
+        ASSERT(0);
+        return;
+    }
 
     *pError = TLS_last_native_error;
 }
@@ -299,8 +318,11 @@ void ze_memory_provider_get_last_native_error(void *provider,
 static umf_result_t ze_memory_provider_get_min_page_size(void *provider,
                                                          void *ptr,
                                                          size_t *pageSize) {
-    (void)provider;
     (void)ptr;
+
+    if (provider == NULL || pageSize == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
 
     // TODO
     *pageSize = 1024 * 64;
@@ -330,15 +352,18 @@ static umf_result_t ze_memory_provider_purge_force(void *provider, void *ptr,
 static umf_result_t
 ze_memory_provider_get_recommended_page_size(void *provider, size_t size,
                                              size_t *pageSize) {
-    (void)provider;
     (void)size;
+
+    if (provider == NULL || pageSize == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
 
     // TODO
     *pageSize = 1024 * 64;
     return UMF_RESULT_SUCCESS;
 }
 
-const char *ze_memory_provider_get_name(void *provider) {
+static const char *ze_memory_provider_get_name(void *provider) {
     (void)provider;
     return "LEVEL_ZERO";
 }
@@ -376,8 +401,10 @@ typedef struct ze_ipc_data_t {
 
 static umf_result_t ze_memory_provider_get_ipc_handle_size(void *provider,
                                                            size_t *size) {
-    (void)provider;
-    ASSERT(size != NULL);
+    if (provider == NULL || size == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     *size = sizeof(ze_ipc_data_t);
     return UMF_RESULT_SUCCESS;
 }
@@ -386,9 +413,12 @@ static umf_result_t ze_memory_provider_get_ipc_handle(void *provider,
                                                       const void *ptr,
                                                       size_t size,
                                                       void *providerIpcData) {
-    ASSERT(ptr != NULL);
-    ASSERT(providerIpcData != NULL);
     (void)size;
+
+    if (provider == NULL || ptr == NULL || providerIpcData == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     ze_result_t ze_result;
     ze_ipc_data_t *ze_ipc_data = (ze_ipc_data_t *)providerIpcData;
     struct ze_memory_provider_t *ze_provider =
@@ -408,8 +438,10 @@ static umf_result_t ze_memory_provider_get_ipc_handle(void *provider,
 
 static umf_result_t ze_memory_provider_put_ipc_handle(void *provider,
                                                       void *providerIpcData) {
-    ASSERT(provider != NULL);
-    ASSERT(providerIpcData != NULL);
+    if (provider == NULL || providerIpcData == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     ze_result_t ze_result;
     struct ze_memory_provider_t *ze_provider =
         (struct ze_memory_provider_t *)provider;
@@ -434,9 +466,10 @@ static umf_result_t ze_memory_provider_put_ipc_handle(void *provider,
 static umf_result_t ze_memory_provider_open_ipc_handle(void *provider,
                                                        void *providerIpcData,
                                                        void **ptr) {
-    ASSERT(provider != NULL);
-    ASSERT(providerIpcData != NULL);
-    ASSERT(ptr != NULL);
+    if (provider == NULL || ptr == NULL || providerIpcData == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     ze_result_t ze_result;
     ze_ipc_data_t *ze_ipc_data = (ze_ipc_data_t *)providerIpcData;
     struct ze_memory_provider_t *ze_provider =
@@ -471,9 +504,12 @@ static umf_result_t ze_memory_provider_open_ipc_handle(void *provider,
 
 static umf_result_t
 ze_memory_provider_close_ipc_handle(void *provider, void *ptr, size_t size) {
-    ASSERT(provider != NULL);
-    ASSERT(ptr != NULL);
     (void)size;
+
+    if (provider == NULL || ptr == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     ze_result_t ze_result;
     struct ze_memory_provider_t *ze_provider =
         (struct ze_memory_provider_t *)provider;
