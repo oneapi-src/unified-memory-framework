@@ -121,6 +121,22 @@ function(set_version_variables)
         return()
     endif()
 
+    # v1.5.0-dev - we're on a development tag -> UMF ver: "1.5.0-dev"
+    string(REGEX MATCHALL "\^v([0-9]+\.[0-9]+\.[0-9]+)-dev\$" MATCHES
+                 ${GIT_VERSION})
+    if(MATCHES)
+        set(UMF_VERSION
+            "${CMAKE_MATCH_1}-dev"
+            PARENT_SCOPE)
+        set(UMF_CMAKE_VERSION
+            "${CMAKE_MATCH_1}"
+            PARENT_SCOPE)
+        set(UMF_VERSION_PRIVATE
+            0
+            PARENT_SCOPE)
+        return()
+    endif()
+
     # v1.5.0-rc1-19-gb8f7a32 -> UMF ver: "1.5.0-rc1.git19.gb8f7a32"
     string(REGEX MATCHALL "v([0-9.]*)-rc([0-9]*)-([0-9]*)-([0-9a-g]*)" MATCHES
                  ${GIT_VERSION})
@@ -137,6 +153,19 @@ function(set_version_variables)
             PARENT_SCOPE)
         set(UMF_VERSION_PRERELEASE
             1
+            PARENT_SCOPE)
+        return()
+    endif()
+
+    # v1.5.0-dev-19-gb8f7a32 -> UMF ver: "1.5.0-dev.git19.gb8f7a32"
+    string(REGEX MATCHALL "v([0-9.]*)-dev-([0-9]*)-([0-9a-g]*)" MATCHES
+                 ${GIT_VERSION})
+    if(MATCHES)
+        set(UMF_VERSION
+            "${CMAKE_MATCH_1}-dev.git${CMAKE_MATCH_2}.${CMAKE_MATCH_3}"
+            PARENT_SCOPE)
+        set(UMF_CMAKE_VERSION
+            "${CMAKE_MATCH_1}"
             PARENT_SCOPE)
         return()
     endif()
