@@ -14,7 +14,6 @@
 #include <string.h>
 
 #include "base_alloc_global.h"
-#include "provider_devdax_memory_internal.h"
 #include "provider_os_memory_internal.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
@@ -27,6 +26,15 @@
 #define NODESET_STR_BUF_LEN 1024
 
 #define TLS_MSG_BUF_LEN 1024
+
+typedef struct devdax_memory_provider_t {
+    char path[PATH_MAX]; // a path to the device DAX
+    size_t size;         // size of the file used for memory mapping
+    void *base;          // base address of memory mapping
+    size_t offset;       // offset in the file used for memory mapping
+    os_mutex_t lock;     // lock of ptr and offset
+    unsigned protection; // combination of OS-specific protection flags
+} devdax_memory_provider_t;
 
 typedef struct devdax_last_native_error_t {
     int32_t native_error;
