@@ -44,16 +44,16 @@ endif()
 if(UMF_BUILD_GPU_EXAMPLES
    AND UMF_BUILD_LIBUMF_POOL_DISJOINT
    AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
-    set(EXAMPLE_NAME umf_example_gpu_shared_memory)
+    set(EXAMPLE_NAME umf_example_level_zero_shared_memory)
 
     add_umf_executable(
         NAME ${EXAMPLE_NAME}
-        SRCS gpu_shared_memory/gpu_shared_memory.c
+        SRCS level_zero_shared_memory/level_zero_shared_memory.c
         LIBS disjoint_pool ze_loader umf)
 
     target_include_directories(
         ${EXAMPLE_NAME}
-        PRIVATE ${UMF_CMAKE_SOURCE_DIR}/src/utils
+        PRIVATE ${LEVEL_ZERO_INCLUDE_DIRS} ${UMF_CMAKE_SOURCE_DIR}/src/utils
                 ${UMF_CMAKE_SOURCE_DIR}/include
                 ${UMF_CMAKE_SOURCE_DIR}/examples/common)
 
@@ -72,11 +72,48 @@ if(UMF_BUILD_GPU_EXAMPLES
                                                    "${DLL_PATH_LIST}")
     endif()
 else()
+    message(STATUS "GPU Level Zero shared memory example requires "
+                   "UMF_BUILD_GPU_EXAMPLES, UMF_BUILD_LEVEL_ZERO_PROVIDER and "
+                   "UMF_BUILD_LIBUMF_POOL_DISJOINT to be turned ON - skipping")
+endif()
+
+if(UMF_BUILD_GPU_EXAMPLES
+   AND UMF_BUILD_LIBUMF_POOL_DISJOINT
+   AND UMF_BUILD_CUDA_PROVIDER
+   AND UMF_CUDA_ENABLED)
+    set(EXAMPLE_NAME umf_example_cuda_shared_memory)
+
+    add_umf_executable(
+        NAME ${EXAMPLE_NAME}
+        SRCS cuda_shared_memory/cuda_shared_memory.c
+        LIBS disjoint_pool cuda umf)
+
+    target_include_directories(
+        ${EXAMPLE_NAME}
+        PRIVATE ${CUDA_INCLUDE_DIRS} ${UMF_CMAKE_SOURCE_DIR}/src/utils
+                ${UMF_CMAKE_SOURCE_DIR}/include
+                ${UMF_CMAKE_SOURCE_DIR}/examples/common)
+
+    target_link_directories(${EXAMPLE_NAME} PRIVATE ${LIBHWLOC_LIBRARY_DIRS}
+                            ${CUDA_LIBRARY_DIRS})
+
+    add_test(
+        NAME ${EXAMPLE_NAME}
+        COMMAND ${EXAMPLE_NAME}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+    set_tests_properties(${EXAMPLE_NAME} PROPERTIES LABELS "example")
+
+    if(WINDOWS)
+        # append PATH to DLLs
+        set_property(TEST ${EXAMPLE_NAME} PROPERTY ENVIRONMENT_MODIFICATION
+                                                   "${DLL_PATH_LIST}")
+    endif()
+else()
     message(
         STATUS
-            "GPU shared memory example requires UMF_BUILD_GPU_EXAMPLES, "
-            "UMF_BUILD_LEVEL_ZERO_PROVIDER and UMF_BUILD_LIBUMF_POOL_DISJOINT "
-            "to be turned ON - skipping")
+            "GPU CUDA shared memory example requires UMF_BUILD_GPU_EXAMPLES, UMF_BUILD_CUDA_PROVIDER, UMF_BUILD_LIBUMF_POOL_DISJOINT to be turned ON and installed CUDA libraries - skipping"
+    )
 endif()
 
 # TODO: it looks like there is some problem with IPC implementation in Level

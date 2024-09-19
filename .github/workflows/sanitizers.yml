@@ -55,6 +55,7 @@ jobs:
         -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
         -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
+        -DUMF_BUILD_CUDA_PROVIDER=ON
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
@@ -132,6 +133,7 @@ jobs:
         -DUMF_USE_ASAN=${{matrix.sanitizers.asan}}
         -DUMF_BUILD_EXAMPLES=ON
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
+        -DUMF_BUILD_CUDA_PROVIDER=OFF
         -DUMF_TESTS_FAIL_ON_SKIP=ON
 
     - name: Build UMF

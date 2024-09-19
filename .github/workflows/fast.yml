@@ -106,6 +106,7 @@ jobs:
         -DUMF_BUILD_TESTS=${{matrix.build_tests}}
         -DUMF_BUILD_EXAMPLES=ON
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
+        -DUMF_BUILD_CUDA_PROVIDER=ON
         -DUMF_TESTS_FAIL_ON_SKIP=ON
         -DUMF_BUILD_SHARED_LIBRARY=ON
         ${{matrix.extra_build_options}}

@@ -1,6 +1,7 @@
 # This workflow builds and tests providers using GPU memory. It requires 
-# "level_zero" labeled self-hosted runners installed on systems with the 
-# appropriate GPU and drivers.
+# appropriately labelled self-hosted runners installed on systems with the 
+# correct GPU and drivers
+
 name: GPU
 
 on: [workflow_call]
@@ -63,6 +64,7 @@ jobs:
           -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
           -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
           -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
+          -DUMF_BUILD_CUDA_PROVIDER=OFF
           -DUMF_TESTS_FAIL_ON_SKIP=ON
       
       - name: Configure build for Ubuntu
@@ -84,6 +86,7 @@ jobs:
           -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
           -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
           -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
+          -DUMF_BUILD_CUDA_PROVIDER=OFF
           -DUMF_TESTS_FAIL_ON_SKIP=ON
 
       - name: Build UMF
@@ -100,3 +103,66 @@ jobs:
       - name: Run benchmarks
         working-directory: ${{env.BUILD_DIR}}
         run: ctest --output-on-failure --test-dir benchmark -C ${{env.BUILD_TYPE}} --exclude-regex umf-bench-multithreaded
+
+  gpu-CUDA:
+    name: Build
+    env:
+      BUILD_TYPE: Release
+    # run only on upstream; forks will not have the HW
+    if: github.repository == 'oneapi-src/unified-memory-framework'
+    strategy:
+      matrix:
+        shared_library: ['ON', 'OFF']
+        # TODO add windows
+        os: ['Ubuntu']
+        include:
+        - os: 'Ubuntu'
+          compiler: {c: gcc, cxx: g++}
+          number_of_processors: '$(nproc)'
+
+    runs-on: ["DSS-CUDA", "DSS-${{matrix.os}}"]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      with:
+        fetch-depth: 0
+
+    - name: Get information about platform
+      if: matrix.os == 'Ubuntu'
+      run: .github/scripts/get_system_info.sh
+
+    - name: Configure build for Ubuntu
+      if: matrix.os == 'Ubuntu'
+      run: >
+        cmake -B ${{env.BUILD_DIR}}
+        -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
+        -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+        -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
+        -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
+        -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
+        -DUMF_BUILD_BENCHMARKS=ON
+        -DUMF_BUILD_TESTS=ON
+        -DUMF_BUILD_GPU_TESTS=ON
+        -DUMF_BUILD_GPU_EXAMPLES=ON
+        -DUMF_FORMAT_CODE_STYLE=OFF
+        -DUMF_DEVELOPER_MODE=ON
+        -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
+        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
+        -DUMF_BUILD_CUDA_PROVIDER=ON
+        -DUMF_TESTS_FAIL_ON_SKIP=ON
+
+    - name: Build UMF
+      run: cmake --build ${{env.BUILD_DIR}} --config ${{env.BUILD_TYPE}} -j ${{matrix.number_of_processors}}
+
+    - name: Run tests
+      working-directory: ${{env.BUILD_DIR}}
+      run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure --test-dir test
+
+    - name: Run examples
+      working-directory: ${{env.BUILD_DIR}}
+      run: ctest --output-on-failure --test-dir examples -C ${{env.BUILD_TYPE}}
+
+    - name: Run benchmarks
+      working-directory: ${{env.BUILD_DIR}}
+      run: ctest --output-on-failure --test-dir benchmark -C ${{env.BUILD_TYPE}} --exclude-regex umf-bench-multithreaded

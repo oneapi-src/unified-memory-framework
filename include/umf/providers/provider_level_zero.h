@@ -8,22 +8,14 @@
 #ifndef UMF_PROVIDER_LEVEL_ZERO_H
 #define UMF_PROVIDER_LEVEL_ZERO_H
 
-#include "umf/memory_provider.h"
+#include <umf/memory_provider_gpu.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef struct _ze_context_handle_t *ze_context_handle_t;
 typedef struct _ze_device_handle_t *ze_device_handle_t;
-
-/// @brief USM memory allocation type
-typedef enum umf_usm_memory_type_t {
-    UMF_MEMORY_TYPE_UNKNOWN = 0, ///< The memory pointed to is of unknown type
-    UMF_MEMORY_TYPE_HOST,        ///< The memory pointed to is a host allocation
-    UMF_MEMORY_TYPE_DEVICE, ///< The memory pointed to is a device allocation
-    UMF_MEMORY_TYPE_SHARED, ///< The memory pointed to is a shared ownership allocation
-} umf_usm_memory_type_t;
+typedef struct _ze_context_handle_t *ze_context_handle_t;
 
 /// @brief Level Zero Memory Provider settings struct
 typedef struct level_zero_memory_provider_params_t {

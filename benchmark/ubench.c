@@ -506,6 +506,8 @@ err_destroy_context:
 }
 #endif /* (defined UMF_BUILD_LIBUMF_POOL_DISJOINT && defined UMF_BUILD_LEVEL_ZERO_PROVIDER && defined UMF_BUILD_GPU_TESTS) */
 
+// TODO add IPC benchmark for CUDA
+
 UBENCH_MAIN()
 
 #if defined(_MSC_VER)
