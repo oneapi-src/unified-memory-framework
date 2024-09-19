@@ -235,3 +235,152 @@ TEST_F(memspaceNumaProviderTest, allocFree) {
     ret = umfMemoryProviderFree(hProvider, ptr, size);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 }
+
+TEST_F(numaNodesCapacityTest, CapacityFilter) {
+    if (capacities.size() <= 1) {
+        GTEST_SKIP() << "Not enough numa nodes - skipping the test";
+    }
+
+    umf_memspace_handle_t hMemspace;
+    auto ret = umfMemspaceClone(umfMemspaceHostAllGet(), &hMemspace);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(hMemspace, nullptr);
+
+    std::sort(capacities.begin(), capacities.end());
+
+    size_t filter_size = capacities[capacities.size() / 2];
+    ret = umfMemspaceFilterByCapacity(hMemspace, filter_size);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ASSERT_EQ(umfMemspaceMemtargetNum(hMemspace), (capacities.size() + 1) / 2);
+    for (size_t i = 0; i < umfMemspaceMemtargetNum(hMemspace); i++) {
+        auto hTarget = umfMemspaceMemtargetGet(hMemspace, i);
+        ASSERT_NE(hTarget, nullptr);
+        size_t capacity;
+        auto ret = umfMemtargetGetCapacity(hTarget, &capacity);
+        EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+        auto it = std::find(capacities.begin(), capacities.end(), capacity);
+        EXPECT_NE(it, capacities.end());
+        EXPECT_GE(capacity, filter_size);
+        if (it != capacities.end()) {
+            capacities.erase(it);
+        }
+    }
+    umfMemspaceDestroy(hMemspace);
+}
+
+TEST_F(numaNodesTest, idfilter) {
+    if (nodeIds.size() <= 1) {
+        GTEST_SKIP() << "Not enough numa nodes - skipping the test";
+    }
+
+    umf_memspace_handle_t hMemspace;
+    auto ret = umfMemspaceClone(umfMemspaceHostAllGet(), &hMemspace);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(hMemspace, nullptr);
+
+    std::vector<unsigned> ids = {nodeIds[0], nodeIds[1]};
+    ret = umfMemspaceFilterById(hMemspace, ids.data(), 2);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ASSERT_EQ(umfMemspaceMemtargetNum(hMemspace), 2);
+
+    for (size_t i = 0; i < umfMemspaceMemtargetNum(hMemspace); i++) {
+        auto hTarget = umfMemspaceMemtargetGet(hMemspace, i);
+        ASSERT_NE(hTarget, nullptr);
+        unsigned id;
+        auto ret = umfMemtargetGetId(hTarget, &id);
+        EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+        auto it = std::find(ids.begin(), ids.end(), id);
+        EXPECT_NE(it, ids.end());
+        if (it != ids.end()) {
+            ids.erase(it);
+        }
+    }
+    umfMemspaceDestroy(hMemspace);
+}
+
+int customfilter(umf_const_memspace_handle_t memspace,
+                 umf_const_memtarget_handle_t memtarget, void *args) {
+    static unsigned customFilterCounter = 0;
+
+    EXPECT_NE(args, nullptr);
+    EXPECT_NE(memspace, nullptr);
+    EXPECT_NE(memtarget, nullptr);
+
+    auto ids = (std::vector<umf_const_memtarget_handle_t> *)args;
+    if (customFilterCounter++ % 2) {
+        ids->push_back(memtarget);
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+TEST_F(numaNodesTest, customfilter) {
+    if (nodeIds.size() <= 1) {
+        GTEST_SKIP() << "Not enough numa nodes - skipping the test";
+    }
+
+    umf_memspace_handle_t hMemspace;
+    auto ret = umfMemspaceClone(umfMemspaceHostAllGet(), &hMemspace);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(hMemspace, nullptr);
+
+    std::vector<umf_const_memtarget_handle_t> vec;
+    ret = umfMemspaceUserFilter(hMemspace, &customfilter, &vec);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ASSERT_EQ(umfMemspaceMemtargetNum(hMemspace), nodeIds.size() / 2);
+
+    for (size_t i = 0; i < umfMemspaceMemtargetNum(hMemspace); i++) {
+        auto hTarget = umfMemspaceMemtargetGet(hMemspace, i);
+        ASSERT_NE(hTarget, nullptr);
+
+        EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+        auto it = std::find(vec.begin(), vec.end(), hTarget);
+        EXPECT_NE(it, vec.end());
+        if (it != vec.end()) {
+            vec.erase(it);
+        }
+    }
+    ASSERT_EQ(vec.size(), 0);
+    umfMemspaceDestroy(hMemspace);
+}
+
+int invalidFilter(umf_const_memspace_handle_t memspace,
+                  umf_const_memtarget_handle_t memtarget, void *args) {
+    EXPECT_EQ(args, nullptr);
+    EXPECT_NE(memspace, nullptr);
+    EXPECT_NE(memtarget, nullptr);
+
+    return -1;
+}
+
+TEST_F(numaNodesTest, invalidFilters) {
+    umf_memspace_handle_t hMemspace;
+    auto ret = umfMemspaceClone(umfMemspaceHostAllGet(), &hMemspace);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(hMemspace, nullptr);
+
+    ret = umfMemspaceFilterByCapacity(nullptr, 0);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    ret = umfMemspaceFilterByCapacity(hMemspace, -1);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    ret = umfMemspaceFilterById(hMemspace, nullptr, 0);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    unsigned id = 0;
+    ret = umfMemspaceFilterById(nullptr, &id, 1);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    ret = umfMemspaceUserFilter(hMemspace, nullptr, nullptr);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    ret = umfMemspaceUserFilter(nullptr, invalidFilter, nullptr);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    ret = umfMemspaceUserFilter(hMemspace, invalidFilter, nullptr);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_USER_SPECIFIC);
+    umfMemspaceDestroy(hMemspace);
+}

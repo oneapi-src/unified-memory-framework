@@ -102,6 +102,18 @@ struct memspaceProviderTest : ::memspaceGetTest {
     umf_memory_provider_handle_t hProvider = nullptr;
 };
 
+struct numaNodesCapacityTest : numaNodesTest {
+    void SetUp() override {
+        numaNodesTest::SetUp();
+
+        for (auto nodeId : nodeIds) {
+            capacities.push_back(numa_node_size64(nodeId, nullptr));
+        }
+    }
+
+    std::vector<size_t> capacities;
+};
+
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(memspaceGetTest);
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(memspaceProviderTest);
 

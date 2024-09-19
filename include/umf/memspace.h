@@ -131,6 +131,60 @@ umf_result_t
 umfMemspaceMemtargetRemove(umf_memspace_handle_t hMemspace,
                            umf_const_memtarget_handle_t hMemtarget);
 
+/// \brief Clones memspace.
+///
+/// \param hMemspace handle to memspace
+/// \param hNewMemspace [out] handle to the newly created memspace
+/// \return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+///
+umf_result_t umfMemspaceClone(umf_const_memspace_handle_t hMemspace,
+                              umf_memspace_handle_t *hNewMemspace);
+
+/// \brief Custom filter function for umfMemspaceUserFilter
+///
+/// \param hMemspace handle to memspace
+/// \param hMemtarget handle to memory target
+/// \param args user provided arguments
+/// \return zero if hMemtarget should be removed from memspace, positive otherwise, and negative on error
+///
+typedef int (*umf_memspace_filter_func_t)(
+    umf_const_memspace_handle_t hMemspace,
+    umf_const_memtarget_handle_t hMemtarget, void *args);
+
+/// \brief Removes all memory targets with non-matching numa node ids.
+///
+/// \param hMemspace handle to memspace
+/// \param ids array of numa node ids
+/// \param size size of the array
+/// \return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+/// If the error code is UMF_RESULT_UNKNOWN the memspace is corrupted, otherwise the memspace is not modified.
+///
+umf_result_t umfMemspaceFilterById(umf_memspace_handle_t hMemspace,
+                                   unsigned *ids, size_t size);
+
+/// \brief Filters out memory targets that capacity is less than specified size.
+///
+/// \param hMemspace handle to memspace
+/// \param size minimum capacity of memory target
+/// \return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+/// If the error code is UMF_RESULT_UNKNOWN the memspace is corrupted, otherwise the memspace is not modified.
+/// \details Negative values of size parameters are reserved for future
+/// extension of functionality of this function.
+///
+umf_result_t umfMemspaceFilterByCapacity(umf_memspace_handle_t hMemspace,
+                                         int64_t size);
+
+/// \brief Filters out memory targets based on user provided function
+///
+/// \param hMemspace handle to memspace
+/// \param filter user provided function
+/// \param args user provided arguments
+/// \return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+/// If the error code is UMF_RESULT_UNKNOWN the memspace is corrupted, otherwise the memspace is not modified.
+///
+umf_result_t umfMemspaceUserFilter(umf_memspace_handle_t hMemspace,
+                                   umf_memspace_filter_func_t filter,
+                                   void *args);
 #ifdef __cplusplus
 }
 #endif

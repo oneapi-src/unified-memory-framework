@@ -24,13 +24,9 @@ TEST_F(test, memTargetNuma) {
     }
 }
 
-TEST_F(numaNodesTest, getCapacity) {
+TEST_F(numaNodesCapacityTest, getCapacity) {
     auto memspace = umfMemspaceHostAllGet();
     ASSERT_NE(memspace, nullptr);
-    std::vector<size_t> capacities;
-    for (auto nodeId : nodeIds) {
-        capacities.push_back(numa_node_size64(nodeId, nullptr));
-    }
 
     for (size_t i = 0; i < umfMemspaceMemtargetNum(memspace); i++) {
         auto hTarget = umfMemspaceMemtargetGet(memspace, i);
@@ -45,6 +41,25 @@ TEST_F(numaNodesTest, getCapacity) {
         }
     }
     ASSERT_EQ(capacities.size(), 0);
+}
+
+TEST_F(numaNodesTest, getId) {
+    auto memspace = umfMemspaceHostAllGet();
+    ASSERT_NE(memspace, nullptr);
+
+    for (size_t i = 0; i < umfMemspaceMemtargetNum(memspace); i++) {
+        auto hTarget = umfMemspaceMemtargetGet(memspace, i);
+        ASSERT_NE(hTarget, nullptr);
+        unsigned id;
+        auto ret = umfMemtargetGetId(hTarget, &id);
+        EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+        auto it = std::find(nodeIds.begin(), nodeIds.end(), id);
+        EXPECT_NE(it, nodeIds.end());
+        if (it != nodeIds.end()) {
+            nodeIds.erase(it);
+        }
+    }
+    ASSERT_EQ(nodeIds.size(), 0);
 }
 
 TEST_F(numaNodesTest, getCapacityInvalid) {
@@ -72,5 +87,19 @@ TEST_F(test, memTargetInvalid) {
     auto hTarget = umfMemspaceMemtargetGet(memspace, 0);
     ASSERT_NE(hTarget, nullptr);
     ret = umfMemtargetGetType(hTarget, NULL);
+    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(numaNodesTest, getIdInvalid) {
+    auto memspace = umfMemspaceHostAllGet();
+    ASSERT_NE(memspace, nullptr);
+    unsigned id;
+    auto ret = umfMemtargetGetId(NULL, &id);
+    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    ret = umfMemtargetGetId(NULL, NULL);
+    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    auto hTarget = umfMemspaceMemtargetGet(memspace, 0);
+    ASSERT_NE(hTarget, nullptr);
+    ret = umfMemtargetGetId(hTarget, NULL);
     EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 }
