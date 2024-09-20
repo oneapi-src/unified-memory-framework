@@ -15,10 +15,16 @@
 #include <stdint.h>
 
 #include <umf/base.h>
+#include <umf/memory_provider.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef enum umf_purge_advise_t {
+    UMF_PURGE_LAZY,
+    UMF_PURGE_FORCE,
+} umf_purge_advise_t;
 
 #define DO_WHILE_EMPTY                                                         \
     do {                                                                       \
@@ -88,6 +94,51 @@ int utils_close_fd(int fd);
 umf_result_t utils_duplicate_fd(int pid, int fd_in, int *fd_out);
 
 int util_copy_path(const char *in_path, char out_path[], size_t path_max);
+
+umf_result_t utils_translate_flags(unsigned in_flags, unsigned max,
+                                   umf_result_t (*translate_flag)(unsigned,
+                                                                  unsigned *),
+                                   unsigned *out_flags);
+
+umf_result_t utils_translate_mem_protection_flags(unsigned in_protection,
+                                                  unsigned *out_protection);
+
+umf_result_t
+utils_translate_mem_visibility_flag(umf_memory_visibility_t in_flag,
+                                    unsigned *out_flag);
+
+int utils_create_anonymous_fd(void);
+
+int utils_shm_create(const char *shm_name, size_t size);
+
+int utils_shm_open(const char *shm_name);
+
+int utils_shm_unlink(const char *shm_name);
+
+size_t get_max_file_size(void);
+
+int utils_get_file_size(int fd, size_t *size);
+
+int utils_set_file_size(int fd, size_t size);
+
+void *utils_mmap(void *hint_addr, size_t length, int prot, int flag, int fd,
+                 size_t fd_offset);
+
+void *utils_devdax_mmap(void *hint_addr, size_t length, int prot, int fd);
+
+int utils_munmap(void *addr, size_t length);
+
+int utils_purge(void *addr, size_t length, int advice);
+
+void utils_strerror(int errnum, char *buf, size_t buflen);
+
+int utils_devdax_open(const char *path);
+
+int utils_file_open(const char *path);
+
+int utils_file_open_or_create(const char *path);
+
+int utils_fallocate(int fd, long offset, long len);
 
 #ifdef __cplusplus
 }

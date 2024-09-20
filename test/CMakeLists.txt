@@ -114,10 +114,6 @@ endfunction()
 
 add_subdirectory(common)
 
-add_umf_test(NAME base SRCS base.cpp)
-add_umf_test(NAME memoryPool SRCS memoryPoolAPI.cpp malloc_compliance_tests.cpp)
-add_umf_test(NAME memoryProvider SRCS memoryProviderAPI.cpp)
-
 if(UMF_BUILD_SHARED_LIBRARY)
     # if build as shared library, utils symbols won't be visible in tests
     set(UMF_UTILS_FOR_TEST umf_utils)
@@ -125,6 +121,14 @@ if(UMF_BUILD_SHARED_LIBRARY)
         set(UMF_UTILS_SOURCES
             ../src/utils/utils_common.c ../src/utils/utils_posix_common.c
             ../src/utils/utils_posix_concurrency.c)
+        if(LINUX)
+            set(UMF_UTILS_SOURCES ${UMF_UTILS_SOURCES}
+                                  ../src/utils/utils_linux_common.c)
+            set(UMF_LOGGER_LIBS rt) # librt for shm_open()
+        elseif(MACOSX)
+            set(UMF_UTILS_SOURCES ${UMF_UTILS_SOURCES}
+                                  ../src/utils/utils_macosx_common.c)
+        endif()
     elseif(WINDOWS)
         set(UMF_UTILS_SOURCES
             ../src/utils/utils_common.c ../src/utils/utils_windows_common.c
@@ -132,7 +136,16 @@ if(UMF_BUILD_SHARED_LIBRARY)
     endif()
 endif()
 
-add_umf_test(NAME logger SRCS utils/utils_log.cpp ${UMF_UTILS_SOURCES})
+add_umf_test(NAME base SRCS base.cpp)
+add_umf_test(
+    NAME memoryPool
+    SRCS memoryPoolAPI.cpp malloc_compliance_tests.cpp
+    LIBS ${UMF_UTILS_FOR_TEST})
+add_umf_test(NAME memoryProvider SRCS memoryProviderAPI.cpp)
+add_umf_test(
+    NAME logger
+    SRCS utils/utils_log.cpp ${UMF_UTILS_SOURCES}
+    LIBS ${UMF_LOGGER_LIBS})
 
 add_umf_test(
     NAME utils_common

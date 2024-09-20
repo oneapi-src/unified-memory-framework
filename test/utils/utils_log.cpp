@@ -107,7 +107,9 @@ const char *env_variable = "";
 #define strerror_s(A, B, C) mock_strerror_windows(A, B, C)
 //getenv returns 'char *' not 'const char *' so we need explicit cast to drop const
 #define getenv(X) strstr(X, "UMF_LOG") ? (char *)env_variable : getenv(X)
+#ifndef UMF_VERSION
 #define UMF_VERSION "test version"
+#endif
 #include "utils/utils_log.c"
 #undef util_env_var
 #undef fopen

@@ -14,7 +14,6 @@
 #include <string.h>
 
 #include "base_alloc_global.h"
-#include "provider_os_memory_internal.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
 #include "utils_log.h"
@@ -76,8 +75,8 @@ devdax_translate_params(umf_devdax_memory_provider_params_t *in_params,
                         devdax_memory_provider_t *provider) {
     umf_result_t result;
 
-    result = os_translate_mem_protection_flags(in_params->protection,
-                                               &provider->protection);
+    result = utils_translate_mem_protection_flags(in_params->protection,
+                                                  &provider->protection);
     if (result != UMF_RESULT_SUCCESS) {
         LOG_ERR("incorrect memory protection flags: %u", in_params->protection);
         return result;
@@ -124,15 +123,15 @@ static umf_result_t devdax_initialize(void *params, void **provider) {
         goto err_free_devdax_provider;
     }
 
-    int fd = os_devdax_open(in_params->path);
+    int fd = utils_devdax_open(in_params->path);
     if (fd == -1) {
         LOG_ERR("cannot open the device DAX: %s", in_params->path);
         ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
         goto err_free_devdax_provider;
     }
 
-    devdax_provider->base = os_devdax_mmap(NULL, devdax_provider->size,
-                                           devdax_provider->protection, fd);
+    devdax_provider->base = utils_devdax_mmap(NULL, devdax_provider->size,
+                                              devdax_provider->protection, fd);
     utils_close_fd(fd);
     if (devdax_provider->base == NULL) {
         LOG_PDEBUG("devdax memory mapping failed (path=%s, size=%zu)",
@@ -155,7 +154,7 @@ static umf_result_t devdax_initialize(void *params, void **provider) {
     return UMF_RESULT_SUCCESS;
 
 err_unmap_devdax:
-    os_munmap(devdax_provider->base, devdax_provider->size);
+    utils_munmap(devdax_provider->base, devdax_provider->size);
 err_free_devdax_provider:
     umf_ba_global_free(devdax_provider);
     return ret;
@@ -169,7 +168,7 @@ static void devdax_finalize(void *provider) {
 
     devdax_memory_provider_t *devdax_provider = provider;
     util_mutex_destroy_not_free(&devdax_provider->lock);
-    os_munmap(devdax_provider->base, devdax_provider->size);
+    utils_munmap(devdax_provider->base, devdax_provider->size);
     umf_ba_global_free(devdax_provider);
 }
 
@@ -281,8 +280,8 @@ static void devdax_get_last_native_error(void *provider, const char **ppMessage,
     memcpy(TLS_last_native_error.msg_buff + pos, msg, len + 1);
     pos += len;
 
-    os_strerror(TLS_last_native_error.errno_value,
-                TLS_last_native_error.msg_buff + pos, TLS_MSG_BUF_LEN - pos);
+    utils_strerror(TLS_last_native_error.errno_value,
+                   TLS_last_native_error.msg_buff + pos, TLS_MSG_BUF_LEN - pos);
 
     *ppMessage = TLS_last_native_error.msg_buff;
 }
@@ -296,7 +295,7 @@ static umf_result_t devdax_get_recommended_page_size(void *provider,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    *page_size = os_get_page_size();
+    *page_size = util_get_page_size();
 
     return UMF_RESULT_SUCCESS;
 }
@@ -324,7 +323,7 @@ static umf_result_t devdax_purge_force(void *provider, void *ptr, size_t size) {
     }
 
     errno = 0;
-    if (os_purge(ptr, size, UMF_PURGE_FORCE)) {
+    if (utils_purge(ptr, size, UMF_PURGE_FORCE)) {
         devdax_store_last_native_error(
             UMF_DEVDAX_RESULT_ERROR_PURGE_FORCE_FAILED, errno);
         LOG_PERR("force purging failed");
@@ -453,14 +452,14 @@ static umf_result_t devdax_open_ipc_handle(void *provider,
     }
 
     umf_result_t ret = UMF_RESULT_SUCCESS;
-    int fd = os_devdax_open(devdax_provider->path);
+    int fd = utils_devdax_open(devdax_provider->path);
     if (fd == -1) {
         LOG_PERR("opening a devdax (%s) failed", devdax_provider->path);
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    char *base = os_devdax_mmap(NULL, devdax_provider->size,
-                                devdax_provider->protection, fd);
+    char *base = utils_devdax_mmap(NULL, devdax_provider->size,
+                                   devdax_provider->protection, fd);
     if (base == NULL) {
         devdax_store_last_native_error(UMF_DEVDAX_RESULT_ERROR_ALLOC_FAILED,
                                        errno);
@@ -493,7 +492,7 @@ static umf_result_t devdax_close_ipc_handle(void *provider, void *ptr,
         (devdax_memory_provider_t *)provider;
 
     errno = 0;
-    int ret = os_munmap(devdax_provider->base, devdax_provider->size);
+    int ret = utils_munmap(devdax_provider->base, devdax_provider->size);
     // ignore error when size == 0
     if (ret && (size > 0)) {
         devdax_store_last_native_error(UMF_DEVDAX_RESULT_ERROR_FREE_FAILED,

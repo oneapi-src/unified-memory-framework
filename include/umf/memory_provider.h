@@ -17,6 +17,23 @@
 extern "C" {
 #endif
 
+/// @brief Memory visibility mode
+typedef enum umf_memory_visibility_t {
+    UMF_MEM_MAP_PRIVATE = 1, ///< private memory mapping
+    UMF_MEM_MAP_SHARED, ///< shared memory mapping (supported on Linux only)
+} umf_memory_visibility_t;
+
+/// @brief Protection of the memory allocations
+typedef enum umf_mem_protection_flags_t {
+    UMF_PROTECTION_NONE = (1 << 0),  ///< Memory allocations can not be accessed
+    UMF_PROTECTION_READ = (1 << 1),  ///< Memory allocations can be read.
+    UMF_PROTECTION_WRITE = (1 << 2), ///< Memory allocations can be written.
+    UMF_PROTECTION_EXEC = (1 << 3),  ///< Memory allocations can be executed.
+    /// @cond
+    UMF_PROTECTION_MAX // must be the last one
+    /// @endcond
+} umf_mem_protection_flags_t;
+
 /// @brief A struct containing memory provider specific set of functions
 typedef struct umf_memory_provider_t *umf_memory_provider_handle_t;
 
