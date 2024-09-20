@@ -90,31 +90,3 @@ int utils_shm_unlink(const char *shm_name) {
 int utils_create_anonymous_fd(void) {
     return 0; // ignored on MacOSX
 }
-
-int os_get_file_size(int fd, size_t *size) {
-    (void)fd;   // unused
-    (void)size; // unused
-    return -1;  // not supported on MacOSX
-}
-
-int os_set_file_size(int fd, size_t size) {
-    (void)fd;   // unused
-    (void)size; // unused
-    return 0;   // ignored on MacOSX
-}
-
-void *os_devdax_mmap(void *hint_addr, size_t length, int prot, int fd) {
-    (void)hint_addr; // unused
-    (void)length;    // unused
-    (void)prot;      // unused
-    (void)fd;        // unused
-    return NULL;     // not supported on Windows
-}
-
-int os_fallocate(int fd, long offset, long len) {
-    (void)fd;     // unused
-    (void)offset; // unused
-    (void)len;    // unused
-
-    return -1;
-}
