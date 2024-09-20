@@ -22,8 +22,8 @@ umf_memory_tracker_handle_t TRACKER = NULL;
 static unsigned long long umfRefCount = 0;
 
 int umfInit(void) {
-    if (util_fetch_and_add64(&umfRefCount, 1) == 0) {
-        util_log_init();
+    if (utils_fetch_and_add64(&umfRefCount, 1) == 0) {
+        utils_log_init();
         TRACKER = umfMemoryTrackerCreate();
     }
 
@@ -31,7 +31,7 @@ int umfInit(void) {
 }
 
 void umfTearDown(void) {
-    if (util_fetch_and_add64(&umfRefCount, -1) == 1) {
+    if (utils_fetch_and_add64(&umfRefCount, -1) == 1) {
 #if !defined(_WIN32) && !defined(UMF_NO_HWLOC)
         umfMemspaceHostAllDestroy();
         umfMemspaceHighestCapacityDestroy();

@@ -31,7 +31,7 @@ typedef struct umf_ba_next_linear_pool_t umf_ba_next_linear_pool_t;
 // metadata is set and used only in the main (the first) pool
 typedef struct umf_ba_main_linear_pool_meta_t {
     size_t pool_size; // size of this pool (argument of ba_os_alloc() call)
-    os_mutex_t lock;
+    utils_mutex_t lock;
     char *data_ptr;
     size_t size_left;
     size_t pool_n_allocs; // number of allocations in this pool
@@ -98,7 +98,7 @@ umf_ba_linear_pool_t *umf_ba_linear_create(size_t pool_size) {
     void *data_ptr = &pool->data;
     size_t size_left = pool_size - offsetof(umf_ba_linear_pool_t, data);
 
-    util_align_ptr_size(&data_ptr, &size_left, MEMORY_ALIGNMENT);
+    utils_align_ptr_size(&data_ptr, &size_left, MEMORY_ALIGNMENT);
 
     pool->metadata.pool_size = pool_size;
     pool->metadata.data_ptr = data_ptr;
@@ -109,7 +109,7 @@ umf_ba_linear_pool_t *umf_ba_linear_create(size_t pool_size) {
     _DEBUG_EXECUTE(pool->metadata.global_n_allocs = 0);
 
     // init lock
-    os_mutex_t *lock = util_mutex_init(&pool->metadata.lock);
+    utils_mutex_t *lock = utils_mutex_init(&pool->metadata.lock);
     if (!lock) {
         ba_os_free(pool, pool_size);
         return NULL;
@@ -123,7 +123,7 @@ void *umf_ba_linear_alloc(umf_ba_linear_pool_t *pool, size_t size) {
         return NULL;
     }
     size_t aligned_size = ALIGN_UP(size, MEMORY_ALIGNMENT);
-    util_mutex_lock(&pool->metadata.lock);
+    utils_mutex_lock(&pool->metadata.lock);
     if (pool->metadata.size_left < aligned_size) {
         size_t pool_size = MINIMUM_LINEAR_POOL_SIZE;
         size_t usable_size =
@@ -139,7 +139,7 @@ void *umf_ba_linear_alloc(umf_ba_linear_pool_t *pool, size_t size) {
         umf_ba_next_linear_pool_t *new_pool =
             (umf_ba_next_linear_pool_t *)ba_os_alloc(pool_size);
         if (!new_pool) {
-            util_mutex_unlock(&pool->metadata.lock);
+            utils_mutex_unlock(&pool->metadata.lock);
             return NULL;
         }
 
@@ -149,7 +149,7 @@ void *umf_ba_linear_alloc(umf_ba_linear_pool_t *pool, size_t size) {
         void *data_ptr = &new_pool->data;
         size_t size_left =
             new_pool->pool_size - offsetof(umf_ba_next_linear_pool_t, data);
-        util_align_ptr_size(&data_ptr, &size_left, MEMORY_ALIGNMENT);
+        utils_align_ptr_size(&data_ptr, &size_left, MEMORY_ALIGNMENT);
 
         pool->metadata.data_ptr = data_ptr;
         pool->metadata.size_left = size_left;
@@ -171,7 +171,7 @@ void *umf_ba_linear_alloc(umf_ba_linear_pool_t *pool, size_t size) {
     }
     _DEBUG_EXECUTE(pool->metadata.global_n_allocs++);
     _DEBUG_EXECUTE(ba_debug_checks(pool));
-    util_mutex_unlock(&pool->metadata.lock);
+    utils_mutex_unlock(&pool->metadata.lock);
 
     return ptr;
 }
@@ -188,7 +188,7 @@ static inline int pool_contains_ptr(void *pool, size_t pool_size,
 // 0  - ptr belonged to the pool and was freed
 // -1 - ptr doesn't belong to the pool and wasn't freed
 int umf_ba_linear_free(umf_ba_linear_pool_t *pool, void *ptr) {
-    util_mutex_lock(&pool->metadata.lock);
+    utils_mutex_lock(&pool->metadata.lock);
     _DEBUG_EXECUTE(ba_debug_checks(pool));
     if (pool_contains_ptr(pool, pool->metadata.pool_size, pool->data, ptr)) {
         pool->metadata.pool_n_allocs--;
@@ -204,7 +204,7 @@ int umf_ba_linear_free(umf_ba_linear_pool_t *pool, void *ptr) {
             pool->metadata.pool_size = page_size;
         }
         _DEBUG_EXECUTE(ba_debug_checks(pool));
-        util_mutex_unlock(&pool->metadata.lock);
+        utils_mutex_unlock(&pool->metadata.lock);
         return 0;
     }
 
@@ -227,14 +227,14 @@ int umf_ba_linear_free(umf_ba_linear_pool_t *pool, void *ptr) {
                 ba_os_free(next_pool_ptr, size);
             }
             _DEBUG_EXECUTE(ba_debug_checks(pool));
-            util_mutex_unlock(&pool->metadata.lock);
+            utils_mutex_unlock(&pool->metadata.lock);
             return 0;
         }
         prev_pool = next_pool;
         next_pool = next_pool->next_pool;
     }
 
-    util_mutex_unlock(&pool->metadata.lock);
+    utils_mutex_unlock(&pool->metadata.lock);
     // ptr doesn't belong to the pool and wasn't freed
     return -1;
 }
@@ -243,7 +243,7 @@ void umf_ba_linear_destroy(umf_ba_linear_pool_t *pool) {
     // Do not destroy if we are running in the proxy library,
     // because it may need those resources till
     // the very end of exiting the application.
-    if (util_is_running_in_proxy_lib()) {
+    if (utils_is_running_in_proxy_lib()) {
         return;
     }
 
@@ -262,7 +262,7 @@ void umf_ba_linear_destroy(umf_ba_linear_pool_t *pool) {
         ba_os_free(current_pool, current_pool->pool_size);
     }
 
-    util_mutex_destroy_not_free(&pool->metadata.lock);
+    utils_mutex_destroy_not_free(&pool->metadata.lock);
     ba_os_free(pool, pool->metadata.pool_size);
 }
 
@@ -272,12 +272,12 @@ void umf_ba_linear_destroy(umf_ba_linear_pool_t *pool) {
 //   to the end of the pool if ptr belongs to the pool
 size_t umf_ba_linear_pool_contains_pointer(umf_ba_linear_pool_t *pool,
                                            void *ptr) {
-    util_mutex_lock(&pool->metadata.lock);
+    utils_mutex_lock(&pool->metadata.lock);
     char *cptr = (char *)ptr;
     if (cptr >= pool->data &&
         cptr < ((char *)(pool)) + pool->metadata.pool_size) {
         size_t size = ((char *)(pool)) + pool->metadata.pool_size - cptr;
-        util_mutex_unlock(&pool->metadata.lock);
+        utils_mutex_unlock(&pool->metadata.lock);
         return size;
     }
 
@@ -286,12 +286,12 @@ size_t umf_ba_linear_pool_contains_pointer(umf_ba_linear_pool_t *pool,
         if (cptr >= next_pool->data &&
             cptr < ((char *)(next_pool)) + next_pool->pool_size) {
             size_t size = ((char *)(next_pool)) + next_pool->pool_size - cptr;
-            util_mutex_unlock(&pool->metadata.lock);
+            utils_mutex_unlock(&pool->metadata.lock);
             return size;
         }
         next_pool = next_pool->next_pool;
     }
 
-    util_mutex_unlock(&pool->metadata.lock);
+    utils_mutex_unlock(&pool->metadata.lock);
     return 0;
 }

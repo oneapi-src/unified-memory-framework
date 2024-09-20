@@ -68,7 +68,7 @@ static void umfMemspaceHighestCapacityInit(void) {
 }
 
 umf_const_memspace_handle_t umfMemspaceHighestCapacityGet(void) {
-    util_init_once(&UMF_MEMSPACE_HIGHEST_CAPACITY_INITIALIZED,
-                   umfMemspaceHighestCapacityInit);
+    utils_init_once(&UMF_MEMSPACE_HIGHEST_CAPACITY_INITIALIZED,
+                    umfMemspaceHighestCapacityInit);
     return UMF_MEMSPACE_HIGHEST_CAPACITY;
 }

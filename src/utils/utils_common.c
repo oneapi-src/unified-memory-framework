@@ -13,7 +13,7 @@
 #include "utils_common.h"
 
 // align a pointer and a size
-void util_align_ptr_size(void **ptr, size_t *size, size_t alignment) {
+void utils_align_ptr_size(void **ptr, size_t *size, size_t alignment) {
     uintptr_t p = (uintptr_t)*ptr;
     size_t s = *size;
 
@@ -31,7 +31,7 @@ void util_align_ptr_size(void **ptr, size_t *size, size_t alignment) {
     *size = s;
 }
 
-int util_env_var_has_str(const char *envvar, const char *str) {
+int utils_env_var_has_str(const char *envvar, const char *str) {
     char *value = getenv(envvar);
     if (value && strstr(value, str)) {
         return 1;
@@ -41,12 +41,12 @@ int util_env_var_has_str(const char *envvar, const char *str) {
 }
 
 // check if we are running in the proxy library
-int util_is_running_in_proxy_lib(void) {
-    return util_env_var_has_str("LD_PRELOAD", "libumf_proxy.so");
+int utils_is_running_in_proxy_lib(void) {
+    return utils_env_var_has_str("LD_PRELOAD", "libumf_proxy.so");
 }
 
-const char *util_parse_var(const char *var, const char *option,
-                           const char **extraArg) {
+const char *utils_parse_var(const char *var, const char *option,
+                            const char **extraArg) {
     const char *found = strstr(var, option);
     // ensure that found string is first on list or it's a separating semicolon
     if (!found) {
@@ -76,7 +76,7 @@ const char *util_parse_var(const char *var, const char *option,
     return found;
 }
 
-int util_copy_path(const char *in_path, char out_path[], size_t path_max) {
+int utils_copy_path(const char *in_path, char out_path[], size_t path_max) {
     // (- 1) because there should be a room for the terminating null byte ('\0')
     size_t max_len = path_max - 1;
 

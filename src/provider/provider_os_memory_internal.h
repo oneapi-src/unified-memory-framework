@@ -31,10 +31,10 @@ typedef struct os_memory_provider_t {
     unsigned visibility; // memory visibility mode
     // a name of a shared memory file (valid only in case of the shared memory visibility)
     char shm_name[NAME_MAX];
-    int fd;             // file descriptor for memory mapping
-    size_t size_fd;     // size of file used for memory mapping
-    size_t max_size_fd; // maximum size of file used for memory mapping
-    os_mutex_t lock_fd; // lock for updating file size
+    int fd;                // file descriptor for memory mapping
+    size_t size_fd;        // size of file used for memory mapping
+    size_t max_size_fd;    // maximum size of file used for memory mapping
+    utils_mutex_t lock_fd; // lock for updating file size
 
     // A critnib map storing (ptr, fd_offset + 1) pairs. We add 1 to fd_offset
     // in order to be able to store fd_offset equal 0, because

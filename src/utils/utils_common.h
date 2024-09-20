@@ -54,9 +54,9 @@ typedef enum umf_purge_advise_t {
 #endif /* _WIN32 */
 
 // Check if the environment variable contains the given string.
-int util_env_var_has_str(const char *envvar, const char *str);
+int utils_env_var_has_str(const char *envvar, const char *str);
 
-// util_parse_var - Parses var for a prefix,
+// utils_parse_var - Parses var for a prefix,
 //                   optionally identifying a following argument.
 // Parameters:
 //   - var: String to parse  in "option1;option2,arg2;..." format, with options
@@ -70,16 +70,16 @@ int util_env_var_has_str(const char *envvar, const char *str);
 //
 // IMPORTANT: Both extraArg and return values are pointers within var,
 // and are not null-terminated.
-const char *util_parse_var(const char *var, const char *option,
-                           const char **extraArg);
+const char *utils_parse_var(const char *var, const char *option,
+                            const char **extraArg);
 
 // check if we are running in the proxy library
-int util_is_running_in_proxy_lib(void);
+int utils_is_running_in_proxy_lib(void);
 
-size_t util_get_page_size(void);
+size_t utils_get_page_size(void);
 
 // align a pointer and a size
-void util_align_ptr_size(void **ptr, size_t *size, size_t alignment);
+void utils_align_ptr_size(void **ptr, size_t *size, size_t alignment);
 
 // get the current process ID
 int utils_getpid(void);
@@ -93,7 +93,7 @@ int utils_close_fd(int fd);
 // obtain a duplicate of another process's file descriptor
 umf_result_t utils_duplicate_fd(int pid, int fd_in, int *fd_out);
 
-int util_copy_path(const char *in_path, char out_path[], size_t path_max);
+int utils_copy_path(const char *in_path, char out_path[], size_t path_max);
 
 umf_result_t utils_translate_flags(unsigned in_flags, unsigned max,
                                    umf_result_t (*translate_flag)(unsigned,

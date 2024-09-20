@@ -31,7 +31,7 @@ typedef struct devdax_memory_provider_t {
     size_t size;         // size of the file used for memory mapping
     void *base;          // base address of memory mapping
     size_t offset;       // offset in the file used for memory mapping
-    os_mutex_t lock;     // lock of ptr and offset
+    utils_mutex_t lock;  // lock of ptr and offset
     unsigned protection; // combination of OS-specific protection flags
 } devdax_memory_provider_t;
 
@@ -119,7 +119,7 @@ static umf_result_t devdax_initialize(void *params, void **provider) {
     }
 
     devdax_provider->size = in_params->size;
-    if (util_copy_path(in_params->path, devdax_provider->path, PATH_MAX)) {
+    if (utils_copy_path(in_params->path, devdax_provider->path, PATH_MAX)) {
         goto err_free_devdax_provider;
     }
 
@@ -143,7 +143,7 @@ static umf_result_t devdax_initialize(void *params, void **provider) {
     LOG_DEBUG("devdax memory mapped (path=%s, size=%zu, addr=%p)",
               in_params->path, devdax_provider->size, devdax_provider->base);
 
-    if (util_mutex_init(&devdax_provider->lock) == NULL) {
+    if (utils_mutex_init(&devdax_provider->lock) == NULL) {
         LOG_ERR("lock init failed");
         ret = UMF_RESULT_ERROR_UNKNOWN;
         goto err_unmap_devdax;
@@ -167,17 +167,17 @@ static void devdax_finalize(void *provider) {
     }
 
     devdax_memory_provider_t *devdax_provider = provider;
-    util_mutex_destroy_not_free(&devdax_provider->lock);
+    utils_mutex_destroy_not_free(&devdax_provider->lock);
     utils_munmap(devdax_provider->base, devdax_provider->size);
     umf_ba_global_free(devdax_provider);
 }
 
 static int devdax_alloc_aligned(size_t length, size_t alignment, void *base,
-                                size_t size, os_mutex_t *lock, void **out_addr,
-                                size_t *offset) {
+                                size_t size, utils_mutex_t *lock,
+                                void **out_addr, size_t *offset) {
     assert(out_addr);
 
-    if (util_mutex_lock(lock)) {
+    if (utils_mutex_lock(lock)) {
         LOG_ERR("locking file offset failed");
         return -1;
     }
@@ -192,7 +192,7 @@ static int devdax_alloc_aligned(size_t length, size_t alignment, void *base,
     size_t new_offset = ptr - (uintptr_t)base + length;
 
     if (new_offset > size) {
-        util_mutex_unlock(lock);
+        utils_mutex_unlock(lock);
         LOG_ERR("cannot allocate more memory than the device DAX size: %zu",
                 size);
         return -1;
@@ -201,7 +201,7 @@ static int devdax_alloc_aligned(size_t length, size_t alignment, void *base,
     *offset = new_offset;
     *out_addr = (void *)ptr;
 
-    util_mutex_unlock(lock);
+    utils_mutex_unlock(lock);
 
     return 0;
 }
@@ -295,7 +295,7 @@ static umf_result_t devdax_get_recommended_page_size(void *provider,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    *page_size = util_get_page_size();
+    *page_size = utils_get_page_size();
 
     return UMF_RESULT_SUCCESS;
 }

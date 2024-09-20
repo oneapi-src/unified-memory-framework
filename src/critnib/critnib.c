@@ -130,25 +130,25 @@ struct critnib {
 
     uint64_t remove_count;
 
-    struct os_mutex_t mutex; /* writes/removes */
+    struct utils_mutex_t mutex; /* writes/removes */
 };
 
 /*
  * atomic load
  */
 static void load(void *src, void *dst) {
-    util_atomic_load_acquire((word *)src, (word *)dst);
+    utils_atomic_load_acquire((word *)src, (word *)dst);
 }
 
 static void load64(uint64_t *src, uint64_t *dst) {
-    util_atomic_load_acquire(src, dst);
+    utils_atomic_load_acquire(src, dst);
 }
 
 /*
  * atomic store
  */
 static void store(void *dst, void *src) {
-    util_atomic_store_release((word *)dst, (word)src);
+    utils_atomic_store_release((word *)dst, (word)src);
 }
 
 /*
@@ -187,7 +187,7 @@ struct critnib *critnib_new(void) {
 
     memset(c, 0, sizeof(struct critnib));
 
-    void *mutex_ptr = util_mutex_init(&c->mutex);
+    void *mutex_ptr = utils_mutex_init(&c->mutex);
     if (!mutex_ptr) {
         goto err_free_critnib;
     }
@@ -226,7 +226,7 @@ void critnib_delete(struct critnib *c) {
         delete_node(c, c->root);
     }
 
-    util_mutex_destroy_not_free(&c->mutex);
+    utils_mutex_destroy_not_free(&c->mutex);
 
     for (struct critnib_node *m = c->deleted_node; m;) {
         struct critnib_node *mm = m->child[0];
@@ -325,11 +325,11 @@ static struct critnib_leaf *alloc_leaf(struct critnib *__restrict c) {
  * Takes a global write lock but doesn't stall any readers.
  */
 int critnib_insert(struct critnib *c, word key, void *value, int update) {
-    util_mutex_lock(&c->mutex);
+    utils_mutex_lock(&c->mutex);
 
     struct critnib_leaf *k = alloc_leaf(c);
     if (!k) {
-        util_mutex_unlock(&c->mutex);
+        utils_mutex_unlock(&c->mutex);
 
         return ENOMEM;
     }
@@ -345,7 +345,7 @@ int critnib_insert(struct critnib *c, word key, void *value, int update) {
     if (!n) {
         store(&c->root, kn);
 
-        util_mutex_unlock(&c->mutex);
+        utils_mutex_unlock(&c->mutex);
 
         return 0;
     }
@@ -363,7 +363,7 @@ int critnib_insert(struct critnib *c, word key, void *value, int update) {
         n = prev;
         store(&n->child[slice_index(key, n->shift)], kn);
 
-        util_mutex_unlock(&c->mutex);
+        utils_mutex_unlock(&c->mutex);
 
         return 0;
     }
@@ -377,22 +377,22 @@ int critnib_insert(struct critnib *c, word key, void *value, int update) {
 
         if (update) {
             to_leaf(n)->value = value;
-            util_mutex_unlock(&c->mutex);
+            utils_mutex_unlock(&c->mutex);
             return 0;
         } else {
-            util_mutex_unlock(&c->mutex);
+            utils_mutex_unlock(&c->mutex);
             return EEXIST;
         }
     }
 
     /* and convert that to an index. */
-    sh_t sh = util_mssb_index(at) & (sh_t) ~(SLICE - 1);
+    sh_t sh = utils_mssb_index(at) & (sh_t) ~(SLICE - 1);
 
     struct critnib_node *m = alloc_node(c);
     if (!m) {
         free_leaf(c, to_leaf(kn));
 
-        util_mutex_unlock(&c->mutex);
+        utils_mutex_unlock(&c->mutex);
 
         return ENOMEM;
     }
@@ -408,7 +408,7 @@ int critnib_insert(struct critnib *c, word key, void *value, int update) {
     m->path = key & path_mask(sh);
     store(parent, m);
 
-    util_mutex_unlock(&c->mutex);
+    utils_mutex_unlock(&c->mutex);
 
     return 0;
 }
@@ -420,14 +420,14 @@ void *critnib_remove(struct critnib *c, word key) {
     struct critnib_leaf *k;
     void *value = NULL;
 
-    util_mutex_lock(&c->mutex);
+    utils_mutex_lock(&c->mutex);
 
     struct critnib_node *n = c->root;
     if (!n) {
         goto not_found;
     }
 
-    word del = (util_atomic_increment(&c->remove_count) - 1) % DELETED_LIFE;
+    word del = (utils_atomic_increment(&c->remove_count) - 1) % DELETED_LIFE;
     free_node(c, c->pending_del_nodes[del]);
     free_leaf(c, c->pending_del_leaves[del]);
     c->pending_del_nodes[del] = NULL;
@@ -490,7 +490,7 @@ del_leaf:
     c->pending_del_leaves[del] = k;
 
 not_found:
-    util_mutex_unlock(&c->mutex);
+    utils_mutex_unlock(&c->mutex);
     return value;
 }
 
@@ -813,9 +813,9 @@ static int iter(struct critnib_node *__restrict n, word min, word max,
 void critnib_iter(critnib *c, uintptr_t min, uintptr_t max,
                   int (*func)(uintptr_t key, void *value, void *privdata),
                   void *privdata) {
-    util_mutex_lock(&c->mutex);
+    utils_mutex_lock(&c->mutex);
     if (c->root) {
         iter(c->root, min, max, func, privdata);
     }
-    util_mutex_unlock(&c->mutex);
+    utils_mutex_unlock(&c->mutex);
 }

@@ -168,7 +168,7 @@ static int syscall_memfd_create(void) {
 int utils_create_anonymous_fd(void) {
     int fd = -1;
 
-    if (!util_env_var_has_str("UMF_MEM_FD_FUNC", "memfd_create")) {
+    if (!utils_env_var_has_str("UMF_MEM_FD_FUNC", "memfd_create")) {
         fd = syscall_memfd_secret();
         if (fd > 0) {
             return fd;

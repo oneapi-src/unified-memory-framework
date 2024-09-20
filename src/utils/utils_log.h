@@ -20,31 +20,31 @@ typedef enum {
     LOG_WARNING,
     LOG_ERROR,
     LOG_FATAL
-} util_log_level_t;
+} utils_log_level_t;
 
-#define LOG_DEBUG(...) util_log(LOG_DEBUG, __func__, __VA_ARGS__);
-#define LOG_INFO(...) util_log(LOG_INFO, __func__, __VA_ARGS__);
-#define LOG_WARN(...) util_log(LOG_WARNING, __func__, __VA_ARGS__);
-#define LOG_ERR(...) util_log(LOG_ERROR, __func__, __VA_ARGS__);
-#define LOG_FATAL(...) util_log(LOG_FATAL, __func__, __VA_ARGS__);
+#define LOG_DEBUG(...) utils_log(LOG_DEBUG, __func__, __VA_ARGS__);
+#define LOG_INFO(...) utils_log(LOG_INFO, __func__, __VA_ARGS__);
+#define LOG_WARN(...) utils_log(LOG_WARNING, __func__, __VA_ARGS__);
+#define LOG_ERR(...) utils_log(LOG_ERROR, __func__, __VA_ARGS__);
+#define LOG_FATAL(...) utils_log(LOG_FATAL, __func__, __VA_ARGS__);
 
-#define LOG_PDEBUG(...) util_plog(LOG_DEBUG, __func__, __VA_ARGS__);
-#define LOG_PINFO(...) util_plog(LOG_INFO, __func__, __VA_ARGS__);
-#define LOG_PWARN(...) util_plog(LOG_WARNING, __func__, __VA_ARGS__);
-#define LOG_PERR(...) util_plog(LOG_ERROR, __func__, __VA_ARGS__);
-#define LOG_PFATAL(...) util_plog(LOG_FATAL, __func__, __VA_ARGS__);
+#define LOG_PDEBUG(...) utils_plog(LOG_DEBUG, __func__, __VA_ARGS__);
+#define LOG_PINFO(...) utils_plog(LOG_INFO, __func__, __VA_ARGS__);
+#define LOG_PWARN(...) utils_plog(LOG_WARNING, __func__, __VA_ARGS__);
+#define LOG_PERR(...) utils_plog(LOG_ERROR, __func__, __VA_ARGS__);
+#define LOG_PFATAL(...) utils_plog(LOG_FATAL, __func__, __VA_ARGS__);
 
-void util_log_init(void);
+void utils_log_init(void);
 #ifdef _WIN32
-void util_log(util_log_level_t level, const char *func, const char *format,
-              ...);
-void util_plog(util_log_level_t level, const char *func, const char *format,
+void utils_log(utils_log_level_t level, const char *func, const char *format,
                ...);
+void utils_plog(utils_log_level_t level, const char *func, const char *format,
+                ...);
 #else
-void util_log(util_log_level_t level, const char *func, const char *format, ...)
-    __attribute__((format(printf, 3, 4)));
-void util_plog(util_log_level_t level, const char *func, const char *format,
+void utils_log(utils_log_level_t level, const char *func, const char *format,
                ...) __attribute__((format(printf, 3, 4)));
+void utils_plog(utils_log_level_t level, const char *func, const char *format,
+                ...) __attribute__((format(printf, 3, 4)));
 #endif
 
 #ifdef __cplusplus

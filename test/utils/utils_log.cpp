@@ -19,7 +19,7 @@ FILE *mock_fopen(const char *filename, const char *mode) {
 }
 
 const std::string MOCK_FN_NAME = "MOCK_FUNCTION_NAME";
-std::string expected_message = "[ERROR UMF] util_log_init: Logging output not "
+std::string expected_message = "[ERROR UMF] utils_log_init: Logging output not "
                                "set - logging disabled (UMF_LOG = \"\")\n";
 // The expected_message (above) is printed to stderr.
 FILE *expected_stream = stderr;
@@ -98,7 +98,7 @@ const char *env_variable = "";
 #define fopen(A, B) mock_fopen(A, B)
 #define fputs(A, B) mock_fputs(A, B)
 #define fflush(A) mock_fflush(A)
-#define util_env_var(A, B, C) mock_util_env_var(A, B, C)
+#define utils_env_var(A, B, C) mock_utils_env_var(A, B, C)
 #if defined(__APPLE__)
 #define strerror_r(A, B, C) mock_strerror_posix(A, B, C)
 #else
@@ -111,7 +111,7 @@ const char *env_variable = "";
 #define UMF_VERSION "test version"
 #endif
 #include "utils/utils_log.c"
-#undef util_env_var
+#undef utils_env_var
 #undef fopen
 #undef fputs
 #undef fflush
@@ -122,13 +122,13 @@ void helper_log_init(const char *var) {
     env_variable = var;
     fopen_count = 0;
     fput_count = 0;
-    util_log_init();
+    utils_log_init();
     env_variable = NULL;
     EXPECT_EQ(fopen_count, expect_fopen_count);
     EXPECT_EQ(fput_count, expect_fput_count);
 }
 
-void helper_checkConfig(util_log_config_t *expected, util_log_config_t *is) {
+void helper_checkConfig(utils_log_config_t *expected, utils_log_config_t *is) {
     EXPECT_EQ(expected->level, is->level);
     EXPECT_EQ(expected->flushLevel, is->flushLevel);
     EXPECT_EQ(expected->output, is->output);
@@ -142,7 +142,7 @@ TEST_F(test, parseEnv_errors) {
 
     expect_fput_count = 0;
     expected_stream = stderr;
-    util_log_config_t b = loggerConfig;
+    utils_log_config_t b = loggerConfig;
     helper_log_init(NULL);
     helper_checkConfig(&b, &loggerConfig);
 
@@ -156,13 +156,13 @@ TEST_F(test, parseEnv_errors) {
     helper_log_init("_level:debug");
     helper_checkConfig(&b, &loggerConfig);
     expected_message =
-        "[ERROR UMF] util_log_init: Cannot open output file - path too long\n";
+        "[ERROR UMF] utils_log_init: Cannot open output file - path too long\n";
     std::string test_env = "output:file," + std::string(300, 'x');
     helper_log_init(test_env.c_str());
 }
 
 TEST_F(test, parseEnv) {
-    util_log_config_t b = loggerConfig;
+    utils_log_config_t b = loggerConfig;
     expected_message = "";
 
     std::vector<std::pair<std::string, int>> logLevels = {
@@ -228,9 +228,9 @@ TEST_F(test, parseEnv) {
                             expected_stream = output.second;
                             b.timestamp = timestamp.second;
                             b.pid = pid.second;
-                            b.flushLevel = (util_log_level_t)flushLevel.second;
+                            b.flushLevel = (utils_log_level_t)flushLevel.second;
 
-                            b.level = (util_log_level_t)logLevel.second;
+                            b.level = (utils_log_level_t)logLevel.second;
                             if (logLevel.second <= LOG_INFO) {
                                 expect_fput_count = 1;
                             }
@@ -238,7 +238,7 @@ TEST_F(test, parseEnv) {
                             expect_fput_count = 1;
                             if (expected_filename.size() > MAX_FILE_PATH) {
                                 expected_message =
-                                    "[ERROR UMF] util_log_init: Cannot open "
+                                    "[ERROR UMF] utils_log_init: Cannot open "
                                     "output file - path too long\n";
                             }
                         }
@@ -254,7 +254,7 @@ TEST_F(test, parseEnv) {
 template <typename... Args> void helper_test_log(Args... args) {
     fput_count = 0;
     fflush_count = 0;
-    util_log(args...);
+    utils_log(args...);
     EXPECT_EQ(fput_count, expect_fput_count);
     EXPECT_EQ(fflush_count, expect_fflush_count);
 }
@@ -281,7 +281,7 @@ TEST_F(test, log_levels) {
     expected_stream = stderr;
     for (int i = LOG_DEBUG; i <= LOG_ERROR; i++) {
         for (int j = LOG_DEBUG; j <= LOG_ERROR; j++) {
-            loggerConfig = {0, 0, (util_log_level_t)i, LOG_DEBUG, stderr};
+            loggerConfig = {0, 0, (utils_log_level_t)i, LOG_DEBUG, stderr};
             if (i > j) {
                 expect_fput_count = 0;
                 expect_fflush_count = 0;
@@ -292,7 +292,7 @@ TEST_F(test, log_levels) {
             }
             expected_message = "[" + helper_log_str(j) + " UMF] " +
                                MOCK_FN_NAME + ": example log\n";
-            helper_test_log((util_log_level_t)j, MOCK_FN_NAME.c_str(), "%s",
+            helper_test_log((utils_log_level_t)j, MOCK_FN_NAME.c_str(), "%s",
                             "example log");
         }
     }
@@ -315,7 +315,7 @@ TEST_F(test, flush_levels) {
     expect_fput_count = 1;
     for (int i = LOG_DEBUG; i <= LOG_ERROR; i++) {
         for (int j = LOG_DEBUG; j <= LOG_ERROR; j++) {
-            loggerConfig = {0, 0, LOG_DEBUG, (util_log_level_t)i, stderr};
+            loggerConfig = {0, 0, LOG_DEBUG, (utils_log_level_t)i, stderr};
             if (i > j) {
                 expect_fflush_count = 0;
             } else {
@@ -323,7 +323,7 @@ TEST_F(test, flush_levels) {
             }
             expected_message = "[" + helper_log_str(j) + " UMF] " +
                                MOCK_FN_NAME + ": example log\n";
-            helper_test_log((util_log_level_t)j, MOCK_FN_NAME.c_str(), "%s",
+            helper_test_log((utils_log_level_t)j, MOCK_FN_NAME.c_str(), "%s",
                             "example log");
         }
     }
@@ -420,7 +420,7 @@ TEST_F(test, log_macros) {
 template <typename... Args> void helper_test_plog(Args... args) {
     fput_count = 0;
     fflush_count = 0;
-    util_plog(args...);
+    utils_plog(args...);
     EXPECT_EQ(fput_count, expect_fput_count);
     EXPECT_EQ(fflush_count, expect_fflush_count);
 }

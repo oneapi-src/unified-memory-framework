@@ -36,7 +36,7 @@ struct libcu_ops {
 struct DlHandleCloser {
     void operator()(void *dlHandle) {
         if (dlHandle) {
-            util_close_library(dlHandle);
+            utils_close_library(dlHandle);
         }
     }
 };
@@ -52,77 +52,77 @@ int InitCUDAOps() {
     // NOTE that we use UMF_UTIL_OPEN_LIBRARY_GLOBAL which add all loaded
     // symbols to the global symbol table.
     cuDlHandle = std::unique_ptr<void, DlHandleCloser>(
-        util_open_library(lib_name, UMF_UTIL_OPEN_LIBRARY_GLOBAL));
+        utils_open_library(lib_name, UMF_UTIL_OPEN_LIBRARY_GLOBAL));
 
     // NOTE: some symbols defined in the lib have _vX postfixes - this is
     // important to load the proper version of functions
     *(void **)&libcu_ops.cuInit =
-        util_get_symbol_addr(cuDlHandle.get(), "cuInit", lib_name);
+        utils_get_symbol_addr(cuDlHandle.get(), "cuInit", lib_name);
     if (libcu_ops.cuInit == nullptr) {
         fprintf(stderr, "cuInit symbol not found in %s\n", lib_name);
         return -1;
     }
     *(void **)&libcu_ops.cuCtxCreate =
-        util_get_symbol_addr(cuDlHandle.get(), "cuCtxCreate_v2", lib_name);
+        utils_get_symbol_addr(cuDlHandle.get(), "cuCtxCreate_v2", lib_name);
     if (libcu_ops.cuCtxCreate == nullptr) {
         fprintf(stderr, "cuCtxCreate_v2 symbol not found in %s\n", lib_name);
         return -1;
     }
     *(void **)&libcu_ops.cuCtxDestroy =
-        util_get_symbol_addr(cuDlHandle.get(), "cuCtxDestroy_v2", lib_name);
+        utils_get_symbol_addr(cuDlHandle.get(), "cuCtxDestroy_v2", lib_name);
     if (libcu_ops.cuCtxDestroy == nullptr) {
         fprintf(stderr, "cuCtxDestroy symbol not found in %s\n", lib_name);
         return -1;
     }
     *(void **)&libcu_ops.cuDeviceGet =
-        util_get_symbol_addr(cuDlHandle.get(), "cuDeviceGet", lib_name);
+        utils_get_symbol_addr(cuDlHandle.get(), "cuDeviceGet", lib_name);
     if (libcu_ops.cuDeviceGet == nullptr) {
         fprintf(stderr, "cuDeviceGet symbol not found in %s\n", lib_name);
         return -1;
     }
     *(void **)&libcu_ops.cuMemAlloc =
-        util_get_symbol_addr(cuDlHandle.get(), "cuMemAlloc_v2", lib_name);
+        utils_get_symbol_addr(cuDlHandle.get(), "cuMemAlloc_v2", lib_name);
     if (libcu_ops.cuMemAlloc == nullptr) {
         fprintf(stderr, "cuMemAlloc_v2 symbol not found in %s\n", lib_name);
         return -1;
     }
     *(void **)&libcu_ops.cuMemFree =
-        util_get_symbol_addr(cuDlHandle.get(), "cuMemFree_v2", lib_name);
+        utils_get_symbol_addr(cuDlHandle.get(), "cuMemFree_v2", lib_name);
     if (libcu_ops.cuMemFree == nullptr) {
         fprintf(stderr, "cuMemFree_v2 symbol not found in %s\n", lib_name);
         return -1;
     }
     *(void **)&libcu_ops.cuMemAllocHost =
-        util_get_symbol_addr(cuDlHandle.get(), "cuMemAllocHost_v2", lib_name);
+        utils_get_symbol_addr(cuDlHandle.get(), "cuMemAllocHost_v2", lib_name);
     if (libcu_ops.cuMemAllocHost == nullptr) {
         fprintf(stderr, "cuMemAllocHost_v2 symbol not found in %s\n", lib_name);
         return -1;
     }
     *(void **)&libcu_ops.cuMemAllocManaged =
-        util_get_symbol_addr(cuDlHandle.get(), "cuMemAllocManaged", lib_name);
+        utils_get_symbol_addr(cuDlHandle.get(), "cuMemAllocManaged", lib_name);
     if (libcu_ops.cuMemAllocManaged == nullptr) {
         fprintf(stderr, "cuMemAllocManaged symbol not found in %s\n", lib_name);
         return -1;
     }
     *(void **)&libcu_ops.cuMemFreeHost =
-        util_get_symbol_addr(cuDlHandle.get(), "cuMemFreeHost", lib_name);
+        utils_get_symbol_addr(cuDlHandle.get(), "cuMemFreeHost", lib_name);
     if (libcu_ops.cuMemFreeHost == nullptr) {
         fprintf(stderr, "cuMemFreeHost symbol not found in %s\n", lib_name);
         return -1;
     }
     *(void **)&libcu_ops.cuMemsetD32 =
-        util_get_symbol_addr(cuDlHandle.get(), "cuMemsetD32_v2", lib_name);
+        utils_get_symbol_addr(cuDlHandle.get(), "cuMemsetD32_v2", lib_name);
     if (libcu_ops.cuMemsetD32 == nullptr) {
         fprintf(stderr, "cuMemsetD32_v2 symbol not found in %s\n", lib_name);
         return -1;
     }
     *(void **)&libcu_ops.cuMemcpyDtoH =
-        util_get_symbol_addr(cuDlHandle.get(), "cuMemcpyDtoH_v2", lib_name);
+        utils_get_symbol_addr(cuDlHandle.get(), "cuMemcpyDtoH_v2", lib_name);
     if (libcu_ops.cuMemcpyDtoH == nullptr) {
         fprintf(stderr, "cuMemcpyDtoH_v2 symbol not found in %s\n", lib_name);
         return -1;
     }
-    *(void **)&libcu_ops.cuPointerGetAttributes = util_get_symbol_addr(
+    *(void **)&libcu_ops.cuPointerGetAttributes = utils_get_symbol_addr(
         cuDlHandle.get(), "cuPointerGetAttributes", lib_name);
     if (libcu_ops.cuPointerGetAttributes == nullptr) {
         fprintf(stderr, "cuPointerGetAttributes symbol not found in %s\n",
@@ -241,7 +241,7 @@ void init_cuda_once() {
 }
 
 int init_cuda() {
-    util_init_once(&cuda_init_flag, init_cuda_once);
+    utils_init_once(&cuda_init_flag, init_cuda_once);
 
     return InitResult;
 }

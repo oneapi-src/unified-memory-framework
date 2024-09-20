@@ -93,21 +93,21 @@ static void init_cu_global_state(void) {
     // NOTE: some symbols defined in the lib have _vX postfixes - it is
     // important to load the proper version of functions
     *(void **)&g_cu_ops.cuMemGetAllocationGranularity =
-        util_get_symbol_addr(0, "cuMemGetAllocationGranularity", lib_name);
+        utils_get_symbol_addr(0, "cuMemGetAllocationGranularity", lib_name);
     *(void **)&g_cu_ops.cuMemAlloc =
-        util_get_symbol_addr(0, "cuMemAlloc_v2", lib_name);
+        utils_get_symbol_addr(0, "cuMemAlloc_v2", lib_name);
     *(void **)&g_cu_ops.cuMemAllocHost =
-        util_get_symbol_addr(0, "cuMemAllocHost_v2", lib_name);
+        utils_get_symbol_addr(0, "cuMemAllocHost_v2", lib_name);
     *(void **)&g_cu_ops.cuMemAllocManaged =
-        util_get_symbol_addr(0, "cuMemAllocManaged", lib_name);
+        utils_get_symbol_addr(0, "cuMemAllocManaged", lib_name);
     *(void **)&g_cu_ops.cuMemFree =
-        util_get_symbol_addr(0, "cuMemFree_v2", lib_name);
+        utils_get_symbol_addr(0, "cuMemFree_v2", lib_name);
     *(void **)&g_cu_ops.cuMemFreeHost =
-        util_get_symbol_addr(0, "cuMemFreeHost", lib_name);
+        utils_get_symbol_addr(0, "cuMemFreeHost", lib_name);
     *(void **)&g_cu_ops.cuGetErrorName =
-        util_get_symbol_addr(0, "cuGetErrorName", lib_name);
+        utils_get_symbol_addr(0, "cuGetErrorName", lib_name);
     *(void **)&g_cu_ops.cuGetErrorString =
-        util_get_symbol_addr(0, "cuGetErrorString", lib_name);
+        utils_get_symbol_addr(0, "cuGetErrorString", lib_name);
 
     if (!g_cu_ops.cuMemGetAllocationGranularity || !g_cu_ops.cuMemAlloc ||
         !g_cu_ops.cuMemAllocHost || !g_cu_ops.cuMemAllocManaged ||
@@ -136,7 +136,7 @@ static umf_result_t cu_memory_provider_initialize(void *params,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    util_init_once(&cu_is_initialized, init_cu_global_state);
+    utils_init_once(&cu_is_initialized, init_cu_global_state);
     if (Init_cu_global_state_failed) {
         LOG_ERR("Loading CUDA symbols failed");
         return UMF_RESULT_ERROR_UNKNOWN;

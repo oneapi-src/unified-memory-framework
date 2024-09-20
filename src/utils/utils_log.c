@@ -40,14 +40,14 @@
 typedef struct {
     int timestamp;
     int pid;
-    util_log_level_t level;
-    util_log_level_t flushLevel;
+    utils_log_level_t level;
+    utils_log_level_t flushLevel;
     FILE *output;
-} util_log_config_t;
+} utils_log_config_t;
 
-util_log_config_t loggerConfig = {0, 0, LOG_ERROR, LOG_ERROR, NULL};
+utils_log_config_t loggerConfig = {0, 0, LOG_ERROR, LOG_ERROR, NULL};
 
-static const char *level_to_str(util_log_level_t l) {
+static const char *level_to_str(utils_log_level_t l) {
     switch (l) {
     case LOG_DEBUG:
         return "DEBUG";
@@ -73,9 +73,9 @@ static const char *level_to_str(util_log_level_t l) {
 #pragma warning(disable : 6262)
 #endif // _MSC_VER
 
-static void util_log_internal(util_log_level_t level, int perror,
-                              const char *func, const char *format,
-                              va_list args) {
+static void utils_log_internal(utils_log_level_t level, int perror,
+                               const char *func, const char *format,
+                               va_list args) {
     if (!loggerConfig.output && level != LOG_FATAL) {
         return; //logger not enabled
     }
@@ -203,25 +203,25 @@ static void util_log_internal(util_log_level_t level, int perror,
 #pragma warning(pop)
 #endif // _MSC_VER
 
-void util_log(util_log_level_t level, const char *func, const char *format,
-              ...) {
-    va_list args;
-    va_start(args, format);
-    util_log_internal(level, 0, func, format, args);
-    va_end(args);
-}
-
-void util_plog(util_log_level_t level, const char *func, const char *format,
+void utils_log(utils_log_level_t level, const char *func, const char *format,
                ...) {
     va_list args;
     va_start(args, format);
-    util_log_internal(level, 1, func, format, args);
+    utils_log_internal(level, 0, func, format, args);
+    va_end(args);
+}
+
+void utils_plog(utils_log_level_t level, const char *func, const char *format,
+                ...) {
+    va_list args;
+    va_start(args, format);
+    utils_log_internal(level, 1, func, format, args);
     va_end(args);
 }
 
 static const char *bool_to_str(int b) { return b ? "yes" : "no"; }
 
-void util_log_init(void) {
+void utils_log_init(void) {
     const char *envVar = getenv("UMF_LOG");
 
     if (!envVar) {
@@ -229,11 +229,11 @@ void util_log_init(void) {
     }
 
     const char *arg;
-    if (util_parse_var(envVar, "output:stdout", NULL)) {
+    if (utils_parse_var(envVar, "output:stdout", NULL)) {
         loggerConfig.output = stdout;
-    } else if (util_parse_var(envVar, "output:stderr", NULL)) {
+    } else if (utils_parse_var(envVar, "output:stderr", NULL)) {
         loggerConfig.output = stderr;
-    } else if (util_parse_var(envVar, "output:file", &arg)) {
+    } else if (utils_parse_var(envVar, "output:file", &arg)) {
         loggerConfig.output = NULL;
         const char *argEnd = strstr(arg, ";");
         char file[MAX_FILE_PATH + 1];
@@ -269,39 +269,39 @@ void util_log_init(void) {
         return;
     }
 
-    if (util_parse_var(envVar, "timestamp:yes", NULL)) {
+    if (utils_parse_var(envVar, "timestamp:yes", NULL)) {
         loggerConfig.timestamp = 1;
-    } else if (util_parse_var(envVar, "timestamp:no", NULL)) {
+    } else if (utils_parse_var(envVar, "timestamp:no", NULL)) {
         loggerConfig.timestamp = 0;
     }
 
-    if (util_parse_var(envVar, "pid:yes", NULL)) {
+    if (utils_parse_var(envVar, "pid:yes", NULL)) {
         loggerConfig.pid = 1;
-    } else if (util_parse_var(envVar, "pid:no", NULL)) {
+    } else if (utils_parse_var(envVar, "pid:no", NULL)) {
         loggerConfig.pid = 0;
     }
 
-    if (util_parse_var(envVar, "level:debug", NULL)) {
+    if (utils_parse_var(envVar, "level:debug", NULL)) {
         loggerConfig.level = LOG_DEBUG;
-    } else if (util_parse_var(envVar, "level:info", NULL)) {
+    } else if (utils_parse_var(envVar, "level:info", NULL)) {
         loggerConfig.level = LOG_INFO;
-    } else if (util_parse_var(envVar, "level:warning", NULL)) {
+    } else if (utils_parse_var(envVar, "level:warning", NULL)) {
         loggerConfig.level = LOG_WARNING;
-    } else if (util_parse_var(envVar, "level:error", NULL)) {
+    } else if (utils_parse_var(envVar, "level:error", NULL)) {
         loggerConfig.level = LOG_ERROR;
-    } else if (util_parse_var(envVar, "level:fatal", NULL)) {
+    } else if (utils_parse_var(envVar, "level:fatal", NULL)) {
         loggerConfig.level = LOG_FATAL;
     }
 
-    if (util_parse_var(envVar, "flush:debug", NULL)) {
+    if (utils_parse_var(envVar, "flush:debug", NULL)) {
         loggerConfig.flushLevel = LOG_DEBUG;
-    } else if (util_parse_var(envVar, "flush:info", NULL)) {
+    } else if (utils_parse_var(envVar, "flush:info", NULL)) {
         loggerConfig.flushLevel = LOG_INFO;
-    } else if (util_parse_var(envVar, "flush:warning", NULL)) {
+    } else if (utils_parse_var(envVar, "flush:warning", NULL)) {
         loggerConfig.flushLevel = LOG_WARNING;
-    } else if (util_parse_var(envVar, "flush:error", NULL)) {
+    } else if (utils_parse_var(envVar, "flush:error", NULL)) {
         loggerConfig.flushLevel = LOG_ERROR;
-    } else if (util_parse_var(envVar, "flush:fatal", NULL)) {
+    } else if (utils_parse_var(envVar, "flush:fatal", NULL)) {
         loggerConfig.flushLevel = LOG_FATAL;
     }
 

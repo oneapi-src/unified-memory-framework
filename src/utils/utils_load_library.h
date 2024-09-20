@@ -19,10 +19,10 @@ extern "C" {
 #endif
 #define UMF_UTIL_OPEN_LIBRARY_GLOBAL 1
 
-void *util_open_library(const char *filename, int userFlags);
-int util_close_library(void *handle);
-void *util_get_symbol_addr(void *handle, const char *symbol,
-                           const char *libname);
+void *utils_open_library(const char *filename, int userFlags);
+int utils_close_library(void *handle);
+void *utils_get_symbol_addr(void *handle, const char *symbol,
+                            const char *libname);
 
 #ifdef __cplusplus
 }

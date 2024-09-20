@@ -90,6 +90,6 @@ static void umfMemspaceHostAllInit(void) {
 }
 
 umf_const_memspace_handle_t umfMemspaceHostAllGet(void) {
-    util_init_once(&UMF_MEMSPACE_HOST_ALL_INITIALIZED, umfMemspaceHostAllInit);
+    utils_init_once(&UMF_MEMSPACE_HOST_ALL_INITIALIZED, umfMemspaceHostAllInit);
     return UMF_MEMSPACE_HOST_ALL;
 }

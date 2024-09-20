@@ -26,7 +26,7 @@
 #define TLS_MSG_BUF_LEN 1024
 
 typedef struct file_memory_provider_t {
-    os_mutex_t lock; // lock for file parameters (size and offsets)
+    utils_mutex_t lock; // lock for file parameters (size and offsets)
 
     char path[PATH_MAX]; // a path to the file
     int fd;              // file descriptor for memory mapping
@@ -114,7 +114,7 @@ static umf_result_t file_initialize(void *params, void **provider) {
     umf_file_memory_provider_params_t *in_params =
         (umf_file_memory_provider_params_t *)params;
 
-    size_t page_size = util_get_page_size();
+    size_t page_size = utils_get_page_size();
 
     if (in_params->path == NULL) {
         LOG_ERR("file path is missing");
@@ -136,7 +136,7 @@ static umf_result_t file_initialize(void *params, void **provider) {
         goto err_free_file_provider;
     }
 
-    if (util_copy_path(in_params->path, file_provider->path, PATH_MAX)) {
+    if (utils_copy_path(in_params->path, file_provider->path, PATH_MAX)) {
         goto err_free_file_provider;
     }
 
@@ -158,7 +158,7 @@ static umf_result_t file_initialize(void *params, void **provider) {
     LOG_DEBUG("size of the file %s is: %zu", in_params->path,
               file_provider->size_fd);
 
-    if (util_mutex_init(&file_provider->lock) == NULL) {
+    if (utils_mutex_init(&file_provider->lock) == NULL) {
         LOG_ERR("lock init failed");
         ret = UMF_RESULT_ERROR_UNKNOWN;
         goto err_close_fd;
@@ -185,7 +185,7 @@ static umf_result_t file_initialize(void *params, void **provider) {
 err_delete_fd_offset_map:
     critnib_delete(file_provider->fd_offset_map);
 err_mutex_destroy_not_free:
-    util_mutex_destroy_not_free(&file_provider->lock);
+    utils_mutex_destroy_not_free(&file_provider->lock);
 err_close_fd:
     utils_close_fd(file_provider->fd);
 err_free_file_provider:
@@ -211,7 +211,7 @@ static void file_finalize(void *provider) {
         key = rkey;
     }
 
-    util_mutex_destroy_not_free(&file_provider->lock);
+    utils_mutex_destroy_not_free(&file_provider->lock);
     utils_close_fd(file_provider->fd);
     critnib_delete(file_provider->fd_offset_map);
     critnib_delete(file_provider->mmaps);
@@ -291,7 +291,7 @@ static umf_result_t file_alloc_aligned(file_memory_provider_t *file_provider,
 
     umf_result_t umf_result;
 
-    if (util_mutex_lock(&file_provider->lock)) {
+    if (utils_mutex_lock(&file_provider->lock)) {
         LOG_ERR("locking file data failed");
         return UMF_RESULT_ERROR_UNKNOWN;
     }
@@ -299,7 +299,7 @@ static umf_result_t file_alloc_aligned(file_memory_provider_t *file_provider,
     if (file_provider->size_mmap - file_provider->offset_mmap < size) {
         umf_result = file_mmap_aligned(file_provider, size, alignment);
         if (umf_result != UMF_RESULT_SUCCESS) {
-            util_mutex_unlock(&file_provider->lock);
+            utils_mutex_unlock(&file_provider->lock);
             return umf_result;
         }
     }
@@ -321,7 +321,7 @@ static umf_result_t file_alloc_aligned(file_memory_provider_t *file_provider,
     if (file_provider->size_mmap - new_offset_mmap < size) {
         umf_result = file_mmap_aligned(file_provider, size, alignment);
         if (umf_result != UMF_RESULT_SUCCESS) {
-            util_mutex_unlock(&file_provider->lock);
+            utils_mutex_unlock(&file_provider->lock);
             return umf_result;
         }
     }
@@ -334,7 +334,7 @@ static umf_result_t file_alloc_aligned(file_memory_provider_t *file_provider,
 
     *out_addr = (void *)new_aligned_ptr;
 
-    util_mutex_unlock(&file_provider->lock);
+    utils_mutex_unlock(&file_provider->lock);
 
     return UMF_RESULT_SUCCESS;
 }
@@ -436,7 +436,7 @@ static umf_result_t file_get_recommended_page_size(void *provider, size_t size,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    *page_size = util_get_page_size();
+    *page_size = utils_get_page_size();
 
     return UMF_RESULT_SUCCESS;
 }

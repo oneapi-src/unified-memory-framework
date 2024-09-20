@@ -60,7 +60,7 @@ TEST_F(test, baseAllocLinearMultiThreadedAllocMemset) {
     // but not big enough to hold all allocations,
     // so that there were more pools allocated.
     // This is needed to test freeing the first pool.
-    size_t pool_size = 2 * util_get_page_size();
+    size_t pool_size = 2 * utils_get_page_size();
 
     auto pool = std::shared_ptr<umf_ba_linear_pool_t>(
         umf_ba_linear_create(pool_size), umf_ba_linear_destroy);
