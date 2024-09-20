@@ -28,7 +28,7 @@ extern "C" {
 struct umf_memory_tracker_t {
     umf_ba_pool_t *tracker_allocator;
     critnib *map;
-    os_mutex_t splitMergeMutex;
+    utils_mutex_t splitMergeMutex;
 };
 
 typedef struct umf_memory_tracker_t *umf_memory_tracker_handle_t;

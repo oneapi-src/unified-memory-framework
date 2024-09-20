@@ -184,7 +184,7 @@ static umf_result_t trackingAllocationSplit(void *hProvider, void *ptr,
     splitValue->pool = provider->pool;
     splitValue->size = firstSize;
 
-    int r = util_mutex_lock(&provider->hTracker->splitMergeMutex);
+    int r = utils_mutex_lock(&provider->hTracker->splitMergeMutex);
     if (r) {
         goto err_lock;
     }
@@ -235,12 +235,12 @@ static umf_result_t trackingAllocationSplit(void *hProvider, void *ptr,
 
     // free the original value
     umf_ba_free(provider->hTracker->tracker_allocator, value);
-    util_mutex_unlock(&provider->hTracker->splitMergeMutex);
+    utils_mutex_unlock(&provider->hTracker->splitMergeMutex);
 
     return UMF_RESULT_SUCCESS;
 
 err:
-    util_mutex_unlock(&provider->hTracker->splitMergeMutex);
+    utils_mutex_unlock(&provider->hTracker->splitMergeMutex);
 err_lock:
     umf_ba_free(provider->hTracker->tracker_allocator, splitValue);
     return ret;
@@ -262,7 +262,7 @@ static umf_result_t trackingAllocationMerge(void *hProvider, void *lowPtr,
     mergedValue->pool = provider->pool;
     mergedValue->size = totalSize;
 
-    int r = util_mutex_lock(&provider->hTracker->splitMergeMutex);
+    int r = utils_mutex_lock(&provider->hTracker->splitMergeMutex);
     if (r) {
         goto err_lock;
     }
@@ -316,12 +316,12 @@ static umf_result_t trackingAllocationMerge(void *hProvider, void *lowPtr,
 
     umf_ba_free(provider->hTracker->tracker_allocator, erasedhighValue);
 
-    util_mutex_unlock(&provider->hTracker->splitMergeMutex);
+    utils_mutex_unlock(&provider->hTracker->splitMergeMutex);
 
     return UMF_RESULT_SUCCESS;
 
 err:
-    util_mutex_unlock(&provider->hTracker->splitMergeMutex);
+    utils_mutex_unlock(&provider->hTracker->splitMergeMutex);
 err_lock:
     umf_ba_free(provider->hTracker->tracker_allocator, mergedValue);
     return ret;
@@ -414,7 +414,7 @@ static void check_if_tracker_is_empty(umf_memory_tracker_handle_t hTracker,
         // Do not assert if we are running in the proxy library,
         // because it may need those resources till
         // the very end of exiting the application.
-        if (!util_is_running_in_proxy_lib()) {
+        if (!utils_is_running_in_proxy_lib()) {
             if (pool) {
                 LOG_ERR("tracking provider of pool %p is not empty! "
                         "(%zu items left)",
@@ -710,7 +710,7 @@ umf_memory_tracker_handle_t umfMemoryTrackerCreate(void) {
 
     handle->tracker_allocator = tracker_allocator;
 
-    void *mutex_ptr = util_mutex_init(&handle->splitMergeMutex);
+    void *mutex_ptr = utils_mutex_init(&handle->splitMergeMutex);
     if (!mutex_ptr) {
         goto err_destroy_tracker_allocator;
     }
@@ -726,7 +726,7 @@ umf_memory_tracker_handle_t umfMemoryTrackerCreate(void) {
     return handle;
 
 err_destroy_mutex:
-    util_mutex_destroy_not_free(&handle->splitMergeMutex);
+    utils_mutex_destroy_not_free(&handle->splitMergeMutex);
 err_destroy_tracker_allocator:
     umf_ba_destroy(tracker_allocator);
 err_free_handle:
@@ -742,7 +742,7 @@ void umfMemoryTrackerDestroy(umf_memory_tracker_handle_t handle) {
     // Do not destroy if we are running in the proxy library,
     // because it may need those resources till
     // the very end of exiting the application.
-    if (util_is_running_in_proxy_lib()) {
+    if (utils_is_running_in_proxy_lib()) {
         return;
     }
 
@@ -755,7 +755,7 @@ void umfMemoryTrackerDestroy(umf_memory_tracker_handle_t handle) {
     // and used in many places.
     critnib_delete(handle->map);
     handle->map = NULL;
-    util_mutex_destroy_not_free(&handle->splitMergeMutex);
+    utils_mutex_destroy_not_free(&handle->splitMergeMutex);
     umf_ba_destroy(handle->tracker_allocator);
     handle->tracker_allocator = NULL;
     umf_ba_global_free(handle);

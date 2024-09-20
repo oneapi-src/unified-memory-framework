@@ -36,7 +36,7 @@ struct umf_ba_chunk_t {
 struct umf_ba_main_pool_meta_t {
     size_t pool_size; // size of each pool (argument of each ba_os_alloc() call)
     size_t chunk_size;         // size of all memory chunks in this pool
-    os_mutex_t free_lock;      // lock of free_list
+    utils_mutex_t free_lock;   // lock of free_list
     umf_ba_chunk_t *free_list; // list of free chunks
     size_t n_allocs;           // number of allocated chunks
 #ifndef NDEBUG
@@ -135,7 +135,7 @@ static void *ba_os_alloc_annotated(size_t pool_size) {
 
 umf_ba_pool_t *umf_ba_create(size_t size) {
     size_t chunk_size = ALIGN_UP(size, MEMORY_ALIGNMENT);
-    size_t mutex_size = ALIGN_UP(util_mutex_get_size(), MEMORY_ALIGNMENT);
+    size_t mutex_size = ALIGN_UP(utils_mutex_get_size(), MEMORY_ALIGNMENT);
 
     size_t metadata_size = sizeof(struct umf_ba_main_pool_meta_t);
     size_t pool_size = sizeof(void *) + metadata_size + mutex_size +
@@ -168,10 +168,10 @@ umf_ba_pool_t *umf_ba_create(size_t size) {
     char *data_ptr = (char *)&pool->data;
     size_t size_left = pool_size - offsetof(umf_ba_pool_t, data);
 
-    util_align_ptr_size((void **)&data_ptr, &size_left, MEMORY_ALIGNMENT);
+    utils_align_ptr_size((void **)&data_ptr, &size_left, MEMORY_ALIGNMENT);
 
     // init free_lock
-    os_mutex_t *mutex = util_mutex_init(&pool->metadata.free_lock);
+    utils_mutex_t *mutex = utils_mutex_init(&pool->metadata.free_lock);
     if (!mutex) {
         ba_os_free(pool, pool_size);
         return NULL;
@@ -184,13 +184,13 @@ umf_ba_pool_t *umf_ba_create(size_t size) {
 }
 
 void *umf_ba_alloc(umf_ba_pool_t *pool) {
-    util_mutex_lock(&pool->metadata.free_lock);
+    utils_mutex_lock(&pool->metadata.free_lock);
     if (pool->metadata.free_list == NULL) {
         umf_ba_next_pool_t *new_pool =
             (umf_ba_next_pool_t *)ba_os_alloc_annotated(
                 pool->metadata.pool_size);
         if (!new_pool) {
-            util_mutex_unlock(&pool->metadata.free_lock);
+            utils_mutex_unlock(&pool->metadata.free_lock);
             return NULL;
         }
 
@@ -209,7 +209,7 @@ void *umf_ba_alloc(umf_ba_pool_t *pool) {
         size_t size_left =
             pool->metadata.pool_size - offsetof(umf_ba_next_pool_t, data);
 
-        util_align_ptr_size((void **)&data_ptr, &size_left, MEMORY_ALIGNMENT);
+        utils_align_ptr_size((void **)&data_ptr, &size_left, MEMORY_ALIGNMENT);
         ba_divide_memory_into_chunks(pool, data_ptr, size_left);
     }
 
@@ -234,7 +234,7 @@ void *umf_ba_alloc(umf_ba_pool_t *pool) {
     VALGRIND_DO_MALLOCLIKE_BLOCK(chunk, pool->metadata.chunk_size, 0, 0);
     utils_annotate_memory_undefined(chunk, pool->metadata.chunk_size);
 
-    util_mutex_unlock(&pool->metadata.free_lock);
+    utils_mutex_unlock(&pool->metadata.free_lock);
 
     return chunk;
 }
@@ -269,7 +269,7 @@ void umf_ba_free(umf_ba_pool_t *pool, void *ptr) {
 
     umf_ba_chunk_t *chunk = (umf_ba_chunk_t *)ptr;
 
-    util_mutex_lock(&pool->metadata.free_lock);
+    utils_mutex_lock(&pool->metadata.free_lock);
     assert(pool_contains_pointer(pool, ptr));
     chunk->next = pool->metadata.free_list;
     pool->metadata.free_list = chunk;
@@ -281,14 +281,14 @@ void umf_ba_free(umf_ba_pool_t *pool, void *ptr) {
     VALGRIND_DO_FREELIKE_BLOCK(chunk, 0);
     utils_annotate_memory_inaccessible(chunk, pool->metadata.chunk_size);
 
-    util_mutex_unlock(&pool->metadata.free_lock);
+    utils_mutex_unlock(&pool->metadata.free_lock);
 }
 
 void umf_ba_destroy(umf_ba_pool_t *pool) {
     // Do not destroy if we are running in the proxy library,
     // because it may need those resources till
     // the very end of exiting the application.
-    if (pool->metadata.n_allocs && util_is_running_in_proxy_lib()) {
+    if (pool->metadata.n_allocs && utils_is_running_in_proxy_lib()) {
         return;
     }
 
@@ -308,6 +308,6 @@ void umf_ba_destroy(umf_ba_pool_t *pool) {
         ba_os_free(current_pool, size);
     }
 
-    util_mutex_destroy_not_free(&pool->metadata.free_lock);
+    utils_mutex_destroy_not_free(&pool->metadata.free_lock);
     ba_os_free(pool, size);
 }

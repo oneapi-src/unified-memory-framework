@@ -12,28 +12,28 @@
 
 #include "utils_concurrency.h"
 
-size_t util_mutex_get_size(void) { return sizeof(pthread_mutex_t); }
+size_t utils_mutex_get_size(void) { return sizeof(pthread_mutex_t); }
 
-os_mutex_t *util_mutex_init(void *ptr) {
+utils_mutex_t *utils_mutex_init(void *ptr) {
     pthread_mutex_t *mutex = (pthread_mutex_t *)ptr;
     int ret = pthread_mutex_init(mutex, NULL);
-    return ret == 0 ? ((os_mutex_t *)mutex) : NULL;
+    return ret == 0 ? ((utils_mutex_t *)mutex) : NULL;
 }
 
-void util_mutex_destroy_not_free(os_mutex_t *m) {
+void utils_mutex_destroy_not_free(utils_mutex_t *m) {
     pthread_mutex_t *mutex = (pthread_mutex_t *)m;
     int ret = pthread_mutex_destroy(mutex);
     (void)ret; // TODO: add logging
 }
 
-int util_mutex_lock(os_mutex_t *m) {
+int utils_mutex_lock(utils_mutex_t *m) {
     return pthread_mutex_lock((pthread_mutex_t *)m);
 }
 
-int util_mutex_unlock(os_mutex_t *m) {
+int utils_mutex_unlock(utils_mutex_t *m) {
     return pthread_mutex_unlock((pthread_mutex_t *)m);
 }
 
-void util_init_once(UTIL_ONCE_FLAG *flag, void (*oneCb)(void)) {
+void utils_init_once(UTIL_ONCE_FLAG *flag, void (*oneCb)(void)) {
     pthread_once(flag, oneCb);
 }

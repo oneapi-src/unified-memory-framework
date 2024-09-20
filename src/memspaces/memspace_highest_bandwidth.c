@@ -96,7 +96,7 @@ static void umfMemspaceHighestBandwidthInit(void) {
 }
 
 umf_const_memspace_handle_t umfMemspaceHighestBandwidthGet(void) {
-    util_init_once(&UMF_MEMSPACE_HBW_INITIALIZED,
-                   umfMemspaceHighestBandwidthInit);
+    utils_init_once(&UMF_MEMSPACE_HBW_INITIALIZED,
+                    umfMemspaceHighestBandwidthInit);
     return UMF_MEMSPACE_HIGHEST_BANDWIDTH;
 }

@@ -28,6 +28,6 @@ static void _ba_os_init_page_size(void) {
 }
 
 size_t ba_os_get_page_size(void) {
-    util_init_once(&Page_size_is_initialized, _ba_os_init_page_size);
+    utils_init_once(&Page_size_is_initialized, _ba_os_init_page_size);
     return Page_size;
 }

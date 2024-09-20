@@ -501,7 +501,7 @@ static umf_result_t os_initialize(void *params, void **provider) {
     }
 
     if (os_provider->fd > 0) {
-        if (util_mutex_init(&os_provider->lock_fd) == NULL) {
+        if (utils_mutex_init(&os_provider->lock_fd) == NULL) {
             LOG_ERR("initializing the file size lock failed");
             ret = UMF_RESULT_ERROR_UNKNOWN;
             goto err_destroy_bitmaps;
@@ -546,7 +546,7 @@ static void os_finalize(void *provider) {
     os_memory_provider_t *os_provider = provider;
 
     if (os_provider->fd > 0) {
-        util_mutex_destroy_not_free(&os_provider->lock_fd);
+        utils_mutex_destroy_not_free(&os_provider->lock_fd);
     }
 
     critnib_delete(os_provider->fd_offset_map);
@@ -611,7 +611,7 @@ static inline void assert_is_page_aligned(uintptr_t ptr, size_t page_size) {
 
 static int utils_mmap_aligned(void *hint_addr, size_t length, size_t alignment,
                               size_t page_size, int prot, int flag, int fd,
-                              size_t max_fd_size, os_mutex_t *lock_fd,
+                              size_t max_fd_size, utils_mutex_t *lock_fd,
                               void **out_addr, size_t *fd_size,
                               size_t *fd_offset) {
     assert(out_addr);
@@ -629,20 +629,20 @@ static int utils_mmap_aligned(void *hint_addr, size_t length, size_t alignment,
     *fd_offset = 0;
 
     if (fd > 0) {
-        if (util_mutex_lock(lock_fd)) {
+        if (utils_mutex_lock(lock_fd)) {
             LOG_ERR("locking file size failed");
             return -1;
         }
 
         if (*fd_size + extended_length > max_fd_size) {
-            util_mutex_unlock(lock_fd);
+            utils_mutex_unlock(lock_fd);
             LOG_ERR("cannot grow a file size beyond %zu", max_fd_size);
             return -1;
         }
 
         *fd_offset = *fd_size;
         *fd_size += extended_length;
-        util_mutex_unlock(lock_fd);
+        utils_mutex_unlock(lock_fd);
     }
 
     void *ptr =
@@ -815,7 +815,7 @@ static membind_t membindFirst(os_memory_provider_t *provider, void *addr,
 
     if (provider->mode == UMF_NUMA_MODE_INTERLEAVE) {
         assert(provider->part_size != 0);
-        size_t s = util_fetch_and_add64(&provider->alloc_sum, size);
+        size_t s = utils_fetch_and_add64(&provider->alloc_sum, size);
         membind.node = (s / provider->part_size) % provider->nodeset_len;
         membind.bitmap = provider->nodeset[membind.node];
         membind.bind_size = ALIGN_UP(provider->part_size, membind.page_size);
@@ -1034,7 +1034,7 @@ static umf_result_t os_get_recommended_page_size(void *provider, size_t size,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    *page_size = util_get_page_size();
+    *page_size = utils_get_page_size();
 
     return UMF_RESULT_SUCCESS;
 }

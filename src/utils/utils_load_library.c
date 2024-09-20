@@ -28,19 +28,19 @@
 
 #ifdef _WIN32
 
-void *util_open_library(const char *filename, int userFlags) {
+void *utils_open_library(const char *filename, int userFlags) {
     (void)userFlags; //unused for win
     return LoadLibrary(TEXT(filename));
 }
 
-int util_close_library(void *handle) {
+int utils_close_library(void *handle) {
     // If the FreeLibrary function succeeds, the return value is nonzero.
     // If the FreeLibrary function fails, the return value is zero.
     return (FreeLibrary((HMODULE)handle) == 0);
 }
 
-void *util_get_symbol_addr(void *handle, const char *symbol,
-                           const char *libname) {
+void *utils_get_symbol_addr(void *handle, const char *symbol,
+                            const char *libname) {
     if (!handle) {
         if (libname == NULL) {
             return NULL;
@@ -52,7 +52,7 @@ void *util_get_symbol_addr(void *handle, const char *symbol,
 
 #else /* Linux */
 
-void *util_open_library(const char *filename, int userFlags) {
+void *utils_open_library(const char *filename, int userFlags) {
     int dlopenFlags = RTLD_LAZY;
     if (userFlags & UMF_UTIL_OPEN_LIBRARY_GLOBAL) {
         dlopenFlags |= RTLD_GLOBAL;
@@ -60,10 +60,10 @@ void *util_open_library(const char *filename, int userFlags) {
     return dlopen(filename, dlopenFlags);
 }
 
-int util_close_library(void *handle) { return dlclose(handle); }
+int utils_close_library(void *handle) { return dlclose(handle); }
 
-void *util_get_symbol_addr(void *handle, const char *symbol,
-                           const char *libname) {
+void *utils_get_symbol_addr(void *handle, const char *symbol,
+                            const char *libname) {
     (void)libname; //unused
     if (!handle) {
         handle = RTLD_DEFAULT;

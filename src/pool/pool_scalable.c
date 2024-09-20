@@ -106,7 +106,7 @@ static int init_tbb_callbacks(tbb_callbacks_t *tbb_callbacks) {
     assert(tbb_callbacks);
 
     const char *lib_name = tbb_symbol[TBB_LIB_NAME];
-    tbb_callbacks->lib_handle = util_open_library(lib_name, 0);
+    tbb_callbacks->lib_handle = utils_open_library(lib_name, 0);
     if (!tbb_callbacks->lib_handle) {
         LOG_ERR("%s required by Scalable Pool not found - install TBB malloc "
                 "or make sure it is in the default search paths.",
@@ -114,22 +114,22 @@ static int init_tbb_callbacks(tbb_callbacks_t *tbb_callbacks) {
         return -1;
     }
 
-    *(void **)&tbb_callbacks->pool_malloc = util_get_symbol_addr(
+    *(void **)&tbb_callbacks->pool_malloc = utils_get_symbol_addr(
         tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_MALLOC], lib_name);
-    *(void **)&tbb_callbacks->pool_realloc = util_get_symbol_addr(
+    *(void **)&tbb_callbacks->pool_realloc = utils_get_symbol_addr(
         tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_REALLOC], lib_name);
     *(void **)&tbb_callbacks->pool_aligned_malloc =
-        util_get_symbol_addr(tbb_callbacks->lib_handle,
-                             tbb_symbol[TBB_POOL_ALIGNED_MALLOC], lib_name);
-    *(void **)&tbb_callbacks->pool_free = util_get_symbol_addr(
+        utils_get_symbol_addr(tbb_callbacks->lib_handle,
+                              tbb_symbol[TBB_POOL_ALIGNED_MALLOC], lib_name);
+    *(void **)&tbb_callbacks->pool_free = utils_get_symbol_addr(
         tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_FREE], lib_name);
-    *(void **)&tbb_callbacks->pool_create_v1 = util_get_symbol_addr(
+    *(void **)&tbb_callbacks->pool_create_v1 = utils_get_symbol_addr(
         tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_CREATE_V1], lib_name);
-    *(void **)&tbb_callbacks->pool_destroy = util_get_symbol_addr(
+    *(void **)&tbb_callbacks->pool_destroy = utils_get_symbol_addr(
         tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_DESTROY], lib_name);
-    *(void **)&tbb_callbacks->pool_identify = util_get_symbol_addr(
+    *(void **)&tbb_callbacks->pool_identify = utils_get_symbol_addr(
         tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_IDENTIFY], lib_name);
-    *(void **)&tbb_callbacks->pool_msize = util_get_symbol_addr(
+    *(void **)&tbb_callbacks->pool_msize = utils_get_symbol_addr(
         tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_MSIZE], lib_name);
 
     if (!tbb_callbacks->pool_malloc || !tbb_callbacks->pool_realloc ||
@@ -137,7 +137,7 @@ static int init_tbb_callbacks(tbb_callbacks_t *tbb_callbacks) {
         !tbb_callbacks->pool_create_v1 || !tbb_callbacks->pool_destroy ||
         !tbb_callbacks->pool_identify) {
         LOG_ERR("Could not find symbols in %s", lib_name);
-        util_close_library(tbb_callbacks->lib_handle);
+        utils_close_library(tbb_callbacks->lib_handle);
         return -1;
     }
 
@@ -208,7 +208,7 @@ static umf_result_t tbb_pool_initialize(umf_memory_provider_handle_t provider,
 static void tbb_pool_finalize(void *pool) {
     tbb_memory_pool_t *pool_data = (tbb_memory_pool_t *)pool;
     pool_data->tbb_callbacks.pool_destroy(pool_data->tbb_pool);
-    util_close_library(pool_data->tbb_callbacks.lib_handle);
+    utils_close_library(pool_data->tbb_callbacks.lib_handle);
     umf_ba_global_free(pool_data);
 }
 

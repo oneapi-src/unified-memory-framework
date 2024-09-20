@@ -53,7 +53,7 @@
 #include "ubench.h"
 // BENCHMARK CONFIG
 #define N_ITERATIONS 1000
-#define ALLOC_SIZE (util_get_page_size())
+#define ALLOC_SIZE (utils_get_page_size())
 
 // OS MEMORY PROVIDER CONFIG
 #define OS_MEMORY_PROVIDER_TRACE (0)

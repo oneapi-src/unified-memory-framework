@@ -66,7 +66,7 @@ struct libze_ops {
 struct DlHandleCloser {
     void operator()(void *dlHandle) {
         if (dlHandle) {
-            util_close_library(dlHandle);
+            utils_close_library(dlHandle);
         }
     }
 };
@@ -82,26 +82,26 @@ int InitLevelZeroOps() {
     // NOTE that we use UMF_UTIL_OPEN_LIBRARY_GLOBAL which add all loaded symbols to the
     // global symbol table.
     zeDlHandle = std::unique_ptr<void, DlHandleCloser>(
-        util_open_library(lib_name, UMF_UTIL_OPEN_LIBRARY_GLOBAL));
+        utils_open_library(lib_name, UMF_UTIL_OPEN_LIBRARY_GLOBAL));
     *(void **)&libze_ops.zeInit =
-        util_get_symbol_addr(zeDlHandle.get(), "zeInit", lib_name);
+        utils_get_symbol_addr(zeDlHandle.get(), "zeInit", lib_name);
     if (libze_ops.zeInit == nullptr) {
         fprintf(stderr, "zeInit symbol not found in %s\n", lib_name);
         return -1;
     }
     *(void **)&libze_ops.zeDriverGet =
-        util_get_symbol_addr(zeDlHandle.get(), "zeDriverGet", lib_name);
+        utils_get_symbol_addr(zeDlHandle.get(), "zeDriverGet", lib_name);
     if (libze_ops.zeDriverGet == nullptr) {
         fprintf(stderr, "zeDriverGet symbol not found in %s\n", lib_name);
         return -1;
     }
     *(void **)&libze_ops.zeDeviceGet =
-        util_get_symbol_addr(zeDlHandle.get(), "zeDeviceGet", lib_name);
+        utils_get_symbol_addr(zeDlHandle.get(), "zeDeviceGet", lib_name);
     if (libze_ops.zeDeviceGet == nullptr) {
         fprintf(stderr, "zeDeviceGet symbol not found in %s\n", lib_name);
         return -1;
     }
-    *(void **)&libze_ops.zeDeviceGetProperties = util_get_symbol_addr(
+    *(void **)&libze_ops.zeDeviceGetProperties = utils_get_symbol_addr(
         zeDlHandle.get(), "zeDeviceGetProperties", lib_name);
     if (libze_ops.zeDeviceGetProperties == nullptr) {
         fprintf(stderr, "zeDeviceGetProperties symbol not found in %s\n",
@@ -109,25 +109,25 @@ int InitLevelZeroOps() {
         return -1;
     }
     *(void **)&libze_ops.zeContextCreate =
-        util_get_symbol_addr(zeDlHandle.get(), "zeContextCreate", lib_name);
+        utils_get_symbol_addr(zeDlHandle.get(), "zeContextCreate", lib_name);
     if (libze_ops.zeContextCreate == nullptr) {
         fprintf(stderr, "zeContextCreate symbol not found in %s\n", lib_name);
         return -1;
     }
     *(void **)&libze_ops.zeContextDestroy =
-        util_get_symbol_addr(zeDlHandle.get(), "zeContextDestroy", lib_name);
+        utils_get_symbol_addr(zeDlHandle.get(), "zeContextDestroy", lib_name);
     if (libze_ops.zeContextDestroy == nullptr) {
         fprintf(stderr, "zeContextDestroy symbol not found in %s\n", lib_name);
         return -1;
     }
-    *(void **)&libze_ops.zeCommandQueueCreate = util_get_symbol_addr(
+    *(void **)&libze_ops.zeCommandQueueCreate = utils_get_symbol_addr(
         zeDlHandle.get(), "zeCommandQueueCreate", lib_name);
     if (libze_ops.zeCommandQueueCreate == nullptr) {
         fprintf(stderr, "zeCommandQueueCreate symbol not found in %s\n",
                 lib_name);
         return -1;
     }
-    *(void **)&libze_ops.zeCommandQueueDestroy = util_get_symbol_addr(
+    *(void **)&libze_ops.zeCommandQueueDestroy = utils_get_symbol_addr(
         zeDlHandle.get(), "zeCommandQueueDestroy", lib_name);
     if (libze_ops.zeCommandQueueDestroy == nullptr) {
         fprintf(stderr, "zeCommandQueueDestroy symbol not found in %s\n",
@@ -135,29 +135,29 @@ int InitLevelZeroOps() {
         return -1;
     }
     *(void **)&libze_ops.zeCommandQueueExecuteCommandLists =
-        util_get_symbol_addr(zeDlHandle.get(),
-                             "zeCommandQueueExecuteCommandLists", lib_name);
+        utils_get_symbol_addr(zeDlHandle.get(),
+                              "zeCommandQueueExecuteCommandLists", lib_name);
     if (libze_ops.zeCommandQueueExecuteCommandLists == nullptr) {
         fprintf(stderr,
                 "zeCommandQueueExecuteCommandLists symbol not found in %s\n",
                 lib_name);
         return -1;
     }
-    *(void **)&libze_ops.zeCommandQueueSynchronize = util_get_symbol_addr(
+    *(void **)&libze_ops.zeCommandQueueSynchronize = utils_get_symbol_addr(
         zeDlHandle.get(), "zeCommandQueueSynchronize", lib_name);
     if (libze_ops.zeCommandQueueSynchronize == nullptr) {
         fprintf(stderr, "zeCommandQueueSynchronize symbol not found in %s\n",
                 lib_name);
         return -1;
     }
-    *(void **)&libze_ops.zeCommandListCreate =
-        util_get_symbol_addr(zeDlHandle.get(), "zeCommandListCreate", lib_name);
+    *(void **)&libze_ops.zeCommandListCreate = utils_get_symbol_addr(
+        zeDlHandle.get(), "zeCommandListCreate", lib_name);
     if (libze_ops.zeCommandListCreate == nullptr) {
         fprintf(stderr, "zeCommandListCreate symbol not found in %s\n",
                 lib_name);
         return -1;
     }
-    *(void **)&libze_ops.zeCommandListDestroy = util_get_symbol_addr(
+    *(void **)&libze_ops.zeCommandListDestroy = utils_get_symbol_addr(
         zeDlHandle.get(), "zeCommandListDestroy", lib_name);
     if (libze_ops.zeCommandListDestroy == nullptr) {
         fprintf(stderr, "zeCommandListDestroy symbol not found in %s\n",
@@ -165,13 +165,13 @@ int InitLevelZeroOps() {
         return -1;
     }
     *(void **)&libze_ops.zeCommandListClose =
-        util_get_symbol_addr(zeDlHandle.get(), "zeCommandListClose", lib_name);
+        utils_get_symbol_addr(zeDlHandle.get(), "zeCommandListClose", lib_name);
     if (libze_ops.zeCommandListClose == nullptr) {
         fprintf(stderr, "zeCommandListClose symbol not found in %s\n",
                 lib_name);
         return -1;
     }
-    *(void **)&libze_ops.zeCommandListAppendMemoryCopy = util_get_symbol_addr(
+    *(void **)&libze_ops.zeCommandListAppendMemoryCopy = utils_get_symbol_addr(
         zeDlHandle.get(), "zeCommandListAppendMemoryCopy", lib_name);
     if (libze_ops.zeCommandListAppendMemoryCopy == nullptr) {
         fprintf(stderr,
@@ -179,7 +179,7 @@ int InitLevelZeroOps() {
                 lib_name);
         return -1;
     }
-    *(void **)&libze_ops.zeCommandListAppendMemoryFill = util_get_symbol_addr(
+    *(void **)&libze_ops.zeCommandListAppendMemoryFill = utils_get_symbol_addr(
         zeDlHandle.get(), "zeCommandListAppendMemoryFill", lib_name);
     if (libze_ops.zeCommandListAppendMemoryFill == nullptr) {
         fprintf(stderr,
@@ -187,7 +187,7 @@ int InitLevelZeroOps() {
                 lib_name);
         return -1;
     }
-    *(void **)&libze_ops.zeMemGetAllocProperties = util_get_symbol_addr(
+    *(void **)&libze_ops.zeMemGetAllocProperties = utils_get_symbol_addr(
         zeDlHandle.get(), "zeMemGetAllocProperties", lib_name);
     if (libze_ops.zeMemGetAllocProperties == nullptr) {
         fprintf(stderr, "zeMemGetAllocProperties symbol not found in %s\n",
@@ -195,13 +195,13 @@ int InitLevelZeroOps() {
         return -1;
     }
     *(void **)&libze_ops.zeMemAllocDevice =
-        util_get_symbol_addr(zeDlHandle.get(), "zeMemAllocDevice", lib_name);
+        utils_get_symbol_addr(zeDlHandle.get(), "zeMemAllocDevice", lib_name);
     if (libze_ops.zeMemAllocDevice == nullptr) {
         fprintf(stderr, "zeMemAllocDevice symbol not found in %s\n", lib_name);
         return -1;
     }
     *(void **)&libze_ops.zeMemFree =
-        util_get_symbol_addr(zeDlHandle.get(), "zeMemFree", lib_name);
+        utils_get_symbol_addr(zeDlHandle.get(), "zeMemFree", lib_name);
     if (libze_ops.zeMemFree == nullptr) {
         fprintf(stderr, "zeMemFree symbol not found in %s\n", lib_name);
         return -1;
@@ -661,7 +661,7 @@ void init_level_zero_once() {
 }
 
 int init_level_zero() {
-    util_init_once(&level_zero_init_flag, init_level_zero_once);
+    utils_init_once(&level_zero_init_flag, init_level_zero_once);
 
     return InitResult;
 }

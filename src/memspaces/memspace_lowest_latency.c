@@ -96,7 +96,7 @@ static void umfMemspaceLowestLatencyInit(void) {
 }
 
 umf_const_memspace_handle_t umfMemspaceLowestLatencyGet(void) {
-    util_init_once(&UMF_MEMSPACE_LOWEST_LATENCY_INITIALIZED,
-                   umfMemspaceLowestLatencyInit);
+    utils_init_once(&UMF_MEMSPACE_LOWEST_LATENCY_INITIALIZED,
+                    umfMemspaceLowestLatencyInit);
     return UMF_MEMSPACE_LOWEST_LATENCY;
 }

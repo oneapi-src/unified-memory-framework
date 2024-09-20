@@ -41,6 +41,6 @@ static void umfCreateTopology(void) {
 }
 
 hwloc_topology_t umfGetTopology(void) {
-    util_init_once(&topology_initialized, umfCreateTopology);
+    utils_init_once(&topology_initialized, umfCreateTopology);
     return topology;
 }

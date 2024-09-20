@@ -59,7 +59,7 @@
 #define UTIL_ONCE_FLAG INIT_ONCE
 #define UTIL_ONCE_FLAG_INIT INIT_ONCE_STATIC_INIT
 
-void util_init_once(UTIL_ONCE_FLAG *flag, void (*onceCb)(void));
+void utils_init_once(UTIL_ONCE_FLAG *flag, void (*onceCb)(void));
 
 #else /* Linux *************************************************/
 
@@ -108,7 +108,7 @@ static __TLS int was_called_from_umfPool = 0;
 /*****************************************************************************/
 
 void proxy_lib_create_common(void) {
-    util_log_init();
+    utils_log_init();
     umf_os_memory_provider_params_t os_params =
         umfOsMemoryProviderParamsDefault();
     umf_result_t umf_result;
@@ -116,14 +116,14 @@ void proxy_lib_create_common(void) {
 #ifndef _WIN32
     char shm_name[NAME_MAX];
 
-    if (util_env_var_has_str("UMF_PROXY", "page.disposition=shared-fd")) {
+    if (utils_env_var_has_str("UMF_PROXY", "page.disposition=shared-fd")) {
         LOG_DEBUG("proxy_lib: using the MAP_SHARED visibility mode with the "
                   "file descriptor duplication");
         os_params.visibility = UMF_MEM_MAP_SHARED;
         os_params.shm_name = NULL;
 
-    } else if (util_env_var_has_str("UMF_PROXY",
-                                    "page.disposition=shared-shm")) {
+    } else if (utils_env_var_has_str("UMF_PROXY",
+                                     "page.disposition=shared-shm")) {
         LOG_DEBUG("proxy_lib: using the MAP_SHARED visibility mode with the "
                   "named shared memory");
         os_params.visibility = UMF_MEM_MAP_SHARED;
@@ -157,7 +157,7 @@ void proxy_lib_create_common(void) {
 }
 
 void proxy_lib_destroy_common(void) {
-    if (util_is_running_in_proxy_lib()) {
+    if (utils_is_running_in_proxy_lib()) {
         // We cannot destroy 'Base_alloc_leak' nor 'Proxy_pool' nor 'OS_memory_provider',
         // because it could lead to use-after-free in the program's unloader
         // (for example _dl_fini() on Linux).
@@ -209,7 +209,7 @@ static void ba_leak_create(void) { Base_alloc_leak = umf_ba_linear_create(0); }
 // it does not implement destroy(), because we cannot destroy non-freed memory
 
 static void ba_leak_init_once(void) {
-    util_init_once(&Base_alloc_leak_initialized, ba_leak_create);
+    utils_init_once(&Base_alloc_leak_initialized, ba_leak_create);
 }
 
 static inline void *ba_leak_malloc(size_t size) {
