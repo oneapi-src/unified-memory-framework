@@ -23,6 +23,8 @@ utils_translate_mem_visibility_flag(umf_memory_visibility_t in_flag,
         return UMF_RESULT_SUCCESS;
     case UMF_MEM_MAP_SHARED:
         return UMF_RESULT_ERROR_NOT_SUPPORTED; // not supported on MacOSX
+    case UMF_MEM_MAP_SYNC:
+        return UMF_RESULT_ERROR_NOT_SUPPORTED; // not supported on MacOSX
     }
     return UMF_RESULT_ERROR_INVALID_ARGUMENT;
 }
