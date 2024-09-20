@@ -18,23 +18,6 @@ extern "C" {
 #define UMF_OS_RESULTS_START_FROM 1000
 /// @endcond
 
-/// @brief Protection of the memory allocations
-typedef enum umf_mem_protection_flags_t {
-    UMF_PROTECTION_NONE = (1 << 0),  ///< Memory allocations can not be accessed
-    UMF_PROTECTION_READ = (1 << 1),  ///< Memory allocations can be read.
-    UMF_PROTECTION_WRITE = (1 << 2), ///< Memory allocations can be written.
-    UMF_PROTECTION_EXEC = (1 << 3),  ///< Memory allocations can be executed.
-    /// @cond
-    UMF_PROTECTION_MAX // must be the last one
-    /// @endcond
-} umf_mem_protection_flags_t;
-
-/// @brief Memory visibility mode
-typedef enum umf_memory_visibility_t {
-    UMF_MEM_MAP_PRIVATE = 1, ///< private memory mapping
-    UMF_MEM_MAP_SHARED, ///< shared memory mapping (supported on Linux only)
-} umf_memory_visibility_t;
-
 /// @brief Memory binding mode
 /// Specifies how memory is bound to NUMA nodes on systems that support NUMA.
 /// Not every mode is supported on every system.

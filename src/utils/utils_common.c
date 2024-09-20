@@ -91,3 +91,28 @@ int util_copy_path(const char *in_path, char out_path[], size_t path_max) {
 
     return 0;
 }
+
+umf_result_t utils_translate_flags(unsigned in_flags, unsigned max,
+                                   umf_result_t (*translate_flag)(unsigned,
+                                                                  unsigned *),
+                                   unsigned *out_flags) {
+    unsigned out_f = 0;
+    for (unsigned n = 1; n < max; n <<= 1) {
+        if (in_flags & n) {
+            unsigned flag;
+            umf_result_t result = translate_flag(n, &flag);
+            if (result != UMF_RESULT_SUCCESS) {
+                return result;
+            }
+            out_f |= flag;
+            in_flags &= ~n; // clear this bit
+        }
+    }
+
+    if (in_flags != 0) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    *out_flags = out_f;
+    return UMF_RESULT_SUCCESS;
+}

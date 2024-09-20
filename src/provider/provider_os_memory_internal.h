@@ -26,11 +26,6 @@
 extern "C" {
 #endif
 
-typedef enum umf_purge_advise_t {
-    UMF_PURGE_LAZY,
-    UMF_PURGE_FORCE,
-} umf_purge_advise_t;
-
 typedef struct os_memory_provider_t {
     unsigned protection; // combination of OS-specific protection flags
     unsigned visibility; // memory visibility mode
@@ -68,52 +63,6 @@ typedef struct os_memory_provider_t {
 
     hwloc_topology_t topo;
 } os_memory_provider_t;
-
-umf_result_t os_translate_flags(unsigned in_flags, unsigned max,
-                                umf_result_t (*translate_flag)(unsigned,
-                                                               unsigned *),
-                                unsigned *out_flags);
-
-umf_result_t os_translate_mem_protection_flags(unsigned in_protection,
-                                               unsigned *out_protection);
-
-umf_result_t os_translate_mem_visibility_flag(umf_memory_visibility_t in_flag,
-                                              unsigned *out_flag);
-
-int os_create_anonymous_fd(void);
-
-int os_shm_create(const char *shm_name, size_t size);
-
-int os_shm_open(const char *shm_name);
-
-int os_shm_unlink(const char *shm_name);
-
-size_t get_max_file_size(void);
-
-int os_get_file_size(int fd, size_t *size);
-
-int os_set_file_size(int fd, size_t size);
-
-void *os_mmap(void *hint_addr, size_t length, int prot, int flag, int fd,
-              size_t fd_offset);
-
-void *os_devdax_mmap(void *hint_addr, size_t length, int prot, int fd);
-
-int os_munmap(void *addr, size_t length);
-
-int os_purge(void *addr, size_t length, int advice);
-
-size_t os_get_page_size(void);
-
-void os_strerror(int errnum, char *buf, size_t buflen);
-
-int os_devdax_open(const char *path);
-
-int os_file_open(const char *path);
-
-int os_file_open_or_create(const char *path);
-
-int os_fallocate(int fd, long offset, long len);
 
 #ifdef __cplusplus
 }

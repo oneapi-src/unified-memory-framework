@@ -1,9 +1,11 @@
 /*
+ *
  * Copyright (C) 2023-2024 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-*/
+ *
+ */
 
 #include <errno.h>
 #include <fcntl.h>
@@ -13,13 +15,15 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <umf/providers/provider_os_memory.h>
+#include <umf/base.h>
+#include <umf/memory_provider.h>
 
-#include "provider_os_memory_internal.h"
+#include "utils_common.h"
 #include "utils_log.h"
 
-umf_result_t os_translate_mem_visibility_flag(umf_memory_visibility_t in_flag,
-                                              unsigned *out_flag) {
+umf_result_t
+utils_translate_mem_visibility_flag(umf_memory_visibility_t in_flag,
+                                    unsigned *out_flag) {
     switch (in_flag) {
     case UMF_MEM_MAP_PRIVATE:
         *out_flag = MAP_PRIVATE;
@@ -31,8 +35,60 @@ umf_result_t os_translate_mem_visibility_flag(umf_memory_visibility_t in_flag,
     return UMF_RESULT_ERROR_INVALID_ARGUMENT;
 }
 
+/*
+ * MMap a /dev/dax device.
+ * First try to mmap with (MAP_SHARED_VALIDATE | MAP_SYNC) flags
+ * which allows flushing from the user-space. If MAP_SYNC fails
+ * try to mmap with MAP_SHARED flag (without MAP_SYNC).
+ */
+void *utils_devdax_mmap(void *hint_addr, size_t length, int prot, int fd) {
+    void *ptr = utils_mmap(hint_addr, length, prot,
+                           MAP_SHARED_VALIDATE | MAP_SYNC, fd, 0);
+    if (ptr) {
+        LOG_DEBUG(
+            "devdax mapped with the (MAP_SHARED_VALIDATE | MAP_SYNC) flags");
+        return ptr;
+    }
+
+    ptr = utils_mmap(hint_addr, length, prot, MAP_SHARED, fd, 0);
+    if (ptr) {
+        LOG_DEBUG("devdax mapped with the MAP_SHARED flag");
+        return ptr;
+    }
+
+    return NULL;
+}
+
+int utils_get_file_size(int fd, size_t *size) {
+    struct stat statbuf;
+    int ret = fstat(fd, &statbuf);
+    if (ret) {
+        LOG_PERR("fstat(%i) failed", fd);
+        return ret;
+    }
+
+    *size = statbuf.st_size;
+    return 0;
+}
+
+int utils_set_file_size(int fd, size_t size) {
+    errno = 0;
+    int ret = ftruncate(fd, size);
+    if (ret) {
+        LOG_PERR("setting size %zu of a file failed", size);
+    } else {
+        LOG_DEBUG("set size of a file to %zu bytes", size);
+    }
+
+    return ret;
+}
+
+int utils_fallocate(int fd, long offset, long len) {
+    return posix_fallocate(fd, offset, len);
+}
+
 // create a shared memory file
-int os_shm_create(const char *shm_name, size_t size) {
+int utils_shm_create(const char *shm_name, size_t size) {
     if (shm_name == NULL) {
         LOG_ERR("empty name of a shared memory file");
         return -1;
@@ -46,7 +102,7 @@ int os_shm_create(const char *shm_name, size_t size) {
         return fd;
     }
 
-    int ret = os_set_file_size(fd, size);
+    int ret = utils_set_file_size(fd, size);
     if (ret) {
         LOG_ERR("setting size (%zu) of a file /dev/shm/%s failed", size,
                 shm_name);
@@ -59,7 +115,7 @@ int os_shm_create(const char *shm_name, size_t size) {
 }
 
 // open a shared memory file
-int os_shm_open(const char *shm_name) {
+int utils_shm_open(const char *shm_name) {
     if (shm_name == NULL) {
         LOG_ERR("empty name of a shared memory file");
         return -1;
@@ -74,7 +130,7 @@ int os_shm_open(const char *shm_name) {
 }
 
 // unlink a shared memory file
-int os_shm_unlink(const char *shm_name) { return shm_unlink(shm_name); }
+int utils_shm_unlink(const char *shm_name) { return shm_unlink(shm_name); }
 
 static int syscall_memfd_secret(void) {
     int fd = -1;
@@ -109,7 +165,7 @@ static int syscall_memfd_create(void) {
 }
 
 // create an anonymous file descriptor
-int os_create_anonymous_fd(void) {
+int utils_create_anonymous_fd(void) {
     int fd = -1;
 
     if (!util_env_var_has_str("UMF_MEM_FD_FUNC", "memfd_create")) {
@@ -132,56 +188,4 @@ int os_create_anonymous_fd(void) {
 #endif /* !(defined __NR_memfd_secret) && !(defined __NR_memfd_create) */
 
     return fd;
-}
-
-int os_get_file_size(int fd, size_t *size) {
-    struct stat statbuf;
-    int ret = fstat(fd, &statbuf);
-    if (ret) {
-        LOG_PERR("fstat(%i) failed", fd);
-        return ret;
-    }
-
-    *size = statbuf.st_size;
-    return 0;
-}
-
-int os_set_file_size(int fd, size_t size) {
-    errno = 0;
-    int ret = ftruncate(fd, size);
-    if (ret) {
-        LOG_PERR("setting size %zu of a file failed", size);
-    } else {
-        LOG_DEBUG("set size of a file to %zu bytes", size);
-    }
-
-    return ret;
-}
-
-/*
- * MMap a /dev/dax device.
- * First try to mmap with (MAP_SHARED_VALIDATE | MAP_SYNC) flags
- * which allows flushing from the user-space. If MAP_SYNC fails
- * try to mmap with MAP_SHARED flag (without MAP_SYNC).
- */
-void *os_devdax_mmap(void *hint_addr, size_t length, int prot, int fd) {
-    void *ptr =
-        os_mmap(hint_addr, length, prot, MAP_SHARED_VALIDATE | MAP_SYNC, fd, 0);
-    if (ptr) {
-        LOG_DEBUG(
-            "devdax mapped with the (MAP_SHARED_VALIDATE | MAP_SYNC) flags");
-        return ptr;
-    }
-
-    ptr = os_mmap(hint_addr, length, prot, MAP_SHARED, fd, 0);
-    if (ptr) {
-        LOG_DEBUG("devdax mapped with the MAP_SHARED flag");
-        return ptr;
-    }
-
-    return NULL;
-}
-
-int os_fallocate(int fd, long offset, long len) {
-    return posix_fallocate(fd, offset, len);
 }

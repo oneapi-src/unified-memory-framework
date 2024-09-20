@@ -130,7 +130,6 @@ set(UMF_SOURCES_COMMON_LINUX_MACOSX
     provider/provider_devdax_memory.c
     provider/provider_file_memory.c
     provider/provider_os_memory.c
-    provider/provider_os_memory_posix.c
     memtargets/memtarget_numa.c
     memspaces/memspace_numa.c
     memspaces/memspace_host_all.c
@@ -139,17 +138,14 @@ set(UMF_SOURCES_COMMON_LINUX_MACOSX
     memspaces/memspace_lowest_latency.c)
 
 if(NOT UMF_DISABLE_HWLOC)
-    set(UMF_SOURCES_LINUX
-        ${UMF_SOURCES_LINUX} ${UMF_SOURCES_COMMON_LINUX_MACOSX}
-        provider/provider_os_memory_linux.c)
+    set(UMF_SOURCES_LINUX ${UMF_SOURCES_LINUX}
+                          ${UMF_SOURCES_COMMON_LINUX_MACOSX})
 
-    set(UMF_SOURCES_MACOSX
-        ${UMF_SOURCES_MACOSX} ${UMF_SOURCES_COMMON_LINUX_MACOSX}
-        provider/provider_os_memory_macosx.c)
+    set(UMF_SOURCES_MACOSX ${UMF_SOURCES_MACOSX}
+                           ${UMF_SOURCES_COMMON_LINUX_MACOSX})
 
-    set(UMF_SOURCES_WINDOWS
-        ${UMF_SOURCES_WINDOWS} provider/provider_os_memory.c
-        provider/provider_os_memory_windows.c)
+    set(UMF_SOURCES_WINDOWS ${UMF_SOURCES_WINDOWS}
+                            provider/provider_os_memory.c)
 
     set(UMF_LIBS ${UMF_LIBS} ${LIBHWLOC_LIBRARIES})
 
@@ -180,7 +176,7 @@ set(UMF_PRIVATE_LIBRARY_DIRS ${UMF_PRIVATE_LIBRARY_DIRS}
 
 if(LINUX)
     set(UMF_SOURCES ${UMF_SOURCES} ${UMF_SOURCES_LINUX})
-    set(UMF_LIBS ${UMF_LIBS} dl rt) # librt for shm_open()
+    set(UMF_LIBS ${UMF_LIBS} dl)
 elseif(WINDOWS)
     set(UMF_SOURCES ${UMF_SOURCES} ${UMF_SOURCES_WINDOWS})
 

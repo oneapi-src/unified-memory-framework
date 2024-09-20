@@ -15,7 +15,6 @@
 
 #include "base_alloc_global.h"
 #include "critnib.h"
-#include "provider_os_memory_internal.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
 #include "utils_log.h"
@@ -88,15 +87,15 @@ file_translate_params(umf_file_memory_provider_params_t *in_params,
                       file_memory_provider_t *provider) {
     umf_result_t result;
 
-    result = os_translate_mem_protection_flags(in_params->protection,
-                                               &provider->protection);
+    result = utils_translate_mem_protection_flags(in_params->protection,
+                                                  &provider->protection);
     if (result != UMF_RESULT_SUCCESS) {
         LOG_ERR("incorrect memory protection flags: %u", in_params->protection);
         return result;
     }
 
-    result = os_translate_mem_visibility_flag(in_params->visibility,
-                                              &provider->visibility);
+    result = utils_translate_mem_visibility_flag(in_params->visibility,
+                                                 &provider->visibility);
     if (result != UMF_RESULT_SUCCESS) {
         LOG_ERR("incorrect memory visibility flag: %u", in_params->visibility);
         return result;
@@ -115,7 +114,7 @@ static umf_result_t file_initialize(void *params, void **provider) {
     umf_file_memory_provider_params_t *in_params =
         (umf_file_memory_provider_params_t *)params;
 
-    size_t page_size = os_get_page_size();
+    size_t page_size = util_get_page_size();
 
     if (in_params->path == NULL) {
         LOG_ERR("file path is missing");
@@ -141,14 +140,14 @@ static umf_result_t file_initialize(void *params, void **provider) {
         goto err_free_file_provider;
     }
 
-    file_provider->fd = os_file_open_or_create(in_params->path);
+    file_provider->fd = utils_file_open_or_create(in_params->path);
     if (file_provider->fd == -1) {
         LOG_ERR("cannot open the file: %s", in_params->path);
         ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
         goto err_free_file_provider;
     }
 
-    if (os_set_file_size(file_provider->fd, page_size)) {
+    if (utils_set_file_size(file_provider->fd, page_size)) {
         LOG_ERR("cannot set size of the file: %s", in_params->path);
         ret = UMF_RESULT_ERROR_UNKNOWN;
         goto err_close_fd;
@@ -207,7 +206,7 @@ static void file_finalize(void *provider) {
     void *rvalue = NULL;
     while (1 ==
            critnib_find(file_provider->mmaps, key, FIND_G, &rkey, &rvalue)) {
-        os_munmap((void *)rkey, (size_t)rvalue);
+        utils_munmap((void *)rkey, (size_t)rvalue);
         critnib_remove(file_provider->mmaps, rkey);
         key = rkey;
     }
@@ -248,7 +247,7 @@ static umf_result_t file_mmap_aligned(file_memory_provider_t *file_provider,
     }
 
     if (offset_fd + extended_size > size_fd) {
-        if (os_fallocate(fd, offset_fd, extended_size)) {
+        if (utils_fallocate(fd, offset_fd, extended_size)) {
             LOG_ERR("cannot grow the file size from %zu to %zu", size_fd,
                     offset_fd + extended_size);
             return UMF_RESULT_ERROR_UNKNOWN;
@@ -262,7 +261,7 @@ static umf_result_t file_mmap_aligned(file_memory_provider_t *file_provider,
     ASSERT_IS_ALIGNED(extended_size, page_size);
     ASSERT_IS_ALIGNED(offset_fd, page_size);
 
-    void *ptr = os_mmap(NULL, extended_size, prot, flag, fd, offset_fd);
+    void *ptr = utils_mmap(NULL, extended_size, prot, flag, fd, offset_fd);
     if (ptr == NULL) {
         LOG_PERR("memory mapping failed");
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
@@ -423,8 +422,8 @@ static void file_get_last_native_error(void *provider, const char **ppMessage,
     memcpy(TLS_last_native_error.msg_buff + pos, msg, len + 1);
     pos += len;
 
-    os_strerror(TLS_last_native_error.errno_value,
-                TLS_last_native_error.msg_buff + pos, TLS_MSG_BUF_LEN - pos);
+    utils_strerror(TLS_last_native_error.errno_value,
+                   TLS_last_native_error.msg_buff + pos, TLS_MSG_BUF_LEN - pos);
 
     *ppMessage = TLS_last_native_error.msg_buff;
 }
@@ -437,7 +436,7 @@ static umf_result_t file_get_recommended_page_size(void *provider, size_t size,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    *page_size = os_get_page_size();
+    *page_size = util_get_page_size();
 
     return UMF_RESULT_SUCCESS;
 }
@@ -465,7 +464,7 @@ static umf_result_t file_purge_force(void *provider, void *ptr, size_t size) {
     }
 
     errno = 0;
-    if (os_purge(ptr, size, UMF_PURGE_FORCE)) {
+    if (utils_purge(ptr, size, UMF_PURGE_FORCE)) {
         file_store_last_native_error(UMF_FILE_RESULT_ERROR_PURGE_FORCE_FAILED,
                                      errno);
         LOG_PERR("force purging failed");
@@ -606,15 +605,15 @@ static umf_result_t file_open_ipc_handle(void *provider, void *providerIpcData,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    fd = os_file_open(file_ipc_data->path);
+    fd = utils_file_open(file_ipc_data->path);
     if (fd == -1) {
         LOG_PERR("opening the file to be mapped (%s) failed",
                  file_ipc_data->path);
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    *ptr = os_mmap(NULL, file_ipc_data->size, file_provider->protection,
-                   file_provider->visibility, fd, file_ipc_data->offset_fd);
+    *ptr = utils_mmap(NULL, file_ipc_data->size, file_provider->protection,
+                      file_provider->visibility, fd, file_ipc_data->offset_fd);
     (void)utils_close_fd(fd);
     if (*ptr == NULL) {
         file_store_last_native_error(UMF_FILE_RESULT_ERROR_ALLOC_FAILED, errno);
@@ -632,7 +631,7 @@ static umf_result_t file_close_ipc_handle(void *provider, void *ptr,
     }
 
     errno = 0;
-    int ret = os_munmap(ptr, size);
+    int ret = utils_munmap(ptr, size);
     // ignore error when size == 0
     if (ret && (size > 0)) {
         file_store_last_native_error(UMF_FILE_RESULT_ERROR_FREE_FAILED, errno);
