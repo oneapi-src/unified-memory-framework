@@ -1,9 +1,20 @@
-# This workflow builds and tests the devdax memory provider.
-# It requires a DAX device (e.g. /dev/dax0.0) configured in the OS.
-# This DAX device should be specified using the
+#
+# This workflow builds and tests the DEVDAX memory provider
+# and the file memory provider with FSDAX.
+# It requires:
+# - a DAX device (e.g. /dev/dax0.0) and
+# - a FSDAX device (e.g. /dev/pmem1)
+# configured and mounted in the OS.
+#
+# The DAX device should be specified using the
 # UMF_TESTS_DEVDAX_PATH and UMF_TESTS_DEVDAX_SIZE environment variables.
+#
+# The FSDAX device should be mounted in the OS (e.g. /mnt/pmem1)
+# and the UMF_TESTS_FSDAX_PATH environment variable
+# should contain a path to a file o this FSDAX device.
+#
 
-name: DevDax
+name: Dax
 
 on: [workflow_call]
 
@@ -11,12 +22,12 @@ permissions:
   contents: read
 
 env:
-  UMF_TESTS_DEVDAX_NAMESPACE : "0.0"
+  DEVDAX_NAMESPACE : "0.0"
   BUILD_DIR : "${{github.workspace}}/build"
   INSTL_DIR : "${{github.workspace}}/../install-dir"
 
 jobs:
-  devdax:
+  dax:
     name: Build
     # run only on upstream; forks may not have a DAX device
     if: github.repository == 'oneapi-src/unified-memory-framework'
@@ -27,12 +38,13 @@ jobs:
 
     runs-on: ["DSS-DEVDAX", "DSS-Ubuntu"]
     steps:
-      - name: Check if the devdax exists, print out UMF_TESTS_DEVDAX_PATH and UMF_TESTS_DEVDAX_SIZE
+      - name: Check configuration of the DEVDAX
         run: |
-          ndctl list -N --device-dax
-          ls -al /dev/dax${UMF_TESTS_DEVDAX_NAMESPACE}
-          echo UMF_TESTS_DEVDAX_PATH="/dev/dax${UMF_TESTS_DEVDAX_NAMESPACE}"
-          echo UMF_TESTS_DEVDAX_SIZE="$(ndctl list --namespace=namespace${UMF_TESTS_DEVDAX_NAMESPACE} | grep size | cut -d':' -f2 | cut -d',' -f1)"
+          echo DEVDAX_NAMESPACE="${{env.DEVDAX_NAMESPACE}}"
+          ndctl list --namespace=namespace${{env.DEVDAX_NAMESPACE}} --device-dax
+          ls -al /dev/dax${{env.DEVDAX_NAMESPACE}}
+          echo UMF_TESTS_DEVDAX_PATH="/dev/dax${{env.DEVDAX_NAMESPACE}}"
+          echo UMF_TESTS_DEVDAX_SIZE="$(ndctl list --namespace=namespace${{env.DEVDAX_NAMESPACE}} | grep size | cut -d':' -f2 | cut -d',' -f1)"
 
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -62,9 +74,9 @@ jobs:
       - name: Build UMF
         run: cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j $(nproc)
 
-      - name: Run only devdax tests
+      - name: Run the DEVDAX tests
         working-directory: ${{env.BUILD_DIR}}
         run: >
-          UMF_TESTS_DEVDAX_PATH="/dev/dax${UMF_TESTS_DEVDAX_NAMESPACE}"
-          UMF_TESTS_DEVDAX_SIZE="$(ndctl list --namespace=namespace${UMF_TESTS_DEVDAX_NAMESPACE} | grep size | cut -d':' -f2 | cut -d',' -f1)"
+          UMF_TESTS_DEVDAX_PATH="/dev/dax${{env.DEVDAX_NAMESPACE}}"
+          UMF_TESTS_DEVDAX_SIZE="$(ndctl list --namespace=namespace${{env.DEVDAX_NAMESPACE}} | grep size | cut -d':' -f2 | cut -d',' -f1)"
           ctest -C ${{matrix.build_type}} -R devdax -V
