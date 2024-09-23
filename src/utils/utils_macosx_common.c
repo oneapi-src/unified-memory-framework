@@ -29,11 +29,14 @@ utils_translate_mem_visibility_flag(umf_memory_visibility_t in_flag,
     return UMF_RESULT_ERROR_INVALID_ARGUMENT;
 }
 
-void *utils_devdax_mmap(void *hint_addr, size_t length, int prot, int fd) {
+void *utils_mmap_file(void *hint_addr, size_t length, int prot, int flags,
+                      int fd, size_t fd_offset) {
     (void)hint_addr; // unused
     (void)length;    // unused
     (void)prot;      // unused
+    (void)flags;     // unused
     (void)fd;        // unused
+    (void)fd_offset; // unused
     return NULL;     // not supported
 }
 

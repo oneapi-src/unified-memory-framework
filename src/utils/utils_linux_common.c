@@ -39,24 +39,57 @@ utils_translate_mem_visibility_flag(umf_memory_visibility_t in_flag,
 }
 
 /*
- * MMap a /dev/dax device.
- * First try to mmap with (MAP_SHARED_VALIDATE | MAP_SYNC) flags
- * which allows flushing from the user-space. If MAP_SYNC fails
- * try to mmap with MAP_SHARED flag (without MAP_SYNC).
+ * Map given file into memory.
+ * If (flags & MAP_PRIVATE) it uses just mmap. Otherwise, if (flags & MAP_SYNC)
+ * it tries to mmap with (flags | MAP_SHARED_VALIDATE | MAP_SYNC)
+ * which allows flushing from the user-space. If MAP_SYNC fails and the user
+ * did not specify it by himself it tries to mmap with (flags | MAP_SHARED).
  */
-void *utils_devdax_mmap(void *hint_addr, size_t length, int prot, int fd) {
-    void *ptr = utils_mmap(hint_addr, length, prot,
-                           MAP_SHARED_VALIDATE | MAP_SYNC, fd, 0);
-    if (ptr) {
-        LOG_DEBUG(
-            "devdax mapped with the (MAP_SHARED_VALIDATE | MAP_SYNC) flags");
-        return ptr;
+void *utils_mmap_file(void *hint_addr, size_t length, int prot, int flags,
+                      int fd, size_t fd_offset) {
+    void *addr;
+
+    /*
+     * MAP_PRIVATE and MAP_SHARED are mutually exclusive,
+     * therefore mmap with MAP_PRIVATE is executed separately.
+     */
+    if (flags & MAP_PRIVATE) {
+        addr = utils_mmap(hint_addr, length, prot, flags, fd, fd_offset);
+        if (addr == MAP_FAILED) {
+            LOG_PERR("mapping file with the MAP_PRIVATE flag failed");
+            return NULL;
+        }
+
+        LOG_DEBUG("file mapped with the MAP_PRIVATE flag");
+        return addr;
     }
 
-    ptr = utils_mmap(hint_addr, length, prot, MAP_SHARED, fd, 0);
-    if (ptr) {
-        LOG_DEBUG("devdax mapped with the MAP_SHARED flag");
-        return ptr;
+    errno = 0;
+
+    if (flags & MAP_SYNC) {
+        /* try to mmap with MAP_SYNC flag */
+        const int sync_flags = MAP_SHARED_VALIDATE | MAP_SYNC;
+        addr = utils_mmap(hint_addr, length, prot, flags | sync_flags, fd,
+                          fd_offset);
+        if (addr) {
+            LOG_DEBUG("file mapped with the MAP_SYNC flag");
+            return addr;
+        }
+
+        LOG_PERR("mapping file with the MAP_SYNC flag failed");
+    }
+
+    if ((!(flags & MAP_SYNC)) || errno == EINVAL || errno == ENOTSUP ||
+        errno == EOPNOTSUPP) {
+        /* try to mmap with MAP_SHARED flag (without MAP_SYNC) */
+        const int shared_flags = (flags & (~MAP_SYNC)) | MAP_SHARED;
+        addr = utils_mmap(hint_addr, length, prot, shared_flags, fd, fd_offset);
+        if (addr) {
+            LOG_DEBUG("file mapped with the MAP_SHARED flag");
+            return addr;
+        }
+
+        LOG_PERR("mapping file with the MAP_SHARED flag failed");
     }
 
     return NULL;

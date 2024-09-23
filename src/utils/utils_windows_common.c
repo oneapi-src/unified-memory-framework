@@ -147,12 +147,15 @@ void *utils_mmap(void *hint_addr, size_t length, int prot, int flag, int fd,
     return VirtualAlloc(hint_addr, length, MEM_RESERVE | MEM_COMMIT, prot);
 }
 
-void *utils_devdax_mmap(void *hint_addr, size_t length, int prot, int fd) {
+void *utils_mmap_file(void *hint_addr, size_t length, int prot, int flags,
+                      int fd, size_t fd_offset) {
     (void)hint_addr; // unused
     (void)length;    // unused
     (void)prot;      // unused
+    (void)flags;     // unused
     (void)fd;        // unused
-    return NULL;     // not supported on Windows
+    (void)fd_offset; // unused
+    return NULL;     // not supported
 }
 
 int utils_munmap(void *addr, size_t length) {
