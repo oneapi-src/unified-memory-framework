@@ -200,6 +200,8 @@ so it should be used with a pool manager that will take over
 the managing of the provided memory - for example the jemalloc pool
 with the `disable_provider_free` parameter set to true.
 
+The memory visibility mode parameter must be set to `UMF_MEM_MAP_SYNC` in case of FSDAX.
+
 ##### Requirements
 
 1) Linux OS

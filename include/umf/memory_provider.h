@@ -20,7 +20,8 @@ extern "C" {
 /// @brief Memory visibility mode
 typedef enum umf_memory_visibility_t {
     UMF_MEM_MAP_PRIVATE = 1, ///< private memory mapping
-    UMF_MEM_MAP_SHARED, ///< shared memory mapping (supported on Linux only)
+    UMF_MEM_MAP_SHARED,      ///< shared memory mapping (Linux only)
+    UMF_MEM_MAP_SYNC, ///< direct mapping of persistent memory (supported only for files supporting DAX, Linux only)
 } umf_memory_visibility_t;
 
 /// @brief Protection of the memory allocations

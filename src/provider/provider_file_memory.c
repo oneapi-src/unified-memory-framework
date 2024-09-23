@@ -261,7 +261,7 @@ static umf_result_t file_mmap_aligned(file_memory_provider_t *file_provider,
     ASSERT_IS_ALIGNED(extended_size, page_size);
     ASSERT_IS_ALIGNED(offset_fd, page_size);
 
-    void *ptr = utils_mmap(NULL, extended_size, prot, flag, fd, offset_fd);
+    void *ptr = utils_mmap_file(NULL, extended_size, prot, flag, fd, offset_fd);
     if (ptr == NULL) {
         LOG_PERR("memory mapping failed");
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
@@ -612,8 +612,9 @@ static umf_result_t file_open_ipc_handle(void *provider, void *providerIpcData,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    *ptr = utils_mmap(NULL, file_ipc_data->size, file_provider->protection,
-                      file_provider->visibility, fd, file_ipc_data->offset_fd);
+    *ptr = utils_mmap_file(NULL, file_ipc_data->size, file_provider->protection,
+                           file_provider->visibility, fd,
+                           file_ipc_data->offset_fd);
     (void)utils_close_fd(fd);
     if (*ptr == NULL) {
         file_store_last_native_error(UMF_FILE_RESULT_ERROR_ALLOC_FAILED, errno);

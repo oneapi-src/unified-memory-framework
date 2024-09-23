@@ -124,7 +124,8 @@ int utils_set_file_size(int fd, size_t size);
 void *utils_mmap(void *hint_addr, size_t length, int prot, int flag, int fd,
                  size_t fd_offset);
 
-void *utils_devdax_mmap(void *hint_addr, size_t length, int prot, int fd);
+void *utils_mmap_file(void *hint_addr, size_t length, int prot, int flags,
+                      int fd, size_t fd_offset);
 
 int utils_munmap(void *addr, size_t length);
 
