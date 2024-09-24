@@ -106,11 +106,7 @@ jobs:
 
       - name: Run standalone examples
         working-directory: ${{env.BUILD_DIR}}
-        run: ctest -V -R umf_standalone_examples -C ${{env.BUILD_TYPE}}
-
-      - name: Run benchmarks
-        working-directory: ${{env.BUILD_DIR}}
-        run: ctest -V --test-dir benchmark -C ${{env.BUILD_TYPE}} --exclude-regex umf-bench-multithreaded
+        run: ctest -V -R standalone -C ${{env.BUILD_TYPE}}
 
   gpu-CUDA:
     name: Build
@@ -174,7 +170,3 @@ jobs:
     - name: Run standalone examples
       working-directory: ${{env.BUILD_DIR}}
       run: ctest -V -R umf_standalone_examples -C ${{env.BUILD_TYPE}}
-
-    - name: Run benchmarks
-      working-directory: ${{env.BUILD_DIR}}
-      run: ctest -V --test-dir benchmark -C ${{env.BUILD_TYPE}} --exclude-regex umf-bench-multithreaded
