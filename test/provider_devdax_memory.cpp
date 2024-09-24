@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 #ifndef _WIN32
+#include "test_helpers_linux.h"
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -11,6 +12,7 @@
 #include "base.hpp"
 
 #include "cpp_helpers.hpp"
+#include "test_helpers.h"
 
 #include <umf/memory_provider.h>
 #include <umf/providers/provider_devdax_memory.h>
@@ -137,10 +139,6 @@ static void test_alloc_failure(umf_memory_provider_handle_t provider,
 // TESTS
 
 // Test checking if devdax was mapped with the MAP_SYNC flag:
-// 1) Open and read the /proc/self/smaps file.
-// 2) Look for the section of the devdax (the /dev/daxX.Y path).
-// 3) Check if the VmFlags of the /dev/daxX.Y contains the "sf" flag
-//    marking that the devdax was mapped with the MAP_SYNC flag.
 TEST_F(test, test_if_mapped_with_MAP_SYNC) {
     umf_memory_provider_handle_t hProvider = nullptr;
     umf_result_t umf_result;
@@ -167,48 +165,8 @@ TEST_F(test, test_if_mapped_with_MAP_SYNC) {
     umf_result = umfMemoryProviderAlloc(hProvider, size, 0, (void **)&buf);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(buf, nullptr);
-    memset(buf, 0, size);
 
-    int fd = open("/proc/self/smaps", O_RDONLY);
-    ASSERT_NE(fd, -1);
-
-    // number of bytes read from the file
-    ssize_t nbytes = 1;
-    // string starting from the path of the devdax
-    char *devdax = nullptr;
-
-    // Read the "/proc/self/smaps" file
-    // until the path of the devdax is found
-    // or EOF is reached.
-    while (nbytes > 0 && devdax == nullptr) {
-        memset(buf, 0, nbytes); // erase previous data
-        nbytes = read(fd, buf, size);
-        // look for the path of the devdax
-        devdax = strstr(buf, path);
-    }
-
-    // String starting from the "sf" flag
-    // marking that memory was mapped with the MAP_SYNC flag.
-    char *sf_flag = nullptr;
-
-    if (devdax) {
-        // look for the "VmFlags:" string
-        char *VmFlags = strstr(devdax, "VmFlags:");
-        if (VmFlags) {
-            // look for the EOL
-            char *eol = strstr(VmFlags, "\n");
-            if (eol) {
-                // End the VmFlags string at EOL.
-                *eol = 0;
-                // Now the VmFlags string contains only one line with all VmFlags.
-
-                // Look for the "sf" flag in VmFlags
-                // marking that memory was mapped
-                // with the MAP_SYNC flag.
-                sf_flag = strstr(VmFlags, "sf");
-            }
-        }
-    }
+    bool flag_found = is_mapped_with_MAP_SYNC(path, buf, size);
 
     umf_result = umfMemoryProviderFree(hProvider, buf, size);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
@@ -216,7 +174,7 @@ TEST_F(test, test_if_mapped_with_MAP_SYNC) {
     umfMemoryProviderDestroy(hProvider);
 
     // fail test if the "sf" flag was not found
-    ASSERT_NE(sf_flag, nullptr);
+    ASSERT_EQ(flag_found, true);
 }
 
 // positive tests using test_alloc_free_success

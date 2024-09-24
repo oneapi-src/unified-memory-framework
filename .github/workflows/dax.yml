@@ -23,6 +23,9 @@ permissions:
 
 env:
   DEVDAX_NAMESPACE : "0.0"
+  FSDAX_NAMESPACE : "1.0"
+  FSDAX_PMEM: "pmem1"
+  UMF_TESTS_FSDAX_PATH: "/mnt/pmem1/file"
   BUILD_DIR : "${{github.workspace}}/build"
   INSTL_DIR : "${{github.workspace}}/../install-dir"
 
@@ -45,6 +48,16 @@ jobs:
           ls -al /dev/dax${{env.DEVDAX_NAMESPACE}}
           echo UMF_TESTS_DEVDAX_PATH="/dev/dax${{env.DEVDAX_NAMESPACE}}"
           echo UMF_TESTS_DEVDAX_SIZE="$(ndctl list --namespace=namespace${{env.DEVDAX_NAMESPACE}} | grep size | cut -d':' -f2 | cut -d',' -f1)"
+
+      - name: Check configuration of the FSDAX
+        run: |
+          echo FSDAX_NAMESPACE="${{env.FSDAX_NAMESPACE}}"
+          echo UMF_TESTS_FSDAX_PATH="${{env.UMF_TESTS_FSDAX_PATH}}"
+          ndctl list --namespace=namespace${{env.FSDAX_NAMESPACE}}
+          ls -al /dev/${{env.FSDAX_PMEM}} /mnt/${{env.FSDAX_PMEM}}
+          mount | grep -e "/dev/${{env.FSDAX_PMEM}}"
+          touch ${{env.UMF_TESTS_FSDAX_PATH}}
+          rm -f ${{env.UMF_TESTS_FSDAX_PATH}}
 
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -80,3 +93,9 @@ jobs:
           UMF_TESTS_DEVDAX_PATH="/dev/dax${{env.DEVDAX_NAMESPACE}}"
           UMF_TESTS_DEVDAX_SIZE="$(ndctl list --namespace=namespace${{env.DEVDAX_NAMESPACE}} | grep size | cut -d':' -f2 | cut -d',' -f1)"
           ctest -C ${{matrix.build_type}} -R devdax -V
+
+      - name: Run the FSDAX tests
+        working-directory: ${{env.BUILD_DIR}}
+        run: >
+          UMF_TESTS_FSDAX_PATH=${{env.UMF_TESTS_FSDAX_PATH}}
+          ctest -C ${{matrix.build_type}} -R umf-provider_file_memory -V
