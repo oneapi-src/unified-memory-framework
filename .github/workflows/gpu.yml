@@ -4,7 +4,11 @@
 
 name: GPU
 
-on: [workflow_call]
+on:
+  push:
+    branches-ignore:
+      - 'dependabot/**'
+  pull_request:
 
 permissions:
   contents: read
