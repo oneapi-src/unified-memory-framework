@@ -94,19 +94,19 @@ jobs:
 
       - name: Run tests
         working-directory: ${{env.BUILD_DIR}}
-        run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure --test-dir test
+        run: ctest -C ${{env.BUILD_TYPE}} -V --test-dir test
 
       - name: Run examples
         working-directory: ${{env.BUILD_DIR}}
-        run: ctest --output-on-failure --test-dir examples -C ${{env.BUILD_TYPE}}
+        run: ctest -V --test-dir examples -C ${{env.BUILD_TYPE}}
 
       - name: Run standalone examples
         working-directory: ${{env.BUILD_DIR}}
-        run: ctest --output-on-failure -R umf_standalone_examples -C ${{env.BUILD_TYPE}}
+        run: ctest -V -R umf_standalone_examples -C ${{env.BUILD_TYPE}}
 
       - name: Run benchmarks
         working-directory: ${{env.BUILD_DIR}}
-        run: ctest --output-on-failure --test-dir benchmark -C ${{env.BUILD_TYPE}} --exclude-regex umf-bench-multithreaded
+        run: ctest -V --test-dir benchmark -C ${{env.BUILD_TYPE}} --exclude-regex umf-bench-multithreaded
 
   gpu-CUDA:
     name: Build
@@ -161,16 +161,16 @@ jobs:
 
     - name: Run tests
       working-directory: ${{env.BUILD_DIR}}
-      run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure --test-dir test
+      run: ctest -C ${{env.BUILD_TYPE}} -V --test-dir test
 
     - name: Run examples
       working-directory: ${{env.BUILD_DIR}}
-      run: ctest --output-on-failure --test-dir examples -C ${{env.BUILD_TYPE}}
+      run: ctest -V --test-dir examples -C ${{env.BUILD_TYPE}}
 
     - name: Run standalone examples
       working-directory: ${{env.BUILD_DIR}}
-      run: ctest --output-on-failure -R umf_standalone_examples -C ${{env.BUILD_TYPE}}
+      run: ctest -V -R umf_standalone_examples -C ${{env.BUILD_TYPE}}
 
     - name: Run benchmarks
       working-directory: ${{env.BUILD_DIR}}
-      run: ctest --output-on-failure --test-dir benchmark -C ${{env.BUILD_TYPE}} --exclude-regex umf-bench-multithreaded
+      run: ctest -V --test-dir benchmark -C ${{env.BUILD_TYPE}} --exclude-regex umf-bench-multithreaded
