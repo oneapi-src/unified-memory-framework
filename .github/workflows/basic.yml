@@ -429,7 +429,7 @@ jobs:
     name: MacOS
     strategy:
       matrix:
-        os: ['macos-12', 'macos-13']
+        os: ['macos-13', 'macos-14']
     env:
       BUILD_TYPE : "Release"
     runs-on: ${{matrix.os}}
@@ -440,8 +440,13 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Install Python requirements
-      run: python3 -m pip install -r third_party/requirements.txt
+    # Latest distros do not allow global pip installation
+    - name: Install Python requirements in venv
+      run: |
+        python3 -m venv .venv
+        . .venv/bin/activate
+        echo "$PATH" >> $GITHUB_PATH
+        python3 -m pip install -r third_party/requirements.txt
 
     - name: Install hwloc
       run: brew install hwloc jemalloc tbb
