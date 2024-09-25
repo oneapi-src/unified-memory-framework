@@ -107,6 +107,15 @@ umf_result_t umfMemtargetGetLatency(umf_memtarget_handle_t srcMemoryTarget,
                                              dstMemoryTarget->priv, latency);
 }
 
+umf_result_t umfMemtargetGetId(umf_const_memtarget_handle_t hMemtarget,
+                               unsigned *id) {
+    if (!hMemtarget || !id) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    return hMemtarget->ops->get_id(hMemtarget->priv, id);
+}
+
 umf_result_t umfMemtargetGetType(umf_const_memtarget_handle_t memoryTarget,
                                  umf_memtarget_type_t *type) {
     if (!memoryTarget || !type) {

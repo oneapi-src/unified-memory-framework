@@ -24,12 +24,6 @@ struct umf_memspace_t {
     umf_memtarget_handle_t *nodes;
 };
 
-///
-/// \brief Clones memspace
-///
-umf_result_t umfMemspaceClone(umf_const_memspace_handle_t hMemspace,
-                              umf_memspace_handle_t *outHandle);
-
 typedef umf_result_t (*umfGetPropertyFn)(umf_const_memtarget_handle_t,
                                          uint64_t *);
 

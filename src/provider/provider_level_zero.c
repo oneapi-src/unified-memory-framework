@@ -188,12 +188,7 @@ static void ze_memory_provider_finalize(void *provider) {
         return;
     }
 
-    utils_init_once(&ze_is_initialized, init_ze_global_state);
     umf_ba_global_free(provider);
-
-    // portable version of "ze_is_initialized = UTIL_ONCE_FLAG_INIT;"
-    static UTIL_ONCE_FLAG is_initialized = UTIL_ONCE_FLAG_INIT;
-    memcpy(&ze_is_initialized, &is_initialized, sizeof(ze_is_initialized));
 }
 
 static bool use_relaxed_allocation(ze_memory_provider_t *ze_provider,

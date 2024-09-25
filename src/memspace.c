@@ -426,3 +426,153 @@ umfMemspaceMemtargetRemove(umf_memspace_handle_t hMemspace,
     hMemspace->size--;
     return UMF_RESULT_SUCCESS;
 }
+
+// Helper function - returns zero on success, negative in case of error in filter function
+// and positive error code, in case of other errors.
+static int umfMemspaceFilterHelper(umf_memspace_handle_t memspace,
+                                   umf_memspace_filter_func_t filter,
+                                   void *args) {
+
+    if (!memspace || !filter) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    size_t idx = 0;
+    int ret;
+    umf_memtarget_handle_t *nodesToRemove =
+        umf_ba_global_alloc(sizeof(*nodesToRemove) * memspace->size);
+    if (!nodesToRemove) {
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    for (size_t i = 0; i < memspace->size; i++) {
+        ret = filter(memspace, memspace->nodes[i], args);
+        if (ret < 0) {
+            LOG_ERR("filter function failed");
+            goto free_mem;
+        } else if (ret == 0) {
+            nodesToRemove[idx++] = memspace->nodes[i];
+        }
+    }
+
+    size_t i = 0;
+    for (; i < idx; i++) {
+        ret = umfMemspaceMemtargetRemove(memspace, nodesToRemove[i]);
+        if (ret != UMF_RESULT_SUCCESS) {
+            goto re_add;
+        }
+    }
+
+    umf_ba_global_free(nodesToRemove);
+    return UMF_RESULT_SUCCESS;
+
+re_add:
+    // If target removal failed, add back previously removed targets.
+    for (size_t j = 0; j < i; j++) {
+        umf_result_t ret2 = umfMemspaceMemtargetAdd(memspace, nodesToRemove[j]);
+        if (ret2 != UMF_RESULT_SUCCESS) {
+            ret =
+                UMF_RESULT_ERROR_UNKNOWN; // indicate that memspace is corrupted
+            break;
+        }
+    }
+free_mem:
+    umf_ba_global_free(nodesToRemove);
+    return ret;
+}
+
+umf_result_t umfMemspaceUserFilter(umf_memspace_handle_t memspace,
+                                   umf_memspace_filter_func_t filter,
+                                   void *args) {
+
+    if (!memspace || !filter) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    int ret = umfMemspaceFilterHelper(memspace, filter, args);
+    if (ret < 0) {
+        return UMF_RESULT_ERROR_USER_SPECIFIC;
+    }
+
+    return ret;
+}
+
+typedef struct filter_by_id_args {
+    unsigned *ids; // array of numa nodes ids
+    size_t size;   // size of the array
+} filter_by_id_args_t;
+
+/*
+ * The following predefined filter callbacks returns umf_result_t codes as negative value
+ * because only negative values are treated as errors. umfMemspaceFilterHelper() will pass
+ * this error code through and umfMemspaceFilterBy*() functions will translate this code to positive
+ * umf_result_t code.
+ */
+
+static int filterById(umf_const_memspace_handle_t memspace,
+                      umf_const_memtarget_handle_t target, void *args) {
+    if (!memspace || !target || !args) {
+        return -UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    filter_by_id_args_t *filterArgs = args;
+    for (size_t i = 0; i < filterArgs->size; i++) {
+        unsigned id;
+        umf_result_t ret = umfMemtargetGetId(target, &id);
+        if (ret != UMF_RESULT_SUCCESS) {
+            return -ret;
+        }
+
+        if (id == filterArgs->ids[i]) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static int filterByCapacity(umf_const_memspace_handle_t memspace,
+                            umf_const_memtarget_handle_t target, void *args) {
+    if (!memspace || !target || !args) {
+        return -UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    size_t capacity;
+    umf_result_t ret = umfMemtargetGetCapacity(target, &capacity);
+    if (ret != UMF_RESULT_SUCCESS) {
+        return -ret;
+    }
+
+    size_t *targetCapacity = args;
+    return (capacity >= *targetCapacity) ? 1 : 0;
+}
+
+umf_result_t umfMemspaceFilterById(umf_memspace_handle_t memspace,
+                                   unsigned *ids, size_t size) {
+    if (!memspace || !ids || size == 0) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    filter_by_id_args_t args = {ids, size};
+    int ret = umfMemspaceFilterHelper(memspace, &filterById, &args);
+
+    // if umfMemspaceFilter() returned negative umf_result_t change it to positive
+    return ret < 0 ? -ret : ret;
+}
+
+umf_result_t umfMemspaceFilterByCapacity(umf_memspace_handle_t memspace,
+                                         int64_t capacity) {
+    if (!memspace) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    // TODO: At this moment this function filters out memory targets that capacity is
+    // less than specified size. We can extend this function to support reverse filter,
+    // by using negative values of capacity parameter.
+    // For now we just return invalid argument.
+    if (capacity < 0) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    int ret = umfMemspaceFilterHelper(memspace, &filterByCapacity, &capacity);
+
+    // if umfMemspaceFilter() returned negative umf_result_t change it to positive
+    return ret < 0 ? -ret : ret;
+}

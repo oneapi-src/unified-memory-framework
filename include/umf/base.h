@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023 Intel Corporation
+ * Copyright (C) 2023-2024 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -43,7 +43,8 @@ typedef enum umf_result_t {
     UMF_RESULT_ERROR_INVALID_ALIGNMENT =
         4,                              ///< Invalid alignment of an argument
     UMF_RESULT_ERROR_NOT_SUPPORTED = 5, ///< Operation not supported
-
+    UMF_RESULT_ERROR_USER_SPECIFIC =
+        6, ///< Failure in user provider code (i.e in user provided callback)
     UMF_RESULT_ERROR_UNKNOWN = 0x7ffffffe ///< Unknown or internal error
 } umf_result_t;
 
