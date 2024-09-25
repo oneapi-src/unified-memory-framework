@@ -504,6 +504,15 @@ if(LINUX
         )
     endif()
 
+    if(LIBNUMA_LIBRARIES)
+        set(EXAMPLES ${EXAMPLES} memspace_hmat memspace_numa)
+    else()
+        message(
+            STATUS
+                "The memspace_hmat and memspace_numa examples require libnuma to be installed and added to the default library search path - skipping"
+        )
+    endif()
+
     if(UMF_BUILD_GPU_EXAMPLES
        AND UMF_BUILD_LIBUMF_POOL_DISJOINT
        AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
