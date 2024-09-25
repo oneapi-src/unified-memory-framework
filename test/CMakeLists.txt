@@ -494,13 +494,15 @@ if(LINUX
         OR UMF_USE_UBSAN
         OR UMF_USE_TSAN
         OR UMF_USE_MSAN))
+
     set(EXAMPLES "")
+
     if(UMF_POOL_SCALABLE_ENABLED)
-        set(EXAMPLES ${EXAMPLES} basic)
+        set(EXAMPLES ${EXAMPLES} basic custom_file_provider)
     else()
         message(
             STATUS
-                "The basic example requires TBB to be installed and added to the default library search path - skipping"
+                "The basic and custom_file_provider examples require TBB to be installed and added to the default library search path - skipping"
         )
     endif()
 
