@@ -9,15 +9,16 @@ SOURCE_DIR=$1
 BUILD_DIR=$2
 INSTALL_DIR=$3
 CMAKE_INSTALL_PREFIX=$4
+STANDALONE_CMAKE_OPTIONS=$5
 
 echo "Running: $0 $*"
 
 function print_usage() {
 	echo "$(basename $0) - test all examples standalone"
-	echo "Usage: $(basename $0) <source_dir> <build_dir> <install_dir> <CMAKE_INSTALL_PREFIX> <list-of-examples-to-run>"
+	echo "Usage: $(basename $0) <source_dir> <build_dir> <install_dir> <CMAKE_INSTALL_PREFIX> <standalone_cmake_options> <list-of-examples-to-run>"
 }
 
-if [ "$5" = "" ]; then
+if [ "$6" = "" ]; then
 	print_usage
 	echo -e "Error: too few arguments\n"
 	exit 1
@@ -39,8 +40,9 @@ echo "SOURCE_DIR=$SOURCE_DIR"
 echo "BUILD_DIR=$BUILD_DIR"
 echo "CMAKE_INSTALL_PREFIX=$CMAKE_INSTALL_PREFIX"
 echo "INSTALL_DIR=$INSTALL_DIR"
+echo "STANDALONE_CMAKE_OPTIONS=$STANDALONE_CMAKE_OPTIONS"
 
-shift 4
+shift 5
 EXAMPLES="$*"
 echo "Examples to run: $EXAMPLES"
 echo
@@ -70,7 +72,7 @@ for ex in $EXAMPLES; do
 	rm -rf $BLD_DIR
 	mkdir -p $BLD_DIR
 	cd $BLD_DIR
-	CMAKE_PREFIX_PATH="${INSTALL_DIR}/${CMAKE_INSTALL_PREFIX}" cmake $SRC_DIR
+	CMAKE_PREFIX_PATH="${INSTALL_DIR}/${CMAKE_INSTALL_PREFIX}" cmake $SRC_DIR $STANDALONE_CMAKE_OPTIONS
 	make -j$(nproc)
 	ctest --output-on-failure
 	set +x

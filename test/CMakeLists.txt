@@ -551,13 +551,17 @@ if(LINUX
     endif()
 
     if(EXAMPLES AND NOT UMF_DISABLE_HWLOC)
+        set(STANDALONE_CMAKE_OPTIONS
+            "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
+        )
         add_test(
             NAME umf-standalone_examples
             COMMAND
                 ${UMF_CMAKE_SOURCE_DIR}/test/test_examples.sh
                 ${UMF_CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
                 ${CMAKE_CURRENT_BINARY_DIR}/umf_standalone_examples/install-dir
-                "${CMAKE_INSTALL_PREFIX}" ${EXAMPLES}
+                "${CMAKE_INSTALL_PREFIX}" "${STANDALONE_CMAKE_OPTIONS}"
+                ${EXAMPLES}
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
     endif()
 endif()
