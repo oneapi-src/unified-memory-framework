@@ -552,7 +552,7 @@ if(LINUX
 
     if(EXAMPLES AND NOT UMF_DISABLE_HWLOC)
         add_test(
-            NAME umf_standalone_examples
+            NAME umf-standalone_examples
             COMMAND
                 ${UMF_CMAKE_SOURCE_DIR}/test/test_examples.sh
                 ${UMF_CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
