@@ -1,0 +1,101 @@
+#
+# This workflow builds and tests the DEVDAX memory provider
+# and the file memory provider with FSDAX.
+# It requires:
+# - a DAX device (e.g. /dev/dax0.0) and
+# - a FSDAX device (e.g. /dev/pmem1)
+# configured and mounted in the OS.
+#
+# The DAX device should be specified using the
+# UMF_TESTS_DEVDAX_PATH and UMF_TESTS_DEVDAX_SIZE environment variables.
+#
+# The FSDAX device should be mounted in the OS (e.g. /mnt/pmem1)
+# and the UMF_TESTS_FSDAX_PATH environment variable
+# should contain a path to a file o this FSDAX device.
+#
+
+name: Dax
+
+on: [workflow_call]
+
+permissions:
+  contents: read
+
+env:
+  DEVDAX_NAMESPACE : "0.0"
+  FSDAX_NAMESPACE : "1.0"
+  FSDAX_PMEM: "pmem1"
+  UMF_TESTS_FSDAX_PATH: "/mnt/pmem1/file"
+  BUILD_DIR : "${{github.workspace}}/build"
+  INSTL_DIR : "${{github.workspace}}/../install-dir"
+
+jobs:
+  dax:
+    name: Build
+    # run only on upstream; forks may not have a DAX device
+    if: github.repository == 'oneapi-src/unified-memory-framework'
+    strategy:
+      matrix:
+        build_type: [Debug, Release]
+        shared_library: ['ON', 'OFF']
+
+    runs-on: ["DSS-DEVDAX", "DSS-Ubuntu"]
+    steps:
+      - name: Check configuration of the DEVDAX
+        run: |
+          echo DEVDAX_NAMESPACE="${{env.DEVDAX_NAMESPACE}}"
+          ndctl list --namespace=namespace${{env.DEVDAX_NAMESPACE}} --device-dax
+          ls -al /dev/dax${{env.DEVDAX_NAMESPACE}}
+          echo UMF_TESTS_DEVDAX_PATH="/dev/dax${{env.DEVDAX_NAMESPACE}}"
+          echo UMF_TESTS_DEVDAX_SIZE="$(ndctl list --namespace=namespace${{env.DEVDAX_NAMESPACE}} | grep size | cut -d':' -f2 | cut -d',' -f1)"
+
+      - name: Check configuration of the FSDAX
+        run: |
+          echo FSDAX_NAMESPACE="${{env.FSDAX_NAMESPACE}}"
+          echo UMF_TESTS_FSDAX_PATH="${{env.UMF_TESTS_FSDAX_PATH}}"
+          ndctl list --namespace=namespace${{env.FSDAX_NAMESPACE}}
+          ls -al /dev/${{env.FSDAX_PMEM}} /mnt/${{env.FSDAX_PMEM}}
+          mount | grep -e "/dev/${{env.FSDAX_PMEM}}"
+          touch ${{env.UMF_TESTS_FSDAX_PATH}}
+          rm -f ${{env.UMF_TESTS_FSDAX_PATH}}
+
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          fetch-depth: 0
+
+      - name: Configure build
+        run: >
+          cmake
+          -B ${{env.BUILD_DIR}}
+          -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
+          -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+          -DCMAKE_C_COMPILER=gcc
+          -DCMAKE_CXX_COMPILER=g++
+          -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
+          -DUMF_BUILD_BENCHMARKS=OFF
+          -DUMF_BUILD_TESTS=ON
+          -DUMF_BUILD_GPU_TESTS=OFF
+          -DUMF_BUILD_GPU_EXAMPLES=OFF
+          -DUMF_FORMAT_CODE_STYLE=OFF
+          -DUMF_DEVELOPER_MODE=ON
+          -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
+          -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
+          -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
+          -DUMF_TESTS_FAIL_ON_SKIP=ON
+
+      - name: Build UMF
+        run: cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j $(nproc)
+
+      - name: Run the DEVDAX tests
+        working-directory: ${{env.BUILD_DIR}}
+        run: >
+          UMF_TESTS_DEVDAX_PATH="/dev/dax${{env.DEVDAX_NAMESPACE}}"
+          UMF_TESTS_DEVDAX_SIZE="$(ndctl list --namespace=namespace${{env.DEVDAX_NAMESPACE}} | grep size | cut -d':' -f2 | cut -d',' -f1)"
+          ctest -C ${{matrix.build_type}} -R devdax -V
+
+      - name: Run the FSDAX tests
+        working-directory: ${{env.BUILD_DIR}}
+        run: >
+          UMF_TESTS_FSDAX_PATH=${{env.UMF_TESTS_FSDAX_PATH}}
+          ctest -C ${{matrix.build_type}} -R umf-provider_file_memory -V

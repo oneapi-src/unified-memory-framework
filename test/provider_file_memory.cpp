@@ -6,6 +6,9 @@
 
 #include "cpp_helpers.hpp"
 #include "test_helpers.h"
+#ifndef _WIN32
+#include "test_helpers_linux.h"
+#endif
 
 #include <umf/memory_provider.h>
 #include <umf/providers/provider_file_memory.h>
@@ -120,6 +123,41 @@ static void test_alloc_failure(umf_memory_provider_handle_t provider,
 }
 
 // TESTS
+
+// Test checking if FSDAX was mapped with the MAP_SYNC flag:
+TEST_F(test, test_if_mapped_with_MAP_SYNC) {
+    umf_memory_provider_handle_t hProvider = nullptr;
+    umf_result_t umf_result;
+
+    char *path = getenv("UMF_TESTS_FSDAX_PATH");
+    if (path == nullptr || path[0] == 0) {
+        GTEST_SKIP() << "Test skipped, UMF_TESTS_FSDAX_PATH is not set";
+    }
+
+    auto params = umfFileMemoryProviderParamsDefault(path);
+    params.visibility = UMF_MEM_MAP_SYNC;
+
+    umf_result = umfMemoryProviderCreate(umfFileMemoryProviderOps(), &params,
+                                         &hProvider);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(hProvider, nullptr);
+
+    char *buf;
+    size_t size = 2 * 1024 * 1024; // 2MB
+    umf_result = umfMemoryProviderAlloc(hProvider, size, 0, (void **)&buf);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(buf, nullptr);
+
+    bool flag_found = is_mapped_with_MAP_SYNC(path, buf, size);
+
+    umf_result = umfMemoryProviderFree(hProvider, buf, size);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
+
+    umfMemoryProviderDestroy(hProvider);
+
+    // fail test if the "sf" flag was not found
+    ASSERT_EQ(flag_found, true);
+}
 
 // positive tests using test_alloc_free_success
 

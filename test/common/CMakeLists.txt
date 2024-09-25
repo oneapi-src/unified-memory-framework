@@ -9,6 +9,10 @@ set(COMMON_SOURCES
     provider_null.c
     provider_trace.c)
 
+if(LINUX)
+    set(COMMON_SOURCES ${COMMON_SOURCES} test_helpers_linux.c)
+endif(LINUX)
+
 add_umf_library(
     NAME umf_test_common
     TYPE STATIC
