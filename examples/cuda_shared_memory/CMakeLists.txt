@@ -21,6 +21,8 @@ if(NOT LIBHWLOC_FOUND)
     find_package(LIBHWLOC 2.3.0 REQUIRED hwloc)
 endif()
 
+find_package(CUDA REQUIRED cuda)
+
 include(FetchContent)
 
 set(CUDA_REPO "https://gitlab.com/nvidia/headers/cuda-individual/cudart.git")
@@ -43,17 +45,23 @@ set(CUDA_INCLUDE_DIRS
     ${cuda-headers_SOURCE_DIR}
     CACHE PATH "Path to CUDA headers")
 message(STATUS "CUDA include directory: ${CUDA_INCLUDE_DIRS}")
+
 # build the example
 set(EXAMPLE_NAME umf_example_cuda_shared_memory)
 add_executable(${EXAMPLE_NAME} cuda_shared_memory.c)
 target_include_directories(
     ${EXAMPLE_NAME} PRIVATE ${CUDA_INCLUDE_DIRS} ${LIBUMF_INCLUDE_DIRS}
                             ${UMF_EXAMPLE_DIR}/common)
-target_link_directories(${EXAMPLE_NAME} PRIVATE ${LIBUMF_LIBRARY_DIRS}
-                        ${LIBHWLOC_LIBRARY_DIRS})
+target_link_directories(
+    ${EXAMPLE_NAME}
+    PRIVATE
+    ${LIBUMF_LIBRARY_DIRS}
+    ${LIBHWLOC_LIBRARY_DIRS}
+    ${CUDA_LIBRARY_DIRS})
 target_link_options(${EXAMPLE_NAME} PRIVATE "-Wl,--start-group")
-target_link_libraries(${EXAMPLE_NAME} PRIVATE stdc++ libdisjoint_pool.a cuda
-                                              ${LIBUMF_LIBRARIES})
+target_link_libraries(
+    ${EXAMPLE_NAME} PRIVATE stdc++ libdisjoint_pool.a ${CUDA_LIBRARIES}
+                            ${LIBUMF_LIBRARIES})
 
 # an optional part - adds a test of this example
 add_test(
