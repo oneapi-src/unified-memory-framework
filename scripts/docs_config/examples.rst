@@ -127,7 +127,7 @@ TODO
 Custom memory provider
 ==============================================================================
 
-You can find the full examples code in the `examples/custom_provider/file_provider.c`_ file
+You can find the full examples code in the `examples/custom_file_provider/custom_file_provider.c`_ file
 in the UMF repository.
 
 TODO
@@ -212,7 +212,7 @@ the :any:`umfCloseIPCHandle` function is called.
 .. _examples/level_zero_shared_memory/level_zero_shared_memory.c: https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/level_zero_shared_memory/level_zero_shared_memory.c
 .. _examples/cuda_shared_memory/cuda_shared_memory.c: https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/cuda_shared_memory/cuda_shared_memory.c
 .. _examples/ipc_level_zero/ipc_level_zero.c: https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/ipc_level_zero/ipc_level_zero.c
-.. _examples/custom_provider/file_provider.c: https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/custom_provider/file_provider.c
+.. _examples/custom_file_provider/custom_file_provider.c: https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/custom_file_provider/custom_file_provider.c
 .. _examples/memspace: https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/memspace/
 .. _README: https://github.com/oneapi-src/unified-memory-framework/blob/main/README.md#memory-pool-managers
 .. _umf/ipc.h: https://github.com/oneapi-src/unified-memory-framework/blob/main/include/umf/ipc.h
