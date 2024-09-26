@@ -40,6 +40,8 @@ bool is_mapped_with_MAP_SYNC(char *path, char *buf, size_t size_buf) {
         smaps = strstr(buf, path);
     }
 
+    (void)close(fd);
+
     // String starting from the "sf" flag
     // marking that memory was mapped with the MAP_SYNC flag.
     char *sf_flag = NULL;
