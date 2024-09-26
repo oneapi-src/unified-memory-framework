@@ -99,3 +99,4 @@ jobs:
         run: |
           UMF_TESTS_FSDAX_PATH=${{env.UMF_TESTS_FSDAX_PATH}} ctest -C ${{matrix.build_type}} -R umf-provider_file_memory -V
           UMF_TESTS_FSDAX_PATH=${{env.UMF_TESTS_FSDAX_PATH}} ctest -C ${{matrix.build_type}} -R umf_example_dram_and_fsdax -V
+          UMF_TESTS_FSDAX_PATH=${{env.UMF_TESTS_FSDAX_PATH}} ctest -C ${{matrix.build_type}} -R umf-ipc_file_prov_fsdax -V
