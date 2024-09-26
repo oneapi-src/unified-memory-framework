@@ -68,7 +68,7 @@ echo
 echo "Working directory: $(pwd)"
 echo "Running: \"valgrind $OPTION\" for the following tests:"
 
-FAIL=0
+ANY_TEST_FAILED=0
 rm -f umf_test-*.log umf_test-*.err
 
 for test in $(ls -1 umf_test-*); do
@@ -121,8 +121,11 @@ for test in $(ls -1 umf_test-*); do
 
 	[ "$FILTER" != "" ] && echo -n "($FILTER) "
 
+	LAST_TEST_FAILED=0
+
 	if ! HWLOC_CPUID_PATH=./cpuid valgrind $OPTION $OPT_SUP --gen-suppressions=all ./$test $FILTER >$LOG 2>&1; then
-		FAIL=1
+		LAST_TEST_FAILED=1
+		ANY_TEST_FAILED=1
 		echo "(valgrind FAILED) "
 		echo "Command: HWLOC_CPUID_PATH=./cpuid valgrind $OPTION $OPT_SUP --gen-suppressions=all ./$test $FILTER >$LOG 2>&1"
 		echo "Output:"
@@ -132,17 +135,17 @@ for test in $(ls -1 umf_test-*); do
 	fi || true
 	# grep for "ERROR SUMMARY" with errors (there can be many lines with "ERROR SUMMARY")
 	grep -e "ERROR SUMMARY:" $LOG | grep -v -e "ERROR SUMMARY: 0 errors from 0 contexts" > $ERR || true
-	if [ $(cat $ERR | wc -l) -eq 0 ]; then
+	if [ $LAST_TEST_FAILED -eq 0 -a $(cat $ERR | wc -l) -eq 0 ]; then
 		echo "- OK"
 		rm -f $LOG $ERR
 	else
 		echo "- FAILED!"
 		cat $ERR | cut -d' ' -f2-
-		FAIL=1
+		ANY_TEST_FAILED=1
 	fi || true
 done
 
-[ $FAIL -eq 0 ] && echo PASSED && exit 0
+[ $ANY_TEST_FAILED -eq 0 ] && echo PASSED && exit 0
 
 echo
 echo "======================================================================"
