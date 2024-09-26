@@ -60,18 +60,6 @@ int utils_fallocate(int fd, long offset, long len) {
     return -1;
 }
 
-umf_result_t os_translate_mem_visibility_flag(umf_memory_visibility_t in_flag,
-                                              unsigned *out_flag) {
-    switch (in_flag) {
-    case UMF_MEM_MAP_PRIVATE:
-        *out_flag = MAP_PRIVATE;
-        return UMF_RESULT_SUCCESS;
-    case UMF_MEM_MAP_SHARED:
-        return UMF_RESULT_ERROR_NOT_SUPPORTED; // not supported on MacOSX
-    }
-    return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-}
-
 // create a shared memory file
 int utils_shm_create(const char *shm_name, size_t size) {
     (void)shm_name; // unused
