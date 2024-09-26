@@ -543,7 +543,7 @@ if(LINUX
         )
     endif()
 
-    if(LINUX AND UMF_POOL_SCALABLE_ENABLED)
+    if(UMF_POOL_SCALABLE_ENABLED)
         set(EXAMPLES ${EXAMPLES} ipc_ipcapi)
     else()
         message(
@@ -552,14 +552,27 @@ if(LINUX
         )
     endif()
 
+    if(UMF_POOL_JEMALLOC_ENABLED)
+        set(EXAMPLES ${EXAMPLES} dram_and_fsdax)
+    else()
+        message(
+            STATUS
+                "The dram_and_fsdax example is supported on Linux only and requires UMF_BUILD_LIBUMF_POOL_JEMALLOC to be turned ON - skipping"
+        )
+    endif()
+
     if(EXAMPLES AND NOT UMF_DISABLE_HWLOC)
+        set(STANDALONE_CMAKE_OPTIONS
+            "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
+        )
         add_test(
             NAME umf-standalone_examples
             COMMAND
                 ${UMF_CMAKE_SOURCE_DIR}/test/test_examples.sh
                 ${UMF_CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
                 ${CMAKE_CURRENT_BINARY_DIR}/umf_standalone_examples/install-dir
-                "${CMAKE_INSTALL_PREFIX}" ${EXAMPLES}
+                "${CMAKE_INSTALL_PREFIX}" "${STANDALONE_CMAKE_OPTIONS}"
+                ${EXAMPLES}
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
     endif()
 endif()
