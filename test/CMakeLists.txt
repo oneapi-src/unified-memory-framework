@@ -433,6 +433,7 @@ if(LINUX)
             common/ipc_common.c
             common/ipc_os_prov_common.c)
         add_umf_ipc_test(TEST ipc_file_prov)
+        add_umf_ipc_test(TEST ipc_file_prov_fsdax)
     endif()
 
     # TODO add IPC tests for CUDA
