@@ -251,11 +251,12 @@ if(LINUX)
 
     set_tests_properties(${EXAMPLE_NAME} PROPERTIES
                          SKIP_RETURN_CODE ${UMF_TEST_SKIP_RETURN_CODE})
-    set(EXAMPLE_NAME umf_example_file_provider)
+
+    set(EXAMPLE_NAME umf_example_custom_file_provider)
 
     add_umf_executable(
         NAME ${EXAMPLE_NAME}
-        SRCS custom_provider/file_provider.c
+        SRCS custom_file_provider/custom_file_provider.c
         LIBS umf ${LIBHWLOC_LIBRARIES})
 
     target_include_directories(
