@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <limits.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,6 +41,9 @@ typedef struct file_memory_provider_t {
     unsigned protection; // combination of OS-specific protection flags
     unsigned visibility; // memory visibility mode
     size_t page_size;    // minimum page size
+
+    // IPC is enabled only for UMF_MEM_MAP_SHARED or UMF_MEM_MAP_SYNC visibility
+    bool IPC_enabled;
 
     critnib *mmaps; // a critnib map storing mmap mappings (addr, size)
 
@@ -100,6 +104,10 @@ file_translate_params(umf_file_memory_provider_params_t *in_params,
         LOG_ERR("incorrect memory visibility flag: %u", in_params->visibility);
         return result;
     }
+
+    // IPC is enabled only for UMF_MEM_MAP_SHARED or UMF_MEM_MAP_SYNC visibility
+    provider->IPC_enabled = (in_params->visibility == UMF_MEM_MAP_SHARED ||
+                             in_params->visibility == UMF_MEM_MAP_SYNC);
 
     return UMF_RESULT_SUCCESS;
 }
@@ -545,6 +553,13 @@ static umf_result_t file_get_ipc_handle_size(void *provider, size_t *size) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
+    file_memory_provider_t *file_provider = (file_memory_provider_t *)provider;
+    if (!file_provider->IPC_enabled) {
+        LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED nor "
+                "UMF_MEM_MAP_SYNC")
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     *size = sizeof(file_ipc_data_t);
 
     return UMF_RESULT_SUCCESS;
@@ -557,6 +572,11 @@ static umf_result_t file_get_ipc_handle(void *provider, const void *ptr,
     }
 
     file_memory_provider_t *file_provider = (file_memory_provider_t *)provider;
+    if (!file_provider->IPC_enabled) {
+        LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED nor "
+                "UMF_MEM_MAP_SYNC")
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
 
     void *value = critnib_get(file_provider->fd_offset_map, (uintptr_t)ptr);
     if (value == NULL) {
@@ -581,6 +601,12 @@ static umf_result_t file_put_ipc_handle(void *provider, void *providerIpcData) {
     }
 
     file_memory_provider_t *file_provider = (file_memory_provider_t *)provider;
+    if (!file_provider->IPC_enabled) {
+        LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED nor "
+                "UMF_MEM_MAP_SYNC")
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     file_ipc_data_t *file_ipc_data = (file_ipc_data_t *)providerIpcData;
 
     if (strncmp(file_ipc_data->path, file_provider->path, PATH_MAX)) {
@@ -597,6 +623,12 @@ static umf_result_t file_open_ipc_handle(void *provider, void *providerIpcData,
     }
 
     file_memory_provider_t *file_provider = (file_memory_provider_t *)provider;
+    if (!file_provider->IPC_enabled) {
+        LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED nor "
+                "UMF_MEM_MAP_SYNC")
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     file_ipc_data_t *file_ipc_data = (file_ipc_data_t *)providerIpcData;
     umf_result_t ret = UMF_RESULT_SUCCESS;
     int fd;
@@ -628,6 +660,13 @@ static umf_result_t file_open_ipc_handle(void *provider, void *providerIpcData,
 static umf_result_t file_close_ipc_handle(void *provider, void *ptr,
                                           size_t size) {
     if (provider == NULL || ptr == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    file_memory_provider_t *file_provider = (file_memory_provider_t *)provider;
+    if (!file_provider->IPC_enabled) {
+        LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED nor "
+                "UMF_MEM_MAP_SYNC")
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
