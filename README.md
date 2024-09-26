@@ -143,6 +143,9 @@ OS memory provider supports two types of memory mappings (set by the `visibility
 1) private memory mapping (`UMF_MEM_MAP_PRIVATE`)
 2) shared memory mapping (`UMF_MEM_MAP_SHARED` - supported on Linux only yet)
 
+IPC API requires the `UMF_MEM_MAP_SHARED` memory `visibility` mode
+(`UMF_RESULT_ERROR_INVALID_ARGUMENT` is returned otherwise).
+
 There are available two mechanisms for the shared memory mapping:
 1) a named shared memory object (used if the `shm_name` parameter is not NULL) or
 2) an anonymous file descriptor (used if the `shm_name` parameter is NULL)

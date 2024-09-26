@@ -402,6 +402,9 @@ static umf_result_t translate_params(umf_os_memory_provider_params_t *in_params,
         return result;
     }
 
+    // IPC API requires in_params->visibility == UMF_MEM_MAP_SHARED
+    provider->IPC_enabled = (in_params->visibility == UMF_MEM_MAP_SHARED);
+
     // NUMA config
     int emptyNodeset = in_params->numa_list_len == 0;
     result = validate_numa_mode(in_params->numa_mode, emptyNodeset);
@@ -1089,7 +1092,7 @@ static umf_result_t os_allocation_split(void *provider, void *ptr,
     (void)totalSize;
 
     os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
-    if (os_provider->fd <= 0) {
+    if (os_provider->fd < 0) {
         return UMF_RESULT_SUCCESS;
     }
 
@@ -1122,7 +1125,7 @@ static umf_result_t os_allocation_merge(void *provider, void *lowPtr,
     (void)totalSize;
 
     os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
-    if (os_provider->fd <= 0) {
+    if (os_provider->fd < 0) {
         return UMF_RESULT_SUCCESS;
     }
 
@@ -1152,6 +1155,10 @@ static umf_result_t os_get_ipc_handle_size(void *provider, size_t *size) {
     }
 
     os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
+    if (!os_provider->IPC_enabled) {
+        LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED")
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
 
     if (os_provider->shm_name[0]) {
         // os_ipc_data_t->shm_name will be used
@@ -1171,7 +1178,8 @@ static umf_result_t os_get_ipc_handle(void *provider, const void *ptr,
     }
 
     os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
-    if (os_provider->fd <= 0) {
+    if (!os_provider->IPC_enabled) {
+        LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED")
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -1203,6 +1211,11 @@ static umf_result_t os_put_ipc_handle(void *provider, void *providerIpcData) {
     }
 
     os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
+    if (!os_provider->IPC_enabled) {
+        LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED")
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     os_ipc_data_t *os_ipc_data = (os_ipc_data_t *)providerIpcData;
 
     if (os_ipc_data->pid != utils_getpid()) {
@@ -1229,6 +1242,11 @@ static umf_result_t os_open_ipc_handle(void *provider, void *providerIpcData,
     }
 
     os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
+    if (!os_provider->IPC_enabled) {
+        LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED")
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     os_ipc_data_t *os_ipc_data = (os_ipc_data_t *)providerIpcData;
     umf_result_t ret = UMF_RESULT_SUCCESS;
     int fd;
@@ -1266,6 +1284,12 @@ static umf_result_t os_open_ipc_handle(void *provider, void *providerIpcData,
 static umf_result_t os_close_ipc_handle(void *provider, void *ptr,
                                         size_t size) {
     if (provider == NULL || ptr == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
+    if (!os_provider->IPC_enabled) {
+        LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED")
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
