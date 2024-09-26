@@ -355,9 +355,12 @@ if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
     if(NOT JEMALLOC_FOUND)
         find_package(JEMALLOC REQUIRED jemalloc)
     endif()
-    # add PATH to DLL on Windows
-    set(DLL_PATH_LIST
-        "${DLL_PATH_LIST};PATH=path_list_append:${JEMALLOC_DLL_DIRS}")
+    if(JEMALLOC_FOUND OR JEMALLOC_LIBRARIES)
+        set(UMF_POOL_JEMALLOC_ENABLED TRUE)
+        # add PATH to DLL on Windows
+        set(DLL_PATH_LIST
+            "${DLL_PATH_LIST};PATH=path_list_append:${JEMALLOC_DLL_DIRS}")
+    endif()
 endif()
 
 if(WINDOWS)

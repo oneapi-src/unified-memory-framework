@@ -541,12 +541,21 @@ if(LINUX
         )
     endif()
 
-    if(LINUX AND UMF_POOL_SCALABLE_ENABLED)
+    if(UMF_POOL_SCALABLE_ENABLED)
         set(EXAMPLES ${EXAMPLES} ipc_ipcapi)
     else()
         message(
             STATUS
                 "IPC examples with UMF pool API are supported on Linux with TBB installed only - skipping"
+        )
+    endif()
+
+    if(UMF_POOL_JEMALLOC_ENABLED)
+        set(EXAMPLES ${EXAMPLES} dram_and_fsdax)
+    else()
+        message(
+            STATUS
+                "The dram_and_fsdax example is supported on Linux only and requires UMF_BUILD_LIBUMF_POOL_JEMALLOC to be turned ON - skipping"
         )
     endif()
 

@@ -11,7 +11,7 @@
 #
 # The FSDAX device should be mounted in the OS (e.g. /mnt/pmem1)
 # and the UMF_TESTS_FSDAX_PATH environment variable
-# should contain a path to a file o this FSDAX device.
+# should contain a path to a file on this FSDAX device.
 #
 
 name: Dax
@@ -96,6 +96,6 @@ jobs:
 
       - name: Run the FSDAX tests
         working-directory: ${{env.BUILD_DIR}}
-        run: >
-          UMF_TESTS_FSDAX_PATH=${{env.UMF_TESTS_FSDAX_PATH}}
-          ctest -C ${{matrix.build_type}} -R umf-provider_file_memory -V
+        run: |
+          UMF_TESTS_FSDAX_PATH=${{env.UMF_TESTS_FSDAX_PATH}} ctest -C ${{matrix.build_type}} -R umf-provider_file_memory -V
+          UMF_TESTS_FSDAX_PATH=${{env.UMF_TESTS_FSDAX_PATH}} ctest -C ${{matrix.build_type}} -R umf_example_dram_and_fsdax -V

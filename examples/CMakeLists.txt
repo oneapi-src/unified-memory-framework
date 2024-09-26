@@ -269,6 +269,19 @@ if(LINUX)
         COMMAND ${EXAMPLE_NAME}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
+    if(UMF_POOL_JEMALLOC_ENABLED)
+        set(EXAMPLE_NAME umf_example_dram_and_fsdax)
+
+        add_umf_executable(
+            NAME ${EXAMPLE_NAME}
+            SRCS dram_and_fsdax/dram_and_fsdax.c
+            LIBS umf jemalloc_pool)
+
+        add_test(
+            NAME ${EXAMPLE_NAME}
+            COMMAND ${EXAMPLE_NAME}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    endif()
 else()
     message(
         STATUS "Memspace examples API are supported on Linux only - skipping")
