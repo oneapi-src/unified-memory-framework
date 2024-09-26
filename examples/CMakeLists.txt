@@ -210,7 +210,7 @@ if(LINUX)
 
     add_umf_executable(
         NAME ${EXAMPLE_NAME}
-        SRCS memspace/memspace_numa.c
+        SRCS memspace_numa/memspace_numa.c
         LIBS umf ${LIBHWLOC_LIBRARIES} numa)
 
     target_include_directories(
@@ -233,7 +233,7 @@ if(LINUX)
 
     add_umf_executable(
         NAME ${EXAMPLE_NAME}
-        SRCS memspace/memspace_hmat.c
+        SRCS memspace_hmat/memspace_hmat.c
         LIBS umf ${LIBHWLOC_LIBRARIES} numa)
 
     target_include_directories(
