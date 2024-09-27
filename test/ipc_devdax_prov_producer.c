@@ -34,9 +34,7 @@ int main(int argc, char *argv[]) {
     }
 
     umf_devdax_memory_provider_params_t devdax_params =
-        umfDevDaxMemoryProviderParamsDefault(
-            getenv("UMF_TESTS_DEVDAX_PATH"),
-            atol(getenv("UMF_TESTS_DEVDAX_SIZE")));
+        umfDevDaxMemoryProviderParamsDefault(path, atol(size));
 
     return run_producer(port, umfDevDaxMemoryProviderOps(), &devdax_params,
                         memcopy, NULL);
