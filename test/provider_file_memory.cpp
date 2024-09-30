@@ -55,7 +55,7 @@ static void providerCreateExt(providerCreateExtParams params,
         umf::provider_unique_handle_t(hProvider, &umfMemoryProviderDestroy);
 }
 
-struct umfProviderTest
+struct FileProviderParamsDefault
     : umf_test::test,
       ::testing::WithParamInterface<providerCreateExtParams> {
     void SetUp() override {
@@ -74,6 +74,8 @@ struct umfProviderTest
     size_t page_size;
     size_t page_plus_64;
 };
+
+struct FileProviderParamsShared : FileProviderParamsDefault {};
 
 static void test_alloc_free_success(umf_memory_provider_handle_t provider,
                                     size_t size, size_t alignment,
@@ -161,6 +163,9 @@ TEST_F(test, test_if_mapped_with_MAP_SYNC) {
 
 // positive tests using test_alloc_free_success
 
+umf_file_memory_provider_params_t file_params_default =
+    umfFileMemoryProviderParamsDefault(FILE_PATH);
+
 umf_file_memory_provider_params_t get_file_params_shared(char *path) {
     umf_file_memory_provider_params_t file_params =
         umfFileMemoryProviderParamsDefault(path);
@@ -171,60 +176,100 @@ umf_file_memory_provider_params_t get_file_params_shared(char *path) {
 umf_file_memory_provider_params_t file_params_shared =
     get_file_params_shared(FILE_PATH);
 
-INSTANTIATE_TEST_SUITE_P(fileProviderTest, umfProviderTest,
+INSTANTIATE_TEST_SUITE_P(fileProviderTest, FileProviderParamsDefault,
                          ::testing::Values(providerCreateExtParams{
-                             umfFileMemoryProviderOps(), &file_params_shared}));
+                             umfFileMemoryProviderOps(),
+                             &file_params_default}));
 
-TEST_P(umfProviderTest, create_destroy) {}
+TEST_P(FileProviderParamsDefault, create_destroy) {}
 
-TEST_P(umfProviderTest, alloc_page64_align_0) {
+TEST_P(FileProviderParamsDefault, alloc_page64_align_0) {
     test_alloc_free_success(provider.get(), page_plus_64, 0, PURGE_NONE);
 }
 
-TEST_P(umfProviderTest, alloc_page64_align_page_div_2) {
+TEST_P(FileProviderParamsDefault, alloc_page64_align_page_div_2) {
     test_alloc_free_success(provider.get(), page_plus_64, page_size / 2,
                             PURGE_NONE);
 }
 
-TEST_P(umfProviderTest, purge_lazy) {
+TEST_P(FileProviderParamsDefault, purge_lazy) {
     test_alloc_free_success(provider.get(), page_plus_64, 0, PURGE_LAZY);
 }
 
-TEST_P(umfProviderTest, purge_force) {
+TEST_P(FileProviderParamsDefault, purge_force) {
     test_alloc_free_success(provider.get(), page_plus_64, 0, PURGE_FORCE);
 }
 
 // negative tests using test_alloc_failure
 
-TEST_P(umfProviderTest, alloc_WRONG_SIZE) {
+TEST_P(FileProviderParamsDefault, alloc_WRONG_SIZE) {
     test_alloc_failure(provider.get(), -1, 0, UMF_RESULT_ERROR_INVALID_ARGUMENT,
                        0);
 }
 
-TEST_P(umfProviderTest, alloc_page64_WRONG_ALIGNMENT_3_pages) {
+TEST_P(FileProviderParamsDefault, alloc_page64_WRONG_ALIGNMENT_3_pages) {
     test_alloc_failure(provider.get(), page_plus_64, 3 * page_size,
                        UMF_RESULT_ERROR_INVALID_ALIGNMENT, 0);
 }
 
-TEST_P(umfProviderTest, alloc_3pages_WRONG_ALIGNMENT_3pages) {
+TEST_P(FileProviderParamsDefault, alloc_3pages_WRONG_ALIGNMENT_3pages) {
     test_alloc_failure(provider.get(), 3 * page_size, 3 * page_size,
                        UMF_RESULT_ERROR_INVALID_ALIGNMENT, 0);
 }
 
-TEST_P(umfProviderTest, alloc_page64_align_page_minus_1_WRONG_ALIGNMENT_1) {
+TEST_P(FileProviderParamsDefault,
+       alloc_page64_align_page_minus_1_WRONG_ALIGNMENT_1) {
     test_alloc_failure(provider.get(), page_plus_64, page_size - 1,
                        UMF_RESULT_ERROR_INVALID_ALIGNMENT, 0);
 }
 
-TEST_P(umfProviderTest, alloc_page64_align_one_half_pages_WRONG_ALIGNMENT_2) {
+TEST_P(FileProviderParamsDefault,
+       alloc_page64_align_one_half_pages_WRONG_ALIGNMENT_2) {
     test_alloc_failure(provider.get(), page_plus_64,
                        page_size + (page_size / 2),
                        UMF_RESULT_ERROR_INVALID_ALIGNMENT, 0);
 }
 
+// negative IPC tests
+
+TEST_P(FileProviderParamsDefault, get_ipc_handle_size_wrong_visibility) {
+    size_t size;
+    umf_result_t umf_result =
+        umfMemoryProviderGetIPCHandleSize(provider.get(), &size);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_P(FileProviderParamsDefault, get_ipc_handle_wrong_visibility) {
+    char providerIpcData;
+    umf_result_t umf_result = umfMemoryProviderGetIPCHandle(
+        provider.get(), INVALID_PTR, 1, &providerIpcData);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_P(FileProviderParamsDefault, put_ipc_handle_wrong_visibility) {
+    char providerIpcData;
+    umf_result_t umf_result =
+        umfMemoryProviderPutIPCHandle(provider.get(), &providerIpcData);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_P(FileProviderParamsDefault, open_ipc_handle_wrong_visibility) {
+    char providerIpcData;
+    void *ptr;
+    umf_result_t umf_result =
+        umfMemoryProviderOpenIPCHandle(provider.get(), &providerIpcData, &ptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_P(FileProviderParamsDefault, close_ipc_handle_wrong_visibility) {
+    umf_result_t umf_result =
+        umfMemoryProviderCloseIPCHandle(provider.get(), INVALID_PTR, 1);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
 // other positive tests
 
-TEST_P(umfProviderTest, get_min_page_size) {
+TEST_P(FileProviderParamsDefault, get_min_page_size) {
     size_t min_page_size;
     umf_result_t umf_result = umfMemoryProviderGetMinPageSize(
         provider.get(), nullptr, &min_page_size);
@@ -232,7 +277,7 @@ TEST_P(umfProviderTest, get_min_page_size) {
     ASSERT_LE(min_page_size, page_size);
 }
 
-TEST_P(umfProviderTest, get_recommended_page_size) {
+TEST_P(FileProviderParamsDefault, get_recommended_page_size) {
     size_t min_page_size;
     umf_result_t umf_result = umfMemoryProviderGetMinPageSize(
         provider.get(), nullptr, &min_page_size);
@@ -246,18 +291,18 @@ TEST_P(umfProviderTest, get_recommended_page_size) {
     ASSERT_GE(recommended_page_size, min_page_size);
 }
 
-TEST_P(umfProviderTest, get_name) {
+TEST_P(FileProviderParamsDefault, get_name) {
     const char *name = umfMemoryProviderGetName(provider.get());
     ASSERT_STREQ(name, "FILE");
 }
 
-TEST_P(umfProviderTest, free_size_0_ptr_not_null) {
+TEST_P(FileProviderParamsDefault, free_size_0_ptr_not_null) {
     umf_result_t umf_result =
         umfMemoryProviderFree(provider.get(), INVALID_PTR, 0);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
 }
 
-TEST_P(umfProviderTest, free_NULL) {
+TEST_P(FileProviderParamsDefault, free_NULL) {
     umf_result_t umf_result = umfMemoryProviderFree(provider.get(), nullptr, 0);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
 }
@@ -274,19 +319,19 @@ TEST_F(test, create_empty_path) {
     EXPECT_EQ(hProvider, nullptr);
 }
 
-TEST_P(umfProviderTest, free_INVALID_POINTER_SIZE_GT_0) {
+TEST_P(FileProviderParamsDefault, free_INVALID_POINTER_SIZE_GT_0) {
     umf_result_t umf_result =
         umfMemoryProviderFree(provider.get(), INVALID_PTR, page_plus_64);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
 }
 
-TEST_P(umfProviderTest, purge_lazy_INVALID_POINTER) {
+TEST_P(FileProviderParamsDefault, purge_lazy_INVALID_POINTER) {
     umf_result_t umf_result =
         umfMemoryProviderPurgeLazy(provider.get(), INVALID_PTR, 1);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
 }
 
-TEST_P(umfProviderTest, purge_force_INVALID_POINTER) {
+TEST_P(FileProviderParamsDefault, purge_force_INVALID_POINTER) {
     umf_result_t umf_result =
         umfMemoryProviderPurgeForce(provider.get(), INVALID_PTR, 1);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC);
@@ -297,7 +342,11 @@ TEST_P(umfProviderTest, purge_force_INVALID_POINTER) {
 
 // IPC tests
 
-TEST_P(umfProviderTest, IPC_base_success_test) {
+INSTANTIATE_TEST_SUITE_P(fileProviderTest, FileProviderParamsShared,
+                         ::testing::Values(providerCreateExtParams{
+                             umfFileMemoryProviderOps(), &file_params_shared}));
+
+TEST_P(FileProviderParamsShared, IPC_base_success_test) {
     umf_result_t umf_result;
     void *ptr = nullptr;
     size_t size = page_size;
@@ -338,7 +387,7 @@ TEST_P(umfProviderTest, IPC_base_success_test) {
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
 }
 
-TEST_P(umfProviderTest, IPC_file_not_exist) {
+TEST_P(FileProviderParamsShared, IPC_file_not_exist) {
     umf_result_t umf_result;
     void *ptr = nullptr;
     size_t size = page_size;

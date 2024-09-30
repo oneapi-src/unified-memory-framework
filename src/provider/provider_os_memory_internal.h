@@ -9,6 +9,7 @@
 #define UMF_OS_MEMORY_PROVIDER_INTERNAL_H
 
 #include <limits.h>
+#include <stdbool.h>
 
 #if defined(_WIN32) && !defined(NAME_MAX)
 #include <stdlib.h>
@@ -29,8 +30,13 @@ extern "C" {
 typedef struct os_memory_provider_t {
     unsigned protection; // combination of OS-specific protection flags
     unsigned visibility; // memory visibility mode
+
+    // IPC is enabled only if (in_params->visibility == UMF_MEM_MAP_SHARED)
+    bool IPC_enabled;
+
     // a name of a shared memory file (valid only in case of the shared memory visibility)
     char shm_name[NAME_MAX];
+
     int fd;                // file descriptor for memory mapping
     size_t size_fd;        // size of file used for memory mapping
     size_t max_size_fd;    // maximum size of file used for memory mapping

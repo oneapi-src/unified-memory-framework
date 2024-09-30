@@ -328,6 +328,41 @@ TEST_P(umfProviderTest, purge_force_INVALID_POINTER) {
                              UMF_OS_RESULT_ERROR_PURGE_FORCE_FAILED);
 }
 
+TEST_P(umfProviderTest, get_ipc_handle_size_wrong_visibility) {
+    size_t size;
+    umf_result_t umf_result =
+        umfMemoryProviderGetIPCHandleSize(provider.get(), &size);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_P(umfProviderTest, get_ipc_handle_wrong_visibility) {
+    char providerIpcData;
+    umf_result_t umf_result = umfMemoryProviderGetIPCHandle(
+        provider.get(), INVALID_PTR, 1, &providerIpcData);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_P(umfProviderTest, put_ipc_handle_wrong_visibility) {
+    char providerIpcData;
+    umf_result_t umf_result =
+        umfMemoryProviderPutIPCHandle(provider.get(), &providerIpcData);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_P(umfProviderTest, open_ipc_handle_wrong_visibility) {
+    char providerIpcData;
+    void *ptr;
+    umf_result_t umf_result =
+        umfMemoryProviderOpenIPCHandle(provider.get(), &providerIpcData, &ptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_P(umfProviderTest, close_ipc_handle_wrong_visibility) {
+    umf_result_t umf_result =
+        umfMemoryProviderCloseIPCHandle(provider.get(), INVALID_PTR, 1);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(umfIpcTest);
 
 umf_os_memory_provider_params_t osMemoryProviderParamsShared() {
