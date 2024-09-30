@@ -16,6 +16,7 @@
 #include "../src/utils/utils_common.h"
 #include "../src/utils/utils_concurrency.h"
 #include "assert.h"
+#include "base_alloc_global.h"
 
 #include <errno.h>
 #include <stdint.h>
@@ -51,7 +52,7 @@ struct ravl {
  * ravl_new -- creates a new ravl tree instance
  */
 struct ravl *ravl_new_sized(ravl_compare *compare, size_t data_size) {
-    struct ravl *r = malloc(sizeof(*r));
+    struct ravl *r = umf_ba_global_alloc(sizeof(*r));
     if (r == NULL) {
         return NULL;
     }
@@ -87,7 +88,7 @@ static void ravl_foreach_node(struct ravl_node *n, ravl_cb cb, void *arg,
     ravl_foreach_node(n->slots[RAVL_RIGHT], cb, arg, free_node);
 
     if (free_node) {
-        free(n);
+        umf_ba_global_free(n);
     }
 }
 
@@ -104,7 +105,7 @@ void ravl_clear(struct ravl *ravl) {
  */
 void ravl_delete_cb(struct ravl *ravl, ravl_cb cb, void *arg) {
     ravl_foreach_node(ravl->root, cb, arg, 1);
-    free(ravl);
+    umf_ba_global_free(ravl);
 }
 
 /*
@@ -149,7 +150,7 @@ static void ravl_node_copy_constructor(void *data, size_t data_size,
  */
 static struct ravl_node *ravl_new_node(struct ravl *ravl, ravl_constr constr,
                                        const void *arg) {
-    struct ravl_node *n = malloc(sizeof(*n) + ravl->data_size);
+    struct ravl_node *n = umf_ba_global_alloc(sizeof(*n) + ravl->data_size);
     if (n == NULL) {
         return NULL;
     }
@@ -383,7 +384,7 @@ int ravl_emplace(struct ravl *ravl, ravl_constr constr, const void *arg) {
 
 error_duplicate:
     errno = EEXIST;
-    free(n);
+    umf_ba_global_free(n);
     return -1;
 }
 
@@ -516,7 +517,7 @@ void ravl_remove(struct ravl *ravl, struct ravl_node *n) {
         }
 
         *ravl_node_ref(ravl, n) = r;
-        free(n);
+        umf_ba_global_free(n);
     }
 }
 
