@@ -1,4 +1,5 @@
 /*
+Copyright (C) 2024 Intel Corporation
 Copyright (c) 2003-2022, Troy D. Hanson  https://troydhanson.github.io/uthash/
 All rights reserved.
 
@@ -21,6 +22,12 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+/*
+Modifications by Intel:
+- define uthash_malloc unconditional as a umf_ba_global_alloc
+- define uthash_free unconditional as a umf_ba_global_free
+*/
+
 #ifndef UTHASH_H
 #define UTHASH_H
 
@@ -29,6 +36,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stddef.h> /* ptrdiff_t */
 #include <stdlib.h> /* exit */
 #include <string.h> /* memcmp, memset, strlen */
+
+#include "base_alloc_global.h"
 
 #if defined(HASH_DEFINE_OWN_STDINT) && HASH_DEFINE_OWN_STDINT
 /* This codepath is provided for backward compatibility, but I plan to remove it. */
@@ -76,12 +85,9 @@ typedef unsigned char uint8_t;
     } while (0)
 #endif
 
-#ifndef uthash_malloc
-#define uthash_malloc(sz) malloc(sz) /* malloc fcn                      */
-#endif
-#ifndef uthash_free
-#define uthash_free(ptr, sz) free(ptr) /* free fcn                        */
-#endif
+#define uthash_malloc(sz) umf_ba_global_alloc(sz)    /* malloc fcn */
+#define uthash_free(ptr, sz) umf_ba_global_free(ptr) /* free fcn */
+
 #ifndef uthash_bzero
 #define uthash_bzero(a, n) memset(a, '\0', n)
 #endif
