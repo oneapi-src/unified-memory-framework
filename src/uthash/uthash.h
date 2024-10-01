@@ -30,6 +30,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h> /* exit */
 #include <string.h> /* memcmp, memset, strlen */
 
+#include "base_alloc_global.h"
+
 #if defined(HASH_DEFINE_OWN_STDINT) && HASH_DEFINE_OWN_STDINT
 /* This codepath is provided for backward compatibility, but I plan to remove it. */
 #warning                                                                       \
@@ -77,10 +79,10 @@ typedef unsigned char uint8_t;
 #endif
 
 #ifndef uthash_malloc
-#define uthash_malloc(sz) malloc(sz) /* malloc fcn                      */
+#define uthash_malloc(sz) umf_ba_global_alloc(sz) /* malloc fcn */
 #endif
 #ifndef uthash_free
-#define uthash_free(ptr, sz) free(ptr) /* free fcn                        */
+#define uthash_free(ptr, sz) umf_ba_global_free(ptr) /* free fcn */
 #endif
 #ifndef uthash_bzero
 #define uthash_bzero(a, n) memset(a, '\0', n)
