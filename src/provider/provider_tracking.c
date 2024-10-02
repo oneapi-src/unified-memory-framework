@@ -48,13 +48,14 @@ static umf_result_t umfMemoryTrackerAdd(umf_memory_tracker_handle_t hTracker,
     int ret = critnib_insert(hTracker->map, (uintptr_t)ptr, value, 0);
 
     if (ret == 0) {
-        LOG_DEBUG("memory region is added, tracker=%p, ptr=%p, size=%zu",
-                  (void *)hTracker, ptr, size);
+        LOG_DEBUG(
+            "memory region is added, tracker=%p, ptr=%p, pool=%p, size=%zu",
+            (void *)hTracker, ptr, (void *)pool, size);
         return UMF_RESULT_SUCCESS;
     }
 
-    LOG_ERR("failed to insert tracker value, ret=%d, ptr=%p, size=%zu", ret,
-            ptr, size);
+    LOG_ERR("failed to insert tracker value, ret=%d, ptr=%p, pool=%p, size=%zu",
+            ret, ptr, (void *)pool, size);
 
     umf_ba_free(hTracker->tracker_allocator, value);
 
@@ -166,11 +167,35 @@ static umf_result_t trackingAlloc(void *hProvider, size_t size,
         return ret;
     }
 
-    umf_result_t ret2 = umfMemoryTrackerAdd(p->hTracker, p->pool, *ptr, size);
-    if (ret2 != UMF_RESULT_SUCCESS) {
-        LOG_ERR("failed to add allocated region to the tracker, ptr = %p, size "
+    // check if the allocation was already added to the tracker
+    // (in case of using ProxyLib)
+    tracker_value_t *value =
+        (tracker_value_t *)critnib_get(p->hTracker->map, *(uintptr_t *)ptr);
+    if (value) {
+        assert(value->pool != p->pool);
+
+        LOG_DEBUG("ptr already exists in the tracker (added by Proxy Lib) - "
+                  "updating value, ptr=%p, size=%zu, old pool: %p, new pool %p",
+                  *ptr, size, (void *)value->pool, (void *)p->pool);
+
+        // the allocation was made by the ProxyLib so we only update the tracker
+        value->pool = p->pool;
+        int crit_ret = critnib_insert(p->hTracker->map, *(uintptr_t *)ptr,
+                                      value, 1 /* update */);
+
+        // this cannot fail since we know the element exists  and there is
+        // nothing to allocate
+        assert(crit_ret == 0);
+        (void)crit_ret;
+    } else {
+        umf_result_t ret2 =
+            umfMemoryTrackerAdd(p->hTracker, p->pool, *ptr, size);
+        if (ret2 != UMF_RESULT_SUCCESS) {
+            LOG_ERR(
+                "failed to add allocated region to the tracker, ptr = %p, size "
                 "= %zu, ret = %d",
                 *ptr, size, ret2);
+        }
     }
 
     return ret;
