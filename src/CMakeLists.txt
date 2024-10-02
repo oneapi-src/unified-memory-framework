@@ -278,8 +278,6 @@ install(TARGETS umf EXPORT ${PROJECT_NAME}-targets)
 
 add_subdirectory(pool)
 
-if(UMF_PROXY_LIB_ENABLED
-   AND NOT UMF_LINK_HWLOC_STATICALLY
-   AND NOT UMF_DISABLE_HWLOC)
+if(UMF_PROXY_LIB_ENABLED)
     add_subdirectory(proxy_lib)
 endif()
