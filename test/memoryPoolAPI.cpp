@@ -139,7 +139,8 @@ TEST_P(umfPoolWithCreateFlagsTest, memoryPoolWithCustomProvider) {
 }
 
 TEST_F(test, retrieveMemoryProvider) {
-    umf_memory_provider_handle_t provider = (umf_memory_provider_handle_t)0x1;
+    auto nullProvider = umf_test::wrapProviderUnique(nullProviderCreate());
+    umf_memory_provider_handle_t provider = nullProvider.get();
 
     auto pool =
         wrapPoolUnique(createPoolChecked(umfProxyPoolOps(), provider, nullptr));
@@ -258,7 +259,8 @@ TEST_P(poolInitializeTest, errorPropagation) {
 }
 
 TEST_F(test, retrieveMemoryProvidersError) {
-    umf_memory_provider_handle_t provider = (umf_memory_provider_handle_t)0x1;
+    auto nullProvider = umf_test::wrapProviderUnique(nullProviderCreate());
+    umf_memory_provider_handle_t provider = nullProvider.get();
 
     auto pool =
         wrapPoolUnique(createPoolChecked(umfProxyPoolOps(), provider, nullptr));
