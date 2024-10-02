@@ -432,8 +432,16 @@ if(WINDOWS)
         )
     endif()
 endif()
+
 # set UMF_PROXY_LIB_ENABLED
-if(UMF_PROXY_LIB_BASED_ON_POOL STREQUAL SCALABLE)
+if(UMF_LINK_HWLOC_STATICALLY)
+    message(
+        STATUS
+            "Disabling the proxy library, because HWLOC is set to link statically which is not supported"
+    )
+elseif(UMF_DISABLE_HWLOC)
+    message(STATUS "Disabling the proxy library, because HWLOC is disabled")
+elseif(UMF_PROXY_LIB_BASED_ON_POOL STREQUAL SCALABLE)
     if(UMF_POOL_SCALABLE_ENABLED)
         set(UMF_PROXY_LIB_ENABLED ON)
         set(PROXY_LIB_USES_SCALABLE_POOL ON)

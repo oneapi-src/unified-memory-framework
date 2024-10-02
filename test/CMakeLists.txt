@@ -408,10 +408,7 @@ add_umf_test(
     LIBS ${UMF_UTILS_FOR_TEST})
 
 # tests for the proxy library
-if(UMF_PROXY_LIB_ENABLED
-   AND UMF_BUILD_SHARED_LIBRARY
-   AND NOT UMF_DISABLE_HWLOC
-   AND NOT UMF_LINK_HWLOC_STATICALLY)
+if(UMF_PROXY_LIB_ENABLED AND UMF_BUILD_SHARED_LIBRARY)
     add_umf_test(
         NAME proxy_lib_basic
         SRCS ${BA_SOURCES_FOR_TEST} test_proxy_lib.cpp
@@ -485,6 +482,18 @@ if(LINUX)
             common/ipc_os_prov_common.c)
         add_umf_ipc_test(TEST ipc_os_prov_anon_fd)
         add_umf_ipc_test(TEST ipc_os_prov_shm)
+
+        if(UMF_PROXY_LIB_ENABLED AND UMF_BUILD_SHARED_LIBRARY)
+            build_umf_test(
+                NAME
+                ipc_os_prov_proxy
+                SRCS
+                ipc_os_prov_proxy.c
+                common/ipc_common.c
+                LIBS
+                ${UMF_UTILS_FOR_TEST})
+            add_umf_ipc_test(TEST ipc_os_prov_proxy)
+        endif()
 
         build_umf_test(
             NAME
