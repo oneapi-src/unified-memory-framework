@@ -761,7 +761,7 @@ void umfMemoryTrackerDestroy(umf_memory_tracker_handle_t handle) {
         return;
     }
 
-    // Do not destroy the tracket if we are running in the proxy library,
+    // Do not destroy the tracker if we are running in the proxy library,
     // because it may need those resources till
     // the very end of exiting the application.
     if (utils_is_running_in_proxy_lib()) {
