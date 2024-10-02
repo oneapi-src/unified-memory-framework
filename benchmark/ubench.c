@@ -430,7 +430,7 @@ int create_level_zero_params(level_zero_memory_provider_params_t *params) {
 UBENCH_EX(ipc, disjoint_pool_with_level_zero_provider) {
     const size_t BUFFER_SIZE = 100;
     const size_t N_BUFFERS = 1000;
-    level_zero_memory_provider_params_t level_zero_params;
+    level_zero_memory_provider_params_t level_zero_params = {0};
 
     int ret = create_level_zero_params(&level_zero_params);
     if (ret != 0) {

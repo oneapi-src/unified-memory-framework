@@ -49,7 +49,7 @@ int main(void) {
 
     // Setup parameters for the Level Zero memory provider. It will be used for
     // allocating memory from Level Zero devices.
-    level_zero_memory_provider_params_t ze_memory_provider_params;
+    level_zero_memory_provider_params_t ze_memory_provider_params = {0};
     ze_memory_provider_params.level_zero_context_handle = hContext;
     ze_memory_provider_params.level_zero_device_handle = hDevice;
     // Set the memory type to shared to allow the memory to be accessed on both

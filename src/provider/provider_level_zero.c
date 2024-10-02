@@ -177,6 +177,25 @@ static umf_result_t ze_memory_provider_initialize(void *params,
                sizeof(ze_provider->device_properties));
     }
 
+    if (ze_params->resident_device_count) {
+        ze_provider->resident_device_handles = umf_ba_global_alloc(
+            sizeof(ze_device_handle_t) * ze_params->resident_device_count);
+        if (!ze_provider->resident_device_handles) {
+            umf_ba_global_free(ze_provider);
+            return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+        }
+
+        ze_provider->resident_device_count = ze_params->resident_device_count;
+
+        for (uint32_t i = 0; i < ze_provider->resident_device_count; i++) {
+            ze_provider->resident_device_handles[i] =
+                ze_params->resident_device_handles[i];
+        }
+    } else {
+        ze_provider->resident_device_handles = NULL;
+        ze_provider->resident_device_count = 0;
+    }
+
     *provider = ze_provider;
 
     return UMF_RESULT_SUCCESS;
@@ -187,6 +206,9 @@ static void ze_memory_provider_finalize(void *provider) {
         ASSERT(0);
         return;
     }
+
+    ze_memory_provider_t *ze_provider = (ze_memory_provider_t *)provider;
+    umf_ba_global_free(ze_provider->resident_device_handles);
 
     umf_ba_global_free(provider);
 }
