@@ -25,6 +25,13 @@ typedef struct umf_memory_provider_t {
     void *provider_priv;
 } umf_memory_provider_t;
 
+static umf_result_t umfDefaultFree(void *provider, void *ptr, size_t size) {
+    (void)provider;
+    (void)ptr;
+    (void)size;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
 static umf_result_t umfDefaultPurgeLazy(void *provider, void *ptr,
                                         size_t size) {
     (void)provider;
@@ -99,6 +106,9 @@ static umf_result_t umfDefaultCloseIPCHandle(void *provider, void *ptr,
 }
 
 void assignOpsExtDefaults(umf_memory_provider_ops_t *ops) {
+    if (!ops->ext.free) {
+        ops->ext.free = umfDefaultFree;
+    }
     if (!ops->ext.purge_lazy) {
         ops->ext.purge_lazy = umfDefaultPurgeLazy;
     }
@@ -133,7 +143,7 @@ void assignOpsIpcDefaults(umf_memory_provider_ops_t *ops) {
 
 static bool validateOpsMandatory(const umf_memory_provider_ops_t *ops) {
     // Mandatory ops should be non-NULL
-    return ops->alloc && ops->free && ops->get_recommended_page_size &&
+    return ops->alloc && ops->get_recommended_page_size &&
            ops->get_min_page_size && ops->initialize && ops->finalize &&
            ops->get_last_native_error && ops->get_name;
 }
@@ -157,6 +167,10 @@ static bool validateOpsIpc(const umf_memory_provider_ipc_ops_t *ipc) {
 static bool validateOps(const umf_memory_provider_ops_t *ops) {
     return validateOpsMandatory(ops) && validateOpsExt(&(ops->ext)) &&
            validateOpsIpc(&(ops->ipc));
+}
+
+bool umfIsFreeOpDefault(umf_memory_provider_handle_t hProvider) {
+    return (hProvider->ops.ext.free == umfDefaultFree);
 }
 
 umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
@@ -219,7 +233,8 @@ umf_result_t umfMemoryProviderAlloc(umf_memory_provider_handle_t hProvider,
 umf_result_t umfMemoryProviderFree(umf_memory_provider_handle_t hProvider,
                                    void *ptr, size_t size) {
     UMF_CHECK((hProvider != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
-    umf_result_t res = hProvider->ops.free(hProvider->provider_priv, ptr, size);
+    umf_result_t res =
+        hProvider->ops.ext.free(hProvider->provider_priv, ptr, size);
     checkErrorAndSetLastProvider(res, hProvider);
     return res;
 }

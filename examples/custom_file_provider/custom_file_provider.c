@@ -251,11 +251,11 @@ static umf_memory_provider_ops_t file_ops = {
     .initialize = file_init,
     .finalize = file_deinit,
     .alloc = file_alloc,
-    .free = file_free,
     .get_name = file_get_name,
     .get_last_native_error = file_get_last_native_error,
     .get_recommended_page_size = file_get_recommended_page_size,
     .get_min_page_size = file_get_min_page_size,
+    .ext.free = file_free,
 };
 
 // Main function

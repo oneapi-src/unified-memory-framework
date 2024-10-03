@@ -82,10 +82,7 @@ TEST_F(test, sharedLimits) {
         }
         umf_result_t free(void *ptr, [[maybe_unused]] size_t size) noexcept {
             ::free(ptr);
-            // umfMemoryProviderFree(provider, NULL, 0) is called inside umfPoolCreateInternal()
-            if (ptr != NULL && size != 0) {
-                numFrees++;
-            }
+            numFrees++;
             return UMF_RESULT_SUCCESS;
         }
     };

@@ -392,15 +392,6 @@ static umf_result_t file_alloc(void *provider, size_t size, size_t alignment,
     return UMF_RESULT_SUCCESS;
 }
 
-// free() is not supported
-static umf_result_t file_free(void *provider, void *ptr, size_t size) {
-    (void)provider; // unused
-    (void)ptr;      // unused
-    (void)size;     // unused
-
-    return UMF_RESULT_ERROR_NOT_SUPPORTED;
-}
-
 static void file_get_last_native_error(void *provider, const char **ppMessage,
                                        int32_t *pError) {
     (void)provider; // unused
@@ -688,7 +679,6 @@ static umf_memory_provider_ops_t UMF_FILE_MEMORY_PROVIDER_OPS = {
     .initialize = file_initialize,
     .finalize = file_finalize,
     .alloc = file_alloc,
-    .free = file_free,
     .get_last_native_error = file_get_last_native_error,
     .get_recommended_page_size = file_get_recommended_page_size,
     .get_min_page_size = file_get_min_page_size,

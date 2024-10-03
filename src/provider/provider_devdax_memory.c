@@ -247,15 +247,6 @@ static umf_result_t devdax_alloc(void *provider, size_t size, size_t alignment,
     return UMF_RESULT_SUCCESS;
 }
 
-// free() is not supported
-static umf_result_t devdax_free(void *provider, void *ptr, size_t size) {
-    (void)provider; // unused
-    (void)ptr;      // unused
-    (void)size;     // unused
-
-    return UMF_RESULT_ERROR_NOT_SUPPORTED;
-}
-
 static void devdax_get_last_native_error(void *provider, const char **ppMessage,
                                          int32_t *pError) {
     (void)provider; // unused
@@ -520,7 +511,6 @@ static umf_memory_provider_ops_t UMF_DEVDAX_MEMORY_PROVIDER_OPS = {
     .initialize = devdax_initialize,
     .finalize = devdax_finalize,
     .alloc = devdax_alloc,
-    .free = devdax_free,
     .get_last_native_error = devdax_get_last_native_error,
     .get_recommended_page_size = devdax_get_recommended_page_size,
     .get_min_page_size = devdax_get_min_page_size,

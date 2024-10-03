@@ -23,6 +23,15 @@ extern "C" {
 ///
 typedef struct umf_memory_provider_ext_ops_t {
     ///
+    /// @brief Frees the memory space pointed by \p ptr from the memory \p provider
+    /// @param provider pointer to the memory provider
+    /// @param ptr pointer to the allocated memory to free
+    /// @param size size of the allocation
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure
+    ///
+    umf_result_t (*free)(void *provider, void *ptr, size_t size);
+
+    ///
     /// @brief Discard physical pages within the virtual memory mapping associated at the given addr
     ///        and \p size. This call is asynchronous and may delay purging the pages indefinitely.
     /// @param provider pointer to the memory provider
@@ -171,15 +180,6 @@ typedef struct umf_memory_provider_ops_t {
     ///
     umf_result_t (*alloc)(void *provider, size_t size, size_t alignment,
                           void **ptr);
-
-    ///
-    /// @brief Frees the memory space pointed by \p ptr from the memory \p provider
-    /// @param provider pointer to the memory provider
-    /// @param ptr pointer to the allocated memory to free
-    /// @param size size of the allocation
-    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure
-    ///
-    umf_result_t (*free)(void *provider, void *ptr, size_t size);
 
     ///
     /// @brief Retrieve string representation of the underlying provider specific
