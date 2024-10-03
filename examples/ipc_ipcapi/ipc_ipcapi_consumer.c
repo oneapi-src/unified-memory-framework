@@ -5,12 +5,20 @@
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  */
 
+#ifdef _WIN32
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+#include <winsock2.h>
+typedef int socklen_t;
+typedef SSIZE_T ssize_t;
+#else
 #include <arpa/inet.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
-#include <unistd.h>
 
 #include <umf/ipc.h>
 #include <umf/memory_pool.h>
@@ -27,25 +35,40 @@
     "shared memory!"
 
 int consumer_connect_to_producer(int port) {
-    struct sockaddr_in consumer_addr;
-    struct sockaddr_in producer_addr;
-    int producer_addr_len;
+#ifdef _WIN32
+    WSADATA wsaData;
+    SOCKET producer_socket, consumer_socket;
+#else
     int producer_socket = -1;
     int consumer_socket = -1;
+#endif
+
+    struct sockaddr_in consumer_addr;
+    struct sockaddr_in producer_addr;
+
+    int producer_addr_len;
     int ret = -1;
+
+#ifdef _WIN32
+    // initialize Winsock
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+        fprintf(stderr, "Failed. Error Code : %d", WSAGetLastError());
+        return -1;
+    }
+#endif
 
     // create a socket
     consumer_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (consumer_socket < 0) {
         fprintf(stderr, "[consumer] ERROR: creating socket failed\n");
-        return -1;
+        goto err_WSA_cleanup;
     }
 
     fprintf(stderr, "[consumer] Socket created\n");
 
     // set the IP address and the port
     consumer_addr.sin_family = AF_INET;
-    consumer_addr.sin_port = htons(port);
+    consumer_addr.sin_port = htons((u_short)port);
     consumer_addr.sin_addr.s_addr = inet_addr(INET_ADDR);
 
     // bind to the IP address and the port
@@ -77,10 +100,19 @@ int consumer_connect_to_producer(int port) {
     fprintf(stderr, "[consumer] Producer connected at IP %s and port %i\n",
             inet_ntoa(producer_addr.sin_addr), ntohs(producer_addr.sin_port));
 
-    ret = producer_socket; // success
+    ret = (int)producer_socket; // success
 
 err_close_consumer_socket:
+#ifdef _WIN32
+    closesocket(consumer_socket);
+#else
     close(consumer_socket);
+#endif
+
+err_WSA_cleanup:
+#ifdef _WIN32
+    WSACleanup();
+#endif
 
     return ret;
 }
@@ -152,8 +184,8 @@ int main(int argc, char *argv[]) {
             len, size_IPC_handle);
 
     // send received size to the producer as a confirmation
-    recv_len =
-        send(producer_socket, &size_IPC_handle, sizeof(size_IPC_handle), 0);
+    recv_len = send(producer_socket, (const char *)&size_IPC_handle,
+                    sizeof(size_IPC_handle), 0);
     if (recv_len < 0) {
         fprintf(stderr, "[consumer] ERROR: sending confirmation failed\n");
         goto err_close_producer_socket;

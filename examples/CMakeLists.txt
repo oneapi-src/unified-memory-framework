@@ -172,6 +172,13 @@ function(build_umf_ipc_example name)
                                ${UMF_CMAKE_SOURCE_DIR}/include)
 
         target_link_directories(${EX_NAME} PRIVATE ${LIBHWLOC_LIBRARY_DIRS})
+        if(WINDOWS)
+            # link with Winsock2 lib
+            target_link_libraries(${EX_NAME} PRIVATE ws2_32)
+            # append PATH to DLLs set_property(TEST ${EX_NAME} PROPERTY
+            # ENVIRONMENT_MODIFICATION
+            # "${DLL_PATH_LIST}")
+        endif()
     endforeach(loop_var)
 endfunction()
 
@@ -192,14 +199,16 @@ function(add_umf_ipc_example script)
     endif()
 endfunction()
 
+# IPC API examples
+build_umf_ipc_example(ipc_ipcapi)
+
 if(LINUX)
-    build_umf_ipc_example(ipc_ipcapi)
     add_umf_ipc_example(ipc_ipcapi_anon_fd)
     add_umf_ipc_example(ipc_ipcapi_shm)
 else()
     message(
         STATUS
-            "IPC examples with UMF pool API are supported on Linux only - skipping"
+            "IPC anon_fd and shm examples with UMF pool API are supported on Linux only - skipping"
     )
 endif()
 

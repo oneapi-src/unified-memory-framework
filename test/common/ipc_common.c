@@ -5,12 +5,20 @@
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  */
 
+#ifdef _WIN32
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+#include <winsock2.h>
+typedef int socklen_t;
+typedef SSIZE_T ssize_t;
+#else
 #include <arpa/inet.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
-#include <unistd.h>
 
 #include "ipc_common.h"
 
@@ -48,25 +56,40 @@ Generally communication between the producer and the consumer looks like:
 */
 
 int consumer_connect(int port) {
+
+#ifdef _WIN32
+    WSADATA wsaData;
+    SOCKET producer_socket, consumer_socket;
+#else
+    int producer_socket = -1;
+    int consumer_socket = -1;
+#endif
+
     struct sockaddr_in consumer_addr;
     struct sockaddr_in producer_addr;
     int producer_addr_len;
-    int producer_socket = -1;
-    int consumer_socket = -1;
     int ret = -1;
+
+#ifdef _WIN32
+    // initialize Winsock
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+        fprintf(stderr, "Failed. Error Code : %d", WSAGetLastError());
+        return -1;
+    }
+#endif
 
     // create a socket
     consumer_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (consumer_socket < 0) {
         fprintf(stderr, "[consumer] ERROR: creating socket failed\n");
-        return -1;
+        goto err_WSA_cleanup;
     }
 
     fprintf(stderr, "[consumer] Socket created\n");
 
     // set the IP address and the port
     consumer_addr.sin_family = AF_INET;
-    consumer_addr.sin_port = htons(port);
+    consumer_addr.sin_port = htons((u_short)port);
     consumer_addr.sin_addr.s_addr = inet_addr(INET_ADDR);
 
     // bind to the IP address and the port
@@ -96,12 +119,22 @@ int consumer_connect(int port) {
     }
 
     fprintf(stderr, "[consumer] Producer connected at IP %s and port %i\n",
-            inet_ntoa(producer_addr.sin_addr), ntohs(producer_addr.sin_port));
+            inet_ntoa(producer_addr.sin_addr),
+            (int)ntohs(producer_addr.sin_port));
 
-    ret = producer_socket; // success
+    ret = (int)producer_socket; // success
 
 err_close_consumer_socket:
+#ifdef _WIN32
+    closesocket(consumer_socket);
+#else
     close(consumer_socket);
+#endif
+
+err_WSA_cleanup:
+#ifdef _WIN32
+    WSACleanup();
+#endif
 
     return ret;
 }
@@ -110,7 +143,13 @@ int run_consumer(int port, umf_memory_provider_ops_t *provider_ops,
                  void *provider_params, memcopy_callback_t memcopy_callback,
                  void *memcopy_ctx) {
     char consumer_message[MSG_SIZE];
+
+#ifdef _WIN32
+    SOCKET producer_socket;
+#else
     int producer_socket = -1;
+#endif
+
     int ret = -1;
     umf_memory_provider_handle_t provider = NULL;
     umf_result_t umf_result = UMF_RESULT_ERROR_UNKNOWN;
@@ -149,7 +188,8 @@ int run_consumer(int port, umf_memory_provider_ops_t *provider_ops,
     }
 
     // receive a producer's message
-    ssize_t recv_len = recv(producer_socket, recv_buffer, IPC_handle_size, 0);
+    ssize_t recv_len =
+        (ssize_t)recv(producer_socket, recv_buffer, (int)IPC_handle_size, 0);
     if (recv_len < 0) {
         fprintf(stderr, "[consumer] ERROR: recv() failed\n");
         goto err_close_producer_socket;
@@ -182,8 +222,8 @@ int run_consumer(int port, umf_memory_provider_ops_t *provider_ops,
         strcpy(consumer_message, "SKIP");
 
         // send the SKIP response to the producer
-        send(producer_socket, consumer_message, strlen(consumer_message) + 1,
-             0);
+        send(producer_socket, consumer_message,
+             (int)strlen(consumer_message) + 1, 0);
 
         goto err_close_producer_socket;
     }
@@ -217,8 +257,8 @@ int run_consumer(int port, umf_memory_provider_ops_t *provider_ops,
     strcpy(consumer_message, CONSUMER_MSG);
 
     // send response to the producer
-    if (send(producer_socket, consumer_message, strlen(consumer_message) + 1,
-             0) < 0) {
+    if (send(producer_socket, consumer_message,
+             (int)strlen(consumer_message) + 1, 0) < 0) {
         fprintf(stderr, "[consumer] ERROR: send() failed\n");
         goto err_closeIPCHandle;
     }
@@ -239,7 +279,11 @@ err_closeIPCHandle:
             "[consumer] Closed the IPC handle received from the producer\n");
 
 err_close_producer_socket:
+#ifdef _WIN32
+    closesocket(producer_socket);
+#else
     close(producer_socket);
+#endif
 
 err_umfMemoryProviderDestroy:
     umfMemoryProviderDestroy(provider);
@@ -258,20 +302,34 @@ err_umfMemoryProviderDestroy:
 
 int producer_connect(int port) {
     struct sockaddr_in consumer_addr;
+
+#ifdef _WIN32
+    WSADATA wsaData;
+    SOCKET producer_socket;
+#else
     int producer_socket = -1;
+#endif
+
+#ifdef _WIN32
+    // initialize Winsock
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+        fprintf(stderr, "Failed. Error Code : %d", WSAGetLastError());
+        return -1;
+    }
+#endif
 
     // create a producer socket
     producer_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (producer_socket < 0) {
         fprintf(stderr, "[producer] ERROR: Unable to create socket\n");
-        return -1;
+        goto err_WSA_cleanup;
     }
 
     fprintf(stderr, "[producer] Socket created\n");
 
     // set IP address and port the same as for the consumer
     consumer_addr.sin_family = AF_INET;
-    consumer_addr.sin_port = htons(port);
+    consumer_addr.sin_port = htons((u_short)port);
     consumer_addr.sin_addr.s_addr = inet_addr(INET_ADDR);
 
     // send connection request to the consumer
@@ -284,10 +342,19 @@ int producer_connect(int port) {
 
     fprintf(stderr, "[producer] Connected to the consumer\n");
 
-    return producer_socket; // success
+    return (int)producer_socket; // success
 
 err_close_producer_socket_connect:
+#ifdef _WIN32
+    closesocket(producer_socket);
+#else
     close(producer_socket);
+#endif
+
+err_WSA_cleanup:
+#ifdef _WIN32
+    WSACleanup();
+#endif
 
     return -1;
 }
@@ -389,7 +456,7 @@ int run_producer(int port, umf_memory_provider_ops_t *provider_ops,
     }
 
     // send the IPC_handle of IPC_handle_size to the consumer
-    if (send(producer_socket, IPC_handle, IPC_handle_size, 0) < 0) {
+    if (send(producer_socket, IPC_handle, (int)IPC_handle_size, 0) < 0) {
         fprintf(stderr, "[producer] ERROR: unable to send the message\n");
         goto err_close_producer_socket;
     }
@@ -442,7 +509,11 @@ int run_producer(int port, umf_memory_provider_ops_t *provider_ops,
     }
 
 err_close_producer_socket:
+#ifdef _WIN32
+    closesocket(producer_socket);
+#else
     close(producer_socket);
+#endif
 
 err_PutIPCHandle:
     umf_result = umfMemoryProviderPutIPCHandle(provider, IPC_handle);

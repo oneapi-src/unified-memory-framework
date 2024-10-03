@@ -37,6 +37,10 @@ function(build_umf_ipc_example name)
         target_include_directories(${EX_NAME} PRIVATE ${LIBUMF_INCLUDE_DIRS})
         target_link_directories(${EX_NAME} PRIVATE ${LIBHWLOC_LIBRARY_DIRS})
         target_link_libraries(${EX_NAME} PRIVATE ${LIBUMF_LIBRARIES} hwloc)
+        if(WINDOWS)
+            # link with Winsock lib
+            target_link_libraries(${EX_NAME} PRIVATE ${LIBUMF_LIBRARIES} ws2_32)
+        endif()
     endforeach(loop_var)
 endfunction()
 
@@ -44,12 +48,18 @@ endfunction()
 function(add_test_for_umf_ipc_example script)
     set(EXAMPLE_NAME umf_example_${script})
 
-    file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/${script}.sh
+    if(LINUX)
+        set(script_ext sh)
+    else()
+        set(script_ext bat)
+    endif()
+
+    file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/${script}.${script_ext}
          DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
     add_test(
         NAME ${EXAMPLE_NAME}
-        COMMAND ${script}.sh
+        COMMAND ${script}.${script_ext}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
     if(LINUX)
