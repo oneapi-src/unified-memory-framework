@@ -88,3 +88,90 @@ jobs:
 
     - name: Run tests under valgrind
       run: ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{github.workspace}}/build ${{matrix.tool}}
+
+  icx:
+    name: ICX
+    env:
+      VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
+      BUILD_DIR : "${{github.workspace}}/build"
+    strategy:
+      matrix:
+        os: ['windows-2019', 'windows-2022']
+        build_type: [Debug]
+        compiler: [{c: icx, cxx: icx}]
+        shared_library: ['ON', 'OFF']
+        include:
+          - os: windows-2022
+            build_type: Release
+            compiler: {c: icx, cxx: icx}
+            shared_library: 'ON'
+
+    runs-on: ${{matrix.os}}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      with:
+        fetch-depth: 0
+
+    - name: Initialize vcpkg
+      uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
+      with:
+        vcpkgGitCommitId: 3dd44b931481d7a8e9ba412621fa810232b66289
+        vcpkgDirectory: ${{env.BUILD_DIR}}/vcpkg
+        vcpkgJsonGlob: '**/vcpkg.json'
+
+    - name: Install dependencies
+      run: vcpkg install
+
+    - name: Install Ninja
+      uses: seanmiddleditch/gha-setup-ninja@96bed6edff20d1dd61ecff9b75cc519d516e6401 # v5
+
+    - name: Download icx compiler
+      env:
+        # Link source: https://www.intel.com/content/www/us/en/developer/tools/oneapi/dpc-compiler-download.html
+        CMPLR_LINK: "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/15a35578-2f9a-4f39-804b-3906e0a5f8fc/w_dpcpp-cpp-compiler_p_2024.2.1.83_offline.exe"
+      run: |
+        Invoke-WebRequest -Uri "${{ env.CMPLR_LINK }}" -OutFile compiler_install.exe
+
+    - name: Install icx compiler
+      shell: cmd
+      run: |
+        start /b /wait .\compiler_install.exe -s -x -f extracted --log extract.log
+        extracted\bootstrapper.exe -s --action install --eula=accept -p=NEED_VS2017_INTEGRATION=0 ^
+          -p=NEED_VS2019_INTEGRATION=0 -p=NEED_VS2022_INTEGRATION=0 --log-dir=.
+
+    - name: Configure build
+      shell: cmd
+      run: |
+        call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
+        call "C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat"
+        cmake ^
+          -B ${{env.BUILD_DIR}} ^
+          -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}" ^
+          -DCMAKE_C_COMPILER=${{matrix.compiler.c}} ^
+          -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}} ^
+          -G Ninja ^
+          -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}} ^
+          -DUMF_FORMAT_CODE_STYLE=OFF ^
+          -DUMF_DEVELOPER_MODE=ON ^
+          -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON ^
+          -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON ^
+          -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON ^
+          -DUMF_BUILD_CUDA_PROVIDER=ON ^
+          -DUMF_TESTS_FAIL_ON_SKIP=ON
+
+    - name: Build UMF
+      shell: cmd
+      run: |
+        call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
+        call "C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat"
+        cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j %NUMBER_OF_PROCESSORS%
+
+    - name: Run tests
+      shell: cmd
+      working-directory: ${{env.BUILD_DIR}}
+      run: |
+        call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
+        call "C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat"
+        ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
