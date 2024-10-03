@@ -258,7 +258,7 @@ function(add_umf_target_compile_options name)
             ${name}
             PRIVATE /MD$<$<CONFIG:Debug>:d>
                     $<$<CONFIG:Release>:/sdl>
-                    /analyze
+                    $<$<CXX_COMPILER_ID:MSVC>:/analyze>
                     /DYNAMICBASE
                     /W4
                     /Gy
