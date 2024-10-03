@@ -169,6 +169,10 @@ static bool validateOps(const umf_memory_provider_ops_t *ops) {
            validateOpsIpc(&(ops->ipc));
 }
 
+bool umfIsFreeOpDefault(umf_memory_provider_handle_t hProvider) {
+    return (hProvider->ops.ext.free == umfDefaultFree);
+}
+
 umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
                                      void *params,
                                      umf_memory_provider_handle_t *hProvider) {

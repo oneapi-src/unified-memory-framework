@@ -10,6 +10,8 @@
 #ifndef UMF_MEMORY_PROVIDER_INTERNAL_H
 #define UMF_MEMORY_PROVIDER_INTERNAL_H 1
 
+#include <stdbool.h>
+
 #include <umf/memory_provider.h>
 
 #ifdef __cplusplus
@@ -18,6 +20,7 @@ extern "C" {
 
 void *umfMemoryProviderGetPriv(umf_memory_provider_handle_t hProvider);
 umf_memory_provider_handle_t *umfGetLastFailedMemoryProviderPtr(void);
+bool umfIsFreeOpDefault(umf_memory_provider_handle_t hProvider);
 
 #ifdef __cplusplus
 }
