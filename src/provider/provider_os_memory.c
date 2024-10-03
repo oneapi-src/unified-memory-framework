@@ -1251,14 +1251,14 @@ static umf_result_t os_open_ipc_handle(void *provider, void *providerIpcData,
     umf_result_t ret = UMF_RESULT_SUCCESS;
     int fd;
 
-    if (os_provider->shm_name[0]) {
-        fd = utils_shm_open(os_provider->shm_name);
+    if (os_ipc_data->shm_name[0]) {
+        fd = utils_shm_open(os_ipc_data->shm_name);
         if (fd <= 0) {
             LOG_PERR("opening a shared memory file (%s) failed",
-                     os_provider->shm_name);
+                     os_ipc_data->shm_name);
             return UMF_RESULT_ERROR_UNKNOWN;
         }
-        (void)utils_shm_unlink(os_provider->shm_name);
+        (void)utils_shm_unlink(os_ipc_data->shm_name);
     } else {
         umf_result_t umf_result =
             utils_duplicate_fd(os_ipc_data->pid, os_ipc_data->fd, &fd);
