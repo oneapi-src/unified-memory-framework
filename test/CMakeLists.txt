@@ -161,6 +161,10 @@ if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
         NAME c_api_disjoint_pool
         SRCS c_api/disjoint_pool.c
         LIBS disjoint_pool)
+    add_umf_test(
+        NAME disjointCoarseMallocPool
+        SRCS disjointCoarseMallocPool.cpp
+        LIBS disjoint_pool)
 endif()
 
 if(UMF_BUILD_LIBUMF_POOL_DISJOINT

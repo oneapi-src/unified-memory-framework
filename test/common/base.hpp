@@ -48,6 +48,9 @@ std::function<Ret(void)> withGeneratedArgs(Ret (*f)(Args...)) {
     };
 }
 
+const size_t KB = 1024;
+const size_t MB = 1024 * KB;
+
 } // namespace umf_test
 
 #endif /* UMF_TEST_BASE_HPP */

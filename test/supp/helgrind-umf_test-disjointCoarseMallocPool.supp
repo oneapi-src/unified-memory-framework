@@ -1,0 +1,24 @@
+{
+   Incompatibility with helgrind's implementation (pthread_mutex_lock with a pthread_rwlock_t* argument)
+   Helgrind:Misc
+   obj:*vgpreload_helgrind-amd64-linux.so
+   fun:_ZL20__gthread_mutex_lockP15pthread_mutex_t
+   ...
+}
+
+{
+   Incompatibility with helgrind's implementation (pthread_mutex_unlock with a pthread_rwlock_t* argument)
+   Helgrind:Misc
+   obj:*vgpreload_helgrind-amd64-linux.so
+   fun:_ZL22__gthread_mutex_unlockP15pthread_mutex_t
+   ...
+}
+
+{
+   Incompatibility with helgrind's implementation (lock order "0xA before 0xB" violated)
+   Helgrind:LockOrder
+   obj:*vgpreload_helgrind-amd64-linux.so
+   fun:_ZStL23__glibcxx_rwlock_wrlockP16pthread_rwlock_t
+   fun:_ZNSt22__shared_mutex_pthread4lockEv
+   ...
+}
