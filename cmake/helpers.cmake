@@ -295,17 +295,17 @@ function(add_umf_target_link_options name)
         target_link_options(
             ${name}
             PRIVATE
-            /DYNAMICBASE
-            /HIGHENTROPYVA
+            LINKER:/DYNAMICBASE
+            LINKER:/HIGHENTROPYVA
             $<$<C_COMPILER_ID:MSVC>:/DEPENDENTLOADFLAG:0x2000>
             $<$<CXX_COMPILER_ID:MSVC>:/DEPENDENTLOADFLAG:0x2000>
-            /NXCOMPAT)
+            LINKER:/NXCOMPAT)
     endif()
 endfunction()
 
 function(add_umf_target_exec_options name)
     if(MSVC)
-        target_link_options(${name} PRIVATE /ALLOWISOLATION)
+        target_link_options(${name} PRIVATE LINKER:/ALLOWISOLATION)
     endif()
 endfunction()
 
@@ -362,7 +362,7 @@ function(add_umf_library)
 
         if(WINDOWS)
             target_link_options(${ARG_NAME} PRIVATE
-                                /DEF:${ARG_WINDOWS_DEF_FILE})
+                                LINKER:/DEF:${ARG_WINDOWS_DEF_FILE})
         elseif(LINUX)
             target_link_options(${ARG_NAME} PRIVATE
                                 "-Wl,--version-script=${ARG_LINUX_MAP_FILE}")
