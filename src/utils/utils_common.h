@@ -35,10 +35,14 @@ typedef enum umf_purge_advise_t {
         expression;                                                            \
     } while (0)
 
+#define IS_ALIGNED(value, align)                                               \
+    ((align == 0 || (((value) & ((align)-1)) == 0)))
+#define IS_NOT_ALIGNED(value, align)                                           \
+    ((align != 0 && (((value) & ((align)-1)) != 0)))
 #define ALIGN_UP(value, align) (((value) + (align)-1) & ~((align)-1))
 #define ALIGN_DOWN(value, align) ((value) & ~((align)-1))
 #define ASSERT_IS_ALIGNED(value, align)                                        \
-    DO_WHILE_EXPRS(assert(((value) & ((align)-1)) == 0))
+    DO_WHILE_EXPRS(assert(IS_ALIGNED(value, align)))
 
 #define VALGRIND_ANNOTATE_NEW_MEMORY(p, s) DO_WHILE_EMPTY
 #define VALGRIND_HG_DRD_DISABLE_CHECKING(p, s) DO_WHILE_EMPTY

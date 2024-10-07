@@ -110,6 +110,7 @@ set(UMF_SOURCES
     memtarget.c
     mempolicy.c
     memspace.c
+    provider/provider_coarse.c
     provider/provider_tracking.c
     critnib/critnib.c
     ravl/ravl.c
@@ -266,6 +267,7 @@ target_include_directories(
     umf
     PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+           $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/ravl>
            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/critnib>
            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/provider>
            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/memspaces>
