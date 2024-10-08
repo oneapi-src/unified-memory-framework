@@ -15,7 +15,7 @@
 #include "ipc_common.h"
 
 #define INET_ADDR "127.0.0.1"
-#define MSG_SIZE 1024
+#define MSG_SIZE 1024 * 8
 
 // consumer's response message
 #define CONSUMER_MSG                                                           \
@@ -33,6 +33,10 @@ Generally communication between the producer and the consumer looks like:
 - Producer creates a socket
 - Producer connects to the consumer
 - Consumer connects at IP 127.0.0.1 and a port to the producer
+- Producer sends the IPC handle size to the consumer
+- Consumer receives the IPC handle size from the producer
+- Consumer sends the confirmation (IPC handle size) to the producer
+- Producer receives the confirmation (IPC handle size) from the consumer
 - Producer sends the IPC handle to the consumer
 - Consumer receives the IPC handle from the producer
 - Consumer opens the IPC handle received from the producer
@@ -127,29 +131,36 @@ int run_consumer(int port, umf_memory_provider_ops_t *provider_ops,
         return -1;
     }
 
-    // get the size of the IPC handle
-    size_t IPC_handle_size;
-    umf_result = umfMemoryProviderGetIPCHandleSize(provider, &IPC_handle_size);
-    if (umf_result != UMF_RESULT_SUCCESS) {
-        fprintf(stderr,
-                "[consumer] ERROR: getting size of the IPC handle failed\n");
-        goto err_umfMemoryProviderDestroy;
-    }
-
-    // allocate the zeroed receive buffer
-    char *recv_buffer = calloc(1, IPC_handle_size);
-    if (!recv_buffer) {
-        fprintf(stderr, "[consumer] ERROR: out of memory\n");
-        goto err_umfMemoryProviderDestroy;
-    }
-
     producer_socket = consumer_connect(port);
     if (producer_socket < 0) {
         goto err_umfMemoryProviderDestroy;
     }
 
-    // receive a producer's message
-    ssize_t recv_len = recv(producer_socket, recv_buffer, IPC_handle_size, 0);
+    // allocate the zeroed receive buffer
+    char *recv_buffer = calloc(1, MSG_SIZE);
+    if (!recv_buffer) {
+        fprintf(stderr, "[consumer] ERROR: out of memory\n");
+        goto err_umfMemoryProviderDestroy;
+    }
+
+    // get the size of the IPC handle from the producer
+    size_t IPC_handle_size;
+    ssize_t recv_len = recv(producer_socket, recv_buffer, MSG_SIZE, 0);
+    if (recv_len < 0) {
+        fprintf(stderr, "[consumer] ERROR: recv() failed\n");
+        goto err_close_producer_socket;
+    }
+    IPC_handle_size = *(size_t *)recv_buffer;
+    fprintf(stderr, "[consumer] Got the size of the IPC handle: %zu\n",
+            IPC_handle_size);
+
+    // send confirmation to the producer (IPC handle size)
+    send(producer_socket, &IPC_handle_size, sizeof(IPC_handle_size), 0);
+    fprintf(stderr,
+            "[consumer] Send the confirmation (IPC handle size) to producer\n");
+
+    // receive IPC handle from the producer
+    recv_len = recv(producer_socket, recv_buffer, MSG_SIZE, 0);
     if (recv_len < 0) {
         fprintf(stderr, "[consumer] ERROR: recv() failed\n");
         goto err_close_producer_socket;
@@ -386,6 +397,44 @@ int run_producer(int port, umf_memory_provider_ops_t *provider_ops,
     producer_socket = producer_connect(port);
     if (producer_socket < 0) {
         goto err_PutIPCHandle;
+    }
+
+    // send the IPC_handle_size to the consumer
+    ssize_t len =
+        send(producer_socket, &IPC_handle_size, sizeof(IPC_handle_size), 0);
+    if (len < 0) {
+        fprintf(stderr, "[producer] ERROR: unable to send the message\n");
+        goto err_close_producer_socket;
+    }
+
+    fprintf(stderr,
+            "[producer] Sent the size of the IPC handle (%zu) to the consumer "
+            "(sent %zu bytes)\n",
+            IPC_handle_size, len);
+
+    // zero the consumer_message buffer
+    memset(consumer_message, 0, sizeof(consumer_message));
+
+    // receive the consumer's confirmation - IPC handle size
+    len = recv(producer_socket, consumer_message, sizeof(consumer_message), 0);
+    if (len < 0) {
+        fprintf(stderr, "[producer] ERROR: error while receiving the "
+                        "confirmation from the consumer\n");
+        goto err_close_producer_socket;
+    }
+
+    size_t conf_IPC_handle_size = *(size_t *)consumer_message;
+    if (conf_IPC_handle_size == IPC_handle_size) {
+        fprintf(stderr,
+                "[producer] Received the correct confirmation (%zu) from the "
+                "consumer (%zu bytes)\n",
+                conf_IPC_handle_size, len);
+    } else {
+        fprintf(stderr,
+                "[producer] Received an INCORRECT confirmation (%zu) from the "
+                "consumer (%zu bytes)\n",
+                conf_IPC_handle_size, len);
+        goto err_close_producer_socket;
     }
 
     // send the IPC_handle of IPC_handle_size to the consumer

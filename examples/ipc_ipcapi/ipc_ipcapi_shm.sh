@@ -20,7 +20,7 @@ UMF_LOG_VAL="level:debug;flush:debug;output:stderr;pid:yes"
 rm -f /dev/shm/${SHM_NAME}
 
 echo "Starting ipc_ipcapi_shm CONSUMER on port $PORT ..."
-UMF_LOG=$UMF_LOG_VAL ./umf_example_ipc_ipcapi_consumer $PORT $SHM_NAME &
+UMF_LOG=$UMF_LOG_VAL ./umf_example_ipc_ipcapi_consumer $PORT &
 
 echo "Waiting 1 sec ..."
 sleep 1
