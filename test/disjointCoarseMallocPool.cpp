@@ -759,3 +759,95 @@ TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMallocPool_wrong_params_4) {
 
     umfMemoryProviderDestroy(malloc_memory_provider);
 }
+
+TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMallocPool_split_merge) {
+    umf_memory_provider_handle_t malloc_memory_provider;
+    umf_result_t umf_result;
+
+    umf_result = umfMemoryProviderCreate(&UMF_MALLOC_MEMORY_PROVIDER_OPS, NULL,
+                                         &malloc_memory_provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(malloc_memory_provider, nullptr);
+
+    const size_t init_buffer_size = 20 * MB;
+
+    coarse_memory_provider_params_t coarse_memory_provider_params;
+    // make sure there are no undefined members - prevent a UB
+    memset(&coarse_memory_provider_params, 0,
+           sizeof(coarse_memory_provider_params));
+    coarse_memory_provider_params.upstream_memory_provider =
+        malloc_memory_provider;
+    coarse_memory_provider_params.immediate_init_from_upstream = true;
+    coarse_memory_provider_params.init_buffer = NULL;
+    coarse_memory_provider_params.init_buffer_size = init_buffer_size;
+
+    umf_memory_provider_handle_t coarse_memory_provider;
+    umf_result = umfMemoryProviderCreate(umfCoarseMemoryProviderOps(),
+                                         &coarse_memory_provider_params,
+                                         &coarse_memory_provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(coarse_memory_provider, nullptr);
+
+    umf_memory_provider_handle_t cp = coarse_memory_provider;
+    char *ptr = nullptr;
+
+    ASSERT_EQ(GetStats(cp).used_size, 0 * MB);
+    ASSERT_EQ(GetStats(cp).alloc_size, init_buffer_size);
+    ASSERT_EQ(GetStats(cp).num_all_blocks, 1);
+
+    /* test umfMemoryProviderAllocationSplit */
+    umf_result = umfMemoryProviderAlloc(cp, 2 * MB, 0, (void **)&ptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(ptr, nullptr);
+    ASSERT_EQ(GetStats(cp).used_size, 2 * MB);
+    ASSERT_EQ(GetStats(cp).alloc_size, init_buffer_size);
+    ASSERT_EQ(GetStats(cp).num_all_blocks, 2);
+
+    umf_result = umfMemoryProviderAllocationSplit(cp, ptr, 2 * MB, 1 * MB);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(GetStats(cp).used_size, 2 * MB);
+    ASSERT_EQ(GetStats(cp).alloc_size, init_buffer_size);
+    ASSERT_EQ(GetStats(cp).num_all_blocks, 3);
+
+    umf_result = umfMemoryProviderFree(cp, (ptr + 1 * MB), 1 * MB);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(GetStats(cp).used_size, 1 * MB);
+    ASSERT_EQ(GetStats(cp).alloc_size, init_buffer_size);
+    ASSERT_EQ(GetStats(cp).num_all_blocks, 2);
+
+    umf_result = umfMemoryProviderFree(cp, ptr, 1 * MB);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(GetStats(cp).used_size, 0);
+    ASSERT_EQ(GetStats(cp).alloc_size, init_buffer_size);
+    ASSERT_EQ(GetStats(cp).num_all_blocks, 1);
+
+    /* test umfMemoryProviderAllocationMerge */
+    umf_result = umfMemoryProviderAlloc(cp, 2 * MB, 0, (void **)&ptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(ptr, nullptr);
+    ASSERT_EQ(GetStats(cp).used_size, 2 * MB);
+    ASSERT_EQ(GetStats(cp).alloc_size, init_buffer_size);
+    ASSERT_EQ(GetStats(cp).num_all_blocks, 2);
+
+    umf_result = umfMemoryProviderAllocationSplit(cp, ptr, 2 * MB, 1 * MB);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(GetStats(cp).used_size, 2 * MB);
+    ASSERT_EQ(GetStats(cp).alloc_size, init_buffer_size);
+    ASSERT_EQ(GetStats(cp).num_all_blocks, 3);
+
+    umf_result =
+        umfMemoryProviderAllocationMerge(cp, ptr, (ptr + 1 * MB), 2 * MB);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(GetStats(cp).used_size, 2 * MB);
+    ASSERT_EQ(GetStats(cp).alloc_size, init_buffer_size);
+    ASSERT_EQ(GetStats(cp).num_all_blocks, 2);
+
+    umf_result = umfMemoryProviderFree(cp, ptr, 2 * MB);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(GetStats(cp).used_size, 0);
+    ASSERT_EQ(GetStats(cp).alloc_size, init_buffer_size);
+    ASSERT_EQ(GetStats(cp).num_all_blocks, 1);
+
+    umfMemoryProviderDestroy(coarse_memory_provider);
+    umfMemoryProviderDestroy(malloc_memory_provider);
+}
