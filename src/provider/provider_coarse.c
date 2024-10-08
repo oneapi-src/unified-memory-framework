@@ -120,11 +120,6 @@ static int coarse_ravl_comp(const void *lhs, const void *rhs) {
     return 0;
 }
 
-static inline ravl_node_t *get_block_node(struct ravl *rtree, block_t *block) {
-    ravl_data_t rdata = {(uintptr_t)block->data, NULL};
-    return ravl_find(rtree, &rdata, RAVL_PREDICATE_EQUAL);
-}
-
 static inline block_t *get_node_block(ravl_node_t *node) {
     ravl_data_t *node_data = ravl_data(node);
     assert(node_data);
