@@ -1283,43 +1283,42 @@ static umf_result_t coarse_memory_provider_alloc(void *provider, size_t size,
 
     if (coarse_provider->upstream_memory_provider == NULL) {
         LOG_ERR("out of memory - no upstream memory provider given");
-        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+        umf_result = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+        goto err_unlock;
     }
 
     umfMemoryProviderAlloc(coarse_provider->upstream_memory_provider, size,
                            alignment, resultPtr);
     if (*resultPtr == NULL) {
         LOG_ERR("out of memory - upstream memory provider allocation failed");
-        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+        umf_result = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+        goto err_unlock;
     }
 
     ASSERT_IS_ALIGNED(((uintptr_t)(*resultPtr)), alignment);
 
     umf_result = coarse_add_upstream_block(coarse_provider, *resultPtr, size);
     if (umf_result != UMF_RESULT_SUCCESS) {
-        return umf_result;
+        if (!coarse_provider->disable_upstream_provider_free) {
+            umfMemoryProviderFree(coarse_provider->upstream_memory_provider,
+                                  *resultPtr, size);
+        }
+        goto err_unlock;
     }
 
     LOG_DEBUG("coarse_ALLOC (upstream) %zu used %zu alloc %zu", size,
               coarse_provider->used_size, coarse_provider->alloc_size);
 
+    umf_result = UMF_RESULT_SUCCESS;
+
+err_unlock:
     assert(debug_check(coarse_provider));
 
     if (utils_mutex_unlock(&coarse_provider->lock) != 0) {
         LOG_ERR("unlocking the lock failed");
-        umf_result = UMF_RESULT_ERROR_UNKNOWN;
-        goto unlock_error;
-    }
-
-    return UMF_RESULT_SUCCESS;
-
-unlock_error:
-    coarse_ravl_rm(coarse_provider->all_blocks, *resultPtr);
-    coarse_ravl_rm(coarse_provider->upstream_blocks, *resultPtr);
-
-    if (!coarse_provider->disable_upstream_provider_free) {
-        umfMemoryProviderFree(coarse_provider->upstream_memory_provider,
-                              *resultPtr, size);
+        if (umf_result == UMF_RESULT_SUCCESS) {
+            umf_result = UMF_RESULT_ERROR_UNKNOWN;
+        }
     }
 
     return umf_result;
