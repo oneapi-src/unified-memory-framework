@@ -16,13 +16,13 @@ permissions:
   contents: read
 
 jobs:
-  CodeCheck:
+  CodeChecks:
     uses: ./.github/workflows/reusable_checks.yml
   DocsBuild:
     uses: ./.github/workflows/reusable_docs_build.yml
   FastBuild:
     name: Fast builds
-    needs: [CodeCheck, DocsBuild]
+    needs: [CodeChecks, DocsBuild]
     uses: ./.github/workflows/reusable_fast.yml
   Build:
     name: Basic builds

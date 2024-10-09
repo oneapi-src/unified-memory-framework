@@ -1,4 +1,4 @@
-# Basic checks on the code, incl. coding style and spelling.
+# Basic checks on the code, incl. coding style, spelling, bandit analysis.
 # TODO: add license check
 name: Basic checks
 
@@ -8,8 +8,8 @@ permissions:
   contents: read
 
 jobs:
-  CodeCheck:
-    name: Coding style and spell check
+  CodeChecks:
+    name: Basic code checks
     runs-on: ${{ github.repository_owner == 'oneapi-src' && 'intel-ubuntu-22.04' || 'ubuntu-latest' }}
 
     steps:
@@ -18,10 +18,11 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Install apt packages
+    - name: Install dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y black cmake clang-format-15 cmake-format libhwloc-dev
+        python3 -m pip install bandit
 
     - name: Configure CMake
       run: >
@@ -48,3 +49,7 @@ jobs:
       uses: crate-ci/typos@b63f421581dce830bda2f597a678cb7776b41877 # v1.18.2
       with:
         config: ./.github/workflows/.spellcheck-conf.toml
+
+    # Run Bandit recursively, but omit _deps directory (with 3rd party code)
+    - name: Run Bandit
+      run: python3 -m bandit -r . -x '/_deps/'
