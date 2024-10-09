@@ -171,7 +171,8 @@ function(build_umf_ipc_example name)
             ${EX_NAME} PRIVATE ${UMF_CMAKE_SOURCE_DIR}/src/utils
                                ${UMF_CMAKE_SOURCE_DIR}/include)
 
-        target_link_directories(${EX_NAME} PRIVATE ${LIBHWLOC_LIBRARY_DIRS})
+        target_link_directories(${EX_NAME} PRIVATE ${LIBHWLOC_LIBRARY_DIRS}
+                                ${TBB_LIBRARY_DIRS})
     endforeach(loop_var)
 endfunction()
 
@@ -192,7 +193,7 @@ function(add_umf_ipc_example script)
     endif()
 endfunction()
 
-if(LINUX)
+if(LINUX AND UMF_POOL_SCALABLE_ENABLED)
     build_umf_ipc_example(ipc_ipcapi)
     add_umf_ipc_example(ipc_ipcapi_anon_fd)
     add_umf_ipc_example(ipc_ipcapi_shm)
@@ -252,23 +253,26 @@ if(LINUX)
     set_tests_properties(${EXAMPLE_NAME} PROPERTIES
                          SKIP_RETURN_CODE ${UMF_TEST_SKIP_RETURN_CODE})
 
-    set(EXAMPLE_NAME umf_example_custom_file_provider)
+    if(UMF_POOL_SCALABLE_ENABLED)
+        set(EXAMPLE_NAME umf_example_custom_file_provider)
 
-    add_umf_executable(
-        NAME ${EXAMPLE_NAME}
-        SRCS custom_file_provider/custom_file_provider.c
-        LIBS umf ${LIBHWLOC_LIBRARIES})
+        add_umf_executable(
+            NAME ${EXAMPLE_NAME}
+            SRCS custom_file_provider/custom_file_provider.c
+            LIBS umf ${LIBHWLOC_LIBRARIES})
 
-    target_include_directories(
-        ${EXAMPLE_NAME} PRIVATE ${UMF_CMAKE_SOURCE_DIR}/src/utils
-                                ${UMF_CMAKE_SOURCE_DIR}/include)
+        target_include_directories(
+            ${EXAMPLE_NAME} PRIVATE ${UMF_CMAKE_SOURCE_DIR}/src/utils
+                                    ${UMF_CMAKE_SOURCE_DIR}/include)
 
-    target_link_directories(${EXAMPLE_NAME} PRIVATE ${LIBHWLOC_LIBRARY_DIRS})
+        target_link_directories(${EXAMPLE_NAME} PRIVATE
+                                ${LIBHWLOC_LIBRARY_DIRS} ${TBB_LIBRARY_DIRS})
 
-    add_test(
-        NAME ${EXAMPLE_NAME}
-        COMMAND ${EXAMPLE_NAME}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+        add_test(
+            NAME ${EXAMPLE_NAME}
+            COMMAND ${EXAMPLE_NAME}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    endif()
 
     if(UMF_POOL_JEMALLOC_ENABLED)
         set(EXAMPLE_NAME umf_example_dram_and_fsdax)
@@ -277,6 +281,9 @@ if(LINUX)
             NAME ${EXAMPLE_NAME}
             SRCS dram_and_fsdax/dram_and_fsdax.c
             LIBS umf jemalloc_pool)
+
+        target_link_directories(${EXAMPLE_NAME} PRIVATE
+                                ${LIBHWLOC_LIBRARY_DIRS})
 
         add_test(
             NAME ${EXAMPLE_NAME}
