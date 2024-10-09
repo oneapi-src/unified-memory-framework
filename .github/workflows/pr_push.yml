@@ -16,97 +16,40 @@ permissions:
 
 jobs:
   CodeStyle:
-    name: Coding style
-    runs-on: ${{ github.repository_owner == 'oneapi-src' && 'intel-ubuntu-22.04' || 'ubuntu-latest' }}
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      with:
-        fetch-depth: 0
-
-    - name: Install apt packages
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y black cmake clang-format-15 cmake-format libhwloc-dev
-
-    - name: Configure CMake
-      run: >
-        cmake
-        -B ${{github.workspace}}/build
-        -DUMF_FORMAT_CODE_STYLE=ON
-        -DUMF_BUILD_TESTS=OFF
-        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
-        -DUMF_BUILD_CUDA_PROVIDER=OFF
-        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=OFF
-
-    - name: Check C/C++ formatting
-      run: cmake --build build --target clang-format-check
-
-    - name: Check CMake formatting
-      run: |
-        cmake --build build --target cmake-format-apply
-        git diff --exit-code
-
-    - name: Check Python formatting
-      run: cmake --build build --target black-format-check
-
+    uses: ./.github/workflows/reusable_code_style.yml
   DocsBuild:
-    name: Build docs
-    runs-on: ${{ github.repository_owner == 'oneapi-src' && 'intel-ubuntu-22.04' || 'ubuntu-latest' }}
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      with:
-        fetch-depth: 0
-
-    - name: Install doxygen
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y doxygen
-
-    - name: Install pip requirements
-      run: python3 -m pip install -r third_party/requirements.txt
-
-    - name: Setup PATH for python
-      run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-    - name: Build the documentation
-      working-directory: scripts
-      run: python3 generate_docs.py
-
+    uses: ./.github/workflows/reusable_docs_build.yml
   Spellcheck:
-    uses: ./.github/workflows/spellcheck.yml
+    uses: ./.github/workflows/reusable_spellcheck.yml
   FastBuild:
     name: Fast builds
     needs: [Spellcheck, CodeStyle]
-    uses: ./.github/workflows/fast.yml
+    uses: ./.github/workflows/reusable_fast.yml
   Build:
     name: Basic builds
     needs: [FastBuild]
-    uses: ./.github/workflows/basic.yml
+    uses: ./.github/workflows/reusable_basic.yml
   DevDax:
     needs: [FastBuild]
-    uses: ./.github/workflows/dax.yml
+    uses: ./.github/workflows/reusable_dax.yml
   Sanitizers:
     needs: [FastBuild]
-    uses: ./.github/workflows/sanitizers.yml
+    uses: ./.github/workflows/reusable_sanitizers.yml
   Qemu:
     needs: [FastBuild]
-    uses: ./.github/workflows/qemu.yml
+    uses: ./.github/workflows/reusable_qemu.yml
   Benchmarks:
     needs: [Build]
-    uses: ./.github/workflows/benchmarks.yml
+    uses: ./.github/workflows/reusable_benchmarks.yml
   ProxyLib:
     needs: [Build]
-    uses: ./.github/workflows/proxy_lib.yml
+    uses: ./.github/workflows/reusable_proxy_lib.yml
   GPU:
     needs: [Build]
-    uses: ./.github/workflows/gpu.yml
+    uses: ./.github/workflows/reusable_gpu.yml
   Valgrind:
     needs: [Build]
-    uses: ./.github/workflows/valgrind.yml
+    uses: ./.github/workflows/reusable_valgrind.yml
   MultiNuma:
     needs: [Build]
-    uses: ./.github/workflows/multi_numa.yml
+    uses: ./.github/workflows/reusable_multi_numa.yml
