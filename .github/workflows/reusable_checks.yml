@@ -1,4 +1,6 @@
-name: Code Style
+# Basic checks on the code, incl. coding style and spelling.
+# TODO: add license check
+name: Basic checks
 
 on: workflow_call
 
@@ -6,8 +8,8 @@ permissions:
   contents: read
 
 jobs:
-  CodeStyle:
-    name: Coding style
+  CodeCheck:
+    name: Coding style and spell check
     runs-on: ${{ github.repository_owner == 'oneapi-src' && 'intel-ubuntu-22.04' || 'ubuntu-latest' }}
 
     steps:
@@ -41,3 +43,8 @@ jobs:
 
     - name: Check Python formatting
       run: cmake --build build --target black-format-check
+
+    - name: Run a spell check
+      uses: crate-ci/typos@b63f421581dce830bda2f597a678cb7776b41877 # v1.18.2
+      with:
+        config: ./.github/workflows/.spellcheck-conf.toml
