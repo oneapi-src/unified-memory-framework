@@ -1,3 +1,4 @@
+# Run tests with valgrind intstrumentation tools: memcheck, drd, helgrind
 name: Valgrind
 
 on: workflow_call
@@ -8,10 +9,6 @@ permissions:
 jobs:
   valgrind:
     name: Valgrind
-    strategy:
-      fail-fast: false
-      matrix:
-        tool: ['memcheck', 'drd', 'helgrind']
     runs-on: ubuntu-latest
 
     steps:
@@ -42,5 +39,11 @@ jobs:
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config Debug -j$(nproc)
 
-    - name: Run tests under valgrind
-      run: ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{github.workspace}}/build ${{matrix.tool}}
+    - name: Run tests with 'memcheck'
+      run: ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{github.workspace}}/build memcheck
+
+    - name: Run tests with 'drd'
+      run: ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{github.workspace}}/build drd
+
+    - name: Run tests with 'helgrind'
+      run: ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{github.workspace}}/build helgrind
