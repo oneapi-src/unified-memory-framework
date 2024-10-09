@@ -15,15 +15,13 @@ permissions:
   contents: read
 
 jobs:
-  CodeStyle:
-    uses: ./.github/workflows/reusable_code_style.yml
+  CodeCheck:
+    uses: ./.github/workflows/reusable_checks.yml
   DocsBuild:
     uses: ./.github/workflows/reusable_docs_build.yml
-  Spellcheck:
-    uses: ./.github/workflows/reusable_spellcheck.yml
   FastBuild:
     name: Fast builds
-    needs: [Spellcheck, CodeStyle]
+    needs: [CodeCheck, DocsBuild]
     uses: ./.github/workflows/reusable_fast.yml
   Build:
     name: Basic builds
