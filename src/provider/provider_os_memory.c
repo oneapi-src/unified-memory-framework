@@ -1146,7 +1146,10 @@ typedef struct os_ipc_data_t {
     int fd;
     size_t fd_offset;
     size_t size;
-    char shm_name[NAME_MAX]; // optional - can be used or not (see below)
+    // shm_name is a Flexible Array Member because it is optional and its size
+    // varies on the Shared Memory object name
+    size_t shm_name_len;
+    char shm_name[];
 } os_ipc_data_t;
 
 static umf_result_t os_get_ipc_handle_size(void *provider, size_t *size) {
@@ -1160,13 +1163,8 @@ static umf_result_t os_get_ipc_handle_size(void *provider, size_t *size) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    if (os_provider->shm_name[0]) {
-        // os_ipc_data_t->shm_name will be used
-        *size = sizeof(os_ipc_data_t);
-    } else {
-        // os_ipc_data_t->shm_name will NOT be used
-        *size = sizeof(os_ipc_data_t) - NAME_MAX;
-    }
+    // NOTE: +1 for '\0' at the end of the string
+    *size = sizeof(os_ipc_data_t) + strlen(os_provider->shm_name) + 1;
 
     return UMF_RESULT_SUCCESS;
 }
@@ -1195,9 +1193,10 @@ static umf_result_t os_get_ipc_handle(void *provider, const void *ptr,
     os_ipc_data->pid = utils_getpid();
     os_ipc_data->fd_offset = (size_t)value - 1;
     os_ipc_data->size = size;
-    if (os_provider->shm_name[0]) {
-        strncpy(os_ipc_data->shm_name, os_provider->shm_name, NAME_MAX - 1);
-        os_ipc_data->shm_name[NAME_MAX - 1] = '\0';
+    os_ipc_data->shm_name_len = strlen(os_provider->shm_name);
+    if (os_ipc_data->shm_name_len > 0) {
+        strncpy(os_ipc_data->shm_name, os_provider->shm_name,
+                os_ipc_data->shm_name_len);
     } else {
         os_ipc_data->fd = os_provider->fd;
     }
@@ -1222,8 +1221,12 @@ static umf_result_t os_put_ipc_handle(void *provider, void *providerIpcData) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    if (os_provider->shm_name[0]) {
-        if (strncmp(os_ipc_data->shm_name, os_provider->shm_name, NAME_MAX)) {
+    size_t shm_name_len = strlen(os_provider->shm_name);
+    if (shm_name_len > 0) {
+        if (os_ipc_data->shm_name_len != shm_name_len) {
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        } else if (strncmp(os_ipc_data->shm_name, os_provider->shm_name,
+                           shm_name_len)) {
             return UMF_RESULT_ERROR_INVALID_ARGUMENT;
         }
     } else {
@@ -1251,14 +1254,14 @@ static umf_result_t os_open_ipc_handle(void *provider, void *providerIpcData,
     umf_result_t ret = UMF_RESULT_SUCCESS;
     int fd;
 
-    if (os_provider->shm_name[0]) {
-        fd = utils_shm_open(os_provider->shm_name);
+    if (os_ipc_data->shm_name_len) {
+        fd = utils_shm_open(os_ipc_data->shm_name);
         if (fd <= 0) {
             LOG_PERR("opening a shared memory file (%s) failed",
-                     os_provider->shm_name);
+                     os_ipc_data->shm_name);
             return UMF_RESULT_ERROR_UNKNOWN;
         }
-        (void)utils_shm_unlink(os_provider->shm_name);
+        (void)utils_shm_unlink(os_ipc_data->shm_name);
     } else {
         umf_result_t umf_result =
             utils_duplicate_fd(os_ipc_data->pid, os_ipc_data->fd, &fd);
