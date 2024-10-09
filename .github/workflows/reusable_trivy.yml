@@ -1,22 +1,7 @@
 # Runs linter for Docker files
 name: Trivy
 
-# Due to lower score on Scorecard we're running this separately from
-# "PR/push" workflow. For some reason permissions weren't properly set
-# or recognized (by Scorecard). If Scorecard changes its behavior we can
-# use 'workflow_call' trigger.
-on:
-  push:
-    branches-ignore:
-      - 'dependabot/**'
-  pull_request:
-    paths:
-      - '.github/docker/*Dockerfile'
-      - '.github/workflows/trivy.yml'
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
-  cancel-in-progress: true
+on: workflow_call
 
 permissions:
   contents: read
