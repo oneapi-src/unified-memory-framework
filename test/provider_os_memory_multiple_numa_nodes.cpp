@@ -42,7 +42,14 @@ std::vector<int> get_available_cpus() {
     CPU_ZERO(mask);
 
     int ret = sched_getaffinity(0, sizeof(cpu_set_t), mask);
-    UT_ASSERTeq(ret, 0);
+
+    if (ret != 0) {
+        available_cpus.emplace_back(-1);
+        CPU_FREE(mask);
+
+        return available_cpus;
+    }
+
     // Get all available cpus.
     printf("All CPUs: ");
     for (size_t i = 0; i < CPU_SETSIZE; ++i) {
@@ -88,13 +95,21 @@ struct testNuma : testing::Test {
         ASSERT_NE(os_memory_provider, nullptr);
     }
 
-    struct bitmask *retrieve_nodemask(void *addr) {
+    std::pair<int, bitmask *> retrieve_nodemask(void *addr) {
         struct bitmask *retrieved_nodemask = numa_allocate_nodemask();
-        UT_ASSERTne(nodemask, nullptr);
+
+        if (nodemask == nullptr) {
+            return std::make_pair(-1, nodemask);
+        }
+
         int ret = get_mempolicy(nullptr, retrieved_nodemask->maskp,
                                 nodemask->size, addr, MPOL_F_ADDR);
-        UT_ASSERTeq(ret, 0);
-        return retrieved_nodemask;
+
+        if (ret != 0) {
+            return std::make_pair(-1, retrieved_nodemask);
+        }
+
+        return std::pair(0, retrieved_nodemask);
     }
 
     void TearDown() override {
@@ -241,7 +256,18 @@ TEST_P(testNumaOnEachNode, checkModeInterleaveSingleNode) {
     EXPECT_NODE_EQ(ptr, numa_node_number);
 }
 
-struct testNumaOnEachCpu : testNuma, testing::WithParamInterface<int> {};
+struct testNumaOnEachCpu : testNuma, testing::WithParamInterface<int> {
+    void SetUp() override {
+        ::testNuma::SetUp();
+
+        int cpuNumber = this->GetParam();
+
+        if (cpuNumber < 0) {
+            GTEST_FAIL() << "get_available_cpus(): sched_getaffinity() return "
+                            "value is not equal to 0";
+        }
+    }
+};
 
 INSTANTIATE_TEST_SUITE_P(testNumaNodesAllocationsAllCpus, testNumaOnEachCpu,
                          ::testing::ValuesIn(get_available_cpus()));
@@ -260,7 +286,7 @@ TEST_P(testNumaOnEachCpu, checkModePreferredEmptyNodeset) {
     int ret = sched_setaffinity(0, sizeof(cpu_set_t), mask);
     CPU_FREE(mask);
 
-    UT_ASSERTeq(ret, 0);
+    ASSERT_EQ(ret, 0);
 
     umf_os_memory_provider_params_t os_memory_provider_params =
         UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
@@ -275,7 +301,7 @@ TEST_P(testNumaOnEachCpu, checkModePreferredEmptyNodeset) {
 
     // Verify we're on the expected CPU
     int cpu_check = sched_getcpu();
-    UT_ASSERTeq(cpu, cpu_check);
+    ASSERT_EQ(cpu, cpu_check);
 
     int numa_node_number = numa_node_of_cpu(cpu);
     printf("Got CPU: %d, got numa node: %d\n", cpu, numa_node_number);
@@ -297,7 +323,7 @@ TEST_P(testNumaOnEachCpu, checkModeLocal) {
     int ret = sched_setaffinity(0, sizeof(cpu_set_t), mask);
     CPU_FREE(mask);
 
-    UT_ASSERTeq(ret, 0);
+    ASSERT_EQ(ret, 0);
 
     umf_os_memory_provider_params_t os_memory_provider_params =
         UMF_OS_MEMORY_PROVIDER_PARAMS_TEST;
@@ -312,7 +338,7 @@ TEST_P(testNumaOnEachCpu, checkModeLocal) {
 
     // Verify we're on the expected CPU
     int cpu_check = sched_getcpu();
-    UT_ASSERTeq(cpu, cpu_check);
+    ASSERT_EQ(cpu, cpu_check);
 
     int numa_node_number = numa_node_of_cpu(cpu);
     printf("Got CPU: %d, got numa node: %d\n", cpu, numa_node_number);
@@ -391,7 +417,16 @@ TEST_F(testNuma, checkModeInterleave) {
         EXPECT_NODE_EQ((char *)ptr + page_size * i, numa_nodes[index]);
     }
 
-    bitmask *retrieved_nodemask = retrieve_nodemask(ptr);
+    auto [fileLine, retrieved_nodemask] = retrieve_nodemask(ptr);
+    if (fileLine != 0) {
+        if (retrieved_nodemask == nullptr) {
+            GTEST_FAIL() << "retrieve_nodemask(): numa_allocate_nodemask() "
+                            "returned nullptr";
+        } else {
+            GTEST_FAIL() << "retrieve_nodemask(): get_mempolicy() return value "
+                            "is not equal to 0";
+        }
+    }
     int ret = numa_bitmask_equal(retrieved_nodemask, nodemask);
     numa_bitmask_free(retrieved_nodemask);
 
