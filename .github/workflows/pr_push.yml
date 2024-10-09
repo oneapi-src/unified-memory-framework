@@ -51,3 +51,15 @@ jobs:
   MultiNuma:
     needs: [Build]
     uses: ./.github/workflows/reusable_multi_numa.yml
+  CodeQL:
+    needs: [Build]
+    permissions:
+      contents: read
+      security-events: write
+    uses: ./.github/workflows/reusable_codeql.yml
+  Trivy:
+    needs: [Build]
+    permissions:
+      contents: read
+      security-events: write
+    uses: ./.github/workflows/reusable_trivy.yml
