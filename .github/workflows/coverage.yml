@@ -93,6 +93,12 @@ jobs:
           name: exports-coverage-multinuma-os-ubuntu-22.04
           path: coverage
 
+      - name: Download files exports-coverage-qemu-all
+        uses: actions/download-artifact@v4
+        with:
+          name: exports-coverage-qemu-all
+          path: coverage
+
       - name: Compute coverage
         working-directory: ${{env.COVERAGE_DIR}}
         run: |
