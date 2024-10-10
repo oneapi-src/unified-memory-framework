@@ -1,0 +1,32 @@
+name: Docs build
+
+on: workflow_call
+
+permissions:
+  contents: read
+
+jobs:
+  DocsBuild:
+    name: Docs build
+    runs-on: ${{ github.repository_owner == 'oneapi-src' && 'intel-ubuntu-22.04' || 'ubuntu-latest' }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      with:
+        fetch-depth: 0
+
+    - name: Install doxygen
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y doxygen
+
+    - name: Install pip requirements
+      run: python3 -m pip install -r third_party/requirements.txt
+
+    - name: Setup PATH for python
+      run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+    - name: Build the documentation
+      working-directory: scripts
+      run: python3 generate_docs.py
