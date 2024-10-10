@@ -111,5 +111,5 @@ jobs:
     needs: [Build]
     uses: ./.github/workflows/multi_numa.yml
   Coverage:
-    needs: [Build, DevDax, GPU]
+    needs: [Build, DevDax, GPU, MultiNuma]
     uses: ./.github/workflows/coverage.yml

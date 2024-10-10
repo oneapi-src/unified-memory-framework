@@ -87,6 +87,12 @@ jobs:
           name: exports-coverage-gpu-CUDA-shared-OFF
           path: coverage
 
+      - name: Download file exports-coverage-multinuma-os-ubuntu-22.04
+        uses: actions/download-artifact@v4
+        with:
+          name: exports-coverage-multinuma-os-ubuntu-22.04
+          path: coverage
+
       - name: Compute coverage
         working-directory: ${{env.COVERAGE_DIR}}
         run: |
