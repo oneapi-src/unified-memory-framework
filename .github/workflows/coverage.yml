@@ -51,6 +51,18 @@ jobs:
           name: exports-coverage-basic-ubuntu-22.04-shared-ON-hwloc-ON
           path: coverage
 
+      - name: Download file exports-coverage-dax-shared-ON
+        uses: actions/download-artifact@v4
+        with:
+          name: exports-coverage-dax-shared-ON
+          path: coverage
+
+      - name: Download file exports-coverage-dax-shared-OFF
+        uses: actions/download-artifact@v4
+        with:
+          name: exports-coverage-dax-shared-OFF
+          path: coverage
+
       - name: Compute coverage
         working-directory: ${{env.COVERAGE_DIR}}
         run: |
