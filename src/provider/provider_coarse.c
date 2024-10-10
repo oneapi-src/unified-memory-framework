@@ -1204,7 +1204,7 @@ static umf_result_t coarse_memory_provider_alloc(void *provider, size_t size,
         (struct coarse_memory_provider_t *)provider;
 
     if (utils_mutex_lock(&coarse_provider->lock) != 0) {
-        LOG_ERR("lockng the lock failed");
+        LOG_ERR("locking the lock failed");
         return UMF_RESULT_ERROR_UNKNOWN;
     }
 
@@ -1329,7 +1329,7 @@ static umf_result_t coarse_memory_provider_free(void *provider, void *ptr,
         (struct coarse_memory_provider_t *)provider;
 
     if (utils_mutex_lock(&coarse_provider->lock) != 0) {
-        LOG_ERR("lockng the lock failed");
+        LOG_ERR("locking the lock failed");
         return UMF_RESULT_ERROR_UNKNOWN;
     }
 
@@ -1351,7 +1351,12 @@ static umf_result_t coarse_memory_provider_free(void *provider, void *ptr,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    assert(bytes == 0 || bytes == block->size);
+    if (bytes > 0 && bytes != block->size) {
+        // wrong size of allocation
+        utils_mutex_unlock(&coarse_provider->lock);
+        LOG_ERR("wrong size of allocation");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
 
     LOG_DEBUG("coarse_FREE (return_block_to_pool) %zu used %zu alloc %zu",
               block->size, coarse_provider->used_size - block->size,
@@ -1511,6 +1516,179 @@ coarse_memory_provider_get_stats(void *provider,
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t coarse_memory_provider_allocation_split(void *provider,
+                                                            void *ptr,
+                                                            size_t totalSize,
+                                                            size_t firstSize) {
+    if (provider == NULL || ptr == NULL || (firstSize >= totalSize) ||
+        firstSize == 0) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    umf_result_t umf_result;
+
+    coarse_memory_provider_t *coarse_provider =
+        (struct coarse_memory_provider_t *)provider;
+
+    if (utils_mutex_lock(&coarse_provider->lock) != 0) {
+        LOG_ERR("locking the lock failed");
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
+
+    assert(debug_check(coarse_provider));
+
+    ravl_node_t *node = coarse_ravl_find_node(coarse_provider->all_blocks, ptr);
+    if (node == NULL) {
+        LOG_ERR("memory block not found");
+        umf_result = UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        goto err_mutex_unlock;
+    }
+
+    block_t *block = get_node_block(node);
+
+    if (block->size != totalSize) {
+        LOG_ERR("wrong totalSize");
+        umf_result = UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        goto err_mutex_unlock;
+    }
+
+    if (!block->used) {
+        LOG_ERR("block is not allocated");
+        umf_result = UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        goto err_mutex_unlock;
+    }
+
+    block_t *new_block = coarse_ravl_add_new(coarse_provider->all_blocks,
+                                             block->data + firstSize,
+                                             block->size - firstSize, NULL);
+    if (new_block == NULL) {
+        umf_result = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+        goto err_mutex_unlock;
+    }
+
+    block->size = firstSize;
+    new_block->used = true;
+
+    assert(new_block->size == (totalSize - firstSize));
+
+    umf_result = UMF_RESULT_SUCCESS;
+
+err_mutex_unlock:
+    assert(debug_check(coarse_provider));
+
+    if (utils_mutex_unlock(&coarse_provider->lock) != 0) {
+        LOG_ERR("unlocking the lock failed");
+        if (umf_result == UMF_RESULT_SUCCESS) {
+            umf_result = UMF_RESULT_ERROR_UNKNOWN;
+        }
+    }
+
+    return umf_result;
+}
+
+static umf_result_t coarse_memory_provider_allocation_merge(void *provider,
+                                                            void *lowPtr,
+                                                            void *highPtr,
+                                                            size_t totalSize) {
+    if (provider == NULL || lowPtr == NULL || highPtr == NULL ||
+        ((uintptr_t)highPtr <= (uintptr_t)lowPtr) ||
+        ((uintptr_t)highPtr - (uintptr_t)lowPtr >= totalSize)) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    umf_result_t umf_result;
+
+    coarse_memory_provider_t *coarse_provider =
+        (struct coarse_memory_provider_t *)provider;
+
+    if (utils_mutex_lock(&coarse_provider->lock) != 0) {
+        LOG_ERR("locking the lock failed");
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
+
+    assert(debug_check(coarse_provider));
+
+    ravl_node_t *low_node =
+        coarse_ravl_find_node(coarse_provider->all_blocks, lowPtr);
+    if (low_node == NULL) {
+        LOG_ERR("the lowPtr memory block not found");
+        umf_result = UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        goto err_mutex_unlock;
+    }
+
+    block_t *low_block = get_node_block(low_node);
+    if (!low_block->used) {
+        LOG_ERR("the lowPtr block is not allocated");
+        umf_result = UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        goto err_mutex_unlock;
+    }
+
+    ravl_node_t *high_node =
+        coarse_ravl_find_node(coarse_provider->all_blocks, highPtr);
+    if (high_node == NULL) {
+        LOG_ERR("the highPtr memory block not found");
+        umf_result = UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        goto err_mutex_unlock;
+    }
+
+    block_t *high_block = get_node_block(high_node);
+    if (!high_block->used) {
+        LOG_ERR("the highPtr block is not allocated");
+        umf_result = UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        goto err_mutex_unlock;
+    }
+
+    if (get_node_next(low_node) != high_node) {
+        LOG_ERR("given pointers cannot be merged");
+        umf_result = UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        goto err_mutex_unlock;
+    }
+
+    if (get_node_prev(high_node) != low_node) {
+        LOG_ERR("given pointers cannot be merged");
+        umf_result = UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        goto err_mutex_unlock;
+    }
+
+    if (low_block->size + high_block->size != totalSize) {
+        LOG_ERR("wrong totalSize");
+        umf_result = UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        goto err_mutex_unlock;
+    }
+
+    if ((uintptr_t)highPtr != ((uintptr_t)lowPtr + low_block->size)) {
+        LOG_ERR("given pointers cannot be merged");
+        umf_result = UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        goto err_mutex_unlock;
+    }
+
+    ravl_node_t *merged_node = NULL;
+
+    umf_result = user_block_merge(coarse_provider, low_node, high_node, true,
+                                  &merged_node);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        LOG_ERR("merging failed");
+        goto err_mutex_unlock;
+    }
+
+    assert(merged_node == low_node);
+    assert(low_block->size == totalSize);
+
+    umf_result = UMF_RESULT_SUCCESS;
+
+err_mutex_unlock:
+    assert(debug_check(coarse_provider));
+
+    if (utils_mutex_unlock(&coarse_provider->lock) != 0) {
+        LOG_ERR("unlocking the lock failed");
+        if (umf_result == UMF_RESULT_SUCCESS) {
+            umf_result = UMF_RESULT_ERROR_UNKNOWN;
+        }
+    }
+
+    return umf_result;
+}
+
 umf_memory_provider_ops_t UMF_COARSE_MEMORY_PROVIDER_OPS = {
     .version = UMF_VERSION_CURRENT,
     .initialize = coarse_memory_provider_initialize,
@@ -1522,12 +1700,12 @@ umf_memory_provider_ops_t UMF_COARSE_MEMORY_PROVIDER_OPS = {
     .get_min_page_size = coarse_memory_provider_get_min_page_size,
     .get_name = coarse_memory_provider_get_name,
     .ext.free = coarse_memory_provider_free,
+    .ext.allocation_merge = coarse_memory_provider_allocation_merge,
+    .ext.allocation_split = coarse_memory_provider_allocation_split,
     // TODO
     /*
     .ext.purge_lazy = coarse_memory_provider_purge_lazy,
     .ext.purge_force = coarse_memory_provider_purge_force,
-    .ext.allocation_merge = coarse_memory_provider_allocation_merge,
-    .ext.allocation_split = coarse_memory_provider_allocation_split,
     .ipc.get_ipc_handle_size = coarse_memory_provider_get_ipc_handle_size,
     .ipc.get_ipc_handle = coarse_memory_provider_get_ipc_handle,
     .ipc.put_ipc_handle = coarse_memory_provider_put_ipc_handle,
@@ -1554,7 +1732,7 @@ umfCoarseMemoryProviderGetStats(umf_memory_provider_handle_t provider) {
         (struct coarse_memory_provider_t *)priv;
 
     if (utils_mutex_lock(&coarse_provider->lock) != 0) {
-        LOG_ERR("lockng the lock failed");
+        LOG_ERR("locking the lock failed");
         return stats;
     }
 
