@@ -110,6 +110,16 @@ set(UMF_SOURCES
     memtarget.c
     mempolicy.c
     memspace.c
+    memspaces/memspace_host_all.c
+    memspaces/memspace_highest_capacity.c
+    memspaces/memspace_highest_bandwidth.c
+    memspaces/memspace_lowest_latency.c
+    memspaces/memspace_numa.c
+    provider/provider_cuda.c
+    provider/provider_devdax_memory.c
+    provider/provider_file_memory.c
+    provider/provider_level_zero.c
+    provider/provider_os_memory.c
     provider/provider_tracking.c
     critnib/critnib.c
     ravl/ravl.c
@@ -117,62 +127,35 @@ set(UMF_SOURCES
     pool/pool_scalable.c)
 
 if(NOT UMF_DISABLE_HWLOC)
-    set(UMF_SOURCES ${UMF_SOURCES} ${HWLOC_DEPENDENT_SOURCES})
+    set(UMF_SOURCES ${UMF_SOURCES} ${HWLOC_DEPENDENT_SOURCES}
+                    memtargets/memtarget_numa.c)
+    set(UMF_LIBS ${UMF_LIBS} ${LIBHWLOC_LIBRARIES})
+    set(UMF_PRIVATE_LIBRARY_DIRS ${UMF_PRIVATE_LIBRARY_DIRS}
+                                 ${LIBHWLOC_LIBRARY_DIRS})
+else()
+    set(UMF_COMMON_COMPILE_DEFINITIONS ${UMF_COMMON_COMPILE_DEFINITIONS}
+                                       "UMF_NO_HWLOC=1")
 endif()
 
 set(UMF_SOURCES_LINUX libumf_linux.c)
-
 set(UMF_SOURCES_MACOSX libumf_linux.c)
-
 set(UMF_SOURCES_WINDOWS libumf_windows.c)
 
-set(UMF_SOURCES_COMMON_LINUX_MACOSX
-    provider/provider_devdax_memory.c
-    provider/provider_file_memory.c
-    provider/provider_os_memory.c
-    memtargets/memtarget_numa.c
-    memspaces/memspace_numa.c
-    memspaces/memspace_host_all.c
-    memspaces/memspace_highest_capacity.c
-    memspaces/memspace_highest_bandwidth.c
-    memspaces/memspace_lowest_latency.c)
-
-if(NOT UMF_DISABLE_HWLOC)
-    set(UMF_SOURCES_LINUX ${UMF_SOURCES_LINUX}
-                          ${UMF_SOURCES_COMMON_LINUX_MACOSX})
-
-    set(UMF_SOURCES_MACOSX ${UMF_SOURCES_MACOSX}
-                           ${UMF_SOURCES_COMMON_LINUX_MACOSX})
-
-    set(UMF_SOURCES_WINDOWS ${UMF_SOURCES_WINDOWS}
-                            provider/provider_os_memory.c)
-
-    set(UMF_LIBS ${UMF_LIBS} ${LIBHWLOC_LIBRARIES})
-
-    if(NOT WINDOWS)
-        add_optional_symbol(umfMemspaceCreateFromNumaArray)
-        add_optional_symbol(umfMemspaceHighestBandwidthGet)
-        add_optional_symbol(umfMemspaceHighestCapacityGet)
-        add_optional_symbol(umfMemspaceHostAllGet)
-        add_optional_symbol(umfMemspaceLowestLatencyGet)
-    endif()
+# Add compile definitions to handle unsupported functions
+if(NOT UMF_BUILD_CUDA_PROVIDER)
+    set(UMF_COMMON_COMPILE_DEFINITIONS ${UMF_COMMON_COMPILE_DEFINITIONS}
+                                       "UMF_NO_CUDA_PROVIDER=1")
 endif()
-
-if(WINDOWS)
-    message(STATUS "UMF_OPTIONAL_SYMBOLS: ${UMF_OPTIONAL_SYMBOLS_WINDOWS}")
-else()
-    message(STATUS "UMF_OPTIONAL_SYMBOLS: ${UMF_OPTIONAL_SYMBOLS_LINUX}")
+if(NOT UMF_BUILD_LEVEL_ZERO_PROVIDER)
+    set(UMF_COMMON_COMPILE_DEFINITIONS ${UMF_COMMON_COMPILE_DEFINITIONS}
+                                       "UMF_NO_LEVEL_ZERO_PROVIDER=1")
 endif()
-
-# Configure map/def files with optional symbols
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libumf.def.in"
-               "${CMAKE_CURRENT_BINARY_DIR}/libumf.def" @ONLY)
-
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libumf.map.in"
-               "${CMAKE_CURRENT_BINARY_DIR}/libumf.map" @ONLY)
-
-set(UMF_PRIVATE_LIBRARY_DIRS ${UMF_PRIVATE_LIBRARY_DIRS}
-                             ${LIBHWLOC_LIBRARY_DIRS})
+if(UMF_DISABLE_HWLOC OR WINDOWS)
+    set(UMF_COMMON_COMPILE_DEFINITIONS ${UMF_COMMON_COMPILE_DEFINITIONS}
+                                       "UMF_NO_DEVDAX_PROVIDER=1")
+    set(UMF_COMMON_COMPILE_DEFINITIONS ${UMF_COMMON_COMPILE_DEFINITIONS}
+                                       "UMF_NO_FILE_PROVIDER=1")
+endif()
 
 if(LINUX)
     set(UMF_SOURCES ${UMF_SOURCES} ${UMF_SOURCES_LINUX})
@@ -197,8 +180,8 @@ if(UMF_BUILD_SHARED_LIBRARY)
         TYPE SHARED
         SRCS ${UMF_SOURCES}
         LIBS ${UMF_LIBS} ${HWLOC_LIB}
-        LINUX_MAP_FILE ${CMAKE_CURRENT_BINARY_DIR}/libumf.map
-        WINDOWS_DEF_FILE ${CMAKE_CURRENT_BINARY_DIR}/libumf.def)
+        LINUX_MAP_FILE ${CMAKE_CURRENT_SOURCE_DIR}/libumf.map
+        WINDOWS_DEF_FILE ${CMAKE_CURRENT_SOURCE_DIR}/libumf.def)
     set(UMF_COMMON_COMPILE_DEFINITIONS ${UMF_COMMON_COMPILE_DEFINITIONS}
                                        "UMF_SHARED_LIBRARY")
     set_target_properties(
@@ -214,11 +197,6 @@ else()
         LIBS ${UMF_LIBS})
 endif()
 
-if(UMF_DISABLE_HWLOC)
-    set(UMF_COMMON_COMPILE_DEFINITIONS ${UMF_COMMON_COMPILE_DEFINITIONS}
-                                       UMF_NO_HWLOC=1)
-endif()
-
 if(UMF_LINK_HWLOC_STATICALLY)
     add_dependencies(umf ${UMF_HWLOC_NAME})
 endif()
@@ -228,8 +206,6 @@ target_link_directories(umf PRIVATE ${UMF_PRIVATE_LIBRARY_DIRS})
 target_compile_definitions(umf PRIVATE ${UMF_COMMON_COMPILE_DEFINITIONS})
 
 if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
-    target_sources(umf PRIVATE provider/provider_level_zero.c)
-
     if(LINUX)
         # WA for error ze_api.h:14234:20: no newline at end of file
         # [-Werror,-Wnewline-eof]
@@ -243,7 +219,6 @@ if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
 endif()
 
 if(UMF_BUILD_CUDA_PROVIDER)
-    target_sources(umf PRIVATE provider/provider_cuda.c)
     set(UMF_COMPILE_DEFINITIONS ${UMF_COMPILE_DEFINITIONS}
                                 "UMF_BUILD_CUDA_PROVIDER=1")
 endif()

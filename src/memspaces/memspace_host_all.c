@@ -10,6 +10,20 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include <umf.h>
+#include <umf/memspace.h>
+
+// UMF_MEMSPACE_HOST_ALL requires HWLOC
+// Additionally, it is currently unsupported on Win
+
+#if defined(_WIN32) || defined(UMF_NO_HWLOC)
+umf_const_memspace_handle_t umfMemspaceHostAllGet(void) {
+    // not supported
+    return NULL;
+}
+
+#else // !defined(_WIN32) && !defined(UMF_NO_HWLOC)
+
 #include "base_alloc_global.h"
 #include "memspace_internal.h"
 #include "memtarget_numa.h"
@@ -93,3 +107,5 @@ umf_const_memspace_handle_t umfMemspaceHostAllGet(void) {
     utils_init_once(&UMF_MEMSPACE_HOST_ALL_INITIALIZED, umfMemspaceHostAllInit);
     return UMF_MEMSPACE_HOST_ALL;
 }
+
+#endif // !defined(_WIN32) && !defined(UMF_NO_HWLOC)
