@@ -63,6 +63,30 @@ jobs:
           name: exports-coverage-dax-shared-OFF
           path: coverage
 
+      - name: Download file exports-coverage-gpu-shared-ON
+        uses: actions/download-artifact@v4
+        with:
+          name: exports-coverage-gpu-shared-ON
+          path: coverage
+
+      - name: Download file exports-coverage-gpu-shared-OFF
+        uses: actions/download-artifact@v4
+        with:
+          name: exports-coverage-gpu-shared-OFF
+          path: coverage
+
+      - name: Download file exports-coverage-gpu-CUDA-shared-ON
+        uses: actions/download-artifact@v4
+        with:
+          name: exports-coverage-gpu-CUDA-shared-ON
+          path: coverage
+
+      - name: Download file exports-coverage-gpu-CUDA-shared-OFF
+        uses: actions/download-artifact@v4
+        with:
+          name: exports-coverage-gpu-CUDA-shared-OFF
+          path: coverage
+
       - name: Compute coverage
         working-directory: ${{env.COVERAGE_DIR}}
         run: |
