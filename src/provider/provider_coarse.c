@@ -135,6 +135,7 @@ static inline ravl_node_t *get_node_next(ravl_node_t *node) {
     return ravl_node_successor(node);
 }
 
+#ifndef NDEBUG
 static block_t *get_block_prev(ravl_node_t *node) {
     ravl_node_t *ravl_prev = ravl_node_predecessor(node);
     if (!ravl_prev) {
@@ -152,6 +153,7 @@ static block_t *get_block_next(ravl_node_t *node) {
 
     return get_node_block(ravl_next);
 }
+#endif /* NDEBUG */
 
 static bool is_same_origin(struct ravl *upstream_blocks, block_t *block1,
                            block_t *block2) {
