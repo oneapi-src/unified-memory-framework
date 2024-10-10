@@ -16,10 +16,13 @@ EXPORTS
     umfCloseIPCHandle
     umfCoarseMemoryProviderGetStats
     umfCoarseMemoryProviderOps
+    umfCUDAMemoryProviderOps
+    umfDevDaxMemoryProviderOps
     umfFree
+    umfFileMemoryProviderOps
     umfGetIPCHandle
     umfGetLastFailedMemoryProvider
-    umfMemoryTrackerGetAllocInfo
+    umfLevelZeroMemoryProviderOps
     umfMemoryProviderAlloc
     umfMemoryProviderAllocationMerge
     umfMemoryProviderAllocationSplit
@@ -38,14 +41,20 @@ EXPORTS
     umfMemoryProviderPurgeForce
     umfMemoryProviderPurgeLazy
     umfMemoryProviderPutIPCHandle
+    umfMemoryTrackerGetAllocInfo
     umfMempolicyCreate
     umfMempolicyDestroy
     umfMempolicySetCustomSplitPartitions
     umfMempolicySetInterleavePartSize
     umfMemspaceClone
+    umfMemspaceCreateFromNumaArray
     umfMemspaceDestroy
     umfMemspaceFilterByCapacity
     umfMemspaceFilterById
+    umfMemspaceHighestBandwidthGet
+    umfMemspaceHighestCapacityGet
+    umfMemspaceHostAllGet
+    umfMemspaceLowestLatencyGet
     umfMemspaceMemtargetAdd
     umfMemspaceMemtargetGet
     umfMemspaceMemtargetNum
@@ -55,7 +64,8 @@ EXPORTS
     umfMemtargetGetCapacity
     umfMemtargetGetId
     umfMemtargetGetType
-    umfOpenIPCHandle    
+    umfOpenIPCHandle
+    umfOsMemoryProviderOps
     umfPoolAlignedMalloc
     umfPoolByPtr
     umfPoolCalloc
@@ -72,4 +82,3 @@ EXPORTS
     umfProxyPoolOps
     umfPutIPCHandle
     umfScalablePoolOps
-    @UMF_OPTIONAL_SYMBOLS_WINDOWS@
