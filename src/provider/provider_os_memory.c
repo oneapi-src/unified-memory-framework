@@ -13,16 +13,23 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <umf.h>
+#include <umf/memory_provider_ops.h>
+#include <umf/providers/provider_os_memory.h>
+
+// OS Memory Provider requires HWLOC
+#if defined(UMF_NO_HWLOC)
+
+umf_memory_provider_ops_t *umfOsMemoryProviderOps(void) { return NULL; }
+
+#else // !defined(UMF_NO_HWLOC)
+
 #include "base_alloc_global.h"
 #include "critnib.h"
 #include "provider_os_memory_internal.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
 #include "utils_log.h"
-
-#include <umf.h>
-#include <umf/memory_provider_ops.h>
-#include <umf/providers/provider_os_memory.h>
 
 #define NODESET_STR_BUF_LEN 1024
 
@@ -1332,3 +1339,5 @@ static umf_memory_provider_ops_t UMF_OS_MEMORY_PROVIDER_OPS = {
 umf_memory_provider_ops_t *umfOsMemoryProviderOps(void) {
     return &UMF_OS_MEMORY_PROVIDER_OPS;
 }
+
+#endif // !defined(UMF_NO_HWLOC)

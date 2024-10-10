@@ -14,15 +14,24 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <umf.h>
+#include <umf/memory_provider_ops.h>
+#include <umf/providers/provider_file_memory.h>
+
+#if defined(_WIN32) || defined(UMF_NO_HWLOC)
+
+umf_memory_provider_ops_t *umfFileMemoryProviderOps(void) {
+    // not supported
+    return NULL;
+}
+
+#else // !defined(_WIN32) && !defined(UMF_NO_HWLOC)
+
 #include "base_alloc_global.h"
 #include "critnib.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
 #include "utils_log.h"
-
-#include <umf.h>
-#include <umf/memory_provider_ops.h>
-#include <umf/providers/provider_file_memory.h>
 
 #define TLS_MSG_BUF_LEN 1024
 
@@ -696,3 +705,5 @@ static umf_memory_provider_ops_t UMF_FILE_MEMORY_PROVIDER_OPS = {
 umf_memory_provider_ops_t *umfFileMemoryProviderOps(void) {
     return &UMF_FILE_MEMORY_PROVIDER_OPS;
 }
+
+#endif // !defined(_WIN32) && !defined(UMF_NO_HWLOC)

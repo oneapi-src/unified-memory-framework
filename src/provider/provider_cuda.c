@@ -12,6 +12,15 @@
 #include <umf.h>
 #include <umf/providers/provider_cuda.h>
 
+#if defined(UMF_NO_CUDA_PROVIDER)
+
+umf_memory_provider_ops_t *umfCUDAMemoryProviderOps(void) {
+    // not supported
+    return NULL;
+}
+
+#else // !defined(UMF_NO_CUDA_PROVIDER)
+
 #include "cuda.h"
 
 #include "base_alloc_global.h"
@@ -370,3 +379,5 @@ static struct umf_memory_provider_ops_t UMF_CUDA_MEMORY_PROVIDER_OPS = {
 umf_memory_provider_ops_t *umfCUDAMemoryProviderOps(void) {
     return &UMF_CUDA_MEMORY_PROVIDER_OPS;
 }
+
+#endif // !defined(UMF_NO_CUDA_PROVIDER)
