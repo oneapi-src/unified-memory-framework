@@ -13,14 +13,23 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <umf.h>
+#include <umf/memory_provider_ops.h>
+#include <umf/providers/provider_devdax_memory.h>
+
+#if defined(_WIN32) || defined(UMF_NO_HWLOC)
+
+umf_memory_provider_ops_t *umfDevDaxMemoryProviderOps(void) {
+    // not supported
+    return NULL;
+}
+
+#else // !defined(_WIN32) && !defined(UMF_NO_HWLOC)
+
 #include "base_alloc_global.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
 #include "utils_log.h"
-
-#include <umf.h>
-#include <umf/memory_provider_ops.h>
-#include <umf/providers/provider_devdax_memory.h>
 
 #define NODESET_STR_BUF_LEN 1024
 
@@ -528,3 +537,5 @@ static umf_memory_provider_ops_t UMF_DEVDAX_MEMORY_PROVIDER_OPS = {
 umf_memory_provider_ops_t *umfDevDaxMemoryProviderOps(void) {
     return &UMF_DEVDAX_MEMORY_PROVIDER_OPS;
 }
+
+#endif // !defined(_WIN32) && !defined(UMF_NO_HWLOC)

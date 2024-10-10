@@ -9,6 +9,24 @@
 
 #include <stdlib.h>
 
+#include <umf.h>
+#include <umf/memspace.h>
+
+// umfMemspaceCreateFromNumaArray requires HWLOC
+// Additionally, it is currently unsupported on Win
+#if defined(_WIN32) || defined(UMF_NO_HWLOC)
+umf_result_t umfMemspaceCreateFromNumaArray(unsigned *nodeIds, size_t numIds,
+                                            umf_memspace_handle_t *hMemspace) {
+    (void)nodeIds;
+    (void)numIds;
+    (void)hMemspace;
+
+    // not supported
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+#else // !defined(_WIN32) && !defined(UMF_NO_HWLOC)
+
 #include "../memspace_internal.h"
 #include "../memtargets/memtarget_numa.h"
 #include "base_alloc_global.h"
@@ -57,3 +75,5 @@ err_nodes_alloc:
     umf_ba_global_free(memspace);
     return ret;
 }
+
+#endif // !defined(_WIN32) && !defined(UMF_NO_HWLOC)
