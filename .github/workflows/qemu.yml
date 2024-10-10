@@ -6,6 +6,9 @@ on: workflow_call
 permissions:
   contents: read
 
+env:
+  UMF_DIR: "/home/runner/work/unified-memory-framework/unified-memory-framework"
+
 jobs:
   qemu-build:
     name: Qemu
@@ -44,10 +47,10 @@ jobs:
         cat > user-data << EOF
         #cloud-config
 
-        # Add a 'testuser' user to the system with a password
+        # Add a 'runner' user to the system with a password
         users:
           - default
-          - name: testuser
+          - name: runner
             gecos: Test User
             primary_group: wheel
             groups: users
@@ -61,7 +64,7 @@ jobs:
         chpasswd:
           list: |
             root:password
-            testuser:password
+            runner:password
           expire: False
         EOF
 
@@ -82,12 +85,18 @@ jobs:
       run: |
         umf/scripts/qemu/start_qemu.sh default.xml
 
-        # Copy UMF repository's content into the home dir in QEMU
-        rsync -az -e "ssh -p 2222" ${{github.workspace}}/umf/ testuser@127.0.0.1:/home/testuser/
-        ssh testuser@127.0.0.1 -p 2222 -t "sudo chown -R testuser:users /home/testuser"
+        ssh runner@127.0.0.1 -p 2222 -t "sudo chown -R runner:users /home/runner"
 
-        ssh testuser@127.0.0.1 -p 2222 -t "bash /home/testuser/scripts/qemu/run-build.sh"
-        ssh testuser@127.0.0.1 -p 2222 -t "sudo shutdown -h now"
+        # Coverage (lcov) has to be run in the same directory on all runners:
+        # /home/runner/work/unified-memory-framework/unified-memory-framework/build
+        # so we have to create the same path here.
+        ssh runner@127.0.0.1 -p 2222 -t "mkdir -p ${{env.UMF_DIR}}"
+
+        # Copy UMF repository's content into QEMU.
+        rsync -az -e "ssh -p 2222" ${{github.workspace}}/umf/ runner@127.0.0.1:${{env.UMF_DIR}}/
+
+        ssh runner@127.0.0.1 -p 2222 -t "bash ${{env.UMF_DIR}}/scripts/qemu/run-build.sh COVERAGE"
+        ssh runner@127.0.0.1 -p 2222 -t "sudo shutdown -h now"
 
     - name: Run tests in QEMU
       run: |
@@ -102,6 +111,13 @@ jobs:
           echo "\n ### Testing ${config_name} ###"
           umf/scripts/qemu/start_qemu.sh ${config_name}
 
-          ssh testuser@127.0.0.1 -p 2222 -t "bash /home/testuser/scripts/qemu/run-tests.sh"
-          ssh testuser@127.0.0.1 -p 2222 -t "sudo shutdown -h now"
+          ssh runner@127.0.0.1 -p 2222 -t "bash ${{env.UMF_DIR}}/scripts/qemu/run-tests.sh COVERAGE ${config_name}"
+          scp -r -P 2222 runner@127.0.0.1:/home/runner/coverage ./
+          ssh runner@127.0.0.1 -p 2222 -t "sudo shutdown -h now"
         done
+        ls -al ./coverage
+
+    - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+      with:
+        name: exports-coverage-qemu-all
+        path: coverage
