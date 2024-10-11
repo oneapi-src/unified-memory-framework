@@ -29,6 +29,8 @@ int main(int argc, char *argv[]) {
         os_params.shm_name = argv[2];
     }
 
-    return run_producer(port, umfOsMemoryProviderOps(), &os_params, memcopy,
-                        NULL);
+    void *pool_params = NULL;
+
+    return run_producer(port, umfScalablePoolOps(), pool_params,
+                        umfOsMemoryProviderOps(), &os_params, memcopy, NULL);
 }

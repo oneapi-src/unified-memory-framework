@@ -397,13 +397,14 @@ function(add_umf_ipc_test)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
     set_tests_properties(${TEST_NAME} PROPERTIES LABELS "umf")
+    set_tests_properties(${TEST_NAME} PROPERTIES TIMEOUT 60)
     if(NOT UMF_TESTS_FAIL_ON_SKIP)
         set_tests_properties(${TEST_NAME} PROPERTIES SKIP_RETURN_CODE 125)
     endif()
 endfunction()
 
 if(LINUX)
-    if(NOT UMF_DISABLE_HWLOC)
+    if(NOT UMF_DISABLE_HWLOC AND UMF_POOL_SCALABLE_ENABLED)
         build_umf_test(
             NAME
             ipc_os_prov_consumer
@@ -457,7 +458,9 @@ if(LINUX)
 
     # TODO add IPC tests for CUDA
 
-    if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
+    if(UMF_BUILD_GPU_TESTS
+       AND UMF_BUILD_LEVEL_ZERO_PROVIDER
+       AND UMF_BUILD_LIBUMF_POOL_DISJOINT)
         build_umf_test(
             NAME
             ipc_level_zero_prov_consumer
@@ -468,6 +471,7 @@ if(LINUX)
             providers/level_zero_helpers.cpp
             LIBS
             ze_loader
+            disjoint_pool
             ${UMF_UTILS_FOR_TEST})
         build_umf_test(
             NAME
@@ -479,6 +483,7 @@ if(LINUX)
             providers/level_zero_helpers.cpp
             LIBS
             ze_loader
+            disjoint_pool
             ${UMF_UTILS_FOR_TEST})
         target_include_directories(umf_test-ipc_level_zero_prov_producer
                                    PRIVATE ${LEVEL_ZERO_INCLUDE_DIRS})
