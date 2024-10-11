@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <umf/pools/pool_disjoint.h>
 #include <umf/providers/provider_level_zero.h>
 
 #include "ipc_common.h"
@@ -25,6 +26,9 @@ int main(int argc, char *argv[]) {
     level_zero_memory_provider_params_t l0_params =
         create_level_zero_prov_params(UMF_MEMORY_TYPE_DEVICE);
 
-    return run_consumer(port, umfLevelZeroMemoryProviderOps(), &l0_params,
-                        memcopy, &l0_params);
+    umf_disjoint_pool_params_t pool_params = umfDisjointPoolParamsDefault();
+
+    return run_consumer(port, umfDisjointPoolOps(), &pool_params,
+                        umfLevelZeroMemoryProviderOps(), &l0_params, memcopy,
+                        &l0_params);
 }
