@@ -14,6 +14,15 @@
 #include <umf/memory_provider_ops.h>
 #include <umf/providers/provider_level_zero.h>
 
+#if defined(UMF_NO_LEVEL_ZERO_PROVIDER)
+
+umf_memory_provider_ops_t *umfLevelZeroMemoryProviderOps(void) {
+    // not supported
+    return NULL;
+}
+
+#else // !defined(UMF_NO_LEVEL_ZERO_PROVIDER)
+
 #include "base_alloc_global.h"
 #include "utils_assert.h"
 #include "utils_common.h"
@@ -564,3 +573,5 @@ static struct umf_memory_provider_ops_t UMF_LEVEL_ZERO_MEMORY_PROVIDER_OPS = {
 umf_memory_provider_ops_t *umfLevelZeroMemoryProviderOps(void) {
     return &UMF_LEVEL_ZERO_MEMORY_PROVIDER_OPS;
 }
+
+#endif // !defined(UMF_NO_LEVEL_ZERO_PROVIDER)

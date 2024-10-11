@@ -10,6 +10,20 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include <umf.h>
+#include <umf/memspace.h>
+
+// UMF_MEMSPACE_HIGHEST_CAPACITY requires HWLOC
+// Additionally, it is currently unsupported on Win
+#if defined(_WIN32) || defined(UMF_NO_HWLOC)
+
+umf_const_memspace_handle_t umfMemspaceHighestCapacityGet(void) {
+    // not supported
+    return NULL;
+}
+
+#else // !defined(_WIN32) && !defined(UMF_NO_HWLOC)
+
 #include "base_alloc_global.h"
 #include "memspace_internal.h"
 #include "memtarget_numa.h"
@@ -72,3 +86,5 @@ umf_const_memspace_handle_t umfMemspaceHighestCapacityGet(void) {
                     umfMemspaceHighestCapacityInit);
     return UMF_MEMSPACE_HIGHEST_CAPACITY;
 }
+
+#endif // !defined(_WIN32) && !defined(UMF_NO_HWLOC)

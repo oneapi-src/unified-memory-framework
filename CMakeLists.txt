@@ -423,29 +423,6 @@ if((UMF_BUILD_GPU_TESTS OR UMF_BUILD_GPU_EXAMPLES) AND UMF_BUILD_CUDA_PROVIDER)
     # TODO do the same for ze_loader
 endif()
 
-# set optional symbols for map/def files
-#
-# TODO: ref. #649
-set(UMF_OPTIONAL_SYMBOLS_LINUX "")
-set(UMF_OPTIONAL_SYMBOLS_WINDOWS "")
-
-if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
-    add_optional_symbol(umfLevelZeroMemoryProviderOps)
-endif()
-
-# Conditional configuration for CUDA provider
-if(UMF_BUILD_CUDA_PROVIDER)
-    add_optional_symbol(umfCUDAMemoryProviderOps)
-endif()
-
-if(NOT UMF_DISABLE_HWLOC)
-    add_optional_symbol(umfOsMemoryProviderOps)
-    if(LINUX)
-        add_optional_symbol(umfDevDaxMemoryProviderOps)
-        add_optional_symbol(umfFileMemoryProviderOps)
-    endif()
-endif()
-
 add_subdirectory(src)
 
 if(UMF_BUILD_TESTS)
