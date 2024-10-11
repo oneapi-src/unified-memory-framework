@@ -36,6 +36,9 @@ int main(int argc, char *argv[]) {
     umf_devdax_memory_provider_params_t devdax_params =
         umfDevDaxMemoryProviderParamsDefault(path, atol(size));
 
-    return run_producer(port, umfDevDaxMemoryProviderOps(), &devdax_params,
-                        memcopy, NULL);
+    void *pool_params = NULL;
+
+    return run_producer(port, umfScalablePoolOps(), pool_params,
+                        umfDevDaxMemoryProviderOps(), &devdax_params, memcopy,
+                        NULL);
 }
