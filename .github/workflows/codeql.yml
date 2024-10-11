@@ -46,6 +46,11 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Setup newer Python
+      uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0
+      with:
+        python-version: "3.10"
+
     - name: Initialize CodeQL
       uses: github/codeql-action/init@b7bf0a3ed3ecfa44160715d7c442788f65f0f923 # v3.23.2
       with:
