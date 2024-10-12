@@ -76,16 +76,18 @@ err_provider_create:
 
 void umfPoolDestroy(umf_memory_pool_handle_t hPool) {
     hPool->ops.finalize(hPool->pool_priv);
-    if (hPool->flags & UMF_POOL_CREATE_FLAG_OWN_PROVIDER) {
-        // Destroy associated memory provider.
-        umf_memory_provider_handle_t hProvider = NULL;
-        umfPoolGetMemoryProvider(hPool, &hProvider);
-        umfMemoryProviderDestroy(hProvider);
-    }
+
+    umf_memory_provider_handle_t hUpstreamProvider = NULL;
+    umfPoolGetMemoryProvider(hPool, &hUpstreamProvider);
 
     if (!(hPool->flags & UMF_POOL_CREATE_FLAG_DISABLE_TRACKING)) {
         // Destroy tracking provider.
         umfMemoryProviderDestroy(hPool->provider);
+    }
+
+    if (hPool->flags & UMF_POOL_CREATE_FLAG_OWN_PROVIDER) {
+        // Destroy associated memory provider.
+        umfMemoryProviderDestroy(hUpstreamProvider);
     }
 
     LOG_INFO("Memory pool destroyed: %p", (void *)hPool);
