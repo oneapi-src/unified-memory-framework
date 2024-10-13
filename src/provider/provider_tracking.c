@@ -571,8 +571,8 @@ static umf_result_t trackingGetIpcHandle(void *provider, const void *ptr,
                 // 2. critnib failed to allocate memory internally. We need
                 //    to cleanup and return corresponding error.
                 umf_ba_global_free(cache_value);
-                ret = umfMemoryProviderPutIPCHandle(p->hUpstream,
-                                                    providerIpcData);
+                ret = umfMemoryProviderPutIPCHandle(
+                    p->hUpstream, cache_value->providerIpcData);
                 if (ret != UMF_RESULT_SUCCESS) {
                     LOG_ERR("upstream provider is failed to put IPC handle");
                     return ret;
