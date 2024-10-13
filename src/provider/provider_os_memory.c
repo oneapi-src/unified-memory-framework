@@ -1179,12 +1179,17 @@ static umf_result_t os_get_ipc_handle_size(void *provider, size_t *size) {
 static umf_result_t os_get_ipc_handle(void *provider, const void *ptr,
                                       size_t size, void *providerIpcData) {
     if (provider == NULL || ptr == NULL || providerIpcData == NULL) {
+        LOG_ERR(
+            "Some argument is NULL, provider=%p, ptr=%p, providerIpcData=%p",
+            provider, ptr, providerIpcData);
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
     os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
     if (!os_provider->IPC_enabled) {
-        LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED")
+        LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED, ptr=%p, "
+                "size=%lu",
+                ptr, size);
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -1213,6 +1218,9 @@ static umf_result_t os_get_ipc_handle(void *provider, const void *ptr,
 
 static umf_result_t os_put_ipc_handle(void *provider, void *providerIpcData) {
     if (provider == NULL || providerIpcData == NULL) {
+        LOG_ERR("provider or providerIpcData are NULL, provider=%p, "
+                "providerIpcData=%p",
+                provider, providerIpcData);
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -1225,19 +1233,28 @@ static umf_result_t os_put_ipc_handle(void *provider, void *providerIpcData) {
     os_ipc_data_t *os_ipc_data = (os_ipc_data_t *)providerIpcData;
 
     if (os_ipc_data->pid != utils_getpid()) {
+        LOG_ERR("invalid PID, os_ipc_data->pid = %d", os_ipc_data->pid);
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
     size_t shm_name_len = strlen(os_provider->shm_name);
     if (shm_name_len > 0) {
         if (os_ipc_data->shm_name_len != shm_name_len) {
+            LOG_ERR("invalid shm_name_len, os_ipc_data->shm_name_len=%lu, "
+                    "expected shm_name_len=%lu",
+                    os_ipc_data->shm_name_len, shm_name_len);
             return UMF_RESULT_ERROR_INVALID_ARGUMENT;
         } else if (strncmp(os_ipc_data->shm_name, os_provider->shm_name,
                            shm_name_len)) {
+            LOG_ERR("invalid shm_name, os_ipc_data->shm_name=%s, "
+                    "os_provider->shm_name=%s",
+                    os_ipc_data->shm_name, os_provider->shm_name);
             return UMF_RESULT_ERROR_INVALID_ARGUMENT;
         }
     } else {
         if (os_ipc_data->fd != os_provider->fd) {
+            LOG_ERR("invalid fd, os_ipc_data->fd=%d, os_provider->fd=%d",
+                    os_ipc_data->fd, os_provider->fd);
             return UMF_RESULT_ERROR_INVALID_ARGUMENT;
         }
     }
