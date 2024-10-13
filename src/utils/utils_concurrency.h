@@ -75,7 +75,8 @@ static __inline unsigned char utils_mssb_index(long long value) {
 // There is no good way to do atomic_load on windows...
 #define utils_atomic_load_acquire(object, dest)                                \
     do {                                                                       \
-        *dest = InterlockedOr64Acquire((LONG64 volatile *)object, 0);          \
+        *(LONG64 *)dest =                                                      \
+            InterlockedOr64Acquire((LONG64 volatile *)object, 0);              \
     } while (0)
 
 #define utils_atomic_store_release(object, desired)                            \
