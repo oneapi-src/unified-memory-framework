@@ -86,7 +86,7 @@ jobs:
         rsync -az -e "ssh -p 2222" ${{github.workspace}}/umf/ testuser@127.0.0.1:/home/testuser/
         ssh testuser@127.0.0.1 -p 2222 -t "sudo chown -R testuser:users /home/testuser"
 
-        ssh testuser@127.0.0.1 -p 2222 -t "bash /home/testuser/scripts/qemu/run-build.sh"
+        ssh testuser@127.0.0.1 -p 2222 -t "bash /home/testuser/scripts/qemu/run-build.sh COVERAGE"
         ssh testuser@127.0.0.1 -p 2222 -t "sudo shutdown -h now"
 
     - name: Run tests in QEMU
@@ -102,6 +102,13 @@ jobs:
           echo "\n ### Testing ${config_name} ###"
           umf/scripts/qemu/start_qemu.sh ${config_name}
 
-          ssh testuser@127.0.0.1 -p 2222 -t "bash /home/testuser/scripts/qemu/run-tests.sh"
+          ssh testuser@127.0.0.1 -p 2222 -t "bash /home/testuser/scripts/qemu/run-tests.sh COVERAGE ${config_name}"
+          scp -r -P 2222 testuser@127.0.0.1:/home/testuser/coverage ./
           ssh testuser@127.0.0.1 -p 2222 -t "sudo shutdown -h now"
         done
+        ls -al ./coverage
+
+    - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+      with:
+        name: exports-coverage-qemu-all
+        path: coverage
