@@ -66,8 +66,8 @@ jobs:
 
       - name: Run "/usr/bin/ls" with proxy library
         working-directory: ${{env.BUILD_DIR}}
-        run: LD_PRELOAD=./lib/libumf_proxy.so /usr/bin/ls
+        run: UMF_PROXY="page.disposition=shared-fd" LD_PRELOAD=./lib/libumf_proxy.so /usr/bin/ls
 
       - name: Run "/usr/bin/date" with proxy library
         working-directory: ${{env.BUILD_DIR}}
-        run: LD_PRELOAD=./lib/libumf_proxy.so /usr/bin/date
+        run: UMF_PROXY="page.disposition=shared-shm" LD_PRELOAD=./lib/libumf_proxy.so /usr/bin/date
