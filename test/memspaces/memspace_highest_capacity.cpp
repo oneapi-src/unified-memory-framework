@@ -21,7 +21,7 @@ struct memspaceHighestCapacityProviderTest : ::numaNodesTest {
         ::numaNodesTest::SetUp();
 
         umf_const_memspace_handle_t hMemspace = umfMemspaceHighestCapacityGet();
-        UT_ASSERTne(hMemspace, nullptr);
+        ASSERT_NE(hMemspace, nullptr);
 
         umf_result_t ret =
             umfMemoryProviderCreateFromMemspace(hMemspace, nullptr, &hProvider);
