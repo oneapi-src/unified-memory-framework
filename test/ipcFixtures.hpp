@@ -335,6 +335,59 @@ TEST_P(umfIpcTest, AllocFreeAllocTest) {
     EXPECT_EQ(stat.openCount, stat.closeCount);
 }
 
+TEST_P(umfIpcTest, openInTwoPools) {
+    constexpr size_t SIZE = 100;
+    std::vector<int> expected_data(SIZE);
+    umf::pool_unique_handle_t pool1 = makePool();
+    umf::pool_unique_handle_t pool2 = makePool();
+    void *ptr = umfPoolMalloc(pool1.get(), sizeof(expected_data[0]) * SIZE);
+    EXPECT_NE(ptr, nullptr);
+
+    std::iota(expected_data.begin(), expected_data.end(), 0);
+    memAccessor->copy(ptr, expected_data.data(), SIZE * sizeof(int));
+
+    umf_ipc_handle_t ipcHandle = nullptr;
+    size_t handleSize = 0;
+    umf_result_t ret = umfGetIPCHandle(ptr, &ipcHandle, &handleSize);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    void *openedPtr1 = nullptr;
+    ret = umfOpenIPCHandle(pool1.get(), ipcHandle, &openedPtr1);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    void *openedPtr2 = nullptr;
+    ret = umfOpenIPCHandle(pool2.get(), ipcHandle, &openedPtr2);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfPutIPCHandle(ipcHandle);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    std::vector<int> actual_data(SIZE);
+    memAccessor->copy(actual_data.data(), openedPtr1, SIZE * sizeof(int));
+    ASSERT_TRUE(std::equal(expected_data.begin(), expected_data.end(),
+                           actual_data.begin()));
+
+    ret = umfCloseIPCHandle(openedPtr1);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    memAccessor->copy(actual_data.data(), openedPtr2, SIZE * sizeof(int));
+    ASSERT_TRUE(std::equal(expected_data.begin(), expected_data.end(),
+                           actual_data.begin()));
+
+    ret = umfCloseIPCHandle(openedPtr2);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfPoolFree(pool1.get(), ptr);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    pool1.reset(nullptr);
+    pool2.reset(nullptr);
+    EXPECT_EQ(stat.getCount, 1);
+    EXPECT_EQ(stat.putCount, stat.getCount);
+    EXPECT_EQ(stat.openCount, 2);
+    EXPECT_EQ(stat.closeCount, stat.openCount);
+}
+
 TEST_P(umfIpcTest, ConcurrentGetPutHandles) {
     std::vector<void *> ptrs;
     constexpr size_t ALLOC_SIZE = 100;
