@@ -209,12 +209,12 @@ origin: https://dependency_origin.com
 ## Code coverage
 
 After adding a new functionality add tests and check coverage before and after the change.
-To do this, enable coverage instrumentation by turning on the UMF_USE_GCOV flag in CMake.
+To do this, enable coverage instrumentation by turning on the UMF_USE_COVERAGE flag in CMake.
 Coverage instrumentation feature is supported only by GCC and Clang.
 An example flow might look like the following:
 
 ```bash
-$ cmake -B build -DUMF_USE_GCOV=1 -DCMAKE_BUILD_TYPE=Debug
+$ cmake -B build -DUMF_USE_COVERAGE=1 -DCMAKE_BUILD_TYPE=Debug
 $ cmake --build build -j
 $ cd build
 $ ctest

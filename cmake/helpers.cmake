@@ -247,9 +247,12 @@ function(add_umf_target_compile_options name)
             target_compile_options(${name} PRIVATE -fno-omit-frame-pointer
                                                    -fstack-protector-strong)
         endif()
-        if(UMF_USE_GCOV)
+        if(UMF_USE_COVERAGE)
             if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
-                message(FATAL_ERROR "To use gcov, the build type must be Debug")
+                message(
+                    FATAL_ERROR
+                        "To use the --coverage flag, the build type must be Debug"
+                )
             endif()
             target_compile_options(${name} PRIVATE --coverage)
         endif()
@@ -283,10 +286,12 @@ function(add_umf_target_link_options name)
     if(NOT MSVC)
         if(NOT APPLE)
             target_link_options(${name} PRIVATE "LINKER:-z,relro,-z,now")
-            if(UMF_USE_GCOV)
+            if(UMF_USE_COVERAGE)
                 if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
                     message(
-                        FATAL_ERROR "To use gcov, the build type must be Debug")
+                        FATAL_ERROR
+                            "To use the --coverage flag, the build type must be Debug"
+                    )
                 endif()
                 target_link_options(${name} PRIVATE --coverage)
             endif()
