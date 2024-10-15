@@ -9,6 +9,8 @@ permissions:
 env:
   BUILD_DIR : "${{github.workspace}}/build"
   INSTL_DIR : "${{github.workspace}}/../install-dir"
+  COVERAGE_DIR : "${{github.workspace}}/coverage"
+  COVERAGE_NAME : "exports-coverage-proxy"
 
 jobs:
   proxy-ubuntu:
@@ -30,7 +32,7 @@ jobs:
       - name: Install apt packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake libhwloc-dev libjemalloc-dev libtbb-dev
+          sudo apt-get install -y cmake libhwloc-dev libjemalloc-dev libtbb-dev lcov
 
       - name: Set ptrace value for IPC test
         run: sudo bash -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
@@ -52,6 +54,7 @@ jobs:
           -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
           -DUMF_TESTS_FAIL_ON_SKIP=ON
           -DUMF_PROXY_LIB_BASED_ON_POOL=${{matrix.proxy_lib_pool}}
+          ${{ matrix.build_type == 'Debug' && '-DUMF_USE_COVERAGE=ON' || '' }}
 
       - name: Build UMF
         run: cmake --build ${{env.BUILD_DIR}} -j $(nproc)
@@ -71,3 +74,19 @@ jobs:
       - name: Run "/usr/bin/date" with proxy library
         working-directory: ${{env.BUILD_DIR}}
         run: UMF_PROXY="page.disposition=shared-shm" LD_PRELOAD=./lib/libumf_proxy.so /usr/bin/date
+
+      - name: Check coverage
+        if:  ${{ matrix.build_type == 'Debug' }}
+        working-directory: ${{env.BUILD_DIR}}
+        run: |
+          export COVERAGE_FILE_NAME=${{env.COVERAGE_NAME}}-proxy_lib_pool-${{matrix.proxy_lib_pool}}
+          echo "COVERAGE_FILE_NAME: $COVERAGE_FILE_NAME"
+          ../scripts/coverage/coverage_capture.sh $COVERAGE_FILE_NAME
+          mkdir -p ${{env.COVERAGE_DIR}}
+          mv ./$COVERAGE_FILE_NAME ${{env.COVERAGE_DIR}}
+
+      - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+        if:  ${{ matrix.build_type == 'Debug' }}
+        with:
+          name: ${{env.COVERAGE_NAME}}-proxy_lib_pool-${{matrix.proxy_lib_pool}}
+          path: ${{env.COVERAGE_DIR}}
