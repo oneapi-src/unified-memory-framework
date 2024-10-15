@@ -80,6 +80,11 @@ static umf_result_t umfMemoryTrackerRemove(umf_memory_tracker_handle_t hTracker,
         return UMF_RESULT_ERROR_UNKNOWN;
     }
 
+    tracker_value_t *v = value;
+
+    LOG_DEBUG("memory region removed: tracker=%p, ptr=%p, size=%zu",
+              (void *)hTracker, ptr, v->size);
+
     umf_ba_free(hTracker->tracker_allocator, value);
 
     return UMF_RESULT_SUCCESS;
