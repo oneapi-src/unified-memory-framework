@@ -337,6 +337,7 @@ err_lock:
 
 static umf_result_t trackingFree(void *hProvider, void *ptr, size_t size) {
     umf_result_t ret;
+    umf_result_t ret_remove = UMF_RESULT_ERROR_UNKNOWN;
     umf_tracking_memory_provider_t *p =
         (umf_tracking_memory_provider_t *)hProvider;
 
@@ -345,13 +346,13 @@ static umf_result_t trackingFree(void *hProvider, void *ptr, size_t size) {
     // could allocate the memory at address `ptr` before a call to umfMemoryTrackerRemove
     // resulting in inconsistent state.
     if (ptr) {
-        ret = umfMemoryTrackerRemove(p->hTracker, ptr);
-        if (ret != UMF_RESULT_SUCCESS) {
+        ret_remove = umfMemoryTrackerRemove(p->hTracker, ptr);
+        if (ret_remove != UMF_RESULT_SUCCESS) {
             // DO NOT return an error here, because the tracking provider
             // cannot change behaviour of the upstream provider.
             LOG_ERR("failed to remove the region from the tracker, ptr=%p, "
                     "size=%zu, ret = %d",
-                    ptr, size, ret);
+                    ptr, size, ret_remove);
         }
     }
 
@@ -371,6 +372,12 @@ static umf_result_t trackingFree(void *hProvider, void *ptr, size_t size) {
     ret = umfMemoryProviderFree(p->hUpstream, ptr, size);
     if (ret != UMF_RESULT_SUCCESS) {
         LOG_ERR("upstream provider is failed to free the memory");
+        // Do not add memory back to the tracker,
+        // if it had not been removed.
+        if (ret_remove != UMF_RESULT_SUCCESS) {
+            return ret;
+        }
+
         if (umfMemoryTrackerAdd(p->hTracker, p->pool, ptr, size) !=
             UMF_RESULT_SUCCESS) {
             LOG_ERR(
