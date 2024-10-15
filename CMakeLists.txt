@@ -71,7 +71,7 @@ option(UMF_USE_UBSAN "Enable UndefinedBehaviorSanitizer checks" OFF)
 option(UMF_USE_TSAN "Enable ThreadSanitizer checks" OFF)
 option(UMF_USE_MSAN "Enable MemorySanitizer checks" OFF)
 option(UMF_USE_VALGRIND "Enable Valgrind instrumentation" OFF)
-option(UMF_USE_GCOV "Enable gcov support" OFF)
+option(UMF_USE_COVERAGE "Build with coverage enabled (Linux only)" OFF)
 
 # set UMF_PROXY_LIB_BASED_ON_POOL to one of: SCALABLE or JEMALLOC
 set(KNOWN_PROXY_LIB_POOLS SCALABLE JEMALLOC)

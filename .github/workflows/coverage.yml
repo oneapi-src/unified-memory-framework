@@ -1,0 +1,49 @@
+# Coverage build
+name: Coverage
+
+on: workflow_call
+
+permissions:
+  contents: read
+
+env:
+  COVERAGE_DIR : "${{github.workspace}}/coverage"
+
+jobs:
+  Coverage:
+    name: Coverage build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          fetch-depth: 0
+
+      - name: Install dependencies (ubuntu-latest)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lcov
+
+      - name: Download all coverage artifacts
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          pattern: exports-coverage-*
+          path: coverage
+          merge-multiple: true
+
+      - name: Compute coverage
+        working-directory: ${{env.COVERAGE_DIR}}
+        run: |
+          echo "DIR: $(pwd)" && ls -al
+          ../scripts/coverage/merge_coverage_files.sh exports-coverage total_coverage
+          genhtml --no-function-coverage -o html_report total_coverage 2>&1 | tee output.txt
+          mkdir coverage_report
+          mv html_report ./coverage_report/
+          tail -n2 output.txt >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+        with:
+          name: coverage_html_report
+          path: coverage/coverage_report

@@ -119,7 +119,7 @@ List of options provided by CMake:
 | UMF_USE_TSAN | Enable ThreadSanitizer checks | ON/OFF | OFF |
 | UMF_USE_MSAN | Enable MemorySanitizer checks | ON/OFF | OFF |
 | UMF_USE_VALGRIND | Enable Valgrind instrumentation | ON/OFF | OFF |
-| UMF_USE_GCOV | Enable gcov support (Linux only) | ON/OFF | OFF |
+| UMF_USE_COVERAGE | Build with coverage enabled (Linux only) | ON/OFF | OFF |
 | UMF_LINK_HWLOC_STATICALLY | Link UMF with HWLOC library statically (Windows+Release only) | ON/OFF | OFF |
 | UMF_DISABLE_HWLOC | Disable features that requires hwloc (OS provider, memory targets, topology discovery) | ON/OFF | OFF |
 

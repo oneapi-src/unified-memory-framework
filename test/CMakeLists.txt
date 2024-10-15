@@ -498,7 +498,8 @@ if(LINUX
        (UMF_USE_ASAN
         OR UMF_USE_UBSAN
         OR UMF_USE_TSAN
-        OR UMF_USE_MSAN))
+        OR UMF_USE_MSAN
+        OR UMF_USE_COVERAGE))
 
     set(EXAMPLES "")
 

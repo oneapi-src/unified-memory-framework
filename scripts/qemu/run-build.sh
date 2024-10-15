@@ -5,9 +5,16 @@
 
 set -e
 
+[ "$1" = "COVERAGE" ] && COVERAGE=ON || COVERAGE=OFF
+
+# This is ${UMF_DIR}/scripts/qemu/run-build.sh file, so
+UMF_DIR=$(dirname $0)/../..
+cd $UMF_DIR
+pwd
+
 echo password | sudo -Sk apt-get update
 echo password | sudo -Sk apt-get install -y git cmake gcc g++ pkg-config \
-    numactl libnuma-dev hwloc libhwloc-dev libjemalloc-dev libtbb-dev valgrind
+    numactl libnuma-dev hwloc libhwloc-dev libjemalloc-dev libtbb-dev valgrind lcov
 
 mkdir build
 cd build
@@ -21,6 +28,7 @@ cmake .. \
     -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON \
     -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON \
     -DUMF_BUILD_EXAMPLES=ON \
+    -DUMF_USE_COVERAGE=${COVERAGE} \
     -DUMF_TESTS_FAIL_ON_SKIP=ON
 
 make -j $(nproc)

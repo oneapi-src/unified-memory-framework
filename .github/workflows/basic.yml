@@ -11,6 +11,8 @@ env:
   UMF_VERSION: 0.10.0
   BUILD_DIR : "${{github.workspace}}/build"
   INSTL_DIR : "${{github.workspace}}/../install-dir"
+  COVERAGE_DIR : "${{github.workspace}}/coverage"
+  COVERAGE_NAME : "exports-coverage-basic"
 
 jobs:
   ubuntu-build:
@@ -122,8 +124,8 @@ jobs:
     - name: Install apt packages
       run: |
         sudo apt-get update
-        sudo apt-get install -y clang cmake libnuma-dev libjemalloc-dev 
-        
+        sudo apt-get install -y clang cmake libnuma-dev libjemalloc-dev lcov
+
     - name: Install TBB apt package
       if: matrix.install_tbb == 'ON'
       run: |
@@ -167,6 +169,7 @@ jobs:
         -DUMF_TESTS_FAIL_ON_SKIP=ON
         -DUMF_DISABLE_HWLOC=${{matrix.disable_hwloc}}
         -DUMF_LINK_HWLOC_STATICALLY=${{matrix.link_hwloc_statically}}
+        ${{ matrix.build_type == 'Debug' && matrix.compiler.c == 'gcc' && '-DUMF_USE_COVERAGE=ON' || '' }}
 
     - name: Build UMF
       run: |
@@ -177,7 +180,23 @@ jobs:
       working-directory: ${{env.BUILD_DIR}}
       run: |
         ${{ matrix.compiler.cxx == 'icpx' && '. /opt/intel/oneapi/setvars.sh' || true }}
-        ctest --output-on-failure --test-dir test
+        ctest --output-on-failure # run all tests for better coverage
+
+    - name: Check coverage
+      if:  ${{ matrix.build_type == 'Debug' && matrix.compiler.c == 'gcc' }}
+      working-directory: ${{env.BUILD_DIR}}
+      run: |
+        export COVERAGE_FILE_NAME=${{env.COVERAGE_NAME}}-${{matrix.os}}-shared-${{matrix.shared_library}}-no_hwloc-${{matrix.disable_hwloc}}
+        echo "COVERAGE_FILE_NAME: $COVERAGE_FILE_NAME"
+        ../scripts/coverage/coverage_capture.sh $COVERAGE_FILE_NAME
+        mkdir -p ${{env.COVERAGE_DIR}}
+        mv ./$COVERAGE_FILE_NAME ${{env.COVERAGE_DIR}}
+
+    - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+      if:  ${{ matrix.build_type == 'Debug' && matrix.compiler.c == 'gcc' }}
+      with:
+        name: ${{env.COVERAGE_NAME}}-${{matrix.os}}-shared-${{matrix.shared_library}}-no_hwloc-${{matrix.disable_hwloc}}
+        path: ${{env.COVERAGE_DIR}}
 
     - name: Remove the installation directory
       run: rm -rf ${{env.INSTL_DIR}}

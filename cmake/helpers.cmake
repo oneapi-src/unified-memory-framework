@@ -247,11 +247,21 @@ function(add_umf_target_compile_options name)
             target_compile_options(${name} PRIVATE -fno-omit-frame-pointer
                                                    -fstack-protector-strong)
         endif()
-        if(UMF_USE_GCOV)
+        if(UMF_USE_COVERAGE)
             if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
-                message(FATAL_ERROR "To use gcov, the build type must be Debug")
+                message(
+                    FATAL_ERROR
+                        "To use the --coverage flag, the build type must be Debug"
+                )
             endif()
             target_compile_options(${name} PRIVATE --coverage)
+            if(${CMAKE_C_COMPILER} MATCHES "gcc")
+                # Fix for the following error: geninfo: ERROR: Unexpected
+                # negative count '-1' for provider_os_memory.c:1037. Perhaps you
+                # need to compile with '-fprofile-update=atomic
+                target_compile_options(${name} PRIVATE -fprofile-update=atomic
+                                                       -g -O0)
+            endif()
         endif()
     elseif(MSVC)
         target_compile_options(
@@ -283,10 +293,12 @@ function(add_umf_target_link_options name)
     if(NOT MSVC)
         if(NOT APPLE)
             target_link_options(${name} PRIVATE "LINKER:-z,relro,-z,now")
-            if(UMF_USE_GCOV)
+            if(UMF_USE_COVERAGE)
                 if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
                     message(
-                        FATAL_ERROR "To use gcov, the build type must be Debug")
+                        FATAL_ERROR
+                            "To use the --coverage flag, the build type must be Debug"
+                    )
                 endif()
                 target_link_options(${name} PRIVATE --coverage)
             endif()
