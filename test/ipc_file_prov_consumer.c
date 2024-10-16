@@ -43,6 +43,9 @@ int main(int argc, char *argv[]) {
         file_params.visibility = UMF_MEM_MAP_SHARED;
     }
 
-    return run_consumer(port, umfFileMemoryProviderOps(), &file_params, memcopy,
+    void *pool_params = NULL;
+
+    return run_consumer(port, umfScalablePoolOps(), pool_params,
+                        umfFileMemoryProviderOps(), &file_params, memcopy,
                         NULL);
 }
