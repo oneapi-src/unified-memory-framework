@@ -22,6 +22,13 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y black cmake clang-format-15 cmake-format libhwloc-dev
+
+    # Latest distros do not allow global pip installation
+    - name: Install Python requirements in venv
+      run: |
+        python3 -m venv .venv
+        . .venv/bin/activate
+        echo "$PATH" >> $GITHUB_PATH
         python3 -m pip install bandit
 
     - name: Configure CMake
@@ -50,6 +57,6 @@ jobs:
       with:
         config: ./.github/workflows/.spellcheck-conf.toml
 
-    # Run Bandit recursively, but omit _deps directory (with 3rd party code)
+    # Run Bandit recursively, but omit _deps directory (with 3rd party code) and python's venv
     - name: Run Bandit
-      run: python3 -m bandit -r . -x '/_deps/'
+      run: python3 -m bandit -r . -x '/_deps/,/.venv/'
