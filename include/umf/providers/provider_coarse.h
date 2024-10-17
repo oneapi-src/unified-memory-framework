@@ -69,6 +69,9 @@ typedef struct coarse_memory_provider_params_t {
     /// the init_buffer is always used instead
     /// (regardless of the value of this parameter).
     bool immediate_init_from_upstream;
+
+    /// Destroy upstream_memory_provider in finalize().
+    bool destroy_upstream_memory_provider;
 } coarse_memory_provider_params_t;
 
 /// @brief Coarse Memory Provider stats (TODO move to CTL)

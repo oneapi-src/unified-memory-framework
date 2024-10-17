@@ -760,6 +760,37 @@ TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMallocPool_wrong_params_4) {
     umfMemoryProviderDestroy(malloc_memory_provider);
 }
 
+// wrong parameters: destroy_upstream_memory_provider is true, but an upstream provider is not provided
+TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMallocPool_wrong_params_5) {
+    umf_result_t umf_result;
+
+    const size_t init_buffer_size = 20 * MB;
+
+    // Preallocate some memory
+    std::unique_ptr<char[]> buffer(new char[init_buffer_size]);
+    void *buf = buffer.get();
+    ASSERT_NE(buf, nullptr);
+    memset(buf, 0, init_buffer_size);
+
+    coarse_memory_provider_params_t coarse_memory_provider_params;
+    // make sure there are no undefined members - prevent a UB
+    memset(&coarse_memory_provider_params, 0,
+           sizeof(coarse_memory_provider_params));
+    coarse_memory_provider_params.allocation_strategy = allocation_strategy;
+    coarse_memory_provider_params.upstream_memory_provider = nullptr;
+    coarse_memory_provider_params.destroy_upstream_memory_provider = true;
+    coarse_memory_provider_params.immediate_init_from_upstream = false;
+    coarse_memory_provider_params.init_buffer = buf;
+    coarse_memory_provider_params.init_buffer_size = init_buffer_size;
+
+    umf_memory_provider_handle_t coarse_memory_provider = nullptr;
+    umf_result = umfMemoryProviderCreate(umfCoarseMemoryProviderOps(),
+                                         &coarse_memory_provider_params,
+                                         &coarse_memory_provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    ASSERT_EQ(coarse_memory_provider, nullptr);
+}
+
 TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMallocPool_split_merge) {
     umf_memory_provider_handle_t malloc_memory_provider;
     umf_result_t umf_result;
