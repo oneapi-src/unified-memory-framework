@@ -183,6 +183,38 @@ INSTANTIATE_TEST_SUITE_P(fileProviderTest, FileProviderParamsDefault,
 
 TEST_P(FileProviderParamsDefault, create_destroy) {}
 
+TEST_P(FileProviderParamsDefault, two_allocations) {
+    umf_result_t umf_result;
+    void *ptr1 = nullptr;
+    void *ptr2 = nullptr;
+    size_t size = page_plus_64;
+    size_t alignment = page_size;
+
+    umf_result = umfMemoryProviderAlloc(provider.get(), size, alignment, &ptr1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(ptr1, nullptr);
+
+    umf_result = umfMemoryProviderAlloc(provider.get(), size, alignment, &ptr2);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(ptr2, nullptr);
+
+    ASSERT_NE(ptr1, ptr2);
+    if ((uintptr_t)ptr1 > (uintptr_t)ptr2) {
+        ASSERT_GT((uintptr_t)ptr1 - (uintptr_t)ptr2, size);
+    } else {
+        ASSERT_GT((uintptr_t)ptr2 - (uintptr_t)ptr1, size);
+    }
+
+    memset(ptr1, 0x11, size);
+    memset(ptr2, 0x22, size);
+
+    umf_result = umfMemoryProviderFree(provider.get(), ptr1, size);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
+
+    umf_result = umfMemoryProviderFree(provider.get(), ptr2, size);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
+}
+
 TEST_P(FileProviderParamsDefault, alloc_page64_align_0) {
     test_alloc_free_success(provider.get(), page_plus_64, 0, PURGE_NONE);
 }
