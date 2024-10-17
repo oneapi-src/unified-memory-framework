@@ -2,11 +2,12 @@
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-#ifndef UMF_TEST_MEMORY_POOL_OPS_HPP
-#define UMF_TEST_MEMORY_POOL_OPS_HPP
+#ifndef UMF_TEST_POOL_FIXTURES_HPP
+#define UMF_TEST_POOL_FIXTURES_HPP 1
 
 #include "pool.hpp"
 #include "provider.hpp"
+#include "umf/providers/provider_coarse.h"
 
 #include <array>
 #include <cstring>
@@ -17,23 +18,51 @@
 
 #include "../malloc_compliance_tests.hpp"
 
-using poolCreateExtParams = std::tuple<umf_memory_pool_ops_t *, void *,
-                                       umf_memory_provider_ops_t *, void *>;
+using poolCreateExtParams =
+    std::tuple<umf_memory_pool_ops_t *, void *, umf_memory_provider_ops_t *,
+               void *, void *>;
 
 umf::pool_unique_handle_t poolCreateExtUnique(poolCreateExtParams params) {
     umf_memory_pool_handle_t hPool;
-    auto [pool_ops, pool_params, provider_ops, provider_params] = params;
+    auto [pool_ops, pool_params, provider_ops, provider_params, coarse_params] =
+        params;
 
+    umf_memory_provider_handle_t upstream_provider = nullptr;
+    umf_memory_provider_handle_t coarse_provider = nullptr;
     umf_memory_provider_handle_t provider = nullptr;
-    auto ret =
-        umfMemoryProviderCreate(provider_ops, provider_params, &provider);
+    auto ret = umfMemoryProviderCreate(provider_ops, provider_params,
+                                       &upstream_provider);
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
 
-    ret = umfPoolCreate(pool_ops, provider, pool_params,
-                        UMF_POOL_CREATE_FLAG_OWN_PROVIDER, &hPool);
+    provider = upstream_provider;
+
+    if (coarse_params) {
+        coarse_memory_provider_params_t *coarse_memory_provider_params =
+            (coarse_memory_provider_params_t *)coarse_params;
+        coarse_memory_provider_params->upstream_memory_provider =
+            upstream_provider;
+
+        umf_memory_provider_handle_t coarse_provider = nullptr;
+        auto ret = umfMemoryProviderCreate(umfCoarseMemoryProviderOps(),
+                                           coarse_params, &coarse_provider);
+        EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+
+        provider = coarse_provider;
+    }
+
+    ret = umfPoolCreate(pool_ops, provider, pool_params, 0, &hPool);
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
 
-    return umf::pool_unique_handle_t(hPool, &umfPoolDestroy);
+    auto dtor = [coarse_provider,
+                 upstream_provider](umf_memory_pool_handle_t pool) {
+        umfPoolDestroy(pool);
+        if (coarse_provider) {
+            umfMemoryProviderDestroy(coarse_provider);
+        }
+        umfMemoryProviderDestroy(upstream_provider);
+    };
+
+    return umf::pool_unique_handle_t(hPool, std::move(dtor));
 }
 
 struct umfPoolTest : umf_test::test,
@@ -407,4 +436,4 @@ TEST_P(umfPoolTest, realloc_compliance) {
 
 TEST_P(umfPoolTest, free_compliance) { free_compliance_test(pool.get()); }
 
-#endif /* UMF_TEST_MEMORY_POOL_OPS_HPP */
+#endif /* UMF_TEST_POOL_FIXTURES_HPP */
