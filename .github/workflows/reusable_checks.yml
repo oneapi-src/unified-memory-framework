@@ -1,0 +1,62 @@
+# Basic checks on the code, incl. coding style, spelling, bandit analysis.
+# TODO: add license check
+name: Basic checks
+
+on: workflow_call
+
+permissions:
+  contents: read
+
+jobs:
+  CodeChecks:
+    name: Basic code checks
+    runs-on: ${{ github.repository_owner == 'oneapi-src' && 'intel-ubuntu-22.04' || 'ubuntu-latest' }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      with:
+        fetch-depth: 0
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y black cmake clang-format-15 cmake-format libhwloc-dev
+
+    # Latest distros do not allow global pip installation
+    - name: Install Python requirements in venv
+      run: |
+        python3 -m venv .venv
+        . .venv/bin/activate
+        echo "$PATH" >> $GITHUB_PATH
+        python3 -m pip install bandit
+
+    - name: Configure CMake
+      run: >
+        cmake
+        -B ${{github.workspace}}/build
+        -DUMF_FORMAT_CODE_STYLE=ON
+        -DUMF_BUILD_TESTS=OFF
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
+        -DUMF_BUILD_CUDA_PROVIDER=OFF
+        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=OFF
+
+    - name: Check C/C++ formatting
+      run: cmake --build build --target clang-format-check
+
+    - name: Check CMake formatting
+      run: |
+        cmake --build build --target cmake-format-apply
+        git diff --exit-code
+
+    - name: Check Python formatting
+      run: cmake --build build --target black-format-check
+
+    - name: Run a spell check
+      uses: crate-ci/typos@b63f421581dce830bda2f597a678cb7776b41877 # v1.18.2
+      with:
+        config: ./.github/workflows/.spellcheck-conf.toml
+
+    # Run Bandit recursively, but omit _deps directory (with 3rd party code) and python's venv
+    - name: Run Bandit
+      run: python3 -m bandit -r . -x '/_deps/,/.venv/'

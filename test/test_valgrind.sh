@@ -145,6 +145,8 @@ for test in $(ls -1 umf_test-*); do
 	fi || true
 done
 
+rm -rf ${BUILD_DIR}/test/cpuid
+
 [ $ANY_TEST_FAILED -eq 0 ] && echo PASSED && exit 0
 
 echo

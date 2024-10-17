@@ -1,19 +1,7 @@
 # CodeQL static analysis
 name: CodeQL
 
-# Due to lower score on Scorecard we're running this separately from
-# "PR/push" workflow. For some reason permissions weren't properly set
-# or recognized (by Scorecard). If Scorecard changes its behavior we can
-# go back to use 'workflow_call' trigger.
-on:
-  push:
-    branches-ignore:
-      - 'dependabot/**'
-  pull_request:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
-  cancel-in-progress: true
+on: workflow_call
 
 permissions:
   contents: read
@@ -56,27 +44,34 @@ jobs:
       with:
         languages: cpp
 
-    - name: Initialize vcpkg
-      if: ${{ matrix.os == 'windows-latest' }}
+    - name: "[Win] Initialize vcpkg"
+      if: matrix.os == 'windows-latest'
       uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
       with:
         vcpkgGitCommitId: 3dd44b931481d7a8e9ba412621fa810232b66289
         vcpkgDirectory: ${{env.BUILD_DIR}}/vcpkg
         vcpkgJsonGlob: '**/vcpkg.json'
 
-    - name: Install dependencies
-      if: ${{ matrix.os == 'windows-latest' }}
-      run: vcpkg install
-      shell: pwsh # Specifies PowerShell as the shell for running the script.
+    - name: "[Win] Install dependencies"
+      if: matrix.os == 'windows-latest'
+      run: |
+        vcpkg install
+        python3 -m pip install -r third_party/requirements.txt
 
-    - name: Install apt packages
+    - name: "[Lin] Install apt packages"
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
         sudo apt-get install -y cmake clang libhwloc-dev libnuma-dev libjemalloc-dev libtbb-dev
 
-    - name: Install pip packages
-      run: python3 -m pip install -r third_party/requirements.txt
+    # Latest distros do not allow global pip installation
+    - name: "[Lin] Install Python requirements in venv"
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        python3 -m venv .venv
+        . .venv/bin/activate
+        echo "$PATH" >> $GITHUB_PATH
+        python3 -m pip install -r third_party/requirements.txt
 
     - name: Configure CMake
       run: >
