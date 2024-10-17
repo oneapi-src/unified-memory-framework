@@ -263,22 +263,38 @@ static umf_result_t file_mmap_aligned(file_memory_provider_t *file_provider,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT; // arithmetic overflow
     }
 
-    if (offset_fd + extended_size > size_fd) {
-        if (utils_fallocate(fd, offset_fd, extended_size)) {
+    // offset_fd has to be also page-aligned since it is the offset of mmap()
+    size_t aligned_offset_fd = offset_fd;
+    rest = aligned_offset_fd & (page_size - 1);
+    if (rest) {
+        aligned_offset_fd += page_size - rest;
+    }
+    if (aligned_offset_fd < offset_fd) {
+        LOG_ERR("arithmetic overflow of file offset");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT; // arithmetic overflow
+    }
+
+    if (aligned_offset_fd + extended_size > size_fd) {
+        size_t new_size_fd = aligned_offset_fd + extended_size;
+        if (utils_fallocate(fd, size_fd, new_size_fd - size_fd)) {
             LOG_ERR("cannot grow the file size from %zu to %zu", size_fd,
-                    offset_fd + extended_size);
+                    new_size_fd);
             return UMF_RESULT_ERROR_UNKNOWN;
         }
 
-        LOG_DEBUG("file size grown from %zu to %zu", size_fd,
-                  offset_fd + extended_size);
-        file_provider->size_fd = size_fd = offset_fd + extended_size;
+        LOG_DEBUG("file size grown from %zu to %zu", size_fd, new_size_fd);
+        file_provider->size_fd = new_size_fd;
+    }
+
+    if (aligned_offset_fd > offset_fd) {
+        file_provider->offset_fd = aligned_offset_fd;
     }
 
     ASSERT_IS_ALIGNED(extended_size, page_size);
-    ASSERT_IS_ALIGNED(offset_fd, page_size);
+    ASSERT_IS_ALIGNED(aligned_offset_fd, page_size);
 
-    void *ptr = utils_mmap_file(NULL, extended_size, prot, flag, fd, offset_fd);
+    void *ptr =
+        utils_mmap_file(NULL, extended_size, prot, flag, fd, aligned_offset_fd);
     if (ptr == NULL) {
         LOG_PERR("memory mapping failed");
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
@@ -291,6 +307,10 @@ static umf_result_t file_mmap_aligned(file_memory_provider_t *file_provider,
                 "(addr=%p, size=%zu)",
                 ptr, extended_size);
     }
+
+    LOG_DEBUG(
+        "inserted a value to the map of memory mapping (addr=%p, size=%zu)",
+        ptr, extended_size);
 
     file_provider->base_mmap = ptr;
     file_provider->size_mmap = extended_size;
@@ -335,19 +355,31 @@ static umf_result_t file_alloc_aligned(file_memory_provider_t *file_provider,
     }
 
     size_t new_offset_mmap = new_aligned_ptr - (uintptr_t)base_mmap;
+    size_t new_offset_fd =
+        file_provider->offset_fd + new_offset_mmap - file_provider->offset_mmap;
+
     if (file_provider->size_mmap - new_offset_mmap < size) {
         umf_result = file_mmap_aligned(file_provider, size, alignment);
         if (umf_result != UMF_RESULT_SUCCESS) {
             utils_mutex_unlock(&file_provider->lock);
             return umf_result;
         }
+
+        assert(file_provider->base_mmap);
+
+        // file_provider-> base_mmap, offset_mmap, offset_fd
+        // were updated by file_mmap_aligned():
+        new_aligned_ptr = (uintptr_t)file_provider->base_mmap;
+        new_offset_mmap = 0; // == file_provider->offset_mmap
+        new_offset_fd = file_provider->offset_fd;
+
+        ASSERT_IS_ALIGNED(new_aligned_ptr, alignment);
     }
 
-    size_t old_offset_mmap = file_provider->offset_mmap;
-    file_provider->offset_mmap = new_offset_mmap;
-    *alloc_offset_fd =
-        file_provider->offset_fd + new_offset_mmap - old_offset_mmap;
-    file_provider->offset_fd = *alloc_offset_fd + size;
+    *alloc_offset_fd = new_offset_fd;
+
+    file_provider->offset_fd = new_offset_fd + size;
+    file_provider->offset_mmap = new_offset_mmap + size;
 
     *out_addr = (void *)new_aligned_ptr;
 
