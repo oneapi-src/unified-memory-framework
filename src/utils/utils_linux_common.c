@@ -60,7 +60,10 @@ void *utils_mmap_file(void *hint_addr, size_t length, int prot, int flags,
             return NULL;
         }
 
-        LOG_DEBUG("file mapped with the MAP_PRIVATE flag");
+        LOG_DEBUG("file mapped with the MAP_PRIVATE flag (fd=%i, offset=%zu, "
+                  "length=%zu)",
+                  fd, fd_offset, length);
+
         return addr;
     }
 
@@ -72,7 +75,9 @@ void *utils_mmap_file(void *hint_addr, size_t length, int prot, int flags,
         addr = utils_mmap(hint_addr, length, prot, flags | sync_flags, fd,
                           fd_offset);
         if (addr) {
-            LOG_DEBUG("file mapped with the MAP_SYNC flag");
+            LOG_DEBUG("file mapped with the MAP_SYNC flag (fd=%i, offset=%zu, "
+                      "length=%zu)",
+                      fd, fd_offset, length);
             return addr;
         }
 
@@ -85,7 +90,9 @@ void *utils_mmap_file(void *hint_addr, size_t length, int prot, int flags,
         const int shared_flags = (flags & (~MAP_SYNC)) | MAP_SHARED;
         addr = utils_mmap(hint_addr, length, prot, shared_flags, fd, fd_offset);
         if (addr) {
-            LOG_DEBUG("file mapped with the MAP_SHARED flag");
+            LOG_DEBUG("file mapped with the MAP_SHARED flag (fd=%i, "
+                      "offset=%zu, length=%zu)",
+                      fd, fd_offset, length);
             return addr;
         }
 
