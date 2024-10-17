@@ -75,8 +75,12 @@ static inline void UT_OUT(const char *format, ...) {
                       (unsigned long long)(rhs)),                              \
              0)))
 
-#ifndef ALIGN_UP
-#define ALIGN_UP(value, align) (((value) + (align)-1) & ~((align)-1))
+#ifndef ALIGN_UP_SAFE
+#define ALIGN_UP_SAFE(value, align)                                            \
+    (((align) == 0) ? (value)                                                  \
+                    : (((value) + (align)-1) < (value)                         \
+                           ? 0                                                 \
+                           : (((value) + (align)-1) & ~((align)-1))))
 #endif
 
 int bufferIsFilledWithChar(void *ptr, size_t size, char c);
