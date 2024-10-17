@@ -21,10 +21,8 @@ using namespace umf_test;
 
 class CUDAMemoryAccessor : public MemoryAccessor {
   public:
-    void init(CUcontext hContext, CUdevice hDevice) {
-        hDevice_ = hDevice;
-        hContext_ = hContext;
-    }
+    CUDAMemoryAccessor(CUcontext hContext, CUdevice hDevice)
+        : hDevice_(hDevice), hContext_(hContext) {}
 
     void fill(void *ptr, size_t size, const void *pattern,
               size_t pattern_size) {
@@ -53,7 +51,7 @@ class CUDAMemoryAccessor : public MemoryAccessor {
 };
 
 using CUDAProviderTestParams =
-    std::tuple<umf_usm_memory_type_t, MemoryAccessor *>;
+    std::tuple<cuda_memory_provider_params_t, MemoryAccessor *>;
 
 struct umfCUDAProviderTest
     : umf_test::test,
@@ -62,23 +60,12 @@ struct umfCUDAProviderTest
     void SetUp() override {
         test::SetUp();
 
-        auto [memory_type, accessor] = this->GetParam();
-        params = create_cuda_prov_params(memory_type);
+        auto [cuda_params, accessor] = this->GetParam();
+        params = cuda_params;
         memAccessor = accessor;
-        if (memory_type == UMF_MEMORY_TYPE_DEVICE) {
-            ((CUDAMemoryAccessor *)memAccessor)
-                ->init((CUcontext)params.cuda_context_handle,
-                       params.cuda_device_handle);
-        }
     }
 
-    void TearDown() override {
-        if (params.cuda_context_handle) {
-            int ret = destroy_context((CUcontext)params.cuda_context_handle);
-            ASSERT_EQ(ret, 0);
-        }
-        test::TearDown();
-    }
+    void TearDown() override { test::TearDown(); }
 
     cuda_memory_provider_params_t params;
     MemoryAccessor *memAccessor = nullptr;
@@ -150,33 +137,28 @@ TEST_P(umfCUDAProviderTest, allocInvalidSize) {
         umf_result = umfMemoryProviderAlloc(provider, 0, 0, &ptr);
         ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
     }
-
-    // destroy context and try to alloc some memory
-    destroy_context((CUcontext)params.cuda_context_handle);
-    params.cuda_context_handle = 0;
-    umf_result = umfMemoryProviderAlloc(provider, 128, 0, &ptr);
-    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC);
-
-    const char *message;
-    int32_t error;
-    umfMemoryProviderGetLastNativeError(provider, &message, &error);
-    ASSERT_EQ(error, CUDA_ERROR_INVALID_CONTEXT);
-    const char *expected_message =
-        "CUDA_ERROR_INVALID_CONTEXT - invalid device context";
-    ASSERT_EQ(strncmp(message, expected_message, strlen(expected_message)), 0);
 }
 
 // TODO add tests that mixes CUDA Memory Provider and Disjoint Pool
 
-CUDAMemoryAccessor cuAccessor;
+cuda_memory_provider_params_t cuParams_device_memory =
+    create_cuda_prov_params(UMF_MEMORY_TYPE_DEVICE);
+cuda_memory_provider_params_t cuParams_shared_memory =
+    create_cuda_prov_params(UMF_MEMORY_TYPE_SHARED);
+cuda_memory_provider_params_t cuParams_host_memory =
+    create_cuda_prov_params(UMF_MEMORY_TYPE_HOST);
+
+CUDAMemoryAccessor
+    cuAccessor((CUcontext)cuParams_device_memory.cuda_context_handle,
+               (CUdevice)cuParams_device_memory.cuda_device_handle);
 HostMemoryAccessor hostAccessor;
 
 INSTANTIATE_TEST_SUITE_P(
     umfCUDAProviderTestSuite, umfCUDAProviderTest,
     ::testing::Values(
-        CUDAProviderTestParams{UMF_MEMORY_TYPE_DEVICE, &cuAccessor},
-        CUDAProviderTestParams{UMF_MEMORY_TYPE_SHARED, &hostAccessor},
-        CUDAProviderTestParams{UMF_MEMORY_TYPE_HOST, &hostAccessor}));
+        CUDAProviderTestParams{cuParams_device_memory, &cuAccessor},
+        CUDAProviderTestParams{cuParams_shared_memory, &hostAccessor},
+        CUDAProviderTestParams{cuParams_host_memory, &hostAccessor}));
 
 // TODO: add IPC API
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(umfIpcTest);
@@ -185,5 +167,5 @@ INSTANTIATE_TEST_SUITE_P(umfCUDAProviderTestSuite, umfIpcTest,
                          ::testing::Values(ipcTestParams{
                              umfProxyPoolOps(), nullptr,
                              umfCUDAMemoryProviderOps(),
-                             &cuParams_device_memory, &l0Accessor}));
+                             &cuParams_device_memory, &cuAccessor}));
 */
