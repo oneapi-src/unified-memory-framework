@@ -98,6 +98,11 @@ TEST_P(umfPoolTest, allocFree) {
     umfPoolFree(pool.get(), ptr);
 }
 
+TEST_P(umfPoolTest, allocMaxSize) {
+    auto *ptr = umfPoolMalloc(pool.get(), SIZE_MAX);
+    ASSERT_EQ(ptr, nullptr);
+}
+
 TEST_P(umfPoolTest, allocFreeNonAlignedSizes) {
     for (const auto &allocSize : nonAlignedAllocSizes) {
         auto *ptr = umfPoolMalloc(pool.get(), allocSize);
