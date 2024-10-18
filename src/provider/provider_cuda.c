@@ -51,6 +51,8 @@ typedef struct cu_ops_t {
 
     CUresult (*cuGetErrorName)(CUresult error, const char **pStr);
     CUresult (*cuGetErrorString)(CUresult error, const char **pStr);
+    CUresult (*cuCtxGetCurrent)(CUcontext *pctx);
+    CUresult (*cuCtxSetCurrent)(CUcontext ctx);
 } cu_ops_t;
 
 static cu_ops_t g_cu_ops;
@@ -117,11 +119,16 @@ static void init_cu_global_state(void) {
         utils_get_symbol_addr(0, "cuGetErrorName", lib_name);
     *(void **)&g_cu_ops.cuGetErrorString =
         utils_get_symbol_addr(0, "cuGetErrorString", lib_name);
+    *(void **)&g_cu_ops.cuCtxGetCurrent =
+        utils_get_symbol_addr(0, "cuCtxGetCurrent", lib_name);
+    *(void **)&g_cu_ops.cuCtxSetCurrent =
+        utils_get_symbol_addr(0, "cuCtxSetCurrent", lib_name);
 
     if (!g_cu_ops.cuMemGetAllocationGranularity || !g_cu_ops.cuMemAlloc ||
         !g_cu_ops.cuMemAllocHost || !g_cu_ops.cuMemAllocManaged ||
         !g_cu_ops.cuMemFree || !g_cu_ops.cuMemFreeHost ||
-        !g_cu_ops.cuGetErrorName || !g_cu_ops.cuGetErrorString) {
+        !g_cu_ops.cuGetErrorName || !g_cu_ops.cuGetErrorString ||
+        !g_cu_ops.cuCtxGetCurrent || !g_cu_ops.cuCtxSetCurrent) {
         LOG_ERR("Required CUDA symbols not found.");
         Init_cu_global_state_failed = true;
     }
@@ -190,6 +197,31 @@ static void cu_memory_provider_finalize(void *provider) {
     umf_ba_global_free(provider);
 }
 
+/* 
+ * This function is used by the CUDA provider to make sure that
+ * the required context is set. If the current context is
+ * not the required one, it will be saved in restore_ctx.
+ */
+static inline umf_result_t set_context(CUcontext required_ctx,
+                                       CUcontext *restore_ctx) {
+    CUcontext current_ctx = NULL;
+    CUresult cu_result = g_cu_ops.cuCtxGetCurrent(&current_ctx);
+    if (cu_result != CUDA_SUCCESS) {
+        LOG_ERR("cuCtxGetCurrent() failed.");
+        return cu2umf_result(cu_result);
+    }
+    *restore_ctx = current_ctx;
+    if (current_ctx != required_ctx) {
+        cu_result = g_cu_ops.cuCtxSetCurrent(required_ctx);
+        if (cu_result != CUDA_SUCCESS) {
+            LOG_ERR("cuCtxSetCurrent() failed.");
+            return cu2umf_result(cu_result);
+        }
+    }
+
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_result_t cu_memory_provider_alloc(void *provider, size_t size,
                                              size_t alignment,
                                              void **resultPtr) {
@@ -203,6 +235,14 @@ static umf_result_t cu_memory_provider_alloc(void *provider, size_t size,
         // alignment of CUDA allocations is controlled by the CUDA driver -
         // currently UMF doesn't support alignment larger than default
         return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
+
+    // Remember current context and set the one from the provider
+    CUcontext restore_ctx = NULL;
+    umf_result_t umf_result = set_context(cu_provider->context, &restore_ctx);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        LOG_ERR("Failed to set CUDA context, ret = %d", umf_result);
+        return umf_result;
     }
 
     CUresult cu_result = CUDA_SUCCESS;
@@ -224,7 +264,20 @@ static umf_result_t cu_memory_provider_alloc(void *provider, size_t size,
         // this shouldn't happen as we check the memory_type settings during
         // the initialization
         LOG_ERR("unsupported USM memory type");
+        assert(false);
         return UMF_RESULT_ERROR_UNKNOWN;
+    }
+
+    umf_result = set_context(restore_ctx, &restore_ctx);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        LOG_ERR("Failed to restore CUDA context, ret = %d", umf_result);
+    }
+
+    umf_result = cu2umf_result(cu_result);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        LOG_ERR("Failed to allocate memory, cu_result = %d, ret = %d",
+                cu_result, umf_result);
+        return umf_result;
     }
 
     // check the alignment
@@ -233,8 +286,7 @@ static umf_result_t cu_memory_provider_alloc(void *provider, size_t size,
         LOG_ERR("unsupported alignment size");
         return UMF_RESULT_ERROR_INVALID_ALIGNMENT;
     }
-
-    return cu2umf_result(cu_result);
+    return umf_result;
 }
 
 static umf_result_t cu_memory_provider_free(void *provider, void *ptr,
