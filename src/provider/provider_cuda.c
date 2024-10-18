@@ -51,6 +51,12 @@ typedef struct cu_ops_t {
 
     CUresult (*cuGetErrorName)(CUresult error, const char **pStr);
     CUresult (*cuGetErrorString)(CUresult error, const char **pStr);
+    CUresult (*cuCtxGetCurrent)(CUcontext *pctx);
+    CUresult (*cuCtxSetCurrent)(CUcontext ctx);
+    CUresult (*cuIpcGetMemHandle)(CUipcMemHandle *pHandle, CUdeviceptr dptr);
+    CUresult (*cuIpcOpenMemHandle)(CUdeviceptr *pdptr, CUipcMemHandle handle,
+                                   unsigned int Flags);
+    CUresult (*cuIpcCloseMemHandle)(CUdeviceptr dptr);
 } cu_ops_t;
 
 static cu_ops_t g_cu_ops;
@@ -117,11 +123,24 @@ static void init_cu_global_state(void) {
         utils_get_symbol_addr(0, "cuGetErrorName", lib_name);
     *(void **)&g_cu_ops.cuGetErrorString =
         utils_get_symbol_addr(0, "cuGetErrorString", lib_name);
+    *(void **)&g_cu_ops.cuCtxGetCurrent =
+        utils_get_symbol_addr(0, "cuCtxGetCurrent", lib_name);
+    *(void **)&g_cu_ops.cuCtxSetCurrent =
+        utils_get_symbol_addr(0, "cuCtxSetCurrent", lib_name);
+    *(void **)&g_cu_ops.cuIpcGetMemHandle =
+        utils_get_symbol_addr(0, "cuIpcGetMemHandle", lib_name);
+    *(void **)&g_cu_ops.cuIpcOpenMemHandle =
+        utils_get_symbol_addr(0, "cuIpcOpenMemHandle_v2", lib_name);
+    *(void **)&g_cu_ops.cuIpcCloseMemHandle =
+        utils_get_symbol_addr(0, "cuIpcCloseMemHandle", lib_name);
 
     if (!g_cu_ops.cuMemGetAllocationGranularity || !g_cu_ops.cuMemAlloc ||
         !g_cu_ops.cuMemAllocHost || !g_cu_ops.cuMemAllocManaged ||
         !g_cu_ops.cuMemFree || !g_cu_ops.cuMemFreeHost ||
-        !g_cu_ops.cuGetErrorName || !g_cu_ops.cuGetErrorString) {
+        !g_cu_ops.cuGetErrorName || !g_cu_ops.cuGetErrorString ||
+        !g_cu_ops.cuCtxGetCurrent || !g_cu_ops.cuCtxSetCurrent ||
+        !g_cu_ops.cuIpcGetMemHandle || !g_cu_ops.cuIpcOpenMemHandle ||
+        !g_cu_ops.cuIpcCloseMemHandle) {
         LOG_ERR("Required CUDA symbols not found.");
         Init_cu_global_state_failed = true;
     }
@@ -190,6 +209,31 @@ static void cu_memory_provider_finalize(void *provider) {
     umf_ba_global_free(provider);
 }
 
+/* 
+ * This function is used by the CUDA provider to make sure that
+ * the required context is set. If the current context is
+ * not the required one, it will be saved in restore_ctx.
+ */
+static inline umf_result_t set_context(CUcontext required_ctx,
+                                       CUcontext *restore_ctx) {
+    CUcontext current_ctx = NULL;
+    CUresult cu_result = g_cu_ops.cuCtxGetCurrent(&current_ctx);
+    if (cu_result != CUDA_SUCCESS) {
+        LOG_ERR("cuCtxGetCurrent() failed.");
+        return cu2umf_result(cu_result);
+    }
+    *restore_ctx = current_ctx;
+    if (current_ctx != required_ctx) {
+        cu_result = g_cu_ops.cuCtxSetCurrent(required_ctx);
+        if (cu_result != CUDA_SUCCESS) {
+            LOG_ERR("cuCtxSetCurrent() failed.");
+            return cu2umf_result(cu_result);
+        }
+    }
+
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_result_t cu_memory_provider_alloc(void *provider, size_t size,
                                              size_t alignment,
                                              void **resultPtr) {
@@ -203,6 +247,13 @@ static umf_result_t cu_memory_provider_alloc(void *provider, size_t size,
         // alignment of CUDA allocations is controlled by the CUDA driver -
         // currently UMF doesn't support alignment larger than default
         return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
+
+    // Remember current context and set the one from the provider
+    CUcontext restore_ctx = NULL;
+    umf_result_t umf_result = set_context(cu_provider->context, &restore_ctx);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        return umf_result;
     }
 
     CUresult cu_result = CUDA_SUCCESS;
@@ -224,16 +275,21 @@ static umf_result_t cu_memory_provider_alloc(void *provider, size_t size,
         // this shouldn't happen as we check the memory_type settings during
         // the initialization
         LOG_ERR("unsupported USM memory type");
-        return UMF_RESULT_ERROR_UNKNOWN;
+        assert(false);
     }
 
     // check the alignment
     if (alignment > 0 && ((uintptr_t)(*resultPtr) % alignment) != 0) {
         cu_memory_provider_free(provider, *resultPtr, size);
         LOG_ERR("unsupported alignment size");
+        set_context(restore_ctx, &restore_ctx);
         return UMF_RESULT_ERROR_INVALID_ALIGNMENT;
     }
 
+    umf_result = set_context(restore_ctx, &restore_ctx);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        return umf_result;
+    }
     return cu2umf_result(cu_result);
 }
 
@@ -352,6 +408,99 @@ static const char *cu_memory_provider_get_name(void *provider) {
     return "CUDA";
 }
 
+typedef CUipcMemHandle cu_ipc_data_t;
+
+static umf_result_t cu_memory_provider_get_ipc_handle_size(void *provider,
+                                                           size_t *size) {
+    if (provider == NULL || size == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    *size = sizeof(cu_ipc_data_t);
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t cu_memory_provider_get_ipc_handle(void *provider,
+                                                      const void *ptr,
+                                                      size_t size,
+                                                      void *providerIpcData) {
+    (void)size;
+
+    if (provider == NULL || ptr == NULL || providerIpcData == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    CUresult cu_result;
+    cu_ipc_data_t *cu_ipc_data = (cu_ipc_data_t *)providerIpcData;
+
+    cu_result = g_cu_ops.cuIpcGetMemHandle(cu_ipc_data, (CUdeviceptr)ptr);
+    if (cu_result != CUDA_SUCCESS) {
+        LOG_ERR("cuIpcGetMemHandle() failed.");
+        return cu2umf_result(cu_result);
+    }
+
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t cu_memory_provider_put_ipc_handle(void *provider,
+                                                      void *providerIpcData) {
+    if (provider == NULL || providerIpcData == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t cu_memory_provider_open_ipc_handle(void *provider,
+                                                       void *providerIpcData,
+                                                       void **ptr) {
+    if (provider == NULL || ptr == NULL || providerIpcData == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    cu_memory_provider_t *cu_provider = (cu_memory_provider_t *)provider;
+
+    CUresult cu_result;
+    cu_ipc_data_t *cu_ipc_data = (cu_ipc_data_t *)providerIpcData;
+
+    // Remember current context and set the one from the provider
+    CUcontext restore_ctx = NULL;
+    umf_result_t umf_result = set_context(cu_provider->context, &restore_ctx);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        return umf_result;
+    }
+
+    cu_result = g_cu_ops.cuIpcOpenMemHandle((CUdeviceptr *)ptr, *cu_ipc_data,
+                                            CU_IPC_MEM_LAZY_ENABLE_PEER_ACCESS);
+
+    if (cu_result != CUDA_SUCCESS) {
+        LOG_ERR("cuIpcOpenMemHandle() failed.");
+    }
+
+    set_context(restore_ctx, &restore_ctx);
+
+    return cu2umf_result(cu_result);
+}
+
+static umf_result_t
+cu_memory_provider_close_ipc_handle(void *provider, void *ptr, size_t size) {
+    (void)size;
+
+    if (provider == NULL || ptr == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    CUresult cu_result;
+
+    cu_result = g_cu_ops.cuIpcCloseMemHandle((CUdeviceptr)ptr);
+    if (cu_result != CUDA_SUCCESS) {
+        LOG_ERR("cuIpcCloseMemHandle() failed.");
+        return cu2umf_result(cu_result);
+    }
+
+    return UMF_RESULT_SUCCESS;
+}
+
 static struct umf_memory_provider_ops_t UMF_CUDA_MEMORY_PROVIDER_OPS = {
     .version = UMF_VERSION_CURRENT,
     .initialize = cu_memory_provider_initialize,
@@ -368,12 +517,12 @@ static struct umf_memory_provider_ops_t UMF_CUDA_MEMORY_PROVIDER_OPS = {
     .ext.purge_force = cu_memory_provider_purge_force,
     .ext.allocation_merge = cu_memory_provider_allocation_merge,
     .ext.allocation_split = cu_memory_provider_allocation_split,
+    */
     .ipc.get_ipc_handle_size = cu_memory_provider_get_ipc_handle_size,
     .ipc.get_ipc_handle = cu_memory_provider_get_ipc_handle,
     .ipc.put_ipc_handle = cu_memory_provider_put_ipc_handle,
     .ipc.open_ipc_handle = cu_memory_provider_open_ipc_handle,
     .ipc.close_ipc_handle = cu_memory_provider_close_ipc_handle,
-    */
 };
 
 umf_memory_provider_ops_t *umfCUDAMemoryProviderOps(void) {
