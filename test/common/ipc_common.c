@@ -110,9 +110,9 @@ err_close_consumer_socket:
     return ret;
 }
 
-int run_consumer(int port, umf_memory_provider_ops_t *provider_ops,
-                 void *provider_params, memcopy_callback_t memcopy_callback,
-                 void *memcopy_ctx) {
+int run_consumer(int port, umf_memory_pool_ops_t *pool_ops, void *pool_params,
+                 umf_memory_provider_ops_t *provider_ops, void *provider_params,
+                 memcopy_callback_t memcopy_callback, void *memcopy_ctx) {
     char consumer_message[MSG_SIZE];
     int producer_socket = -1;
     int ret = -1;
@@ -130,6 +130,9 @@ int run_consumer(int port, umf_memory_provider_ops_t *provider_ops,
                 "[consumer] ERROR: creating OS memory provider failed\n");
         return -1;
     }
+
+    umf_memory_pool_handle_t pool;
+    umf_result = umfPoolCreate(pool_ops, provider, pool_params, 0, &pool);
 
     producer_socket = consumer_connect(port);
     if (producer_socket < 0) {
@@ -183,7 +186,7 @@ int run_consumer(int port, umf_memory_provider_ops_t *provider_ops,
         len);
 
     void *SHM_ptr;
-    umf_result = umfMemoryProviderOpenIPCHandle(provider, IPC_handle, &SHM_ptr);
+    umf_result = umfOpenIPCHandle(pool, IPC_handle, &SHM_ptr);
     if (umf_result == UMF_RESULT_ERROR_NOT_SUPPORTED) {
         fprintf(stderr,
                 "[consumer] SKIP: opening the IPC handle is not supported\n");
@@ -240,8 +243,7 @@ int run_consumer(int port, umf_memory_provider_ops_t *provider_ops,
 
 err_closeIPCHandle:
     // we do not know the exact size of the remote shared memory
-    umf_result = umfMemoryProviderCloseIPCHandle(provider, SHM_ptr,
-                                                 sizeof(unsigned long long));
+    umf_result = umfCloseIPCHandle(SHM_ptr);
     if (umf_result != UMF_RESULT_SUCCESS) {
         fprintf(stderr, "[consumer] ERROR: closing the IPC handle failed\n");
     }
@@ -254,6 +256,7 @@ err_close_producer_socket:
 
 err_umfMemoryProviderDestroy:
     umfMemoryProviderDestroy(provider);
+    umfPoolDestroy(pool);
 
     if (ret == 0) {
         fprintf(stderr, "[consumer] Shutting down (status OK) ...\n");
@@ -303,9 +306,9 @@ err_close_producer_socket_connect:
     return -1;
 }
 
-int run_producer(int port, umf_memory_provider_ops_t *provider_ops,
-                 void *provider_params, memcopy_callback_t memcopy_callback,
-                 void *memcopy_ctx) {
+int run_producer(int port, umf_memory_pool_ops_t *pool_ops, void *pool_params,
+                 umf_memory_provider_ops_t *provider_ops, void *provider_params,
+                 memcopy_callback_t memcopy_callback, void *memcopy_ctx) {
     int ret = -1;
     umf_memory_provider_handle_t provider = NULL;
     umf_result_t umf_result = UMF_RESULT_ERROR_UNKNOWN;
@@ -321,6 +324,9 @@ int run_producer(int port, umf_memory_provider_ops_t *provider_ops,
         return -1;
     }
 
+    umf_memory_pool_handle_t pool;
+    umf_result = umfPoolCreate(pool_ops, provider, pool_params, 0, &pool);
+
     size_t page_size;
     umf_result = umfMemoryProviderGetMinPageSize(provider, NULL, &page_size);
     if (umf_result != UMF_RESULT_SUCCESS) {
@@ -335,44 +341,35 @@ int run_producer(int port, umf_memory_provider_ops_t *provider_ops,
     size_t ptr2_size = 2 * page_size;
     size_t size_IPC_shared_memory = 3 * page_size;
 
-    umf_result = umfMemoryProviderAlloc(provider, ptr1_size, 0, &ptr1);
-    if (umf_result != UMF_RESULT_SUCCESS) {
+    ptr1 = umfPoolMalloc(pool, ptr1_size);
+    if (ptr1 == NULL) {
         fprintf(stderr, "[producer] ERROR: allocating 1 page failed\n");
         goto err_umfMemoryProviderDestroy;
     }
 
-    umf_result = umfMemoryProviderAlloc(provider, ptr2_size, 0, &ptr2);
-    if (umf_result != UMF_RESULT_SUCCESS) {
+    ptr2 = umfPoolMalloc(pool, ptr2_size);
+    if (ptr2 == NULL) {
         fprintf(stderr, "[producer] ERROR: allocating 2 pages failed\n");
         goto err_free_ptr1;
     }
 
-    umf_result = umfMemoryProviderAlloc(provider, size_IPC_shared_memory, 0,
-                                        &IPC_shared_memory);
-    if (umf_result != UMF_RESULT_SUCCESS) {
+    IPC_shared_memory = umfPoolMalloc(pool, size_IPC_shared_memory);
+    if (IPC_shared_memory == NULL) {
         fprintf(stderr, "[producer] ERROR: allocating 3 pages failed\n");
         goto err_free_ptr2;
     }
 
     // get size of the IPC handle
     size_t IPC_handle_size;
-    umf_result = umfMemoryProviderGetIPCHandleSize(provider, &IPC_handle_size);
+    umf_ipc_handle_t IPC_handle = NULL;
+
+    // get the IPC handle
+    umf_result =
+        umfGetIPCHandle(IPC_shared_memory, &IPC_handle, &IPC_handle_size);
     if (umf_result != UMF_RESULT_SUCCESS) {
-        fprintf(stderr,
-                "[producer] ERROR: getting size of the IPC handle failed\n");
+        fprintf(stderr, "[producer] ERROR: getting the IPC handle failed\n");
         goto err_free_IPC_shared_memory;
     }
-
-    // allocate data for IPC provider
-    void *IPC_handle = malloc(IPC_handle_size);
-    if (IPC_handle == NULL) {
-        fprintf(stderr,
-                "[producer] ERROR: allocating memory for IPC handle failed\n");
-        goto err_free_IPC_shared_memory;
-    }
-
-    // zero the IPC handle and the shared memory
-    memset(IPC_handle, 0, IPC_handle_size);
 
     // save a random number (&provider) in the shared memory
     unsigned long long SHM_number_1 = (unsigned long long)&provider;
@@ -381,16 +378,6 @@ int run_producer(int port, umf_memory_provider_ops_t *provider_ops,
 
     fprintf(stderr, "[producer] My shared memory contains a number: %llu\n",
             SHM_number_1);
-
-    // get the IPC handle from the OS memory provider
-    umf_result = umfMemoryProviderGetIPCHandle(
-        provider, IPC_shared_memory, size_IPC_shared_memory, IPC_handle);
-    if (umf_result != UMF_RESULT_SUCCESS) {
-        fprintf(stderr,
-                "[producer] ERROR: getting the IPC handle from the OS memory "
-                "provider failed\n");
-        goto err_free_IPC_handle;
-    }
 
     fprintf(stderr, "[producer] Got the IPC handle\n");
 
@@ -494,23 +481,24 @@ err_close_producer_socket:
     close(producer_socket);
 
 err_PutIPCHandle:
-    umf_result = umfMemoryProviderPutIPCHandle(provider, IPC_handle);
+    umf_result = umfPutIPCHandle(IPC_handle);
     if (umf_result != UMF_RESULT_SUCCESS) {
         fprintf(stderr, "[producer] ERROR: putting the IPC handle failed\n");
     }
 
     fprintf(stderr, "[producer] Put the IPC handle\n");
 
-err_free_IPC_handle:
-    free(IPC_handle);
 err_free_IPC_shared_memory:
-    (void)umfMemoryProviderFree(provider, IPC_shared_memory,
-                                size_IPC_shared_memory);
+    (void)umfFree(IPC_shared_memory);
+
 err_free_ptr2:
-    (void)umfMemoryProviderFree(provider, ptr2, ptr2_size);
+    (void)umfFree(ptr2);
+
 err_free_ptr1:
-    (void)umfMemoryProviderFree(provider, ptr1, ptr1_size);
+    (void)umfFree(ptr1);
+
 err_umfMemoryProviderDestroy:
+    umfPoolDestroy(pool);
     umfMemoryProviderDestroy(provider);
 
     if (ret == 0) {
