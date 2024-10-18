@@ -371,7 +371,7 @@ static umf_result_t trackingFree(void *hProvider, void *ptr, size_t size) {
 
     ret = umfMemoryProviderFree(p->hUpstream, ptr, size);
     if (ret != UMF_RESULT_SUCCESS) {
-        LOG_ERR("upstream provider is failed to free the memory");
+        LOG_ERR("upstream provider failed to free the memory");
         // Do not add memory back to the tracker,
         // if it had not been removed.
         if (ret_remove != UMF_RESULT_SUCCESS) {
