@@ -16,15 +16,18 @@
 #include <libloaderapi.h>
 // clang-format on
 
-#else
+#else // _WIN32
 
 #define _GNU_SOURCE 1
 
 #include <dlfcn.h> // forces linking with libdl on Linux
 
-#endif
+#endif // !_WIN32
+
+#include <stddef.h>
 
 #include "utils_load_library.h"
+#include "utils_log.h"
 
 #ifdef _WIN32
 
@@ -47,7 +50,13 @@ void *utils_get_symbol_addr(void *handle, const char *symbol,
         }
         handle = GetModuleHandle(libname);
     }
-    return (void *)GetProcAddress((HMODULE)handle, symbol);
+
+    void *addr = (void *)GetProcAddress((HMODULE)handle, symbol);
+    if (addr == NULL) {
+        LOG_ERR("Required symbol not found: %s", symbol);
+    }
+
+    return addr;
 }
 
 #else /* Linux */
@@ -68,7 +77,13 @@ void *utils_get_symbol_addr(void *handle, const char *symbol,
     if (!handle) {
         handle = RTLD_DEFAULT;
     }
-    return dlsym(handle, symbol);
+
+    void *addr = dlsym(handle, symbol);
+    if (addr == NULL) {
+        LOG_ERR("Required symbol not found: %s", symbol);
+    }
+
+    return addr;
 }
 
 #endif
