@@ -210,7 +210,7 @@ jobs:
         --build-type ${{matrix.build_type}}
         --disjoint-pool
         --jemalloc-pool
-        ${{ matrix.install_tbb == 'ON' && matrix.disable_hwloc != 'ON' && matrix.link_hwloc_statically != 'ON' && '--proxy' || '' }}
+        ${{ matrix.install_tbb == 'ON' && matrix.disable_hwloc != 'ON' && '--proxy' || '' }}
         --umf-version ${{env.UMF_VERSION}}
         ${{ matrix.shared_library == 'ON' && '--shared-library' || '' }}
 
