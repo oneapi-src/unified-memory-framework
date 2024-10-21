@@ -38,7 +38,7 @@ FetchContent_Declare(
 
 FetchContent_GetProperties(cuda-headers)
 if(NOT cuda-headers_POPULATED)
-    FetchContent_Populate(cuda-headers)
+    FetchContent_MakeAvailable(cuda-headers)
 endif()
 
 set(CUDA_INCLUDE_DIRS
