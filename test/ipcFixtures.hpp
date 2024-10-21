@@ -461,7 +461,7 @@ TEST_P(umfIpcTest, ConcurrentOpenCloseHandles) {
 
     umf_test::syncthreads_barrier syncthreads(NTHREADS);
 
-    auto openHandlesFn = [this, &ipcHandles, &openedIpcHandles, &syncthreads,
+    auto openHandlesFn = [&ipcHandles, &openedIpcHandles, &syncthreads,
                           &pool](size_t tid) {
         syncthreads();
         for (auto ipcHandle : ipcHandles) {
