@@ -362,7 +362,7 @@ static umf_result_t trackingFree(void *hProvider, void *ptr, size_t size) {
         ret = umfMemoryProviderPutIPCHandle(p->hUpstream,
                                             cache_value->providerIpcData);
         if (ret != UMF_RESULT_SUCCESS) {
-            LOG_ERR("upstream provider is failed to put IPC handle, ptr=%p, "
+            LOG_ERR("upstream provider failed to put IPC handle, ptr=%p, "
                     "size=%zu, ret = %d",
                     ptr, size, ret);
         }
@@ -371,7 +371,7 @@ static umf_result_t trackingFree(void *hProvider, void *ptr, size_t size) {
 
     ret = umfMemoryProviderFree(p->hUpstream, ptr, size);
     if (ret != UMF_RESULT_SUCCESS) {
-        LOG_ERR("upstream provider is failed to free the memory");
+        LOG_ERR("upstream provider failed to free the memory");
         // Do not add memory back to the tracker,
         // if it had not been removed.
         if (ret_remove != UMF_RESULT_SUCCESS) {
@@ -537,18 +537,18 @@ static umf_result_t trackingGetIpcHandle(void *provider, const void *ptr,
             ret = umfMemoryProviderGetIPCHandle(p->hUpstream, ptr, size,
                                                 providerIpcData);
             if (ret != UMF_RESULT_SUCCESS) {
-                LOG_ERR("upstream provider is failed to get IPC handle");
+                LOG_ERR("upstream provider failed to get IPC handle");
                 return ret;
             }
 
             ret = umfMemoryProviderGetIPCHandleSize(p->hUpstream, &ipcDataSize);
             if (ret != UMF_RESULT_SUCCESS) {
-                LOG_ERR("upstream provider is failed to get the size of IPC "
+                LOG_ERR("upstream provider failed to get the size of IPC "
                         "handle");
                 ret = umfMemoryProviderPutIPCHandle(p->hUpstream,
                                                     providerIpcData);
                 if (ret != UMF_RESULT_SUCCESS) {
-                    LOG_ERR("upstream provider is failed to put IPC handle");
+                    LOG_ERR("upstream provider failed to put IPC handle");
                 }
                 return ret;
             }
@@ -560,7 +560,7 @@ static umf_result_t trackingGetIpcHandle(void *provider, const void *ptr,
                 ret = umfMemoryProviderPutIPCHandle(p->hUpstream,
                                                     providerIpcData);
                 if (ret != UMF_RESULT_SUCCESS) {
-                    LOG_ERR("upstream provider is failed to put IPC handle");
+                    LOG_ERR("upstream provider failed to put IPC handle");
                 }
                 return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
             }
@@ -586,7 +586,7 @@ static umf_result_t trackingGetIpcHandle(void *provider, const void *ptr,
                 ret = umfMemoryProviderPutIPCHandle(p->hUpstream,
                                                     providerIpcData);
                 if (ret != UMF_RESULT_SUCCESS) {
-                    LOG_ERR("upstream provider is failed to put IPC handle");
+                    LOG_ERR("upstream provider failed to put IPC handle");
                     return ret;
                 }
                 if (insRes == ENOMEM) {
@@ -632,7 +632,7 @@ static umf_result_t trackingOpenIpcHandle(void *provider, void *providerIpcData,
 
     ret = umfMemoryProviderOpenIPCHandle(p->hUpstream, providerIpcData, ptr);
     if (ret != UMF_RESULT_SUCCESS) {
-        LOG_ERR("upstream provider is failed to open IPC handle");
+        LOG_ERR("upstream provider failed to open IPC handle");
         return ret;
     }
     size_t bufferSize = getDataSizeFromIpcHandle(providerIpcData);
@@ -642,7 +642,7 @@ static umf_result_t trackingOpenIpcHandle(void *provider, void *providerIpcData,
                 "ret = %d",
                 *ptr, bufferSize, ret);
         if (umfMemoryProviderCloseIPCHandle(p->hUpstream, *ptr, bufferSize)) {
-            LOG_ERR("upstream provider is failed to close IPC handle, ptr=%p, "
+            LOG_ERR("upstream provider failed to close IPC handle, ptr=%p, "
                     "size=%zu",
                     *ptr, bufferSize);
         }
