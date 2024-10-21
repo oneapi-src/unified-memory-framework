@@ -181,14 +181,16 @@ TEST_F(test, BasicPoolByPtrTest) {
 INSTANTIATE_TEST_SUITE_P(
     mallocPoolTest, umfPoolTest,
     ::testing::Values(poolCreateExtParams{&MALLOC_POOL_OPS, nullptr,
-                                          &UMF_NULL_PROVIDER_OPS, nullptr},
+                                          &UMF_NULL_PROVIDER_OPS, nullptr,
+                                          nullptr},
                       poolCreateExtParams{umfProxyPoolOps(), nullptr,
-                                          &MALLOC_PROVIDER_OPS, nullptr}));
+                                          &MALLOC_PROVIDER_OPS, nullptr,
+                                          nullptr}));
 
 INSTANTIATE_TEST_SUITE_P(mallocMultiPoolTest, umfMultiPoolTest,
                          ::testing::Values(poolCreateExtParams{
                              umfProxyPoolOps(), nullptr, &MALLOC_PROVIDER_OPS,
-                             nullptr}));
+                             nullptr, nullptr}));
 
 INSTANTIATE_TEST_SUITE_P(umfPoolWithCreateFlagsTest, umfPoolWithCreateFlagsTest,
                          ::testing::Values(0,

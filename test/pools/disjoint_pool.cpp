@@ -148,17 +148,17 @@ auto defaultPoolConfig = poolConfig();
 INSTANTIATE_TEST_SUITE_P(disjointPoolTests, umfPoolTest,
                          ::testing::Values(poolCreateExtParams{
                              umfDisjointPoolOps(), (void *)&defaultPoolConfig,
-                             &MALLOC_PROVIDER_OPS, nullptr}));
+                             &MALLOC_PROVIDER_OPS, nullptr, nullptr}));
 
 INSTANTIATE_TEST_SUITE_P(
     disjointPoolTests, umfMemTest,
     ::testing::Values(std::make_tuple(
         poolCreateExtParams{umfDisjointPoolOps(), (void *)&defaultPoolConfig,
                             &MOCK_OUT_OF_MEM_PROVIDER_OPS,
-                            (void *)&defaultPoolConfig.Capacity},
+                            (void *)&defaultPoolConfig.Capacity, nullptr},
         static_cast<int>(defaultPoolConfig.Capacity) / 2)));
 
 INSTANTIATE_TEST_SUITE_P(disjointMultiPoolTests, umfMultiPoolTest,
                          ::testing::Values(poolCreateExtParams{
                              umfDisjointPoolOps(), (void *)&defaultPoolConfig,
-                             &MALLOC_PROVIDER_OPS, nullptr}));
+                             &MALLOC_PROVIDER_OPS, nullptr, nullptr}));
