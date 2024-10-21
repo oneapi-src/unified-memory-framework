@@ -84,9 +84,11 @@ Coarse Provider
 ------------------------------------------
 
 A memory provider that can provide memory from:
-1) a given pre-allocated buffer (the fixed-size memory provider option) or
-2) from an additional upstream provider (e.g. provider that does not support the free() operation
-   like the File memory provider or the DevDax memory provider - see below).
+
+1) A given pre-allocated buffer (the fixed-size memory provider option) or
+2) From an additional upstream provider (e.g. provider that does not support 
+   the free() operation like the File memory provider or the DevDax memory 
+   provider - see below).
 
 .. doxygenfile:: provider_coarse.h
     :sections: define enum typedef func var
