@@ -126,7 +126,7 @@ TEST_F(memspaceHostAllProviderTest, hostAllDefaults) {
     EXPECT_BIND_MASK_EQ(ptr1, ptr2);
 
     auto ret2 = munmap(ptr2, size);
-    UT_ASSERTeq(ret2, 0);
+    ASSERT_EQ(ret2, 0);
 
     ret = umfMemoryProviderFree(hProvider, ptr1, size);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
@@ -181,10 +181,10 @@ TEST_F(memspaceHostAllProviderTest, HostAllVsCopy) {
     ASSERT_BIND_MODE_EQ(ptr2, MPOL_BIND);
 
     ret = umfMemoryProviderFree(hProvider1, ptr1, SIZE_4K);
-    UT_ASSERTeq(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 
     ret = umfMemoryProviderFree(hProvider2, ptr2, SIZE_4K);
-    UT_ASSERTeq(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 
     umfMemoryProviderDestroy(hProvider1);
     umfMemoryProviderDestroy(hProvider2);
