@@ -36,11 +36,7 @@ FetchContent_Declare(
     GIT_REPOSITORY ${LEVEL_ZERO_LOADER_REPO}
     GIT_TAG ${LEVEL_ZERO_LOADER_TAG}
     EXCLUDE_FROM_ALL)
-
-FetchContent_GetProperties(level-zero-loader)
-if(NOT level-zero-loader_POPULATED)
-    FetchContent_MakeAvailable(level-zero-loader)
-endif()
+FetchContent_MakeAvailable(level-zero-loader)
 
 set(LEVEL_ZERO_INCLUDE_DIRS
     ${level-zero-loader_SOURCE_DIR}/include
