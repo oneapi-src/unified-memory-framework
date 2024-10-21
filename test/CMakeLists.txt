@@ -168,7 +168,7 @@ if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
 endif()
 
 if(UMF_BUILD_LIBUMF_POOL_DISJOINT
-   AND UMF_BUILD_LIBUMF_POOL_JEMALLOC
+   AND UMF_POOL_JEMALLOC_ENABLED
    AND UMF_POOL_SCALABLE_ENABLED
    AND (NOT UMF_DISABLE_HWLOC))
     add_umf_test(
@@ -177,7 +177,7 @@ if(UMF_BUILD_LIBUMF_POOL_DISJOINT
         LIBS disjoint_pool jemalloc_pool ${JEMALLOC_LIBRARIES})
 endif()
 
-if(UMF_BUILD_LIBUMF_POOL_JEMALLOC AND (NOT UMF_DISABLE_HWLOC))
+if(UMF_POOL_JEMALLOC_ENABLED AND (NOT UMF_DISABLE_HWLOC))
     add_umf_test(
         NAME jemalloc_pool
         SRCS pools/jemalloc_pool.cpp malloc_compliance_tests.cpp
@@ -190,8 +190,7 @@ if(UMF_POOL_SCALABLE_ENABLED AND (NOT UMF_DISABLE_HWLOC))
 endif()
 
 if(LINUX AND (NOT UMF_DISABLE_HWLOC)) # OS-specific functions are implemented
-                                      # only for
-    # Linux now
+                                      # only for Linux now
     if(PkgConfig_FOUND)
         pkg_check_modules(LIBNUMA numa)
     endif()
@@ -257,6 +256,22 @@ if(LINUX AND (NOT UMF_DISABLE_HWLOC)) # OS-specific functions are implemented
         NAME provider_file_memory
         SRCS provider_file_memory.cpp
         LIBS ${UMF_UTILS_FOR_TEST})
+
+    # This test requires Linux-only file memory provider
+    if(UMF_POOL_JEMALLOC_ENABLED)
+        add_umf_test(
+            NAME jemalloc_coarse_file
+            SRCS pools/jemalloc_coarse_file.cpp malloc_compliance_tests.cpp
+            LIBS jemalloc_pool)
+    endif()
+
+    # This test requires Linux-only file memory provider
+    if(UMF_POOL_SCALABLE_ENABLED)
+        add_umf_test(
+            NAME scalable_coarse_file SRCS pools/scalable_coarse_file.cpp
+                                           malloc_compliance_tests.cpp)
+    endif()
+
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND UMF_BUILD_FUZZTESTS)
         add_subdirectory(fuzz)
     endif()
