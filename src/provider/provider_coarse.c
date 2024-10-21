@@ -31,6 +31,9 @@
 typedef struct coarse_memory_provider_t {
     umf_memory_provider_handle_t upstream_memory_provider;
 
+    // destroy upstream_memory_provider in finalize()
+    bool destroy_upstream_memory_provider;
+
     // memory allocation strategy
     coarse_memory_provider_strategy_t allocation_strategy;
 
@@ -898,6 +901,13 @@ static umf_result_t coarse_memory_provider_initialize(void *params,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
+    if (coarse_params->destroy_upstream_memory_provider &&
+        !coarse_params->upstream_memory_provider) {
+        LOG_ERR("destroy_upstream_memory_provider is true, but an upstream "
+                "provider is not provided");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     coarse_memory_provider_t *coarse_provider =
         umf_ba_global_alloc(sizeof(*coarse_provider));
     if (!coarse_provider) {
@@ -909,6 +919,8 @@ static umf_result_t coarse_memory_provider_initialize(void *params,
 
     coarse_provider->upstream_memory_provider =
         coarse_params->upstream_memory_provider;
+    coarse_provider->destroy_upstream_memory_provider =
+        coarse_params->destroy_upstream_memory_provider;
     coarse_provider->allocation_strategy = coarse_params->allocation_strategy;
     coarse_provider->init_buffer = coarse_params->init_buffer;
 
@@ -1080,6 +1092,11 @@ static void coarse_memory_provider_finalize(void *provider) {
     ravl_delete(coarse_provider->free_blocks);
 
     umf_ba_global_free(coarse_provider->name);
+
+    if (coarse_provider->destroy_upstream_memory_provider &&
+        coarse_provider->upstream_memory_provider) {
+        umfMemoryProviderDestroy(coarse_provider->upstream_memory_provider);
+    }
 
     umf_ba_global_free(coarse_provider);
 }
