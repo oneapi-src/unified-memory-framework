@@ -1,7 +1,13 @@
 # Coverage build - gather artifacts from other builds and merge them into a single report
 name: Coverage
 
-on: workflow_call
+on:
+  workflow_call:
+    inputs:
+      trigger:
+        description: Type of workflow trigger
+        type: string
+        required: false
 
 permissions:
   contents: read
@@ -34,6 +40,7 @@ jobs:
 
       - name: Compute coverage
         working-directory: ${{env.COVERAGE_DIR}}
+        id: coverage
         run: |
           echo "DIR: $(pwd)" && ls -al
           ../scripts/coverage/merge_coverage_files.sh exports-coverage total_coverage
@@ -41,9 +48,24 @@ jobs:
           mkdir coverage_report
           mv html_report ./coverage_report/
           tail -n2 output.txt >> $GITHUB_STEP_SUMMARY
+          echo "COV_OUT=$(tail -n1 output.txt | grep -oP "lines[.]+: [\d.]+%" | cut -d ' ' -f2 | tr -d '%')" >> $GITHUB_OUTPUT
 
       - name: Upload coverage report
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         with:
           name: coverage_html_report
           path: coverage/coverage_report
+
+      # Only update the badge on push (event is passed only for total coverage)
+      - name: Update coverity badge
+        if: ${{ success() && inputs.trigger == 'push' }}
+        uses: Schneegans/dynamic-badges-action@e9a478b16159b4d31420099ba146cdc50f134483 # v1.7.0
+        with:
+          auth: ${{ secrets.BB_GIST_TOKEN }}
+          gistID: 3f66c77d7035df39aa75dda8a2ac75b3
+          filename: umf_coverage_badge.svg
+          label: Coverage
+          message: ${{ steps.coverage.outputs.COV_OUT }}%
+          valColorRange: ${{ steps.coverage.outputs.COV_OUT }}
+          minColorRange: 50 # <= this value = color: red
+          maxColorRange: 90 # >= this value = color: green
