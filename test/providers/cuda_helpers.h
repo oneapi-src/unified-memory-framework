@@ -26,6 +26,10 @@ int cuda_copy(CUcontext context, CUdevice device, void *dst_ptr, void *src_ptr,
 
 umf_usm_memory_type_t get_mem_type(CUcontext context, void *ptr);
 
+CUcontext get_mem_context(void *ptr);
+
+CUcontext get_current_context();
+
 cuda_memory_provider_params_t
 create_cuda_prov_params(umf_usm_memory_type_t memory_type);
 
