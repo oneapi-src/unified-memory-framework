@@ -15,8 +15,8 @@ env:
   COVERAGE_DIR : "${{github.workspace}}/coverage"
 
 jobs:
-  gpu:
-    name: Build
+  gpu-Level-Zero:
+    name: Level-Zero
     env:
       VCPKG_PATH: "${{github.workspace}}/../../../../vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/../../../../vcpkg/packages/tbb_x64-windows;${{github.workspace}}/../../../../vcpkg/packages/jemalloc_x64-windows"
       COVERAGE_NAME : "exports-coverage-gpu"
@@ -127,7 +127,7 @@ jobs:
           path: ${{env.COVERAGE_DIR}}
 
   gpu-CUDA:
-    name: Build
+    name: CUDA
     env:
       COVERAGE_NAME : "exports-coverage-gpu-CUDA"
     # run only on upstream; forks will not have the HW
