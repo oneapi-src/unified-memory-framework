@@ -33,6 +33,7 @@ struct libcu_ops {
     CUresult (*cuPointerGetAttributes)(unsigned int numAttributes,
                                        CUpointer_attribute *attributes,
                                        void **data, CUdeviceptr ptr);
+    CUresult (*cuStreamSynchronize)(CUstream hStream);
 } libcu_ops;
 
 #if USE_DLOPEN
@@ -145,6 +146,13 @@ int InitCUDAOps() {
                 lib_name);
         return -1;
     }
+    *(void **)&libcu_ops.cuStreamSynchronize = utils_get_symbol_addr(
+        cuDlHandle.get(), "cuStreamSynchronize", lib_name);
+    if (libcu_ops.cuStreamSynchronize == nullptr) {
+        fprintf(stderr, "cuStreamSynchronize symbol not found in %s\n",
+                lib_name);
+        return -1;
+    }
 
     return 0;
 }
@@ -167,6 +175,7 @@ int InitCUDAOps() {
     libcu_ops.cuMemcpy = cuMemcpy;
     libcu_ops.cuPointerGetAttribute = cuPointerGetAttribute;
     libcu_ops.cuPointerGetAttributes = cuPointerGetAttributes;
+    libcu_ops.cuStreamSynchronize = cuStreamSynchronize;
 
     return 0;
 }
@@ -215,6 +224,12 @@ int cuda_copy(CUcontext context, CUdevice device, void *dst_ptr, void *src_ptr,
         libcu_ops.cuMemcpy((CUdeviceptr)dst_ptr, (CUdeviceptr)src_ptr, size);
     if (res != CUDA_SUCCESS) {
         fprintf(stderr, "cuMemcpy() failed!\n");
+        return -1;
+    }
+
+    res = libcu_ops.cuStreamSynchronize(0);
+    if (res != CUDA_SUCCESS) {
+        fprintf(stderr, "cuStreamSynchronize() failed!\n");
         return -1;
     }
 
