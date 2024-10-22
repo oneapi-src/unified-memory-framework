@@ -1535,6 +1535,40 @@ coarse_memory_provider_get_stats(void *provider,
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t coarse_memory_provider_purge_lazy(void *provider, void *ptr,
+                                                      size_t size) {
+    if (provider == NULL || ptr == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    coarse_memory_provider_t *coarse_provider =
+        (struct coarse_memory_provider_t *)provider;
+    if (coarse_provider->upstream_memory_provider == NULL) {
+        LOG_ERR("no upstream memory provider given");
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
+
+    return umfMemoryProviderPurgeLazy(coarse_provider->upstream_memory_provider,
+                                      ptr, size);
+}
+
+static umf_result_t coarse_memory_provider_purge_force(void *provider,
+                                                       void *ptr, size_t size) {
+    if (provider == NULL || ptr == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    coarse_memory_provider_t *coarse_provider =
+        (struct coarse_memory_provider_t *)provider;
+    if (coarse_provider->upstream_memory_provider == NULL) {
+        LOG_ERR("no upstream memory provider given");
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
+
+    return umfMemoryProviderPurgeForce(
+        coarse_provider->upstream_memory_provider, ptr, size);
+}
+
 static umf_result_t coarse_memory_provider_allocation_split(void *provider,
                                                             void *ptr,
                                                             size_t totalSize,
@@ -1719,12 +1753,12 @@ umf_memory_provider_ops_t UMF_COARSE_MEMORY_PROVIDER_OPS = {
     .get_min_page_size = coarse_memory_provider_get_min_page_size,
     .get_name = coarse_memory_provider_get_name,
     .ext.free = coarse_memory_provider_free,
+    .ext.purge_lazy = coarse_memory_provider_purge_lazy,
+    .ext.purge_force = coarse_memory_provider_purge_force,
     .ext.allocation_merge = coarse_memory_provider_allocation_merge,
     .ext.allocation_split = coarse_memory_provider_allocation_split,
     // TODO
     /*
-    .ext.purge_lazy = coarse_memory_provider_purge_lazy,
-    .ext.purge_force = coarse_memory_provider_purge_force,
     .ipc.get_ipc_handle_size = coarse_memory_provider_get_ipc_handle_size,
     .ipc.get_ipc_handle = coarse_memory_provider_get_ipc_handle,
     .ipc.put_ipc_handle = coarse_memory_provider_put_ipc_handle,
