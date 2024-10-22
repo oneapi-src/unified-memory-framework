@@ -146,6 +146,39 @@ TEST_F(test, memoryProviderOpsNullAllocationSplitAllocationMergeFields) {
     umfMemoryProviderDestroy(hProvider);
 }
 
+TEST_F(test, memoryProviderOpsNullAllIPCFields) {
+    umf_memory_provider_ops_t provider_ops = UMF_NULL_PROVIDER_OPS;
+    provider_ops.ipc.get_ipc_handle_size = nullptr;
+    provider_ops.ipc.get_ipc_handle = nullptr;
+    provider_ops.ipc.put_ipc_handle = nullptr;
+    provider_ops.ipc.open_ipc_handle = nullptr;
+    provider_ops.ipc.close_ipc_handle = nullptr;
+
+    umf_memory_provider_handle_t hProvider;
+    auto ret = umfMemoryProviderCreate(&provider_ops, nullptr, &hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    size_t size;
+    ret = umfMemoryProviderGetIPCHandleSize(hProvider, &size);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_NOT_SUPPORTED);
+
+    void *ptr = nullptr;
+    void *providerIpcData = nullptr;
+    ret = umfMemoryProviderGetIPCHandle(hProvider, ptr, size, providerIpcData);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_NOT_SUPPORTED);
+
+    ret = umfMemoryProviderPutIPCHandle(hProvider, providerIpcData);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_NOT_SUPPORTED);
+
+    ret = umfMemoryProviderOpenIPCHandle(hProvider, providerIpcData, &ptr);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_NOT_SUPPORTED);
+
+    ret = umfMemoryProviderCloseIPCHandle(hProvider, ptr, size);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_NOT_SUPPORTED);
+
+    umfMemoryProviderDestroy(hProvider);
+}
+
 ////////////////// Negative test cases /////////////////
 
 TEST_F(test, memoryProviderCreateNullOps) {
@@ -254,6 +287,37 @@ TEST_F(test, memoryProviderOpsNullCloseIpcHandle) {
     umf_memory_provider_handle_t hProvider;
     auto ret = umfMemoryProviderCreate(&provider_ops, nullptr, &hProvider);
     ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, memoryProviderOpsNullAllocationSplitAllocationMergeNegative) {
+    umf_memory_provider_ops_t provider_ops = UMF_NULL_PROVIDER_OPS;
+    umf_memory_provider_handle_t hProvider;
+
+    auto ret = umfMemoryProviderCreate(&provider_ops, nullptr, &hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfMemoryProviderAllocationSplit(hProvider, nullptr, 2 * 4096, 4096);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    ret =
+        umfMemoryProviderAllocationMerge(hProvider, nullptr, nullptr, 2 * 4096);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    void *lowPtr = (void *)0xBAD;
+    void *highPtr = (void *)((uintptr_t)lowPtr + 4096);
+    size_t totalSize = 0;
+    ret =
+        umfMemoryProviderAllocationMerge(hProvider, lowPtr, highPtr, totalSize);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    totalSize = 4096;
+    lowPtr = (void *)0xBAD;
+    highPtr = (void *)((uintptr_t)lowPtr + 2 * totalSize);
+    ret =
+        umfMemoryProviderAllocationMerge(hProvider, lowPtr, highPtr, totalSize);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    umfMemoryProviderDestroy(hProvider);
 }
 
 struct providerInitializeTest : umf_test::test,
