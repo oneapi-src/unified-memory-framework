@@ -69,8 +69,8 @@ struct umfIpcTest : umf_test::test,
     umf::pool_unique_handle_t makePool() {
         // TODO: The function is similar to poolCreateExt function
         //       from memoryPool.hpp
-        umf_memory_provider_handle_t hProvider;
-        umf_memory_pool_handle_t hPool;
+        umf_memory_provider_handle_t hProvider = NULL;
+        umf_memory_pool_handle_t hPool = NULL;
 
         auto ret =
             umfMemoryProviderCreate(providerOps, providerParams, &hProvider);
