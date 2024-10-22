@@ -9,6 +9,8 @@
 #define UMF_COARSE_PROVIDER_H
 
 #include <stdbool.h>
+#include <string.h>
+
 #include <umf/memory_provider.h>
 
 #ifdef __cplusplus
@@ -97,6 +99,15 @@ umf_memory_provider_ops_t *umfCoarseMemoryProviderOps(void);
 // TODO use CTL
 coarse_memory_provider_stats_t
 umfCoarseMemoryProviderGetStats(umf_memory_provider_handle_t provider);
+
+/// @brief Create default params for the coarse memory provider
+static inline coarse_memory_provider_params_t
+umfCoarseMemoryProviderParamsDefault(void) {
+    coarse_memory_provider_params_t coarse_memory_provider_params;
+    memset(&coarse_memory_provider_params, 0,
+           sizeof(coarse_memory_provider_params));
+    return coarse_memory_provider_params;
+}
 
 #ifdef __cplusplus
 }

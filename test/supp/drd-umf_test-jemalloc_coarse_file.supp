@@ -1,0 +1,34 @@
+{
+   False-positive ConflictingAccess in libjemalloc.so
+   drd:ConflictingAccess
+   obj:*/libjemalloc.so*
+   ...
+   fun:mallocx
+   ...
+}
+
+{
+   False-positive ConflictingAccess in libjemalloc.so
+   drd:ConflictingAccess
+   obj:*/libjemalloc.so*
+   ...
+   fun:op_free
+   ...
+}
+
+{
+   False-positive ConflictingAccess in libjemalloc.so
+   drd:ConflictingAccess
+   obj:*/libjemalloc.so*
+   ...
+   fun:__nptl_deallocate_tsd
+   ...
+}
+
+{
+   False-positive ConflictingAccess in critnib_insert
+   drd:ConflictingAccess
+   fun:store
+   fun:critnib_insert
+   ...
+}
