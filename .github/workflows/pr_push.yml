@@ -53,7 +53,14 @@ jobs:
     needs: [Build]
     uses: ./.github/workflows/reusable_multi_numa.yml
   Coverage:
+    # total coverage (on upstream only)
+    if: github.repository == 'oneapi-src/unified-memory-framework'
     needs: [Build, DevDax, GPU, MultiNuma, Qemu, ProxyLib]
+    uses: ./.github/workflows/reusable_coverage.yml
+  Coverage_partial:
+    # partial coverage (on forks)
+    if: github.repository != 'oneapi-src/unified-memory-framework'
+    needs: [Build, Qemu, ProxyLib]
     uses: ./.github/workflows/reusable_coverage.yml
   CodeQL:
     needs: [Build]
