@@ -32,11 +32,7 @@ if(UMF_BUILD_LEVEL_ZERO_PROVIDER AND (UMF_BUILD_GPU_TESTS
         GIT_REPOSITORY ${LEVEL_ZERO_LOADER_REPO}
         GIT_TAG ${LEVEL_ZERO_LOADER_TAG}
         EXCLUDE_FROM_ALL)
-
-    FetchContent_GetProperties(level-zero-loader)
-    if(NOT level-zero-loader_POPULATED)
-        FetchContent_Populate(level-zero-loader)
-    endif()
+    FetchContent_MakeAvailable(level-zero-loader)
 
     set(LEVEL_ZERO_INCLUDE_DIRS
         ${level-zero-loader_SOURCE_DIR}/include
@@ -62,11 +58,7 @@ if(UMF_BUILD_CUDA_PROVIDER)
         GIT_REPOSITORY ${CUDA_REPO}
         GIT_TAG ${CUDA_TAG}
         EXCLUDE_FROM_ALL)
-
-    FetchContent_GetProperties(cuda-headers)
-    if(NOT cuda-headers_POPULATED)
-        FetchContent_Populate(cuda-headers)
-    endif()
+    FetchContent_MakeAvailable(cuda-headers)
 
     set(CUDA_INCLUDE_DIRS
         ${cuda-headers_SOURCE_DIR}

@@ -35,11 +35,7 @@ FetchContent_Declare(
     GIT_REPOSITORY ${CUDA_REPO}
     GIT_TAG ${CUDA_TAG}
     EXCLUDE_FROM_ALL)
-
-FetchContent_GetProperties(cuda-headers)
-if(NOT cuda-headers_POPULATED)
-    FetchContent_Populate(cuda-headers)
-endif()
+FetchContent_MakeAvailable(cuda-headers)
 
 set(CUDA_INCLUDE_DIRS
     ${cuda-headers_SOURCE_DIR}

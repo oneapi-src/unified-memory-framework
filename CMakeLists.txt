@@ -149,11 +149,7 @@ else()
             GIT_TAG ${UMF_HWLOC_TAG}
             PATCH_COMMAND ${HWLOC_PATCH} SOURCE_SUBDIR contrib/windows-cmake/
                           FIND_PACKAGE_ARGS)
-
-        FetchContent_GetProperties(hwloc_targ)
-        if(NOT hwloc_targ_POPULATED)
-            FetchContent_MakeAvailable(hwloc_targ)
-        endif()
+        FetchContent_MakeAvailable(hwloc_targ)
 
         set(LIBHWLOC_INCLUDE_DIRS
             ${hwloc_targ_SOURCE_DIR}/include;${hwloc_targ_BINARY_DIR}/include)
@@ -178,11 +174,7 @@ else()
             GIT_REPOSITORY ${UMF_HWLOC_REPO}
             GIT_TAG ${UMF_HWLOC_TAG}
             PATCH_COMMAND ${HWLOC_PATCH})
-
-        FetchContent_GetProperties(hwloc_targ)
-        if(NOT hwloc_targ_POPULATED)
-            FetchContent_MakeAvailable(hwloc_targ)
-        endif()
+        FetchContent_MakeAvailable(hwloc_targ)
 
         add_custom_command(
             COMMAND ./autogen.sh
