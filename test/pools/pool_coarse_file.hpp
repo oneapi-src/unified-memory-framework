@@ -14,6 +14,6 @@
 using umf_test::test;
 using namespace umf_test;
 
-#define FILE_PATH ((char *)"/tmp/file_provider")
+#define FILE_PATH ((char *)"tmp_file_provider")
 
 #endif /* UMF_TEST_POOL_COARSE_FILE_HPP */
