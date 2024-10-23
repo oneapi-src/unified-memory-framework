@@ -665,10 +665,6 @@ static umf_result_t file_open_ipc_handle(void *provider, void *providerIpcData,
     umf_result_t ret = UMF_RESULT_SUCCESS;
     int fd;
 
-    if (strncmp(file_ipc_data->path, file_provider->path, PATH_MAX)) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
     fd = utils_file_open(file_ipc_data->path);
     if (fd == -1) {
         LOG_PERR("opening the file to be mapped (%s) failed",
