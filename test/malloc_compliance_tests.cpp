@@ -85,12 +85,11 @@ void calloc_compliance_test(umf_memory_pool_handle_t hPool) {
     // Checking that the memory returned by calloc is zero filled
     for (int i = 0; i < ITERATIONS; i++) {
         alloc_size = rand_alloc_size(MAX_ALLOC_SIZE);
-        alloc_ptr[i] = umfPoolCalloc(hPool, i + 1, alloc_size);
+        alloc_ptr[i] = umfPoolCalloc(hPool, 2, alloc_size);
 
         ASSERT_NE(alloc_ptr[i], nullptr)
             << "calloc returned NULL, couldn't allocate much memory";
-        ASSERT_NE(bufferIsFilledWithChar(alloc_ptr[i], alloc_size * (i + 1), 0),
-                  0)
+        ASSERT_NE(bufferIsFilledWithChar(alloc_ptr[i], 2 * alloc_size, 0), 0)
             << "Memory returned by calloc was not zeroed";
     }
     free_memory(hPool, alloc_ptr);

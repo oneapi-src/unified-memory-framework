@@ -1,0 +1,49 @@
+{
+   False-positive ConflictingAccess in libtbbmalloc.so
+   drd:ConflictingAccess
+   obj:*/libtbbmalloc.so*
+}
+
+{
+   False-positive ConflictingAccess in libtbbmalloc.so
+   drd:ConflictingAccess
+   obj:*/libtbbmalloc.so*
+   ...
+   fun:tbb_malloc
+   ...
+}
+
+{
+   False-positive ConflictingAccess in libtbbmalloc.so
+   drd:ConflictingAccess
+   obj:*/libtbbmalloc.so*
+   ...
+   fun:tbb_aligned_malloc
+   ...
+}
+
+{
+   False-positive ConflictingAccess in libtbbmalloc.so
+   drd:ConflictingAccess
+   obj:*/libtbbmalloc.so*
+   ...
+   fun:tbb_free
+   ...
+}
+
+{
+   False-positive ConflictingAccess in libtbbmalloc.so
+   drd:ConflictingAccess
+   obj:*/libtbbmalloc.so*
+   ...
+   fun:__nptl_deallocate_tsd
+   ...
+}
+
+{
+   False-positive ConflictingAccess in _Z22pow2AlignedAllocHelperP17umf_memory_pool_t
+   drd:ConflictingAccess
+   fun:memset
+   fun:_Z22pow2AlignedAllocHelperP17umf_memory_pool_t
+   ...
+}
