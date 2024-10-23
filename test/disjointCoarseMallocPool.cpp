@@ -1004,3 +1004,126 @@ TEST_P(CoarseWithMemoryStrategyTest,
     umfMemoryProviderDestroy(coarse_memory_provider);
     umfMemoryProviderDestroy(malloc_memory_provider);
 }
+
+TEST_P(CoarseWithMemoryStrategyTest,
+       disjointCoarseMallocPool_purge_no_upstream) {
+    umf_result_t umf_result;
+
+    const size_t init_buffer_size = 20 * MB;
+
+    // Preallocate some memory
+    std::unique_ptr<char[]> buffer(new char[init_buffer_size]);
+    void *buf = buffer.get();
+    ASSERT_NE(buf, nullptr);
+    memset(buf, 0, init_buffer_size);
+
+    coarse_memory_provider_params_t coarse_memory_provider_params;
+    // make sure there are no undefined members - prevent a UB
+    memset(&coarse_memory_provider_params, 0,
+           sizeof(coarse_memory_provider_params));
+    coarse_memory_provider_params.allocation_strategy = allocation_strategy;
+    coarse_memory_provider_params.upstream_memory_provider = nullptr;
+    coarse_memory_provider_params.immediate_init_from_upstream = false;
+    coarse_memory_provider_params.init_buffer = buf;
+    coarse_memory_provider_params.init_buffer_size = init_buffer_size;
+
+    umf_memory_provider_handle_t coarse_memory_provider = nullptr;
+    umf_result = umfMemoryProviderCreate(umfCoarseMemoryProviderOps(),
+                                         &coarse_memory_provider_params,
+                                         &coarse_memory_provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(coarse_memory_provider, nullptr);
+
+    // umfMemoryProviderPurgeLazy
+    // provider == NULL
+    umf_result = umfMemoryProviderPurgeLazy(nullptr, (void *)0x01, 1);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    // ptr == NULL
+    umf_result = umfMemoryProviderPurgeLazy(coarse_memory_provider, nullptr, 1);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    // no upstream_memory_provider
+    umf_result =
+        umfMemoryProviderPurgeLazy(coarse_memory_provider, (void *)0x01, 1);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
+
+    // umfMemoryProviderPurgeForce
+    // provider == NULL
+    umf_result = umfMemoryProviderPurgeForce(nullptr, (void *)0x01, 1);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    // ptr == NULL
+    umf_result =
+        umfMemoryProviderPurgeForce(coarse_memory_provider, nullptr, 1);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    // no upstream_memory_provider
+    umf_result =
+        umfMemoryProviderPurgeForce(coarse_memory_provider, (void *)0x01, 1);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
+
+    umfMemoryProviderDestroy(coarse_memory_provider);
+}
+
+TEST_P(CoarseWithMemoryStrategyTest,
+       disjointCoarseMallocPool_purge_with_upstream) {
+    umf_memory_provider_handle_t malloc_memory_provider;
+    umf_result_t umf_result;
+
+    umf_result = umfMemoryProviderCreate(&UMF_MALLOC_MEMORY_PROVIDER_OPS, NULL,
+                                         &malloc_memory_provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(malloc_memory_provider, nullptr);
+
+    const size_t init_buffer_size = 20 * MB;
+
+    coarse_memory_provider_params_t coarse_memory_provider_params;
+    // make sure there are no undefined members - prevent a UB
+    memset(&coarse_memory_provider_params, 0,
+           sizeof(coarse_memory_provider_params));
+    coarse_memory_provider_params.upstream_memory_provider =
+        malloc_memory_provider;
+    coarse_memory_provider_params.immediate_init_from_upstream = true;
+    coarse_memory_provider_params.init_buffer = NULL;
+    coarse_memory_provider_params.init_buffer_size = init_buffer_size;
+
+    umf_memory_provider_handle_t coarse_memory_provider;
+    umf_result = umfMemoryProviderCreate(umfCoarseMemoryProviderOps(),
+                                         &coarse_memory_provider_params,
+                                         &coarse_memory_provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(coarse_memory_provider, nullptr);
+
+    // umfMemoryProviderPurgeLazy
+    // provider == NULL
+    umf_result = umfMemoryProviderPurgeLazy(nullptr, (void *)0x01, 1);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    // ptr == NULL
+    umf_result = umfMemoryProviderPurgeLazy(coarse_memory_provider, nullptr, 1);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    // malloc_memory_provider returns UMF_RESULT_ERROR_UNKNOWN
+    umf_result =
+        umfMemoryProviderPurgeLazy(coarse_memory_provider, (void *)0x01, 1);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_UNKNOWN);
+
+    // umfMemoryProviderPurgeForce
+    // provider == NULL
+    umf_result = umfMemoryProviderPurgeForce(nullptr, (void *)0x01, 1);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    // ptr == NULL
+    umf_result =
+        umfMemoryProviderPurgeForce(coarse_memory_provider, nullptr, 1);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    // malloc_memory_provider returns UMF_RESULT_ERROR_UNKNOWN
+    umf_result =
+        umfMemoryProviderPurgeForce(coarse_memory_provider, (void *)0x01, 1);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_UNKNOWN);
+
+    umfMemoryProviderDestroy(coarse_memory_provider);
+    umfMemoryProviderDestroy(malloc_memory_provider);
+}
