@@ -152,6 +152,8 @@ add_umf_test(
     SRCS utils/utils.cpp
     LIBS ${UMF_UTILS_FOR_TEST})
 
+add_umf_test(NAME provider_coarse SRCS provider_coarse.cpp)
+
 if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
     add_umf_test(
         NAME disjointPool
