@@ -141,14 +141,9 @@ struct umfLevelZeroProviderTest
 
         auto [l0_params, accessor] = this->GetParam();
         params = l0_params;
-        hDevice = (ze_device_handle_t)params.level_zero_device_handle;
+        memAccessor = accessor;
         hContext = (ze_context_handle_t)params.level_zero_context_handle;
 
-        if (params.memory_type == UMF_MEMORY_TYPE_HOST) {
-            ASSERT_EQ(hDevice, nullptr);
-        } else {
-            ASSERT_NE(hDevice, nullptr);
-        }
         ASSERT_NE(hContext, nullptr);
 
         switch (params.memory_type) {
@@ -167,21 +162,14 @@ struct umfLevelZeroProviderTest
         }
 
         ASSERT_NE(zeMemoryTypeExpected, ZE_MEMORY_TYPE_UNKNOWN);
-
-        memAccessor = accessor;
     }
 
-    void TearDown() override {
-        int ret = destroy_context(hContext);
-        ASSERT_EQ(ret, 0);
-        test::TearDown();
-    }
+    void TearDown() override { test::TearDown(); }
 
     level_zero_memory_provider_params_t params;
-    ze_device_handle_t hDevice = nullptr;
+    MemoryAccessor *memAccessor = nullptr;
     ze_context_handle_t hContext = nullptr;
     ze_memory_type_t zeMemoryTypeExpected = ZE_MEMORY_TYPE_UNKNOWN;
-    MemoryAccessor *memAccessor = nullptr;
 };
 
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(umfLevelZeroProviderTest);
@@ -222,8 +210,97 @@ TEST_P(umfLevelZeroProviderTest, basic) {
     umfMemoryProviderDestroy(provider);
 }
 
-// TODO add Level Zero Memory Provider specyfic tests
-// TODO add negative test and check for Level Zero native errors
+TEST_P(umfLevelZeroProviderTest, getPageSize) {
+    umf_memory_provider_handle_t provider = nullptr;
+    umf_result_t umf_result = umfMemoryProviderCreate(
+        umfLevelZeroMemoryProviderOps(), &params, &provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(provider, nullptr);
+
+    size_t recommendedPageSize = 0;
+    umf_result = umfMemoryProviderGetRecommendedPageSize(provider, 0,
+                                                         &recommendedPageSize);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_GE(recommendedPageSize, 0);
+
+    size_t minPageSize = 0;
+    umf_result =
+        umfMemoryProviderGetMinPageSize(provider, nullptr, &minPageSize);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_GE(minPageSize, 0);
+
+    ASSERT_GE(recommendedPageSize, minPageSize);
+
+    umfMemoryProviderDestroy(provider);
+}
+
+TEST_P(umfLevelZeroProviderTest, getName) {
+    umf_memory_provider_handle_t provider = nullptr;
+    umf_result_t umf_result = umfMemoryProviderCreate(
+        umfLevelZeroMemoryProviderOps(), &params, &provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(provider, nullptr);
+
+    const char *name = umfMemoryProviderGetName(provider);
+    ASSERT_STREQ(name, "LEVEL_ZERO");
+
+    umfMemoryProviderDestroy(provider);
+}
+
+TEST_P(umfLevelZeroProviderTest, allocInvalidSize) {
+    umf_memory_provider_handle_t provider = nullptr;
+    umf_result_t umf_result = umfMemoryProviderCreate(
+        umfLevelZeroMemoryProviderOps(), &params, &provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(provider, nullptr);
+
+    // try to alloc (int)-1
+    void *ptr = nullptr;
+    umf_result = umfMemoryProviderAlloc(provider, -1, 0, &ptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC);
+    const char *message;
+    int32_t error;
+    umfMemoryProviderGetLastNativeError(provider, &message, &error);
+    ASSERT_EQ(error, ZE_RESULT_ERROR_UNSUPPORTED_SIZE);
+
+    // in case of size == 0 we should got INVALID_ARGUMENT error
+    // NOTE: this is invalid only for the DEVICE or SHARED allocations
+    if (params.memory_type != UMF_MEMORY_TYPE_HOST) {
+        umf_result = umfMemoryProviderAlloc(provider, 0, 0, &ptr);
+        ASSERT_EQ(umf_result, UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC);
+        umfMemoryProviderGetLastNativeError(provider, &message, &error);
+        ASSERT_EQ(error, ZE_RESULT_ERROR_UNSUPPORTED_SIZE);
+    }
+
+    umfMemoryProviderDestroy(provider);
+}
+
+TEST_P(umfLevelZeroProviderTest, providerCreateInvalidArgs) {
+    umf_memory_provider_handle_t provider = nullptr;
+    umf_result_t umf_result = umfMemoryProviderCreate(
+        umfLevelZeroMemoryProviderOps(), nullptr, &provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    umf_result = umfMemoryProviderCreate(nullptr, &params, nullptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_P(umfLevelZeroProviderTest, getPageSizeInvalidArgs) {
+    umf_memory_provider_handle_t provider = nullptr;
+    umf_result_t umf_result = umfMemoryProviderCreate(
+        umfLevelZeroMemoryProviderOps(), &params, &provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(provider, nullptr);
+
+    umf_result = umfMemoryProviderGetMinPageSize(provider, nullptr, nullptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    umf_result = umfMemoryProviderGetRecommendedPageSize(provider, 0, nullptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    umfMemoryProviderDestroy(provider);
+}
+
 // TODO add tests that mixes Level Zero Memory Provider and Disjoint Pool
 
 level_zero_memory_provider_params_t l0Params_device_memory =

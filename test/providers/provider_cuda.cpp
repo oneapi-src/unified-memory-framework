@@ -125,6 +125,43 @@ TEST_P(umfCUDAProviderTest, basic) {
     umfMemoryProviderDestroy(provider);
 }
 
+TEST_P(umfCUDAProviderTest, getPageSize) {
+    umf_memory_provider_handle_t provider = nullptr;
+    umf_result_t umf_result =
+        umfMemoryProviderCreate(umfCUDAMemoryProviderOps(), &params, &provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(provider, nullptr);
+
+    size_t recommendedPageSize = 0;
+    umf_result = umfMemoryProviderGetRecommendedPageSize(provider, 0,
+                                                         &recommendedPageSize);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_GE(recommendedPageSize, 0);
+
+    size_t minPageSize = 0;
+    umf_result =
+        umfMemoryProviderGetMinPageSize(provider, nullptr, &minPageSize);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_GE(minPageSize, 0);
+
+    ASSERT_GE(recommendedPageSize, minPageSize);
+
+    umfMemoryProviderDestroy(provider);
+}
+
+TEST_P(umfCUDAProviderTest, getName) {
+    umf_memory_provider_handle_t provider = nullptr;
+    umf_result_t umf_result =
+        umfMemoryProviderCreate(umfCUDAMemoryProviderOps(), &params, &provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(provider, nullptr);
+
+    const char *name = umfMemoryProviderGetName(provider);
+    ASSERT_STREQ(name, "CUDA");
+
+    umfMemoryProviderDestroy(provider);
+}
+
 TEST_P(umfCUDAProviderTest, allocInvalidSize) {
     CUcontext expected_current_context = get_current_context();
     // create CUDA provider
@@ -148,6 +185,32 @@ TEST_P(umfCUDAProviderTest, allocInvalidSize) {
 
     CUcontext actual_current_context = get_current_context();
     ASSERT_EQ(actual_current_context, expected_current_context);
+
+    umfMemoryProviderDestroy(provider);
+}
+
+TEST_P(umfCUDAProviderTest, providerCreateInvalidArgs) {
+    umf_memory_provider_handle_t provider = nullptr;
+    umf_result_t umf_result =
+        umfMemoryProviderCreate(umfCUDAMemoryProviderOps(), nullptr, &provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    umf_result = umfMemoryProviderCreate(nullptr, &params, nullptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_P(umfCUDAProviderTest, getPageSizeInvalidArgs) {
+    umf_memory_provider_handle_t provider = nullptr;
+    umf_result_t umf_result =
+        umfMemoryProviderCreate(umfCUDAMemoryProviderOps(), &params, &provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(provider, nullptr);
+
+    umf_result = umfMemoryProviderGetMinPageSize(provider, nullptr, nullptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    umf_result = umfMemoryProviderGetRecommendedPageSize(provider, 0, nullptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 
     umfMemoryProviderDestroy(provider);
 }
