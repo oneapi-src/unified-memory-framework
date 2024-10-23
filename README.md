@@ -1,14 +1,11 @@
 # Unified Memory Framework
 
-[![PR/push](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/pr_push.yml/badge.svg?branch=main)](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/pr_push.yml)
+[![PR/push](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/pr_push.yml/badge.svg?branch=main&event=push)](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/pr_push.yml)
 [![Coverage](https://gist.githubusercontent.com/bb-ur/3f66c77d7035df39aa75dda8a2ac75b3/raw/umf_coverage_badge.svg)](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/pr_push.yml?query=branch%3Amain)
 [![GitHubPages](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/docs.yml/badge.svg?branch=main)](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/docs.yml)
 [![Nightly](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/nightly.yml/badge.svg?branch=main)](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/nightly.yml)
-[![Bandit](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/bandit.yml/badge.svg?branch=main)](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/bandit.yml)
-[![CodeQL](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/codeql.yml)
 [![Coverity build](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/coverity.yml/badge.svg?branch=main)](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/coverity.yml)
 [![Coverity report](https://scan.coverity.com/projects/29761/badge.svg?flat=0)](https://scan.coverity.com/projects/oneapi-src-unified-memory-framework)
-[![Trivy](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/trivy.yml/badge.svg)](https://github.com/oneapi-src/unified-memory-framework/actions/workflows/trivy.yml)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/oneapi-src/unified-memory-framework/badge)](https://securityscorecards.dev/viewer/?uri=github.com/oneapi-src/unified-memory-framework)
 
 ## Introduction
