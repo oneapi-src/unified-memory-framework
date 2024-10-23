@@ -31,6 +31,9 @@ jobs:
   DevDax:
     needs: [FastBuild]
     uses: ./.github/workflows/reusable_dax.yml
+  MultiNuma:
+    needs: [FastBuild]
+    uses: ./.github/workflows/reusable_multi_numa.yml
   Sanitizers:
     needs: [FastBuild]
     uses: ./.github/workflows/reusable_sanitizers.yml
@@ -49,9 +52,6 @@ jobs:
   Valgrind:
     needs: [Build]
     uses: ./.github/workflows/reusable_valgrind.yml
-  MultiNuma:
-    needs: [Build]
-    uses: ./.github/workflows/reusable_multi_numa.yml
   Coverage:
     # total coverage (on upstream only)
     if: github.repository == 'oneapi-src/unified-memory-framework'
