@@ -395,11 +395,10 @@ TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMMapPool_random) {
 
     const size_t init_buffer_size = 200 * MB;
 
-    // Preallocate some memory
-    std::unique_ptr<char[]> buffer(new char[init_buffer_size]);
-    void *buf = buffer.get();
+    // preallocate some memory and initialize the vector with zeros
+    std::vector<char> buffer(init_buffer_size, 0);
+    void *buf = (void *)buffer.data();
     ASSERT_NE(buf, nullptr);
-    memset(buf, 0, init_buffer_size);
 
     const unsigned char alloc_check_val = 11;
 
