@@ -8,6 +8,7 @@
 #include "pool.hpp"
 #include "provider.hpp"
 #include "umf/providers/provider_coarse.h"
+#include "umf/providers/provider_devdax_memory.h"
 
 #include <array>
 #include <cstring>
@@ -66,6 +67,23 @@ struct umfPoolTest : umf_test::test,
                      ::testing::WithParamInterface<poolCreateExtParams> {
     void SetUp() override {
         test::SetUp();
+
+        auto [pool_ops, pool_params, provider_ops, provider_params,
+              coarse_params] = this->GetParam();
+        if (provider_ops == umfDevDaxMemoryProviderOps()) {
+            char *path = getenv("UMF_TESTS_DEVDAX_PATH");
+            if (path == nullptr || path[0] == 0) {
+                GTEST_SKIP()
+                    << "Test skipped, UMF_TESTS_DEVDAX_PATH is not set";
+            }
+
+            char *size = getenv("UMF_TESTS_DEVDAX_SIZE");
+            if (size == nullptr || size[0] == 0) {
+                GTEST_SKIP()
+                    << "Test skipped, UMF_TESTS_DEVDAX_SIZE is not set";
+            }
+        }
+
         pool = poolCreateExtUnique(this->GetParam());
     }
 

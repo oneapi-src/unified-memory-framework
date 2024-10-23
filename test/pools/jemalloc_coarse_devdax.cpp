@@ -3,15 +3,18 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 #include "umf/pools/pool_jemalloc.h"
-#include "umf/providers/provider_file_memory.h"
+#include "umf/providers/provider_devdax_memory.h"
 
 #include "pool_coarse.hpp"
 
 auto coarseParams = umfCoarseMemoryProviderParamsDefault();
-auto fileParams = umfFileMemoryProviderParamsDefault(FILE_PATH);
+auto devdaxParams = umfDevDaxMemoryProviderParamsDefault(
+    getenv("UMF_TESTS_DEVDAX_PATH"), getenv("UMF_TESTS_DEVDAX_SIZE")
+                                         ? atol(getenv("UMF_TESTS_DEVDAX_SIZE"))
+                                         : 0);
 
-INSTANTIATE_TEST_SUITE_P(jemallocCoarseFileTest, umfPoolTest,
+INSTANTIATE_TEST_SUITE_P(jemallocCoarseDevDaxTest, umfPoolTest,
                          ::testing::Values(poolCreateExtParams{
                              umfJemallocPoolOps(), nullptr,
-                             umfFileMemoryProviderOps(), &fileParams,
+                             umfDevDaxMemoryProviderOps(), &devdaxParams,
                              &coarseParams}));

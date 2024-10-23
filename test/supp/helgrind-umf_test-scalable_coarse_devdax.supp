@@ -1,0 +1,49 @@
+{
+   False-positive Race in libtbbmalloc.so
+   Helgrind:Race
+   obj:*/libtbbmalloc.so*
+}
+
+{
+   False-positive Race in libtbbmalloc.so
+   Helgrind:Race
+   obj:*/libtbbmalloc.so*
+   ...
+   fun:tbb_malloc
+   ...
+}
+
+{
+   False-positive Race in libtbbmalloc.so
+   Helgrind:Race
+   obj:*/libtbbmalloc.so*
+   ...
+   fun:tbb_aligned_malloc
+   ...
+}
+
+{
+   False-positive Race in libtbbmalloc.so
+   Helgrind:Race
+   obj:*/libtbbmalloc.so*
+   ...
+   fun:tbb_free
+   ...
+}
+
+{
+   False-positive Race in libtbbmalloc.so
+   Helgrind:Race
+   obj:*/libtbbmalloc.so*
+   ...
+   fun:__nptl_deallocate_tsd
+   ...
+}
+
+{
+   False-positive Race in _Z22pow2AlignedAllocHelperP17umf_memory_pool_t
+   Helgrind:Race
+   fun:memset
+   fun:_Z22pow2AlignedAllocHelperP17umf_memory_pool_t
+   ...
+}
