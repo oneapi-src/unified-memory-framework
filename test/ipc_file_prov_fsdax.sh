@@ -14,7 +14,13 @@ if [ "$UMF_TESTS_FSDAX_PATH" = "" ]; then
 	exit 0
 fi
 
+if [ "$UMF_TESTS_FSDAX_PATH_2" = "" ]; then
+	echo "$0: Test skipped, UMF_TESTS_FSDAX_PATH_2 is not set";
+	exit 0
+fi
+
 FILE_NAME="$UMF_TESTS_FSDAX_PATH"
+FILE_NAME_2="$UMF_TESTS_FSDAX_PATH_2"
 
 # port should be a number from the range <1024, 65535>
 PORT=$(( 1024 + ( $$ % ( 65535 - 1024 ))))
@@ -31,7 +37,7 @@ echo "Waiting 1 sec ..."
 sleep 1
 
 echo "Starting ipc_file_prov_fsdax PRODUCER on port $PORT ..."
-UMF_LOG=$UMF_LOG_VAL ./umf_test-ipc_file_prov_producer $PORT $FILE_NAME "FSDAX"
+UMF_LOG=$UMF_LOG_VAL ./umf_test-ipc_file_prov_producer $PORT $FILE_NAME_2 "FSDAX"
 
 # remove the SHM file
 rm -f ${FILE_NAME}
