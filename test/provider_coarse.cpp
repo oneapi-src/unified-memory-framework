@@ -85,11 +85,10 @@ TEST_F(test, coarseProvider_name_no_upstream) {
 
     const size_t init_buffer_size = 20 * MB;
 
-    // Preallocate some memory
-    std::unique_ptr<char[]> buffer(new char[init_buffer_size]);
-    void *buf = buffer.get();
+    // preallocate some memory and initialize the vector with zeros
+    std::vector<char> buffer(init_buffer_size, 0);
+    void *buf = (void *)buffer.data();
     ASSERT_NE(buf, nullptr);
-    memset(buf, 0, init_buffer_size);
 
     coarse_memory_provider_params_t coarse_memory_provider_params;
     // make sure there are no undefined members - prevent a UB
@@ -159,11 +158,10 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseProvider_wrong_params_1) {
 
     const size_t init_buffer_size = 20 * MB;
 
-    // Preallocate some memory
-    std::unique_ptr<char[]> buffer(new char[init_buffer_size]);
-    void *buf = buffer.get();
+    // preallocate some memory and initialize the vector with zeros
+    std::vector<char> buffer(init_buffer_size, 0);
+    void *buf = (void *)buffer.data();
     ASSERT_NE(buf, nullptr);
-    memset(buf, 0, init_buffer_size);
 
     coarse_memory_provider_params_t coarse_memory_provider_params;
     // make sure there are no undefined members - prevent a UB
@@ -223,11 +221,10 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseProvider_wrong_params_3) {
 
     const size_t init_buffer_size = 20 * MB;
 
-    // Preallocate some memory
-    std::unique_ptr<char[]> buffer(new char[init_buffer_size]);
-    void *buf = buffer.get();
+    // preallocate some memory and initialize the vector with zeros
+    std::vector<char> buffer(init_buffer_size, 0);
+    void *buf = (void *)buffer.data();
     ASSERT_NE(buf, nullptr);
-    memset(buf, 0, init_buffer_size);
 
     coarse_memory_provider_params_t coarse_memory_provider_params;
     // make sure there are no undefined members - prevent a UB
@@ -284,11 +281,10 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseProvider_wrong_params_5) {
 
     const size_t init_buffer_size = 20 * MB;
 
-    // Preallocate some memory
-    std::unique_ptr<char[]> buffer(new char[init_buffer_size]);
-    void *buf = buffer.get();
+    // preallocate some memory and initialize the vector with zeros
+    std::vector<char> buffer(init_buffer_size, 0);
+    void *buf = (void *)buffer.data();
     ASSERT_NE(buf, nullptr);
-    memset(buf, 0, init_buffer_size);
 
     coarse_memory_provider_params_t coarse_memory_provider_params;
     // make sure there are no undefined members - prevent a UB
@@ -521,11 +517,10 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseProvider_purge_no_upstream) {
 
     const size_t init_buffer_size = 20 * MB;
 
-    // Preallocate some memory
-    std::unique_ptr<char[]> buffer(new char[init_buffer_size]);
-    void *buf = buffer.get();
+    // preallocate some memory and initialize the vector with zeros
+    std::vector<char> buffer(init_buffer_size, 0);
+    void *buf = (void *)buffer.data();
     ASSERT_NE(buf, nullptr);
-    memset(buf, 0, init_buffer_size);
 
     coarse_memory_provider_params_t coarse_memory_provider_params;
     // make sure there are no undefined members - prevent a UB
