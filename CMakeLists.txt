@@ -35,8 +35,8 @@ find_package(PkgConfig)
 
 # Build Options
 option(UMF_BUILD_SHARED_LIBRARY "Build UMF as shared library" OFF)
-option(UMF_BUILD_LEVEL_ZERO_PROVIDER "Build Level Zero memory provider" ON)
-option(UMF_BUILD_CUDA_PROVIDER "Build CUDA memory provider" ON)
+option(UMF_BUILD_LEVEL_ZERO_PROVIDER "Build Level Zero memory provider" OFF)
+option(UMF_BUILD_CUDA_PROVIDER "Build CUDA memory provider" OFF)
 option(UMF_BUILD_LIBUMF_POOL_DISJOINT
        "Build the libumf_pool_disjoint static library" OFF)
 option(UMF_BUILD_LIBUMF_POOL_JEMALLOC
