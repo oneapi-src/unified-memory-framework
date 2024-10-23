@@ -26,6 +26,7 @@ env:
   FSDAX_NAMESPACE : "1.0"
   FSDAX_PMEM: "pmem1"
   UMF_TESTS_FSDAX_PATH: "/mnt/pmem1/file"
+  UMF_TESTS_FSDAX_PATH_2: "/mnt/pmem1/file_2"
   BUILD_DIR : "${{github.workspace}}/build"
   INSTL_DIR : "${{github.workspace}}/../install-dir"
   COVERAGE_DIR : "${{github.workspace}}/coverage"
@@ -55,11 +56,12 @@ jobs:
         run: |
           echo FSDAX_NAMESPACE="${{env.FSDAX_NAMESPACE}}"
           echo UMF_TESTS_FSDAX_PATH="${{env.UMF_TESTS_FSDAX_PATH}}"
+          echo UMF_TESTS_FSDAX_PATH_2="${{env.UMF_TESTS_FSDAX_PATH_2}}"
           ndctl list --namespace=namespace${{env.FSDAX_NAMESPACE}}
           ls -al /dev/${{env.FSDAX_PMEM}} /mnt/${{env.FSDAX_PMEM}}
           mount | grep -e "/dev/${{env.FSDAX_PMEM}}"
-          touch ${{env.UMF_TESTS_FSDAX_PATH}}
-          rm -f ${{env.UMF_TESTS_FSDAX_PATH}}
+          touch ${{env.UMF_TESTS_FSDAX_PATH}} ${{env.UMF_TESTS_FSDAX_PATH_2}}
+          rm -f ${{env.UMF_TESTS_FSDAX_PATH}} ${{env.UMF_TESTS_FSDAX_PATH_2}}
 
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -100,9 +102,9 @@ jobs:
       - name: Run the FSDAX tests
         working-directory: ${{env.BUILD_DIR}}
         run: |
-          UMF_TESTS_FSDAX_PATH=${{env.UMF_TESTS_FSDAX_PATH}} ctest -C ${{matrix.build_type}} -R umf-provider_file_memory -V
-          UMF_TESTS_FSDAX_PATH=${{env.UMF_TESTS_FSDAX_PATH}} ctest -C ${{matrix.build_type}} -R umf_example_dram_and_fsdax -V
-          UMF_TESTS_FSDAX_PATH=${{env.UMF_TESTS_FSDAX_PATH}} ctest -C ${{matrix.build_type}} -R umf-ipc_file_prov_fsdax -V
+          UMF_TESTS_FSDAX_PATH=${{env.UMF_TESTS_FSDAX_PATH}} UMF_TESTS_FSDAX_PATH_2=${{env.UMF_TESTS_FSDAX_PATH_2}} ctest -C ${{matrix.build_type}} -R umf-provider_file_memory -V
+          UMF_TESTS_FSDAX_PATH=${{env.UMF_TESTS_FSDAX_PATH}} UMF_TESTS_FSDAX_PATH_2=${{env.UMF_TESTS_FSDAX_PATH_2}} ctest -C ${{matrix.build_type}} -R umf_example_dram_and_fsdax -V
+          UMF_TESTS_FSDAX_PATH=${{env.UMF_TESTS_FSDAX_PATH}} UMF_TESTS_FSDAX_PATH_2=${{env.UMF_TESTS_FSDAX_PATH_2}} ctest -C ${{matrix.build_type}} -R umf-ipc_file_prov_fsdax -V
 
       - name: Check coverage
         if:  ${{ matrix.build_type == 'Debug' }}
