@@ -12,8 +12,11 @@
 #include "base.hpp"
 
 #include "cpp_helpers.hpp"
-#include "ipcFixtures.hpp"
 #include "test_helpers.h"
+
+#define UMF_TEST_PROVIDER_FREE_NOT_SUPPORTED 1
+#include "ipcFixtures.hpp"
+#undef UMF_TEST_PROVIDER_FREE_NOT_SUPPORTED
 
 #include <umf/memory_provider.h>
 #include <umf/providers/provider_devdax_memory.h>
