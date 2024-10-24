@@ -57,6 +57,9 @@ jobs:
     if: github.repository == 'oneapi-src/unified-memory-framework'
     needs: [Build, DevDax, GPU, MultiNuma, Qemu, ProxyLib]
     uses: ./.github/workflows/reusable_coverage.yml
+    secrets: inherit
+    with:
+      trigger: "${{github.event_name}}"
   Coverage_partial:
     # partial coverage (on forks)
     if: github.repository != 'oneapi-src/unified-memory-framework'
