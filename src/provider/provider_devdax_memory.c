@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <limits.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,12 +37,13 @@ umf_memory_provider_ops_t *umfDevDaxMemoryProviderOps(void) {
 #define TLS_MSG_BUF_LEN 1024
 
 typedef struct devdax_memory_provider_t {
-    char path[PATH_MAX]; // a path to the device DAX
-    size_t size;         // size of the file used for memory mapping
-    void *base;          // base address of memory mapping
-    size_t offset;       // offset in the file used for memory mapping
-    utils_mutex_t lock;  // lock of ptr and offset
-    unsigned protection; // combination of OS-specific protection flags
+    char path[PATH_MAX];         // a path to the device DAX
+    size_t size;                 // size of the file used for memory mapping
+    void *base;                  // base address of memory mapping
+    size_t offset;               // offset in the file used for memory mapping
+    utils_mutex_t lock;          // lock of ptr and offset
+    unsigned protection;         // combination of OS-specific protection flags
+    bool ipc_consumer_only_mode; // when path==NULL and size==0
 } devdax_memory_provider_t;
 
 typedef struct devdax_last_native_error_t {
@@ -104,13 +106,9 @@ static umf_result_t devdax_initialize(void *params, void **provider) {
     umf_devdax_memory_provider_params_t *in_params =
         (umf_devdax_memory_provider_params_t *)params;
 
-    if (in_params->path == NULL) {
-        LOG_ERR("devdax path is missing");
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
-    if (in_params->size == 0) {
-        LOG_ERR("devdax size is 0");
+    if (!(!in_params->path == !in_params->size)) {
+        LOG_ERR(
+            "both path and size of the devdax have to be provided or both not");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -121,6 +119,14 @@ static umf_result_t devdax_initialize(void *params, void **provider) {
     }
 
     memset(devdax_provider, 0, sizeof(*devdax_provider));
+
+    if (in_params->path == NULL && in_params->size == 0) {
+        // IPC-consumer-only mode
+        devdax_provider->ipc_consumer_only_mode = true;
+        LOG_INFO("devdax provider started in the IPC-consumer-only mode");
+        *provider = devdax_provider;
+        return UMF_RESULT_SUCCESS;
+    }
 
     ret = devdax_translate_params(in_params, devdax_provider);
     if (ret != UMF_RESULT_SUCCESS) {
@@ -181,8 +187,12 @@ static void devdax_finalize(void *provider) {
     }
 
     devdax_memory_provider_t *devdax_provider = provider;
-    utils_mutex_destroy_not_free(&devdax_provider->lock);
-    utils_munmap(devdax_provider->base, devdax_provider->size);
+
+    if (!devdax_provider->ipc_consumer_only_mode) {
+        utils_mutex_destroy_not_free(&devdax_provider->lock);
+        utils_munmap(devdax_provider->base, devdax_provider->size);
+    }
+
     umf_ba_global_free(devdax_provider);
 }
 
@@ -224,7 +234,22 @@ static umf_result_t devdax_alloc(void *provider, size_t size, size_t alignment,
                                  void **resultPtr) {
     int ret;
 
-    if (provider == NULL || resultPtr == NULL) {
+    if (provider == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    devdax_memory_provider_t *devdax_provider =
+        (devdax_memory_provider_t *)provider;
+
+    if (devdax_provider->ipc_consumer_only_mode) {
+        LOG_ERR("devdax provider is working in the IPC-consumer-only mode");
+        if (resultPtr) {
+            *resultPtr = NULL;
+        }
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
+
+    if (resultPtr == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -236,9 +261,6 @@ static umf_result_t devdax_alloc(void *provider, size_t size, size_t alignment,
                 alignment);
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
-
-    devdax_memory_provider_t *devdax_provider =
-        (devdax_memory_provider_t *)provider;
 
     void *addr = NULL;
     errno = 0;
@@ -323,7 +345,19 @@ static umf_result_t devdax_purge_lazy(void *provider, void *ptr, size_t size) {
 }
 
 static umf_result_t devdax_purge_force(void *provider, void *ptr, size_t size) {
-    if (provider == NULL || ptr == NULL) {
+    if (provider == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    devdax_memory_provider_t *devdax_provider =
+        (devdax_memory_provider_t *)provider;
+
+    if (devdax_provider->ipc_consumer_only_mode) {
+        LOG_ERR("devdax provider is working in the IPC-consumer-only mode");
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
+
+    if (ptr == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -345,17 +379,38 @@ static const char *devdax_get_name(void *provider) {
 static umf_result_t devdax_allocation_split(void *provider, void *ptr,
                                             size_t totalSize,
                                             size_t firstSize) {
-    (void)provider;
     (void)ptr;
     (void)totalSize;
     (void)firstSize;
+
+    if (provider == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    devdax_memory_provider_t *devdax_provider =
+        (devdax_memory_provider_t *)provider;
+
+    if (devdax_provider->ipc_consumer_only_mode) {
+        LOG_ERR("devdax provider is working in the IPC-consumer-only mode");
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
 
     return UMF_RESULT_SUCCESS;
 }
 
 static umf_result_t devdax_allocation_merge(void *provider, void *lowPtr,
                                             void *highPtr, size_t totalSize) {
-    (void)provider;
+    if (provider == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    devdax_memory_provider_t *devdax_provider =
+        (devdax_memory_provider_t *)provider;
+
+    if (devdax_provider->ipc_consumer_only_mode) {
+        LOG_ERR("devdax provider is working in the IPC-consumer-only mode");
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
 
     if ((uintptr_t)highPtr <= (uintptr_t)lowPtr) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
@@ -369,9 +424,10 @@ static umf_result_t devdax_allocation_merge(void *provider, void *lowPtr,
 }
 
 typedef struct devdax_ipc_data_t {
-    char dd_path[PATH_MAX]; // path to the /dev/dax
-    size_t dd_size;         // size of the /dev/dax
-    size_t offset;          // offset of the data
+    char path[PATH_MAX]; // path to the /dev/dax
+    unsigned protection; // combination of OS-specific memory protection flags
+    size_t offset;       // offset of the data
+    size_t length;       // length of the data
 } devdax_ipc_data_t;
 
 static umf_result_t devdax_get_ipc_handle_size(void *provider, size_t *size) {
@@ -386,46 +442,57 @@ static umf_result_t devdax_get_ipc_handle_size(void *provider, size_t *size) {
 
 static umf_result_t devdax_get_ipc_handle(void *provider, const void *ptr,
                                           size_t size, void *providerIpcData) {
-    (void)size; // unused
-
-    if (provider == NULL || ptr == NULL || providerIpcData == NULL) {
+    if (provider == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
     devdax_memory_provider_t *devdax_provider =
         (devdax_memory_provider_t *)provider;
 
+    if (devdax_provider->ipc_consumer_only_mode) {
+        LOG_ERR("devdax provider is working in the IPC-consumer-only mode");
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
+
+    if (ptr == NULL || providerIpcData == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     devdax_ipc_data_t *devdax_ipc_data = (devdax_ipc_data_t *)providerIpcData;
+    strncpy(devdax_ipc_data->path, devdax_provider->path, PATH_MAX - 1);
+    devdax_ipc_data->path[PATH_MAX - 1] = '\0';
+    devdax_ipc_data->protection = devdax_provider->protection;
     devdax_ipc_data->offset =
         (size_t)((uintptr_t)ptr - (uintptr_t)devdax_provider->base);
-    strncpy(devdax_ipc_data->dd_path, devdax_provider->path, PATH_MAX - 1);
-    devdax_ipc_data->dd_path[PATH_MAX - 1] = '\0';
-    devdax_ipc_data->dd_size = devdax_provider->size;
+    devdax_ipc_data->length = size;
 
     return UMF_RESULT_SUCCESS;
 }
 
 static umf_result_t devdax_put_ipc_handle(void *provider,
                                           void *providerIpcData) {
-    if (provider == NULL || providerIpcData == NULL) {
+    if (provider == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
     devdax_memory_provider_t *devdax_provider =
         (devdax_memory_provider_t *)provider;
-    devdax_ipc_data_t *devdax_ipc_data = (devdax_ipc_data_t *)providerIpcData;
 
-    // verify the path of the /dev/dax
-    if (strncmp(devdax_ipc_data->dd_path, devdax_provider->path, PATH_MAX)) {
-        LOG_ERR("devdax path mismatch (local: %s, ipc: %s)",
-                devdax_provider->path, devdax_ipc_data->dd_path);
+    if (devdax_provider->ipc_consumer_only_mode) {
+        LOG_ERR("devdax provider is working in the IPC-consumer-only mode");
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
+
+    if (providerIpcData == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    // verify the size of the /dev/dax
-    if (devdax_ipc_data->dd_size != devdax_provider->size) {
-        LOG_ERR("devdax size mismatch (local: %zu, ipc: %zu)",
-                devdax_provider->size, devdax_ipc_data->dd_size);
+    devdax_ipc_data_t *devdax_ipc_data = (devdax_ipc_data_t *)providerIpcData;
+
+    // verify the path of the /dev/dax
+    if (strncmp(devdax_ipc_data->path, devdax_provider->path, PATH_MAX)) {
+        LOG_ERR("devdax path mismatch (local: %s, ipc: %s)",
+                devdax_provider->path, devdax_ipc_data->path);
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -438,58 +505,52 @@ static umf_result_t devdax_open_ipc_handle(void *provider,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    devdax_memory_provider_t *devdax_provider =
-        (devdax_memory_provider_t *)provider;
     devdax_ipc_data_t *devdax_ipc_data = (devdax_ipc_data_t *)providerIpcData;
 
-    // verify it is the same devdax - first verify the path
-    if (strncmp(devdax_ipc_data->dd_path, devdax_provider->path, PATH_MAX)) {
-        LOG_ERR("devdax path mismatch (local: %s, ipc: %s)",
-                devdax_provider->path, devdax_ipc_data->dd_path);
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
-    // verify the size of the /dev/dax
-    if (devdax_ipc_data->dd_size != devdax_provider->size) {
-        LOG_ERR("devdax size mismatch (local: %zu, ipc: %zu)",
-                devdax_provider->size, devdax_ipc_data->dd_size);
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
-    umf_result_t ret = UMF_RESULT_SUCCESS;
-    int fd = utils_devdax_open(devdax_provider->path);
+    int fd = utils_devdax_open(devdax_ipc_data->path);
     if (fd == -1) {
-        LOG_PERR("opening a devdax (%s) failed", devdax_provider->path);
+        LOG_PERR("opening the devdax (%s) failed", devdax_ipc_data->path);
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
     unsigned map_sync_flag = 0;
     utils_translate_mem_visibility_flag(UMF_MEM_MAP_SYNC, &map_sync_flag);
 
+    // length and offset passed to mmap() have to be page-aligned
+    size_t page_size = utils_get_page_size();
+    size_t offset_aligned = ALIGN_DOWN(devdax_ipc_data->offset, page_size);
+    size_t offset_diff = devdax_ipc_data->offset - offset_aligned;
+    size_t new_length = devdax_ipc_data->length + offset_diff;
+    size_t length_aligned = ALIGN_UP(new_length, page_size);
+
     // mmap /dev/dax with the MAP_SYNC xor MAP_SHARED flag (if MAP_SYNC fails)
-    char *base = utils_mmap_file(NULL, devdax_provider->size,
-                                 devdax_provider->protection, map_sync_flag, fd,
-                                 0 /* offset */);
-    if (base == NULL) {
+    char *addr =
+        utils_mmap_file(NULL, length_aligned, devdax_ipc_data->protection,
+                        map_sync_flag, fd, offset_aligned);
+    if (addr == NULL) {
         devdax_store_last_native_error(UMF_DEVDAX_RESULT_ERROR_ALLOC_FAILED,
                                        errno);
         LOG_PERR("devdax mapping failed (path: %s, size: %zu, protection: %i, "
-                 "fd: %i)",
-                 devdax_provider->path, devdax_provider->size,
-                 devdax_provider->protection, fd);
-        ret = UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
+                 "fd: %i, offset: %zu)",
+                 devdax_ipc_data->path, length_aligned,
+                 devdax_ipc_data->protection, fd, offset_aligned);
+
+        *ptr = NULL;
+        (void)utils_close_fd(fd);
+
+        return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
 
     LOG_DEBUG("devdax mapped (path: %s, size: %zu, protection: %i, fd: %i, "
               "offset: %zu)",
-              devdax_provider->path, devdax_provider->size,
-              devdax_provider->protection, fd, devdax_ipc_data->offset);
+              devdax_ipc_data->path, length_aligned,
+              devdax_ipc_data->protection, fd, offset_aligned);
+
+    *ptr = addr + offset_diff;
 
     (void)utils_close_fd(fd);
 
-    *ptr = base + devdax_ipc_data->offset;
-
-    return ret;
+    return UMF_RESULT_SUCCESS;
 }
 
 static umf_result_t devdax_close_ipc_handle(void *provider, void *ptr,
@@ -498,11 +559,15 @@ static umf_result_t devdax_close_ipc_handle(void *provider, void *ptr,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    devdax_memory_provider_t *devdax_provider =
-        (devdax_memory_provider_t *)provider;
+    // ptr and size passed to munmap() have to be page-aligned
+    size_t page_size = utils_get_page_size();
+    void *ptr_aligned = (void *)ALIGN_DOWN((uintptr_t)ptr, page_size);
+    size_t ptr_diff = (uintptr_t)ptr - (uintptr_t)ptr_aligned;
+    size_t new_size = size + ptr_diff;
+    size_t size_aligned = ALIGN_UP(new_size, page_size);
 
     errno = 0;
-    int ret = utils_munmap(devdax_provider->base, devdax_provider->size);
+    int ret = utils_munmap(ptr_aligned, size_aligned);
     // ignore error when size == 0
     if (ret && (size > 0)) {
         devdax_store_last_native_error(UMF_DEVDAX_RESULT_ERROR_FREE_FAILED,

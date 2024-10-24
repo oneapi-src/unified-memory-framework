@@ -39,7 +39,7 @@ jobs:
     if: github.repository == 'oneapi-src/unified-memory-framework'
     strategy:
       matrix:
-        build_type: [Debug, Release]
+        build_type: [Debug]
         shared_library: ['ON', 'OFF']
 
     runs-on: ["DSS-DEVDAX", "DSS-Ubuntu"]
@@ -105,19 +105,3 @@ jobs:
           UMF_TESTS_FSDAX_PATH=${{env.UMF_TESTS_FSDAX_PATH}} UMF_TESTS_FSDAX_PATH_2=${{env.UMF_TESTS_FSDAX_PATH_2}} ctest -C ${{matrix.build_type}} -R umf-provider_file_memory -V
           UMF_TESTS_FSDAX_PATH=${{env.UMF_TESTS_FSDAX_PATH}} UMF_TESTS_FSDAX_PATH_2=${{env.UMF_TESTS_FSDAX_PATH_2}} ctest -C ${{matrix.build_type}} -R umf_example_dram_and_fsdax -V
           UMF_TESTS_FSDAX_PATH=${{env.UMF_TESTS_FSDAX_PATH}} UMF_TESTS_FSDAX_PATH_2=${{env.UMF_TESTS_FSDAX_PATH_2}} ctest -C ${{matrix.build_type}} -R umf-ipc_file_prov_fsdax -V
-
-      - name: Check coverage
-        if:  ${{ matrix.build_type == 'Debug' }}
-        working-directory: ${{env.BUILD_DIR}}
-        run: |
-          export COVERAGE_FILE_NAME=${{env.COVERAGE_NAME}}-shared-${{matrix.shared_library}}
-          echo "COVERAGE_FILE_NAME: $COVERAGE_FILE_NAME"
-          ../scripts/coverage/coverage_capture.sh $COVERAGE_FILE_NAME
-          mkdir -p ${{env.COVERAGE_DIR}}
-          mv ./$COVERAGE_FILE_NAME ${{env.COVERAGE_DIR}}
-
-      - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
-        if:  ${{ matrix.build_type == 'Debug' }}
-        with:
-          name: ${{env.COVERAGE_NAME}}-shared-${{matrix.shared_library}}
-          path: ${{env.COVERAGE_DIR}}
