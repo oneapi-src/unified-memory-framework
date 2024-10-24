@@ -12,6 +12,7 @@
 #include <umf/providers/provider_os_memory.h>
 
 #include "test_helpers.h"
+#include "ut_asserts.h"
 
 umf_memory_pool_handle_t
 createDisjointPool(umf_memory_provider_handle_t provider) {

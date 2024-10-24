@@ -8,6 +8,8 @@
 #include "provider_null.h"
 #include "test_helpers.h"
 
+#include "ut_asserts.h"
+
 void test_disjoint_pool_default_params(void) {
     umf_memory_provider_handle_t provider = nullProviderCreate();
     umf_result_t retp;
