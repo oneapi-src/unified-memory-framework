@@ -12,6 +12,7 @@
 #include "base.hpp"
 
 #include "cpp_helpers.hpp"
+#include "ipcFixtures.hpp"
 #include "test_helpers.h"
 
 #include <umf/memory_provider.h>
@@ -179,14 +180,15 @@ TEST_F(test, test_if_mapped_with_MAP_SYNC) {
 
 // positive tests using test_alloc_free_success
 
-auto defaultParams = umfDevDaxMemoryProviderParamsDefault(
+auto defaultDevDaxParams = umfDevDaxMemoryProviderParamsDefault(
     getenv("UMF_TESTS_DEVDAX_PATH"),
     atol(getenv("UMF_TESTS_DEVDAX_SIZE") ? getenv("UMF_TESTS_DEVDAX_SIZE")
                                          : "0"));
 
 INSTANTIATE_TEST_SUITE_P(devdaxProviderTest, umfProviderTest,
                          ::testing::Values(providerCreateExtParams{
-                             umfDevDaxMemoryProviderOps(), &defaultParams}));
+                             umfDevDaxMemoryProviderOps(),
+                             &defaultDevDaxParams}));
 
 TEST_P(umfProviderTest, create_destroy) {}
 
@@ -343,3 +345,15 @@ TEST_F(test, create_wrong_size_0) {
     EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
     EXPECT_EQ(hProvider, nullptr);
 }
+
+HostMemoryAccessor hostAccessor;
+
+static std::vector<ipcTestParams> ipcProxyPoolTestParamsList = {
+    {umfProxyPoolOps(), nullptr, umfDevDaxMemoryProviderOps(),
+     &defaultDevDaxParams, &hostAccessor},
+};
+
+GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(umfIpcTest);
+
+INSTANTIATE_TEST_SUITE_P(DevDaxProviderProxyPoolTest, umfIpcTest,
+                         ::testing::ValuesIn(ipcProxyPoolTestParamsList));
