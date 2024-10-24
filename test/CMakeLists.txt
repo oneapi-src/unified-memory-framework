@@ -500,6 +500,40 @@ if(LINUX)
                                    PRIVATE ${LEVEL_ZERO_INCLUDE_DIRS})
         add_umf_ipc_test(TEST ipc_level_zero_prov SRC_DIR providers)
     endif()
+
+    if(UMF_BUILD_GPU_TESTS
+       AND UMF_BUILD_CUDA_PROVIDER
+       AND UMF_BUILD_LIBUMF_POOL_DISJOINT)
+        build_umf_test(
+            NAME
+            ipc_cuda_prov_consumer
+            SRCS
+            providers/ipc_cuda_prov_consumer.c
+            common/ipc_common.c
+            providers/ipc_cuda_prov_common.c
+            providers/cuda_helpers.cpp
+            LIBS
+            cuda
+            disjoint_pool
+            ${UMF_UTILS_FOR_TEST})
+        build_umf_test(
+            NAME
+            ipc_cuda_prov_producer
+            SRCS
+            providers/ipc_cuda_prov_producer.c
+            common/ipc_common.c
+            providers/ipc_cuda_prov_common.c
+            providers/cuda_helpers.cpp
+            LIBS
+            cuda
+            disjoint_pool
+            ${UMF_UTILS_FOR_TEST})
+        target_include_directories(umf_test-ipc_cuda_prov_producer
+                                   PRIVATE ${CUDA_INCLUDE_DIRS})
+        target_include_directories(umf_test-ipc_cuda_prov_consumer
+                                   PRIVATE ${CUDA_INCLUDE_DIRS})
+        add_umf_ipc_test(TEST ipc_cuda_prov SRC_DIR providers)
+    endif()
 else()
     message(STATUS "IPC tests are supported on Linux only - skipping")
 endif()

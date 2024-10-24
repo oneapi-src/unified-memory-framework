@@ -9,11 +9,11 @@
 #include <stdlib.h>
 
 #include <umf/pools/pool_disjoint.h>
-#include <umf/providers/provider_level_zero.h>
+#include <umf/providers/provider_cuda.h>
 
+#include "cuda_helpers.h"
 #include "ipc_common.h"
-#include "ipc_level_zero_prov_common.h"
-#include "level_zero_helpers.h"
+#include "ipc_cuda_prov_common.h"
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
@@ -23,12 +23,12 @@ int main(int argc, char *argv[]) {
 
     int port = atoi(argv[1]);
 
-    level_zero_memory_provider_params_t l0_params =
-        create_level_zero_prov_params(UMF_MEMORY_TYPE_DEVICE);
+    cuda_memory_provider_params_t cu_params =
+        create_cuda_prov_params(UMF_MEMORY_TYPE_DEVICE);
 
     umf_disjoint_pool_params_t pool_params = umfDisjointPoolParamsDefault();
 
-    return run_consumer(port, umfDisjointPoolOps(), &pool_params,
-                        umfLevelZeroMemoryProviderOps(), &l0_params, memcopy,
-                        &l0_params);
+    return run_producer(port, umfDisjointPoolOps(), &pool_params,
+                        umfCUDAMemoryProviderOps(), &cu_params, memcopy,
+                        &cu_params);
 }
