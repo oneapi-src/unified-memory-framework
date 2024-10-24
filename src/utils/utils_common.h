@@ -40,6 +40,10 @@ typedef enum umf_purge_advise_t {
 #define IS_NOT_ALIGNED(value, align)                                           \
     ((align != 0 && (((value) & ((align)-1)) != 0)))
 #define ALIGN_UP(value, align) (((value) + (align)-1) & ~((align)-1))
+#define ALIGN_UP_SAFE(value, align)                                            \
+    (((align) == 0)                                                            \
+         ? (value)                                                             \
+         : (((value) + (align)-1) < (value) ? 0 : ALIGN_UP((value), (align))))
 #define ALIGN_DOWN(value, align) ((value) & ~((align)-1))
 #define ASSERT_IS_ALIGNED(value, align)                                        \
     DO_WHILE_EXPRS(assert(IS_ALIGNED(value, align)))

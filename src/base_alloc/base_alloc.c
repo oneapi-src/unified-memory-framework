@@ -134,7 +134,10 @@ static void *ba_os_alloc_annotated(size_t pool_size) {
 }
 
 umf_ba_pool_t *umf_ba_create(size_t size) {
-    size_t chunk_size = ALIGN_UP(size, MEMORY_ALIGNMENT);
+    size_t chunk_size = ALIGN_UP_SAFE(size, MEMORY_ALIGNMENT);
+    if (chunk_size == 0) {
+        return NULL;
+    }
     size_t mutex_size = ALIGN_UP(utils_mutex_get_size(), MEMORY_ALIGNMENT);
 
     size_t metadata_size = sizeof(struct umf_ba_main_pool_meta_t);
@@ -144,7 +147,10 @@ umf_ba_pool_t *umf_ba_create(size_t size) {
         pool_size = MINIMUM_POOL_SIZE;
     }
 
-    pool_size = ALIGN_UP(pool_size, ba_os_get_page_size());
+    pool_size = ALIGN_UP_SAFE(pool_size, ba_os_get_page_size());
+    if (pool_size == 0) {
+        return NULL;
+    }
 
     umf_ba_pool_t *pool = (umf_ba_pool_t *)ba_os_alloc_annotated(pool_size);
     if (!pool) {

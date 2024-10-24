@@ -14,6 +14,7 @@
 #include <umf/memory_provider_ops.h>
 
 #include "provider_trace.h"
+#include "utils_common.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -74,10 +75,6 @@ static inline void UT_OUT(const char *format, ...) {
                       (unsigned long long)(lhs), #rhs,                         \
                       (unsigned long long)(rhs)),                              \
              0)))
-
-#ifndef ALIGN_UP
-#define ALIGN_UP(value, align) (((value) + (align)-1) & ~((align)-1))
-#endif
 
 int bufferIsFilledWithChar(void *ptr, size_t size, char c);
 
