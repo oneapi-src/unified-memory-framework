@@ -31,4 +31,4 @@ echo "Waiting 1 sec ..."
 sleep 1
 
 echo "Starting ipc_devdax_prov PRODUCER on port $PORT ..."
-UMF_LOG=$UMF_LOG_VAL ./umf_test-ipc_devdax_prov_producer $PORT
+UMF_LOG=$UMF_LOG_VAL ./umf_test-ipc_devdax_prov_producer $PORT $UMF_TESTS_DEVDAX_PATH $UMF_TESTS_DEVDAX_SIZE
