@@ -124,8 +124,6 @@ void proxy_lib_create_common(void) {
 
     } else if (utils_env_var_has_str("UMF_PROXY",
                                      "page.disposition=shared-shm")) {
-        LOG_DEBUG("proxy_lib: using the MAP_SHARED visibility mode with the "
-                  "named shared memory");
         os_params.visibility = UMF_MEM_MAP_SHARED;
 
         memset(shm_name, 0, NAME_MAX);
@@ -145,9 +143,8 @@ void proxy_lib_create_common(void) {
         exit(-1);
     }
 
-    umf_result =
-        umfPoolCreate(umfPoolManagerOps(), OS_memory_provider, NULL,
-                      UMF_POOL_CREATE_FLAG_DISABLE_TRACKING, &Proxy_pool);
+    umf_result = umfPoolCreate(umfPoolManagerOps(), OS_memory_provider, NULL, 0,
+                               &Proxy_pool);
     if (umf_result != UMF_RESULT_SUCCESS) {
         LOG_ERR("creating UMF pool manager failed");
         exit(-1);
