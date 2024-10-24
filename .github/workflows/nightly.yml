@@ -184,3 +184,10 @@ jobs:
     uses: ./.github/workflows/reusable_gpu.yml
     with:
       name: "CUDA"
+
+  # Full exeuction of QEMU tests
+  QEMU:
+    uses: ./.github/workflows/reusable_qemu.yml
+    with:
+      short_run: false
+      os: "['ubuntu-23.04', 'ubuntu-24.04']"

@@ -49,9 +49,11 @@ jobs:
   Sanitizers:
     needs: [FastBuild]
     uses: ./.github/workflows/reusable_sanitizers.yml
-  Qemu:
+  QEMU:
     needs: [FastBuild]
     uses: ./.github/workflows/reusable_qemu.yml
+    with:
+      short_run: true
   Benchmarks:
     needs: [Build]
     uses: ./.github/workflows/reusable_benchmarks.yml
@@ -64,7 +66,7 @@ jobs:
   Coverage:
     # total coverage (on upstream only)
     if: github.repository == 'oneapi-src/unified-memory-framework'
-    needs: [Build, DevDax, L0, CUDA, MultiNuma, Qemu, ProxyLib]
+    needs: [Build, DevDax, L0, CUDA, MultiNuma, QEMU, ProxyLib]
     uses: ./.github/workflows/reusable_coverage.yml
     secrets: inherit
     with:
@@ -72,7 +74,7 @@ jobs:
   Coverage_partial:
     # partial coverage (on forks)
     if: github.repository != 'oneapi-src/unified-memory-framework'
-    needs: [Build, Qemu, ProxyLib]
+    needs: [Build, QEMU, ProxyLib]
     uses: ./.github/workflows/reusable_coverage.yml
   CodeQL:
     needs: [Build]
