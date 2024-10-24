@@ -10,6 +10,7 @@
 #include <stddef.h>
 
 #include "base_alloc_global.h"
+#include "ipc_cache.h"
 #include "memspace_internal.h"
 #include "provider_tracking.h"
 #include "utils_log.h"
@@ -25,6 +26,7 @@ int umfInit(void) {
     if (utils_fetch_and_add64(&umfRefCount, 1) == 0) {
         utils_log_init();
         TRACKER = umfMemoryTrackerCreate();
+        umfIpcCacheInit();
     }
 
     return (TRACKER) ? 0 : -1;
@@ -39,6 +41,7 @@ void umfTearDown(void) {
         umfMemspaceLowestLatencyDestroy();
         umfDestroyTopology();
 #endif
+        umfIpcCacheTearDown();
         // make sure TRACKER is not used after being destroyed
         umf_memory_tracker_handle_t t = TRACKER;
         TRACKER = NULL;
