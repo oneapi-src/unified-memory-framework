@@ -14,23 +14,24 @@
 #include "ipc_os_prov_common.h"
 
 int main(int argc, char *argv[]) {
-    if (argc < 2) {
-        fprintf(stderr, "usage: %s <port>\n", argv[0]);
+    if (argc < 2 || argc == 3) {
+        fprintf(stderr, "usage: %s <port> [path_devdax] [size_devdax]\n",
+                argv[0]);
+        if (argc == 3) {
+            fprintf(stderr, "error: both [path_devdax] and [size_devdax] have "
+                            "to be provided, not only one of them\n");
+        }
+
         return -1;
     }
 
     int port = atoi(argv[1]);
+    char *path = NULL;
+    char *size = "0";
 
-    char *path = getenv("UMF_TESTS_DEVDAX_PATH");
-    if (path == NULL || path[0] == 0) {
-        fprintf(stderr, "Test skipped, UMF_TESTS_DEVDAX_PATH is not set\n");
-        return 0;
-    }
-
-    char *size = getenv("UMF_TESTS_DEVDAX_SIZE");
-    if (size == NULL || size[0] == 0) {
-        fprintf(stderr, "Test skipped, UMF_TESTS_DEVDAX_SIZE is not set\n");
-        return 0;
+    if (argc >= 4) {
+        path = argv[2];
+        size = argv[3];
     }
 
     umf_devdax_memory_provider_params_t devdax_params =
