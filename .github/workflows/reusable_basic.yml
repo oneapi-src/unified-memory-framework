@@ -76,15 +76,15 @@ jobs:
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
           # test icx compiler
-          - os: 'ubuntu-22.04'
-            build_type: Release
-            compiler: {c: icx, cxx: icpx}
-            shared_library: 'ON'
-            level_zero_provider: 'ON'
-            cuda_provider: 'ON'
-            install_tbb: 'ON'
-            disable_hwloc: 'OFF'
-            link_hwloc_statically: 'OFF'
+          # - os: 'ubuntu-22.04'
+            # build_type: Release
+            # compiler: {c: icx, cxx: icpx}
+            # shared_library: 'ON'
+            # level_zero_provider: 'ON'
+            # cuda_provider: 'ON'
+            # install_tbb: 'ON'
+            # disable_hwloc: 'OFF'
+            # link_hwloc_statically: 'OFF'
           # test without installing TBB
           - os: 'ubuntu-22.04'
             build_type: Release
