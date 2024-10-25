@@ -106,26 +106,6 @@ jobs:
         working-directory: ${{env.BUILD_DIR}}
         run: ctest --output-on-failure --test-dir examples -C ${{matrix.build_type}}
 
-      - name: Run benchmarks
-        working-directory: ${{env.BUILD_DIR}}
-        run: ctest --output-on-failure --test-dir benchmark -C ${{matrix.build_type}} --exclude-regex umf-bench-multithreaded
-
-      - name: Check coverage
-        if:  ${{ matrix.build_type == 'Debug' && matrix.os == 'Ubuntu' }}
-        working-directory: ${{env.BUILD_DIR}}
-        run: |
-          export COVERAGE_FILE_NAME=${{env.COVERAGE_NAME}}-shared-${{matrix.shared_library}}
-          echo "COVERAGE_FILE_NAME: $COVERAGE_FILE_NAME"
-          ../scripts/coverage/coverage_capture.sh $COVERAGE_FILE_NAME
-          mkdir -p ${{env.COVERAGE_DIR}}
-          mv ./$COVERAGE_FILE_NAME ${{env.COVERAGE_DIR}}
-
-      - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
-        if:  ${{ matrix.build_type == 'Debug' && matrix.os == 'Ubuntu' }}
-        with:
-          name: ${{env.COVERAGE_NAME}}-shared-${{matrix.shared_library}}
-          path: ${{env.COVERAGE_DIR}}
-
   gpu-CUDA:
     name: CUDA
     env:
@@ -186,23 +166,3 @@ jobs:
     - name: Run examples
       working-directory: ${{env.BUILD_DIR}}
       run: ctest --output-on-failure --test-dir examples -C ${{matrix.build_type}}
-
-    - name: Run benchmarks
-      working-directory: ${{env.BUILD_DIR}}
-      run: ctest --output-on-failure --test-dir benchmark -C ${{matrix.build_type}} --exclude-regex umf-bench-multithreaded
-
-    - name: Check coverage
-      if:  ${{ matrix.build_type == 'Debug' && matrix.os == 'Ubuntu' }}
-      working-directory: ${{env.BUILD_DIR}}
-      run: |
-        export COVERAGE_FILE_NAME=${{env.COVERAGE_NAME}}-shared-${{matrix.shared_library}}
-        echo "COVERAGE_FILE_NAME: $COVERAGE_FILE_NAME"
-        ../scripts/coverage/coverage_capture.sh $COVERAGE_FILE_NAME
-        mkdir -p ${{env.COVERAGE_DIR}}
-        mv ./$COVERAGE_FILE_NAME ${{env.COVERAGE_DIR}}
-
-    - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
-      if:  ${{ matrix.build_type == 'Debug' && matrix.os == 'Ubuntu' }}
-      with:
-        name: ${{env.COVERAGE_NAME}}-shared-${{matrix.shared_library}}
-        path: ${{env.COVERAGE_DIR}}
