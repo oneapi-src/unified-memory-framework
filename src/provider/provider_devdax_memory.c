@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <limits.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,12 +37,13 @@ umf_memory_provider_ops_t *umfDevDaxMemoryProviderOps(void) {
 #define TLS_MSG_BUF_LEN 1024
 
 typedef struct devdax_memory_provider_t {
-    char path[PATH_MAX]; // a path to the device DAX
-    size_t size;         // size of the file used for memory mapping
-    void *base;          // base address of memory mapping
-    size_t offset;       // offset in the file used for memory mapping
-    utils_mutex_t lock;  // lock of ptr and offset
-    unsigned protection; // combination of OS-specific protection flags
+    char path[PATH_MAX];         // a path to the device DAX
+    size_t size;                 // size of the file used for memory mapping
+    void *base;                  // base address of memory mapping
+    size_t offset;               // offset in the file used for memory mapping
+    utils_mutex_t lock;          // lock of ptr and offset
+    unsigned protection;         // combination of OS-specific protection flags
+    bool ipc_consumer_only_mode; // when path==NULL and size==0
 } devdax_memory_provider_t;
 
 typedef struct devdax_last_native_error_t {
@@ -104,13 +106,9 @@ static umf_result_t devdax_initialize(void *params, void **provider) {
     umf_devdax_memory_provider_params_t *in_params =
         (umf_devdax_memory_provider_params_t *)params;
 
-    if (in_params->path == NULL) {
-        LOG_ERR("devdax path is missing");
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
-    if (in_params->size == 0) {
-        LOG_ERR("devdax size is 0");
+    if (!(!in_params->path == !in_params->size)) {
+        LOG_ERR(
+            "both path and size of the devdax have to be provided or both not");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -121,6 +119,36 @@ static umf_result_t devdax_initialize(void *params, void **provider) {
     }
 
     memset(devdax_provider, 0, sizeof(*devdax_provider));
+
+    if (in_params->path == NULL && in_params->size == 0) {
+        // IPC-consumer-only mode (limited functionality):
+        //
+        // Supported ops:
+        // .initialize()
+        // .finalize()
+        // .get_last_native_error()
+        // .get_recommended_page_size()
+        // .get_min_page_size()
+        // .get_name()
+        // .ipc.get_ipc_handle_size()
+        // .ipc.open_ipc_handle()
+        // .ipc.close_ipc_handle()
+        //
+        // Unsupported ops (always return UMF_RESULT_ERROR_NOT_SUPPORTED):
+        // .alloc()
+        // .free() (as always unsupported)
+        // .ext.purge_lazy() (as always unsupported)
+        // .ext.purge_force()
+        // .ext.allocation_split()
+        // .ext.allocation_merge()
+        // .ipc.get_ipc_handle()
+        // .ipc.put_ipc_handle()
+        devdax_provider->ipc_consumer_only_mode = true;
+        LOG_WARN("devdax provider started in the IPC-consumer-only mode "
+                 "(limited functionality)");
+        *provider = devdax_provider;
+        return UMF_RESULT_SUCCESS;
+    }
 
     ret = devdax_translate_params(in_params, devdax_provider);
     if (ret != UMF_RESULT_SUCCESS) {
@@ -181,8 +209,12 @@ static void devdax_finalize(void *provider) {
     }
 
     devdax_memory_provider_t *devdax_provider = provider;
-    utils_mutex_destroy_not_free(&devdax_provider->lock);
-    utils_munmap(devdax_provider->base, devdax_provider->size);
+
+    if (!devdax_provider->ipc_consumer_only_mode) {
+        utils_mutex_destroy_not_free(&devdax_provider->lock);
+        utils_munmap(devdax_provider->base, devdax_provider->size);
+    }
+
     umf_ba_global_free(devdax_provider);
 }
 
@@ -224,7 +256,22 @@ static umf_result_t devdax_alloc(void *provider, size_t size, size_t alignment,
                                  void **resultPtr) {
     int ret;
 
-    if (provider == NULL || resultPtr == NULL) {
+    if (provider == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    devdax_memory_provider_t *devdax_provider =
+        (devdax_memory_provider_t *)provider;
+
+    if (devdax_provider->ipc_consumer_only_mode) {
+        LOG_ERR("devdax provider is working in the IPC-consumer-only mode");
+        if (resultPtr) {
+            *resultPtr = NULL;
+        }
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
+
+    if (resultPtr == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -236,9 +283,6 @@ static umf_result_t devdax_alloc(void *provider, size_t size, size_t alignment,
                 alignment);
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
-
-    devdax_memory_provider_t *devdax_provider =
-        (devdax_memory_provider_t *)provider;
 
     void *addr = NULL;
     errno = 0;
@@ -323,7 +367,19 @@ static umf_result_t devdax_purge_lazy(void *provider, void *ptr, size_t size) {
 }
 
 static umf_result_t devdax_purge_force(void *provider, void *ptr, size_t size) {
-    if (provider == NULL || ptr == NULL) {
+    if (provider == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    devdax_memory_provider_t *devdax_provider =
+        (devdax_memory_provider_t *)provider;
+
+    if (devdax_provider->ipc_consumer_only_mode) {
+        LOG_ERR("devdax provider is working in the IPC-consumer-only mode");
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
+
+    if (ptr == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -345,17 +401,38 @@ static const char *devdax_get_name(void *provider) {
 static umf_result_t devdax_allocation_split(void *provider, void *ptr,
                                             size_t totalSize,
                                             size_t firstSize) {
-    (void)provider;
     (void)ptr;
     (void)totalSize;
     (void)firstSize;
+
+    if (provider == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    devdax_memory_provider_t *devdax_provider =
+        (devdax_memory_provider_t *)provider;
+
+    if (devdax_provider->ipc_consumer_only_mode) {
+        LOG_ERR("devdax provider is working in the IPC-consumer-only mode");
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
 
     return UMF_RESULT_SUCCESS;
 }
 
 static umf_result_t devdax_allocation_merge(void *provider, void *lowPtr,
                                             void *highPtr, size_t totalSize) {
-    (void)provider;
+    if (provider == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    devdax_memory_provider_t *devdax_provider =
+        (devdax_memory_provider_t *)provider;
+
+    if (devdax_provider->ipc_consumer_only_mode) {
+        LOG_ERR("devdax provider is working in the IPC-consumer-only mode");
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
 
     if ((uintptr_t)highPtr <= (uintptr_t)lowPtr) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
@@ -388,12 +465,21 @@ static umf_result_t devdax_get_ipc_handle_size(void *provider, size_t *size) {
 
 static umf_result_t devdax_get_ipc_handle(void *provider, const void *ptr,
                                           size_t size, void *providerIpcData) {
-    if (provider == NULL || ptr == NULL || providerIpcData == NULL) {
+    if (provider == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
     devdax_memory_provider_t *devdax_provider =
         (devdax_memory_provider_t *)provider;
+
+    if (devdax_provider->ipc_consumer_only_mode) {
+        LOG_ERR("devdax provider is working in the IPC-consumer-only mode");
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
+
+    if (ptr == NULL || providerIpcData == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
 
     devdax_ipc_data_t *devdax_ipc_data = (devdax_ipc_data_t *)providerIpcData;
     strncpy(devdax_ipc_data->path, devdax_provider->path, PATH_MAX - 1);
@@ -408,12 +494,22 @@ static umf_result_t devdax_get_ipc_handle(void *provider, const void *ptr,
 
 static umf_result_t devdax_put_ipc_handle(void *provider,
                                           void *providerIpcData) {
-    if (provider == NULL || providerIpcData == NULL) {
+    if (provider == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
     devdax_memory_provider_t *devdax_provider =
         (devdax_memory_provider_t *)provider;
+
+    if (devdax_provider->ipc_consumer_only_mode) {
+        LOG_ERR("devdax provider is working in the IPC-consumer-only mode");
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
+
+    if (providerIpcData == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     devdax_ipc_data_t *devdax_ipc_data = (devdax_ipc_data_t *)providerIpcData;
 
     // verify the path of the /dev/dax

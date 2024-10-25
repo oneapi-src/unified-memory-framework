@@ -193,6 +193,21 @@ so it should be used with a pool manager that will take over
 the managing of the provided memory - for example the jemalloc pool
 with the `disable_provider_free` parameter set to true.
 
+When the DevDax provider is started with `path == NULL` and `size == 0` input parameters
+(`umf_devdax_memory_provider_params_t`) it is working in the **IPC-consumer-only** mode
+with limited functionality. The following API is **unsupported** in IPC-consumer-only mode
+(always return `UMF_RESULT_ERROR_NOT_SUPPORTED`):
+- `umfMemoryProviderAlloc()`
+- `umfMemoryProviderFree()` (always unsupported)
+- `umfMemoryProviderPurgeLazy()` (always unsupported)
+- `umfMemoryProviderPurgeForce()`
+- `umfMemoryProviderAllocationSplit()`
+- `umfMemoryProviderAllocationMerge()`
+- `umfMemoryProviderGetIPCHandle()`
+- `umfMemoryProviderPutIPCHandle()`
+
+The rest of the API works normally.
+
 ##### Requirements
 
 1) Linux OS
