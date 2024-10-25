@@ -17,15 +17,37 @@ void utils_align_ptr_up_size_down(void **ptr, size_t *size, size_t alignment) {
     uintptr_t p = (uintptr_t)*ptr;
     size_t s = *size;
 
-    // align pointer to 'alignment' bytes and adjust the size
+    // align the pointer up to 'alignment' bytes and adjust the size down
     size_t rest = p & (alignment - 1);
     if (rest) {
-        p += alignment - rest;
+        p = ALIGN_UP(p, alignment);
         s -= alignment - rest;
     }
 
-    ASSERT((p & (alignment - 1)) == 0);
-    ASSERT((s & (alignment - 1)) == 0);
+    ASSERT(IS_ALIGNED(p, alignment));
+    ASSERT(IS_ALIGNED(s, alignment));
+
+    *ptr = (void *)p;
+    *size = s;
+}
+
+// align a pointer down and a size up (for mmap()/munmap())
+void utils_align_ptr_down_size_up(void **ptr, size_t *size, size_t alignment) {
+    uintptr_t p = (uintptr_t)*ptr;
+    size_t s = *size;
+
+    // align the pointer down to 'alignment' bytes and adjust the size up
+    size_t rest = p & (alignment - 1);
+    if (rest) {
+        p = ALIGN_DOWN(p, alignment);
+        s += rest;
+    }
+
+    // align the size up to 'alignment' bytes
+    s = ALIGN_UP(s, alignment);
+
+    ASSERT(IS_ALIGNED(p, alignment));
+    ASSERT(IS_ALIGNED(s, alignment));
 
     *ptr = (void *)p;
     *size = s;
