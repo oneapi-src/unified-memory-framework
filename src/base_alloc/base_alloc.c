@@ -168,7 +168,8 @@ umf_ba_pool_t *umf_ba_create(size_t size) {
     char *data_ptr = (char *)&pool->data;
     size_t size_left = pool_size - offsetof(umf_ba_pool_t, data);
 
-    utils_align_ptr_size((void **)&data_ptr, &size_left, MEMORY_ALIGNMENT);
+    utils_align_ptr_up_size_down((void **)&data_ptr, &size_left,
+                                 MEMORY_ALIGNMENT);
 
     // init free_lock
     utils_mutex_t *mutex = utils_mutex_init(&pool->metadata.free_lock);
@@ -209,7 +210,8 @@ void *umf_ba_alloc(umf_ba_pool_t *pool) {
         size_t size_left =
             pool->metadata.pool_size - offsetof(umf_ba_next_pool_t, data);
 
-        utils_align_ptr_size((void **)&data_ptr, &size_left, MEMORY_ALIGNMENT);
+        utils_align_ptr_up_size_down((void **)&data_ptr, &size_left,
+                                     MEMORY_ALIGNMENT);
         ba_divide_memory_into_chunks(pool, data_ptr, size_left);
     }
 

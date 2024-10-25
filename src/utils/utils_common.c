@@ -12,8 +12,8 @@
 #include "utils_assert.h"
 #include "utils_common.h"
 
-// align a pointer and a size
-void utils_align_ptr_size(void **ptr, size_t *size, size_t alignment) {
+// align a pointer up and a size down
+void utils_align_ptr_up_size_down(void **ptr, size_t *size, size_t alignment) {
     uintptr_t p = (uintptr_t)*ptr;
     size_t s = *size;
 
