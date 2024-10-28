@@ -387,7 +387,7 @@ umf_disjoint_pool_params_t disjointParams = disjointPoolParams();
 static std::vector<ipcTestParams> ipcTestParamsList = {
 #if (defined UMF_POOL_DISJOINT_ENABLED)
     {umfDisjointPoolOps(), &disjointParams, umfOsMemoryProviderOps(),
-     &os_params, &hostAccessor},
+     &os_params, &hostAccessor, false},
 #endif
 };
 
