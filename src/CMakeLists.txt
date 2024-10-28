@@ -6,17 +6,19 @@ include(${UMF_CMAKE_SOURCE_DIR}/cmake/helpers.cmake)
 
 set(UMF_LEVEL_ZERO_INCLUDE_DIR
     ""
-    CACHE PATH "Directory containing the Level Zero Headers")
+    CACHE PATH "Directory containing the Level Zero headers")
+set(UMF_CUDA_INCLUDE_DIR
+    ""
+    CACHE PATH "Directory containing the CUDA headers")
 
 # Compile definitions for UMF library.
 #
 # TODO: Cleanup the compile definitions across all the CMake files
 set(UMF_COMMON_COMPILE_DEFINITIONS UMF_VERSION=${UMF_VERSION})
 
-# Only fetch L0 loader if needed (L0 provider and GPU tests are ON), and not
-# already provided by the user (via setting UMF_LEVEL_ZERO_INCLUDE_DIR).
-if(UMF_BUILD_LEVEL_ZERO_PROVIDER AND (UMF_BUILD_GPU_TESTS
-                                      OR (NOT UMF_LEVEL_ZERO_INCLUDE_DIR)))
+# Fetch L0 loader only if needed i.e.: if building L0 provider is ON and L0
+# headers are not provided by the user (via setting UMF_LEVEL_ZERO_INCLUDE_DIR).
+if(UMF_BUILD_LEVEL_ZERO_PROVIDER AND (NOT UMF_LEVEL_ZERO_INCLUDE_DIR))
     include(FetchContent)
 
     set(LEVEL_ZERO_LOADER_REPO "https://github.com/oneapi-src/level-zero.git")
@@ -44,7 +46,9 @@ elseif(UMF_BUILD_LEVEL_ZERO_PROVIDER)
     message(STATUS "Level Zero include directory: ${LEVEL_ZERO_INCLUDE_DIRS}")
 endif()
 
-if(UMF_BUILD_CUDA_PROVIDER)
+# Fetch CUDA only if needed i.e.: if building CUDA provider is ON and CUDA
+# headers are not provided by the user (via setting UMF_CUDA_INCLUDE_DIR).
+if(UMF_BUILD_CUDA_PROVIDER AND (NOT UMF_CUDA_INCLUDE_DIR))
     include(FetchContent)
 
     set(CUDA_REPO
@@ -63,6 +67,10 @@ if(UMF_BUILD_CUDA_PROVIDER)
     set(CUDA_INCLUDE_DIRS
         ${cuda-headers_SOURCE_DIR}
         CACHE PATH "Path to CUDA headers")
+    message(STATUS "CUDA include directory: ${CUDA_INCLUDE_DIRS}")
+elseif(UMF_BUILD_CUDA_PROVIDER)
+    # Only header is needed to build UMF
+    set(CUDA_INCLUDE_DIRS ${UMF_CUDA_INCLUDE_DIR})
     message(STATUS "CUDA include directory: ${CUDA_INCLUDE_DIRS}")
 endif()
 
