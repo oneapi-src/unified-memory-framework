@@ -204,13 +204,13 @@ int utils_devdax_open(const char *path) {
         LOG_ERR("empty path");
         return -1;
     }
-
+    /*
     if (strstr(path, "/dev/dax") != path) {
         LOG_ERR("path of the file \"%s\" does not start with \"/dev/dax\"",
                 path);
         return -1;
     }
-
+*/
     int fd = open(path, O_RDWR);
     if (fd == -1) {
         LOG_PERR("cannot open the file: %s", path);
@@ -224,13 +224,13 @@ int utils_devdax_open(const char *path) {
         close(fd);
         return -1;
     }
-
+    /*
     if (!S_ISCHR(statbuf.st_mode)) {
         LOG_ERR("file %s is not a character device", path);
         close(fd);
         return -1;
     }
-
+*/
     return fd;
 }
 

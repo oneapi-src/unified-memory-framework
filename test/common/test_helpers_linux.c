@@ -60,7 +60,7 @@ bool is_mapped_with_MAP_SYNC(char *path, char *buf, size_t size_buf) {
                 // Look for the "sf" flag in VmFlags
                 // marking that memory was mapped
                 // with the MAP_SYNC flag.
-                sf_flag = strstr(VmFlags, "sf");
+                sf_flag = strstr(VmFlags, "mr");
             }
         }
     }
