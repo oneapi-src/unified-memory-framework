@@ -31,7 +31,8 @@ umf_memory_provider_ops_t *umfDevDaxMemoryProviderOps(void) {
 #include "utils_concurrency.h"
 #include "utils_log.h"
 
-#define NODESET_STR_BUF_LEN 1024
+// the default alignment for the devdax mode
+#define DEVDAX_ALIGNMENT_2MB (2 * 1024 * 1024) // == 2 MB
 
 #define TLS_MSG_BUF_LEN 1024
 
@@ -300,7 +301,8 @@ static umf_result_t devdax_get_recommended_page_size(void *provider,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    *page_size = utils_get_page_size();
+    // the default alignment for the devdax mode
+    *page_size = DEVDAX_ALIGNMENT_2MB;
 
     return UMF_RESULT_SUCCESS;
 }
@@ -369,9 +371,11 @@ static umf_result_t devdax_allocation_merge(void *provider, void *lowPtr,
 }
 
 typedef struct devdax_ipc_data_t {
-    char dd_path[PATH_MAX]; // path to the /dev/dax
-    size_t dd_size;         // size of the /dev/dax
-    size_t offset;          // offset of the data
+    char path[PATH_MAX]; // path to the /dev/dax
+    unsigned protection; // combination of OS-specific memory protection flags
+    // offset of the data (from the beginning of the devdax mapping) - see devdax_get_ipc_handle()
+    size_t offset;
+    size_t length; // length of the data
 } devdax_ipc_data_t;
 
 static umf_result_t devdax_get_ipc_handle_size(void *provider, size_t *size) {
@@ -386,8 +390,6 @@ static umf_result_t devdax_get_ipc_handle_size(void *provider, size_t *size) {
 
 static umf_result_t devdax_get_ipc_handle(void *provider, const void *ptr,
                                           size_t size, void *providerIpcData) {
-    (void)size; // unused
-
     if (provider == NULL || ptr == NULL || providerIpcData == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
@@ -396,11 +398,12 @@ static umf_result_t devdax_get_ipc_handle(void *provider, const void *ptr,
         (devdax_memory_provider_t *)provider;
 
     devdax_ipc_data_t *devdax_ipc_data = (devdax_ipc_data_t *)providerIpcData;
+    strncpy(devdax_ipc_data->path, devdax_provider->path, PATH_MAX - 1);
+    devdax_ipc_data->path[PATH_MAX - 1] = '\0';
+    devdax_ipc_data->protection = devdax_provider->protection;
     devdax_ipc_data->offset =
         (size_t)((uintptr_t)ptr - (uintptr_t)devdax_provider->base);
-    strncpy(devdax_ipc_data->dd_path, devdax_provider->path, PATH_MAX - 1);
-    devdax_ipc_data->dd_path[PATH_MAX - 1] = '\0';
-    devdax_ipc_data->dd_size = devdax_provider->size;
+    devdax_ipc_data->length = size;
 
     return UMF_RESULT_SUCCESS;
 }
@@ -416,16 +419,9 @@ static umf_result_t devdax_put_ipc_handle(void *provider,
     devdax_ipc_data_t *devdax_ipc_data = (devdax_ipc_data_t *)providerIpcData;
 
     // verify the path of the /dev/dax
-    if (strncmp(devdax_ipc_data->dd_path, devdax_provider->path, PATH_MAX)) {
+    if (strncmp(devdax_ipc_data->path, devdax_provider->path, PATH_MAX)) {
         LOG_ERR("devdax path mismatch (local: %s, ipc: %s)",
-                devdax_provider->path, devdax_ipc_data->dd_path);
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
-    // verify the size of the /dev/dax
-    if (devdax_ipc_data->dd_size != devdax_provider->size) {
-        LOG_ERR("devdax size mismatch (local: %zu, ipc: %zu)",
-                devdax_provider->size, devdax_ipc_data->dd_size);
+                devdax_provider->path, devdax_ipc_data->path);
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -438,58 +434,56 @@ static umf_result_t devdax_open_ipc_handle(void *provider,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    devdax_memory_provider_t *devdax_provider =
-        (devdax_memory_provider_t *)provider;
     devdax_ipc_data_t *devdax_ipc_data = (devdax_ipc_data_t *)providerIpcData;
 
-    // verify it is the same devdax - first verify the path
-    if (strncmp(devdax_ipc_data->dd_path, devdax_provider->path, PATH_MAX)) {
-        LOG_ERR("devdax path mismatch (local: %s, ipc: %s)",
-                devdax_provider->path, devdax_ipc_data->dd_path);
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
-    // verify the size of the /dev/dax
-    if (devdax_ipc_data->dd_size != devdax_provider->size) {
-        LOG_ERR("devdax size mismatch (local: %zu, ipc: %zu)",
-                devdax_provider->size, devdax_ipc_data->dd_size);
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
-    umf_result_t ret = UMF_RESULT_SUCCESS;
-    int fd = utils_devdax_open(devdax_provider->path);
+    int fd = utils_devdax_open(devdax_ipc_data->path);
     if (fd == -1) {
-        LOG_PERR("opening a devdax (%s) failed", devdax_provider->path);
+        LOG_PERR("opening the devdax (%s) failed", devdax_ipc_data->path);
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
     unsigned map_sync_flag = 0;
     utils_translate_mem_visibility_flag(UMF_MEM_MAP_SYNC, &map_sync_flag);
 
+    // get the page size
+    size_t page_size;
+    (void)devdax_get_recommended_page_size(provider, devdax_ipc_data->length,
+                                           &page_size);
+
+    // length and offset passed to mmap() have to be page-aligned in case of /dev/dax device
+    size_t offset_aligned = devdax_ipc_data->offset;
+    size_t length_aligned = devdax_ipc_data->length;
+    utils_align_ptr_down_size_up((void **)&offset_aligned, &length_aligned,
+                                 page_size);
+
     // mmap /dev/dax with the MAP_SYNC xor MAP_SHARED flag (if MAP_SYNC fails)
-    char *base = utils_mmap_file(NULL, devdax_provider->size,
-                                 devdax_provider->protection, map_sync_flag, fd,
-                                 0 /* offset */);
-    if (base == NULL) {
+    char *addr =
+        utils_mmap_file(NULL, length_aligned, devdax_ipc_data->protection,
+                        map_sync_flag, fd, offset_aligned);
+    if (addr == NULL) {
         devdax_store_last_native_error(UMF_DEVDAX_RESULT_ERROR_ALLOC_FAILED,
                                        errno);
         LOG_PERR("devdax mapping failed (path: %s, size: %zu, protection: %i, "
-                 "fd: %i)",
-                 devdax_provider->path, devdax_provider->size,
-                 devdax_provider->protection, fd);
-        ret = UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
+                 "fd: %i, offset: %zu)",
+                 devdax_ipc_data->path, length_aligned,
+                 devdax_ipc_data->protection, fd, offset_aligned);
+
+        *ptr = NULL;
+        (void)utils_close_fd(fd);
+
+        return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
 
     LOG_DEBUG("devdax mapped (path: %s, size: %zu, protection: %i, fd: %i, "
               "offset: %zu)",
-              devdax_provider->path, devdax_provider->size,
-              devdax_provider->protection, fd, devdax_ipc_data->offset);
+              devdax_ipc_data->path, length_aligned,
+              devdax_ipc_data->protection, fd, offset_aligned);
+
+    *ptr = addr + (devdax_ipc_data->offset - offset_aligned);
 
     (void)utils_close_fd(fd);
 
-    *ptr = base + devdax_ipc_data->offset;
-
-    return ret;
+    return UMF_RESULT_SUCCESS;
 }
 
 static umf_result_t devdax_close_ipc_handle(void *provider, void *ptr,
@@ -498,11 +492,15 @@ static umf_result_t devdax_close_ipc_handle(void *provider, void *ptr,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    devdax_memory_provider_t *devdax_provider =
-        (devdax_memory_provider_t *)provider;
+    // get the page size
+    size_t page_size;
+    (void)devdax_get_recommended_page_size(provider, size, &page_size);
+
+    // ptr and size passed to munmap() have to be page-aligned in case of /dev/dax device
+    utils_align_ptr_down_size_up(&ptr, &size, page_size);
 
     errno = 0;
-    int ret = utils_munmap(devdax_provider->base, devdax_provider->size);
+    int ret = utils_munmap(ptr, size);
     // ignore error when size == 0
     if (ret && (size > 0)) {
         devdax_store_last_native_error(UMF_DEVDAX_RESULT_ERROR_FREE_FAILED,
