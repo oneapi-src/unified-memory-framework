@@ -220,6 +220,21 @@ TEST_P(umfIpcTest, BasicFlow) {
     ret = umfPoolFree(pool.get(), ptr);
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
 
+    void *ptr1 = umfPoolMalloc(pool.get(), SIZE);
+    EXPECT_NE(ptr1, nullptr);
+
+    void *ptr2 = umfPoolMalloc(pool.get(), SIZE);
+    EXPECT_NE(ptr2, nullptr);
+
+    // fill ptr1 with data from ptr2
+    memAccessor->copy(ptr1, ptr2, SIZE);
+
+    ret = umfPoolFree(pool.get(), ptr1);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfPoolFree(pool.get(), ptr2);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+
     pool.reset(nullptr);
     EXPECT_EQ(stat.getCount, 1);
     EXPECT_EQ(stat.putCount, stat.getCount);
@@ -328,8 +343,22 @@ TEST_P(umfIpcTest, AllocFreeAllocTest) {
     ret = umfPoolFree(pool.get(), ptr);
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
 
+    void *ptr1 = umfPoolMalloc(pool.get(), SIZE);
+    ASSERT_NE(ptr1, nullptr);
+
+    void *ptr2 = umfPoolMalloc(pool.get(), SIZE);
+    ASSERT_NE(ptr2, nullptr);
+
+    // fill ptr1 with data from ptr2
+    memAccessor->copy(ptr1, ptr2, SIZE);
+
+    ret = umfPoolFree(pool.get(), ptr1);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfPoolFree(pool.get(), ptr2);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+
     pool.reset(nullptr);
-    EXPECT_EQ(stat.allocCount, stat.getCount);
     EXPECT_EQ(stat.getCount, stat.putCount);
     EXPECT_EQ(stat.openCount, stat.getCount);
     EXPECT_EQ(stat.openCount, stat.closeCount);
