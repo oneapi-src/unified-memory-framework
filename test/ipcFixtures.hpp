@@ -19,6 +19,12 @@
 #include <numeric>
 #include <tuple>
 
+#ifdef UMF_TEST_PROVIDER_FREE_NOT_SUPPORTED
+#define get_umf_result_of_free(expected_result) UMF_RESULT_ERROR_NOT_SUPPORTED
+#else
+#define get_umf_result_of_free(expected_result) (expected_result)
+#endif
+
 class MemoryAccessor {
   public:
     virtual void fill(void *ptr, size_t size, const void *pattern,
@@ -163,7 +169,7 @@ TEST_P(umfIpcTest, GetIPCHandleInvalidArgs) {
     EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 
     ret = umfFree(ptr);
-    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+    EXPECT_EQ(ret, get_umf_result_of_free(UMF_RESULT_SUCCESS));
 }
 
 TEST_P(umfIpcTest, BasicFlow) {
@@ -218,7 +224,7 @@ TEST_P(umfIpcTest, BasicFlow) {
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
 
     ret = umfPoolFree(pool.get(), ptr);
-    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+    EXPECT_EQ(ret, get_umf_result_of_free(UMF_RESULT_SUCCESS));
 
     void *ptr1 = umfPoolMalloc(pool.get(), SIZE);
     EXPECT_NE(ptr1, nullptr);
@@ -230,10 +236,10 @@ TEST_P(umfIpcTest, BasicFlow) {
     memAccessor->copy(ptr1, ptr2, SIZE);
 
     ret = umfPoolFree(pool.get(), ptr1);
-    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+    EXPECT_EQ(ret, get_umf_result_of_free(UMF_RESULT_SUCCESS));
 
     ret = umfPoolFree(pool.get(), ptr2);
-    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+    EXPECT_EQ(ret, get_umf_result_of_free(UMF_RESULT_SUCCESS));
 
     pool.reset(nullptr);
     EXPECT_EQ(stat.getCount, 1);
@@ -297,7 +303,7 @@ TEST_P(umfIpcTest, GetPoolByOpenedHandle) {
 
     for (size_t i = 0; i < NUM_ALLOCS; ++i) {
         umf_result_t ret = umfFree(ptrs[i]);
-        EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+        EXPECT_EQ(ret, get_umf_result_of_free(UMF_RESULT_SUCCESS));
     }
 }
 
@@ -323,7 +329,7 @@ TEST_P(umfIpcTest, AllocFreeAllocTest) {
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
 
     ret = umfPoolFree(pool.get(), ptr);
-    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+    EXPECT_EQ(ret, get_umf_result_of_free(UMF_RESULT_SUCCESS));
 
     ptr = umfPoolMalloc(pool.get(), SIZE);
     ASSERT_NE(ptr, nullptr);
@@ -341,7 +347,7 @@ TEST_P(umfIpcTest, AllocFreeAllocTest) {
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
 
     ret = umfPoolFree(pool.get(), ptr);
-    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+    EXPECT_EQ(ret, get_umf_result_of_free(UMF_RESULT_SUCCESS));
 
     void *ptr1 = umfPoolMalloc(pool.get(), SIZE);
     ASSERT_NE(ptr1, nullptr);
@@ -353,10 +359,10 @@ TEST_P(umfIpcTest, AllocFreeAllocTest) {
     memAccessor->copy(ptr1, ptr2, SIZE);
 
     ret = umfPoolFree(pool.get(), ptr1);
-    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+    EXPECT_EQ(ret, get_umf_result_of_free(UMF_RESULT_SUCCESS));
 
     ret = umfPoolFree(pool.get(), ptr2);
-    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+    EXPECT_EQ(ret, get_umf_result_of_free(UMF_RESULT_SUCCESS));
 
     pool.reset(nullptr);
     EXPECT_EQ(stat.getCount, stat.putCount);
@@ -407,7 +413,7 @@ TEST_P(umfIpcTest, openInTwoPools) {
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
 
     ret = umfPoolFree(pool1.get(), ptr);
-    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+    EXPECT_EQ(ret, get_umf_result_of_free(UMF_RESULT_SUCCESS));
 
     pool1.reset(nullptr);
     pool2.reset(nullptr);
@@ -458,7 +464,7 @@ TEST_P(umfIpcTest, ConcurrentGetPutHandles) {
 
     for (void *ptr : ptrs) {
         umf_result_t ret = umfPoolFree(pool.get(), ptr);
-        EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+        EXPECT_EQ(ret, get_umf_result_of_free(UMF_RESULT_SUCCESS));
     }
 
     pool.reset(nullptr);
@@ -520,7 +526,7 @@ TEST_P(umfIpcTest, ConcurrentOpenCloseHandles) {
 
     for (void *ptr : ptrs) {
         umf_result_t ret = umfPoolFree(pool.get(), ptr);
-        EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+        EXPECT_EQ(ret, get_umf_result_of_free(UMF_RESULT_SUCCESS));
     }
 
     pool.reset(nullptr);
