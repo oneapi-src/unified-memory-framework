@@ -31,7 +31,7 @@ umf_memory_provider_ops_t *umfDevDaxMemoryProviderOps(void) {
 #include "utils_concurrency.h"
 #include "utils_log.h"
 
-#define NODESET_STR_BUF_LEN 1024
+#define DEVDAX_PAGE_SIZE_2MB ((size_t)(2 * 1024 * 1024)) // == 2 MB
 
 #define TLS_MSG_BUF_LEN 1024
 
@@ -300,7 +300,7 @@ static umf_result_t devdax_get_recommended_page_size(void *provider,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    *page_size = utils_get_page_size();
+    *page_size = DEVDAX_PAGE_SIZE_2MB;
 
     return UMF_RESULT_SUCCESS;
 }
