@@ -56,7 +56,9 @@ void *utils_mmap_file(void *hint_addr, size_t length, int prot, int flags,
     if (flags & MAP_PRIVATE) {
         addr = utils_mmap(hint_addr, length, prot, flags, fd, fd_offset);
         if (addr == MAP_FAILED) {
-            LOG_PERR("mapping file with the MAP_PRIVATE flag failed");
+            LOG_PERR("mapping file with the MAP_PRIVATE flag failed (fd=%i, "
+                     "offset=%zu, length=%zu)",
+                     fd, fd_offset, length);
             return NULL;
         }
 
@@ -81,7 +83,9 @@ void *utils_mmap_file(void *hint_addr, size_t length, int prot, int flags,
             return addr;
         }
 
-        LOG_PERR("mapping file with the MAP_SYNC flag failed");
+        LOG_PERR("mapping file with the MAP_SYNC flag failed (fd=%i, "
+                 "offset=%zu, length=%zu)",
+                 fd, fd_offset, length);
     }
 
     if ((!(flags & MAP_SYNC)) || errno == EINVAL || errno == ENOTSUP ||
@@ -96,7 +100,9 @@ void *utils_mmap_file(void *hint_addr, size_t length, int prot, int flags,
             return addr;
         }
 
-        LOG_PERR("mapping file with the MAP_SHARED flag failed");
+        LOG_PERR("mapping file with the MAP_SHARED flag failed (fd=%i, "
+                 "offset=%zu, length=%zu)",
+                 fd, fd_offset, length);
     }
 
     return NULL;
