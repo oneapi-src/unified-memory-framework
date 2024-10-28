@@ -436,6 +436,12 @@ endif()
 # set UMF_PROXY_LIB_ENABLED
 if(UMF_DISABLE_HWLOC)
     message(STATUS "Disabling the proxy library, because HWLOC is disabled")
+elseif(NOT UMF_BUILD_SHARED_LIBRARY)
+    # TODO enable this scenario
+    message(
+        STATUS
+            "Disabling the proxy library, because UMF is built as static library"
+    )
 elseif(UMF_PROXY_LIB_BASED_ON_POOL STREQUAL SCALABLE)
     if(UMF_POOL_SCALABLE_ENABLED)
         set(UMF_PROXY_LIB_ENABLED ON)

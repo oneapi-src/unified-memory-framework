@@ -210,7 +210,7 @@ jobs:
         --build-type ${{matrix.build_type}}
         --disjoint-pool
         --jemalloc-pool
-        ${{ matrix.install_tbb == 'ON' && matrix.disable_hwloc != 'ON' && '--proxy' || '' }}
+        ${{ matrix.install_tbb == 'ON' && matrix.disable_hwloc != 'ON' && matrix.shared_library == 'ON' && '--proxy' || '' }}
         --umf-version ${{env.UMF_VERSION}}
         ${{ matrix.shared_library == 'ON' && '--shared-library' || '' }}
 
@@ -300,7 +300,7 @@ jobs:
         --build-type ${{matrix.build_type}}
         --disjoint-pool
         --jemalloc-pool
-        --proxy
+        ${{matrix.shared_library == 'ON' && '--proxy' || '' }}
         --umf-version ${{env.UMF_VERSION}}
         ${{ matrix.shared_library == 'ON' && '--shared-library' || ''}}
         
@@ -310,7 +310,7 @@ jobs:
       shell: pwsh
 
     - name: check /DEPENDENTLOADFLAG in umf_proxy.dll
-      if: ${{matrix.compiler.cxx == 'cl'}}
+      if: ${{matrix.shared_library == 'ON' && matrix.compiler.cxx == 'cl'}}
       run: ${{github.workspace}}/.github/scripts/check_dll_flags.ps1 ${{env.BUILD_DIR}}/src/proxy_lib/${{matrix.build_type}}/umf_proxy.dll
       shell: pwsh
 
