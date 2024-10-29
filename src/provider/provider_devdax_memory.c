@@ -228,13 +228,18 @@ static umf_result_t devdax_alloc(void *provider, size_t size, size_t alignment,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    // alignment must be a power of two and a multiple of sizeof(void *)
-    if (alignment &&
-        ((alignment & (alignment - 1)) || (alignment % sizeof(void *)))) {
-        LOG_ERR("wrong alignment: %zu (not a power of 2 or a multiple of "
-                "sizeof(void *))",
-                alignment);
+    // alignment must be a power of two and a multiple or a divider of the page size
+    if (alignment && ((alignment & (alignment - 1)) ||
+                      ((alignment % DEVDAX_PAGE_SIZE_2MB) &&
+                       (DEVDAX_PAGE_SIZE_2MB % alignment)))) {
+        LOG_ERR("wrong alignment: %zu (not a power of 2 or a multiple or a "
+                "divider of the page size (%zu))",
+                alignment, DEVDAX_PAGE_SIZE_2MB);
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (IS_NOT_ALIGNED(alignment, DEVDAX_PAGE_SIZE_2MB)) {
+        alignment = ALIGN_UP(alignment, DEVDAX_PAGE_SIZE_2MB);
     }
 
     devdax_memory_provider_t *devdax_provider =
