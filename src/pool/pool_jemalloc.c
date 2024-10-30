@@ -36,6 +36,7 @@
 
 typedef struct jemalloc_memory_pool_t {
     umf_memory_provider_handle_t provider;
+    size_t page_size;         // cached page size of the provider
     unsigned int arena_index; // index of jemalloc arena
     // set to true if umfMemoryProviderFree() should never be called
     bool disable_provider_free;
@@ -401,6 +402,8 @@ static umf_result_t op_initialize(umf_memory_provider_handle_t provider,
     assert(provider);
     assert(out_pool);
 
+    umf_result_t umf_result = UMF_RESULT_ERROR_UNKNOWN;
+
     umf_jemalloc_pool_params_t *je_params =
         (umf_jemalloc_pool_params_t *)params;
 
@@ -416,6 +419,13 @@ static umf_result_t op_initialize(umf_memory_provider_handle_t provider,
 
     pool->provider = provider;
 
+    umf_result =
+        umfMemoryProviderGetMinPageSize(provider, NULL, &pool->page_size);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        LOG_ERR("umfMemoryProviderGetMinPageSize() failed");
+        goto err_free_pool;
+    }
+
     if (je_params) {
         pool->disable_provider_free = je_params->disable_provider_free;
     } else {
@@ -427,6 +437,7 @@ static umf_result_t op_initialize(umf_memory_provider_handle_t provider,
                      NULL, 0);
     if (err) {
         LOG_ERR("Could not create arena.");
+        umf_result = UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
         goto err_free_pool;
     }
 
@@ -438,6 +449,7 @@ static umf_result_t op_initialize(umf_memory_provider_handle_t provider,
         snprintf(cmd, sizeof(cmd), "arena.%u.destroy", arena_index);
         je_mallctl(cmd, NULL, 0, NULL, 0);
         LOG_ERR("Could not setup extent_hooks for newly created arena.");
+        umf_result = UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
         goto err_free_pool;
     }
 
@@ -452,7 +464,7 @@ static umf_result_t op_initialize(umf_memory_provider_handle_t provider,
 
 err_free_pool:
     umf_ba_global_free(pool);
-    return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
+    return umf_result;
 }
 
 static void op_finalize(void *pool) {
