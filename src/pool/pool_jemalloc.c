@@ -76,6 +76,9 @@ static void *arena_extent_alloc(extent_hooks_t *extent_hooks, void *new_addr,
 
     jemalloc_memory_pool_t *pool = get_pool_by_arena_index(arena_ind);
 
+    // align a size of the allocation to the provider's page size
+    size = ALIGN_UP(size, pool->page_size);
+
     void *ptr = new_addr;
     ret = umfMemoryProviderAlloc(pool->provider, size, alignment, &ptr);
     if (ret != UMF_RESULT_SUCCESS) {
