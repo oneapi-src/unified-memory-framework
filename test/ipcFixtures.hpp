@@ -313,6 +313,10 @@ TEST_P(umfIpcTest, AllocFreeAllocTest) {
     ptr = umfPoolMalloc(pool.get(), SIZE);
     ASSERT_NE(ptr, nullptr);
 
+    // test if the allocated memory is usable - fill it with the 0xAB pattern.
+    const uint32_t pattern = 0xAB;
+    memAccessor->fill(ptr, SIZE, &pattern, sizeof(pattern));
+
     ret = umfGetIPCHandle(ptr, &ipcHandle, &handleSize);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 
