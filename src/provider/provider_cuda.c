@@ -58,7 +58,7 @@ typedef struct cu_ops_t {
                                    unsigned int Flags);
     CUresult (*cuIpcCloseMemHandle)(CUdeviceptr dptr);
 } cu_ops_t;
-
+// aa
 typedef CUipcMemHandle cu_ipc_data_t;
 
 static cu_ops_t g_cu_ops;
