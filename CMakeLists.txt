@@ -131,12 +131,6 @@ elseif(WINDOWS AND NOT UMF_DISABLE_HWLOC)
     set(HWLOC_ENABLE_TESTING OFF)
     set(HWLOC_SKIP_LSTOPO ON)
     set(HWLOC_SKIP_TOOLS ON)
-    set(HWLOC_PATCH
-        git
-        apply
-        ${PROJECT_SOURCE_DIR}/cmake/fix_coverity_issues.patch
-        ||
-        (exit 0))
 
     message(STATUS "Will fetch hwloc from ${UMF_HWLOC_REPO}")
 
@@ -144,8 +138,7 @@ elseif(WINDOWS AND NOT UMF_DISABLE_HWLOC)
         hwloc_targ
         GIT_REPOSITORY ${UMF_HWLOC_REPO}
         GIT_TAG ${UMF_HWLOC_TAG}
-        PATCH_COMMAND ${HWLOC_PATCH} SOURCE_SUBDIR contrib/windows-cmake/
-                      FIND_PACKAGE_ARGS)
+        SOURCE_SUBDIR contrib/windows-cmake/ FIND_PACKAGE_ARGS)
 
     FetchContent_GetProperties(hwloc_targ)
     if(NOT hwloc_targ_POPULATED)
@@ -162,20 +155,13 @@ elseif(WINDOWS AND NOT UMF_DISABLE_HWLOC)
     message(STATUS "    LIBHWLOC_LIBRARY_DIRS = ${LIBHWLOC_LIBRARY_DIRS}")
 elseif(NOT UMF_DISABLE_HWLOC)
     include(FetchContent)
-    set(HWLOC_PATCH
-        git
-        apply
-        ${PROJECT_SOURCE_DIR}/cmake/fix_coverity_issues.patch
-        ||
-        (exit 0))
 
     message(STATUS "Will fetch hwloc from ${UMF_HWLOC_REPO}")
 
     FetchContent_Declare(
         hwloc_targ
         GIT_REPOSITORY ${UMF_HWLOC_REPO}
-        GIT_TAG ${UMF_HWLOC_TAG}
-        PATCH_COMMAND ${HWLOC_PATCH})
+        GIT_TAG ${UMF_HWLOC_TAG})
 
     FetchContent_GetProperties(hwloc_targ)
     if(NOT hwloc_targ_POPULATED)
@@ -220,6 +206,22 @@ elseif(NOT UMF_DISABLE_HWLOC)
     message(STATUS "    LIBHWLOC_LIBRARIES = ${LIBHWLOC_LIBRARIES}")
     message(STATUS "    LIBHWLOC_INCLUDE_DIRS = ${LIBHWLOC_INCLUDE_DIRS}")
     message(STATUS "    LIBHWLOC_LIBRARY_DIRS = ${LIBHWLOC_LIBRARY_DIRS}")
+endif()
+
+if(hwloc_targ_SOURCE_DIR)
+    # apply security patch for HWLOC
+    execute_process(
+        COMMAND git apply ${PROJECT_SOURCE_DIR}/cmake/fix_coverity_issues.patch
+        WORKING_DIRECTORY ${hwloc_targ_SOURCE_DIR}
+        OUTPUT_VARIABLE UMF_HWLOC_PATCH_OUTPUT
+        ERROR_VARIABLE UMF_HWLOC_PATCH_ERROR)
+
+    if(UMF_HWLOC_PATCH_OUTPUT)
+        message(STATUS "HWLOC patch command output:\n${UMF_HWLOC_PATCH_OUTPUT}")
+    endif()
+    if(UMF_HWLOC_PATCH_ERROR)
+        message(WARNING "HWLOC patch command output:\n${UMF_HWLOC_PATCH_ERROR}")
+    endif()
 endif()
 
 # This build type check is not possible on Windows when CMAKE_BUILD_TYPE is not
