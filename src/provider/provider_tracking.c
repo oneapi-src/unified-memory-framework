@@ -26,7 +26,15 @@
 #include <string.h>
 
 typedef struct tracker_value_t {
-    umf_memory_pool_handle_t pool;
+    union {
+        umf_memory_pool_handle_t pool;
+        umf_umf_const_ipc_handler_t ipc_handler;
+    } handle;
+    enum {
+        ENTRY_TYPE_POOL,
+        ENTRY_TYPE_IPC // To track IPC open entires
+
+    } entry_type;
     size_t size;
 } tracker_value_t;
 

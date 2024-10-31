@@ -116,13 +116,13 @@ typedef struct umf_memory_provider_ipc_ops_t {
 
     ///
     /// @brief Open IPC handle.
-    /// @param provider pointer to the memory provider.
-    /// @param providerIpcData pointer to the IPC opaque data structure.
+    /// @param ipcHandler pointer to the memory provider.
+    /// @param providerIpc Data pointer to the IPC opaque data structure.
     /// @param ptr [out] pointer to the memory to be used in the current process.
     /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
     ///         UMF_RESULT_ERROR_INVALID_ARGUMENT if providerIpcData cannot be handled by the provider.
     ///         UMF_RESULT_ERROR_NOT_SUPPORTED if IPC functionality is not supported by this provider.
-    umf_result_t (*open_ipc_handle)(void *provider, void *providerIpcData,
+    umf_result_t (*open_ipc_handle)(void *ipcHandler, void *providerIpcData,
                                     void **ptr);
 
     ///
@@ -133,7 +133,26 @@ typedef struct umf_memory_provider_ipc_ops_t {
     /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
     ///         UMF_RESULT_ERROR_INVALID_ARGUMENT if invalid \p ptr is passed.
     ///         UMF_RESULT_ERROR_NOT_SUPPORTED if IPC functionality is not supported by this provider.
-    umf_result_t (*close_ipc_handle)(void *provider, void *ptr, size_t size);
+    umf_result_t (*close_ipc_handle)(void *ipcHandler, void *ptr, size_t size);
+
+    /// @brief Retrieve an IPC handler which is used to open IPC handles.
+    /// @param provider pointer to the memory provider.
+    /// @param ipcHandler [out] pointer to the IPC handler.
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+    umf_result_t (*get_ipc_handler)(void *provider, void **ipcHandler);
+
+    /// @brief Creates an IPC handler, which is used to open IPC handles.
+    /// @param params provider-specific params. This argument must be the same structure then in the initialize function,
+    ///        but some fields might be ignored, if they are not needed for IPC handle.
+    /// @param ipcHandler [out] pointer to the newly created IPC handler.
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+    /// @details This function create ipc handler, with is used to open IPC handles, without need to create provider, only to open handle.
+    umf_result_t (*create_ipc_handler)(void *params, void **ipcHandler);
+
+    /// @brief Destroys an IPC handler, created by create_ipc_handler.
+    /// @param ipcHandler pointer to the IPC handler.
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+    umf_result_t (*destory_ipc_handler)(void *ipcHandler);
 } umf_memory_provider_ipc_ops_t;
 
 ///

@@ -157,7 +157,7 @@ umf_result_t umfPoolGetLastAllocationError(umf_memory_pool_handle_t hPool);
 ///        with the usage of a memory provider is being tracked.
 /// @param ptr pointer to memory belonging to a memory pool
 /// @return Handle to a memory pool that contains ptr or NULL if pointer does not belong to any UMF pool.
-///
+/// @details returns NULL for ptrs that were open through IPC open function, as this ptr do not belong to any pool.
 umf_memory_pool_handle_t umfPoolByPtr(const void *ptr);
 
 ///

@@ -19,7 +19,8 @@ extern "C" {
 
 /// @brief A struct containing memory provider specific set of functions
 typedef struct umf_memory_provider_t *umf_memory_provider_handle_t;
-
+typedef struct umf_ipc_handler *umf_ipc_handler_t;
+typedef const struct umf_ipc_handler *umf_ipc_handler_t;
 ///
 /// @brief Creates new memory provider.
 /// @param ops instance of umf_memory_provider_ops_t
@@ -172,21 +173,35 @@ umf_result_t
 umfMemoryProviderPutIPCHandle(umf_memory_provider_handle_t hProvider,
                               void *providerIpcData);
 
+/// check memory_provider_ops.h for more details
+umf_result_t
+umfMemoryProviderGetIpcHandler(umf_memory_provider_handle_t hProvider,
+                               umf_const_ipc_handler_t *handler);
+/// check memory_provider_ops.h for more details
+umf_result_t
+umfMemoryProviderCreateIpcHandler(const umf_memory_provider_ops_t *ops,
+                                  void *params, umf_ipc_handler_t *handler);
+/// check memory_provider_ops.h for more details
+umf_result_t
+umfMemoryProviderDestroyIpcHandler(umf_memory_provider_handle_t *hProvider);
+
 ///
 /// @brief Open IPC handle.
-/// @param hProvider [in] handle to the memory provider.
+/// @param hIpcHandler [in] handle to the ipcHandler
 /// @param providerIpcData [in] pointer to the IPC opaque data structure.
 /// @param ptr [out] pointer to the memory to be used in the current process.
+/// @param size [out][optional] size of the memory address range.
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 ///         UMF_RESULT_ERROR_INVALID_ARGUMENT if providerIpcData cannot be handled by the provider.
 ///         UMF_RESULT_ERROR_NOT_SUPPORTED if IPC functionality is not supported by this provider.
 umf_result_t
-umfMemoryProviderOpenIPCHandle(umf_memory_provider_handle_t hProvider,
-                               void *providerIpcData, void **ptr);
+umfMemoryProviderOpenIPCHandle(umf_memory_provider_handleer_t hIpcHanler,
+                               void *providerIpcData, void **ptr,
+                               size_t **size);
 
 ///
 /// @brief Close an IPC memory handle.
-/// @param hProvider [in] handle to the memory provider.
+/// @param hIpcHanler [in] handle to the memory provider.
 /// @param ptr [in] pointer returned by umfMemoryProviderOpenIPCHandle function.
 /// @param size [in] size of the memory address range.
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
