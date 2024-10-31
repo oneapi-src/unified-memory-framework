@@ -199,6 +199,11 @@ TEST_P(umfProviderTest, alloc_2page_align_page_size) {
                             PURGE_NONE);
 }
 
+TEST_P(umfProviderTest, alloc_page64_align_page_div_2) {
+    test_alloc_free_success(provider.get(), page_plus_64, page_size / 2,
+                            PURGE_NONE);
+}
+
 TEST_P(umfProviderTest, purge_lazy) {
     test_alloc_free_success(provider.get(), page_size, 0, PURGE_LAZY);
 }
@@ -208,11 +213,6 @@ TEST_P(umfProviderTest, purge_force) {
 }
 
 // negative tests using test_alloc_failure
-
-TEST_P(umfProviderTest, alloc_page64_align_page_div_2) {
-    test_alloc_failure(provider.get(), page_plus_64, page_size / 2,
-                       UMF_RESULT_ERROR_INVALID_ARGUMENT, 0);
-}
 
 TEST_P(umfProviderTest, alloc_page64_align_page_minus_1_WRONG_ALIGNMENT_1) {
     test_alloc_failure(provider.get(), page_plus_64, page_size - 1,
