@@ -14,6 +14,7 @@
 #include <umf/memory_pool.h>
 #include <umf/memory_provider.h>
 #include <umf/pools/pool_proxy.h>
+#include "umf/providers/provider_devdax_memory.h"
 
 #include <cstring>
 #include <numeric>
@@ -63,6 +64,21 @@ struct umfIpcTest : umf_test::test,
         test::SetUp();
         auto [pool_ops, pool_params, provider_ops, provider_params, accessor] =
             this->GetParam();
+
+        if (provider_ops == umfDevDaxMemoryProviderOps()) {
+            char *path = getenv("UMF_TESTS_DEVDAX_PATH");
+            if (path == nullptr || path[0] == 0) {
+                GTEST_SKIP()
+                    << "Test skipped, UMF_TESTS_DEVDAX_PATH is not set";
+            }
+
+            char *size = getenv("UMF_TESTS_DEVDAX_SIZE");
+            if (size == nullptr || size[0] == 0) {
+                GTEST_SKIP()
+                    << "Test skipped, UMF_TESTS_DEVDAX_SIZE is not set";
+            }
+        }
+
         poolOps = pool_ops;
         poolParams = pool_params;
         providerOps = provider_ops;
