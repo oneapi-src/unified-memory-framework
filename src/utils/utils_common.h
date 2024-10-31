@@ -82,8 +82,11 @@ int utils_is_running_in_proxy_lib(void);
 
 size_t utils_get_page_size(void);
 
-// align a pointer and a size
-void utils_align_ptr_size(void **ptr, size_t *size, size_t alignment);
+// align a pointer up and a size down
+void utils_align_ptr_up_size_down(void **ptr, size_t *size, size_t alignment);
+
+// align a pointer down and a size up (for mmap()/munmap())
+void utils_align_ptr_down_size_up(void **ptr, size_t *size, size_t alignment);
 
 // get the current process ID
 int utils_getpid(void);
