@@ -379,6 +379,8 @@ endif()
 
 add_umf_test(NAME ipc SRCS ipcAPI.cpp)
 
+add_umf_test(NAME ipc_negative SRCS ipc_negative.cpp)
+
 function(add_umf_ipc_test)
     # Parameters: * TEST - a name of the test * SRC_DIR - source files directory
     # path
