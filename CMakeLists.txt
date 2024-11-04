@@ -231,7 +231,7 @@ if(UMF_BUILD_LEVEL_ZERO_PROVIDER AND (NOT UMF_LEVEL_ZERO_INCLUDE_DIR))
     include(FetchContent)
 
     set(LEVEL_ZERO_LOADER_REPO "https://github.com/oneapi-src/level-zero.git")
-    set(LEVEL_ZERO_LOADER_TAG v1.17.39)
+    set(LEVEL_ZERO_LOADER_TAG v1.19.2)
 
     message(
         STATUS
