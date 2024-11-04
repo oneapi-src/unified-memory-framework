@@ -56,6 +56,16 @@ function(build_umf_test)
         SRCS ${ARG_SRCS}
         LIBS ${TEST_LIBS})
 
+    if(UMF_POOL_JEMALLOC_ENABLED)
+        target_compile_definitions(${TEST_TARGET_NAME}
+                                   PRIVATE UMF_POOL_JEMALLOC_ENABLED=1)
+    endif()
+
+    if(UMF_POOL_SCALABLE_ENABLED)
+        target_compile_definitions(${TEST_TARGET_NAME}
+                                   PRIVATE UMF_POOL_SCALABLE_ENABLED=1)
+    endif()
+
     if(NOT MSVC)
         # Suppress 'cast discards const qualifier' warnings. Parametrized GTEST
         # tests retrieve arguments using 'GetParam()', which applies a 'const'
@@ -134,6 +144,10 @@ if(UMF_BUILD_SHARED_LIBRARY)
             ../src/utils/utils_common.c ../src/utils/utils_windows_common.c
             ../src/utils/utils_windows_concurrency.c)
     endif()
+endif()
+
+if(UMF_POOL_JEMALLOC_ENABLED)
+    set(LIB_JEMALLOC_POOL jemalloc_pool)
 endif()
 
 add_umf_test(NAME base SRCS base.cpp)
@@ -253,7 +267,7 @@ if(LINUX AND (NOT UMF_DISABLE_HWLOC)) # OS-specific functions are implemented
     add_umf_test(
         NAME provider_devdax_memory
         SRCS provider_devdax_memory.cpp
-        LIBS ${UMF_UTILS_FOR_TEST})
+        LIBS ${UMF_UTILS_FOR_TEST} ${LIB_JEMALLOC_POOL})
     add_umf_test(
         NAME provider_file_memory
         SRCS provider_file_memory.cpp

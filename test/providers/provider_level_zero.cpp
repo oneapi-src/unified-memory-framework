@@ -332,5 +332,5 @@ INSTANTIATE_TEST_SUITE_P(umfLevelZeroProviderTestSuite, umfIpcTest,
                          ::testing::Values(ipcTestParams{
                              umfProxyPoolOps(), nullptr,
                              umfLevelZeroMemoryProviderOps(),
-                             &l0Params_device_memory, &l0Accessor}));
+                             &l0Params_device_memory, &l0Accessor, false}));
 #endif
