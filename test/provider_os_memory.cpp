@@ -11,6 +11,9 @@
 #include <umf/memory_provider.h>
 #include <umf/pools/pool_disjoint.h>
 #include <umf/providers/provider_os_memory.h>
+#ifdef UMF_POOL_JEMALLOC_ENABLED
+#include <umf/pools/pool_jemalloc.h>
+#endif
 
 using umf_test::test;
 
@@ -388,6 +391,10 @@ static std::vector<ipcTestParams> ipcTestParamsList = {
 #if (defined UMF_POOL_DISJOINT_ENABLED)
     {umfDisjointPoolOps(), &disjointParams, umfOsMemoryProviderOps(),
      &os_params, &hostAccessor, false},
+#endif
+#ifdef UMF_POOL_JEMALLOC_ENABLED
+    {umfJemallocPoolOps(), nullptr, umfOsMemoryProviderOps(), &os_params,
+     &hostAccessor, false},
 #endif
 };
 
