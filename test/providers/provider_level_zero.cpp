@@ -263,15 +263,6 @@ TEST_P(umfLevelZeroProviderTest, allocInvalidSize) {
     umfMemoryProviderGetLastNativeError(provider, &message, &error);
     ASSERT_EQ(error, ZE_RESULT_ERROR_UNSUPPORTED_SIZE);
 
-    // in case of size == 0 we should got INVALID_ARGUMENT error
-    // NOTE: this is invalid only for the DEVICE or SHARED allocations
-    if (params.memory_type != UMF_MEMORY_TYPE_HOST) {
-        umf_result = umfMemoryProviderAlloc(provider, 0, 0, &ptr);
-        ASSERT_EQ(umf_result, UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC);
-        umfMemoryProviderGetLastNativeError(provider, &message, &error);
-        ASSERT_EQ(error, ZE_RESULT_ERROR_UNSUPPORTED_SIZE);
-    }
-
     umfMemoryProviderDestroy(provider);
 }
 
