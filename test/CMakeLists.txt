@@ -274,6 +274,10 @@ if(LINUX AND (NOT UMF_DISABLE_HWLOC)) # OS-specific functions are implemented
     add_umf_test(
         NAME provider_devdax_memory
         SRCS provider_devdax_memory.cpp
+        LIBS ${UMF_UTILS_FOR_TEST})
+    add_umf_test(
+        NAME provider_devdax_memory_ipc
+        SRCS provider_devdax_memory_ipc.cpp
         LIBS ${UMF_UTILS_FOR_TEST} ${LIB_JEMALLOC_POOL})
     add_umf_test(
         NAME provider_file_memory
