@@ -106,6 +106,21 @@ jobs:
           UMF_TESTS_FSDAX_PATH=${{env.UMF_TESTS_FSDAX_PATH}} UMF_TESTS_FSDAX_PATH_2=${{env.UMF_TESTS_FSDAX_PATH_2}} ctest -C ${{matrix.build_type}} -R umf_example_dram_and_fsdax -V
           UMF_TESTS_FSDAX_PATH=${{env.UMF_TESTS_FSDAX_PATH}} UMF_TESTS_FSDAX_PATH_2=${{env.UMF_TESTS_FSDAX_PATH_2}} ctest -C ${{matrix.build_type}} -R umf-ipc_file_prov_fsdax -V
 
+      - name: Run the DEVDAX tests with the proxy library
+        working-directory: ${{env.BUILD_DIR}}
+        run: >
+          LD_PRELOAD=./lib/libumf_proxy.so
+          UMF_TESTS_DEVDAX_PATH="/dev/dax${{env.DEVDAX_NAMESPACE}}"
+          UMF_TESTS_DEVDAX_SIZE="$(ndctl list --namespace=namespace${{env.DEVDAX_NAMESPACE}} | grep size | cut -d':' -f2 | cut -d',' -f1)"
+          ctest -C ${{matrix.build_type}} -R devdax -V
+
+      - name: Run the FSDAX tests with the proxy library
+        working-directory: ${{env.BUILD_DIR}}
+        run: |
+          LD_PRELOAD=./lib/libumf_proxy.so UMF_TESTS_FSDAX_PATH=${{env.UMF_TESTS_FSDAX_PATH}} UMF_TESTS_FSDAX_PATH_2=${{env.UMF_TESTS_FSDAX_PATH_2}} ctest -C ${{matrix.build_type}} -R umf-provider_file_memory -V
+          LD_PRELOAD=./lib/libumf_proxy.so UMF_TESTS_FSDAX_PATH=${{env.UMF_TESTS_FSDAX_PATH}} UMF_TESTS_FSDAX_PATH_2=${{env.UMF_TESTS_FSDAX_PATH_2}} ctest -C ${{matrix.build_type}} -R umf_example_dram_and_fsdax -V
+          LD_PRELOAD=./lib/libumf_proxy.so UMF_TESTS_FSDAX_PATH=${{env.UMF_TESTS_FSDAX_PATH}} UMF_TESTS_FSDAX_PATH_2=${{env.UMF_TESTS_FSDAX_PATH_2}} ctest -C ${{matrix.build_type}} -R umf-ipc_file_prov_fsdax -V
+
       - name: Check coverage
         if:  ${{ matrix.build_type == 'Debug' }}
         working-directory: ${{env.BUILD_DIR}}
