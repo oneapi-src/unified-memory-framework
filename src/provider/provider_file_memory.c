@@ -397,16 +397,21 @@ static umf_result_t file_alloc(void *provider, size_t size, size_t alignment,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    // alignment must be a power of two and a multiple of sizeof(void *)
-    if (alignment &&
-        ((alignment & (alignment - 1)) || (alignment % sizeof(void *)))) {
-        LOG_ERR("wrong alignment: %zu (not a power of 2 or a multiple of "
-                "sizeof(void *))",
-                alignment);
+    file_memory_provider_t *file_provider = (file_memory_provider_t *)provider;
+
+    // alignment must be a power of two and a multiple or a divider of the page size
+    if (alignment && ((alignment & (alignment - 1)) ||
+                      ((alignment % file_provider->page_size) &&
+                       (file_provider->page_size % alignment)))) {
+        LOG_ERR("wrong alignment: %zu (not a power of 2 or a multiple or a "
+                "divider of the page size (%zu))",
+                alignment, file_provider->page_size);
         return UMF_RESULT_ERROR_INVALID_ALIGNMENT;
     }
 
-    file_memory_provider_t *file_provider = (file_memory_provider_t *)provider;
+    if (IS_NOT_ALIGNED(alignment, file_provider->page_size)) {
+        alignment = ALIGN_UP(alignment, file_provider->page_size);
+    }
 
     void *addr = NULL;
     size_t alloc_offset_fd; // needed for critnib_insert()
@@ -578,6 +583,8 @@ typedef struct file_ipc_data_t {
     char path[PATH_MAX];
     size_t offset_fd;
     size_t size;
+    unsigned protection; // combination of OS-specific protection flags
+    unsigned visibility; // memory visibility mode
 } file_ipc_data_t;
 
 static umf_result_t file_get_ipc_handle_size(void *provider, size_t *size) {
@@ -623,6 +630,8 @@ static umf_result_t file_get_ipc_handle(void *provider, const void *ptr,
     file_ipc_data->size = size;
     strncpy(file_ipc_data->path, file_provider->path, PATH_MAX - 1);
     file_ipc_data->path[PATH_MAX - 1] = '\0';
+    file_ipc_data->protection = file_provider->protection;
+    file_ipc_data->visibility = file_provider->visibility;
 
     return UMF_RESULT_SUCCESS;
 }
@@ -672,15 +681,25 @@ static umf_result_t file_open_ipc_handle(void *provider, void *providerIpcData,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    *ptr = utils_mmap_file(NULL, file_ipc_data->size, file_provider->protection,
-                           file_provider->visibility, fd,
-                           file_ipc_data->offset_fd);
+    char *addr = utils_mmap_file(
+        NULL, file_ipc_data->size, file_ipc_data->protection,
+        file_ipc_data->visibility, fd, file_ipc_data->offset_fd);
     (void)utils_close_fd(fd);
-    if (*ptr == NULL) {
+    if (addr == NULL) {
         file_store_last_native_error(UMF_FILE_RESULT_ERROR_ALLOC_FAILED, errno);
-        LOG_PERR("memory mapping failed");
-        ret = UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
+        LOG_PERR("file mapping failed (path: %s, size: %zu, protection: %i, "
+                 "fd: %i, offset: %zu)",
+                 file_ipc_data->path, file_ipc_data->size,
+                 file_ipc_data->protection, fd, file_ipc_data->offset_fd);
+        return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
+
+    LOG_DEBUG("file mapped (path: %s, size: %zu, protection: %i, fd: %i, "
+              "offset: %zu) at address %p",
+              file_ipc_data->path, file_ipc_data->size,
+              file_ipc_data->protection, fd, file_ipc_data->offset_fd, addr);
+
+    *ptr = addr;
 
     return ret;
 }
