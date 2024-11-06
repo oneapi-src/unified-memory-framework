@@ -99,7 +99,7 @@ typedef struct provider_base_t {
 umf_memory_provider_ops_t BASE_PROVIDER_OPS =
     umf::providerMakeCOps<provider_base_t, void>();
 
-struct provider_malloc : public provider_base_t {
+struct provider_ba_global : public provider_base_t {
     umf_result_t alloc(size_t size, size_t align, void **ptr) noexcept {
         if (!align) {
             align = 8;
@@ -124,10 +124,10 @@ struct provider_malloc : public provider_base_t {
 };
 
 umf_memory_provider_ops_t MALLOC_PROVIDER_OPS =
-    umf::providerMakeCOps<provider_malloc, void>();
+    umf::providerMakeCOps<provider_ba_global, void>();
 
 struct provider_mock_out_of_mem : public provider_base_t {
-    provider_malloc helper_prov;
+    provider_ba_global helper_prov;
     int allocNum = 0;
     umf_result_t initialize(int *inAllocNum) noexcept {
         allocNum = *inAllocNum;
