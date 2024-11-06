@@ -181,6 +181,12 @@ TEST_P(umfIpcTest, GetIPCHandleInvalidArgs) {
               get_umf_result_of_free(freeNotSupported, UMF_RESULT_SUCCESS));
 }
 
+TEST_P(umfIpcTest, CloseIPCHandleInvalidPtr) {
+    int local_var;
+    auto ret = umfCloseIPCHandle(&local_var);
+    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
 TEST_P(umfIpcTest, BasicFlow) {
     constexpr size_t SIZE = 100;
     std::vector<int> expected_data(SIZE);
