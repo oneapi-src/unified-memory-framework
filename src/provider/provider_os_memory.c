@@ -1153,6 +1153,8 @@ typedef struct os_ipc_data_t {
     int fd;
     size_t fd_offset;
     size_t size;
+    unsigned protection; // combination of OS-specific protection flags
+    unsigned visibility; // memory visibility mode
     // shm_name is a Flexible Array Member because it is optional and its size
     // varies on the Shared Memory object name
     size_t shm_name_len;
@@ -1200,6 +1202,8 @@ static umf_result_t os_get_ipc_handle(void *provider, const void *ptr,
     os_ipc_data->pid = utils_getpid();
     os_ipc_data->fd_offset = (size_t)value - 1;
     os_ipc_data->size = size;
+    os_ipc_data->protection = os_provider->protection;
+    os_ipc_data->visibility = os_provider->visibility;
     os_ipc_data->shm_name_len = strlen(os_provider->shm_name);
     if (os_ipc_data->shm_name_len > 0) {
         strncpy(os_ipc_data->shm_name, os_provider->shm_name,
@@ -1278,8 +1282,8 @@ static umf_result_t os_open_ipc_handle(void *provider, void *providerIpcData,
         }
     }
 
-    *ptr = utils_mmap(NULL, os_ipc_data->size, os_provider->protection,
-                      os_provider->visibility, fd, os_ipc_data->fd_offset);
+    *ptr = utils_mmap(NULL, os_ipc_data->size, os_ipc_data->protection,
+                      os_ipc_data->visibility, fd, os_ipc_data->fd_offset);
     if (*ptr == NULL) {
         os_store_last_native_error(UMF_OS_RESULT_ERROR_ALLOC_FAILED, errno);
         LOG_PERR("memory mapping failed");
