@@ -46,23 +46,22 @@ For Level Zero memory provider tests:
 
 ### Linux
 
-Executable and binaries will be in **build/bin**
+Executable and binaries will be in **build/bin**.
+The `{build_config}` can be either `Debug` or `Release`.
 
 ```bash
-$ mkdir build
-$ cd build
-$ cmake {path_to_source_dir}
-$ make
+$ cmake -B build -DCMAKE_BUILD_TYPE={build_config}
+$ cmake --build build -j $(nproc)
 ```
 
 ### Windows
 
-Generating Visual Studio Project. EXE and binaries will be in **build/bin/{build_config}**
+Generating Visual Studio Project. EXE and binaries will be in **build/bin/{build_config}**.
+The `{build_config}` can be either `Debug` or `Release`.
 
 ```bash
-$ mkdir build
-$ cd build
-$ cmake {path_to_source_dir} -G "Visual Studio 15 2017 Win64"
+$ cmake -B build -G "Visual Studio 15 2017 Win64"
+$ cmake --build build --config {build_config} -j $Env:NUMBER_OF_PROCESSORS
 ```
 
 ### Benchmark
