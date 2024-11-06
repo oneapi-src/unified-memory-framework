@@ -123,7 +123,7 @@ struct provider_ba_global : public provider_base_t {
     const char *get_name() noexcept { return "umf_ba_global"; }
 };
 
-umf_memory_provider_ops_t MALLOC_PROVIDER_OPS =
+umf_memory_provider_ops_t BA_GLOBAL_PROVIDER_OPS =
     umf::providerMakeCOps<provider_ba_global, void>();
 
 struct provider_mock_out_of_mem : public provider_base_t {

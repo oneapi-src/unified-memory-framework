@@ -156,7 +156,7 @@ TEST_F(test, BasicPoolByPtrTest) {
 
     umf_memory_provider_handle_t provider;
     umf_result_t ret =
-        umfMemoryProviderCreate(&MALLOC_PROVIDER_OPS, NULL, &provider);
+        umfMemoryProviderCreate(&BA_GLOBAL_PROVIDER_OPS, NULL, &provider);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
     auto pool =
         wrapPoolUnique(createPoolChecked(umfProxyPoolOps(), provider, nullptr,
@@ -184,13 +184,13 @@ INSTANTIATE_TEST_SUITE_P(
                                           &UMF_NULL_PROVIDER_OPS, nullptr,
                                           nullptr},
                       poolCreateExtParams{umfProxyPoolOps(), nullptr,
-                                          &MALLOC_PROVIDER_OPS, nullptr,
+                                          &BA_GLOBAL_PROVIDER_OPS, nullptr,
                                           nullptr}));
 
 INSTANTIATE_TEST_SUITE_P(mallocMultiPoolTest, umfMultiPoolTest,
                          ::testing::Values(poolCreateExtParams{
-                             umfProxyPoolOps(), nullptr, &MALLOC_PROVIDER_OPS,
-                             nullptr, nullptr}));
+                             umfProxyPoolOps(), nullptr,
+                             &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr}));
 
 INSTANTIATE_TEST_SUITE_P(umfPoolWithCreateFlagsTest, umfPoolWithCreateFlagsTest,
                          ::testing::Values(0,
