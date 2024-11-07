@@ -218,6 +218,64 @@ if(hwloc_targ_SOURCE_DIR)
     endif()
 endif()
 
+# Fetch L0 loader only if needed i.e.: if building L0 provider is ON and L0
+# headers are not provided by the user (via setting UMF_LEVEL_ZERO_INCLUDE_DIR).
+if(UMF_BUILD_LEVEL_ZERO_PROVIDER AND (NOT UMF_LEVEL_ZERO_INCLUDE_DIR))
+    include(FetchContent)
+
+    set(LEVEL_ZERO_LOADER_REPO "https://github.com/oneapi-src/level-zero.git")
+    set(LEVEL_ZERO_LOADER_TAG v1.17.39)
+
+    message(
+        STATUS
+            "Fetching L0 loader (${LEVEL_ZERO_LOADER_TAG}) from ${LEVEL_ZERO_LOADER_REPO} ..."
+    )
+
+    FetchContent_Declare(
+        level-zero-loader
+        GIT_REPOSITORY ${LEVEL_ZERO_LOADER_REPO}
+        GIT_TAG ${LEVEL_ZERO_LOADER_TAG}
+        EXCLUDE_FROM_ALL)
+    FetchContent_MakeAvailable(level-zero-loader)
+
+    set(LEVEL_ZERO_INCLUDE_DIRS
+        ${level-zero-loader_SOURCE_DIR}/include
+        CACHE PATH "Path to Level Zero Headers")
+    message(STATUS "Level Zero include directory: ${LEVEL_ZERO_INCLUDE_DIRS}")
+elseif(UMF_BUILD_LEVEL_ZERO_PROVIDER)
+    # Only header is needed to build UMF
+    set(LEVEL_ZERO_INCLUDE_DIRS ${UMF_LEVEL_ZERO_INCLUDE_DIR})
+    message(STATUS "Level Zero include directory: ${LEVEL_ZERO_INCLUDE_DIRS}")
+endif()
+
+# Fetch CUDA only if needed i.e.: if building CUDA provider is ON and CUDA
+# headers are not provided by the user (via setting UMF_CUDA_INCLUDE_DIR).
+if(UMF_BUILD_CUDA_PROVIDER AND (NOT UMF_CUDA_INCLUDE_DIR))
+    include(FetchContent)
+
+    set(CUDA_REPO
+        "https://gitlab.com/nvidia/headers/cuda-individual/cudart.git")
+    set(CUDA_TAG cuda-12.5.1)
+
+    message(STATUS "Fetching CUDA ${CUDA_TAG} from ${CUDA_REPO} ...")
+
+    FetchContent_Declare(
+        cuda-headers
+        GIT_REPOSITORY ${CUDA_REPO}
+        GIT_TAG ${CUDA_TAG}
+        EXCLUDE_FROM_ALL)
+    FetchContent_MakeAvailable(cuda-headers)
+
+    set(CUDA_INCLUDE_DIRS
+        ${cuda-headers_SOURCE_DIR}
+        CACHE PATH "Path to CUDA headers")
+    message(STATUS "CUDA include directory: ${CUDA_INCLUDE_DIRS}")
+elseif(UMF_BUILD_CUDA_PROVIDER)
+    # Only header is needed to build UMF
+    set(CUDA_INCLUDE_DIRS ${UMF_CUDA_INCLUDE_DIR})
+    message(STATUS "CUDA include directory: ${CUDA_INCLUDE_DIRS}")
+endif()
+
 # This build type check is not possible on Windows when CMAKE_BUILD_TYPE is not
 # set, because in this case the build type is determined after a CMake
 # configuration is done (at the build time)
