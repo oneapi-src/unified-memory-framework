@@ -59,9 +59,11 @@ jobs:
       - name: Build UMF
         run: cmake --build ${{env.BUILD_DIR}} -j $(nproc)
 
+      # TODO enable the provider_file_memory_ipc test when the IPC tests with the proxy library are fixed
+      # see the issue: https://github.com/oneapi-src/unified-memory-framework/issues/864
       - name: Run "ctest --output-on-failure" with proxy library
         working-directory: ${{env.BUILD_DIR}}
-        run: LD_PRELOAD=./lib/libumf_proxy.so ctest --output-on-failure
+        run: LD_PRELOAD=./lib/libumf_proxy.so ctest --output-on-failure -E provider_file_memory_ipc
 
       - name: Run "./test/umf_test-memoryPool" with proxy library
         working-directory: ${{env.BUILD_DIR}}
