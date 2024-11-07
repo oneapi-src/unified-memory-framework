@@ -686,6 +686,17 @@ static umf_result_t file_open_ipc_handle(void *provider, void *providerIpcData,
     umf_result_t ret = UMF_RESULT_SUCCESS;
     int fd;
 
+    size_t offset_aligned = file_ipc_data->offset_fd;
+    size_t size_aligned = file_ipc_data->size;
+
+    if (file_provider->is_fsdax) {
+        // It is just a workaround for case when
+        // file_alloc() was called with the size argument
+        // that is not a multiplier of FSDAX_PAGE_SIZE_2MB.
+        utils_align_ptr_down_size_up((void **)&offset_aligned, &size_aligned,
+                                     FSDAX_PAGE_SIZE_2MB);
+    }
+
     fd = utils_file_open(file_ipc_data->path);
     if (fd == -1) {
         LOG_PERR("opening the file to be mapped (%s) failed",
@@ -693,23 +704,23 @@ static umf_result_t file_open_ipc_handle(void *provider, void *providerIpcData,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    char *addr = utils_mmap_file(
-        NULL, file_ipc_data->size, file_ipc_data->protection,
-        file_ipc_data->visibility, fd, file_ipc_data->offset_fd, NULL);
+    char *addr =
+        utils_mmap_file(NULL, size_aligned, file_ipc_data->protection,
+                        file_ipc_data->visibility, fd, offset_aligned, NULL);
     (void)utils_close_fd(fd);
     if (addr == NULL) {
         file_store_last_native_error(UMF_FILE_RESULT_ERROR_ALLOC_FAILED, errno);
         LOG_PERR("file mapping failed (path: %s, size: %zu, protection: %i, "
                  "fd: %i, offset: %zu)",
-                 file_ipc_data->path, file_ipc_data->size,
-                 file_ipc_data->protection, fd, file_ipc_data->offset_fd);
+                 file_ipc_data->path, size_aligned, file_ipc_data->protection,
+                 fd, offset_aligned);
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
 
     LOG_DEBUG("file mapped (path: %s, size: %zu, protection: %i, fd: %i, "
               "offset: %zu) at address %p",
-              file_ipc_data->path, file_ipc_data->size,
-              file_ipc_data->protection, fd, file_ipc_data->offset_fd, addr);
+              file_ipc_data->path, size_aligned, file_ipc_data->protection, fd,
+              offset_aligned, addr);
 
     *ptr = addr;
 
@@ -726,6 +737,13 @@ static umf_result_t file_close_ipc_handle(void *provider, void *ptr,
     if (!file_provider->IPC_enabled) {
         LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED")
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (file_provider->is_fsdax) {
+        // It is just a workaround for case when
+        // file_alloc() was called with the size argument
+        // that is not a multiplier of FSDAX_PAGE_SIZE_2MB.
+        utils_align_ptr_down_size_up(&ptr, &size, FSDAX_PAGE_SIZE_2MB);
     }
 
     errno = 0;
