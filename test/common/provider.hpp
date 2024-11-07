@@ -14,6 +14,7 @@
 #include <umf/memory_provider.h>
 
 #include "base.hpp"
+#include "base_alloc_global.h"
 #include "cpp_helpers.hpp"
 #include "test_helpers.h"
 
@@ -110,24 +111,16 @@ struct provider_malloc : public provider_base_t {
         // error because of this issue.
         size_t aligned_size = ALIGN_UP(size, align);
 
-#ifdef _WIN32
-        *ptr = _aligned_malloc(aligned_size, align);
-#else
-        *ptr = ::aligned_alloc(align, aligned_size);
-#endif
+        *ptr = umf_ba_global_aligned_alloc(aligned_size, align);
 
         return (*ptr) ? UMF_RESULT_SUCCESS
                       : UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
     umf_result_t free(void *ptr, size_t) noexcept {
-#ifdef _WIN32
-        _aligned_free(ptr);
-#else
-        ::free(ptr);
-#endif
+        umf_ba_global_free(ptr);
         return UMF_RESULT_SUCCESS;
     }
-    const char *get_name() noexcept { return "malloc"; }
+    const char *get_name() noexcept { return "umf_ba_global"; }
 };
 
 umf_memory_provider_ops_t MALLOC_PROVIDER_OPS =

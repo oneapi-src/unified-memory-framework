@@ -17,7 +17,7 @@ using umf_test::test;
 
 #define GetStats umfCoarseMemoryProviderGetStats
 
-#define UPSTREAM_NAME "malloc"
+#define UPSTREAM_NAME "umf_ba_global"
 #define BASE_NAME "coarse"
 #define COARSE_NAME BASE_NAME " (" UPSTREAM_NAME ")"
 
