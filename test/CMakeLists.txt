@@ -44,6 +44,10 @@ function(build_umf_test)
         set(LIB_DIRS ${LIB_DIRS} ${JEMALLOC_LIBRARY_DIRS})
     endif()
 
+    if(UMF_BUILD_CUDA_PROVIDER)
+        set(LIB_DIRS ${LIB_DIRS} ${CUDA_LIBRARY_DIRS})
+    endif()
+
     set(TEST_LIBS
         umf_test_common
         ${ARG_LIBS}
