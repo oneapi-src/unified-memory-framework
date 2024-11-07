@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   fuzz-test:
@@ -194,3 +195,10 @@ jobs:
       # Beside the 2 LTS Ubuntu, we also test this on the latest Ubuntu -  to be updated
       # every 6 months, so we verify the latest version of packages (compilers, etc.).
       os: "['ubuntu-22.04', 'ubuntu-24.04', 'ubuntu-24.10']"
+
+  Benchmarks:
+    uses: ./.github/workflows/reusable_benchmarks.yml
+    with:
+      pr_no: '0'
+      bench_script_params: ''
+      upload_report: true

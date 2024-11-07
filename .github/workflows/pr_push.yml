@@ -14,7 +14,8 @@ concurrency:
 
 permissions:
   contents: read
-
+  pull-requests: write 
+  
 jobs:
   CodeChecks:
     uses: ./.github/workflows/reusable_checks.yml
@@ -57,6 +58,10 @@ jobs:
   Benchmarks:
     needs: [Build]
     uses: ./.github/workflows/reusable_benchmarks.yml
+    with:
+      pr_no: '0'
+      bench_script_params: ''
+      upload_report: true
   ProxyLib:
     needs: [Build]
     uses: ./.github/workflows/reusable_proxy_lib.yml
