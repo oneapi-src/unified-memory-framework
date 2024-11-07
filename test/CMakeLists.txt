@@ -154,12 +154,20 @@ if(UMF_POOL_JEMALLOC_ENABLED)
     set(LIB_JEMALLOC_POOL jemalloc_pool)
 endif()
 
+if(UMF_BUILD_SHARED_LIBRARY)
+    # if build as shared library, ba symbols won't be visible in tests
+    set(BA_SOURCES_FOR_TEST ${BA_SOURCES})
+endif()
+
 add_umf_test(NAME base SRCS base.cpp)
 add_umf_test(
     NAME memoryPool
-    SRCS memoryPoolAPI.cpp malloc_compliance_tests.cpp
+    SRCS memoryPoolAPI.cpp malloc_compliance_tests.cpp ${BA_SOURCES_FOR_TEST}
     LIBS ${UMF_UTILS_FOR_TEST})
-add_umf_test(NAME memoryProvider SRCS memoryProviderAPI.cpp)
+add_umf_test(
+    NAME memoryProvider
+    SRCS memoryProviderAPI.cpp ${BA_SOURCES_FOR_TEST}
+    LIBS ${UMF_UTILS_FOR_TEST})
 add_umf_test(
     NAME logger
     SRCS utils/utils_log.cpp ${UMF_UTILS_SOURCES}
@@ -177,7 +185,10 @@ if(LINUX)
         LIBS ${UMF_UTILS_FOR_TEST})
 endif()
 
-add_umf_test(NAME provider_coarse SRCS provider_coarse.cpp)
+add_umf_test(
+    NAME provider_coarse
+    SRCS provider_coarse.cpp ${BA_SOURCES_FOR_TEST}
+    LIBS ${UMF_UTILS_FOR_TEST})
 
 if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
     add_umf_test(
@@ -212,8 +223,11 @@ if(UMF_POOL_JEMALLOC_ENABLED AND (NOT UMF_DISABLE_HWLOC))
 endif()
 
 if(UMF_POOL_SCALABLE_ENABLED AND (NOT UMF_DISABLE_HWLOC))
-    add_umf_test(NAME scalable_pool SRCS pools/scalable_pool.cpp
-                                         malloc_compliance_tests.cpp)
+    add_umf_test(
+        NAME scalable_pool
+        SRCS pools/scalable_pool.cpp malloc_compliance_tests.cpp
+             ${BA_SOURCES_FOR_TEST}
+        LIBS ${UMF_UTILS_FOR_TEST})
 endif()
 
 if(LINUX AND (NOT UMF_DISABLE_HWLOC)) # OS-specific functions are implemented
@@ -227,7 +241,7 @@ if(LINUX AND (NOT UMF_DISABLE_HWLOC)) # OS-specific functions are implemented
 
     add_umf_test(
         NAME provider_os_memory
-        SRCS provider_os_memory.cpp
+        SRCS provider_os_memory.cpp ${BA_SOURCES_FOR_TEST}
         LIBS ${UMF_UTILS_FOR_TEST})
     if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
         target_compile_definitions(umf_test-provider_os_memory
@@ -281,7 +295,7 @@ if(LINUX AND (NOT UMF_DISABLE_HWLOC)) # OS-specific functions are implemented
         LIBS ${UMF_UTILS_FOR_TEST})
     add_umf_test(
         NAME provider_devdax_memory_ipc
-        SRCS provider_devdax_memory_ipc.cpp
+        SRCS provider_devdax_memory_ipc.cpp ${BA_SOURCES_FOR_TEST}
         LIBS ${UMF_UTILS_FOR_TEST} ${LIB_JEMALLOC_POOL})
     add_umf_test(
         NAME provider_file_memory
@@ -303,11 +317,15 @@ if(LINUX AND (NOT UMF_DISABLE_HWLOC)) # OS-specific functions are implemented
     # This test requires Linux-only file memory provider
     if(UMF_POOL_SCALABLE_ENABLED)
         add_umf_test(
-            NAME scalable_coarse_file SRCS pools/scalable_coarse_file.cpp
-                                           malloc_compliance_tests.cpp)
+            NAME scalable_coarse_file
+            SRCS pools/scalable_coarse_file.cpp malloc_compliance_tests.cpp
+                 ${BA_SOURCES_FOR_TEST}
+            LIBS ${UMF_UTILS_FOR_TEST})
         add_umf_test(
-            NAME scalable_coarse_devdax SRCS pools/scalable_coarse_devdax.cpp
-                                             malloc_compliance_tests.cpp)
+            NAME scalable_coarse_devdax
+            SRCS pools/scalable_coarse_devdax.cpp malloc_compliance_tests.cpp
+                 ${BA_SOURCES_FOR_TEST}
+            LIBS ${UMF_UTILS_FOR_TEST})
     endif()
 
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND UMF_BUILD_FUZZTESTS)
@@ -322,6 +340,7 @@ if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
     add_umf_test(
         NAME provider_level_zero
         SRCS providers/provider_level_zero.cpp providers/level_zero_helpers.cpp
+             ${BA_SOURCES_FOR_TEST}
         LIBS ${UMF_UTILS_FOR_TEST} ze_loader)
     target_include_directories(umf_test-provider_level_zero
                                PRIVATE ${LEVEL_ZERO_INCLUDE_DIRS})
@@ -329,6 +348,7 @@ if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
     add_umf_test(
         NAME provider_level_zero_dlopen
         SRCS providers/provider_level_zero.cpp providers/level_zero_helpers.cpp
+             ${BA_SOURCES_FOR_TEST}
         LIBS ${UMF_UTILS_FOR_TEST})
     target_compile_definitions(umf_test-provider_level_zero_dlopen
                                PUBLIC USE_DLOPEN=1)
@@ -344,6 +364,7 @@ if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_CUDA_PROVIDER)
         add_umf_test(
             NAME provider_cuda
             SRCS providers/provider_cuda.cpp providers/cuda_helpers.cpp
+                 ${BA_SOURCES_FOR_TEST}
             LIBS ${UMF_UTILS_FOR_TEST} cuda)
         target_include_directories(umf_test-provider_cuda
                                    PRIVATE ${CUDA_INCLUDE_DIRS})
@@ -353,6 +374,7 @@ if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_CUDA_PROVIDER)
         add_umf_test(
             NAME provider_cuda_dlopen
             SRCS providers/provider_cuda.cpp providers/cuda_helpers.cpp
+                 ${BA_SOURCES_FOR_TEST}
             LIBS ${UMF_UTILS_FOR_TEST})
         target_compile_definitions(umf_test-provider_cuda_dlopen
                                    PUBLIC USE_DLOPEN=1)
@@ -364,11 +386,6 @@ if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_CUDA_PROVIDER)
                 "CUDA provdier tests requires CUDA libraries to be installed and added to the default library search path - skipping"
         )
     endif()
-endif()
-
-if(UMF_BUILD_SHARED_LIBRARY)
-    # if build as shared library, ba symbols won't be visible in tests
-    set(BA_SOURCES_FOR_TEST ${BA_SOURCES})
 endif()
 
 add_umf_test(
@@ -406,7 +423,10 @@ if(UMF_PROXY_LIB_ENABLED
                                PUBLIC UMF_PROXY_LIB_ENABLED=1)
 endif()
 
-add_umf_test(NAME ipc SRCS ipcAPI.cpp)
+add_umf_test(
+    NAME ipc
+    SRCS ipcAPI.cpp ${BA_SOURCES_FOR_TEST}
+    LIBS ${UMF_UTILS_FOR_TEST})
 
 add_umf_test(NAME ipc_negative SRCS ipc_negative.cpp)
 

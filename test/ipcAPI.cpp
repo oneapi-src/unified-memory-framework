@@ -24,7 +24,7 @@ struct provider_mock_ipc : public umf_test::provider_base_t {
         size_t size;
     };
 
-    umf_test::provider_malloc helper_prov;
+    umf_test::provider_ba_global helper_prov;
     static allocations_mutex_type alloc_mutex;
     static allocations_map_type allocations;
 

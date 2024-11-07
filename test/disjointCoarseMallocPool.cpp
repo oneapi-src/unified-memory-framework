@@ -19,7 +19,7 @@ using umf_test::test;
 #define GetStats umfCoarseMemoryProviderGetStats
 
 umf_memory_provider_ops_t UMF_MALLOC_MEMORY_PROVIDER_OPS =
-    umf::providerMakeCOps<umf_test::provider_malloc, void>();
+    umf::providerMakeCOps<umf_test::provider_ba_global, void>();
 
 struct CoarseWithMemoryStrategyTest
     : umf_test::test,
