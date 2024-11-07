@@ -23,17 +23,19 @@ TEST_F(test, utils_shm_open_invalid_args) {
 
 TEST_F(test, utils_get_file_size_invalid_args) {
     size_t size;
-    auto ret = utils_get_file_size(-1, &size);
+    auto ret = utils_get_file_size(0xffffff, &size);
     EXPECT_EQ(ret, -1);
 
     int fd = utils_create_anonymous_fd();
+    ASSERT_GE(fd, 0);
+
     ret = utils_get_file_size(fd, &size);
     EXPECT_EQ(ret, 0);
     EXPECT_EQ(size, 0);
 }
 
 TEST_F(test, utils_set_file_size_invalid_args) {
-    auto ret = utils_set_file_size(-1, 256);
+    auto ret = utils_set_file_size(0xffffff, 256);
     EXPECT_EQ(ret, -1);
 }
 
