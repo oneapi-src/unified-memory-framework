@@ -710,17 +710,17 @@ static umf_result_t file_open_ipc_handle(void *provider, void *providerIpcData,
     (void)utils_close_fd(fd);
     if (addr == NULL) {
         file_store_last_native_error(UMF_FILE_RESULT_ERROR_ALLOC_FAILED, errno);
-        LOG_PERR("file mapping failed (path: %s, size: %zu, protection: %i, "
-                 "fd: %i, offset: %zu)",
+        LOG_PERR("file mapping failed (path: %s, size: %zu, protection: %u, "
+                 "visibility: %u, fd: %i, offset: %zu)",
                  file_ipc_data->path, size_aligned, file_ipc_data->protection,
-                 fd, offset_aligned);
+                 file_ipc_data->visibility, fd, offset_aligned);
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
 
-    LOG_DEBUG("file mapped (path: %s, size: %zu, protection: %i, fd: %i, "
-              "offset: %zu) at address %p",
-              file_ipc_data->path, size_aligned, file_ipc_data->protection, fd,
-              offset_aligned, addr);
+    LOG_DEBUG("file mapped (path: %s, size: %zu, protection: %u, visibility: "
+              "%u, fd: %i, offset: %zu) at address %p",
+              file_ipc_data->path, size_aligned, file_ipc_data->protection,
+              file_ipc_data->visibility, fd, offset_aligned, addr);
 
     *ptr = addr;
 
