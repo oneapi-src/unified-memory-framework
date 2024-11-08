@@ -305,6 +305,8 @@ umf_result_t
 umfMemoryProviderAllocationSplit(umf_memory_provider_handle_t hProvider,
                                  void *ptr, size_t totalSize,
                                  size_t firstSize) {
+    UMF_CHECK((hProvider != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
     if (!ptr) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
@@ -325,6 +327,8 @@ umf_result_t
 umfMemoryProviderAllocationMerge(umf_memory_provider_handle_t hProvider,
                                  void *lowPtr, void *highPtr,
                                  size_t totalSize) {
+    UMF_CHECK((hProvider != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
     if (!lowPtr || !highPtr) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
@@ -334,7 +338,7 @@ umfMemoryProviderAllocationMerge(umf_memory_provider_handle_t hProvider,
     if ((uintptr_t)lowPtr >= (uintptr_t)highPtr) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
-    if ((uintptr_t)highPtr - (uintptr_t)lowPtr > totalSize) {
+    if ((uintptr_t)highPtr - (uintptr_t)lowPtr >= totalSize) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
