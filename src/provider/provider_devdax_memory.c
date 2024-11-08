@@ -360,13 +360,9 @@ static umf_result_t devdax_allocation_split(void *provider, void *ptr,
 
 static umf_result_t devdax_allocation_merge(void *provider, void *lowPtr,
                                             void *highPtr, size_t totalSize) {
-    (void)provider;
-
-    if ((uintptr_t)highPtr <= (uintptr_t)lowPtr) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
-    if ((uintptr_t)highPtr - (uintptr_t)lowPtr <= totalSize) {
+    if (provider == NULL || lowPtr == NULL || highPtr == NULL ||
+        ((uintptr_t)highPtr <= (uintptr_t)lowPtr) ||
+        ((uintptr_t)highPtr - (uintptr_t)lowPtr >= totalSize)) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
