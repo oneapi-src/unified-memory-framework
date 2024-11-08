@@ -153,6 +153,9 @@ elseif(MACOSX)
 endif()
 
 if(UMF_BUILD_SHARED_LIBRARY)
+    # Set the runtime search path to the directory containing hwloc library
+    set(CMAKE_INSTALL_RPATH "\$ORIGIN")
+
     if(NOT UMF_DISABLE_HWLOC)
         set(HWLOC_LIB ${UMF_HWLOC_NAME})
     endif()
