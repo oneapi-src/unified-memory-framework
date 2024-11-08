@@ -115,6 +115,10 @@ elseif(MACOSX)
 endif()
 
 if(UMF_BUILD_SHARED_LIBRARY)
+    if(UMF_INSTALL_RPATH)
+        set(CMAKE_INSTALL_RPATH "${UMF_INSTALL_RPATH}")
+    endif()
+
     if(NOT UMF_DISABLE_HWLOC)
         set(HWLOC_LIB ${UMF_HWLOC_NAME})
     endif()
