@@ -33,12 +33,15 @@ umf_memory_provider_ops_t *umfFileMemoryProviderOps(void) {
 #include "utils_concurrency.h"
 #include "utils_log.h"
 
+#define FSDAX_PAGE_SIZE_2MB ((size_t)(2 * 1024 * 1024)) // == 2 MB
+
 #define TLS_MSG_BUF_LEN 1024
 
 typedef struct file_memory_provider_t {
     utils_mutex_t lock; // lock for file parameters (size and offsets)
 
     char path[PATH_MAX]; // a path to the file
+    bool is_fsdax;       // true if file is located on FSDAX
     int fd;              // file descriptor for memory mapping
     size_t size_fd;      // size of the file used for memory mappings
     size_t offset_fd;    // offset in the file used for memory mappings
@@ -163,16 +166,27 @@ static umf_result_t file_initialize(void *params, void **provider) {
         goto err_free_file_provider;
     }
 
-    if (utils_set_file_size(file_provider->fd, page_size)) {
+    if (utils_set_file_size(file_provider->fd, FSDAX_PAGE_SIZE_2MB)) {
         LOG_ERR("cannot set size of the file: %s", in_params->path);
         ret = UMF_RESULT_ERROR_UNKNOWN;
         goto err_close_fd;
     }
 
-    file_provider->size_fd = page_size;
+    file_provider->size_fd = FSDAX_PAGE_SIZE_2MB;
 
     LOG_DEBUG("size of the file %s is: %zu", in_params->path,
               file_provider->size_fd);
+
+    if (!(in_params->visibility & UMF_MEM_MAP_PRIVATE)) {
+        // check if file is located on FSDAX
+        void *addr = utils_mmap_file(
+            NULL, file_provider->size_fd, file_provider->protection,
+            file_provider->visibility, file_provider->fd, 0,
+            &file_provider->is_fsdax);
+        if (addr) {
+            utils_munmap(addr, file_provider->size_fd);
+        }
+    }
 
     if (utils_mutex_init(&file_provider->lock) == NULL) {
         LOG_ERR("lock init failed");
