@@ -11,7 +11,7 @@ get_filename_component(CUDA_LIB_DIR ${CUDA_LIBRARIES} DIRECTORY)
 set(CUDA_LIBRARY_DIRS ${CUDA_LIB_DIR})
 
 if(WINDOWS)
-    find_file(CUDA_DLL NAMES "bin/cuda.dll" "cuda.dll")
+    find_file(CUDA_DLL NAMES "nvcuda.dll")
     get_filename_component(CUDA_DLL_DIR ${CUDA_DLL} DIRECTORY)
     set(CUDA_DLL_DIRS ${CUDA_DLL_DIR})
 endif()

@@ -14,7 +14,17 @@
 #include <umf/pools/pool_disjoint.h>
 #include <umf/providers/provider_cuda.h>
 
+// disable warning 4201: nonstandard extension used: nameless struct/union
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4201)
+#endif // _MSC_VER
+
 #include <cuda.h>
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif // _MSC_VER
 
 int main(void) {
     // A result object for storing UMF API result status

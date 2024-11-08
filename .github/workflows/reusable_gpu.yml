@@ -19,7 +19,7 @@ jobs:
     name: Level-Zero
     env:
       VCPKG_PATH: "${{github.workspace}}/../../../../vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/../../../../vcpkg/packages/tbb_x64-windows;${{github.workspace}}/../../../../vcpkg/packages/jemalloc_x64-windows"
-      COVERAGE_NAME : "exports-coverage-gpu"
+      COVERAGE_NAME : "exports-coverage-gpu-L0"
     # run only on upstream; forks will not have the HW
     if: github.repository == 'oneapi-src/unified-memory-framework'
     strategy:
@@ -130,18 +130,26 @@ jobs:
     name: CUDA
     env:
       COVERAGE_NAME : "exports-coverage-gpu-CUDA"
+      VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows;"
+      CUDA_PATH: "c:/cuda"
+
     # run only on upstream; forks will not have the HW
     if: github.repository == 'oneapi-src/unified-memory-framework'
     strategy:
       matrix:
         shared_library: ['ON', 'OFF']
         build_type: ['Debug', 'Release']
-        # TODO add windows
-        os: ['Ubuntu']
+        os: ['Ubuntu', 'Windows']
         include:
+        - os: 'Windows'
+          compiler: {c: cl, cxx: cl}
+          number_of_processors: '$Env:NUMBER_OF_PROCESSORS'
         - os: 'Ubuntu'
           compiler: {c: gcc, cxx: g++}
           number_of_processors: '$(nproc)'
+        exclude:
+        - os: 'Windows'
+          build_type: 'Debug'
 
     runs-on: ["DSS-CUDA", "DSS-${{matrix.os}}"]
     steps:
@@ -154,10 +162,47 @@ jobs:
       if: matrix.os == 'Ubuntu'
       run: .github/scripts/get_system_info.sh
 
+    - name: Initialize vcpkg
+      if: matrix.os == 'Windows'
+      uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
+      with:
+        vcpkgGitCommitId: 3dd44b931481d7a8e9ba412621fa810232b66289
+        vcpkgDirectory: ${{env.BUILD_DIR}}/vcpkg
+        vcpkgJsonGlob: '**/vcpkg.json'
+
+    - name: Install dependencies (windows-latest)
+      if: matrix.os == 'Windows'
+      run: vcpkg install
+      shell: pwsh # Specifies PowerShell as the shell for running the script.
+
+    - name: Configure build for Win
+      if: matrix.os == 'Windows'
+      run: >
+        cmake
+        -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}${{env.CUDA_PATH}}"
+        -B ${{env.BUILD_DIR}}
+        -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
+        -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+        -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
+        -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
+        -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
+        -DUMF_BUILD_BENCHMARKS=ON
+        -DUMF_BUILD_TESTS=ON
+        -DUMF_BUILD_GPU_TESTS=ON
+        -DUMF_BUILD_GPU_EXAMPLES=ON
+        -DUMF_FORMAT_CODE_STYLE=OFF
+        -DUMF_DEVELOPER_MODE=ON
+        -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
+        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
+        -DUMF_BUILD_CUDA_PROVIDER=ON
+        -DUMF_TESTS_FAIL_ON_SKIP=ON
+
     - name: Configure build for Ubuntu
       if: matrix.os == 'Ubuntu'
       run: >
-        cmake -B ${{env.BUILD_DIR}}
+        cmake 
+        -B ${{env.BUILD_DIR}}
         -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
         -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
         -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
