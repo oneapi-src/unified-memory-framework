@@ -148,13 +148,14 @@ void *utils_mmap(void *hint_addr, size_t length, int prot, int flag, int fd,
 }
 
 void *utils_mmap_file(void *hint_addr, size_t length, int prot, int flags,
-                      int fd, size_t fd_offset) {
+                      int fd, size_t fd_offset, bool *map_sync) {
     (void)hint_addr; // unused
     (void)length;    // unused
     (void)prot;      // unused
     (void)flags;     // unused
     (void)fd;        // unused
     (void)fd_offset; // unused
+    (void)map_sync;  // unused
     return NULL;     // not supported
 }
 

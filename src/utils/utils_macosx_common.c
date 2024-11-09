@@ -12,6 +12,7 @@
 #include <umf/base.h>
 #include <umf/memory_provider.h>
 
+#include "utils_common.h"
 #include "utils_log.h"
 
 umf_result_t
@@ -30,13 +31,14 @@ utils_translate_mem_visibility_flag(umf_memory_visibility_t in_flag,
 }
 
 void *utils_mmap_file(void *hint_addr, size_t length, int prot, int flags,
-                      int fd, size_t fd_offset) {
+                      int fd, size_t fd_offset, bool *map_sync) {
     (void)hint_addr; // unused
     (void)length;    // unused
     (void)prot;      // unused
     (void)flags;     // unused
     (void)fd;        // unused
     (void)fd_offset; // unused
+    (void)map_sync;  // unused
     return NULL;     // not supported
 }
 
