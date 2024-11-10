@@ -106,16 +106,19 @@ umf_memory_pool_handle_t umfMemoryTrackerGetPool(const void *ptr) {
 
 umf_result_t umfMemoryTrackerGetAllocInfo(const void *ptr,
                                           umf_alloc_info_t *pAllocInfo) {
-    assert(ptr);
     assert(pAllocInfo);
 
+    if (ptr == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     if (TRACKER == NULL) {
-        LOG_ERR("tracker is not created");
+        LOG_ERR("tracker does not exist");
         return UMF_RESULT_ERROR_NOT_SUPPORTED;
     }
 
     if (TRACKER->map == NULL) {
-        LOG_ERR("tracker's map is not created");
+        LOG_ERR("tracker's map does not exist");
         return UMF_RESULT_ERROR_NOT_SUPPORTED;
     }
 
@@ -124,9 +127,8 @@ umf_result_t umfMemoryTrackerGetAllocInfo(const void *ptr,
     int found = critnib_find(TRACKER->map, (uintptr_t)ptr, FIND_LE,
                              (void *)&rkey, (void **)&rvalue);
     if (!found || (uintptr_t)ptr >= rkey + rvalue->size) {
-        LOG_WARN("pointer %p not found in the "
-                 "tracker, TRACKER=%p",
-                 ptr, (void *)TRACKER);
+        LOG_DEBUG("pointer %p not found in the tracker, TRACKER=%p", ptr,
+                  (void *)TRACKER);
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
