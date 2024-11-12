@@ -29,9 +29,12 @@ TEST_F(test, utils_get_file_size_invalid_args) {
     int fd = utils_create_anonymous_fd();
     ASSERT_GE(fd, 0);
 
-    ret = utils_get_file_size(fd, &size);
-    EXPECT_EQ(ret, 0);
-    EXPECT_EQ(size, 0);
+    // Explicit condition for coverity
+    if (fd >= 0) {
+        ret = utils_get_file_size(fd, &size);
+        EXPECT_EQ(ret, 0);
+        EXPECT_EQ(size, 0);
+    }
 }
 
 TEST_F(test, utils_set_file_size_invalid_args) {
