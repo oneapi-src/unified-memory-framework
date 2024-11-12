@@ -75,6 +75,14 @@ static inline int utils_is_running_in_proxy_lib(void) {
     return utils_env_var_get_str("LD_PRELOAD", "libumf_proxy.so") ? 1 : 0;
 }
 
+// check if we are running in the proxy library with a size threshold
+static inline int utils_is_running_in_proxy_lib_with_size_threshold(void) {
+    return (utils_env_var_get_str("LD_PRELOAD", "libumf_proxy.so") &&
+            utils_env_var_get_str("UMF_PROXY", "size.threshold="))
+               ? 1
+               : 0;
+}
+
 // utils_parse_var - Parses var for a prefix,
 //                   optionally identifying a following argument.
 // Parameters:
