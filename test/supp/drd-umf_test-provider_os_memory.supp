@@ -1,12 +1,4 @@
 {
-   Conditional variable destruction false-positive
-   drd:CondErr
-   ...
-   fun:pthread_cond_destroy@*
-   ...
-}
-
-{
    [false-positive] Double check locking pattern in trackingOpenIpcHandle
    drd:ConflictingAccess
    fun:trackingOpenIpcHandle
