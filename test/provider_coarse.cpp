@@ -70,6 +70,18 @@ TEST_F(test, coarseProvider_name_upstream) {
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(coarse_memory_provider, nullptr);
 
+    size_t minPageSize = 0;
+    umf_result = umfMemoryProviderGetMinPageSize(coarse_memory_provider,
+                                                 nullptr, &minPageSize);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_UNKNOWN);
+    ASSERT_EQ(minPageSize, 0);
+
+    size_t pageSize = 0;
+    umf_result = umfMemoryProviderGetRecommendedPageSize(
+        coarse_memory_provider, minPageSize, &pageSize);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_UNKNOWN);
+    ASSERT_EQ(pageSize, minPageSize);
+
     ASSERT_EQ(
         strcmp(umfMemoryProviderGetName(coarse_memory_provider), COARSE_NAME),
         0);
@@ -106,6 +118,18 @@ TEST_F(test, coarseProvider_name_no_upstream) {
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(coarse_memory_provider, nullptr);
 
+    size_t minPageSize = 0;
+    umf_result = umfMemoryProviderGetMinPageSize(coarse_memory_provider,
+                                                 nullptr, &minPageSize);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_GT(minPageSize, 0);
+
+    size_t pageSize = 0;
+    umf_result = umfMemoryProviderGetRecommendedPageSize(
+        coarse_memory_provider, minPageSize, &pageSize);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_GE(pageSize, minPageSize);
+
     ASSERT_EQ(
         strcmp(umfMemoryProviderGetName(coarse_memory_provider), BASE_NAME), 0);
 
@@ -120,6 +144,17 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseProvider_null_stats) {
     ASSERT_EQ(GetStats(nullptr).num_upstream_blocks, 0);
     ASSERT_EQ(GetStats(nullptr).num_all_blocks, 0);
     ASSERT_EQ(GetStats(nullptr).num_free_blocks, 0);
+}
+
+// wrong NULL parameters
+TEST_P(CoarseWithMemoryStrategyTest, coarseProvider_NULL_params) {
+    umf_result_t umf_result;
+
+    umf_memory_provider_handle_t coarse_memory_provider = nullptr;
+    umf_result = umfMemoryProviderCreate(umfCoarseMemoryProviderOps(), nullptr,
+                                         &coarse_memory_provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    ASSERT_EQ(coarse_memory_provider, nullptr);
 }
 
 // wrong parameters: given no upstream_memory_provider
