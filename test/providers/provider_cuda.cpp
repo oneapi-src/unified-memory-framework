@@ -114,7 +114,7 @@ TEST_P(umfCUDAProviderTest, basic) {
     // check if the pattern was successfully applied
     uint32_t *hostMemory = (uint32_t *)calloc(1, size);
     memAccessor->copy(hostMemory, ptr, size);
-    for (size_t i = 0; i < size / sizeof(int); i++) {
+    for (size_t i = 0; i < size / sizeof(uint32_t); i++) {
         ASSERT_EQ(hostMemory[i], pattern);
     }
     free(hostMemory);
@@ -171,15 +171,18 @@ TEST_P(umfCUDAProviderTest, allocInvalidSize) {
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(provider, nullptr);
 
-    // try to alloc (int)-1
     void *ptr = nullptr;
-    umf_result = umfMemoryProviderAlloc(provider, -1, 0, &ptr);
-    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY);
 
-    // in case of size == 0 we should got INVALID_ARGUMENT error
-    // NOTE: this is invalid only for the DEVICE or SHARED allocations
-    if (params.memory_type != UMF_MEMORY_TYPE_HOST) {
+    // NOTE: some scenarios are invalid only for the DEVICE allocations
+    if (params.memory_type == UMF_MEMORY_TYPE_DEVICE) {
+        // try to alloc SIZE_MAX
+        umf_result = umfMemoryProviderAlloc(provider, SIZE_MAX, 0, &ptr);
+        ASSERT_EQ(ptr, nullptr);
+        ASSERT_EQ(umf_result, UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY);
+
+        // in case of size == 0 we should got INVALID_ARGUMENT error
         umf_result = umfMemoryProviderAlloc(provider, 0, 0, &ptr);
+        ASSERT_EQ(ptr, nullptr);
         ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
     }
 
