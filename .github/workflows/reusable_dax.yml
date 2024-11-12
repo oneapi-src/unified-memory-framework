@@ -109,6 +109,8 @@ jobs:
       # TODO: enable the provider_devdax_memory_ipc test when the IPC tests with the proxy library are fixed
       # see the issue: https://github.com/oneapi-src/unified-memory-framework/issues/864
       - name: Run the DEVDAX tests with the proxy library
+        # proxy library is built only if libumf is a shared library
+        if: ${{ matrix.shared_library == 'ON' }}
         working-directory: ${{env.BUILD_DIR}}
         run: >
           LD_PRELOAD=./lib/libumf_proxy.so
@@ -119,6 +121,8 @@ jobs:
       # TODO: enable the provider_file_memory_ipc test when the IPC tests with the proxy library are fixed
       # see the issue: https://github.com/oneapi-src/unified-memory-framework/issues/864
       - name: Run the FSDAX tests with the proxy library
+        # proxy library is built only if libumf is a shared library
+        if: ${{ matrix.shared_library == 'ON' }}
         working-directory: ${{env.BUILD_DIR}}
         run: >
           LD_PRELOAD=./lib/libumf_proxy.so
