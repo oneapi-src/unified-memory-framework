@@ -48,13 +48,14 @@ static umf_result_t umfMemoryTrackerAdd(umf_memory_tracker_handle_t hTracker,
     int ret = critnib_insert(hTracker->map, (uintptr_t)ptr, value, 0);
 
     if (ret == 0) {
-        LOG_DEBUG("memory region is added, tracker=%p, ptr=%p, size=%zu",
-                  (void *)hTracker, ptr, size);
+        LOG_DEBUG(
+            "memory region is added, tracker=%p, ptr=%p, pool=%p, size=%zu",
+            (void *)hTracker, ptr, (void *)pool, size);
         return UMF_RESULT_SUCCESS;
     }
 
-    LOG_ERR("failed to insert tracker value, ret=%d, ptr=%p, size=%zu", ret,
-            ptr, size);
+    LOG_ERR("failed to insert tracker value, ret=%d, ptr=%p, pool=%p, size=%zu",
+            ret, ptr, (void *)pool, size);
 
     umf_ba_free(hTracker->tracker_allocator, value);
 
@@ -303,8 +304,8 @@ static umf_result_t trackingAllocationMerge(void *hProvider, void *lowPtr,
     ret = umfMemoryProviderAllocationMerge(provider->hUpstream, lowPtr, highPtr,
                                            totalSize);
     if (ret != UMF_RESULT_SUCCESS) {
-        LOG_ERR("upstream provider failed to merge regions");
-        goto err;
+        LOG_WARN("upstream provider failed to merge regions");
+        goto not_merged;
     }
 
     // We'll have a duplicate entry for the range [highPtr, highValue->size] but this is fine,
@@ -329,7 +330,11 @@ static umf_result_t trackingAllocationMerge(void *hProvider, void *lowPtr,
     return UMF_RESULT_SUCCESS;
 
 err:
+    assert(0);
+
+not_merged:
     utils_mutex_unlock(&provider->hTracker->splitMergeMutex);
+
 err_lock:
     umf_ba_free(provider->hTracker->tracker_allocator, mergedValue);
     return ret;
