@@ -493,7 +493,7 @@ static umf_result_t devdax_open_ipc_handle(void *provider,
     LOG_DEBUG("devdax mapped (path: %s, size: %zu, protection: %i, fd: %i, "
               "offset: %zu) to address %p",
               devdax_ipc_data->path, length_aligned,
-              devdax_ipc_data->protection, fd, offset_aligned, addr);
+              devdax_ipc_data->protection, fd, offset_aligned, (void *)addr);
 
     *ptr = addr;
 

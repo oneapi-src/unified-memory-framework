@@ -720,7 +720,7 @@ static umf_result_t file_open_ipc_handle(void *provider, void *providerIpcData,
     LOG_DEBUG("file mapped (path: %s, size: %zu, protection: %u, visibility: "
               "%u, fd: %i, offset: %zu) at address %p",
               file_ipc_data->path, size_aligned, file_ipc_data->protection,
-              file_ipc_data->visibility, fd, offset_aligned, addr);
+              file_ipc_data->visibility, fd, offset_aligned, (void *)addr);
 
     *ptr = addr;
 
