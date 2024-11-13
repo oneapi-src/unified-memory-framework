@@ -27,6 +27,16 @@ umf_file_memory_provider_params_t get_file_params_shared(char *path) {
 umf_file_memory_provider_params_t file_params_shared =
     get_file_params_shared(FILE_PATH);
 
+umf_file_memory_provider_params_t get_file_params_fsdax(char *path) {
+    umf_file_memory_provider_params_t file_params =
+        umfFileMemoryProviderParamsDefault(path);
+    file_params.visibility = UMF_MEM_MAP_SHARED;
+    return file_params;
+}
+
+umf_file_memory_provider_params_t file_params_fsdax =
+    get_file_params_fsdax(getenv("UMF_TESTS_FSDAX_PATH"));
+
 HostMemoryAccessor hostAccessor;
 
 static std::vector<ipcTestParams> ipcManyPoolsTestParamsList = {
@@ -43,7 +53,36 @@ static std::vector<ipcTestParams> ipcManyPoolsTestParamsList = {
 #endif
 };
 
+static std::vector<ipcTestParams> getIpcFsDaxTestParamsList(void) {
+    std::vector<ipcTestParams> ipcFsDaxTestParamsList = {};
+
+    char *path = getenv("UMF_TESTS_FSDAX_PATH");
+    if (path == nullptr || path[0] == 0) {
+        // skipping the test, UMF_TESTS_FSDAX_PATH is not set
+        return ipcFsDaxTestParamsList;
+    }
+
+    ipcFsDaxTestParamsList = {
+// TODO: enable it when sizes of allocations in ipcFixtures.hpp are fixed
+//        {umfProxyPoolOps(), nullptr, umfFileMemoryProviderOps(),
+//         &file_params_fsdax, &hostAccessor, true},
+#ifdef UMF_POOL_JEMALLOC_ENABLED
+        {umfJemallocPoolOps(), nullptr, umfFileMemoryProviderOps(),
+         &file_params_fsdax, &hostAccessor, false},
+#endif
+#ifdef UMF_POOL_SCALABLE_ENABLED
+        {umfScalablePoolOps(), nullptr, umfFileMemoryProviderOps(),
+         &file_params_fsdax, &hostAccessor, false},
+#endif
+    };
+
+    return ipcFsDaxTestParamsList;
+}
+
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(umfIpcTest);
 
 INSTANTIATE_TEST_SUITE_P(FileProviderDifferentPoolsTest, umfIpcTest,
                          ::testing::ValuesIn(ipcManyPoolsTestParamsList));
+
+INSTANTIATE_TEST_SUITE_P(FileProviderDifferentPoolsFSDAXTest, umfIpcTest,
+                         ::testing::ValuesIn(getIpcFsDaxTestParamsList()));
