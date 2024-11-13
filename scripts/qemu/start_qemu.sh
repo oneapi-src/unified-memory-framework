@@ -14,7 +14,7 @@ parsed_config=$(python3 "$(dirname $0)/parse_config.py" "$(dirname $0)/configs/$
 set -x
 
 sudo qemu-system-x86_64 \
-    -drive file=./ubuntu-23.04-server-cloudimg-amd64.img,format=qcow2,index=0,media=disk,id=hd \
+    -drive file=./qemu_image.img,format=qcow2,index=0,media=disk,id=hd \
     -cdrom ./ubuntu-cloud-init.iso \
     -enable-kvm \
     -net nic -net user,hostfwd=tcp::2222-:22 \

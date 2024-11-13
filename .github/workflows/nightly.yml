@@ -175,3 +175,19 @@ jobs:
         call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
         call "C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat"
         ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
+
+  L0:
+    uses: ./.github/workflows/reusable_gpu.yml
+    with:
+      name: "LEVEL_ZERO"
+  CUDA:
+    uses: ./.github/workflows/reusable_gpu.yml
+    with:
+      name: "CUDA"
+
+  # Full exeuction of QEMU tests
+  QEMU:
+    uses: ./.github/workflows/reusable_qemu.yml
+    with:
+      short_run: false
+      os: "['ubuntu-23.04', 'ubuntu-24.04']"

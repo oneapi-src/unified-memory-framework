@@ -13,13 +13,15 @@ env:
 
 jobs:
   multi_numa:
-    name: ${{matrix.os}}
+    name: "${{matrix.os}}, ${{matrix.build_type}}, shared=${{matrix.shared_library}}"
     # run only on upstream; forks will not have the HW
     if: github.repository == 'oneapi-src/unified-memory-framework'
 
     strategy:
       matrix:
         os: [ubuntu-22.04, rhel-9.1]
+        build_type: [Debug, Release]
+        shared_library: ['ON', 'OFF']
     runs-on:  ["DSS-MULTI-NUMA", "DSS-${{matrix.os}}"]
 
     steps:
@@ -35,17 +37,17 @@ jobs:
         run: >
           cmake
           -B ${{github.workspace}}/build
-          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
           -DCMAKE_C_COMPILER=gcc
           -DCMAKE_CXX_COMPILER=g++
-          -DUMF_BUILD_SHARED_LIBRARY=OFF
+          -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
           -DUMF_BUILD_BENCHMARKS=OFF
           -DUMF_BUILD_TESTS=ON
           -DUMF_DEVELOPER_MODE=ON
           -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
           -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
           -DUMF_TESTS_FAIL_ON_SKIP=ON
-          ${{ matrix.os == 'ubuntu-22.04' && '-DUMF_USE_COVERAGE=ON' || '' }}
+          ${{ matrix.build_type == 'Debug' && matrix.os == 'ubuntu-22.04' && '-DUMF_USE_COVERAGE=ON' || '' }}
 
       - name: Build UMF
         run: cmake --build ${{github.workspace}}/build -j $(nproc)
@@ -70,7 +72,7 @@ jobs:
         if: matrix.os == 'ubuntu-22.04'
         working-directory: ${{env.BUILD_DIR}}
         run: |
-          export COVERAGE_FILE_NAME=${{env.COVERAGE_NAME}}-os-${{matrix.os}}
+          export COVERAGE_FILE_NAME=${{env.COVERAGE_NAME}}-${{matrix.os}}-shared-${{matrix.shared_library}}
           echo "COVERAGE_FILE_NAME: $COVERAGE_FILE_NAME"
           ../scripts/coverage/coverage_capture.sh $COVERAGE_FILE_NAME
           mkdir -p ${{env.COVERAGE_DIR}}
@@ -79,5 +81,5 @@ jobs:
       - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         if: matrix.os == 'ubuntu-22.04'
         with:
-          name: ${{env.COVERAGE_NAME}}-os-${{matrix.os}}
+          name: ${{env.COVERAGE_NAME}}-${{matrix.os}}-${{matrix.build_type}}-shared-${{matrix.shared_library}}
           path: ${{env.COVERAGE_DIR}}

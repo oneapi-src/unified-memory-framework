@@ -31,31 +31,42 @@ jobs:
   DevDax:
     needs: [FastBuild]
     uses: ./.github/workflows/reusable_dax.yml
+  MultiNuma:
+    needs: [FastBuild]
+    uses: ./.github/workflows/reusable_multi_numa.yml
+  L0:
+    needs: [Build]
+    uses: ./.github/workflows/reusable_gpu.yml
+    with:
+      name: "LEVEL_ZERO"
+      shared_lib: "['ON']"
+  CUDA:
+    needs: [Build]
+    uses: ./.github/workflows/reusable_gpu.yml
+    with:
+      name: "CUDA"
+      shared_lib: "['ON']"
   Sanitizers:
     needs: [FastBuild]
     uses: ./.github/workflows/reusable_sanitizers.yml
-  Qemu:
+  QEMU:
     needs: [FastBuild]
     uses: ./.github/workflows/reusable_qemu.yml
+    with:
+      short_run: true
   Benchmarks:
     needs: [Build]
     uses: ./.github/workflows/reusable_benchmarks.yml
   ProxyLib:
     needs: [Build]
     uses: ./.github/workflows/reusable_proxy_lib.yml
-  GPU:
-    needs: [Build]
-    uses: ./.github/workflows/reusable_gpu.yml
   Valgrind:
     needs: [Build]
     uses: ./.github/workflows/reusable_valgrind.yml
-  MultiNuma:
-    needs: [Build]
-    uses: ./.github/workflows/reusable_multi_numa.yml
   Coverage:
     # total coverage (on upstream only)
     if: github.repository == 'oneapi-src/unified-memory-framework'
-    needs: [Build, DevDax, GPU, MultiNuma, Qemu, ProxyLib]
+    needs: [Build, DevDax, L0, CUDA, MultiNuma, QEMU, ProxyLib]
     uses: ./.github/workflows/reusable_coverage.yml
     secrets: inherit
     with:
@@ -63,7 +74,7 @@ jobs:
   Coverage_partial:
     # partial coverage (on forks)
     if: github.repository != 'oneapi-src/unified-memory-framework'
-    needs: [Build, Qemu, ProxyLib]
+    needs: [Build, QEMU, ProxyLib]
     uses: ./.github/workflows/reusable_coverage.yml
   CodeQL:
     needs: [Build]

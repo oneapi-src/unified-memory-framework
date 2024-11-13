@@ -1,14 +1,29 @@
 # Builds project on qemu with custom hmat settings
 name: Qemu
 
-on: workflow_call
+on:
+  workflow_call:
+    inputs:
+      short_run:
+        description: Should the workflow run only basic tests?
+        type: boolean
+        default: false
+      os:
+        description: List of OSes
+        type: string
+        default: '["ubuntu-23.04"]'
 
 permissions:
   contents: read
 
 jobs:
   qemu-build:
-    name: Qemu
+    name: QEMU
+    strategy:
+      matrix:
+        os: ${{ fromJson(inputs.os) }}
+
+    # Host QEMU on any Linux platform
     runs-on: ubuntu-22.04
 
     steps:
@@ -79,11 +94,26 @@ jobs:
 
         sudo -Sk genisoimage -output ubuntu-cloud-init.iso -volid cidata -joliet -rock ./user-data ./meta-data
 
-    - name: Download ubuntu image
-      run: wget https://cloud-images.ubuntu.com/releases/lunar/release/ubuntu-23.04-server-cloudimg-amd64.img
+    - name: Set vars if short run
+      if: ${{ inputs.short_run == true }}
+      run: |
+        echo "SHORT_RUN=true" >> $GITHUB_ENV
+        declare -a short_configs=("default.xml" "sock_2_var3.xml" "sock_4_var1_hmat.xml")
+        echo "CONFIG_OPTIONS=${short_configs[@]}" >> $GITHUB_ENV
+
+    - name: Set vars if long run
+      if: ${{ inputs.short_run == false }}
+      run: |
+        echo "SHORT_RUN=false" >> $GITHUB_ENV
+        echo "CONFIG_OPTIONS=umf/scripts/qemu/configs/*.xml" >> $GITHUB_ENV
+
+    - name: Download Ubuntu image
+      run: |
+        OS_VER=$(echo ${{matrix.os}} | cut -d'-' -f2)
+        wget https://cloud-images.ubuntu.com/releases/${OS_VER}/release/${{matrix.os}}-server-cloudimg-amd64.img -O qemu_image.img
 
     - name: Resize image
-      run: qemu-img resize ./ubuntu-23.04-server-cloudimg-amd64.img +4G
+      run: qemu-img resize ./qemu_image.img +4G
 
     - name: Build UMF in QEMU
       run: |
@@ -98,7 +128,9 @@ jobs:
 
     - name: Run tests in QEMU
       run: |
-        for config_file in umf/scripts/qemu/configs/*.xml; do
+        echo "Running tests for: ${CONFIG_OPTIONS}"
+
+        for config_file in ${CONFIG_OPTIONS}; do
           config_name=$(basename $config_file)
 
           while ps -aux | grep qemu-system-x86_64 | grep -q -v grep; do
@@ -106,10 +138,10 @@ jobs:
             sleep 5
           done
 
-          echo "\n ### Testing ${config_name} ###"
+          echo "### Testing ${config_name} ###"
           umf/scripts/qemu/start_qemu.sh ${config_name}
 
-          ssh testuser@127.0.0.1 -p 2222 -t "bash /home/testuser/scripts/qemu/run-tests.sh COVERAGE ${config_name}"
+          ssh testuser@127.0.0.1 -p 2222 -t "export SHORT_RUN=${SHORT_RUN} OS_FULL_NAME=${{matrix.os}} && /home/testuser/scripts/qemu/run-tests.sh COVERAGE ${config_name}"
           scp -r -P 2222 testuser@127.0.0.1:/home/testuser/coverage ./
           ssh testuser@127.0.0.1 -p 2222 -t "sudo shutdown -h now"
         done
@@ -117,5 +149,5 @@ jobs:
 
     - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
       with:
-        name: exports-coverage-qemu-all
+        name: exports-coverage-qemu-${{matrix.os}}
         path: coverage
