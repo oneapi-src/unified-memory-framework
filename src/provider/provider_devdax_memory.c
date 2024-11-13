@@ -139,18 +139,28 @@ static umf_result_t devdax_initialize(void *params, void **provider) {
         goto err_free_devdax_provider;
     }
 
-    unsigned map_sync_flag = 0;
-    utils_translate_mem_visibility_flag(UMF_MEM_MAP_SYNC, &map_sync_flag);
+    bool is_dax = false;
 
-    // mmap /dev/dax with the MAP_SYNC xor MAP_SHARED flag (if MAP_SYNC fails)
-    devdax_provider->base = utils_mmap_file(NULL, devdax_provider->size,
-                                            devdax_provider->protection,
-                                            map_sync_flag, fd, 0 /* offset */);
+    // mmap /dev/dax with the MAP_SYNC
+    devdax_provider->base = utils_mmap_file(
+        NULL, devdax_provider->size, devdax_provider->protection, 0 /* flags */,
+        fd, 0 /* offset */, &is_dax);
     utils_close_fd(fd);
     if (devdax_provider->base == NULL) {
-        LOG_PDEBUG("devdax memory mapping failed (path=%s, size=%zu)",
+        LOG_PDEBUG("mapping the devdax failed (path=%s, size=%zu)",
                    in_params->path, devdax_provider->size);
         ret = UMF_RESULT_ERROR_UNKNOWN;
+        goto err_free_devdax_provider;
+    }
+
+    if (!is_dax) {
+        LOG_ERR("mapping the devdax with MAP_SYNC failed: %s", in_params->path);
+        ret = UMF_RESULT_ERROR_UNKNOWN;
+
+        if (devdax_provider->base) {
+            utils_munmap(devdax_provider->base, devdax_provider->size);
+        }
+
         goto err_free_devdax_provider;
     }
 
@@ -433,6 +443,8 @@ static umf_result_t devdax_open_ipc_handle(void *provider,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
+    *ptr = NULL;
+
     devdax_ipc_data_t *devdax_ipc_data = (devdax_ipc_data_t *)providerIpcData;
 
     int fd = utils_devdax_open(devdax_ipc_data->path);
@@ -440,9 +452,6 @@ static umf_result_t devdax_open_ipc_handle(void *provider,
         LOG_PERR("opening the devdax (%s) failed", devdax_ipc_data->path);
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
-
-    unsigned map_sync_flag = 0;
-    utils_translate_mem_visibility_flag(UMF_MEM_MAP_SYNC, &map_sync_flag);
 
     // It is just a workaround for case when
     // devdax_alloc() was called with the size argument
@@ -452,23 +461,33 @@ static umf_result_t devdax_open_ipc_handle(void *provider,
     utils_align_ptr_down_size_up((void **)&offset_aligned, &length_aligned,
                                  DEVDAX_PAGE_SIZE_2MB);
 
-    // mmap /dev/dax with the MAP_SYNC xor MAP_SHARED flag (if MAP_SYNC fails)
+    bool is_dax = false;
+
+    // mmap /dev/dax with the MAP_SYNC
     char *addr =
         utils_mmap_file(NULL, length_aligned, devdax_ipc_data->protection,
-                        map_sync_flag, fd, offset_aligned);
+                        0 /* flags */, fd, offset_aligned, &is_dax);
+    (void)utils_close_fd(fd);
     if (addr == NULL) {
-        devdax_store_last_native_error(UMF_DEVDAX_RESULT_ERROR_ALLOC_FAILED,
-                                       errno);
-
         LOG_PERR("devdax mapping failed (path: %s, size: %zu, protection: %i, "
                  "fd: %i, offset: %zu)",
                  devdax_ipc_data->path, length_aligned,
                  devdax_ipc_data->protection, fd, offset_aligned);
 
-        *ptr = NULL;
-        (void)utils_close_fd(fd);
-
+        devdax_store_last_native_error(UMF_DEVDAX_RESULT_ERROR_ALLOC_FAILED,
+                                       errno);
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
+    }
+
+    if (!is_dax) {
+        LOG_ERR("mapping the devdax with MAP_SYNC failed: %s",
+                devdax_ipc_data->path);
+
+        if (addr) {
+            utils_munmap(addr, length_aligned);
+        }
+
+        return UMF_RESULT_ERROR_UNKNOWN;
     }
 
     LOG_DEBUG("devdax mapped (path: %s, size: %zu, protection: %i, fd: %i, "
@@ -477,8 +496,6 @@ static umf_result_t devdax_open_ipc_handle(void *provider,
               devdax_ipc_data->protection, fd, offset_aligned, addr);
 
     *ptr = addr;
-
-    (void)utils_close_fd(fd);
 
     return UMF_RESULT_SUCCESS;
 }

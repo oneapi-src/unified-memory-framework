@@ -51,7 +51,7 @@ typedef struct file_memory_provider_t {
     unsigned visibility; // memory visibility mode
     size_t page_size;    // minimum page size
 
-    // IPC is enabled only for UMF_MEM_MAP_SHARED or UMF_MEM_MAP_SYNC visibility
+    // IPC is enabled only for the UMF_MEM_MAP_SHARED visibility
     bool IPC_enabled;
 
     critnib *mmaps; // a critnib map storing mmap mappings (addr, size)
@@ -114,9 +114,8 @@ file_translate_params(umf_file_memory_provider_params_t *in_params,
         return result;
     }
 
-    // IPC is enabled only for UMF_MEM_MAP_SHARED or UMF_MEM_MAP_SYNC visibility
-    provider->IPC_enabled = (in_params->visibility == UMF_MEM_MAP_SHARED ||
-                             in_params->visibility == UMF_MEM_MAP_SYNC);
+    // IPC is enabled only for the UMF_MEM_MAP_SHARED visibility
+    provider->IPC_enabled = (in_params->visibility == UMF_MEM_MAP_SHARED);
 
     return UMF_RESULT_SUCCESS;
 }
@@ -293,8 +292,8 @@ static umf_result_t file_mmap_aligned(file_memory_provider_t *file_provider,
     ASSERT_IS_ALIGNED(extended_size, page_size);
     ASSERT_IS_ALIGNED(aligned_offset_fd, page_size);
 
-    void *ptr =
-        utils_mmap_file(NULL, extended_size, prot, flag, fd, aligned_offset_fd);
+    void *ptr = utils_mmap_file(NULL, extended_size, prot, flag, fd,
+                                aligned_offset_fd, NULL);
     if (ptr == NULL) {
         LOG_PERR("memory mapping failed");
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
@@ -594,8 +593,7 @@ static umf_result_t file_get_ipc_handle_size(void *provider, size_t *size) {
 
     file_memory_provider_t *file_provider = (file_memory_provider_t *)provider;
     if (!file_provider->IPC_enabled) {
-        LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED nor "
-                "UMF_MEM_MAP_SYNC")
+        LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED")
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -612,8 +610,7 @@ static umf_result_t file_get_ipc_handle(void *provider, const void *ptr,
 
     file_memory_provider_t *file_provider = (file_memory_provider_t *)provider;
     if (!file_provider->IPC_enabled) {
-        LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED nor "
-                "UMF_MEM_MAP_SYNC")
+        LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED")
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -643,8 +640,7 @@ static umf_result_t file_put_ipc_handle(void *provider, void *providerIpcData) {
 
     file_memory_provider_t *file_provider = (file_memory_provider_t *)provider;
     if (!file_provider->IPC_enabled) {
-        LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED nor "
-                "UMF_MEM_MAP_SYNC")
+        LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED")
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -665,8 +661,7 @@ static umf_result_t file_open_ipc_handle(void *provider, void *providerIpcData,
 
     file_memory_provider_t *file_provider = (file_memory_provider_t *)provider;
     if (!file_provider->IPC_enabled) {
-        LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED nor "
-                "UMF_MEM_MAP_SYNC")
+        LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED")
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -683,7 +678,7 @@ static umf_result_t file_open_ipc_handle(void *provider, void *providerIpcData,
 
     char *addr = utils_mmap_file(
         NULL, file_ipc_data->size, file_ipc_data->protection,
-        file_ipc_data->visibility, fd, file_ipc_data->offset_fd);
+        file_ipc_data->visibility, fd, file_ipc_data->offset_fd, NULL);
     (void)utils_close_fd(fd);
     if (addr == NULL) {
         file_store_last_native_error(UMF_FILE_RESULT_ERROR_ALLOC_FAILED, errno);
@@ -712,8 +707,7 @@ static umf_result_t file_close_ipc_handle(void *provider, void *ptr,
 
     file_memory_provider_t *file_provider = (file_memory_provider_t *)provider;
     if (!file_provider->IPC_enabled) {
-        LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED nor "
-                "UMF_MEM_MAP_SYNC")
+        LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED")
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 

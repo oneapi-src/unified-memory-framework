@@ -11,6 +11,7 @@
 #define UMF_COMMON_H 1
 
 #include <assert.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -136,7 +137,7 @@ void *utils_mmap(void *hint_addr, size_t length, int prot, int flag, int fd,
                  size_t fd_offset);
 
 void *utils_mmap_file(void *hint_addr, size_t length, int prot, int flags,
-                      int fd, size_t fd_offset);
+                      int fd, size_t fd_offset, bool *map_sync);
 
 int utils_munmap(void *addr, size_t length);
 

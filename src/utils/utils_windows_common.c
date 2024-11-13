@@ -96,8 +96,6 @@ utils_translate_mem_visibility_flag(umf_memory_visibility_t in_flag,
         return UMF_RESULT_SUCCESS;
     case UMF_MEM_MAP_SHARED:
         return UMF_RESULT_ERROR_NOT_SUPPORTED; // not supported on Windows yet
-    case UMF_MEM_MAP_SYNC:
-        return UMF_RESULT_ERROR_NOT_SUPPORTED; // not supported on Windows yet
     }
     return UMF_RESULT_ERROR_INVALID_ARGUMENT;
 }
@@ -148,13 +146,14 @@ void *utils_mmap(void *hint_addr, size_t length, int prot, int flag, int fd,
 }
 
 void *utils_mmap_file(void *hint_addr, size_t length, int prot, int flags,
-                      int fd, size_t fd_offset) {
+                      int fd, size_t fd_offset, bool *map_sync) {
     (void)hint_addr; // unused
     (void)length;    // unused
     (void)prot;      // unused
     (void)flags;     // unused
     (void)fd;        // unused
     (void)fd_offset; // unused
+    (void)map_sync;  // unused
     return NULL;     // not supported
 }
 

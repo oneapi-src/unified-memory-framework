@@ -207,10 +207,10 @@ so it should be used with a pool manager that will take over
 the managing of the provided memory - for example the jemalloc pool
 with the `disable_provider_free` parameter set to true.
 
-IPC API requires the `UMF_MEM_MAP_SHARED` or `UMF_MEM_MAP_SYNC` memory `visibility` mode
+IPC API requires the `UMF_MEM_MAP_SHARED` memory `visibility` mode
 (`UMF_RESULT_ERROR_INVALID_ARGUMENT` is returned otherwise).
 
-The memory visibility mode parameter must be set to `UMF_MEM_MAP_SYNC` in case of FSDAX.
+The memory visibility mode parameter must be set to `UMF_MEM_MAP_SHARED` in case of FSDAX.
 
 ##### Requirements
 
