@@ -148,7 +148,7 @@ Mempolicy
 Memtarget
 ==========================================
 
-TODO: Add general information about memtarges.
+TODO: Add general information about memtargets.
 
 Memtarget
 ------------------------------------------

@@ -203,7 +203,7 @@ static bool arena_extent_decommit(extent_hooks_t *extent_hooks, void *addr,
 // physical pages within the virtual memory mapping associated with an extent at given addr and size
 // at offset bytes, extending for length on behalf of arena arena_ind. A lazy extent purge function
 // (e.g. implemented via madvise(...MADV_FREE)) can delay purging indefinitely and leave the pages
-// within the purged virtual memory range in an indeterminite state, whereas a forced extent purge
+// within the purged virtual memory range in an indeterminate state, whereas a forced extent purge
 // function immediately purges, and the pages within the virtual memory range will be zero-filled
 // the next time they are accessed. If the function returns true, this indicates failure to purge.
 // (from https://jemalloc.net/jemalloc.3.html)

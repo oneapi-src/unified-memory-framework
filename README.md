@@ -241,6 +241,8 @@ This memory pool is distributed as part of libumf. It forwards all requests to t
 memory provider. Currently umfPoolRealloc, umfPoolCalloc and umfPoolMallocUsableSize functions
 are not supported by the proxy pool.
 
+To enable this feature, the `UMF_BUILD_SHARED_LIBRARY` option needs to be turned `ON`.
+
 #### Disjoint pool
 
 TODO: Add a description

@@ -109,7 +109,7 @@ umf_result_t umfPutIPCHandle(umf_ipc_handle_t umfIPCHandle) {
     //       implementation does nothing in Put function. Tracking memory
     //       provider relies on IPC cache and actually Put IPC handle back
     //       to upstream memory provider when umfMemoryProviderFree is called.
-    //       To support incapsulation we should not take into account
+    //       To support encapsulation we should not take into account
     //       implementation details of tracking memory provider and find the
     //       appropriate pool, get memory provider of that pool and call
     //       umfMemoryProviderPutIPCHandle(hProvider,

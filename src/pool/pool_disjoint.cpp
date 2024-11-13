@@ -237,7 +237,7 @@ class Bucket {
     // When a slab becomes entirely free we have to decide whether to return it
     // to the provider or keep it allocated. A simple check for size of the
     // Available list is not sufficient to check whether any slab has been
-    // pooled yet.We would have to traverse the entire Available listand check
+    // pooled yet. We would have to traverse the entire Available list and check
     // if any of them is entirely free. Instead we keep a counter of entirely
     // empty slabs within the Available list to speed up the process of checking
     // if a slab in this bucket is already pooled.
