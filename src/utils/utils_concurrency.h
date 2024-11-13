@@ -75,13 +75,16 @@ static __inline unsigned char utils_mssb_index(long long value) {
 // There is no good way to do atomic_load on windows...
 #define utils_atomic_load_acquire(object, dest)                                \
     do {                                                                       \
-        *dest = InterlockedOr64Acquire((LONG64 volatile *)object, 0);          \
+        *(LONG64 *)dest =                                                      \
+            InterlockedOr64Acquire((LONG64 volatile *)object, 0);              \
     } while (0)
 
 #define utils_atomic_store_release(object, desired)                            \
     InterlockedExchange64((LONG64 volatile *)object, (LONG64)desired)
 #define utils_atomic_increment(object)                                         \
     InterlockedIncrement64((LONG64 volatile *)object)
+#define utils_atomic_decrement(object)                                         \
+    InterlockedDecrement64((LONG64 volatile *)object)
 #define utils_fetch_and_add64(ptr, value)                                      \
     InterlockedExchangeAdd64((LONG64 *)(ptr), value)
 #else
@@ -101,7 +104,10 @@ static __inline unsigned char utils_mssb_index(long long value) {
 
 #define utils_atomic_increment(object)                                         \
     __atomic_add_fetch(object, 1, __ATOMIC_ACQ_REL)
+#define utils_atomic_decrement(object)                                         \
+    __atomic_sub_fetch(object, 1, __ATOMIC_ACQ_REL)
 #define utils_fetch_and_add64 __sync_fetch_and_add
+
 #endif
 
 #ifdef __cplusplus

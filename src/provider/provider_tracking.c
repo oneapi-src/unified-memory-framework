@@ -10,6 +10,7 @@
 #include "provider_tracking.h"
 #include "base_alloc_global.h"
 #include "critnib.h"
+#include "ipc_cache.h"
 #include "ipc_internal.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
@@ -24,6 +25,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+uint64_t IPC_HANDLE_ID = 0;
 
 typedef struct tracker_value_t {
     umf_memory_pool_handle_t pool;
@@ -138,6 +141,7 @@ umf_result_t umfMemoryTrackerGetAllocInfo(const void *ptr,
 // providerIpcData is a Flexible Array Member because its size varies
 // depending on the provider.
 typedef struct ipc_cache_value_t {
+    uint64_t handle_id;
     uint64_t ipcDataSize;
     char providerIpcData[];
 } ipc_cache_value_t;
@@ -147,6 +151,7 @@ typedef struct umf_tracking_memory_provider_t {
     umf_memory_tracker_handle_t hTracker;
     umf_memory_pool_handle_t pool;
     critnib *ipcCache;
+    ipc_mapped_handle_cache_handle_t hIpcMappedCache;
 
     // the upstream provider does not support the free() operation
     bool upstreamDoesNotFree;
@@ -465,6 +470,8 @@ static void trackingFinalize(void *provider) {
     umf_tracking_memory_provider_t *p =
         (umf_tracking_memory_provider_t *)provider;
 
+    umfIpcHandleMappedCacheDestroy(p->hIpcMappedCache);
+
     critnib_delete(p->ipcCache);
 
     // Do not clear the tracker if we are running in the proxy library,
@@ -524,6 +531,11 @@ static umf_result_t trackingGetIpcHandleSize(void *provider, size_t *size) {
     return umfMemoryProviderGetIPCHandleSize(p->hUpstream, size);
 }
 
+static inline umf_ipc_data_t *getIpcDataFromIpcHandle(void *providerIpcData) {
+    return (umf_ipc_data_t *)((uint8_t *)providerIpcData -
+                              sizeof(umf_ipc_data_t));
+}
+
 static umf_result_t trackingGetIpcHandle(void *provider, const void *ptr,
                                          size_t size, void *providerIpcData) {
     umf_tracking_memory_provider_t *p =
@@ -531,47 +543,39 @@ static umf_result_t trackingGetIpcHandle(void *provider, const void *ptr,
     umf_result_t ret = UMF_RESULT_SUCCESS;
     size_t ipcDataSize = 0;
     int cached = 0;
+    ipc_cache_value_t *cache_value = NULL;
+    umf_ipc_data_t *ipcUmfData = getIpcDataFromIpcHandle(providerIpcData);
+
     do {
         void *value = critnib_get(p->ipcCache, (uintptr_t)ptr);
         if (value) { //cache hit
-            ipc_cache_value_t *cache_value = (ipc_cache_value_t *)value;
-            memcpy(providerIpcData, cache_value->providerIpcData,
-                   cache_value->ipcDataSize);
+            cache_value = (ipc_cache_value_t *)value;
             cached = 1;
-        } else {
-            ret = umfMemoryProviderGetIPCHandle(p->hUpstream, ptr, size,
-                                                providerIpcData);
-            if (ret != UMF_RESULT_SUCCESS) {
-                LOG_ERR("upstream provider failed to get IPC handle");
-                return ret;
-            }
-
+        } else { //cache miss
             ret = umfMemoryProviderGetIPCHandleSize(p->hUpstream, &ipcDataSize);
             if (ret != UMF_RESULT_SUCCESS) {
                 LOG_ERR("upstream provider failed to get the size of IPC "
                         "handle");
-                ret = umfMemoryProviderPutIPCHandle(p->hUpstream,
-                                                    providerIpcData);
-                if (ret != UMF_RESULT_SUCCESS) {
-                    LOG_ERR("upstream provider failed to put IPC handle");
-                }
                 return ret;
             }
 
             size_t value_size = sizeof(ipc_cache_value_t) + ipcDataSize;
-            ipc_cache_value_t *cache_value = umf_ba_global_alloc(value_size);
+            cache_value = umf_ba_global_alloc(value_size);
             if (!cache_value) {
                 LOG_ERR("failed to allocate cache_value");
-                ret = umfMemoryProviderPutIPCHandle(p->hUpstream,
-                                                    providerIpcData);
-                if (ret != UMF_RESULT_SUCCESS) {
-                    LOG_ERR("upstream provider failed to put IPC handle");
-                }
                 return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
             }
 
+            ret = umfMemoryProviderGetIPCHandle(p->hUpstream, ptr, size,
+                                                cache_value->providerIpcData);
+            if (ret != UMF_RESULT_SUCCESS) {
+                LOG_ERR("upstream provider failed to get IPC handle");
+                umf_ba_global_free(cache_value);
+                return ret;
+            }
+
+            cache_value->handle_id = utils_atomic_increment(&IPC_HANDLE_ID);
             cache_value->ipcDataSize = ipcDataSize;
-            memcpy(cache_value->providerIpcData, providerIpcData, ipcDataSize);
 
             int insRes = critnib_insert(p->ipcCache, (uintptr_t)ptr,
                                         (void *)cache_value, 0 /*update*/);
@@ -587,9 +591,9 @@ static umf_result_t trackingGetIpcHandle(void *provider, const void *ptr,
                 //    But this case should be rare enough.
                 // 2. critnib failed to allocate memory internally. We need
                 //    to cleanup and return corresponding error.
+                ret = umfMemoryProviderPutIPCHandle(
+                    p->hUpstream, cache_value->providerIpcData);
                 umf_ba_global_free(cache_value);
-                ret = umfMemoryProviderPutIPCHandle(p->hUpstream,
-                                                    providerIpcData);
                 if (ret != UMF_RESULT_SUCCESS) {
                     LOG_ERR("upstream provider failed to put IPC handle");
                     return ret;
@@ -601,6 +605,10 @@ static umf_result_t trackingGetIpcHandle(void *provider, const void *ptr,
             }
         }
     } while (!cached);
+
+    memcpy(providerIpcData, cache_value->providerIpcData,
+           cache_value->ipcDataSize);
+    ipcUmfData->handle_id = cache_value->handle_id;
 
     return ret;
 }
@@ -614,17 +622,65 @@ static umf_result_t trackingPutIpcHandle(void *provider,
     return UMF_RESULT_SUCCESS;
 }
 
-static size_t getDataSizeFromIpcHandle(const void *providerIpcData) {
-    // This is hack to get size of memory pointed by IPC handle.
-    // tracking memory provider gets only provider-specific data
-    // pointed by providerIpcData, but the size of allocation tracked
-    // by umf_ipc_data_t. We use this trick to get pointer to
-    // umf_ipc_data_t data because the providerIpcData is
-    // the Flexible Array Member of umf_ipc_data_t.
-    const umf_ipc_data_t *ipcUmfData =
-        (const umf_ipc_data_t *)((const uint8_t *)providerIpcData -
-                                 sizeof(umf_ipc_data_t));
-    return ipcUmfData->baseSize;
+static void
+ipcMappedCacheEvictionCallback(const ipc_mapped_handle_cache_key_t *key,
+                               const ipc_mapped_handle_cache_value_t *value) {
+    umf_tracking_memory_provider_t *p =
+        (umf_tracking_memory_provider_t *)key->local_provider;
+    // umfMemoryTrackerRemove should be called before umfMemoryProviderCloseIPCHandle
+    // to avoid a race condition. If the order would be different, other thread
+    // could allocate the memory at address `ptr` before a call to umfMemoryTrackerRemove
+    // resulting in inconsistent state.
+    if (value->mapped_base_ptr) {
+        umf_result_t ret =
+            umfMemoryTrackerRemove(p->hTracker, value->mapped_base_ptr);
+        if (ret != UMF_RESULT_SUCCESS) {
+            // DO NOT return an error here, because the tracking provider
+            // cannot change behaviour of the upstream provider.
+            LOG_ERR("failed to remove the region from the tracker, ptr=%p, "
+                    "size=%zu, ret = %d",
+                    value->mapped_base_ptr, value->mapped_size, ret);
+        }
+    }
+    umf_result_t ret = umfMemoryProviderCloseIPCHandle(
+        p->hUpstream, value->mapped_base_ptr, value->mapped_size);
+    if (ret != UMF_RESULT_SUCCESS) {
+        LOG_ERR("provider failed to close IPC handle, ptr=%p, size=%zu",
+                value->mapped_base_ptr, value->mapped_size);
+    }
+}
+
+static umf_result_t upstreamOpenIPCHandle(umf_tracking_memory_provider_t *p,
+                                          void *providerIpcData,
+                                          size_t bufferSize, void **ptr) {
+    void *mapped_ptr = NULL;
+    assert(p != NULL);
+    assert(ptr != NULL);
+    umf_result_t ret = umfMemoryProviderOpenIPCHandle(
+        p->hUpstream, providerIpcData, &mapped_ptr);
+    if (ret != UMF_RESULT_SUCCESS) {
+        LOG_ERR("upstream provider failed to open IPC handle");
+        return ret;
+    }
+    assert(mapped_ptr != NULL);
+
+    ret = umfMemoryTrackerAdd(p->hTracker, p->pool, mapped_ptr, bufferSize);
+    if (ret != UMF_RESULT_SUCCESS) {
+        LOG_ERR("failed to add IPC region to the tracker, ptr=%p, "
+                "size=%zu, "
+                "ret = %d",
+                mapped_ptr, bufferSize, ret);
+        if (umfMemoryProviderCloseIPCHandle(p->hUpstream, mapped_ptr,
+                                            bufferSize)) {
+            LOG_ERR("upstream provider failed to close IPC handle, "
+                    "ptr=%p, size=%zu",
+                    mapped_ptr, bufferSize);
+        }
+        return ret;
+    }
+
+    *ptr = mapped_ptr;
+    return UMF_RESULT_SUCCESS;
 }
 
 static umf_result_t trackingOpenIpcHandle(void *provider, void *providerIpcData,
@@ -634,47 +690,67 @@ static umf_result_t trackingOpenIpcHandle(void *provider, void *providerIpcData,
     umf_result_t ret = UMF_RESULT_SUCCESS;
 
     assert(p->hUpstream);
+    assert(p->hIpcMappedCache);
 
-    ret = umfMemoryProviderOpenIPCHandle(p->hUpstream, providerIpcData, ptr);
+    umf_ipc_data_t *ipcUmfData = getIpcDataFromIpcHandle(providerIpcData);
+
+    // Compiler may add paddings to the ipc_mapped_handle_cache_key_t structure
+    // so we need to zero it out to avoid false cache miss.
+    ipc_mapped_handle_cache_key_t key = {0};
+    key.remote_base_ptr = ipcUmfData->base;
+    key.local_provider = provider;
+    key.remote_pid = ipcUmfData->pid;
+
+    ipc_mapped_handle_cache_value_t *cache_entry = NULL;
+    ret = umfIpcHandleMappedCacheGet(p->hIpcMappedCache, &key,
+                                     ipcUmfData->handle_id, &cache_entry);
     if (ret != UMF_RESULT_SUCCESS) {
-        LOG_ERR("upstream provider failed to open IPC handle");
+        LOG_ERR("failed to get cache entry");
         return ret;
     }
-    size_t bufferSize = getDataSizeFromIpcHandle(providerIpcData);
-    ret = umfMemoryTrackerAdd(p->hTracker, p->pool, *ptr, bufferSize);
-    if (ret != UMF_RESULT_SUCCESS) {
-        LOG_ERR("failed to add IPC region to the tracker, ptr=%p, size=%zu, "
-                "ret = %d",
-                *ptr, bufferSize, ret);
-        if (umfMemoryProviderCloseIPCHandle(p->hUpstream, *ptr, bufferSize)) {
-            LOG_ERR("upstream provider failed to close IPC handle, ptr=%p, "
-                    "size=%zu",
-                    *ptr, bufferSize);
+
+    assert(cache_entry != NULL);
+
+    void *mapped_ptr = NULL;
+    utils_atomic_load_acquire(&(cache_entry->mapped_base_ptr), &mapped_ptr);
+    if (mapped_ptr == NULL) {
+        utils_mutex_lock(&(cache_entry->mmap_lock));
+        utils_atomic_load_acquire(&(cache_entry->mapped_base_ptr), &mapped_ptr);
+        if (mapped_ptr == NULL) {
+            ret = upstreamOpenIPCHandle(p, providerIpcData,
+                                        ipcUmfData->baseSize, &mapped_ptr);
+            if (ret == UMF_RESULT_SUCCESS) {
+                // Put to the cache
+                cache_entry->mapped_size = ipcUmfData->baseSize;
+                utils_atomic_store_release(&(cache_entry->mapped_base_ptr),
+                                           mapped_ptr);
+            }
         }
+        utils_mutex_unlock(&(cache_entry->mmap_lock));
     }
+
+    if (ret == UMF_RESULT_SUCCESS) {
+        *ptr = mapped_ptr;
+    }
+
     return ret;
 }
 
 static umf_result_t trackingCloseIpcHandle(void *provider, void *ptr,
                                            size_t size) {
-    umf_tracking_memory_provider_t *p =
-        (umf_tracking_memory_provider_t *)provider;
-
-    // umfMemoryTrackerRemove should be called before umfMemoryProviderCloseIPCHandle
-    // to avoid a race condition. If the order would be different, other thread
-    // could allocate the memory at address `ptr` before a call to umfMemoryTrackerRemove
-    // resulting in inconsistent state.
-    if (ptr) {
-        umf_result_t ret = umfMemoryTrackerRemove(p->hTracker, ptr);
-        if (ret != UMF_RESULT_SUCCESS) {
-            // DO NOT return an error here, because the tracking provider
-            // cannot change behaviour of the upstream provider.
-            LOG_ERR("failed to remove the region from the tracker, ptr=%p, "
-                    "size=%zu, ret = %d",
-                    ptr, size, ret);
-        }
-    }
-    return umfMemoryProviderCloseIPCHandle(p->hUpstream, ptr, size);
+    (void)provider;
+    (void)ptr;
+    (void)size;
+    // We keep opened IPC handles in the p->hIpcMappedCache.
+    // IPC handle is closed when it is evicted from the cache
+    // or when cache is destroyed.
+    //
+    // TODO: today the size of the IPC cache is infinite.
+    // When the threshold for the cache size is implemented
+    // we need to introduce a reference counting mechanism.
+    // The trackingOpenIpcHandle will increment the refcount for the corresponding entry.
+    // The trackingCloseIpcHandle will decrement the refcount for the corresponding cache entry.
+    return UMF_RESULT_SUCCESS;
 }
 
 umf_memory_provider_ops_t UMF_TRACKING_MEMORY_PROVIDER_OPS = {
@@ -716,10 +792,14 @@ umf_result_t umfTrackingMemoryProviderCreate(
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
+    params.hIpcMappedCache =
+        umfIpcHandleMappedCacheCreate(ipcMappedCacheEvictionCallback);
+
     LOG_DEBUG("upstream=%p, tracker=%p, "
-              "pool=%p, ipcCache=%p",
+              "pool=%p, ipcCache=%p, hIpcMappedCache=%p",
               (void *)params.hUpstream, (void *)params.hTracker,
-              (void *)params.pool, (void *)params.ipcCache);
+              (void *)params.pool, (void *)params.ipcCache,
+              (void *)params.hIpcMappedCache);
 
     return umfMemoryProviderCreate(&UMF_TRACKING_MEMORY_PROVIDER_OPS, &params,
                                    hTrackingProvider);

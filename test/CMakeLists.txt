@@ -242,7 +242,7 @@ if(LINUX AND (NOT UMF_DISABLE_HWLOC)) # OS-specific functions are implemented
     add_umf_test(
         NAME provider_os_memory
         SRCS provider_os_memory.cpp ${BA_SOURCES_FOR_TEST}
-        LIBS ${UMF_UTILS_FOR_TEST})
+        LIBS ${UMF_UTILS_FOR_TEST} ${LIB_JEMALLOC_POOL})
     if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
         target_compile_definitions(umf_test-provider_os_memory
                                    PRIVATE UMF_POOL_DISJOINT_ENABLED=1)

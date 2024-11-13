@@ -245,8 +245,7 @@ TEST_P(umfIpcTest, BasicFlow) {
     pool.reset(nullptr);
     EXPECT_EQ(stat.getCount, 1);
     EXPECT_EQ(stat.putCount, stat.getCount);
-    // TODO: enale check below once cache for open IPC handles is implemented
-    // EXPECT_EQ(stat.openCount, 1);
+    EXPECT_EQ(stat.openCount, 1);
     EXPECT_EQ(stat.closeCount, stat.openCount);
 }
 
@@ -358,11 +357,8 @@ TEST_P(umfIpcTest, AllocFreeAllocTest) {
               get_umf_result_of_free(freeNotSupported, UMF_RESULT_SUCCESS));
 
     pool.reset(nullptr);
-    // TODO fix it - it does not work in case of IPC cache hit
-    // EXPECT_EQ(stat.allocCount, stat.getCount);
     EXPECT_EQ(stat.getCount, stat.putCount);
-    // TODO fix it - it does not work in case of IPC cache hit
-    // EXPECT_EQ(stat.openCount, stat.getCount);
+    EXPECT_EQ(stat.openCount, stat.getCount);
     EXPECT_EQ(stat.openCount, stat.closeCount);
 }
 
@@ -531,8 +527,7 @@ TEST_P(umfIpcTest, ConcurrentOpenCloseHandles) {
     pool.reset(nullptr);
     EXPECT_EQ(stat.getCount, stat.allocCount);
     EXPECT_EQ(stat.putCount, stat.getCount);
-    // TODO: enale check below once cache for open IPC handles is implemented
-    // EXPECT_EQ(stat.openCount, stat.allocCount);
+    EXPECT_EQ(stat.openCount, stat.allocCount);
     EXPECT_EQ(stat.openCount, stat.closeCount);
 }
 

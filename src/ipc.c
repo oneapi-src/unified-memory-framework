@@ -90,6 +90,8 @@ umf_result_t umfGetIPCHandle(const void *ptr, umf_ipc_handle_t *umfIPCHandle,
         return ret;
     }
 
+    // ipcData->handle_id is filled by tracking provider
+    ipcData->base = allocInfo.base;
     ipcData->pid = utils_getpid();
     ipcData->baseSize = allocInfo.baseSize;
     ipcData->offset = (uintptr_t)ptr - (uintptr_t)allocInfo.base;
