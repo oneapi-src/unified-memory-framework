@@ -50,8 +50,8 @@ static umf_memory_pool_handle_t create_fsdax_pool(const char *path) {
 
     umf_file_memory_provider_params_t params_fsdax =
         umfFileMemoryProviderParamsDefault(path);
-    // FSDAX requires mapping the UMF_MEM_MAP_SYNC flag
-    params_fsdax.visibility = UMF_MEM_MAP_SYNC;
+    // FSDAX requires mapping the UMF_MEM_MAP_SHARED flag
+    params_fsdax.visibility = UMF_MEM_MAP_SHARED;
 
     umf_result = umfMemoryProviderCreate(umfFileMemoryProviderOps(),
                                          &params_fsdax, &provider_fsdax);

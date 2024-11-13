@@ -32,9 +32,6 @@ utils_translate_mem_visibility_flag(umf_memory_visibility_t in_flag,
     case UMF_MEM_MAP_SHARED:
         *out_flag = MAP_SHARED;
         return UMF_RESULT_SUCCESS;
-    case UMF_MEM_MAP_SYNC:
-        *out_flag = MAP_SYNC;
-        return UMF_RESULT_SUCCESS;
     }
     return UMF_RESULT_ERROR_INVALID_ARGUMENT;
 }
@@ -95,7 +92,7 @@ void *utils_mmap_file(void *hint_addr, size_t length, int prot, int flags,
 
     /* try to mmap with MAP_SHARED flag (without MAP_SYNC) */
     if (errno == EINVAL || errno == ENOTSUP || errno == EOPNOTSUPP) {
-        const int shared_flags = (flags & (~MAP_SYNC)) | MAP_SHARED;
+        const int shared_flags = flags | MAP_SHARED;
         addr = utils_mmap(hint_addr, length, prot, shared_flags, fd, fd_offset);
         if (addr) {
             LOG_DEBUG("file mapped with the MAP_SHARED flag (fd=%i, "

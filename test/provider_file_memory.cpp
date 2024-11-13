@@ -137,7 +137,7 @@ TEST_F(test, test_if_mapped_with_MAP_SYNC) {
     }
 
     auto params = umfFileMemoryProviderParamsDefault(path);
-    params.visibility = UMF_MEM_MAP_SYNC;
+    params.visibility = UMF_MEM_MAP_SHARED;
 
     umf_result = umfMemoryProviderCreate(umfFileMemoryProviderOps(), &params,
                                          &hProvider);
