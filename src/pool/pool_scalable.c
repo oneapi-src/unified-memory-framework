@@ -183,7 +183,7 @@ umfScalablePoolParamsCreate(umf_scalable_pool_params_handle_t *params) {
     umf_scalable_pool_params_t *params_data =
         umf_ba_global_alloc(sizeof(umf_scalable_pool_params_t));
     if (!params_data) {
-        LOG_ERR("cannot allocate memory for scalable poolparams");
+        LOG_ERR("cannot allocate memory for scalable pool params");
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 

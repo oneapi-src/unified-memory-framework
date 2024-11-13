@@ -99,7 +99,7 @@ defined pool allocators if they implement the UMF interface.
 Memory Pools
 ============
 
-A memory pool consists of a pool allocator and a memory provider instancies 
+A memory pool consists of a pool allocator and a memory provider instances
 along with their properties and allocation policies. Memory pools are used by 
 the :ref:`allocation API <allocation API>` as a first argument. There is also a possibility to 
 retrieve a memory pool from an existing memory pointer that points to a memory 
