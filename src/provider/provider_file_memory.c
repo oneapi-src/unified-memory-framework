@@ -33,12 +33,15 @@ umf_memory_provider_ops_t *umfFileMemoryProviderOps(void) {
 #include "utils_concurrency.h"
 #include "utils_log.h"
 
+#define FSDAX_PAGE_SIZE_2MB ((size_t)(2 * 1024 * 1024)) // == 2 MB
+
 #define TLS_MSG_BUF_LEN 1024
 
 typedef struct file_memory_provider_t {
     utils_mutex_t lock; // lock for file parameters (size and offsets)
 
     char path[PATH_MAX]; // a path to the file
+    bool is_fsdax;       // true if file is located on FSDAX
     int fd;              // file descriptor for memory mapping
     size_t size_fd;      // size of the file used for memory mappings
     size_t offset_fd;    // offset in the file used for memory mappings
@@ -130,8 +133,6 @@ static umf_result_t file_initialize(void *params, void **provider) {
     umf_file_memory_provider_params_t *in_params =
         (umf_file_memory_provider_params_t *)params;
 
-    size_t page_size = utils_get_page_size();
-
     if (in_params->path == NULL) {
         LOG_ERR("file path is missing");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
@@ -144,8 +145,6 @@ static umf_result_t file_initialize(void *params, void **provider) {
     }
 
     memset(file_provider, 0, sizeof(*file_provider));
-
-    file_provider->page_size = page_size;
 
     ret = file_translate_params(in_params, file_provider);
     if (ret != UMF_RESULT_SUCCESS) {
@@ -163,16 +162,33 @@ static umf_result_t file_initialize(void *params, void **provider) {
         goto err_free_file_provider;
     }
 
-    if (utils_set_file_size(file_provider->fd, page_size)) {
+    if (utils_set_file_size(file_provider->fd, FSDAX_PAGE_SIZE_2MB)) {
         LOG_ERR("cannot set size of the file: %s", in_params->path);
         ret = UMF_RESULT_ERROR_UNKNOWN;
         goto err_close_fd;
     }
 
-    file_provider->size_fd = page_size;
+    file_provider->size_fd = FSDAX_PAGE_SIZE_2MB;
 
     LOG_DEBUG("size of the file %s is: %zu", in_params->path,
               file_provider->size_fd);
+
+    if (!(in_params->visibility & UMF_MEM_MAP_PRIVATE)) {
+        // check if file is located on FSDAX
+        void *addr = utils_mmap_file(
+            NULL, file_provider->size_fd, file_provider->protection,
+            file_provider->visibility, file_provider->fd, 0,
+            &file_provider->is_fsdax);
+        if (addr) {
+            utils_munmap(addr, file_provider->size_fd);
+        }
+    }
+
+    if (file_provider->is_fsdax) {
+        file_provider->page_size = FSDAX_PAGE_SIZE_2MB;
+    } else {
+        file_provider->page_size = utils_get_page_size();
+    }
 
     if (utils_mutex_init(&file_provider->lock) == NULL) {
         LOG_ERR("lock init failed");
@@ -480,7 +496,8 @@ static umf_result_t file_get_recommended_page_size(void *provider, size_t size,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    *page_size = utils_get_page_size();
+    file_memory_provider_t *file_provider = (file_memory_provider_t *)provider;
+    *page_size = file_provider->page_size;
 
     return UMF_RESULT_SUCCESS;
 }
@@ -669,6 +686,17 @@ static umf_result_t file_open_ipc_handle(void *provider, void *providerIpcData,
     umf_result_t ret = UMF_RESULT_SUCCESS;
     int fd;
 
+    size_t offset_aligned = file_ipc_data->offset_fd;
+    size_t size_aligned = file_ipc_data->size;
+
+    if (file_provider->is_fsdax) {
+        // It is just a workaround for case when
+        // file_alloc() was called with the size argument
+        // that is not a multiplier of FSDAX_PAGE_SIZE_2MB.
+        utils_align_ptr_down_size_up((void **)&offset_aligned, &size_aligned,
+                                     FSDAX_PAGE_SIZE_2MB);
+    }
+
     fd = utils_file_open(file_ipc_data->path);
     if (fd == -1) {
         LOG_PERR("opening the file to be mapped (%s) failed",
@@ -676,23 +704,23 @@ static umf_result_t file_open_ipc_handle(void *provider, void *providerIpcData,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    char *addr = utils_mmap_file(
-        NULL, file_ipc_data->size, file_ipc_data->protection,
-        file_ipc_data->visibility, fd, file_ipc_data->offset_fd, NULL);
+    char *addr =
+        utils_mmap_file(NULL, size_aligned, file_ipc_data->protection,
+                        file_ipc_data->visibility, fd, offset_aligned, NULL);
     (void)utils_close_fd(fd);
     if (addr == NULL) {
         file_store_last_native_error(UMF_FILE_RESULT_ERROR_ALLOC_FAILED, errno);
-        LOG_PERR("file mapping failed (path: %s, size: %zu, protection: %i, "
-                 "fd: %i, offset: %zu)",
-                 file_ipc_data->path, file_ipc_data->size,
-                 file_ipc_data->protection, fd, file_ipc_data->offset_fd);
+        LOG_PERR("file mapping failed (path: %s, size: %zu, protection: %u, "
+                 "visibility: %u, fd: %i, offset: %zu)",
+                 file_ipc_data->path, size_aligned, file_ipc_data->protection,
+                 file_ipc_data->visibility, fd, offset_aligned);
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
 
-    LOG_DEBUG("file mapped (path: %s, size: %zu, protection: %i, fd: %i, "
-              "offset: %zu) at address %p",
-              file_ipc_data->path, file_ipc_data->size,
-              file_ipc_data->protection, fd, file_ipc_data->offset_fd, addr);
+    LOG_DEBUG("file mapped (path: %s, size: %zu, protection: %u, visibility: "
+              "%u, fd: %i, offset: %zu) at address %p",
+              file_ipc_data->path, size_aligned, file_ipc_data->protection,
+              file_ipc_data->visibility, fd, offset_aligned, (void *)addr);
 
     *ptr = addr;
 
@@ -709,6 +737,13 @@ static umf_result_t file_close_ipc_handle(void *provider, void *ptr,
     if (!file_provider->IPC_enabled) {
         LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED")
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (file_provider->is_fsdax) {
+        // It is just a workaround for case when
+        // file_alloc() was called with the size argument
+        // that is not a multiplier of FSDAX_PAGE_SIZE_2MB.
+        utils_align_ptr_down_size_up(&ptr, &size, FSDAX_PAGE_SIZE_2MB);
     }
 
     errno = 0;

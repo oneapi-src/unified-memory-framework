@@ -1,13 +1,4 @@
 {
-   [false-positive] Double check locking pattern in trackingOpenIpcHandle
-   Helgrind:Race
-   fun:trackingOpenIpcHandle
-   fun:umfMemoryProviderOpenIPCHandle
-   fun:umfOpenIPCHandle
-   ...
-}
-
-{
    False-positive race in critnib_insert (lack of instrumentation)
    Helgrind:Race
    fun:store
