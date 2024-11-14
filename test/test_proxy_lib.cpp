@@ -70,10 +70,8 @@ TEST_F(test, proxyLib_size_threshold_aligned_alloc) {
     ASSERT_EQ((int)(IS_ALIGNED((uintptr_t)ptr_LT, ALIGN_1024)), 1);
     ASSERT_EQ((int)(IS_ALIGNED((uintptr_t)ptr_EQ, ALIGN_1024)), 1);
 
-#ifndef _WIN32 /* the size threshold works only on Linux for now */
     // umfPoolByPtr(ptr_size_LT) == nullptr
     ASSERT_EQ(umfPoolByPtr(ptr_LT), nullptr);
-#endif
     // umfPoolByPtr(ptr_size_EQ) != nullptr
     ASSERT_NE(umfPoolByPtr(ptr_EQ), nullptr);
 
@@ -93,10 +91,8 @@ TEST_F(test, proxyLib_size_threshold_malloc) {
     ASSERT_NE(ptr_LT, nullptr);
     ASSERT_NE(ptr_EQ, nullptr);
 
-#ifndef _WIN32 /* the size threshold works only on Linux for now */
     // umfPoolByPtr(ptr_size_LT) == nullptr
     ASSERT_EQ(umfPoolByPtr(ptr_LT), nullptr);
-#endif
     // umfPoolByPtr(ptr_size_EQ) != nullptr
     ASSERT_NE(umfPoolByPtr(ptr_EQ), nullptr);
 
@@ -111,10 +107,8 @@ TEST_F(test, proxyLib_size_threshold_calloc) {
     ASSERT_NE(ptr_LT, nullptr);
     ASSERT_NE(ptr_EQ, nullptr);
 
-#ifndef _WIN32 /* the size threshold works only on Linux for now */
     // umfPoolByPtr(ptr_size_LT) == nullptr
     ASSERT_EQ(umfPoolByPtr(ptr_LT), nullptr);
-#endif
     // umfPoolByPtr(ptr_size_EQ) != nullptr
     ASSERT_NE(umfPoolByPtr(ptr_EQ), nullptr);
 
@@ -135,10 +129,8 @@ TEST_F(test, proxyLib_size_threshold_realloc_up) {
     ASSERT_NE(ptr_LT_r, nullptr);
     ASSERT_NE(ptr_EQ_r, nullptr);
 
-#ifndef _WIN32 /* the size threshold works only on Linux for now */
     // umfPoolByPtr(ptr_size_LT) == nullptr
     ASSERT_EQ(umfPoolByPtr(ptr_LT_r), nullptr);
-#endif
     // umfPoolByPtr(ptr_size_EQ) != nullptr
     ASSERT_NE(umfPoolByPtr(ptr_EQ_r), nullptr);
 
@@ -159,15 +151,10 @@ TEST_F(test, proxyLib_size_threshold_realloc_down) {
     ASSERT_NE(ptr_LT_r, nullptr);
     ASSERT_NE(ptr_EQ_r, nullptr);
 
-#ifndef _WIN32 /* the size threshold works only on Linux for now */
     // umfPoolByPtr(ptr_size_LT) == nullptr
     ASSERT_EQ(umfPoolByPtr(ptr_LT_r), nullptr);
-#endif
     // umfPoolByPtr(ptr_size_EQ) != nullptr
     ASSERT_NE(umfPoolByPtr(ptr_EQ_r), nullptr);
-
-    ::free(ptr_LT_r);
-    ::free(ptr_EQ_r);
 }
 
 TEST_F(test, proxyLib_size_threshold_malloc_usable_size) {

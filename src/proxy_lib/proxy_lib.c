@@ -101,7 +101,7 @@ void utils_init_once(UTIL_ONCE_FLAG *flag, void (*onceCb)(void));
  * of a UMF pool to allocate memory needed by an application. It should be freed
  * by an application.
  */
-#ifndef _WIN32
+
 typedef void *(*system_aligned_alloc_t)(size_t alignment, size_t size);
 typedef void *(*system_calloc_t)(size_t nmemb, size_t size);
 typedef void (*system_free_t)(void *ptr);
@@ -110,6 +110,7 @@ typedef size_t (*system_malloc_usable_size_t)(void *ptr);
 typedef void *(*system_realloc_t)(void *ptr, size_t size);
 
 // pointers to the default system allocator's API
+static void *System_library_handle;
 static system_aligned_alloc_t System_aligned_alloc;
 static system_calloc_t System_calloc;
 static system_free_t System_free;
@@ -118,7 +119,6 @@ static system_malloc_usable_size_t System_malloc_usable_size;
 static system_realloc_t System_realloc;
 
 static size_t Size_threshold_value = 0;
-#endif /* _WIN32 */
 
 static UTIL_ONCE_FLAG Base_alloc_leak_initialized = UTIL_ONCE_FLAG_INIT;
 static umf_ba_linear_pool_t *Base_alloc_leak = NULL;
@@ -132,7 +132,24 @@ static __TLS int was_called_from_umfPool = 0;
 /*** The constructor and destructor of the proxy library *********************/
 /*****************************************************************************/
 
-#ifndef _WIN32
+// atoi() is defined in stdlib.h, but we cannot include it on Windows
+static size_t custom_atoi(const char *str) {
+    size_t result = 0;
+
+    for (int i = 0; str[i]; i++) {
+        if (str[i] < '0' || str[i] > '9') {
+            LOG_ERR("proxy_lib_create_common: size threshold is not a valid "
+                    "number: %s",
+                    str);
+            return 0;
+        }
+
+        result = 10 * result + (size_t)(str[i] - '0');
+    }
+
+    return result;
+}
+
 static size_t get_size_threshold(void) {
     char *str_threshold = utils_env_var_get_str("UMF_PROXY", "size.threshold=");
     if (!str_threshold) {
@@ -148,7 +165,7 @@ static size_t get_size_threshold(void) {
         *end = '\0';
     }
 
-    size_t int_threshold = (size_t)atoi(str_threshold);
+    size_t int_threshold = (size_t)custom_atoi(str_threshold);
     LOG_DEBUG("Size_threshold_value = (char *) %s, (int) %zu", str_threshold,
               int_threshold);
 
@@ -156,17 +173,24 @@ static size_t get_size_threshold(void) {
 }
 
 static int get_system_allocator_symbols(void) {
+#ifdef _WIN32
+    System_library_handle = utils_open_library("msvcrt.dll", 0);
+#else
+    System_library_handle = RTLD_NEXT;
+#endif /* _WIN32 */
+
     *((void **)(&System_aligned_alloc)) =
-        utils_get_symbol_addr(RTLD_NEXT, "aligned_alloc", NULL);
+        utils_get_symbol_addr(System_library_handle, "aligned_alloc", NULL);
     *((void **)(&System_calloc)) =
-        utils_get_symbol_addr(RTLD_NEXT, "calloc", NULL);
-    *((void **)(&System_free)) = utils_get_symbol_addr(RTLD_NEXT, "free", NULL);
+        utils_get_symbol_addr(System_library_handle, "calloc", NULL);
+    *((void **)(&System_free)) =
+        utils_get_symbol_addr(System_library_handle, "free", NULL);
     *((void **)(&System_malloc)) =
-        utils_get_symbol_addr(RTLD_NEXT, "malloc", NULL);
-    *((void **)(&System_malloc_usable_size)) =
-        utils_get_symbol_addr(RTLD_NEXT, "malloc_usable_size", NULL);
+        utils_get_symbol_addr(System_library_handle, "malloc", NULL);
+    *((void **)(&System_malloc_usable_size)) = utils_get_symbol_addr(
+        System_library_handle, "malloc_usable_size", NULL);
     *((void **)(&System_realloc)) =
-        utils_get_symbol_addr(RTLD_NEXT, "realloc", NULL);
+        utils_get_symbol_addr(System_library_handle, "realloc", NULL);
 
     if (System_aligned_alloc && System_calloc && System_free && System_malloc &&
         System_malloc_usable_size && System_realloc) {
@@ -182,7 +206,6 @@ static int get_system_allocator_symbols(void) {
 
     return -1;
 }
-#endif /* _WIN32 */
 
 void proxy_lib_create_common(void) {
     utils_log_init();
@@ -190,7 +213,6 @@ void proxy_lib_create_common(void) {
         umfOsMemoryProviderParamsDefault();
     umf_result_t umf_result;
 
-#ifndef _WIN32
     size_t _threshold = get_size_threshold();
     if (_threshold > 0) {
         if (get_system_allocator_symbols()) {
@@ -203,6 +225,7 @@ void proxy_lib_create_common(void) {
                  Size_threshold_value);
     }
 
+#ifndef _WIN32
     if (utils_env_var_has_str("UMF_PROXY", "page.disposition=shared-fd")) {
         LOG_INFO("proxy_lib: using the MAP_SHARED visibility mode with the "
                  "file descriptor duplication");
@@ -258,6 +281,14 @@ void proxy_lib_destroy_common(void) {
     umf_memory_provider_handle_t provider = OS_memory_provider;
     OS_memory_provider = NULL;
     umfMemoryProviderDestroy(provider);
+
+#ifdef _WIN32
+    if (System_library_handle) {
+        utils_close_library(System_library_handle);
+        System_library_handle = NULL;
+    }
+#endif /* _WIN32 */
+
     LOG_DEBUG("proxy library destroyed");
 
 fini_proxy_lib_destroy_common:
@@ -340,11 +371,9 @@ static inline size_t ba_leak_pool_contains_pointer(void *ptr) {
 /*****************************************************************************/
 
 void *malloc(size_t size) {
-#ifndef _WIN32
     if (size < Size_threshold_value) {
         return System_malloc(size);
     }
-#endif /* _WIN32 */
 
     if (!was_called_from_umfPool && Proxy_pool) {
         was_called_from_umfPool = 1;
@@ -357,11 +386,9 @@ void *malloc(size_t size) {
 }
 
 void *calloc(size_t nmemb, size_t size) {
-#ifndef _WIN32
     if ((nmemb * size) < Size_threshold_value) {
         return System_calloc(nmemb, size);
     }
-#endif /* _WIN32 */
 
     if (!was_called_from_umfPool && Proxy_pool) {
         was_called_from_umfPool = 1;
@@ -389,12 +416,10 @@ void free(void *ptr) {
         return;
     }
 
-#ifndef _WIN32
     if (Size_threshold_value) {
         System_free(ptr);
         return;
     }
-#endif /* _WIN32 */
 
     LOG_ERR("free() failed: %p", ptr);
 
@@ -423,11 +448,9 @@ void *realloc(void *ptr, size_t size) {
         return new_ptr;
     }
 
-#ifndef _WIN32
     if (Size_threshold_value) {
         return System_realloc(ptr, size);
     }
-#endif /* _WIN32 */
 
     LOG_ERR("realloc() failed: %p", ptr);
 
@@ -435,11 +458,9 @@ void *realloc(void *ptr, size_t size) {
 }
 
 void *aligned_alloc(size_t alignment, size_t size) {
-#ifndef _WIN32
     if (size < Size_threshold_value) {
         return System_aligned_alloc(alignment, size);
     }
-#endif /* _WIN32 */
 
     if (!was_called_from_umfPool && Proxy_pool) {
         was_called_from_umfPool = 1;
@@ -472,11 +493,9 @@ size_t malloc_usable_size(void *ptr) {
         return size;
     }
 
-#ifndef _WIN32
     if (Size_threshold_value) {
         return System_malloc_usable_size(ptr);
     }
-#endif /* _WIN32 */
 
     LOG_ERR("malloc_usable_size() failed: %p", ptr);
 
