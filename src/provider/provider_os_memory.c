@@ -478,7 +478,7 @@ static umf_result_t translate_params(umf_os_memory_provider_params_t *in_params,
 static umf_result_t os_initialize(void *params, void **provider) {
     umf_result_t ret;
 
-    if (provider == NULL || params == NULL) {
+    if (params == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -572,11 +572,6 @@ err_free_os_provider:
 }
 
 static void os_finalize(void *provider) {
-    if (provider == NULL) {
-        assert(0);
-        return;
-    }
-
     os_memory_provider_t *os_provider = provider;
 
     if (os_provider->fd > 0) {
@@ -900,10 +895,6 @@ static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
                              void **resultPtr) {
     int ret;
 
-    if (provider == NULL || resultPtr == NULL) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
     os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
 
     size_t page_size;
@@ -1004,10 +995,6 @@ err_unmap:
 }
 
 static umf_result_t os_free(void *provider, void *ptr, size_t size) {
-    if (provider == NULL) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
     if (ptr == NULL) {
         return UMF_RESULT_SUCCESS;
     }
@@ -1067,11 +1054,8 @@ static void os_get_last_native_error(void *provider, const char **ppMessage,
 
 static umf_result_t os_get_recommended_page_size(void *provider, size_t size,
                                                  size_t *page_size) {
-    (void)size; // unused
-
-    if (provider == NULL || page_size == NULL) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
+    (void)provider; // unused
+    (void)size;     // unused
 
     *page_size = utils_get_page_size();
 
@@ -1086,9 +1070,7 @@ static umf_result_t os_get_min_page_size(void *provider, void *ptr,
 }
 
 static umf_result_t os_purge_lazy(void *provider, void *ptr, size_t size) {
-    if (provider == NULL || ptr == NULL) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
+    (void)provider; // unused
 
     errno = 0;
     if (utils_purge(ptr, size, UMF_PURGE_LAZY)) {
@@ -1102,9 +1084,7 @@ static umf_result_t os_purge_lazy(void *provider, void *ptr, size_t size) {
 }
 
 static umf_result_t os_purge_force(void *provider, void *ptr, size_t size) {
-    if (provider == NULL || ptr == NULL) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
+    (void)provider; // unused
 
     errno = 0;
     if (utils_purge(ptr, size, UMF_PURGE_FORCE)) {
@@ -1191,10 +1171,6 @@ typedef struct os_ipc_data_t {
 } os_ipc_data_t;
 
 static umf_result_t os_get_ipc_handle_size(void *provider, size_t *size) {
-    if (provider == NULL || size == NULL) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
     os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
     if (!os_provider->IPC_enabled) {
         LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED")
@@ -1209,10 +1185,6 @@ static umf_result_t os_get_ipc_handle_size(void *provider, size_t *size) {
 
 static umf_result_t os_get_ipc_handle(void *provider, const void *ptr,
                                       size_t size, void *providerIpcData) {
-    if (provider == NULL || ptr == NULL || providerIpcData == NULL) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
     os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
     if (!os_provider->IPC_enabled) {
         LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED")
@@ -1245,10 +1217,6 @@ static umf_result_t os_get_ipc_handle(void *provider, const void *ptr,
 }
 
 static umf_result_t os_put_ipc_handle(void *provider, void *providerIpcData) {
-    if (provider == NULL || providerIpcData == NULL) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
     os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
     if (!os_provider->IPC_enabled) {
         LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED")
@@ -1280,10 +1248,6 @@ static umf_result_t os_put_ipc_handle(void *provider, void *providerIpcData) {
 
 static umf_result_t os_open_ipc_handle(void *provider, void *providerIpcData,
                                        void **ptr) {
-    if (provider == NULL || providerIpcData == NULL || ptr == NULL) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
     os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
     if (!os_provider->IPC_enabled) {
         LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED")
@@ -1326,10 +1290,6 @@ static umf_result_t os_open_ipc_handle(void *provider, void *providerIpcData,
 
 static umf_result_t os_close_ipc_handle(void *provider, void *ptr,
                                         size_t size) {
-    if (provider == NULL || ptr == NULL) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
     os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
     if (!os_provider->IPC_enabled) {
         LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED")

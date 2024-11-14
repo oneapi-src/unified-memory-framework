@@ -1478,10 +1478,6 @@ coarse_memory_provider_get_stats(void *provider,
 
 static umf_result_t coarse_memory_provider_purge_lazy(void *provider, void *ptr,
                                                       size_t size) {
-    if (provider == NULL || ptr == NULL) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
     coarse_memory_provider_t *coarse_provider =
         (struct coarse_memory_provider_t *)provider;
     if (coarse_provider->upstream_memory_provider == NULL) {
@@ -1495,10 +1491,6 @@ static umf_result_t coarse_memory_provider_purge_lazy(void *provider, void *ptr,
 
 static umf_result_t coarse_memory_provider_purge_force(void *provider,
                                                        void *ptr, size_t size) {
-    if (provider == NULL || ptr == NULL) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
     coarse_memory_provider_t *coarse_provider =
         (struct coarse_memory_provider_t *)provider;
     if (coarse_provider->upstream_memory_provider == NULL) {
@@ -1514,11 +1506,6 @@ static umf_result_t coarse_memory_provider_allocation_split(void *provider,
                                                             void *ptr,
                                                             size_t totalSize,
                                                             size_t firstSize) {
-    if (provider == NULL || ptr == NULL || (firstSize >= totalSize) ||
-        firstSize == 0) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
     umf_result_t umf_result;
 
     coarse_memory_provider_t *coarse_provider =
@@ -1578,12 +1565,6 @@ static umf_result_t coarse_memory_provider_allocation_merge(void *provider,
                                                             void *lowPtr,
                                                             void *highPtr,
                                                             size_t totalSize) {
-    if (provider == NULL || lowPtr == NULL || highPtr == NULL ||
-        ((uintptr_t)highPtr <= (uintptr_t)lowPtr) ||
-        ((uintptr_t)highPtr - (uintptr_t)lowPtr >= totalSize)) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
     umf_result_t umf_result;
 
     coarse_memory_provider_t *coarse_provider =
