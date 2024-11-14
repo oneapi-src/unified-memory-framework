@@ -58,7 +58,7 @@ jobs:
     needs: [Build]
     uses: ./.github/workflows/reusable_benchmarks.yml
   ProxyLib:
-    needs: [Build]
+    needs: [CodeChecks, DocsBuild]
     uses: ./.github/workflows/reusable_proxy_lib.yml
   Valgrind:
     needs: [Build]
