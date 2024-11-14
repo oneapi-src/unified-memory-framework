@@ -61,9 +61,14 @@ jobs:
 
       # TODO enable the provider_file_memory_ipc test when the IPC tests with the proxy library are fixed
       # see the issue: https://github.com/oneapi-src/unified-memory-framework/issues/864
+      # TODO enable the proxy_lib_basic test for the JEMALLOC proxy_lib_pool
+      # see the issue: https://github.com/oneapi-src/unified-memory-framework/issues/894
       - name: Run "ctest --output-on-failure" with proxy library
         working-directory: ${{env.BUILD_DIR}}
-        run: LD_PRELOAD=./lib/libumf_proxy.so ctest --output-on-failure -E provider_file_memory_ipc
+        run: >
+          LD_PRELOAD=./lib/libumf_proxy.so
+          ctest --output-on-failure
+          ${{ matrix.proxy_lib_pool == 'JEMALLOC' && '-E "provider_file_memory_ipc|proxy_lib_basic"' || '-E provider_file_memory_ipc' }}
 
       - name: Run "./test/umf_test-memoryPool" with proxy library
         working-directory: ${{env.BUILD_DIR}}
@@ -76,6 +81,18 @@ jobs:
       - name: Run "/usr/bin/date" with proxy library
         working-directory: ${{env.BUILD_DIR}}
         run: UMF_PROXY="page.disposition=shared-shm" LD_PRELOAD=./lib/libumf_proxy.so /usr/bin/date
+
+      # TODO enable the provider_file_memory_ipc test when the IPC tests with the proxy library are fixed
+      # see the issue: https://github.com/oneapi-src/unified-memory-framework/issues/864
+      # TODO enable the proxy_lib_basic test for the JEMALLOC proxy_lib_pool
+      # see the issue: https://github.com/oneapi-src/unified-memory-framework/issues/894
+      - name: Run "ctest --output-on-failure" with proxy library and size.threshold=128
+        working-directory: ${{env.BUILD_DIR}}
+        run: >
+          UMF_PROXY="size.threshold=128"
+          LD_PRELOAD=./lib/libumf_proxy.so
+          ctest --output-on-failure
+          ${{ matrix.proxy_lib_pool == 'JEMALLOC' && '-E "provider_file_memory_ipc|proxy_lib_basic"' || '-E provider_file_memory_ipc' }}
 
       - name: Check coverage
         if:  ${{ matrix.build_type == 'Debug' }}

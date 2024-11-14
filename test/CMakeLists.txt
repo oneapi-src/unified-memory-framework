@@ -414,6 +414,9 @@ if(UMF_PROXY_LIB_ENABLED AND UMF_BUILD_SHARED_LIBRARY)
         SRCS ${BA_SOURCES_FOR_TEST} test_proxy_lib.cpp
         LIBS ${UMF_UTILS_FOR_TEST} umf_proxy)
 
+    set_property(TEST umf-proxy_lib_basic
+                 PROPERTY ENVIRONMENT "UMF_PROXY=size.threshold=64")
+
     # the memoryPool test run with the proxy library
     add_umf_test(
         NAME proxy_lib_memoryPool
