@@ -86,10 +86,6 @@ void *utils_mmap_file(void *hint_addr, size_t length, int prot, int flags,
         return addr;
     }
 
-    LOG_PERR("mapping file with the MAP_SYNC flag failed (fd=%i, offset=%zu, "
-             "length=%zu, flags=%i)",
-             fd, fd_offset, length, sync_flags);
-
     /* try to mmap with MAP_SHARED flag (without MAP_SYNC) */
     if (errno == EINVAL || errno == ENOTSUP || errno == EOPNOTSUPP) {
         const int shared_flags = flags | MAP_SHARED;
@@ -104,6 +100,11 @@ void *utils_mmap_file(void *hint_addr, size_t length, int prot, int flags,
         LOG_PERR("mapping file with the MAP_SHARED flag failed (fd=%i, "
                  "offset=%zu, length=%zu, flags=%i)",
                  fd, fd_offset, length, shared_flags);
+    } else {
+        LOG_PERR(
+            "mapping file with the MAP_SYNC flag failed (fd=%i, offset=%zu, "
+            "length=%zu, flags=%i)",
+            fd, fd_offset, length, sync_flags);
     }
 
     return NULL;
