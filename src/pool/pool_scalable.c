@@ -174,8 +174,8 @@ static void tbb_raw_free_wrapper(intptr_t pool_id, void *ptr, size_t bytes) {
 }
 
 umf_result_t
-umfScalablePoolParamsCreate(umf_scalable_pool_params_handle_t *params) {
-    if (!params) {
+umfScalablePoolParamsCreate(umf_scalable_pool_params_handle_t *hParams) {
+    if (!hParams) {
         LOG_ERR("scalable pool params handle is NULL");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
@@ -190,28 +190,28 @@ umfScalablePoolParamsCreate(umf_scalable_pool_params_handle_t *params) {
     params_data->granularity = DEFAULT_GRANULARITY;
     params_data->keep_all_memory = false;
 
-    *params = (umf_scalable_pool_params_handle_t)params_data;
+    *hParams = (umf_scalable_pool_params_handle_t)params_data;
 
     return UMF_RESULT_SUCCESS;
 }
 
 umf_result_t
-umfScalablePoolParamsDestroy(umf_scalable_pool_params_handle_t params) {
-    if (!params) {
-        LOG_ERR("params is NULL");
+umfScalablePoolParamsDestroy(umf_scalable_pool_params_handle_t hParams) {
+    if (!hParams) {
+        LOG_ERR("scalable pool params handle is NULL");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    umf_ba_global_free(params);
+    umf_ba_global_free(hParams);
 
     return UMF_RESULT_SUCCESS;
 }
 
 umf_result_t
-umfScalablePoolParamsSetGranularity(umf_scalable_pool_params_handle_t params,
+umfScalablePoolParamsSetGranularity(umf_scalable_pool_params_handle_t hParams,
                                     size_t granularity) {
-    if (!params) {
-        LOG_ERR("params is NULL");
+    if (!hParams) {
+        LOG_ERR("scalable pool params handle is NULL");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -220,20 +220,20 @@ umfScalablePoolParamsSetGranularity(umf_scalable_pool_params_handle_t params,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    params->granularity = granularity;
+    hParams->granularity = granularity;
 
     return UMF_RESULT_SUCCESS;
 }
 
 umf_result_t
-umfScalablePoolParamsSetKeepAllMemory(umf_scalable_pool_params_handle_t params,
-                                      bool keep_all_memory) {
-    if (!params) {
-        LOG_ERR("params is NULL");
+umfScalablePoolParamsSetKeepAllMemory(umf_scalable_pool_params_handle_t hParams,
+                                      bool keepAllMemory) {
+    if (!hParams) {
+        LOG_ERR("scalable pool params handle is NULL");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    params->keep_all_memory = keep_all_memory;
+    hParams->keep_all_memory = keepAllMemory;
 
     return UMF_RESULT_SUCCESS;
 }
