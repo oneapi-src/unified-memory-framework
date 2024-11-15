@@ -260,16 +260,47 @@ UBENCH_EX(simple, disjoint_pool_with_os_memory_provider) {
         exit(-1);
     }
 
-    umf_disjoint_pool_params_t disjoint_memory_pool_params = {0};
-    disjoint_memory_pool_params.SlabMinSize = DISJOINT_POOL_SLAB_MIN_SIZE;
-    disjoint_memory_pool_params.MaxPoolableSize =
-        DISJOINT_POOL_MAX_POOLABLE_SIZE;
-    disjoint_memory_pool_params.Capacity = DISJOINT_POOL_CAPACITY;
-    disjoint_memory_pool_params.MinBucketSize = DISJOINT_POOL_MIN_BUCKET_SIZE;
+    umf_disjoint_pool_params_handle_t disjoint_memory_pool_params = NULL;
+    umf_result = umfDisjointPoolParamsCreate(&disjoint_memory_pool_params);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "ERROR: umfDisjointPoolParamsCreate failed\n");
+        exit(-1);
+    }
+
+    umf_result = umfDisjointPoolParamsSetSlabMinSize(
+        disjoint_memory_pool_params, DISJOINT_POOL_SLAB_MIN_SIZE);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr,
+                "error: umfDisjointPoolParamsSetSlabMinSize() failed\n");
+        exit(-1);
+    }
+
+    umf_result = umfDisjointPoolParamsSetMaxPoolableSize(
+        disjoint_memory_pool_params, DISJOINT_POOL_MAX_POOLABLE_SIZE);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr,
+                "error: umfDisjointPoolParamsSetMaxPoolableSize() failed\n");
+        exit(-1);
+    }
+
+    umf_result = umfDisjointPoolParamsSetCapacity(disjoint_memory_pool_params,
+                                                  DISJOINT_POOL_CAPACITY);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "error: umfDisjointPoolParamsSetCapacity() failed\n");
+        exit(-1);
+    }
+
+    umf_result = umfDisjointPoolParamsSetMinBucketSize(
+        disjoint_memory_pool_params, DISJOINT_POOL_MIN_BUCKET_SIZE);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr,
+                "error: umfDisjointPoolParamsSetMinBucketSize() failed\n");
+        exit(-1);
+    }
 
     umf_memory_pool_handle_t disjoint_pool;
     umf_result = umfPoolCreate(umfDisjointPoolOps(), os_memory_provider,
-                               &disjoint_memory_pool_params, 0, &disjoint_pool);
+                               disjoint_memory_pool_params, 0, &disjoint_pool);
     if (umf_result != UMF_RESULT_SUCCESS) {
         fprintf(stderr, "error: umfPoolCreate() failed\n");
         exit(-1);
@@ -284,6 +315,7 @@ UBENCH_EX(simple, disjoint_pool_with_os_memory_provider) {
     }
 
     umfPoolDestroy(disjoint_pool);
+    umfDisjointPoolParamsDestroy(disjoint_memory_pool_params);
     umfMemoryProviderDestroy(os_memory_provider);
     free(array);
 }
@@ -458,19 +490,50 @@ UBENCH_EX(ipc, disjoint_pool_with_level_zero_provider) {
         goto err_free_ipc_handles;
     }
 
-    umf_disjoint_pool_params_t disjoint_params = {0};
-    disjoint_params.SlabMinSize = BUFFER_SIZE * 10;
-    disjoint_params.MaxPoolableSize = 4ull * 1024ull * 1024ull;
-    disjoint_params.Capacity = 64ull * 1024ull;
-    disjoint_params.MinBucketSize = 64;
-    umf_pool_create_flags_t flags = UMF_POOL_CREATE_FLAG_OWN_PROVIDER;
+    umf_disjoint_pool_params_handle_t disjoint_params = NULL;
+    umf_result = umfDisjointPoolParamsCreate(&disjoint_params);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "ERROR: umfDisjointPoolParamsCreate failed\n");
+        goto err_provider_destroy;
+    }
+
+    umf_result =
+        umfDisjointPoolParamsSetSlabMinSize(disjoint_params, BUFFER_SIZE * 10);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr,
+                "error: umfDisjointPoolParamsSetSlabMinSize() failed\n");
+        goto err_params_destroy;
+    }
+
+    umf_result = umfDisjointPoolParamsSetMaxPoolableSize(
+        disjoint_params, 4ull * 1024ull * 1024ull);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr,
+                "error: umfDisjointPoolParamsSetMaxPoolableSize() failed\n");
+        goto err_params_destroy;
+    }
+
+    umf_result =
+        umfDisjointPoolParamsSetCapacity(disjoint_params, 64ull * 1024ull);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "error: umfDisjointPoolParamsSetCapacity() failed\n");
+        goto err_params_destroy;
+    }
+
+    umf_result = umfDisjointPoolParamsSetMinBucketSize(disjoint_params, 64);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr,
+                "error: umfDisjointPoolParamsSetMinBucketSize() failed\n");
+        goto err_params_destroy;
+    }
+
+    umf_pool_create_flags_t flags = UMF_POOL_CREATE_FLAG_NONE;
     umf_memory_pool_handle_t pool;
-    umf_result = umfPoolCreate(umfDisjointPoolOps(), provider, &disjoint_params,
+    umf_result = umfPoolCreate(umfDisjointPoolOps(), provider, disjoint_params,
                                flags, &pool);
     if (umf_result != UMF_RESULT_SUCCESS) {
         fprintf(stderr, "error: umfPoolCreate() failed\n");
-        umfMemoryProviderDestroy(provider);
-        goto err_free_ipc_handles;
+        goto err_params_destroy;
     }
 
     for (size_t i = 0; i < N_BUFFERS; ++i) {
@@ -494,6 +557,12 @@ err_buffer_destroy:
     }
 
     umfPoolDestroy(pool);
+
+err_params_destroy:
+    umfDisjointPoolParamsDestroy(disjoint_params);
+
+err_provider_destroy:
+    umfMemoryProviderDestroy(provider);
 
 err_free_ipc_handles:
     free(ipc_handles);

@@ -72,27 +72,54 @@ int main(void) {
 
     // Setup parameters for the Disjoint Pool. It will be used for managing the
     // memory allocated using memory provider.
-    umf_disjoint_pool_params_t disjoint_memory_pool_params =
-        umfDisjointPoolParamsDefault();
+    umf_disjoint_pool_params_handle_t disjoint_memory_pool_params = NULL;
+    res = umfDisjointPoolParamsCreate(&disjoint_memory_pool_params);
+    if (res != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "Failed to create pool params!\n");
+        ret = -1;
+        goto memory_provider_destroy;
+    }
     // Set the Slab Min Size to 64KB - the page size for GPU allocations
-    disjoint_memory_pool_params.SlabMinSize = 64 * 1024L;
+    res = umfDisjointPoolParamsSetSlabMinSize(disjoint_memory_pool_params,
+                                              64 * 1024L);
+    if (res != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "Failed to set Slab Min Size!\n");
+        ret = -1;
+        goto disjoint_params_destroy;
+    }
     // We would keep only single slab per each allocation bucket
-    disjoint_memory_pool_params.Capacity = 1;
+    res = umfDisjointPoolParamsSetCapacity(disjoint_memory_pool_params, 1);
+    if (res != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "Failed to set Capacity!\n");
+        ret = -1;
+        goto disjoint_params_destroy;
+    }
     // Set the maximum poolable size to 64KB - objects with size above this
     // limit will not be stored/allocated from the pool.
-    disjoint_memory_pool_params.MaxPoolableSize = 64 * 1024L;
+    res = umfDisjointPoolParamsSetMaxPoolableSize(disjoint_memory_pool_params,
+                                                  64 * 1024L);
+    if (res != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "Failed to set Max Poolable Size!\n");
+        ret = -1;
+        goto disjoint_params_destroy;
+    }
     // Enable tracing
-    disjoint_memory_pool_params.PoolTrace = 1;
+    res = umfDisjointPoolParamsSetTrace(disjoint_memory_pool_params, 1);
+    if (res != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "Failed to set Trace!\n");
+        ret = -1;
+        goto disjoint_params_destroy;
+    }
 
     // Create Disjoint Pool memory pool.
     umf_memory_pool_handle_t ze_disjoint_memory_pool;
     res = umfPoolCreate(umfDisjointPoolOps(), ze_memory_provider,
-                        &disjoint_memory_pool_params, UMF_POOL_CREATE_FLAG_NONE,
+                        disjoint_memory_pool_params, UMF_POOL_CREATE_FLAG_NONE,
                         &ze_disjoint_memory_pool);
     if (res != UMF_RESULT_SUCCESS) {
         fprintf(stderr, "Failed to create a memory pool!\n");
         ret = -1;
-        goto memory_provider_destroy;
+        goto disjoint_params_destroy;
     }
 
     printf("Disjoint Pool created at %p\n", (void *)ze_disjoint_memory_pool);
@@ -120,6 +147,9 @@ int main(void) {
     // Cleanup
 memory_pool_destroy:
     umfPoolDestroy(ze_disjoint_memory_pool);
+
+disjoint_params_destroy:
+    umfDisjointPoolParamsDestroy(disjoint_memory_pool_params);
 
 memory_provider_destroy:
     umfMemoryProviderDestroy(ze_memory_provider);

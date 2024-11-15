@@ -17,10 +17,16 @@
 umf_memory_pool_handle_t
 createDisjointPool(umf_memory_provider_handle_t provider) {
     umf_memory_pool_handle_t pool = NULL;
-    umf_disjoint_pool_params_t params = umfDisjointPoolParamsDefault();
-    umf_result_t ret =
-        umfPoolCreate(umfDisjointPoolOps(), provider, &params, 0, &pool);
+    umf_disjoint_pool_params_handle_t params = NULL;
+
+    umf_result_t ret = umfDisjointPoolParamsCreate(&params);
     UT_ASSERTeq(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfPoolCreate(umfDisjointPoolOps(), provider, params, 0, &pool);
+    UT_ASSERTeq(ret, UMF_RESULT_SUCCESS);
+
+    umfDisjointPoolParamsDestroy(params);
+
     return pool;
 }
 

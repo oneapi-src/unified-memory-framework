@@ -9,8 +9,10 @@
 #include "test_helpers.h"
 
 #include <umf/memory_provider.h>
-#include <umf/pools/pool_disjoint.h>
 #include <umf/providers/provider_os_memory.h>
+#if (defined UMF_POOL_DISJOINT_ENABLED)
+#include <umf/pools/pool_disjoint.h>
+#endif
 #ifdef UMF_POOL_JEMALLOC_ENABLED
 #include <umf/pools/pool_jemalloc.h>
 #endif
@@ -383,19 +385,43 @@ auto os_params = osMemoryProviderParamsShared();
 
 HostMemoryAccessor hostAccessor;
 
-umf_disjoint_pool_params_t disjointPoolParams() {
-    umf_disjoint_pool_params_t params = umfDisjointPoolParamsDefault();
-    params.SlabMinSize = 4096;
-    params.MaxPoolableSize = 4096;
-    params.Capacity = 4;
-    params.MinBucketSize = 64;
-    return params;
+#if (defined UMF_POOL_DISJOINT_ENABLED)
+using disjoint_params_unique_handle_t =
+    std::unique_ptr<umf_disjoint_pool_params_t,
+                    decltype(&umfDisjointPoolParamsDestroy)>;
+
+disjoint_params_unique_handle_t disjointPoolParams() {
+    umf_disjoint_pool_params_handle_t params = nullptr;
+    umf_result_t res = umfDisjointPoolParamsCreate(&params);
+    if (res != UMF_RESULT_SUCCESS) {
+        throw std::runtime_error("Failed to create pool params");
+    }
+    res = umfDisjointPoolParamsSetSlabMinSize(params, 4096);
+    if (res != UMF_RESULT_SUCCESS) {
+        throw std::runtime_error("Failed to set slab min size");
+    }
+    res = umfDisjointPoolParamsSetMaxPoolableSize(params, 4096);
+    if (res != UMF_RESULT_SUCCESS) {
+        throw std::runtime_error("Failed to set max poolable size");
+    }
+    res = umfDisjointPoolParamsSetCapacity(params, 4);
+    if (res != UMF_RESULT_SUCCESS) {
+        throw std::runtime_error("Failed to set capacity");
+    }
+    res = umfDisjointPoolParamsSetMinBucketSize(params, 64);
+    if (res != UMF_RESULT_SUCCESS) {
+        throw std::runtime_error("Failed to set min bucket size");
+    }
+
+    return disjoint_params_unique_handle_t(params,
+                                           &umfDisjointPoolParamsDestroy);
 }
-umf_disjoint_pool_params_t disjointParams = disjointPoolParams();
+disjoint_params_unique_handle_t disjointParams = disjointPoolParams();
+#endif
 
 static std::vector<ipcTestParams> ipcTestParamsList = {
 #if (defined UMF_POOL_DISJOINT_ENABLED)
-    {umfDisjointPoolOps(), &disjointParams, umfOsMemoryProviderOps(),
+    {umfDisjointPoolOps(), disjointParams.get(), umfOsMemoryProviderOps(),
      &os_params, &hostAccessor, false},
 #endif
 #ifdef UMF_POOL_JEMALLOC_ENABLED

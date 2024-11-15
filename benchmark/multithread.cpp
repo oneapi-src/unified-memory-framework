@@ -117,10 +117,15 @@ int main() {
 #endif
 
 #if defined(UMF_BUILD_LIBUMF_POOL_DISJOINT)
-    auto disjointParams = umfDisjointPoolParamsDefault();
+    umf_disjoint_pool_params_handle_t hDisjointParams = nullptr;
+    umf_result_t ret = umfDisjointPoolParamsCreate(&hDisjointParams);
+    if (ret != UMF_RESULT_SUCCESS) {
+        std::cerr << "disjoint pool params create failed" << std::endl;
+        return -1;
+    }
 
     std::cout << "disjoint_pool mt_alloc_free: ";
-    mt_alloc_free(poolCreateExtParams{umfDisjointPoolOps(), &disjointParams,
+    mt_alloc_free(poolCreateExtParams{umfDisjointPoolOps(), hDisjointParams,
                                       umfOsMemoryProviderOps(), &osParams});
 #else
     std::cout << "skipping disjoint_pool mt_alloc_free" << std::endl;
@@ -128,6 +133,12 @@ int main() {
 
     // ctest looks for "PASSED" in the output
     std::cout << "PASSED" << std::endl;
+
+    ret = umfDisjointPoolParamsDestroy(hDisjointParams);
+    if (ret != UMF_RESULT_SUCCESS) {
+        std::cerr << "disjoint pool params destroy failed" << std::endl;
+        return -1;
+    }
 
     return 0;
 }
