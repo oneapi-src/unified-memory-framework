@@ -60,13 +60,20 @@ TEST_F(test, utils_shm_create_invalid_args) {
 TEST_F(test, utils_get_size_threshold) {
     // Expected input to utils_get_size_threshold():
     // char *str_threshold = utils_env_var_get_str("UMF_PROXY", "size.threshold=");
+
     // positive tests
     EXPECT_EQ(utils_get_size_threshold((char *)"size.threshold=111"), 111);
     EXPECT_EQ(utils_get_size_threshold((char *)"size.threshold=222;abcd"), 222);
     EXPECT_EQ(utils_get_size_threshold((char *)"size.threshold=333;var=value"),
               333);
+    // LONG_MAX = 9223372036854775807
+    EXPECT_EQ(utils_get_size_threshold(
+                  (char *)"size.threshold=9223372036854775807;var=value"),
+              9223372036854775807);
+
     // negative tests
     EXPECT_EQ(utils_get_size_threshold(NULL), 0);
+    EXPECT_EQ(utils_get_size_threshold((char *)"size.threshold="), -1);
     EXPECT_EQ(utils_get_size_threshold((char *)"size.threshold=abc"), -1);
     EXPECT_EQ(utils_get_size_threshold((char *)"size.threshold=-111"), -1);
 }
