@@ -97,7 +97,7 @@ devdax_translate_params(umf_devdax_memory_provider_params_t *in_params,
 static umf_result_t devdax_initialize(void *params, void **provider) {
     umf_result_t ret;
 
-    if (provider == NULL || params == NULL) {
+    if (params == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -185,11 +185,6 @@ err_free_devdax_provider:
 }
 
 static void devdax_finalize(void *provider) {
-    if (provider == NULL) {
-        assert(0);
-        return;
-    }
-
     devdax_memory_provider_t *devdax_provider = provider;
     utils_mutex_destroy_not_free(&devdax_provider->lock);
     utils_munmap(devdax_provider->base, devdax_provider->size);
@@ -233,10 +228,6 @@ static int devdax_alloc_aligned(size_t length, size_t alignment, void *base,
 static umf_result_t devdax_alloc(void *provider, size_t size, size_t alignment,
                                  void **resultPtr) {
     int ret;
-
-    if (provider == NULL || resultPtr == NULL) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
 
     // alignment must be a power of two and a multiple or a divider of the page size
     if (alignment && ((alignment & (alignment - 1)) ||
@@ -309,11 +300,8 @@ static void devdax_get_last_native_error(void *provider, const char **ppMessage,
 static umf_result_t devdax_get_recommended_page_size(void *provider,
                                                      size_t size,
                                                      size_t *page_size) {
-    (void)size; // unused
-
-    if (provider == NULL || page_size == NULL) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
+    (void)provider; // unused
+    (void)size;     // unused
 
     *page_size = DEVDAX_PAGE_SIZE_2MB;
 
@@ -338,10 +326,6 @@ static umf_result_t devdax_purge_lazy(void *provider, void *ptr, size_t size) {
 }
 
 static umf_result_t devdax_purge_force(void *provider, void *ptr, size_t size) {
-    if (provider == NULL || ptr == NULL) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
     errno = 0;
     if (utils_purge(ptr, size, UMF_PURGE_FORCE)) {
         devdax_store_last_native_error(
@@ -364,18 +348,15 @@ static umf_result_t devdax_allocation_split(void *provider, void *ptr,
     (void)ptr;
     (void)totalSize;
     (void)firstSize;
-
     return UMF_RESULT_SUCCESS;
 }
 
 static umf_result_t devdax_allocation_merge(void *provider, void *lowPtr,
                                             void *highPtr, size_t totalSize) {
-    if (provider == NULL || lowPtr == NULL || highPtr == NULL ||
-        ((uintptr_t)highPtr <= (uintptr_t)lowPtr) ||
-        ((uintptr_t)highPtr - (uintptr_t)lowPtr >= totalSize)) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
+    (void)provider;
+    (void)lowPtr;
+    (void)highPtr;
+    (void)totalSize;
     return UMF_RESULT_SUCCESS;
 }
 
@@ -388,9 +369,7 @@ typedef struct devdax_ipc_data_t {
 } devdax_ipc_data_t;
 
 static umf_result_t devdax_get_ipc_handle_size(void *provider, size_t *size) {
-    if (provider == NULL || size == NULL) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
+    (void)provider;
 
     *size = sizeof(devdax_ipc_data_t);
 
@@ -399,10 +378,6 @@ static umf_result_t devdax_get_ipc_handle_size(void *provider, size_t *size) {
 
 static umf_result_t devdax_get_ipc_handle(void *provider, const void *ptr,
                                           size_t size, void *providerIpcData) {
-    if (provider == NULL || ptr == NULL || providerIpcData == NULL) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
     devdax_memory_provider_t *devdax_provider =
         (devdax_memory_provider_t *)provider;
 
@@ -419,10 +394,6 @@ static umf_result_t devdax_get_ipc_handle(void *provider, const void *ptr,
 
 static umf_result_t devdax_put_ipc_handle(void *provider,
                                           void *providerIpcData) {
-    if (provider == NULL || providerIpcData == NULL) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
     devdax_memory_provider_t *devdax_provider =
         (devdax_memory_provider_t *)provider;
     devdax_ipc_data_t *devdax_ipc_data = (devdax_ipc_data_t *)providerIpcData;
@@ -439,10 +410,6 @@ static umf_result_t devdax_put_ipc_handle(void *provider,
 
 static umf_result_t devdax_open_ipc_handle(void *provider,
                                            void *providerIpcData, void **ptr) {
-    if (provider == NULL || providerIpcData == NULL || ptr == NULL) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
     *ptr = NULL;
 
     devdax_ipc_data_t *devdax_ipc_data = (devdax_ipc_data_t *)providerIpcData;
@@ -502,10 +469,6 @@ static umf_result_t devdax_open_ipc_handle(void *provider,
 
 static umf_result_t devdax_close_ipc_handle(void *provider, void *ptr,
                                             size_t size) {
-    if (provider == NULL || ptr == NULL) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
     size = ALIGN_UP(size, DEVDAX_PAGE_SIZE_2MB);
 
     errno = 0;

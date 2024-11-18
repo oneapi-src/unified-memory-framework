@@ -160,7 +160,7 @@ static void init_cu_global_state(void) {
 
 static umf_result_t cu_memory_provider_initialize(void *params,
                                                   void **provider) {
-    if (provider == NULL || params == NULL) {
+    if (params == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -214,11 +214,6 @@ static umf_result_t cu_memory_provider_initialize(void *params,
 }
 
 static void cu_memory_provider_finalize(void *provider) {
-    if (provider == NULL) {
-        ASSERT(0);
-        return;
-    }
-
     umf_ba_global_free(provider);
 }
 
@@ -250,10 +245,6 @@ static inline umf_result_t set_context(CUcontext required_ctx,
 static umf_result_t cu_memory_provider_alloc(void *provider, size_t size,
                                              size_t alignment,
                                              void **resultPtr) {
-    if (provider == NULL || resultPtr == NULL) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
     cu_memory_provider_t *cu_provider = (cu_memory_provider_t *)provider;
 
     if (alignment > cu_provider->min_alignment) {
@@ -318,10 +309,6 @@ static umf_result_t cu_memory_provider_free(void *provider, void *ptr,
                                             size_t bytes) {
     (void)bytes;
 
-    if (provider == NULL) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
     if (ptr == NULL) {
         return UMF_RESULT_SUCCESS;
     }
@@ -385,10 +372,6 @@ static umf_result_t cu_memory_provider_get_min_page_size(void *provider,
                                                          size_t *pageSize) {
     (void)ptr;
 
-    if (provider == NULL || pageSize == NULL) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
     cu_memory_provider_t *cu_provider = (cu_memory_provider_t *)provider;
 
     CUmemAllocationProp allocProps = {0};
@@ -406,10 +389,6 @@ static umf_result_t
 cu_memory_provider_get_recommended_page_size(void *provider, size_t size,
                                              size_t *pageSize) {
     (void)size;
-
-    if (provider == NULL || pageSize == NULL) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
 
     cu_memory_provider_t *cu_provider = (cu_memory_provider_t *)provider;
 
@@ -431,10 +410,7 @@ static const char *cu_memory_provider_get_name(void *provider) {
 
 static umf_result_t cu_memory_provider_get_ipc_handle_size(void *provider,
                                                            size_t *size) {
-    if (provider == NULL || size == NULL) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
+    (void)provider;
     *size = sizeof(cu_ipc_data_t);
     return UMF_RESULT_SUCCESS;
 }
@@ -443,11 +419,8 @@ static umf_result_t cu_memory_provider_get_ipc_handle(void *provider,
                                                       const void *ptr,
                                                       size_t size,
                                                       void *providerIpcData) {
+    (void)provider;
     (void)size;
-
-    if (provider == NULL || ptr == NULL || providerIpcData == NULL) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
 
     CUresult cu_result;
     cu_ipc_data_t *cu_ipc_data = (cu_ipc_data_t *)providerIpcData;
@@ -463,20 +436,14 @@ static umf_result_t cu_memory_provider_get_ipc_handle(void *provider,
 
 static umf_result_t cu_memory_provider_put_ipc_handle(void *provider,
                                                       void *providerIpcData) {
-    if (provider == NULL || providerIpcData == NULL) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
+    (void)provider;
+    (void)providerIpcData;
     return UMF_RESULT_SUCCESS;
 }
 
 static umf_result_t cu_memory_provider_open_ipc_handle(void *provider,
                                                        void *providerIpcData,
                                                        void **ptr) {
-    if (provider == NULL || ptr == NULL || providerIpcData == NULL) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
     cu_memory_provider_t *cu_provider = (cu_memory_provider_t *)provider;
 
     CUresult cu_result;
@@ -504,10 +471,6 @@ static umf_result_t cu_memory_provider_open_ipc_handle(void *provider,
 static umf_result_t
 cu_memory_provider_close_ipc_handle(void *provider, void *ptr, size_t size) {
     (void)size;
-
-    if (provider == NULL || ptr == NULL) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
 
     CUresult cu_result;
 
