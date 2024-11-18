@@ -126,8 +126,26 @@ struct provider_ba_global : public provider_base_t {
     const char *get_name() noexcept { return "umf_ba_global"; }
 };
 
+struct provider_ba_global_split_merge : public provider_ba_global {
+    const char *get_name() noexcept { return "umf_ba_global_split_merge"; }
+    umf_result_t allocation_merge([[maybe_unused]] void *lowPtr,
+                                  [[maybe_unused]] void *highPtr,
+                                  [[maybe_unused]] size_t totalSize) {
+        return UMF_RESULT_SUCCESS;
+    }
+
+    umf_result_t allocation_split([[maybe_unused]] void *ptr,
+                                  [[maybe_unused]] size_t totalSize,
+                                  [[maybe_unused]] size_t firstSize) {
+        return UMF_RESULT_SUCCESS;
+    }
+};
+
 umf_memory_provider_ops_t BA_GLOBAL_PROVIDER_OPS =
     umf::providerMakeCOps<provider_ba_global, void>();
+
+umf_memory_provider_ops_t BA_GLOBAL_SPLIT_MERGE_OPS =
+    umf::providerMakeCOps<provider_ba_global_split_merge, void>();
 
 struct provider_mock_out_of_mem : public provider_base_t {
     provider_ba_global helper_prov;

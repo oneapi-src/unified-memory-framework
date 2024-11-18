@@ -12,14 +12,12 @@
 #include <umf/pools/pool_disjoint.h>
 #include <umf/providers/provider_coarse.h>
 
+using umf_test::BA_GLOBAL_SPLIT_MERGE_OPS;
 using umf_test::KB;
 using umf_test::MB;
 using umf_test::test;
 
 #define GetStats umfCoarseMemoryProviderGetStats
-
-umf_memory_provider_ops_t UMF_MALLOC_MEMORY_PROVIDER_OPS =
-    umf::providerMakeCOps<umf_test::provider_ba_global, void>();
 
 struct CoarseWithMemoryStrategyTest
     : umf_test::test,
@@ -39,13 +37,13 @@ INSTANTIATE_TEST_SUITE_P(
                       UMF_COARSE_MEMORY_STRATEGY_CHECK_ALL_SIZE));
 
 TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMallocPool_basic) {
-    umf_memory_provider_handle_t malloc_memory_provider;
+    umf_memory_provider_handle_t ba_global_split_merge_provider;
     umf_result_t umf_result;
 
-    umf_result = umfMemoryProviderCreate(&UMF_MALLOC_MEMORY_PROVIDER_OPS, NULL,
-                                         &malloc_memory_provider);
+    umf_result = umfMemoryProviderCreate(&BA_GLOBAL_SPLIT_MERGE_OPS, NULL,
+                                         &ba_global_split_merge_provider);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(malloc_memory_provider, nullptr);
+    ASSERT_NE(ba_global_split_merge_provider, nullptr);
 
     const size_t init_buffer_size = 20 * MB;
 
@@ -55,7 +53,7 @@ TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMallocPool_basic) {
            sizeof(coarse_memory_provider_params));
     coarse_memory_provider_params.allocation_strategy = allocation_strategy;
     coarse_memory_provider_params.upstream_memory_provider =
-        malloc_memory_provider;
+        ba_global_split_merge_provider;
     coarse_memory_provider_params.destroy_upstream_memory_provider = true;
     coarse_memory_provider_params.immediate_init_from_upstream = true;
     coarse_memory_provider_params.init_buffer = nullptr;
@@ -224,20 +222,20 @@ TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMallocPool_basic) {
     ASSERT_EQ(GetStats(prov).alloc_size, init_buffer_size);
 
     umfPoolDestroy(pool);
-    // Both coarse_memory_provider and malloc_memory_provider
+    // Both coarse_memory_provider and ba_global_split_merge_provider
     // have already been destroyed by umfPoolDestroy(), because:
     // UMF_POOL_CREATE_FLAG_OWN_PROVIDER was set in umfPoolCreate() and
     // coarse_memory_provider_params.destroy_upstream_memory_provider = true;
 }
 
 TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMallocPool_simple1) {
-    umf_memory_provider_handle_t malloc_memory_provider;
+    umf_memory_provider_handle_t ba_global_split_merge_provider;
     umf_result_t umf_result;
 
-    umf_result = umfMemoryProviderCreate(&UMF_MALLOC_MEMORY_PROVIDER_OPS, NULL,
-                                         &malloc_memory_provider);
+    umf_result = umfMemoryProviderCreate(&BA_GLOBAL_SPLIT_MERGE_OPS, NULL,
+                                         &ba_global_split_merge_provider);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(malloc_memory_provider, nullptr);
+    ASSERT_NE(ba_global_split_merge_provider, nullptr);
 
     const size_t init_buffer_size = 20 * MB;
 
@@ -247,7 +245,7 @@ TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMallocPool_simple1) {
            sizeof(coarse_memory_provider_params));
     coarse_memory_provider_params.allocation_strategy = allocation_strategy;
     coarse_memory_provider_params.upstream_memory_provider =
-        malloc_memory_provider;
+        ba_global_split_merge_provider;
     coarse_memory_provider_params.immediate_init_from_upstream = true;
     coarse_memory_provider_params.init_buffer = NULL;
     coarse_memory_provider_params.init_buffer_size = init_buffer_size;
@@ -337,17 +335,17 @@ TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMallocPool_simple1) {
 
     umfPoolDestroy(pool);
     umfMemoryProviderDestroy(coarse_memory_provider);
-    umfMemoryProviderDestroy(malloc_memory_provider);
+    umfMemoryProviderDestroy(ba_global_split_merge_provider);
 }
 
 TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMallocPool_simple2) {
-    umf_memory_provider_handle_t malloc_memory_provider;
+    umf_memory_provider_handle_t ba_global_split_merge_provider;
     umf_result_t umf_result;
 
-    umf_result = umfMemoryProviderCreate(&UMF_MALLOC_MEMORY_PROVIDER_OPS, NULL,
-                                         &malloc_memory_provider);
+    umf_result = umfMemoryProviderCreate(&BA_GLOBAL_SPLIT_MERGE_OPS, NULL,
+                                         &ba_global_split_merge_provider);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(malloc_memory_provider, nullptr);
+    ASSERT_NE(ba_global_split_merge_provider, nullptr);
 
     const size_t init_buffer_size = 20 * MB;
 
@@ -357,7 +355,7 @@ TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMallocPool_simple2) {
            sizeof(coarse_memory_provider_params));
     coarse_memory_provider_params.allocation_strategy = allocation_strategy;
     coarse_memory_provider_params.upstream_memory_provider =
-        malloc_memory_provider;
+        ba_global_split_merge_provider;
     coarse_memory_provider_params.immediate_init_from_upstream = true;
     coarse_memory_provider_params.init_buffer = NULL;
     coarse_memory_provider_params.init_buffer_size = init_buffer_size;
@@ -416,7 +414,7 @@ TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMallocPool_simple2) {
 
     umfPoolDestroy(pool);
     umfMemoryProviderDestroy(coarse_memory_provider);
-    umfMemoryProviderDestroy(malloc_memory_provider);
+    umfMemoryProviderDestroy(ba_global_split_merge_provider);
 }
 
 struct alloc_ptr_size {
