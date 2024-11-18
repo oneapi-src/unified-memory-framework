@@ -70,6 +70,11 @@ function(build_umf_test)
                                    PRIVATE UMF_POOL_SCALABLE_ENABLED=1)
     endif()
 
+    if(UMF_DISABLE_HWLOC)
+        target_compile_definitions(${TEST_TARGET_NAME}
+                                   PRIVATE UMF_DISABLE_HWLOC=1)
+    endif()
+
     if(NOT MSVC)
         # Suppress 'cast discards const qualifier' warnings. Parametrized GTEST
         # tests retrieve arguments using 'GetParam()', which applies a 'const'
