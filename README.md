@@ -317,6 +317,13 @@ The memory used by the proxy memory allocator is mmap'ed:
    - `page.disposition=shared-shm` - IPC uses the named shared memory. An SHM name is generated using the `umf_proxy_lib_shm_pid_$PID` pattern, where `$PID` is the PID of the process. It creates the `/dev/shm/umf_proxy_lib_shm_pid_$PID` file.
    - `page.disposition=shared-fd` - IPC uses the file descriptor duplication. It requires using `pidfd_getfd(2)` to obtain a duplicate of another process's file descriptor. Permission to duplicate another process's file descriptor is governed by a ptrace access mode `PTRACE_MODE_ATTACH_REALCREDS` check (see `ptrace(2)`) that can be changed using the `/proc/sys/kernel/yama/ptrace_scope` interface. `pidfd_getfd(2)` is supported since Linux 5.6.
 
+**Size threshold**
+
+The **size threshold** feature (Linux only) causes that all allocations of size less than the given threshold value go to the default system allocator instead of the proxy library.
+It can be enabled by adding the `size.threshold=<value>` string to the `UMF_PROXY` environment variable (with `';'` as a separator), for example: `UMF_PROXY="page.disposition=shared-shm;size.threshold=64"`.
+
+**Remark:** changing a size of allocation (using `realloc()` ) does not change the allocator (`realloc(malloc(threshold - 1), threshold + 1)` still belongs to the default system allocator and `realloc(malloc(threshold + 1), threshold - 1)` still belongs to the proxy library pool allocator).
+
 #### Windows
 
 In case of Windows it requires:

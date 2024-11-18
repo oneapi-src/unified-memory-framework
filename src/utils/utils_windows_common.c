@@ -215,3 +215,10 @@ int utils_fallocate(int fd, long offset, long len) {
 
     return -1;
 }
+
+// Expected input:
+// char *str_threshold = utils_env_var_get_str("UMF_PROXY", "size.threshold=");
+long utils_get_size_threshold(char *str_threshold) {
+    (void)str_threshold; // unused
+    return 0;
+}

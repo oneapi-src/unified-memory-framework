@@ -168,6 +168,8 @@ int utils_file_open_or_create(const char *path);
 
 int utils_fallocate(int fd, long offset, long len);
 
+long utils_get_size_threshold(char *str_threshold);
+
 #ifdef __cplusplus
 }
 #endif
