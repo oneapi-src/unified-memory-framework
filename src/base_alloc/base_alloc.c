@@ -278,7 +278,11 @@ void umf_ba_free(umf_ba_pool_t *pool, void *ptr) {
     umf_ba_chunk_t *chunk = (umf_ba_chunk_t *)ptr;
 
     utils_mutex_lock(&pool->metadata.free_lock);
-    assert(pool_contains_pointer(pool, ptr));
+    if (!pool_contains_pointer(pool, ptr)) {
+        utils_mutex_unlock(&pool->metadata.free_lock);
+        return;
+    }
+
     chunk->next = pool->metadata.free_list;
     pool->metadata.free_list = chunk;
     pool->metadata.n_allocs--;
