@@ -326,6 +326,7 @@ static umf_result_t devdax_purge_lazy(void *provider, void *ptr, size_t size) {
 }
 
 static umf_result_t devdax_purge_force(void *provider, void *ptr, size_t size) {
+    (void)provider; // unused
     errno = 0;
     if (utils_purge(ptr, size, UMF_PURGE_FORCE)) {
         devdax_store_last_native_error(
@@ -410,6 +411,7 @@ static umf_result_t devdax_put_ipc_handle(void *provider,
 
 static umf_result_t devdax_open_ipc_handle(void *provider,
                                            void *providerIpcData, void **ptr) {
+    (void)provider; // unused
     *ptr = NULL;
 
     devdax_ipc_data_t *devdax_ipc_data = (devdax_ipc_data_t *)providerIpcData;
@@ -469,6 +471,7 @@ static umf_result_t devdax_open_ipc_handle(void *provider,
 
 static umf_result_t devdax_close_ipc_handle(void *provider, void *ptr,
                                             size_t size) {
+    (void)provider; // unused
     size = ALIGN_UP(size, DEVDAX_PAGE_SIZE_2MB);
 
     errno = 0;
