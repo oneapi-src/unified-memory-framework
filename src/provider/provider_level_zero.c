@@ -16,6 +16,51 @@
 
 #if defined(UMF_NO_LEVEL_ZERO_PROVIDER)
 
+umf_result_t umfLevelZeroMemoryProviderParamsCreate(
+    umf_level_zero_memory_provider_params_handle_t *hParams) {
+    (void)hParams;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+umf_result_t umfLevelZeroMemoryProviderParamsDestroy(
+    umf_level_zero_memory_provider_params_handle_t hParams) {
+    (void)hParams;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+umf_result_t umfLevelZeroMemoryProviderParamsSetContext(
+    umf_level_zero_memory_provider_params_handle_t hParams,
+    ze_context_handle_t hContext) {
+    (void)hParams;
+    (void)hContext;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+umf_result_t umfLevelZeroMemoryProviderParamsSetDevice(
+    umf_level_zero_memory_provider_params_handle_t hParams,
+    ze_device_handle_t hDevice) {
+    (void)hParams;
+    (void)hDevice;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+umf_result_t umfLevelZeroMemoryProviderParamsSetMemoryType(
+    umf_level_zero_memory_provider_params_handle_t hParams,
+    umf_usm_memory_type_t memoryType) {
+    (void)hParams;
+    (void)memoryType;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+umf_result_t umfLevelZeroMemoryProviderParamsSetResidentDevices(
+    umf_level_zero_memory_provider_params_handle_t hParams,
+    ze_device_handle_t *hDevices, uint32_t deviceCount) {
+    (void)hParams;
+    (void)hDevices;
+    (void)deviceCount;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
 umf_memory_provider_ops_t *umfLevelZeroMemoryProviderOps(void) {
     // not supported
     return NULL;
@@ -24,6 +69,7 @@ umf_memory_provider_ops_t *umfLevelZeroMemoryProviderOps(void) {
 #else // !defined(UMF_NO_LEVEL_ZERO_PROVIDER)
 
 #include "base_alloc_global.h"
+#include "libumf.h"
 #include "utils_assert.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
@@ -31,6 +77,21 @@ umf_memory_provider_ops_t *umfLevelZeroMemoryProviderOps(void) {
 #include "utils_log.h"
 #include "utils_sanitizers.h"
 #include "ze_api.h"
+
+// Level Zero Memory Provider settings struct
+typedef struct umf_level_zero_memory_provider_params_t {
+    ze_context_handle_t
+        level_zero_context_handle; ///< Handle to the Level Zero context
+    ze_device_handle_t
+        level_zero_device_handle; ///< Handle to the Level Zero device
+
+    umf_usm_memory_type_t memory_type; ///< Allocation memory type
+
+    ze_device_handle_t *
+        resident_device_handles; ///< Array of devices for which the memory should be made resident
+    uint32_t
+        resident_device_count; ///< Number of devices for which the memory should be made resident
+} umf_level_zero_memory_provider_params_t;
 
 typedef struct ze_memory_provider_t {
     ze_context_handle_t context;
@@ -134,26 +195,127 @@ static void init_ze_global_state(void) {
     }
 }
 
+umf_result_t umfLevelZeroMemoryProviderParamsCreate(
+    umf_level_zero_memory_provider_params_handle_t *hParams) {
+    libumfInit();
+    if (!hParams) {
+        LOG_ERR("Level zero memory provider params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    umf_level_zero_memory_provider_params_t *params =
+        umf_ba_global_alloc(sizeof(umf_level_zero_memory_provider_params_t));
+    if (!params) {
+        LOG_ERR("Cannot allocate memory for Level Zero memory provider params");
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    // Assign default values
+    params->level_zero_context_handle = NULL;
+    params->level_zero_device_handle = NULL;
+    params->memory_type = UMF_MEMORY_TYPE_UNKNOWN;
+    params->resident_device_handles = NULL;
+    params->resident_device_count = 0;
+
+    *hParams = params;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t umfLevelZeroMemoryProviderParamsDestroy(
+    umf_level_zero_memory_provider_params_handle_t hParams) {
+    umf_ba_global_free(hParams);
+
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t umfLevelZeroMemoryProviderParamsSetContext(
+    umf_level_zero_memory_provider_params_handle_t hParams,
+    ze_context_handle_t hContext) {
+    if (!hParams) {
+        LOG_ERR("Level zero memory provider params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (!hContext) {
+        LOG_ERR("Level zero context handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    hParams->level_zero_context_handle = hContext;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t umfLevelZeroMemoryProviderParamsSetDevice(
+    umf_level_zero_memory_provider_params_handle_t hParams,
+    ze_device_handle_t hDevice) {
+    if (!hParams) {
+        LOG_ERR("Level zero memory provider params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    hParams->level_zero_device_handle = hDevice;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t umfLevelZeroMemoryProviderParamsSetMemoryType(
+    umf_level_zero_memory_provider_params_handle_t hParams,
+    umf_usm_memory_type_t memoryType) {
+    if (!hParams) {
+        LOG_ERR("Level zero memory provider params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    hParams->memory_type = memoryType;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t umfLevelZeroMemoryProviderParamsSetResidentDevices(
+    umf_level_zero_memory_provider_params_handle_t hParams,
+    ze_device_handle_t *hDevices, uint32_t deviceCount) {
+    if (!hParams) {
+        LOG_ERR("Level zero memory provider params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (deviceCount && !hDevices) {
+        LOG_ERR("Resident devices array is NULL, but deviceCount is not zero");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    hParams->resident_device_handles = hDevices;
+    hParams->resident_device_count = deviceCount;
+
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_result_t ze_memory_provider_initialize(void *params,
                                                   void **provider) {
     if (params == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    level_zero_memory_provider_params_t *ze_params =
-        (level_zero_memory_provider_params_t *)params;
+    umf_level_zero_memory_provider_params_handle_t ze_params =
+        (umf_level_zero_memory_provider_params_handle_t)params;
 
     if (!ze_params->level_zero_context_handle) {
+        LOG_ERR("Level Zero context handle is NULL");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
     if ((ze_params->memory_type == UMF_MEMORY_TYPE_HOST) ==
         (ze_params->level_zero_device_handle != NULL)) {
+        LOG_ERR("Level Zero device handle is NULL");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    if ((bool)ze_params->resident_device_count !=
-        (ze_params->resident_device_handles != NULL)) {
+    if ((bool)ze_params->resident_device_count &&
+        (ze_params->resident_device_handles == NULL)) {
+        LOG_ERR("Resident devices handles array is NULL, but device_count is "
+                "not zero");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -166,6 +328,7 @@ static umf_result_t ze_memory_provider_initialize(void *params,
     ze_memory_provider_t *ze_provider =
         umf_ba_global_alloc(sizeof(ze_memory_provider_t));
     if (!ze_provider) {
+        LOG_ERR("Cannot allocate memory for Level Zero Memory Provider");
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
@@ -178,6 +341,7 @@ static umf_result_t ze_memory_provider_initialize(void *params,
             ze_provider->device, &ze_provider->device_properties));
 
         if (ret != UMF_RESULT_SUCCESS) {
+            LOG_ERR("Cannot get device properties");
             umf_ba_global_free(ze_provider);
             return ret;
         }
@@ -190,6 +354,7 @@ static umf_result_t ze_memory_provider_initialize(void *params,
         ze_provider->resident_device_handles = umf_ba_global_alloc(
             sizeof(ze_device_handle_t) * ze_params->resident_device_count);
         if (!ze_provider->resident_device_handles) {
+            LOG_ERR("Cannot allocate memory for resident devices");
             umf_ba_global_free(ze_provider);
             return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
         }

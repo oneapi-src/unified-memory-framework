@@ -20,15 +20,48 @@ int create_level_zero_pool(ze_context_handle_t context,
                            ze_device_handle_t device,
                            umf_memory_pool_handle_t *pool) {
     // setup params
-    level_zero_memory_provider_params_t params = {0};
-    params.level_zero_context_handle = context;
-    params.level_zero_device_handle = device;
-    params.memory_type = UMF_MEMORY_TYPE_DEVICE;
+    umf_level_zero_memory_provider_params_handle_t provider_params = NULL;
+
+    umf_result_t umf_result =
+        umfLevelZeroMemoryProviderParamsCreate(&provider_params);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr,
+                "ERROR: Failed to create Level Zero memory provider params!\n");
+        return -1;
+    }
+
+    umf_result =
+        umfLevelZeroMemoryProviderParamsSetContext(provider_params, context);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "ERROR: Failed to set context in Level Zero memory "
+                        "provider params!\n");
+        umfLevelZeroMemoryProviderParamsDestroy(provider_params);
+        return -1;
+    }
+
+    umf_result =
+        umfLevelZeroMemoryProviderParamsSetDevice(provider_params, device);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "ERROR: Failed to set device in Level Zero memory "
+                        "provider params!\n");
+        umfLevelZeroMemoryProviderParamsDestroy(provider_params);
+        return -1;
+    }
+
+    umf_result = umfLevelZeroMemoryProviderParamsSetMemoryType(
+        provider_params, UMF_MEMORY_TYPE_DEVICE);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "ERROR: Failed to set memory type in Level Zero memory "
+                        "provider params!\n");
+        umfLevelZeroMemoryProviderParamsDestroy(provider_params);
+        return -1;
+    }
 
     // create Level Zero provider
     umf_memory_provider_handle_t provider = 0;
-    umf_result_t umf_result = umfMemoryProviderCreate(
-        umfLevelZeroMemoryProviderOps(), &params, &provider);
+    umf_result = umfMemoryProviderCreate(umfLevelZeroMemoryProviderOps(),
+                                         provider_params, &provider);
+    umfLevelZeroMemoryProviderParamsDestroy(provider_params);
     if (umf_result != UMF_RESULT_SUCCESS) {
         fprintf(stderr,
                 "ERROR: Failed to create Level Zero memory provider!\n");
