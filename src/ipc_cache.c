@@ -89,12 +89,14 @@ err_exit:
     return ret;
 }
 
+#ifndef NDEBUG
 static size_t getGlobalLruListSize(lru_list_t lru_list) {
     size_t size = 0;
     ipc_handle_cache_entry_t *tmp;
     DL_COUNT(lru_list, tmp, size);
     return size;
 }
+#endif /* NDEBUG */
 
 void umfIpcCacheGlobalTearDown(void) {
     ipc_mapped_handle_cache_global_t *cache_global = IPC_MAPPED_CACHE_GLOBAL;
