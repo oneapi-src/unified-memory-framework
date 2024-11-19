@@ -26,6 +26,13 @@ add_subdirectory(coarse)
 
 set(UMF_LIBS $<BUILD_INTERFACE:umf_utils> $<BUILD_INTERFACE:coarse>)
 
+if(LINUX OR MACOSX)
+    set(CTL_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/ctl/alloc.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/ctl/ctl.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/ctl/ctl_debug.c)
+endif()
+
 if(LINUX)
     set(BA_SOURCES ${BA_SOURCES}
                    ${CMAKE_CURRENT_SOURCE_DIR}/base_alloc/base_alloc_linux.c)
@@ -45,6 +52,7 @@ set(HWLOC_DEPENDENT_SOURCES topology.c)
 
 set(UMF_SOURCES
     ${BA_SOURCES}
+    ${CTL_SOURCES}
     libumf.c
     ipc.c
     ipc_cache.c

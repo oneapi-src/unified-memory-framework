@@ -192,6 +192,13 @@ add_umf_test(
     SRCS utils/utils_log.cpp ${UMF_UTILS_SOURCES}
     LIBS ${UMF_LOGGER_LIBS})
 
+if(LINUX OR MACOSX)
+    add_umf_test(
+        NAME ctl
+        SRCS ctl/test.cpp
+        LIBS ${UMF_UTILS_FOR_TEST})
+endif()
+
 add_umf_test(
     NAME utils_common
     SRCS utils/utils.cpp
