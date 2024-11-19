@@ -67,6 +67,8 @@ static void umf_ba_create_global(void) {
 
     size_t smallestSize = BASE_ALLOC.ac_sizes[0];
     BASE_ALLOC.smallest_ac_size_log2 = log2Utils(smallestSize);
+
+    LOG_DEBUG("UMF base allocator created");
 }
 
 // returns index of the allocation class for a given size

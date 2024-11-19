@@ -62,8 +62,26 @@ typedef enum umf_purge_advise_t {
 
 #endif /* _WIN32 */
 
+// get the address of the given string in the environment variable (or NULL)
+char *utils_env_var_get_str(const char *envvar, const char *str);
+
 // Check if the environment variable contains the given string.
-int utils_env_var_has_str(const char *envvar, const char *str);
+static inline int utils_env_var_has_str(const char *envvar, const char *str) {
+    return utils_env_var_get_str(envvar, str) ? 1 : 0;
+}
+
+// check if we are running in the proxy library
+static inline int utils_is_running_in_proxy_lib(void) {
+    return utils_env_var_get_str("LD_PRELOAD", "libumf_proxy.so") ? 1 : 0;
+}
+
+// check if we are running in the proxy library with a size threshold
+static inline int utils_is_running_in_proxy_lib_with_size_threshold(void) {
+    return (utils_env_var_get_str("LD_PRELOAD", "libumf_proxy.so") &&
+            utils_env_var_get_str("UMF_PROXY", "size.threshold="))
+               ? 1
+               : 0;
+}
 
 // utils_parse_var - Parses var for a prefix,
 //                   optionally identifying a following argument.
@@ -81,9 +99,6 @@ int utils_env_var_has_str(const char *envvar, const char *str);
 // and are not null-terminated.
 const char *utils_parse_var(const char *var, const char *option,
                             const char **extraArg);
-
-// check if we are running in the proxy library
-int utils_is_running_in_proxy_lib(void);
 
 size_t utils_get_page_size(void);
 
@@ -152,6 +167,8 @@ int utils_file_open(const char *path);
 int utils_file_open_or_create(const char *path);
 
 int utils_fallocate(int fd, long offset, long len);
+
+long utils_get_size_threshold(char *str_threshold);
 
 #ifdef __cplusplus
 }

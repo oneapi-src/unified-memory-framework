@@ -7,6 +7,7 @@
  *
  */
 
+#include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -265,4 +266,28 @@ int utils_file_open_or_create(const char *path) {
     LOG_DEBUG("opened/created the file: %s", path);
 
     return fd;
+}
+
+// Expected input:
+// char *str_threshold = utils_env_var_get_str("UMF_PROXY", "size.threshold=");
+long utils_get_size_threshold(char *str_threshold) {
+    if (!str_threshold) {
+        return 0;
+    }
+
+    // move to the beginning of the number
+    str_threshold += strlen("size.threshold=");
+
+    // check if the first character is a digit
+    if (!isdigit(str_threshold[0])) {
+        LOG_ERR("incorrect size threshold, expected numerical value >=0: %s",
+                str_threshold);
+        return -1;
+    }
+
+    size_t threshold = atol(str_threshold);
+    LOG_DEBUG("Size_threshold_value = (char *) %s, (size_t) %zu", str_threshold,
+              threshold);
+
+    return threshold;
 }

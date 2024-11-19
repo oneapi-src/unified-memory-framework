@@ -470,6 +470,7 @@ static umf_result_t cu_memory_provider_open_ipc_handle(void *provider,
 
 static umf_result_t
 cu_memory_provider_close_ipc_handle(void *provider, void *ptr, size_t size) {
+    (void)provider;
     (void)size;
 
     CUresult cu_result;

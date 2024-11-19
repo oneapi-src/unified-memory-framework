@@ -220,7 +220,7 @@ int main(int argc, char *argv[]) {
         fprintf(
             stderr,
             "[producer] ERROR: The consumer did NOT write the correct value "
-            "(the old one / 2 = %llu) to my shared memory: %llu\n",
+            "(the old one / 2 = %zu) to my shared memory: %llu\n",
             expected_val, new_val);
     }
 
