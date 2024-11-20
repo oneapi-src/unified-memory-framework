@@ -60,6 +60,14 @@ function(build_umf_test)
         SRCS ${ARG_SRCS}
         LIBS ${TEST_LIBS})
 
+    if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
+        target_compile_definitions(${TEST_TARGET_NAME}
+                                   PRIVATE UMF_BUILD_LEVEL_ZERO_PROVIDER=1)
+    endif()
+    if(UMF_BUILD_CUDA_PROVIDER)
+        target_compile_definitions(${TEST_TARGET_NAME}
+                                   PRIVATE UMF_BUILD_CUDA_PROVIDER=1)
+    endif()
     if(UMF_POOL_JEMALLOC_ENABLED)
         target_compile_definitions(${TEST_TARGET_NAME}
                                    PRIVATE UMF_POOL_JEMALLOC_ENABLED=1)

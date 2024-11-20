@@ -7,10 +7,12 @@
 
 #include <random>
 
-#include "provider.hpp"
-
+#include <umf/ipc.h>
+#include <umf/pools/pool_proxy.h>
 #include <umf/providers/provider_coarse.h>
 #include <umf/providers/provider_file_memory.h>
+
+#include "provider.hpp"
 
 using umf_test::BA_GLOBAL_SPLIT_MERGE_OPS;
 using umf_test::KB;
@@ -416,6 +418,106 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseProvider_merge_upstream) {
 
     umfMemoryProviderDestroy(coarse_memory_provider);
     umfMemoryProviderDestroy(file_memory_provider);
+}
+
+TEST_P(CoarseWithMemoryStrategyTest, coarseProvider_split_merge_file_prov) {
+    umf_memory_provider_handle_t file_memory_provider;
+    umf_result_t umf_result;
+
+    umf_file_memory_provider_params_t file_params =
+        umfFileMemoryProviderParamsDefault(FILE_PATH);
+    file_params.visibility = UMF_MEM_MAP_SHARED;
+
+    umf_result = umfMemoryProviderCreate(umfFileMemoryProviderOps(),
+                                         &file_params, &file_memory_provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(file_memory_provider, nullptr);
+
+    const size_t init_buffer_size = 8 * KB;
+
+    coarse_memory_provider_params_t coarse_memory_provider_params;
+    // make sure there are no undefined members - prevent a UB
+    memset(&coarse_memory_provider_params, 0,
+           sizeof(coarse_memory_provider_params));
+    coarse_memory_provider_params.upstream_memory_provider =
+        file_memory_provider;
+    coarse_memory_provider_params.immediate_init_from_upstream = true;
+    coarse_memory_provider_params.init_buffer = NULL;
+    coarse_memory_provider_params.init_buffer_size = init_buffer_size;
+    coarse_memory_provider_params.destroy_upstream_memory_provider = true;
+
+    umf_memory_provider_handle_t coarse_memory_provider;
+    umf_result = umfMemoryProviderCreate(umfCoarseMemoryProviderOps(),
+                                         &coarse_memory_provider_params,
+                                         &coarse_memory_provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(coarse_memory_provider, nullptr);
+
+    umf_memory_pool_handle_t pool;
+    umf_result =
+        umfPoolCreate(umfProxyPoolOps(), coarse_memory_provider, nullptr,
+                      UMF_POOL_CREATE_FLAG_OWN_PROVIDER, &pool);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(pool, nullptr);
+
+    umf_memory_provider_handle_t cp = coarse_memory_provider;
+    void *ptr1 = nullptr;
+    void *ptr2 = nullptr;
+
+    ASSERT_EQ(GetStats(cp).used_size, 0 * MB);
+    ASSERT_EQ(GetStats(cp).alloc_size, init_buffer_size);
+    ASSERT_EQ(GetStats(cp).num_all_blocks, 1);
+
+    ptr1 = umfPoolMalloc(pool, init_buffer_size / 2);
+    ASSERT_NE(ptr1, nullptr);
+    ASSERT_EQ(GetStats(cp).used_size, init_buffer_size / 2);
+    ASSERT_EQ(GetStats(cp).alloc_size, init_buffer_size);
+    ASSERT_EQ(GetStats(cp).num_all_blocks, 2);
+
+    ptr2 = umfPoolMalloc(pool, init_buffer_size / 2);
+    ASSERT_NE(ptr2, nullptr);
+    ASSERT_EQ(GetStats(cp).used_size, init_buffer_size);
+    ASSERT_EQ(GetStats(cp).alloc_size, init_buffer_size);
+    ASSERT_EQ(GetStats(cp).num_all_blocks, 2);
+
+    umf_ipc_handle_t ipcHandle1 = nullptr;
+    umf_ipc_handle_t ipcHandle2 = nullptr;
+    size_t handleSize1 = 0;
+    size_t handleSize2 = 0;
+    void *handle1 = nullptr;
+    void *handle2 = nullptr;
+
+    umf_result = umfGetIPCHandle(ptr1, &ipcHandle1, &handleSize1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result = umfGetIPCHandle(ptr2, &ipcHandle2, &handleSize2);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(handleSize1, handleSize2);
+
+    umf_result = umfOpenIPCHandle(pool, ipcHandle1, &handle1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result = umfOpenIPCHandle(pool, ipcHandle2, &handle2);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umf_result = umfCloseIPCHandle(handle1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result = umfCloseIPCHandle(handle2);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umf_result = umfPutIPCHandle(ipcHandle1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result = umfPutIPCHandle(ipcHandle2);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umf_result = umfPoolFree(pool, ptr1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result = umfPoolFree(pool, ptr2);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    ASSERT_EQ(GetStats(cp).used_size, 0);
+    ASSERT_EQ(GetStats(cp).alloc_size, init_buffer_size);
+    ASSERT_EQ(GetStats(cp).num_all_blocks, 1);
+
+    umfPoolDestroy(pool);
 }
 #endif /* !defined(_WIN32) && !defined(UMF_DISABLE_HWLOC) */
 
