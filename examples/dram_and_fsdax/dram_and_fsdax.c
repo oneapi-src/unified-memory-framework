@@ -67,17 +67,33 @@ static umf_memory_pool_handle_t create_fsdax_pool(const char *path) {
     // so it should be used with a pool manager that will take over
     // the managing of the provided memory - for example the jemalloc pool
     // with the `disable_provider_free` parameter set to true.
-    umf_jemalloc_pool_params_t pool_params;
-    pool_params.disable_provider_free = true;
+    umf_jemalloc_pool_params_handle_t pool_params;
+    umf_result = umfJemallocPoolParamsCreate(&pool_params);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "Failed to create jemalloc params!\n");
+        umfMemoryProviderDestroy(provider_fsdax);
+        return NULL;
+    }
+    umf_result = umfJemallocPoolParamsSetKeepAllMemory(pool_params, true);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "Failed to set KeepAllMemory!\n");
+        umfMemoryProviderDestroy(provider_fsdax);
+        return NULL;
+    }
 
     // Create an FSDAX memory pool
     umf_result =
-        umfPoolCreate(umfJemallocPoolOps(), provider_fsdax, &pool_params,
+        umfPoolCreate(umfJemallocPoolOps(), provider_fsdax, pool_params,
                       UMF_POOL_CREATE_FLAG_OWN_PROVIDER, &pool_fsdax);
     if (umf_result != UMF_RESULT_SUCCESS) {
         fprintf(stderr, "Failed to create an FSDAX memory pool!\n");
         umfMemoryProviderDestroy(provider_fsdax);
         return NULL;
+    }
+
+    umf_result = umfJemallocPoolParamsDestroy(pool_params);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "Failed to destroy jemalloc params!\n");
     }
 
     return pool_fsdax;

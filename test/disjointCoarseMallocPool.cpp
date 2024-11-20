@@ -68,19 +68,33 @@ TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMallocPool_basic) {
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(coarse_memory_provider, nullptr);
 
-    umf_disjoint_pool_params_t disjoint_memory_pool_params = {};
-    disjoint_memory_pool_params.SlabMinSize = 4096;
-    disjoint_memory_pool_params.MaxPoolableSize = 4096;
-    disjoint_memory_pool_params.Capacity = 4;
-    disjoint_memory_pool_params.MinBucketSize = 64;
-    disjoint_memory_pool_params.PoolTrace = 1;
+    umf_disjoint_pool_params_handle_t disjoint_pool_params = NULL;
+    umf_result = umfDisjointPoolParamsCreate(&disjoint_pool_params);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(disjoint_pool_params, nullptr);
+    umf_result =
+        umfDisjointPoolParamsSetSlabMinSize(disjoint_pool_params, 4096);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result =
+        umfDisjointPoolParamsSetMaxPoolableSize(disjoint_pool_params, 4096);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result = umfDisjointPoolParamsSetCapacity(disjoint_pool_params, 4);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result =
+        umfDisjointPoolParamsSetMinBucketSize(disjoint_pool_params, 64);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result = umfDisjointPoolParamsSetTrace(disjoint_pool_params, 1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
     umf_memory_pool_handle_t pool;
     umf_result = umfPoolCreate(umfDisjointPoolOps(), coarse_memory_provider,
-                               &disjoint_memory_pool_params,
+                               disjoint_pool_params,
                                UMF_POOL_CREATE_FLAG_OWN_PROVIDER, &pool);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(pool, nullptr);
+
+    umf_result = umfDisjointPoolParamsDestroy(disjoint_pool_params);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
     // test
 
@@ -245,19 +259,32 @@ TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMallocPool_simple1) {
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(coarse_memory_provider, nullptr);
 
-    umf_disjoint_pool_params_t disjoint_memory_pool_params = {};
-    disjoint_memory_pool_params.SlabMinSize = 4096;
-    disjoint_memory_pool_params.MaxPoolableSize = 4096;
-    disjoint_memory_pool_params.Capacity = 4;
-    disjoint_memory_pool_params.MinBucketSize = 64;
-    disjoint_memory_pool_params.PoolTrace = 1;
+    umf_disjoint_pool_params_handle_t disjoint_pool_params = NULL;
+    umf_result = umfDisjointPoolParamsCreate(&disjoint_pool_params);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(disjoint_pool_params, nullptr);
+    umf_result =
+        umfDisjointPoolParamsSetSlabMinSize(disjoint_pool_params, 4096);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result =
+        umfDisjointPoolParamsSetMaxPoolableSize(disjoint_pool_params, 4096);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result = umfDisjointPoolParamsSetCapacity(disjoint_pool_params, 4);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result =
+        umfDisjointPoolParamsSetMinBucketSize(disjoint_pool_params, 64);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result = umfDisjointPoolParamsSetTrace(disjoint_pool_params, 1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
     umf_memory_pool_handle_t pool;
-    umf_result = umfPoolCreate(umfDisjointPoolOps(), coarse_memory_provider,
-                               &disjoint_memory_pool_params,
-                               UMF_POOL_CREATE_FLAG_NONE, &pool);
+    umf_result =
+        umfPoolCreate(umfDisjointPoolOps(), coarse_memory_provider,
+                      disjoint_pool_params, UMF_POOL_CREATE_FLAG_NONE, &pool);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(pool, nullptr);
+
+    umf_result = umfDisjointPoolParamsDestroy(disjoint_pool_params);
 
     umf_memory_provider_handle_t prov = NULL;
     umfPoolGetMemoryProvider(pool, &prov);
@@ -342,19 +369,33 @@ TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMallocPool_simple2) {
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(coarse_memory_provider, nullptr);
 
-    umf_disjoint_pool_params_t disjoint_memory_pool_params = {};
-    disjoint_memory_pool_params.SlabMinSize = 4096;
-    disjoint_memory_pool_params.MaxPoolableSize = 4096;
-    disjoint_memory_pool_params.Capacity = 4;
-    disjoint_memory_pool_params.MinBucketSize = 64;
-    disjoint_memory_pool_params.PoolTrace = 1;
+    umf_disjoint_pool_params_handle_t disjoint_pool_params = NULL;
+    umf_result = umfDisjointPoolParamsCreate(&disjoint_pool_params);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(disjoint_pool_params, nullptr);
+    umf_result =
+        umfDisjointPoolParamsSetSlabMinSize(disjoint_pool_params, 4096);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result =
+        umfDisjointPoolParamsSetMaxPoolableSize(disjoint_pool_params, 4096);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result = umfDisjointPoolParamsSetCapacity(disjoint_pool_params, 4);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result =
+        umfDisjointPoolParamsSetMinBucketSize(disjoint_pool_params, 64);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result = umfDisjointPoolParamsSetTrace(disjoint_pool_params, 1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
     umf_memory_pool_handle_t pool;
-    umf_result = umfPoolCreate(umfDisjointPoolOps(), coarse_memory_provider,
-                               &disjoint_memory_pool_params,
-                               UMF_POOL_CREATE_FLAG_NONE, &pool);
+    umf_result =
+        umfPoolCreate(umfDisjointPoolOps(), coarse_memory_provider,
+                      disjoint_pool_params, UMF_POOL_CREATE_FLAG_NONE, &pool);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(pool, nullptr);
+
+    umf_result = umfDisjointPoolParamsDestroy(disjoint_pool_params);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
     // test
     double sizes[] = {2, 4, 0.5, 1, 8, 0.25};
@@ -419,19 +460,33 @@ TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMMapPool_random) {
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(coarse_memory_provider, nullptr);
 
-    umf_disjoint_pool_params_t disjoint_memory_pool_params = {};
-    disjoint_memory_pool_params.SlabMinSize = 1024;
-    disjoint_memory_pool_params.MaxPoolableSize = 1024;
-    disjoint_memory_pool_params.Capacity = 2;
-    disjoint_memory_pool_params.MinBucketSize = 16;
-    disjoint_memory_pool_params.PoolTrace = 1;
+    umf_disjoint_pool_params_handle_t disjoint_pool_params = NULL;
+    umf_result = umfDisjointPoolParamsCreate(&disjoint_pool_params);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(disjoint_pool_params, nullptr);
+    umf_result =
+        umfDisjointPoolParamsSetSlabMinSize(disjoint_pool_params, 1024);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result =
+        umfDisjointPoolParamsSetMaxPoolableSize(disjoint_pool_params, 1024);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result = umfDisjointPoolParamsSetCapacity(disjoint_pool_params, 2);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result =
+        umfDisjointPoolParamsSetMinBucketSize(disjoint_pool_params, 16);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result = umfDisjointPoolParamsSetTrace(disjoint_pool_params, 1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
     umf_memory_pool_handle_t pool;
-    umf_result = umfPoolCreate(umfDisjointPoolOps(), coarse_memory_provider,
-                               &disjoint_memory_pool_params,
-                               UMF_POOL_CREATE_FLAG_NONE, &pool);
+    umf_result =
+        umfPoolCreate(umfDisjointPoolOps(), coarse_memory_provider,
+                      disjoint_pool_params, UMF_POOL_CREATE_FLAG_NONE, &pool);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(pool, nullptr);
+
+    umf_result = umfDisjointPoolParamsDestroy(disjoint_pool_params);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
     // set constant seed so each test run will have the same scenario
     uint32_t seed = 1234;

@@ -26,9 +26,19 @@ int main(int argc, char *argv[]) {
     level_zero_memory_provider_params_t l0_params =
         create_level_zero_prov_params(UMF_MEMORY_TYPE_DEVICE);
 
-    umf_disjoint_pool_params_t pool_params = umfDisjointPoolParamsDefault();
+    umf_disjoint_pool_params_handle_t pool_params = NULL;
 
-    return run_consumer(port, umfDisjointPoolOps(), &pool_params,
-                        umfLevelZeroMemoryProviderOps(), &l0_params, memcopy,
-                        &l0_params);
+    umf_result_t umf_result = umfDisjointPoolParamsCreate(&pool_params);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "Failed to create pool params!\n");
+        return -1;
+    }
+
+    int ret = run_consumer(port, umfDisjointPoolOps(), pool_params,
+                           umfLevelZeroMemoryProviderOps(), &l0_params, memcopy,
+                           &l0_params);
+
+    umfDisjointPoolParamsDestroy(pool_params);
+
+    return ret;
 }

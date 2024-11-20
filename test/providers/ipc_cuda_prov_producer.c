@@ -26,9 +26,19 @@ int main(int argc, char *argv[]) {
     cuda_memory_provider_params_t cu_params =
         create_cuda_prov_params(UMF_MEMORY_TYPE_DEVICE);
 
-    umf_disjoint_pool_params_t pool_params = umfDisjointPoolParamsDefault();
+    umf_disjoint_pool_params_handle_t pool_params = NULL;
 
-    return run_producer(port, umfDisjointPoolOps(), &pool_params,
-                        umfCUDAMemoryProviderOps(), &cu_params, memcopy,
-                        &cu_params);
+    umf_result_t umf_result = umfDisjointPoolParamsCreate(&pool_params);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "Failed to create pool params!\n");
+        return -1;
+    }
+
+    int ret = run_producer(port, umfDisjointPoolOps(), pool_params,
+                           umfCUDAMemoryProviderOps(), &cu_params, memcopy,
+                           &cu_params);
+
+    umfDisjointPoolParamsDestroy(pool_params);
+
+    return ret;
 }

@@ -8,6 +8,7 @@
 #include <bitset>
 #include <cassert>
 #include <cctype>
+#include <cstring>
 #include <iomanip>
 #include <limits>
 #include <list>
@@ -57,13 +58,43 @@ typedef struct umf_disjoint_pool_shared_limits_t {
     std::atomic<size_t> TotalSize;
 } umf_disjoint_pool_shared_limits_t;
 
+// Configuration of Disjoint Pool
+typedef struct umf_disjoint_pool_params_t {
+    // Minimum allocation size that will be requested from the memory provider.
+    size_t SlabMinSize;
+
+    // Allocations up to this limit will be subject to chunking/pooling
+    size_t MaxPoolableSize;
+
+    // When pooling, each bucket will hold a max of 'Capacity' unfreed slabs
+    size_t Capacity;
+
+    // Holds the minimum bucket size valid for allocation of a memory type.
+    // This value must be a power of 2.
+    size_t MinBucketSize;
+
+    // Holds size of the pool managed by the allocator.
+    size_t CurPoolSize;
+
+    // Whether to print pool usage statistics
+    int PoolTrace;
+
+    // Memory limits that can be shared between multitple pool instances,
+    // i.e. if multiple pools use the same SharedLimits sum of those pools'
+    // sizes cannot exceed MaxSize.
+    umf_disjoint_pool_shared_limits_handle_t SharedLimits;
+
+    // Name used in traces
+    char *Name;
+} umf_disjoint_pool_params_t;
+
 class DisjointPool {
   public:
     class AllocImpl;
     using Config = umf_disjoint_pool_params_t;
 
     umf_result_t initialize(umf_memory_provider_handle_t provider,
-                            umf_disjoint_pool_params_t *parameters);
+                            umf_disjoint_pool_params_handle_t parameters);
     void *malloc(size_t size);
     void *calloc(size_t, size_t);
     void *realloc(void *, size_t);
@@ -85,8 +116,151 @@ umfDisjointPoolSharedLimitsCreate(size_t MaxSize) {
 }
 
 void umfDisjointPoolSharedLimitsDestroy(
-    umf_disjoint_pool_shared_limits_t *limits) {
-    delete limits;
+    umf_disjoint_pool_shared_limits_handle_t hSharedLimits) {
+    delete hSharedLimits;
+}
+
+umf_result_t
+umfDisjointPoolParamsCreate(umf_disjoint_pool_params_handle_t *hParams) {
+    static const char *DEFAULT_NAME = "disjoint_pool";
+
+    if (!hParams) {
+        LOG_ERR("disjoint pool params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    umf_disjoint_pool_params_handle_t params = new umf_disjoint_pool_params_t{};
+    if (params == nullptr) {
+        LOG_ERR("cannot allocate memory for disjoint pool params");
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    params->SlabMinSize = 0;
+    params->MaxPoolableSize = 0;
+    params->Capacity = 0;
+    params->MinBucketSize = UMF_DISJOINT_POOL_MIN_BUCKET_DEFAULT_SIZE;
+    params->CurPoolSize = 0;
+    params->PoolTrace = 0;
+    params->SharedLimits = nullptr;
+    params->Name = nullptr;
+
+    umf_result_t ret = umfDisjointPoolParamsSetName(params, DEFAULT_NAME);
+    if (ret != UMF_RESULT_SUCCESS) {
+        delete params;
+        return ret;
+    }
+
+    *hParams = params;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t
+umfDisjointPoolParamsDestroy(umf_disjoint_pool_params_handle_t hParams) {
+    if (hParams) {
+        delete[] hParams->Name;
+        delete hParams;
+    }
+
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t
+umfDisjointPoolParamsSetSlabMinSize(umf_disjoint_pool_params_handle_t hParams,
+                                    size_t slabMinSize) {
+    if (!hParams) {
+        LOG_ERR("disjoint pool params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    hParams->SlabMinSize = slabMinSize;
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t umfDisjointPoolParamsSetMaxPoolableSize(
+    umf_disjoint_pool_params_handle_t hParams, size_t maxPoolableSize) {
+    if (!hParams) {
+        LOG_ERR("disjoint pool params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    hParams->MaxPoolableSize = maxPoolableSize;
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t
+umfDisjointPoolParamsSetCapacity(umf_disjoint_pool_params_handle_t hParams,
+                                 size_t maxCapacity) {
+    if (!hParams) {
+        LOG_ERR("disjoint pool params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    hParams->Capacity = maxCapacity;
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t
+umfDisjointPoolParamsSetMinBucketSize(umf_disjoint_pool_params_handle_t hParams,
+                                      size_t minBucketSize) {
+    if (!hParams) {
+        LOG_ERR("disjoint pool params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    // minBucketSize parameter must be a power of 2 and greater than 0.
+    if (minBucketSize == 0 || (minBucketSize & (minBucketSize - 1))) {
+        LOG_ERR("minBucketSize must be a power of 2 and greater than 0");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    hParams->MinBucketSize = minBucketSize;
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t
+umfDisjointPoolParamsSetTrace(umf_disjoint_pool_params_handle_t hParams,
+                              int poolTrace) {
+    if (!hParams) {
+        LOG_ERR("disjoint pool params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    hParams->PoolTrace = poolTrace;
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t umfDisjointPoolParamsSetSharedLimits(
+    umf_disjoint_pool_params_handle_t hParams,
+    umf_disjoint_pool_shared_limits_handle_t hSharedLimits) {
+    if (!hParams) {
+        LOG_ERR("disjoint pool params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    hParams->SharedLimits = hSharedLimits;
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t
+umfDisjointPoolParamsSetName(umf_disjoint_pool_params_handle_t hParams,
+                             const char *name) {
+    if (!hParams) {
+        LOG_ERR("disjoint pool params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    char *newName = new char[std::strlen(name) + 1];
+    if (newName == nullptr) {
+        LOG_ERR("cannot allocate memory for disjoint pool name");
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    delete[] hParams->Name;
+    hParams->Name = newName;
+    std::strcpy(hParams->Name, name);
+
+    return UMF_RESULT_SUCCESS;
 }
 
 // Allocations are a minimum of 4KB/64KB/2MB even when a smaller size is
@@ -351,10 +525,14 @@ class DisjointPool::AllocImpl {
 
   public:
     AllocImpl(umf_memory_provider_handle_t hProvider,
-              umf_disjoint_pool_params_t *params)
+              umf_disjoint_pool_params_handle_t params)
         : MemHandle{hProvider}, params(*params) {
 
         VALGRIND_DO_CREATE_MEMPOOL(this, 0, 0);
+
+        // deep copy of the Name
+        this->params.Name = new char[std::strlen(params->Name) + 1];
+        std::strcpy(this->params.Name, params->Name);
 
         // Generate buckets sized such as: 64, 96, 128, 192, ..., CutOff.
         // Powers of 2 and the value halfway between the powers of 2.
@@ -379,7 +557,10 @@ class DisjointPool::AllocImpl {
         }
     }
 
-    ~AllocImpl() { VALGRIND_DO_DESTROY_MEMPOOL(this); }
+    ~AllocImpl() {
+        VALGRIND_DO_DESTROY_MEMPOOL(this);
+        delete[] this->params.Name;
+    }
 
     void *allocate(size_t Size, size_t Alignment, bool &FromPool);
     void *allocate(size_t Size, bool &FromPool);
@@ -1015,8 +1196,9 @@ void DisjointPool::AllocImpl::printStats(bool &TitlePrinted,
     }
 }
 
-umf_result_t DisjointPool::initialize(umf_memory_provider_handle_t provider,
-                                      umf_disjoint_pool_params_t *parameters) {
+umf_result_t
+DisjointPool::initialize(umf_memory_provider_handle_t provider,
+                         umf_disjoint_pool_params_handle_t parameters) {
     if (!provider) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }

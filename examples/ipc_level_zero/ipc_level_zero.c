@@ -35,17 +35,29 @@ int create_level_zero_pool(ze_context_handle_t context,
         return -1;
     }
 
+    umf_disjoint_pool_params_handle_t disjoint_params = NULL;
+    umf_result = umfDisjointPoolParamsCreate(&disjoint_params);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "ERROR: Failed to create pool params!\n");
+        goto provider_destroy;
+    }
+
     // create pool
     umf_pool_create_flags_t flags = UMF_POOL_CREATE_FLAG_OWN_PROVIDER;
-    umf_disjoint_pool_params_t disjoint_params = umfDisjointPoolParamsDefault();
-    umf_result = umfPoolCreate(umfDisjointPoolOps(), provider, &disjoint_params,
+    umf_result = umfPoolCreate(umfDisjointPoolOps(), provider, disjoint_params,
                                flags, pool);
+    umfDisjointPoolParamsDestroy(disjoint_params);
     if (umf_result != UMF_RESULT_SUCCESS) {
         fprintf(stderr, "ERROR: Failed to create pool!\n");
-        return -1;
+        goto provider_destroy;
     }
 
     return 0;
+
+provider_destroy:
+    umfMemoryProviderDestroy(provider);
+
+    return -1;
 }
 
 int main(void) {
