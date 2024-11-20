@@ -19,6 +19,82 @@
 using umf_test::test;
 using namespace umf_test;
 
+class CUDATestHelper {
+  public:
+    CUDATestHelper();
+
+    ~CUDATestHelper() {
+        if (hContext_) {
+            destroy_context(hContext_);
+        }
+    }
+
+    CUcontext get_test_context() const { return hContext_; }
+
+    CUdevice get_test_device() const { return hDevice_; }
+
+  private:
+    CUcontext hContext_ = nullptr;
+    CUdevice hDevice_ = -1;
+};
+
+CUDATestHelper::CUDATestHelper() {
+    int ret = get_cuda_device(&hDevice_);
+    if (ret != 0) {
+        fprintf(stderr, "get_cuda_device() failed!\n");
+        return;
+    }
+
+    ret = create_context(hDevice_, &hContext_);
+    if (ret != 0) {
+        fprintf(stderr, "create_context() failed!\n");
+        return;
+    }
+}
+
+using cuda_params_unique_handle_t =
+    std::unique_ptr<umf_cuda_memory_provider_params_t,
+                    decltype(&umfCUDAMemoryProviderParamsDestroy)>;
+
+cuda_params_unique_handle_t
+create_cuda_prov_params(CUcontext context, CUdevice device,
+                        umf_usm_memory_type_t memory_type) {
+    umf_cuda_memory_provider_params_handle_t params = nullptr;
+
+    umf_result_t res = umfCUDAMemoryProviderParamsCreate(&params);
+    if (res != UMF_RESULT_SUCCESS) {
+        return cuda_params_unique_handle_t(nullptr,
+                                           &umfCUDAMemoryProviderParamsDestroy);
+    }
+
+    res = umfCUDAMemoryProviderParamsSetContext(params, context);
+    if (res != UMF_RESULT_SUCCESS) {
+        umfCUDAMemoryProviderParamsDestroy(params);
+        return cuda_params_unique_handle_t(nullptr,
+                                           &umfCUDAMemoryProviderParamsDestroy);
+        ;
+    }
+
+    res = umfCUDAMemoryProviderParamsSetDevice(params, device);
+    if (res != UMF_RESULT_SUCCESS) {
+        umfCUDAMemoryProviderParamsDestroy(params);
+        return cuda_params_unique_handle_t(nullptr,
+                                           &umfCUDAMemoryProviderParamsDestroy);
+        ;
+    }
+
+    res = umfCUDAMemoryProviderParamsSetMemoryType(params, memory_type);
+    if (res != UMF_RESULT_SUCCESS) {
+        umfCUDAMemoryProviderParamsDestroy(params);
+        return cuda_params_unique_handle_t(nullptr,
+                                           &umfCUDAMemoryProviderParamsDestroy);
+        ;
+    }
+
+    return cuda_params_unique_handle_t(params,
+                                       &umfCUDAMemoryProviderParamsDestroy);
+}
+
 class CUDAMemoryAccessor : public MemoryAccessor {
   public:
     CUDAMemoryAccessor(CUcontext hContext, CUdevice hDevice)
@@ -51,7 +127,8 @@ class CUDAMemoryAccessor : public MemoryAccessor {
 };
 
 using CUDAProviderTestParams =
-    std::tuple<cuda_memory_provider_params_t, MemoryAccessor *>;
+    std::tuple<umf_cuda_memory_provider_params_handle_t, CUcontext,
+               umf_usm_memory_type_t, MemoryAccessor *>;
 
 struct umfCUDAProviderTest
     : umf_test::test,
@@ -60,15 +137,20 @@ struct umfCUDAProviderTest
     void SetUp() override {
         test::SetUp();
 
-        auto [cuda_params, accessor] = this->GetParam();
+        auto [cuda_params, cu_context, memory_type, accessor] =
+            this->GetParam();
         params = cuda_params;
         memAccessor = accessor;
+        expected_context = cu_context;
+        expected_memory_type = memory_type;
     }
 
     void TearDown() override { test::TearDown(); }
 
-    cuda_memory_provider_params_t params;
+    umf_cuda_memory_provider_params_handle_t params;
     MemoryAccessor *memAccessor = nullptr;
+    CUcontext expected_context;
+    umf_usm_memory_type_t expected_memory_type;
 };
 
 TEST_P(umfCUDAProviderTest, basic) {
@@ -79,7 +161,7 @@ TEST_P(umfCUDAProviderTest, basic) {
     // create CUDA provider
     umf_memory_provider_handle_t provider = nullptr;
     umf_result_t umf_result =
-        umfMemoryProviderCreate(umfCUDAMemoryProviderOps(), &params, &provider);
+        umfMemoryProviderCreate(umfCUDAMemoryProviderOps(), params, &provider);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(provider, nullptr);
 
@@ -102,14 +184,14 @@ TEST_P(umfCUDAProviderTest, basic) {
     memAccessor->fill(ptr, size, &pattern, sizeof(pattern));
 
     CUcontext actual_mem_context = get_mem_context(ptr);
-    ASSERT_EQ(actual_mem_context, (CUcontext)params.cuda_context_handle);
+    ASSERT_EQ(actual_mem_context, expected_context);
 
     CUcontext actual_current_context = get_current_context();
     ASSERT_EQ(actual_current_context, expected_current_context);
 
     umf_usm_memory_type_t memoryTypeActual =
-        get_mem_type((CUcontext)params.cuda_context_handle, ptr);
-    ASSERT_EQ(memoryTypeActual, params.memory_type);
+        get_mem_type(actual_current_context, ptr);
+    ASSERT_EQ(memoryTypeActual, expected_memory_type);
 
     // check if the pattern was successfully applied
     uint32_t *hostMemory = (uint32_t *)calloc(1, size);
@@ -128,7 +210,7 @@ TEST_P(umfCUDAProviderTest, basic) {
 TEST_P(umfCUDAProviderTest, getPageSize) {
     umf_memory_provider_handle_t provider = nullptr;
     umf_result_t umf_result =
-        umfMemoryProviderCreate(umfCUDAMemoryProviderOps(), &params, &provider);
+        umfMemoryProviderCreate(umfCUDAMemoryProviderOps(), params, &provider);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(provider, nullptr);
 
@@ -152,7 +234,7 @@ TEST_P(umfCUDAProviderTest, getPageSize) {
 TEST_P(umfCUDAProviderTest, getName) {
     umf_memory_provider_handle_t provider = nullptr;
     umf_result_t umf_result =
-        umfMemoryProviderCreate(umfCUDAMemoryProviderOps(), &params, &provider);
+        umfMemoryProviderCreate(umfCUDAMemoryProviderOps(), params, &provider);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(provider, nullptr);
 
@@ -167,14 +249,14 @@ TEST_P(umfCUDAProviderTest, allocInvalidSize) {
     // create CUDA provider
     umf_memory_provider_handle_t provider = nullptr;
     umf_result_t umf_result =
-        umfMemoryProviderCreate(umfCUDAMemoryProviderOps(), &params, &provider);
+        umfMemoryProviderCreate(umfCUDAMemoryProviderOps(), params, &provider);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(provider, nullptr);
 
     void *ptr = nullptr;
 
     // NOTE: some scenarios are invalid only for the DEVICE allocations
-    if (params.memory_type == UMF_MEMORY_TYPE_DEVICE) {
+    if (expected_memory_type == UMF_MEMORY_TYPE_DEVICE) {
         // try to alloc SIZE_MAX
         umf_result = umfMemoryProviderAlloc(provider, SIZE_MAX, 0, &ptr);
         ASSERT_EQ(ptr, nullptr);
@@ -198,14 +280,14 @@ TEST_P(umfCUDAProviderTest, providerCreateInvalidArgs) {
         umfMemoryProviderCreate(umfCUDAMemoryProviderOps(), nullptr, &provider);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 
-    umf_result = umfMemoryProviderCreate(nullptr, &params, nullptr);
+    umf_result = umfMemoryProviderCreate(nullptr, params, nullptr);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 }
 
 TEST_P(umfCUDAProviderTest, getPageSizeInvalidArgs) {
     umf_memory_provider_handle_t provider = nullptr;
     umf_result_t umf_result =
-        umfMemoryProviderCreate(umfCUDAMemoryProviderOps(), &params, &provider);
+        umfMemoryProviderCreate(umfCUDAMemoryProviderOps(), params, &provider);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(provider, nullptr);
 
@@ -218,26 +300,51 @@ TEST_P(umfCUDAProviderTest, getPageSizeInvalidArgs) {
     umfMemoryProviderDestroy(provider);
 }
 
+TEST_P(umfCUDAProviderTest, cudaProviderNullParams) {
+    umf_result_t res = umfCUDAMemoryProviderParamsCreate(nullptr);
+    EXPECT_EQ(res, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    res = umfCUDAMemoryProviderParamsSetContext(nullptr, expected_context);
+    EXPECT_EQ(res, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    res = umfCUDAMemoryProviderParamsSetDevice(nullptr, 1);
+    EXPECT_EQ(res, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    res =
+        umfCUDAMemoryProviderParamsSetMemoryType(nullptr, expected_memory_type);
+    EXPECT_EQ(res, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
 // TODO add tests that mixes CUDA Memory Provider and Disjoint Pool
 
-cuda_memory_provider_params_t cuParams_device_memory =
-    create_cuda_prov_params(UMF_MEMORY_TYPE_DEVICE);
-cuda_memory_provider_params_t cuParams_shared_memory =
-    create_cuda_prov_params(UMF_MEMORY_TYPE_SHARED);
-cuda_memory_provider_params_t cuParams_host_memory =
-    create_cuda_prov_params(UMF_MEMORY_TYPE_HOST);
+CUDATestHelper cudaTestHelper;
 
-CUDAMemoryAccessor
-    cuAccessor((CUcontext)cuParams_device_memory.cuda_context_handle,
-               (CUdevice)cuParams_device_memory.cuda_device_handle);
+cuda_params_unique_handle_t cuParams_device_memory = create_cuda_prov_params(
+    cudaTestHelper.get_test_context(), cudaTestHelper.get_test_device(),
+    UMF_MEMORY_TYPE_DEVICE);
+cuda_params_unique_handle_t cuParams_shared_memory = create_cuda_prov_params(
+    cudaTestHelper.get_test_context(), cudaTestHelper.get_test_device(),
+    UMF_MEMORY_TYPE_SHARED);
+cuda_params_unique_handle_t cuParams_host_memory = create_cuda_prov_params(
+    cudaTestHelper.get_test_context(), cudaTestHelper.get_test_device(),
+    UMF_MEMORY_TYPE_HOST);
+
+CUDAMemoryAccessor cuAccessor(cudaTestHelper.get_test_context(),
+                              cudaTestHelper.get_test_device());
 HostMemoryAccessor hostAccessor;
 
 INSTANTIATE_TEST_SUITE_P(
     umfCUDAProviderTestSuite, umfCUDAProviderTest,
     ::testing::Values(
-        CUDAProviderTestParams{cuParams_device_memory, &cuAccessor},
-        CUDAProviderTestParams{cuParams_shared_memory, &hostAccessor},
-        CUDAProviderTestParams{cuParams_host_memory, &hostAccessor}));
+        CUDAProviderTestParams{cuParams_device_memory.get(),
+                               cudaTestHelper.get_test_context(),
+                               UMF_MEMORY_TYPE_DEVICE, &cuAccessor},
+        CUDAProviderTestParams{cuParams_shared_memory.get(),
+                               cudaTestHelper.get_test_context(),
+                               UMF_MEMORY_TYPE_SHARED, &hostAccessor},
+        CUDAProviderTestParams{cuParams_host_memory.get(),
+                               cudaTestHelper.get_test_context(),
+                               UMF_MEMORY_TYPE_HOST, &hostAccessor}));
 
 // TODO: add IPC API
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(umfIpcTest);
@@ -246,5 +353,5 @@ INSTANTIATE_TEST_SUITE_P(umfCUDAProviderTestSuite, umfIpcTest,
                          ::testing::Values(ipcTestParams{
                              umfProxyPoolOps(), nullptr,
                              umfCUDAMemoryProviderOps(),
-                             &cuParams_device_memory, &cuAccessor}));
+                             cuParams_device_memory.get(), &cuAccessor, false}));
 */

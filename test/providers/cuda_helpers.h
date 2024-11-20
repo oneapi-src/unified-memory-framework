@@ -26,6 +26,10 @@
 extern "C" {
 #endif
 
+int get_cuda_device(CUdevice *device);
+
+int create_context(CUdevice device, CUcontext *context);
+
 int destroy_context(CUcontext context);
 
 int cuda_fill(CUcontext context, CUdevice device, void *ptr, size_t size,
@@ -39,9 +43,6 @@ umf_usm_memory_type_t get_mem_type(CUcontext context, void *ptr);
 CUcontext get_mem_context(void *ptr);
 
 CUcontext get_current_context();
-
-cuda_memory_provider_params_t
-create_cuda_prov_params(umf_usm_memory_type_t memory_type);
 
 #ifdef __cplusplus
 }

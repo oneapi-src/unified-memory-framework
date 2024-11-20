@@ -39,9 +39,63 @@ struct libcu_ops {
 } libcu_ops;
 
 #if USE_DLOPEN
+// Generic no-op stub function for all callbacks
+template <typename... Args> CUresult noop_stub(Args &&...) {
+    return CUDA_SUCCESS; // Always return CUDA_SUCCESS
+}
+
 struct DlHandleCloser {
     void operator()(void *dlHandle) {
         if (dlHandle) {
+            libcu_ops.cuInit = [](auto... args) { return noop_stub(args...); };
+            libcu_ops.cuCtxCreate = [](auto... args) {
+                return noop_stub(args...);
+            };
+            libcu_ops.cuCtxDestroy = [](auto... args) {
+                return noop_stub(args...);
+            };
+            libcu_ops.cuCtxGetCurrent = [](auto... args) {
+                return noop_stub(args...);
+            };
+            libcu_ops.cuCtxSetCurrent = [](auto... args) {
+                return noop_stub(args...);
+            };
+            libcu_ops.cuDeviceGet = [](auto... args) {
+                return noop_stub(args...);
+            };
+            libcu_ops.cuMemAlloc = [](auto... args) {
+                return noop_stub(args...);
+            };
+            libcu_ops.cuMemFree = [](auto... args) {
+                return noop_stub(args...);
+            };
+            libcu_ops.cuMemAllocHost = [](auto... args) {
+                return noop_stub(args...);
+            };
+            libcu_ops.cuMemAllocManaged = [](auto... args) {
+                return noop_stub(args...);
+            };
+            libcu_ops.cuMemFreeHost = [](auto... args) {
+                return noop_stub(args...);
+            };
+            libcu_ops.cuMemsetD32 = [](auto... args) {
+                return noop_stub(args...);
+            };
+            libcu_ops.cuMemcpy = [](auto... args) {
+                return noop_stub(args...);
+            };
+            libcu_ops.cuPointerGetAttribute = [](auto... args) {
+                return noop_stub(args...);
+            };
+            libcu_ops.cuPointerGetAttributes = [](auto... args) {
+                return noop_stub(args...);
+            };
+            libcu_ops.cuStreamSynchronize = [](auto... args) {
+                return noop_stub(args...);
+            };
+            libcu_ops.cuCtxSynchronize = [](auto... args) {
+                return noop_stub(args...);
+            };
             utils_close_library(dlHandle);
         }
     }
@@ -355,38 +409,40 @@ int init_cuda() {
     return InitResult;
 }
 
-cuda_memory_provider_params_t
-create_cuda_prov_params(umf_usm_memory_type_t memory_type) {
-    cuda_memory_provider_params_t params = {NULL, 0, UMF_MEMORY_TYPE_UNKNOWN};
-    int ret = -1;
+int get_cuda_device(CUdevice *device) {
+    CUdevice cuDevice = -1;
 
-    ret = init_cuda();
+    int ret = init_cuda();
     if (ret != 0) {
-        // Return empty params. Test will be skipped.
-        return params;
+        fprintf(stderr, "init_cuda() failed!\n");
+        return ret;
     }
 
-    // Get the first CUDA device
-    CUdevice cuDevice = -1;
     CUresult res = libcu_ops.cuDeviceGet(&cuDevice, 0);
     if (res != CUDA_SUCCESS || cuDevice < 0) {
-        // Return empty params. Test will be skipped.
-        return params;
+        return -1;
     }
 
-    // Create a CUDA context
+    *device = cuDevice;
+    return 0;
+}
+
+int create_context(CUdevice device, CUcontext *context) {
     CUcontext cuContext = nullptr;
-    res = libcu_ops.cuCtxCreate(&cuContext, 0, cuDevice);
-    if (res != CUDA_SUCCESS || cuContext == nullptr) {
-        // Return empty params. Test will be skipped.
-        return params;
+
+    int ret = init_cuda();
+    if (ret != 0) {
+        fprintf(stderr, "init_cuda() failed!\n");
+        return ret;
     }
 
-    params.cuda_context_handle = cuContext;
-    params.cuda_device_handle = cuDevice;
-    params.memory_type = memory_type;
+    CUresult res = libcu_ops.cuCtxCreate(&cuContext, 0, device);
+    if (res != CUDA_SUCCESS || cuContext == nullptr) {
+        return -1;
+    }
 
-    return params;
+    *context = cuContext;
+    return 0;
 }
 
 int destroy_context(CUcontext context) {

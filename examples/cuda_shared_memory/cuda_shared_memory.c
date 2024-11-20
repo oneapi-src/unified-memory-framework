@@ -43,24 +43,51 @@ int main(void) {
     // Create a context on the device
     cuCtxCreate(&cuContext, 0, cuDevice);
 
-    // Setup parameters for the CUDA memory provider. It will be used for
+    // Setup parameters for the CUDA Memory Provider. It will be used for
     // allocating memory from CUDA devices.
-    cuda_memory_provider_params_t cu_memory_provider_params;
-    cu_memory_provider_params.cuda_context_handle = cuContext;
-    cu_memory_provider_params.cuda_device_handle = cuDevice;
+    umf_cuda_memory_provider_params_handle_t cu_memory_provider_params = NULL;
+    res = umfCUDAMemoryProviderParamsCreate(&cu_memory_provider_params);
+    if (res != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "Failed to create memory provider params!\n");
+        ret = -1;
+        goto cuda_destroy;
+    }
+
+    res = umfCUDAMemoryProviderParamsSetContext(cu_memory_provider_params,
+                                                cuContext);
+    if (res != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "Failed to set context in memory provider params!\n");
+        ret = -1;
+        goto provider_params_destroy;
+    }
+
+    res = umfCUDAMemoryProviderParamsSetDevice(cu_memory_provider_params,
+                                               cuDevice);
+    if (res != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "Failed to set device in memory provider params!\n");
+        ret = -1;
+        goto provider_params_destroy;
+    }
     // Set the memory type to shared to allow the memory to be accessed on both
     // CPU and GPU.
-    cu_memory_provider_params.memory_type = UMF_MEMORY_TYPE_SHARED;
+    res = umfCUDAMemoryProviderParamsSetMemoryType(cu_memory_provider_params,
+                                                   UMF_MEMORY_TYPE_SHARED);
+    if (res != UMF_RESULT_SUCCESS) {
+        fprintf(stderr,
+                "Failed to set memory type in memory provider params!\n");
+        ret = -1;
+        goto provider_params_destroy;
+    }
 
     // Create CUDA memory provider
     umf_memory_provider_handle_t cu_memory_provider;
-    res = umfMemoryProviderCreate(umfCUDAMemoryProviderOps(),
-                                  &cu_memory_provider_params,
-                                  &cu_memory_provider);
+    res =
+        umfMemoryProviderCreate(umfCUDAMemoryProviderOps(),
+                                cu_memory_provider_params, &cu_memory_provider);
     if (res != UMF_RESULT_SUCCESS) {
         fprintf(stderr, "Failed to create a memory provider!\n");
         ret = -1;
-        goto cuda_destroy;
+        goto provider_params_destroy;
     }
 
     printf("CUDA memory provider created at %p\n", (void *)cu_memory_provider);
@@ -146,6 +173,9 @@ pool_params_destroy:
 
 memory_provider_destroy:
     umfMemoryProviderDestroy(cu_memory_provider);
+
+provider_params_destroy:
+    umfCUDAMemoryProviderParamsDestroy(cu_memory_provider_params);
 
 cuda_destroy:
     ret = cuCtxDestroy(cuContext);
