@@ -63,6 +63,12 @@ option(UMF_FORMAT_CODE_STYLE
 set(UMF_HWLOC_NAME
     "hwloc"
     CACHE STRING "Custom name for hwloc library w/o extension")
+set(UMF_INSTALL_RPATH
+    ""
+    CACHE
+        STRING
+        "Set the runtime search path to the directory with dependencies (e.g. hwloc)"
+)
 
 # Only a part of skips is treated as a failure now. TODO: extend to all tests
 option(UMF_TESTS_FAIL_ON_SKIP "Treat skips in tests as fail" OFF)
