@@ -148,12 +148,12 @@ static umf_result_t ze_memory_provider_initialize(void *params,
     }
 
     if ((ze_params->memory_type == UMF_MEMORY_TYPE_HOST) ==
-        (bool)ze_params->level_zero_device_handle) {
+        (ze_params->level_zero_device_handle != NULL)) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
     if ((bool)ze_params->resident_device_count !=
-        (bool)ze_params->resident_device_handles) {
+        (ze_params->resident_device_handles != NULL)) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 

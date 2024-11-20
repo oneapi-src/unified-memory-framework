@@ -254,9 +254,9 @@ TEST_P(umfLevelZeroProviderTest, allocInvalidSize) {
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(provider, nullptr);
 
-    // try to alloc (int)-1
     void *ptr = nullptr;
-    umf_result = umfMemoryProviderAlloc(provider, -1, 0, &ptr);
+    umf_result = umfMemoryProviderAlloc(
+        provider, std::numeric_limits<size_t>::max(), 0, &ptr);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC);
     const char *message;
     int32_t error;

@@ -75,8 +75,11 @@ function(build_umf_test)
         # tests retrieve arguments using 'GetParam()', which applies a 'const'
         # qualifier often discarded in the test scenarios.
         target_compile_options(${TEST_TARGET_NAME} PRIVATE -Wno-cast-qual)
-    endif()
 
+        if(UMF_DEVELOPER_MODE)
+            target_compile_options(${TEST_TARGET_NAME} PRIVATE -Werror)
+        endif()
+    endif()
     target_link_directories(${TEST_TARGET_NAME} PRIVATE ${LIB_DIRS})
 
     target_include_directories(

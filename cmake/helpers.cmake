@@ -244,8 +244,9 @@ function(add_umf_target_compile_options name)
             target_compile_definitions(${name} PRIVATE -D_FORTIFY_SOURCE=2)
         endif()
         if(UMF_DEVELOPER_MODE)
-            target_compile_options(${name} PRIVATE -fno-omit-frame-pointer
-                                                   -fstack-protector-strong)
+            target_compile_options(
+                ${name} PRIVATE -fno-omit-frame-pointer
+                                -fstack-protector-strong -Werror)
         endif()
         if(UMF_USE_COVERAGE)
             if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -279,6 +280,9 @@ function(add_umf_target_compile_options name)
                     # disable 4200 warning: nonstandard extension used:
                     # zero-sized array in struct/union
                     /wd4200)
+        if(UMF_DEVELOPER_MODE)
+            target_compile_options(${name} PRIVATE /WX)
+        endif()
         if(${CMAKE_C_COMPILER_ID} MATCHES "MSVC")
             target_compile_options(
                 ${name}

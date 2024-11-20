@@ -40,7 +40,7 @@ static umf_result_t numa_initialize(void *params, void **memTarget) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    numaTarget->physical_id = config->physical_id;
+    numaTarget->physical_id = (unsigned)config->physical_id;
     *memTarget = numaTarget;
     return UMF_RESULT_SUCCESS;
 }
@@ -100,7 +100,7 @@ static umf_result_t numa_memory_provider_create_from_memspace(
 
             params.partitions =
                 (umf_numa_split_partition_t *)policy->ops.split.part;
-            params.partitions_len = policy->ops.split.part_len;
+            params.partitions_len = (unsigned)policy->ops.split.part_len;
             break;
         default:
             return UMF_RESULT_ERROR_INVALID_ARGUMENT;
@@ -131,7 +131,7 @@ static umf_result_t numa_memory_provider_create_from_memspace(
         for (size_t i = 0; i < numNodesProvider; i++) {
             params.numa_list[i] = numaTargets[i]->physical_id;
         }
-        params.numa_list_len = numNodesProvider;
+        params.numa_list_len = (unsigned)numNodesProvider;
     }
 
     umf_memory_provider_handle_t numaProvider = NULL;

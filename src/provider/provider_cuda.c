@@ -217,7 +217,7 @@ static void cu_memory_provider_finalize(void *provider) {
     umf_ba_global_free(provider);
 }
 
-/* 
+/*
  * This function is used by the CUDA provider to make sure that
  * the required context is set. If the current context is
  * not the required one, it will be saved in restore_ctx.
