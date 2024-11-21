@@ -396,9 +396,9 @@ if(NOT TBB_FOUND)
     find_package(TBB OPTIONAL_COMPONENTS tbb)
 endif()
 if(TBB_FOUND OR TBB_LIBRARY_DIRS)
+    set(UMF_POOL_SCALABLE_ENABLED TRUE)
     # add PATH to DLL on Windows
     set(DLL_PATH_LIST "${DLL_PATH_LIST};PATH=path_list_append:${TBB_DLL_DIRS}")
-    set(UMF_POOL_SCALABLE_ENABLED TRUE)
 else()
     message(
         STATUS
@@ -417,6 +417,10 @@ if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
         # add PATH to DLL on Windows
         set(DLL_PATH_LIST
             "${DLL_PATH_LIST};PATH=path_list_append:${JEMALLOC_DLL_DIRS}")
+        # add LD_LIBRARY_PATH to libs on Linux
+        set(LIST_LD_LIBRARY
+            "${LIST_LD_LIBRARY};LD_LIBRARY_PATH=path_list_append:${JEMALLOC_LIBRARY_DIRS}"
+        )
     endif()
 endif()
 

@@ -38,7 +38,9 @@ function(build_umf_test)
     set(TEST_NAME umf-${ARG_NAME})
     set(TEST_TARGET_NAME umf_test-${ARG_NAME})
 
-    set(LIB_DIRS ${LIB_DIRS} ${LIBHWLOC_LIBRARY_DIRS})
+    if(NOT UMF_DISABLE_HWLOC)
+        set(LIB_DIRS ${LIB_DIRS} ${LIBHWLOC_LIBRARY_DIRS})
+    endif()
 
     if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
         set(LIB_DIRS ${LIB_DIRS} ${JEMALLOC_LIBRARY_DIRS})
@@ -126,6 +128,10 @@ function(add_umf_test)
         # append PATH to DLLs
         set_property(TEST ${TEST_NAME} PROPERTY ENVIRONMENT_MODIFICATION
                                                 "${DLL_PATH_LIST}")
+    else()
+        # append LD_LIBRARY_PATH to libs
+        set_property(TEST ${TEST_NAME} PROPERTY ENVIRONMENT_MODIFICATION
+                                                "${LIST_LD_LIBRARY}")
     endif()
 endfunction()
 
