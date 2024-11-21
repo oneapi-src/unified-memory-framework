@@ -17,6 +17,11 @@
 #include "utils_log.h"
 #include "utlist.h"
 
+// HASH_ADD macro produces `warning C4702: unreachable code` on MSVC
+#ifdef _MSC_VER
+#pragma warning(disable : 4702)
+#endif
+
 struct ipc_handle_cache_entry_t;
 
 typedef struct ipc_handle_cache_entry_t *hash_map_t;

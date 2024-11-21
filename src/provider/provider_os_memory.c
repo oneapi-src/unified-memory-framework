@@ -1207,8 +1207,9 @@ static umf_result_t os_get_ipc_handle(void *provider, const void *ptr,
     os_ipc_data->visibility = os_provider->visibility;
     os_ipc_data->shm_name_len = strlen(os_provider->shm_name);
     if (os_ipc_data->shm_name_len > 0) {
+        // NOTE: +1 for '\0' at the end of the string
         strncpy(os_ipc_data->shm_name, os_provider->shm_name,
-                os_ipc_data->shm_name_len);
+                os_ipc_data->shm_name_len + 1);
     } else {
         os_ipc_data->fd = os_provider->fd;
     }

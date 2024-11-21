@@ -70,6 +70,11 @@ struct umfPoolTest : umf_test::test,
 
         auto [pool_ops, pool_params, provider_ops, provider_params,
               coarse_params] = this->GetParam();
+        (void)pool_ops;
+        (void)pool_params;
+        (void)provider_params;
+        (void)coarse_params;
+
         if (provider_ops == umfDevDaxMemoryProviderOps()) {
             char *path = getenv("UMF_TESTS_DEVDAX_PATH");
             if (path == nullptr || path[0] == 0) {
