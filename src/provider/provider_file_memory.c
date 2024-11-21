@@ -63,6 +63,7 @@ umf_result_t umfFileMemoryProviderParamsSetVisibility(
 #else // !defined(_WIN32) && !defined(UMF_NO_HWLOC)
 
 #include "base_alloc_global.h"
+#include "coarse.h"
 #include "critnib.h"
 #include "libumf.h"
 #include "utils_common.h"
@@ -101,6 +102,8 @@ typedef struct file_memory_provider_t {
     // It is needed mainly in the get_ipc_handle and open_ipc_handle hooks
     // to mmap a specific part of a file.
     critnib *fd_offset_map;
+
+    coarse_t *coarse; // coarse library handle
 } file_memory_provider_t;
 
 // File Memory Provider settings struct
@@ -165,6 +168,14 @@ file_translate_params(umf_file_memory_provider_params_t *in_params,
 
     return UMF_RESULT_SUCCESS;
 }
+
+static umf_result_t file_alloc_cb(void *provider, size_t size, size_t alignment,
+                                  void **resultPtr);
+static umf_result_t file_allocation_split_cb(void *provider, void *ptr,
+                                             size_t totalSize,
+                                             size_t firstSize);
+static umf_result_t file_allocation_merge_cb(void *provider, void *lowPtr,
+                                             void *highPtr, size_t totalSize);
 
 static umf_result_t file_initialize(void *params, void **provider) {
     umf_result_t ret;
@@ -233,10 +244,27 @@ static umf_result_t file_initialize(void *params, void **provider) {
         file_provider->page_size = utils_get_page_size();
     }
 
+    coarse_params_t coarse_params = {0};
+    coarse_params.provider = file_provider;
+    coarse_params.page_size = file_provider->page_size;
+    coarse_params.cb.alloc = file_alloc_cb;
+    coarse_params.cb.free = NULL; // not available for the file provider
+    coarse_params.cb.split = file_allocation_split_cb;
+    coarse_params.cb.merge = file_allocation_merge_cb;
+
+    coarse_t *coarse = NULL;
+    ret = coarse_new(&coarse_params, &coarse);
+    if (ret != UMF_RESULT_SUCCESS) {
+        LOG_ERR("coarse_new() failed");
+        goto err_close_fd;
+    }
+
+    file_provider->coarse = coarse;
+
     if (utils_mutex_init(&file_provider->lock) == NULL) {
         LOG_ERR("lock init failed");
         ret = UMF_RESULT_ERROR_UNKNOWN;
-        goto err_close_fd;
+        goto err_coarse_delete;
     }
 
     file_provider->fd_offset_map = critnib_new();
@@ -261,6 +289,8 @@ err_delete_fd_offset_map:
     critnib_delete(file_provider->fd_offset_map);
 err_mutex_destroy_not_free:
     utils_mutex_destroy_not_free(&file_provider->lock);
+err_coarse_delete:
+    coarse_delete(file_provider->coarse);
 err_close_fd:
     utils_close_fd(file_provider->fd);
 err_free_file_provider:
@@ -285,6 +315,7 @@ static void file_finalize(void *provider) {
     utils_close_fd(file_provider->fd);
     critnib_delete(file_provider->fd_offset_map);
     critnib_delete(file_provider->mmaps);
+    coarse_delete(file_provider->coarse);
     umf_ba_global_free(file_provider);
 }
 
@@ -443,6 +474,12 @@ static umf_result_t file_alloc_aligned(file_memory_provider_t *file_provider,
 
 static umf_result_t file_alloc(void *provider, size_t size, size_t alignment,
                                void **resultPtr) {
+    file_memory_provider_t *file_provider = (file_memory_provider_t *)provider;
+    return coarse_alloc(file_provider->coarse, size, alignment, resultPtr);
+}
+
+static umf_result_t file_alloc_cb(void *provider, size_t size, size_t alignment,
+                                  void **resultPtr) {
     umf_result_t umf_result;
     int ret;
 
@@ -568,10 +605,15 @@ static const char *file_get_name(void *provider) {
     return "FILE";
 }
 
-// This function is supposed to be thread-safe, so it should NOT be called concurrently
-// with file_allocation_merge() with the same pointer.
 static umf_result_t file_allocation_split(void *provider, void *ptr,
                                           size_t totalSize, size_t firstSize) {
+    file_memory_provider_t *file_provider = (file_memory_provider_t *)provider;
+    return coarse_split(file_provider->coarse, ptr, totalSize, firstSize);
+}
+
+static umf_result_t file_allocation_split_cb(void *provider, void *ptr,
+                                             size_t totalSize,
+                                             size_t firstSize) {
     (void)totalSize;
 
     file_memory_provider_t *file_provider = (file_memory_provider_t *)provider;
@@ -601,9 +643,14 @@ static umf_result_t file_allocation_split(void *provider, void *ptr,
     return UMF_RESULT_SUCCESS;
 }
 
-// It should NOT be called concurrently with file_allocation_split() with the same pointer.
 static umf_result_t file_allocation_merge(void *provider, void *lowPtr,
                                           void *highPtr, size_t totalSize) {
+    file_memory_provider_t *file_provider = (file_memory_provider_t *)provider;
+    return coarse_merge(file_provider->coarse, lowPtr, highPtr, totalSize);
+}
+
+static umf_result_t file_allocation_merge_cb(void *provider, void *lowPtr,
+                                             void *highPtr, size_t totalSize) {
     (void)lowPtr;
     (void)totalSize;
 
