@@ -13,10 +13,15 @@ constexpr int MAX_PROVIDER_ALLOC_SIZE = 100 * 1024; // 100 kB
 
 int umf_memory_provider_create(TestState &test_state) {
     umf_memory_provider_ops_t *provider_ops = umfOsMemoryProviderOps();
-    umf_os_memory_provider_params_t params = umfOsMemoryProviderParamsDefault();
-    umf_result_t res =
-        umfMemoryProviderCreate(provider_ops, &params, &test_state.provider);
+    umf_os_memory_provider_params_handle_t params = NULL;
 
+    umf_result_t res = umfOsMemoryProviderParamsCreate(&params);
+    if (res != UMF_RESULT_SUCCESS) {
+        return -1;
+    }
+
+    res = umfMemoryProviderCreate(provider_ops, params, &test_state.provider);
+    umfOsMemoryProviderParamsDestroy(params);
     if (res != UMF_RESULT_SUCCESS) {
         return -1;
     }

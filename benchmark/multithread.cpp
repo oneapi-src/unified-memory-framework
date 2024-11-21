@@ -91,7 +91,12 @@ static void mt_alloc_free(poolCreateExtParams params,
 }
 
 int main() {
-    auto osParams = umfOsMemoryProviderParamsDefault();
+    umf_os_memory_provider_params_handle_t osParams = nullptr;
+    umf_result_t res = umfOsMemoryProviderParamsCreate(&osParams);
+    if (res != UMF_RESULT_SUCCESS) {
+        std::cerr << "os memory provider params create failed" << std::endl;
+        return -1;
+    }
 
 #if defined(UMF_POOL_SCALABLE_ENABLED)
 
@@ -102,7 +107,7 @@ int main() {
 
     std::cout << "scalable_pool mt_alloc_free: ";
     mt_alloc_free(poolCreateExtParams{umfScalablePoolOps(), nullptr,
-                                      umfOsMemoryProviderOps(), &osParams},
+                                      umfOsMemoryProviderOps(), osParams},
                   params);
 #else
     std::cout << "skipping scalable_pool mt_alloc_free" << std::endl;
@@ -111,7 +116,7 @@ int main() {
 #if defined(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
     std::cout << "jemalloc_pool mt_alloc_free: ";
     mt_alloc_free(poolCreateExtParams{umfJemallocPoolOps(), nullptr,
-                                      umfOsMemoryProviderOps(), &osParams});
+                                      umfOsMemoryProviderOps(), osParams});
 #else
     std::cout << "skipping jemalloc_pool mt_alloc_free" << std::endl;
 #endif
@@ -126,7 +131,7 @@ int main() {
 
     std::cout << "disjoint_pool mt_alloc_free: ";
     mt_alloc_free(poolCreateExtParams{umfDisjointPoolOps(), hDisjointParams,
-                                      umfOsMemoryProviderOps(), &osParams});
+                                      umfOsMemoryProviderOps(), osParams});
 #else
     std::cout << "skipping disjoint_pool mt_alloc_free" << std::endl;
 #endif

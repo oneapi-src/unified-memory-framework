@@ -183,9 +183,14 @@ static int get_system_allocator_symbols(void) {
 
 void proxy_lib_create_common(void) {
     utils_log_init();
-    umf_os_memory_provider_params_t os_params =
-        umfOsMemoryProviderParamsDefault();
+    umf_os_memory_provider_params_handle_t os_params = NULL;
     umf_result_t umf_result;
+
+    umf_result = umfOsMemoryProviderParamsCreate(&os_params);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        LOG_ERR("creating OS memory provider params failed");
+        exit(-1);
+    }
 
 #ifndef _WIN32
     size_t _threshold = get_size_threshold();
@@ -203,26 +208,44 @@ void proxy_lib_create_common(void) {
     if (utils_env_var_has_str("UMF_PROXY", "page.disposition=shared-fd")) {
         LOG_INFO("proxy_lib: using the MAP_SHARED visibility mode with the "
                  "file descriptor duplication");
-        os_params.visibility = UMF_MEM_MAP_SHARED;
-        os_params.shm_name = NULL;
-
+        umf_result = umfOsMemoryProviderParamsSetVisibility(os_params,
+                                                            UMF_MEM_MAP_SHARED);
+        if (umf_result != UMF_RESULT_SUCCESS) {
+            LOG_ERR("setting visibility mode failed");
+            exit(-1);
+        }
+        umf_result = umfOsMemoryProviderParamsSetShmName(os_params, NULL);
+        if (umf_result != UMF_RESULT_SUCCESS) {
+            LOG_ERR("setting shared memory name failed");
+            exit(-1);
+        }
     } else if (utils_env_var_has_str("UMF_PROXY",
                                      "page.disposition=shared-shm")) {
-        os_params.visibility = UMF_MEM_MAP_SHARED;
+        umf_result = umfOsMemoryProviderParamsSetVisibility(os_params,
+                                                            UMF_MEM_MAP_SHARED);
+        if (umf_result != UMF_RESULT_SUCCESS) {
+            LOG_ERR("setting visibility mode failed");
+            exit(-1);
+        }
 
         char shm_name[NAME_MAX];
         memset(shm_name, 0, NAME_MAX);
         sprintf(shm_name, "umf_proxy_lib_shm_pid_%i", utils_getpid());
-        os_params.shm_name = shm_name;
+        umf_result = umfOsMemoryProviderParamsSetShmName(os_params, shm_name);
+        if (umf_result != UMF_RESULT_SUCCESS) {
+            LOG_ERR("setting shared memory name failed");
+            exit(-1);
+        }
 
         LOG_INFO("proxy_lib: using the MAP_SHARED visibility mode with the "
                  "named shared memory: %s",
-                 os_params.shm_name);
+                 shm_name);
     }
 #endif /* _WIN32 */
 
-    umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(), &os_params,
+    umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(), os_params,
                                          &OS_memory_provider);
+    umfOsMemoryProviderParamsDestroy(os_params);
     if (umf_result != UMF_RESULT_SUCCESS) {
         LOG_ERR("creating OS memory provider failed");
         exit(-1);

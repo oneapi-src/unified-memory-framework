@@ -69,22 +69,27 @@ static umf_result_t numa_memory_provider_create_from_memspace(
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    umf_os_memory_provider_params_t params = umfOsMemoryProviderParamsDefault();
+    umf_numa_mode_t numa_mode = UMF_NUMA_MODE_DEFAULT;
+    size_t part_size = 0;
+    umf_numa_split_partition_t *partitions = NULL;
+    unsigned partitions_len = 0;
+    unsigned *numa_list = NULL;
+    unsigned numa_list_len = 0;
 
     if (policy) {
         switch (policy->type) {
         case UMF_MEMPOLICY_INTERLEAVE:
-            params.numa_mode = UMF_NUMA_MODE_INTERLEAVE;
-            params.part_size = policy->ops.interleave.part_size;
+            numa_mode = UMF_NUMA_MODE_INTERLEAVE;
+            part_size = policy->ops.interleave.part_size;
             break;
         case UMF_MEMPOLICY_BIND:
-            params.numa_mode = UMF_NUMA_MODE_BIND;
+            numa_mode = UMF_NUMA_MODE_BIND;
             break;
         case UMF_MEMPOLICY_PREFERRED:
-            params.numa_mode = UMF_NUMA_MODE_PREFERRED;
+            numa_mode = UMF_NUMA_MODE_PREFERRED;
             break;
         case UMF_MEMPOLICY_SPLIT:
-            params.numa_mode = UMF_NUMA_MODE_SPLIT;
+            numa_mode = UMF_NUMA_MODE_SPLIT;
 
             // compile time check to ensure we can just cast
             // umf_mempolicy_split_partition_t to
@@ -98,9 +103,8 @@ static umf_result_t numa_memory_provider_create_from_memspace(
                 offsetof(umf_mempolicy_split_partition_t, target) !=
                 offsetof(umf_numa_split_partition_t, target));
 
-            params.partitions =
-                (umf_numa_split_partition_t *)policy->ops.split.part;
-            params.partitions_len = (unsigned)policy->ops.split.part_len;
+            partitions = (umf_numa_split_partition_t *)policy->ops.split.part;
+            partitions_len = (unsigned)policy->ops.split.part_len;
             break;
         default:
             return UMF_RESULT_ERROR_INVALID_ARGUMENT;
@@ -109,44 +113,80 @@ static umf_result_t numa_memory_provider_create_from_memspace(
         if (memspace == umfMemspaceHostAllGet()) {
             // For the default memspace, we use the default mode without any
             // call to mbind
-            params.numa_mode = UMF_NUMA_MODE_DEFAULT;
+            numa_mode = UMF_NUMA_MODE_DEFAULT;
         } else {
-            params.numa_mode = UMF_NUMA_MODE_BIND;
+            numa_mode = UMF_NUMA_MODE_BIND;
         }
     }
 
     if (memspace == umfMemspaceHostAllGet() && policy == NULL) {
         // For default memspace with default policy we use all numa nodes so
         // simply left numa list empty
-        params.numa_list_len = 0;
-        params.numa_list = NULL;
+        numa_list_len = 0;
+        numa_list = NULL;
     } else {
-        params.numa_list =
-            umf_ba_global_alloc(sizeof(*params.numa_list) * numNodesProvider);
+        numa_list = umf_ba_global_alloc(sizeof(*numa_list) * numNodesProvider);
 
-        if (!params.numa_list) {
+        if (!numa_list) {
             return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
         }
 
         for (size_t i = 0; i < numNodesProvider; i++) {
-            params.numa_list[i] = numaTargets[i]->physical_id;
+            numa_list[i] = numaTargets[i]->physical_id;
         }
-        params.numa_list_len = (unsigned)numNodesProvider;
+        numa_list_len = (unsigned)numNodesProvider;
+    }
+
+    umf_os_memory_provider_params_handle_t params = NULL;
+    umf_result_t ret = umfOsMemoryProviderParamsCreate(&params);
+    if (ret != UMF_RESULT_SUCCESS) {
+        LOG_ERR("Creating OS memory provider params failed");
+        goto destroy_numa_list;
+    }
+
+    ret = umfOsMemoryProviderParamsSetNumaMode(params, numa_mode);
+    if (ret != UMF_RESULT_SUCCESS) {
+        LOG_ERR("Setting NUMA mode failed");
+        goto destroy_provider_params;
+    }
+
+    ret =
+        umfOsMemoryProviderParamsSetNumaList(params, numa_list, numa_list_len);
+    if (ret != UMF_RESULT_SUCCESS) {
+        LOG_ERR("Setting NUMA list failed");
+        goto destroy_provider_params;
+    }
+
+    ret = umfOsMemoryProviderParamsSetPartitions(params, partitions,
+                                                 partitions_len);
+    if (ret != UMF_RESULT_SUCCESS) {
+        LOG_ERR("Setting partitions failed");
+        goto destroy_provider_params;
+    }
+
+    ret = umfOsMemoryProviderParamsSetPartSize(params, part_size);
+    if (ret != UMF_RESULT_SUCCESS) {
+        LOG_ERR("Setting part size failed");
+        goto destroy_provider_params;
     }
 
     umf_memory_provider_handle_t numaProvider = NULL;
-    int ret = umfMemoryProviderCreate(umfOsMemoryProviderOps(), &params,
-                                      &numaProvider);
-
-    umf_ba_global_free(params.numa_list);
-
-    if (ret) {
-        return ret;
+    ret = umfMemoryProviderCreate(umfOsMemoryProviderOps(), params,
+                                  &numaProvider);
+    if (ret != UMF_RESULT_SUCCESS) {
+        LOG_ERR("Creating OS memory provider failed");
+        goto destroy_provider_params;
     }
 
     *provider = numaProvider;
 
-    return UMF_RESULT_SUCCESS;
+destroy_provider_params:
+    umfOsMemoryProviderParamsDestroy(params);
+
+destroy_numa_list:
+    umf_ba_global_free(numa_list);
+
+    return ret;
 }
 
 static umf_result_t numa_pool_create_from_memspace(
