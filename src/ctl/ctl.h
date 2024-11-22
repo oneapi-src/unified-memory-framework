@@ -114,8 +114,11 @@ int ctl_arg_integer(const void *arg, void *dest, size_t dest_size);
     {sizeof(int), {{0, sizeof(int), ctl_arg_integer}, CTL_ARG_PARSER_END}};
 
 #define CTL_ARG_LONG_LONG                                                      \
-    {sizeof(long long),                                                        \
-     {{0, sizeof(long long), ctl_arg_integer}, CTL_ARG_PARSER_END}};
+    {                                                                          \
+        sizeof(long long), {                                                   \
+            {0, sizeof(long long), ctl_arg_integer}, CTL_ARG_PARSER_END        \
+        }                                                                      \
+    }
 
 int ctl_arg_string(const void *arg, void *dest, size_t dest_size);
 #define CTL_ARG_STRING(len)                                                    \
@@ -191,13 +194,13 @@ int ctl_query(struct ctl *ctl, void *ctx, enum ctl_query_source source,
 #define CTL_LEAF_RW(name)                                                      \
     {                                                                          \
         CTL_STR(name), CTL_NODE_LEAF,                                          \
-            {CTL_READ_HANDLER(name), CTL_WRITE_HANDLER(name), NULL},           \
+            {CTL_READ_HANDLER(name, ), CTL_WRITE_HANDLER(name, ), NULL},       \
             &CTL_ARG(name), NULL                                               \
     }
 
 #define CTL_REGISTER_MODULE(_ctl, name)                                        \
     ctl_register_module_node((_ctl), CTL_STR(name),                            \
-                             (struct ctl_node *)CTL_NODE(name))
+                             (struct ctl_node *)CTL_NODE(name, ))
 
 #ifdef __cplusplus
 }
