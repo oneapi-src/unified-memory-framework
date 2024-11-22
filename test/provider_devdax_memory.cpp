@@ -63,16 +63,6 @@ struct umfProviderTest
     : umf_test::test,
       ::testing::WithParamInterface<providerCreateExtParams> {
     void SetUp() override {
-        char *path = getenv("UMF_TESTS_DEVDAX_PATH");
-        if (path == nullptr || path[0] == 0) {
-            GTEST_SKIP() << "Test skipped, UMF_TESTS_DEVDAX_PATH is not set";
-        }
-
-        char *size = getenv("UMF_TESTS_DEVDAX_SIZE");
-        if (size == nullptr || size[0] == 0) {
-            GTEST_SKIP() << "Test skipped, UMF_TESTS_DEVDAX_SIZE is not set";
-        }
-
         test::SetUp();
         providerCreateExt(this->GetParam(), &provider);
         umf_result_t umf_result = umfMemoryProviderGetMinPageSize(
@@ -154,9 +144,12 @@ TEST_F(test, test_if_mapped_with_MAP_SYNC) {
     }
 
     size_t size = atol(size_str);
-    auto params = umfDevDaxMemoryProviderParamsDefault(path, size);
+    umf_devdax_memory_provider_params_handle_t params = NULL;
+    umf_result = umfDevDaxMemoryProviderParamsCreate(&params, path, size);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(params, nullptr);
 
-    umf_result = umfMemoryProviderCreate(umfDevDaxMemoryProviderOps(), &params,
+    umf_result = umfMemoryProviderCreate(umfDevDaxMemoryProviderOps(), params,
                                          &hProvider);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(hProvider, nullptr);
@@ -179,15 +172,42 @@ TEST_F(test, test_if_mapped_with_MAP_SYNC) {
 
 // positive tests using test_alloc_free_success
 
-auto defaultDevDaxParams = umfDevDaxMemoryProviderParamsDefault(
-    getenv("UMF_TESTS_DEVDAX_PATH"),
-    atol(getenv("UMF_TESTS_DEVDAX_SIZE") ? getenv("UMF_TESTS_DEVDAX_SIZE")
-                                         : "0"));
+using devdax_params_unique_handle_t =
+    std::unique_ptr<umf_devdax_memory_provider_params_t,
+                    decltype(&umfDevDaxMemoryProviderParamsDestroy)>;
+
+devdax_params_unique_handle_t create_devdax_params() {
+    char *path = getenv("UMF_TESTS_DEVDAX_PATH");
+    char *size = getenv("UMF_TESTS_DEVDAX_SIZE");
+    if (path == nullptr || path[0] == 0 || size == nullptr || size[0] == 0) {
+        return devdax_params_unique_handle_t(
+            nullptr, &umfDevDaxMemoryProviderParamsDestroy);
+    }
+
+    umf_devdax_memory_provider_params_handle_t params = NULL;
+    umf_result_t res =
+        umfDevDaxMemoryProviderParamsCreate(&params, path, atol(size));
+    if (res != UMF_RESULT_SUCCESS) {
+        throw std::runtime_error(
+            "Failed to create DevDax Memory Provider params");
+    }
+
+    return devdax_params_unique_handle_t(params,
+                                         &umfDevDaxMemoryProviderParamsDestroy);
+}
+
+auto defaultDevDaxParams = create_devdax_params();
+
+static std::vector<providerCreateExtParams> devdaxProviderTestParamsList =
+    defaultDevDaxParams.get()
+        ? std::vector<providerCreateExtParams>{providerCreateExtParams{
+              umfDevDaxMemoryProviderOps(), defaultDevDaxParams.get()}}
+        : std::vector<providerCreateExtParams>{};
+
+GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(umfProviderTest);
 
 INSTANTIATE_TEST_SUITE_P(devdaxProviderTest, umfProviderTest,
-                         ::testing::Values(providerCreateExtParams{
-                             umfDevDaxMemoryProviderOps(),
-                             &defaultDevDaxParams}));
+                         ::testing::ValuesIn(devdaxProviderTestParamsList));
 
 TEST_P(umfProviderTest, create_destroy) {}
 
@@ -308,45 +328,118 @@ TEST_P(umfProviderTest, purge_force_INVALID_POINTER) {
 
 // negative tests
 
+TEST_F(test, params_null_handle) {
+    auto ret =
+        umfDevDaxMemoryProviderParamsCreate(nullptr, "/dev/dax0.0", 4096);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    ret = umfDevDaxMemoryProviderParamsDestroy(nullptr);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ret =
+        umfDevDaxMemoryProviderParamsSetDeviceDax(nullptr, "/dev/dax0.0", 4096);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    ret = umfDevDaxMemoryProviderParamsSetProtection(nullptr, 1);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
 TEST_F(test, create_empty_path) {
-    umf_memory_provider_handle_t hProvider = nullptr;
     const char *path = "";
-    auto wrong_params =
-        umfDevDaxMemoryProviderParamsDefault((char *)path, 4096);
-    auto ret = umfMemoryProviderCreate(umfDevDaxMemoryProviderOps(),
-                                       &wrong_params, &hProvider);
-    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
-    EXPECT_EQ(hProvider, nullptr);
+    umf_devdax_memory_provider_params_handle_t wrong_params = NULL;
+    auto ret = umfDevDaxMemoryProviderParamsCreate(&wrong_params, path, 4096);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    ASSERT_EQ(wrong_params, nullptr);
+}
+
+TEST_F(test, create_null_path) {
+    const char *path = nullptr;
+    umf_devdax_memory_provider_params_handle_t wrong_params = NULL;
+    auto ret = umfDevDaxMemoryProviderParamsCreate(&wrong_params, path, 4096);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    ASSERT_EQ(wrong_params, nullptr);
+}
+
+TEST_F(test, set_empty_path) {
+    const char *path = "tmp";
+    const char *empty_path = "";
+    umf_devdax_memory_provider_params_handle_t params = NULL;
+    auto ret = umfDevDaxMemoryProviderParamsCreate(&params, path, 4096);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(params, nullptr);
+
+    ret = umfDevDaxMemoryProviderParamsSetDeviceDax(params, empty_path, 4096);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    ret = umfDevDaxMemoryProviderParamsDestroy(params);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+}
+
+TEST_F(test, set_null_path) {
+    const char *path = "tmp";
+    const char *null_path = nullptr;
+    umf_devdax_memory_provider_params_handle_t params = NULL;
+    auto ret = umfDevDaxMemoryProviderParamsCreate(&params, path, 4096);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(params, nullptr);
+
+    ret = umfDevDaxMemoryProviderParamsSetDeviceDax(params, null_path, 4096);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    ret = umfDevDaxMemoryProviderParamsDestroy(params);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 }
 
 TEST_F(test, create_wrong_path) {
     umf_memory_provider_handle_t hProvider = nullptr;
     const char *path = "/tmp/dev/dax0.0";
-    auto wrong_params =
-        umfDevDaxMemoryProviderParamsDefault((char *)path, 4096);
-    auto ret = umfMemoryProviderCreate(umfDevDaxMemoryProviderOps(),
-                                       &wrong_params, &hProvider);
+    umf_devdax_memory_provider_params_handle_t wrong_params = nullptr;
+
+    auto ret = umfDevDaxMemoryProviderParamsCreate(&wrong_params, path, 4096);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(wrong_params, nullptr);
+
+    ret = umfMemoryProviderCreate(umfDevDaxMemoryProviderOps(), wrong_params,
+                                  &hProvider);
     EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
     EXPECT_EQ(hProvider, nullptr);
+
+    ret = umfDevDaxMemoryProviderParamsDestroy(wrong_params);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 }
 
 TEST_F(test, create_wrong_path_not_exist) {
     umf_memory_provider_handle_t hProvider = nullptr;
     const char *path = "/dev/dax1.1";
-    auto wrong_params =
-        umfDevDaxMemoryProviderParamsDefault((char *)path, 4096);
-    auto ret = umfMemoryProviderCreate(umfDevDaxMemoryProviderOps(),
-                                       &wrong_params, &hProvider);
+    umf_devdax_memory_provider_params_handle_t wrong_params = nullptr;
+
+    auto ret = umfDevDaxMemoryProviderParamsCreate(&wrong_params, path, 4096);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(wrong_params, nullptr);
+
+    ret = umfMemoryProviderCreate(umfDevDaxMemoryProviderOps(), wrong_params,
+                                  &hProvider);
     EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
     EXPECT_EQ(hProvider, nullptr);
+
+    ret = umfDevDaxMemoryProviderParamsDestroy(wrong_params);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 }
 
 TEST_F(test, create_wrong_size_0) {
     umf_memory_provider_handle_t hProvider = nullptr;
     const char *path = "/dev/dax0.0";
-    auto wrong_params = umfDevDaxMemoryProviderParamsDefault((char *)path, 0);
-    auto ret = umfMemoryProviderCreate(umfDevDaxMemoryProviderOps(),
-                                       &wrong_params, &hProvider);
+    umf_devdax_memory_provider_params_handle_t wrong_params = nullptr;
+
+    auto ret = umfDevDaxMemoryProviderParamsCreate(&wrong_params, path, 0);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(wrong_params, nullptr);
+
+    ret = umfMemoryProviderCreate(umfDevDaxMemoryProviderOps(), wrong_params,
+                                  &hProvider);
     EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
     EXPECT_EQ(hProvider, nullptr);
+
+    ret = umfDevDaxMemoryProviderParamsDestroy(wrong_params);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 }

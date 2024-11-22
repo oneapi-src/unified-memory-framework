@@ -24,9 +24,41 @@ umf_memory_provider_ops_t *umfDevDaxMemoryProviderOps(void) {
     return NULL;
 }
 
+umf_result_t umfDevDaxMemoryProviderParamsCreate(
+    umf_devdax_memory_provider_params_handle_t *hParams, const char *path,
+    size_t size) {
+    (void)hParams;
+    (void)path;
+    (void)size;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+umf_result_t umfDevDaxMemoryProviderParamsDestroy(
+    umf_devdax_memory_provider_params_handle_t hParams) {
+    (void)hParams;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+umf_result_t umfDevDaxMemoryProviderParamsSetDeviceDax(
+    umf_devdax_memory_provider_params_handle_t hParams, const char *path,
+    size_t size) {
+    (void)hParams;
+    (void)path;
+    (void)size;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+umf_result_t umfDevDaxMemoryProviderParamsSetProtection(
+    umf_devdax_memory_provider_params_handle_t hParams, unsigned protection) {
+    (void)hParams;
+    (void)protection;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
 #else // !defined(_WIN32) && !defined(UMF_NO_HWLOC)
 
 #include "base_alloc_global.h"
+#include "libumf.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
 #include "utils_log.h"
@@ -43,6 +75,13 @@ typedef struct devdax_memory_provider_t {
     utils_mutex_t lock;  // lock of ptr and offset
     unsigned protection; // combination of OS-specific protection flags
 } devdax_memory_provider_t;
+
+// DevDax Memory provider settings struct
+typedef struct umf_devdax_memory_provider_params_t {
+    char *path;
+    size_t size;
+    unsigned protection;
+} umf_devdax_memory_provider_params_t;
 
 typedef struct devdax_last_native_error_t {
     int32_t native_error;
@@ -509,6 +548,102 @@ static umf_memory_provider_ops_t UMF_DEVDAX_MEMORY_PROVIDER_OPS = {
 
 umf_memory_provider_ops_t *umfDevDaxMemoryProviderOps(void) {
     return &UMF_DEVDAX_MEMORY_PROVIDER_OPS;
+}
+
+umf_result_t umfDevDaxMemoryProviderParamsCreate(
+    umf_devdax_memory_provider_params_handle_t *hParams, const char *path,
+    size_t size) {
+    libumfInit();
+    if (hParams == NULL) {
+        LOG_ERR("DevDax Memory Provider params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (path == NULL) {
+        LOG_ERR("DevDax path is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    umf_devdax_memory_provider_params_handle_t params =
+        umf_ba_global_alloc(sizeof(*params));
+    if (params == NULL) {
+        LOG_ERR(
+            "Allocating memory for the DevDax Memory Provider params failed");
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    params->path = NULL;
+    params->size = 0;
+    params->protection = UMF_PROTECTION_READ | UMF_PROTECTION_WRITE;
+
+    umf_result_t res =
+        umfDevDaxMemoryProviderParamsSetDeviceDax(params, path, size);
+    if (res != UMF_RESULT_SUCCESS) {
+        umf_ba_global_free(params);
+        return res;
+    }
+
+    *hParams = params;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t umfDevDaxMemoryProviderParamsDestroy(
+    umf_devdax_memory_provider_params_handle_t hParams) {
+    if (hParams != NULL) {
+        umf_ba_global_free(hParams->path);
+        umf_ba_global_free(hParams);
+    }
+
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t umfDevDaxMemoryProviderParamsSetDeviceDax(
+    umf_devdax_memory_provider_params_handle_t hParams, const char *path,
+    size_t size) {
+    if (hParams == NULL) {
+        LOG_ERR("DevDax Memory Provider params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (path == NULL) {
+        LOG_ERR("DevDax path is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    size_t path_len = strlen(path);
+    if (path_len == 0) {
+        LOG_ERR("DevDax path is empty");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    path_len += 1; // for the null terminator
+    char *new_path = umf_ba_global_alloc(path_len);
+    if (new_path == NULL) {
+        LOG_ERR("Allocating memory for the DevDax path failed");
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    strncpy(new_path, path, path_len);
+
+    umf_ba_global_free(hParams->path);
+
+    hParams->path = new_path;
+    hParams->size = size;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t umfDevDaxMemoryProviderParamsSetProtection(
+    umf_devdax_memory_provider_params_handle_t hParams, unsigned protection) {
+    if (hParams == NULL) {
+        LOG_ERR("DevDax Memory Provider params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    hParams->protection = protection;
+
+    return UMF_RESULT_SUCCESS;
 }
 
 #endif // !defined(_WIN32) && !defined(UMF_NO_HWLOC)

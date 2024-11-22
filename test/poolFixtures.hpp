@@ -69,27 +69,6 @@ struct umfPoolTest : umf_test::test,
     void SetUp() override {
         test::SetUp();
 
-        auto [pool_ops, pool_params, provider_ops, provider_params,
-              coarse_params] = this->GetParam();
-        (void)pool_ops;
-        (void)pool_params;
-        (void)provider_params;
-        (void)coarse_params;
-
-        if (provider_ops == umfDevDaxMemoryProviderOps()) {
-            char *path = getenv("UMF_TESTS_DEVDAX_PATH");
-            if (path == nullptr || path[0] == 0) {
-                GTEST_SKIP()
-                    << "Test skipped, UMF_TESTS_DEVDAX_PATH is not set";
-            }
-
-            char *size = getenv("UMF_TESTS_DEVDAX_SIZE");
-            if (size == nullptr || size[0] == 0) {
-                GTEST_SKIP()
-                    << "Test skipped, UMF_TESTS_DEVDAX_SIZE is not set";
-            }
-        }
-
         pool = poolCreateExtUnique(this->GetParam());
     }
 

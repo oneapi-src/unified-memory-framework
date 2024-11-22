@@ -19,6 +19,7 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
+    int ret = 0;
     int port = atoi(argv[1]);
 
     char *path = getenv("UMF_TESTS_DEVDAX_PATH");
@@ -33,12 +34,22 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
-    umf_devdax_memory_provider_params_t devdax_params =
-        umfDevDaxMemoryProviderParamsDefault(path, atol(size));
+    umf_devdax_memory_provider_params_handle_t devdax_params = NULL;
+    umf_result_t umf_result =
+        umfDevDaxMemoryProviderParamsCreate(&devdax_params, path, atol(size));
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "[producer] ERROR: creating DevDax Memory Provider "
+                        "params failed\n");
+        return -1;
+    }
 
     void *pool_params = NULL;
 
-    return run_producer(port, umfScalablePoolOps(), pool_params,
-                        umfDevDaxMemoryProviderOps(), &devdax_params, memcopy,
-                        NULL);
+    ret = run_producer(port, umfScalablePoolOps(), pool_params,
+                       umfDevDaxMemoryProviderOps(), devdax_params, memcopy,
+                       NULL);
+
+    umfDevDaxMemoryProviderParamsDestroy(devdax_params);
+
+    return ret;
 }
