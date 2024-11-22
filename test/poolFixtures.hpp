@@ -9,6 +9,7 @@
 #include "provider.hpp"
 #include "umf/providers/provider_coarse.h"
 #include "umf/providers/provider_devdax_memory.h"
+#include "utils/utils_sanitizers.h"
 
 #include <array>
 #include <cstring>
@@ -459,6 +460,28 @@ TEST_P(umfPoolTest, free_compliance) { free_compliance_test(pool.get()); }
 TEST_P(umfPoolTest, allocMaxSize) {
     auto *ptr = umfPoolMalloc(pool.get(), SIZE_MAX);
     ASSERT_EQ(ptr, nullptr);
+}
+
+TEST_P(umfPoolTest, mallocUsableSize) {
+#ifdef __SANITIZE_ADDRESS__
+    // Sanitizer replaces malloc_usable_size implementation with its own
+    GTEST_SKIP()
+        << "This test is invalid with AddressSanitizer instrumentation";
+#endif
+
+    for (size_t allocSize : {32, 48, 1024, 8192}) {
+        char *ptr = static_cast<char *>(umfPoolMalloc(pool.get(), allocSize));
+        ASSERT_NE(ptr, nullptr);
+        size_t result = umfPoolMallocUsableSize(pool.get(), ptr);
+        ASSERT_TRUE(result == 0 || result >= allocSize);
+
+        // Make sure we can write to this memory
+        for (size_t i = 0; i < result; i++) {
+            ptr[i] = 123;
+        }
+
+        umfPoolFree(pool.get(), ptr);
+    }
 }
 
 #endif /* UMF_TEST_POOL_FIXTURES_HPP */
