@@ -17,24 +17,55 @@ using umf_test::test;
 
 #define FILE_PATH ((char *)"tmp_file")
 
-umf_file_memory_provider_params_t get_file_params_shared(char *path) {
-    umf_file_memory_provider_params_t file_params =
-        umfFileMemoryProviderParamsDefault(path);
-    file_params.visibility = UMF_MEM_MAP_SHARED;
-    return file_params;
+using file_params_unique_handle_t =
+    std::unique_ptr<umf_file_memory_provider_params_t,
+                    decltype(&umfFileMemoryProviderParamsDestroy)>;
+
+file_params_unique_handle_t get_file_params_shared(char *path) {
+    umf_file_memory_provider_params_handle_t file_params = NULL;
+    umf_result_t res = umfFileMemoryProviderParamsCreate(&file_params, path);
+    if (res != UMF_RESULT_SUCCESS) {
+        throw std::runtime_error(
+            "Failed to create File Memory Provider params");
+    }
+
+    res = umfFileMemoryProviderParamsSetVisibility(file_params,
+                                                   UMF_MEM_MAP_SHARED);
+    if (res != UMF_RESULT_SUCCESS) {
+        umfFileMemoryProviderParamsDestroy(file_params);
+        throw std::runtime_error("Failed to set visibility to shared for File "
+                                 "Memory Provider params");
+    }
+
+    return file_params_unique_handle_t(file_params,
+                                       &umfFileMemoryProviderParamsDestroy);
 }
 
-umf_file_memory_provider_params_t file_params_shared =
+file_params_unique_handle_t file_params_shared =
     get_file_params_shared(FILE_PATH);
 
-umf_file_memory_provider_params_t get_file_params_fsdax(char *path) {
-    umf_file_memory_provider_params_t file_params =
-        umfFileMemoryProviderParamsDefault(path);
-    file_params.visibility = UMF_MEM_MAP_SHARED;
-    return file_params;
+file_params_unique_handle_t get_file_params_fsdax(char *path) {
+    umf_file_memory_provider_params_handle_t file_params = NULL;
+    umf_result_t res = umfFileMemoryProviderParamsCreate(&file_params, path);
+    if (res != UMF_RESULT_SUCCESS) {
+        //test will be skipped.
+        return file_params_unique_handle_t(nullptr,
+                                           &umfFileMemoryProviderParamsDestroy);
+    }
+
+    res = umfFileMemoryProviderParamsSetVisibility(file_params,
+                                                   UMF_MEM_MAP_SHARED);
+    if (res != UMF_RESULT_SUCCESS) {
+        umfFileMemoryProviderParamsDestroy(file_params);
+        throw std::runtime_error("Failed to set visibility to shared for File "
+                                 "Memory Provider params");
+    }
+
+    return file_params_unique_handle_t(file_params,
+                                       &umfFileMemoryProviderParamsDestroy);
 }
 
-umf_file_memory_provider_params_t file_params_fsdax =
+file_params_unique_handle_t file_params_fsdax =
     get_file_params_fsdax(getenv("UMF_TESTS_FSDAX_PATH"));
 
 HostMemoryAccessor hostAccessor;
@@ -42,14 +73,14 @@ HostMemoryAccessor hostAccessor;
 static std::vector<ipcTestParams> ipcManyPoolsTestParamsList = {
 // TODO: enable it when sizes of allocations in ipcFixtures.hpp are fixed
 //    {umfProxyPoolOps(), nullptr, umfFileMemoryProviderOps(),
-//     &file_params_shared, &hostAccessor, true},
+//     file_params_shared.get(), &hostAccessor, true},
 #ifdef UMF_POOL_JEMALLOC_ENABLED
     {umfJemallocPoolOps(), nullptr, umfFileMemoryProviderOps(),
-     &file_params_shared, &hostAccessor, false},
+     file_params_shared.get(), &hostAccessor, false},
 #endif
 #ifdef UMF_POOL_SCALABLE_ENABLED
     {umfScalablePoolOps(), nullptr, umfFileMemoryProviderOps(),
-     &file_params_shared, &hostAccessor, false},
+     file_params_shared.get(), &hostAccessor, false},
 #endif
 };
 
@@ -65,14 +96,14 @@ static std::vector<ipcTestParams> getIpcFsDaxTestParamsList(void) {
     ipcFsDaxTestParamsList = {
 // TODO: enable it when sizes of allocations in ipcFixtures.hpp are fixed
 //        {umfProxyPoolOps(), nullptr, umfFileMemoryProviderOps(),
-//         &file_params_fsdax, &hostAccessor, true},
+//         file_params_fsdax.get(), &hostAccessor, true},
 #ifdef UMF_POOL_JEMALLOC_ENABLED
         {umfJemallocPoolOps(), nullptr, umfFileMemoryProviderOps(),
-         &file_params_fsdax, &hostAccessor, false},
+         file_params_fsdax.get(), &hostAccessor, false},
 #endif
 #ifdef UMF_POOL_SCALABLE_ENABLED
         {umfScalablePoolOps(), nullptr, umfFileMemoryProviderOps(),
-         &file_params_fsdax, &hostAccessor, false},
+         file_params_fsdax.get(), &hostAccessor, false},
 #endif
     };
 

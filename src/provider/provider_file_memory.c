@@ -25,10 +25,46 @@ umf_memory_provider_ops_t *umfFileMemoryProviderOps(void) {
     return NULL;
 }
 
+umf_result_t umfFileMemoryProviderParamsCreate(
+    umf_file_memory_provider_params_handle_t *hParams, const char *path) {
+    (void)hParams;
+    (void)path;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+umf_result_t umfFileMemoryProviderParamsDestroy(
+    umf_file_memory_provider_params_handle_t hParams) {
+    (void)hParams;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+umf_result_t umfFileMemoryProviderParamsSetPath(
+    umf_file_memory_provider_params_handle_t hParams, const char *path) {
+    (void)hParams;
+    (void)path;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+umf_result_t umfFileMemoryProviderParamsSetProtection(
+    umf_file_memory_provider_params_handle_t hParams, unsigned protection) {
+    (void)hParams;
+    (void)protection;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+umf_result_t umfFileMemoryProviderParamsSetVisibility(
+    umf_file_memory_provider_params_handle_t hParams,
+    umf_memory_visibility_t visibility) {
+    (void)hParams;
+    (void)visibility;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
 #else // !defined(_WIN32) && !defined(UMF_NO_HWLOC)
 
 #include "base_alloc_global.h"
 #include "critnib.h"
+#include "libumf.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
 #include "utils_log.h"
@@ -66,6 +102,13 @@ typedef struct file_memory_provider_t {
     // to mmap a specific part of a file.
     critnib *fd_offset_map;
 } file_memory_provider_t;
+
+// File Memory Provider settings struct
+typedef struct umf_file_memory_provider_params_t {
+    char *path;
+    unsigned protection;
+    umf_memory_visibility_t visibility;
+} umf_file_memory_provider_params_t;
 
 typedef struct file_last_native_error_t {
     int32_t native_error;
@@ -746,6 +789,110 @@ static umf_memory_provider_ops_t UMF_FILE_MEMORY_PROVIDER_OPS = {
 
 umf_memory_provider_ops_t *umfFileMemoryProviderOps(void) {
     return &UMF_FILE_MEMORY_PROVIDER_OPS;
+}
+
+umf_result_t umfFileMemoryProviderParamsCreate(
+    umf_file_memory_provider_params_handle_t *hParams, const char *path) {
+    libumfInit();
+    if (hParams == NULL) {
+        LOG_ERR("File Memory Provider params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (path == NULL) {
+        LOG_ERR("File path is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    umf_file_memory_provider_params_handle_t params =
+        umf_ba_global_alloc(sizeof(*params));
+    if (params == NULL) {
+        LOG_ERR("allocating memory for File Memory Provider params failed");
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    params->path = NULL;
+    params->protection = UMF_PROTECTION_READ | UMF_PROTECTION_WRITE;
+    params->visibility = UMF_MEM_MAP_PRIVATE;
+
+    umf_result_t res = umfFileMemoryProviderParamsSetPath(params, path);
+    if (res != UMF_RESULT_SUCCESS) {
+        umf_ba_global_free(params);
+        return res;
+    }
+
+    *hParams = params;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t umfFileMemoryProviderParamsDestroy(
+    umf_file_memory_provider_params_handle_t hParams) {
+    if (hParams != NULL) {
+        umf_ba_global_free(hParams->path);
+        umf_ba_global_free(hParams);
+    }
+
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t umfFileMemoryProviderParamsSetPath(
+    umf_file_memory_provider_params_handle_t hParams, const char *path) {
+    if (hParams == NULL) {
+        LOG_ERR("File Memory Provider params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (path == NULL) {
+        LOG_ERR("File path is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    size_t len = strlen(path);
+    if (len == 0) {
+        LOG_ERR("File path is empty");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    len += 1; // for the null terminator
+    char *new_path = NULL;
+    new_path = umf_ba_global_alloc(len);
+    if (new_path == NULL) {
+        LOG_ERR("allocating memory for the file path failed");
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    strncpy(new_path, path, len);
+
+    umf_ba_global_free(hParams->path);
+    hParams->path = new_path;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t umfFileMemoryProviderParamsSetProtection(
+    umf_file_memory_provider_params_handle_t hParams, unsigned protection) {
+    if (hParams == NULL) {
+        LOG_ERR("File Memory Provider params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    hParams->protection = protection;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t umfFileMemoryProviderParamsSetVisibility(
+    umf_file_memory_provider_params_handle_t hParams,
+    umf_memory_visibility_t visibility) {
+    if (hParams == NULL) {
+        LOG_ERR("File Memory Provider params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    hParams->visibility = visibility;
+
+    return UMF_RESULT_SUCCESS;
 }
 
 #endif // !defined(_WIN32) && !defined(UMF_NO_HWLOC)

@@ -7,11 +7,27 @@
 
 #include "pool_coarse.hpp"
 
+using file_params_unique_handle_t =
+    std::unique_ptr<umf_file_memory_provider_params_t,
+                    decltype(&umfFileMemoryProviderParamsDestroy)>;
+
+file_params_unique_handle_t get_file_params_default(char *path) {
+    umf_file_memory_provider_params_handle_t file_params = NULL;
+    umf_result_t res = umfFileMemoryProviderParamsCreate(&file_params, path);
+    if (res != UMF_RESULT_SUCCESS) {
+        throw std::runtime_error(
+            "Failed to create File Memory Provider params");
+    }
+
+    return file_params_unique_handle_t(file_params,
+                                       &umfFileMemoryProviderParamsDestroy);
+}
+
 auto coarseParams = umfCoarseMemoryProviderParamsDefault();
-auto fileParams = umfFileMemoryProviderParamsDefault(FILE_PATH);
+file_params_unique_handle_t fileParams = get_file_params_default(FILE_PATH);
 
 INSTANTIATE_TEST_SUITE_P(jemallocCoarseFileTest, umfPoolTest,
                          ::testing::Values(poolCreateExtParams{
                              umfJemallocPoolOps(), nullptr,
-                             umfFileMemoryProviderOps(), &fileParams,
+                             umfFileMemoryProviderOps(), fileParams.get(),
                              &coarseParams}));
