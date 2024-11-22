@@ -14,6 +14,40 @@
 
 #if defined(UMF_NO_CUDA_PROVIDER)
 
+umf_result_t umfCUDAMemoryProviderParamsCreate(
+    umf_cuda_memory_provider_params_handle_t *hParams) {
+    (void)hParams;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+umf_result_t umfCUDAMemoryProviderParamsDestroy(
+    umf_cuda_memory_provider_params_handle_t hParams) {
+    (void)hParams;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+umf_result_t umfCUDAMemoryProviderParamsSetContext(
+    umf_cuda_memory_provider_params_handle_t hParams, void *hContext) {
+    (void)hParams;
+    (void)hContext;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+umf_result_t umfCUDAMemoryProviderParamsSetDevice(
+    umf_cuda_memory_provider_params_handle_t hParams, int hDevice) {
+    (void)hParams;
+    (void)hDevice;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+umf_result_t umfCUDAMemoryProviderParamsSetMemoryType(
+    umf_cuda_memory_provider_params_handle_t hParams,
+    umf_usm_memory_type_t memoryType) {
+    (void)hParams;
+    (void)memoryType;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
 umf_memory_provider_ops_t *umfCUDAMemoryProviderOps(void) {
     // not supported
     return NULL;
@@ -47,6 +81,13 @@ typedef struct cu_memory_provider_t {
     umf_usm_memory_type_t memory_type;
     size_t min_alignment;
 } cu_memory_provider_t;
+
+// CUDA Memory Provider settings struct
+typedef struct umf_cuda_memory_provider_params_t {
+    void *cuda_context_handle;         ///< Handle to the CUDA context
+    int cuda_device_handle;            ///< Handle to the CUDA device
+    umf_usm_memory_type_t memory_type; ///< Allocation memory type
+} umf_cuda_memory_provider_params_t;
 
 typedef struct cu_ops_t {
     CUresult (*cuMemGetAllocationGranularity)(
@@ -158,14 +199,81 @@ static void init_cu_global_state(void) {
     }
 }
 
+umf_result_t umfCUDAMemoryProviderParamsCreate(
+    umf_cuda_memory_provider_params_handle_t *hParams) {
+    if (!hParams) {
+        LOG_ERR("CUDA Memory Provider params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    umf_cuda_memory_provider_params_handle_t params_data =
+        umf_ba_global_alloc(sizeof(umf_cuda_memory_provider_params_t));
+    if (!params_data) {
+        LOG_ERR("Cannot allocate memory for CUDA Memory Provider params");
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    params_data->cuda_context_handle = NULL;
+    params_data->cuda_device_handle = -1;
+    params_data->memory_type = UMF_MEMORY_TYPE_UNKNOWN;
+
+    *hParams = params_data;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t umfCUDAMemoryProviderParamsDestroy(
+    umf_cuda_memory_provider_params_handle_t hParams) {
+    umf_ba_global_free(hParams);
+
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t umfCUDAMemoryProviderParamsSetContext(
+    umf_cuda_memory_provider_params_handle_t hParams, void *hContext) {
+    if (!hParams) {
+        LOG_ERR("CUDA Memory Provider params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    hParams->cuda_context_handle = hContext;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t umfCUDAMemoryProviderParamsSetDevice(
+    umf_cuda_memory_provider_params_handle_t hParams, int hDevice) {
+    if (!hParams) {
+        LOG_ERR("CUDA Memory Provider params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    hParams->cuda_device_handle = hDevice;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t umfCUDAMemoryProviderParamsSetMemoryType(
+    umf_cuda_memory_provider_params_handle_t hParams,
+    umf_usm_memory_type_t memoryType) {
+    if (!hParams) {
+        LOG_ERR("CUDA Memory Provider params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    hParams->memory_type = memoryType;
+
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_result_t cu_memory_provider_initialize(void *params,
                                                   void **provider) {
     if (params == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    cuda_memory_provider_params_t *cu_params =
-        (cuda_memory_provider_params_t *)params;
+    umf_cuda_memory_provider_params_handle_t cu_params =
+        (umf_cuda_memory_provider_params_handle_t)params;
 
     if (cu_params->memory_type == UMF_MEMORY_TYPE_UNKNOWN ||
         cu_params->memory_type > UMF_MEMORY_TYPE_SHARED) {
