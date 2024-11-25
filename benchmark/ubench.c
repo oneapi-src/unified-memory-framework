@@ -421,11 +421,10 @@ static void do_ipc_get_put_benchmark(alloc_t *allocs, size_t num_allocs,
     }
 }
 
-int create_level_zero_params(level_zero_memory_provider_params_t *params) {
+int create_level_zero_params(ze_context_handle_t *context,
+                             ze_device_handle_t *device) {
     uint32_t driver_idx = 0;
     ze_driver_handle_t driver = NULL;
-    ze_context_handle_t context = NULL;
-    ze_device_handle_t device = NULL;
 
     int ret = init_level_zero();
     if (ret != 0) {
@@ -439,22 +438,18 @@ int create_level_zero_params(level_zero_memory_provider_params_t *params) {
         return ret;
     }
 
-    ret = create_context(driver, &context);
+    ret = create_context(driver, context);
     if (ret != 0) {
         fprintf(stderr, "Failed to create L0 context!\n");
         return ret;
     }
 
-    ret = find_gpu_device(driver, &device);
-    if (ret || device == NULL) {
+    ret = find_gpu_device(driver, device);
+    if (ret) {
         fprintf(stderr, "Cannot find GPU device!\n");
-        destroy_context(context);
+        destroy_context(*context);
         return ret;
     }
-
-    params->level_zero_context_handle = context;
-    params->level_zero_device_handle = device;
-    params->memory_type = UMF_MEMORY_TYPE_DEVICE;
 
     return ret;
 }
@@ -462,11 +457,47 @@ int create_level_zero_params(level_zero_memory_provider_params_t *params) {
 UBENCH_EX(ipc, disjoint_pool_with_level_zero_provider) {
     const size_t BUFFER_SIZE = 100;
     const size_t N_BUFFERS = 1000;
-    level_zero_memory_provider_params_t level_zero_params = {0};
+    umf_result_t umf_result;
+    ze_context_handle_t context = NULL;
+    ze_device_handle_t device = NULL;
+    umf_level_zero_memory_provider_params_handle_t level_zero_params = NULL;
 
-    int ret = create_level_zero_params(&level_zero_params);
+    int ret = create_level_zero_params(&context, &device);
     if (ret != 0) {
+        fprintf(stderr, "error: create_level_zero_params() failed\n");
         exit(-1);
+    }
+
+    umf_result = umfLevelZeroMemoryProviderParamsCreate(&level_zero_params);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr,
+                "error: umfLevelZeroMemoryProviderParamsCreate() failed\n");
+        goto err_destroy_context;
+    }
+
+    umf_result =
+        umfLevelZeroMemoryProviderParamsSetContext(level_zero_params, context);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr,
+                "error: umfLevelZeroMemoryProviderParamsSetContext() failed\n");
+        goto err_destroy_params;
+    }
+
+    umf_result =
+        umfLevelZeroMemoryProviderParamsSetDevice(level_zero_params, device);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr,
+                "error: umfLevelZeroMemoryProviderParamsSetDevice() failed\n");
+        goto err_destroy_params;
+    }
+
+    umf_result = umfLevelZeroMemoryProviderParamsSetMemoryType(
+        level_zero_params, UMF_MEMORY_TYPE_DEVICE);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(
+            stderr,
+            "error: umfLevelZeroMemoryProviderParamsSetMemoryType() failed\n");
+        goto err_destroy_params;
     }
 
     alloc_t *allocs = alloc_array(N_BUFFERS);
@@ -481,10 +512,9 @@ UBENCH_EX(ipc, disjoint_pool_with_level_zero_provider) {
         goto err_free_allocs;
     }
 
-    umf_result_t umf_result;
     umf_memory_provider_handle_t provider = NULL;
     umf_result = umfMemoryProviderCreate(umfLevelZeroMemoryProviderOps(),
-                                         &level_zero_params, &provider);
+                                         level_zero_params, &provider);
     if (umf_result != UMF_RESULT_SUCCESS) {
         fprintf(stderr, "error: umfMemoryProviderCreate() failed\n");
         goto err_free_ipc_handles;
@@ -570,8 +600,11 @@ err_free_ipc_handles:
 err_free_allocs:
     free(allocs);
 
+err_destroy_params:
+    umfLevelZeroMemoryProviderParamsDestroy(level_zero_params);
+
 err_destroy_context:
-    destroy_context(level_zero_params.level_zero_context_handle);
+    destroy_context(context);
 }
 #endif /* (defined UMF_BUILD_LIBUMF_POOL_DISJOINT && defined UMF_BUILD_LEVEL_ZERO_PROVIDER && defined UMF_BUILD_GPU_TESTS) */
 

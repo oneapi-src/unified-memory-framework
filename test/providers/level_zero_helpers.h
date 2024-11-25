@@ -38,9 +38,6 @@ int destroy_context(ze_context_handle_t context);
 
 ze_memory_type_t get_mem_type(ze_context_handle_t context, void *ptr);
 
-level_zero_memory_provider_params_t
-create_level_zero_prov_params(umf_usm_memory_type_t memory_type);
-
 #ifdef __cplusplus
 }
 #endif

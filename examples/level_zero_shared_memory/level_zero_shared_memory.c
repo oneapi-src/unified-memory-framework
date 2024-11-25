@@ -49,22 +49,51 @@ int main(void) {
 
     // Setup parameters for the Level Zero memory provider. It will be used for
     // allocating memory from Level Zero devices.
-    level_zero_memory_provider_params_t ze_memory_provider_params = {0};
-    ze_memory_provider_params.level_zero_context_handle = hContext;
-    ze_memory_provider_params.level_zero_device_handle = hDevice;
+    umf_level_zero_memory_provider_params_handle_t ze_memory_provider_params =
+        NULL;
+    res = umfLevelZeroMemoryProviderParamsCreate(&ze_memory_provider_params);
+    if (res != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "Failed to create memory provider params!\n");
+        ret = -1;
+        goto level_zero_destroy;
+    }
+
+    res = umfLevelZeroMemoryProviderParamsSetContext(ze_memory_provider_params,
+                                                     hContext);
+    if (res != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "Failed to set context in memory provider params!\n");
+        ret = -1;
+        goto provider_params_destroy;
+    }
+
+    res = umfLevelZeroMemoryProviderParamsSetDevice(ze_memory_provider_params,
+                                                    hDevice);
+    if (res != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "Failed to set device in memory provider params!\n");
+        ret = -1;
+        goto provider_params_destroy;
+    }
+
     // Set the memory type to shared to allow the memory to be accessed on both
     // CPU and GPU.
-    ze_memory_provider_params.memory_type = UMF_MEMORY_TYPE_SHARED;
+    res = umfLevelZeroMemoryProviderParamsSetMemoryType(
+        ze_memory_provider_params, UMF_MEMORY_TYPE_SHARED);
+    if (res != UMF_RESULT_SUCCESS) {
+        fprintf(stderr,
+                "Failed to set memory type in memory provider params!\n");
+        ret = -1;
+        goto provider_params_destroy;
+    }
 
     // Create Level Zero memory provider
     umf_memory_provider_handle_t ze_memory_provider;
-    res = umfMemoryProviderCreate(umfLevelZeroMemoryProviderOps(),
-                                  &ze_memory_provider_params,
-                                  &ze_memory_provider);
+    res =
+        umfMemoryProviderCreate(umfLevelZeroMemoryProviderOps(),
+                                ze_memory_provider_params, &ze_memory_provider);
     if (res != UMF_RESULT_SUCCESS) {
         fprintf(stderr, "Failed to create a memory provider!\n");
         ret = -1;
-        goto level_zero_destroy;
+        goto provider_params_destroy;
     }
 
     printf("Level Zero memory provider created at %p\n",
@@ -153,6 +182,9 @@ disjoint_params_destroy:
 
 memory_provider_destroy:
     umfMemoryProviderDestroy(ze_memory_provider);
+
+provider_params_destroy:
+    umfLevelZeroMemoryProviderParamsDestroy(ze_memory_provider_params);
 
 level_zero_destroy:
     ret = destroy_context(hContext);
