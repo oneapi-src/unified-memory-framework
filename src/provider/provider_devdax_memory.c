@@ -516,6 +516,12 @@ static umf_result_t devdax_close_ipc_handle(void *provider, void *ptr,
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t devdax_free(void *provider, void *ptr, size_t size) {
+    devdax_memory_provider_t *devdax_provider =
+        (devdax_memory_provider_t *)provider;
+    return coarse_free(devdax_provider->coarse, ptr, size);
+}
+
 static umf_memory_provider_ops_t UMF_DEVDAX_MEMORY_PROVIDER_OPS = {
     .version = UMF_VERSION_CURRENT,
     .initialize = devdax_initialize,
@@ -525,6 +531,7 @@ static umf_memory_provider_ops_t UMF_DEVDAX_MEMORY_PROVIDER_OPS = {
     .get_recommended_page_size = devdax_get_recommended_page_size,
     .get_min_page_size = devdax_get_min_page_size,
     .get_name = devdax_get_name,
+    .ext.free = devdax_free,
     .ext.purge_lazy = devdax_purge_lazy,
     .ext.purge_force = devdax_purge_force,
     .ext.allocation_merge = devdax_allocation_merge,
