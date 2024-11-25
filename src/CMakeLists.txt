@@ -16,14 +16,15 @@ set(UMF_CUDA_INCLUDE_DIR
 # TODO: Cleanup the compile definitions across all the CMake files
 set(UMF_COMMON_COMPILE_DEFINITIONS UMF_VERSION=${UMF_VERSION})
 
-add_subdirectory(utils)
-
-set(UMF_LIBS $<BUILD_INTERFACE:umf_utils>)
-
 set(BA_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/base_alloc/base_alloc.c
     ${CMAKE_CURRENT_SOURCE_DIR}/base_alloc/base_alloc_linear.c
     ${CMAKE_CURRENT_SOURCE_DIR}/base_alloc/base_alloc_global.c)
+
+add_subdirectory(utils)
+add_subdirectory(coarse)
+
+set(UMF_LIBS $<BUILD_INTERFACE:umf_utils> $<BUILD_INTERFACE:coarse>)
 
 if(LINUX)
     set(BA_SOURCES ${BA_SOURCES}
@@ -144,6 +145,8 @@ else()
         SRCS ${UMF_SOURCES}
         LIBS ${UMF_LIBS})
 endif()
+
+add_dependencies(umf coarse)
 
 if(UMF_LINK_HWLOC_STATICALLY)
     add_dependencies(umf ${UMF_HWLOC_NAME})
