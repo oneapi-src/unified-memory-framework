@@ -467,7 +467,7 @@ TEST_P(umfPoolTest, mallocUsableSize) {
     // Sanitizer replaces malloc_usable_size implementation with its own
     GTEST_SKIP()
         << "This test is invalid with AddressSanitizer instrumentation";
-#endif
+#else
 
     for (size_t allocSize : {32, 48, 1024, 8192}) {
         char *ptr = static_cast<char *>(umfPoolMalloc(pool.get(), allocSize));
@@ -482,6 +482,7 @@ TEST_P(umfPoolTest, mallocUsableSize) {
 
         umfPoolFree(pool.get(), ptr);
     }
+#endif
 }
 
 #endif /* UMF_TEST_POOL_FIXTURES_HPP */
