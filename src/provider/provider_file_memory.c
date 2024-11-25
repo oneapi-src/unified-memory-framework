@@ -815,6 +815,11 @@ static umf_result_t file_close_ipc_handle(void *provider, void *ptr,
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t file_free(void *provider, void *ptr, size_t size) {
+    file_memory_provider_t *file_provider = (file_memory_provider_t *)provider;
+    return coarse_free(file_provider->coarse, ptr, size);
+}
+
 static umf_memory_provider_ops_t UMF_FILE_MEMORY_PROVIDER_OPS = {
     .version = UMF_VERSION_CURRENT,
     .initialize = file_initialize,
@@ -824,6 +829,7 @@ static umf_memory_provider_ops_t UMF_FILE_MEMORY_PROVIDER_OPS = {
     .get_recommended_page_size = file_get_recommended_page_size,
     .get_min_page_size = file_get_min_page_size,
     .get_name = file_get_name,
+    .ext.free = file_free,
     .ext.purge_lazy = file_purge_lazy,
     .ext.purge_force = file_purge_force,
     .ext.allocation_merge = file_allocation_merge,
