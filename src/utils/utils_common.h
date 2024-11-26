@@ -23,8 +23,10 @@ extern "C" {
 #endif
 
 typedef enum umf_purge_advise_t {
-    UMF_PURGE_LAZY,
+    UMF_PURGE_LAZY = 1,
     UMF_PURGE_FORCE,
+
+    UMF_PURGE_MAX, // must be the last one
 } umf_purge_advise_t;
 
 #define DO_WHILE_EMPTY                                                         \
@@ -117,6 +119,8 @@ int utils_gettid(void);
 // close file descriptor
 int utils_close_fd(int fd);
 
+umf_result_t utils_errno_to_umf_result(int err);
+
 // obtain a duplicate of another process's file descriptor
 umf_result_t utils_duplicate_fd(int pid, int fd_in, int *fd_out);
 
@@ -129,6 +133,8 @@ umf_result_t utils_translate_flags(unsigned in_flags, unsigned max,
 
 umf_result_t utils_translate_mem_protection_flags(unsigned in_protection,
                                                   unsigned *out_protection);
+
+int utils_translate_purge_advise(umf_purge_advise_t advise);
 
 umf_result_t
 utils_translate_mem_visibility_flag(umf_memory_visibility_t in_flag,

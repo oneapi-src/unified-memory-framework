@@ -64,8 +64,7 @@ int utils_gettid(void) {
 
 int utils_close_fd(int fd) { return close(fd); }
 
-#ifndef __APPLE__
-static umf_result_t errno_to_umf_result(int err) {
+umf_result_t utils_errno_to_umf_result(int err) {
     switch (err) {
     case EBADF:
     case EINVAL:
@@ -83,7 +82,6 @@ static umf_result_t errno_to_umf_result(int err) {
         return UMF_RESULT_ERROR_UNKNOWN;
     }
 }
-#endif
 
 umf_result_t utils_duplicate_fd(int pid, int fd_in, int *fd_out) {
 #ifdef __APPLE__
@@ -102,14 +100,14 @@ umf_result_t utils_duplicate_fd(int pid, int fd_in, int *fd_out) {
     int pid_fd = syscall(__NR_pidfd_open, pid, 0);
     if (pid_fd == -1) {
         LOG_PERR("__NR_pidfd_open");
-        return errno_to_umf_result(errno);
+        return utils_errno_to_umf_result(errno);
     }
 
     int fd_dup = syscall(__NR_pidfd_getfd, pid_fd, fd_in, 0);
     close(pid_fd);
     if (fd_dup == -1) {
         LOG_PERR("__NR_pidfd_open");
-        return errno_to_umf_result(errno);
+        return utils_errno_to_umf_result(errno);
     }
 
     *fd_out = fd_dup;
@@ -147,14 +145,15 @@ umf_result_t utils_translate_mem_protection_flags(unsigned in_protection,
                                  out_protection);
 }
 
-static int utils_translate_purge_advise(umf_purge_advise_t advise) {
+int utils_translate_purge_advise(umf_purge_advise_t advise) {
     switch (advise) {
     case UMF_PURGE_LAZY:
         return MADV_FREE;
     case UMF_PURGE_FORCE:
         return MADV_DONTNEED;
+    default:
+        return -1;
     }
-    return -1;
 }
 
 void *utils_mmap(void *hint_addr, size_t length, int prot, int flag, int fd,
