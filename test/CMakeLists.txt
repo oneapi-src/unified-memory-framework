@@ -407,6 +407,13 @@ if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_CUDA_PROVIDER)
     endif()
 endif()
 
+if(NOT UMF_BUILD_CUDA_PROVIDER)
+    add_umf_test(
+        NAME provider_cuda_not_impl
+        SRCS providers/provider_cuda_not_impl.cpp
+        LIBS ${UMF_UTILS_FOR_TEST})
+endif()
+
 add_umf_test(
     NAME base_alloc
     SRCS ${BA_SOURCES_FOR_TEST} test_base_alloc.cpp
