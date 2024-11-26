@@ -368,6 +368,13 @@ if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
                                PRIVATE ${LEVEL_ZERO_INCLUDE_DIRS})
 endif()
 
+if(NOT UMF_BUILD_LEVEL_ZERO_PROVIDER)
+    add_umf_test(
+        NAME provider_level_zero_not_impl
+        SRCS providers/provider_level_zero_not_impl.cpp
+        LIBS ${UMF_UTILS_FOR_TEST})
+endif()
+
 if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_CUDA_PROVIDER)
     if(UMF_CUDA_ENABLED)
         # we have two test binaries here that use the same sources, but differ
