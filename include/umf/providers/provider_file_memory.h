@@ -18,15 +18,45 @@ extern "C" {
 #define UMF_FILE_RESULTS_START_FROM 3000
 /// @endcond
 
-/// @brief Memory provider settings struct
-typedef struct umf_file_memory_provider_params_t {
-    /// a path to the file (of maximum length PATH_MAX characters)
-    const char *path;
-    /// combination of 'umf_mem_protection_flags_t' flags
-    unsigned protection;
-    /// memory visibility mode
-    umf_memory_visibility_t visibility;
-} umf_file_memory_provider_params_t;
+struct umf_file_memory_provider_params_t;
+
+typedef struct umf_file_memory_provider_params_t
+    *umf_file_memory_provider_params_handle_t;
+
+/// @brief  Create a struct to store parameters of the File Memory Provider.
+/// @param  hParams [out] handle to the newly created parameters struct.
+/// @param  path path to the file.
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+umf_result_t umfFileMemoryProviderParamsCreate(
+    umf_file_memory_provider_params_handle_t *hParams, const char *path);
+
+/// @brief  Destroy parameters struct.
+/// @param  hParams handle to the parameters of the File Memory Provider.
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+umf_result_t umfFileMemoryProviderParamsDestroy(
+    umf_file_memory_provider_params_handle_t hParams);
+
+/// @brief  Set the path in the parameters struct.
+/// @param  hParams handle to the parameters of the File Memory Provider.
+/// @param  path path to the file.
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+umf_result_t umfFileMemoryProviderParamsSetPath(
+    umf_file_memory_provider_params_handle_t hParams, const char *path);
+
+/// @brief  Set the protection in the parameters struct.
+/// @param  hParams handle to the parameters of the File Memory Provider.
+/// @param  protection protection. Combination of \p umf_mem_protection_flags_t flags
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+umf_result_t umfFileMemoryProviderParamsSetProtection(
+    umf_file_memory_provider_params_handle_t hParams, unsigned protection);
+
+/// @brief  Set the visibility in the parameters struct.
+/// @param  hParams handle to the parameters of the File Memory Provider.
+/// @param  visibility memory visibility mode.
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+umf_result_t umfFileMemoryProviderParamsSetVisibility(
+    umf_file_memory_provider_params_handle_t hParams,
+    umf_memory_visibility_t visibility);
 
 /// @brief File Memory Provider operation results
 typedef enum umf_file_memory_provider_native_error {
@@ -37,18 +67,6 @@ typedef enum umf_file_memory_provider_native_error {
 } umf_file_memory_provider_native_error_t;
 
 umf_memory_provider_ops_t *umfFileMemoryProviderOps(void);
-
-/// @brief Create default params for the file memory provider
-static inline umf_file_memory_provider_params_t
-umfFileMemoryProviderParamsDefault(const char *path) {
-    umf_file_memory_provider_params_t params = {
-        path,                                       /* a path to the file */
-        UMF_PROTECTION_READ | UMF_PROTECTION_WRITE, /* protection */
-        UMF_MEM_MAP_PRIVATE,                        /* visibility mode */
-    };
-
-    return params;
-}
 
 #ifdef __cplusplus
 }

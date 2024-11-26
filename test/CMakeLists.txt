@@ -338,6 +338,11 @@ if(LINUX AND (NOT UMF_DISABLE_HWLOC)) # OS-specific functions are implemented
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND UMF_BUILD_FUZZTESTS)
         add_subdirectory(fuzz)
     endif()
+else()
+    add_umf_test(
+        NAME provider_file_memory_not_impl
+        SRCS provider_file_memory_not_impl.cpp
+        LIBS ${UMF_UTILS_FOR_TEST})
 endif()
 
 if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_LEVEL_ZERO_PROVIDER)

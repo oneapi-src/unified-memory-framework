@@ -136,11 +136,17 @@ TEST_F(test, test_if_mapped_with_MAP_SYNC) {
         GTEST_SKIP() << "Test skipped, UMF_TESTS_FSDAX_PATH is not set";
     }
 
-    auto params = umfFileMemoryProviderParamsDefault(path);
-    params.visibility = UMF_MEM_MAP_SHARED;
+    umf_file_memory_provider_params_handle_t params = nullptr;
+    umf_result = umfFileMemoryProviderParamsCreate(&params, path);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(params, nullptr);
 
-    umf_result = umfMemoryProviderCreate(umfFileMemoryProviderOps(), &params,
-                                         &hProvider);
+    umf_result =
+        umfFileMemoryProviderParamsSetVisibility(params, UMF_MEM_MAP_SHARED);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umf_result =
+        umfMemoryProviderCreate(umfFileMemoryProviderOps(), params, &hProvider);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(hProvider, nullptr);
 
@@ -163,23 +169,52 @@ TEST_F(test, test_if_mapped_with_MAP_SYNC) {
 
 // positive tests using test_alloc_free_success
 
-umf_file_memory_provider_params_t file_params_default =
-    umfFileMemoryProviderParamsDefault(FILE_PATH);
+using file_params_unique_handle_t =
+    std::unique_ptr<umf_file_memory_provider_params_t,
+                    decltype(&umfFileMemoryProviderParamsDestroy)>;
 
-umf_file_memory_provider_params_t get_file_params_shared(char *path) {
-    umf_file_memory_provider_params_t file_params =
-        umfFileMemoryProviderParamsDefault(path);
-    file_params.visibility = UMF_MEM_MAP_SHARED;
-    return file_params;
+file_params_unique_handle_t get_file_params_default(char *path) {
+    umf_file_memory_provider_params_handle_t file_params = NULL;
+    umf_result_t res = umfFileMemoryProviderParamsCreate(&file_params, path);
+    if (res != UMF_RESULT_SUCCESS) {
+        throw std::runtime_error(
+            "Failed to create File Memory Provider params");
+    }
+
+    return file_params_unique_handle_t(file_params,
+                                       &umfFileMemoryProviderParamsDestroy);
 }
 
-umf_file_memory_provider_params_t file_params_shared =
+file_params_unique_handle_t file_params_default =
+    get_file_params_default(FILE_PATH);
+
+file_params_unique_handle_t get_file_params_shared(char *path) {
+    umf_file_memory_provider_params_handle_t file_params = NULL;
+    umf_result_t res = umfFileMemoryProviderParamsCreate(&file_params, path);
+    if (res != UMF_RESULT_SUCCESS) {
+        throw std::runtime_error(
+            "Failed to create File Memory Provider params");
+    }
+
+    res = umfFileMemoryProviderParamsSetVisibility(file_params,
+                                                   UMF_MEM_MAP_SHARED);
+    if (res != UMF_RESULT_SUCCESS) {
+        umfFileMemoryProviderParamsDestroy(file_params);
+        throw std::runtime_error("Failed to set visibility to shared for File "
+                                 "Memory Provider params");
+    }
+
+    return file_params_unique_handle_t(file_params,
+                                       &umfFileMemoryProviderParamsDestroy);
+}
+
+file_params_unique_handle_t file_params_shared =
     get_file_params_shared(FILE_PATH);
 
 INSTANTIATE_TEST_SUITE_P(fileProviderTest, FileProviderParamsDefault,
                          ::testing::Values(providerCreateExtParams{
                              umfFileMemoryProviderOps(),
-                             &file_params_default}));
+                             file_params_default.get()}));
 
 TEST_P(FileProviderParamsDefault, create_destroy) {}
 
@@ -341,14 +376,74 @@ TEST_P(FileProviderParamsDefault, free_NULL) {
 
 // other negative tests
 
+TEST_F(test, params_null_handle) {
+    umf_result_t umf_result =
+        umfFileMemoryProviderParamsCreate(nullptr, FILE_PATH);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    umf_result = umfFileMemoryProviderParamsDestroy(nullptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umf_result = umfFileMemoryProviderParamsSetPath(nullptr, FILE_PATH);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    umf_result =
+        umfFileMemoryProviderParamsSetProtection(nullptr, UMF_PROTECTION_READ);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    umf_result =
+        umfFileMemoryProviderParamsSetVisibility(nullptr, UMF_MEM_MAP_PRIVATE);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
 TEST_F(test, create_empty_path) {
-    umf_memory_provider_handle_t hProvider = nullptr;
     const char *path = "";
-    auto wrong_params = umfFileMemoryProviderParamsDefault((char *)path);
-    auto ret = umfMemoryProviderCreate(umfFileMemoryProviderOps(),
-                                       &wrong_params, &hProvider);
-    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
-    EXPECT_EQ(hProvider, nullptr);
+
+    umf_file_memory_provider_params_handle_t wrong_params = nullptr;
+    umf_result_t umf_result =
+        umfFileMemoryProviderParamsCreate(&wrong_params, path);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    ASSERT_EQ(wrong_params, nullptr);
+}
+
+TEST_F(test, create_null_path) {
+    const char *path = nullptr;
+
+    umf_file_memory_provider_params_handle_t wrong_params = nullptr;
+    umf_result_t umf_result =
+        umfFileMemoryProviderParamsCreate(&wrong_params, path);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    ASSERT_EQ(wrong_params, nullptr);
+}
+
+TEST_F(test, set_empty_path) {
+    const char *empty_path = "";
+
+    umf_file_memory_provider_params_handle_t params = nullptr;
+    umf_result_t umf_result =
+        umfFileMemoryProviderParamsCreate(&params, FILE_PATH);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umf_result = umfFileMemoryProviderParamsSetPath(params, empty_path);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    umf_result = umfFileMemoryProviderParamsDestroy(params);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+}
+
+TEST_F(test, set_null_path) {
+    const char *null_path = nullptr;
+
+    umf_file_memory_provider_params_handle_t params = nullptr;
+    umf_result_t umf_result =
+        umfFileMemoryProviderParamsCreate(&params, FILE_PATH);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umf_result = umfFileMemoryProviderParamsSetPath(params, null_path);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    umf_result = umfFileMemoryProviderParamsDestroy(params);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 }
 
 TEST_P(FileProviderParamsDefault, free_INVALID_POINTER_SIZE_GT_0) {
@@ -376,7 +471,8 @@ TEST_P(FileProviderParamsDefault, purge_force_INVALID_POINTER) {
 
 INSTANTIATE_TEST_SUITE_P(fileProviderTest, FileProviderParamsShared,
                          ::testing::Values(providerCreateExtParams{
-                             umfFileMemoryProviderOps(), &file_params_shared}));
+                             umfFileMemoryProviderOps(),
+                             file_params_shared.get()}));
 
 TEST_P(FileProviderParamsShared, IPC_base_success_test) {
     umf_result_t umf_result;

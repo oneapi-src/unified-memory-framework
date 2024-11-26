@@ -22,16 +22,36 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
+    int ret = 0;
     int port = atoi(argv[1]);
     char *file_name = argv[2];
 
-    umf_file_memory_provider_params_t file_params;
-    file_params = umfFileMemoryProviderParamsDefault(file_name);
-    file_params.visibility = UMF_MEM_MAP_SHARED;
+    umf_file_memory_provider_params_handle_t file_params = NULL;
+    umf_result_t umf_result =
+        umfFileMemoryProviderParamsCreate(&file_params, file_name);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(
+            stderr,
+            "[producer] ERROR: creating File Memory Provider params failed\n");
+        return -1;
+    }
+
+    umf_result = umfFileMemoryProviderParamsSetVisibility(file_params,
+                                                          UMF_MEM_MAP_SHARED);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "[producer] ERROR: setting File Memory Provider "
+                        "visibility failed\n");
+        ret = -1;
+        goto destroy_provider_params;
+    }
 
     void *pool_params = NULL;
 
-    return run_producer(port, umfScalablePoolOps(), pool_params,
-                        umfFileMemoryProviderOps(), &file_params, memcopy,
-                        NULL);
+    ret = run_producer(port, umfScalablePoolOps(), pool_params,
+                       umfFileMemoryProviderOps(), file_params, memcopy, NULL);
+
+destroy_provider_params:
+    umfFileMemoryProviderParamsDestroy(file_params);
+
+    return ret;
 }

@@ -48,13 +48,25 @@ static umf_memory_pool_handle_t create_fsdax_pool(const char *path) {
     umf_memory_pool_handle_t pool_fsdax;
     umf_result_t umf_result;
 
-    umf_file_memory_provider_params_t params_fsdax =
-        umfFileMemoryProviderParamsDefault(path);
+    umf_file_memory_provider_params_handle_t params_fsdax = NULL;
+    umf_result = umfFileMemoryProviderParamsCreate(&params_fsdax, path);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "Failed to create the File Memory Provider params");
+        return NULL;
+    }
     // FSDAX requires mapping the UMF_MEM_MAP_SHARED flag
-    params_fsdax.visibility = UMF_MEM_MAP_SHARED;
+    umf_result = umfFileMemoryProviderParamsSetVisibility(params_fsdax,
+                                                          UMF_MEM_MAP_SHARED);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr,
+                "Failed to set the visibility of the FSDAX file provider");
+        umfFileMemoryProviderParamsDestroy(params_fsdax);
+        return NULL;
+    }
 
     umf_result = umfMemoryProviderCreate(umfFileMemoryProviderOps(),
-                                         &params_fsdax, &provider_fsdax);
+                                         params_fsdax, &provider_fsdax);
+    umfFileMemoryProviderParamsDestroy(params_fsdax);
     if (umf_result != UMF_RESULT_SUCCESS) {
         fprintf(stderr, "Failed to create the FSDAX file provider");
         return NULL;
