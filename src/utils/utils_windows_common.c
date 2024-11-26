@@ -45,6 +45,11 @@ int utils_close_fd(int fd) {
     return -1;
 }
 
+umf_result_t utils_errno_to_umf_result(int err) {
+    (void)err; // unused
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
 umf_result_t utils_duplicate_fd(int pid, int fd_in, int *fd_out) {
     (void)pid;    // unused
     (void)fd_in;  // unused
@@ -85,6 +90,11 @@ umf_result_t utils_translate_mem_protection_flags(unsigned in_protection,
         "%u",
         in_protection);
     return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+}
+
+int utils_translate_purge_advise(umf_purge_advise_t advise) {
+    (void)advise; // unused
+    return -1;
 }
 
 umf_result_t
