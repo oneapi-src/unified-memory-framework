@@ -170,13 +170,6 @@ static int get_system_allocator_symbols(void) {
         return 0;
     }
 
-    *((void **)(&System_aligned_alloc)) = NULL;
-    *((void **)(&System_calloc)) = NULL;
-    *((void **)(&System_free)) = NULL;
-    *((void **)(&System_malloc)) = NULL;
-    *((void **)(&System_malloc_usable_size)) = NULL;
-    *((void **)(&System_realloc)) = NULL;
-
     return -1;
 }
 #endif /* _WIN32 */
