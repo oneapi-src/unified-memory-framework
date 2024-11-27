@@ -124,22 +124,6 @@ UBENCH_EX(simple, glibc_malloc) {
 
 ////////////////// OS MEMORY PROVIDER
 
-static umf_os_memory_provider_params_t UMF_OS_MEMORY_PROVIDER_PARAMS = {
-    /* .protection = */ UMF_PROTECTION_READ | UMF_PROTECTION_WRITE,
-    /* .visibility = */ UMF_MEM_MAP_PRIVATE,
-    /* .shm_name = */ NULL,
-
-    // NUMA config
-    /* .numa_list = */ NULL,
-    /* .numa_list_len = */ 0,
-
-    /* .numa_mode = */ UMF_NUMA_MODE_DEFAULT,
-    /* .part_size = */ 0,
-
-    /* .partitions = */ NULL,
-    /* .partitions_len = */ 0,
-};
-
 static void *w_umfMemoryProviderAlloc(void *provider, size_t size,
                                       size_t alignment) {
     void *ptr = NULL;
@@ -171,9 +155,17 @@ UBENCH_EX(simple, os_memory_provider) {
 
     umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = NULL;
-    umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(),
-                                         &UMF_OS_MEMORY_PROVIDER_PARAMS,
+    umf_os_memory_provider_params_handle_t os_params = NULL;
+
+    umf_result = umfOsMemoryProviderParamsCreate(&os_params);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "error: umfOsMemoryProviderParamsCreate() failed\n");
+        exit(-1);
+    }
+
+    umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(), os_params,
                                          &os_memory_provider);
+    umfOsMemoryProviderParamsDestroy(os_params);
     if (umf_result != UMF_RESULT_SUCCESS) {
         fprintf(stderr, "error: umfMemoryProviderCreate() failed\n");
         exit(-1);
@@ -215,9 +207,17 @@ UBENCH_EX(simple, proxy_pool_with_os_memory_provider) {
 
     umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = NULL;
-    umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(),
-                                         &UMF_OS_MEMORY_PROVIDER_PARAMS,
+    umf_os_memory_provider_params_handle_t os_params = NULL;
+
+    umf_result = umfOsMemoryProviderParamsCreate(&os_params);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "error: umfOsMemoryProviderParamsCreate() failed\n");
+        exit(-1);
+    }
+
+    umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(), os_params,
                                          &os_memory_provider);
+    umfOsMemoryProviderParamsDestroy(os_params);
     if (umf_result != UMF_RESULT_SUCCESS) {
         fprintf(stderr, "error: umfMemoryProviderCreate() failed\n");
         exit(-1);
@@ -252,9 +252,17 @@ UBENCH_EX(simple, disjoint_pool_with_os_memory_provider) {
 
     umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = NULL;
-    umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(),
-                                         &UMF_OS_MEMORY_PROVIDER_PARAMS,
+    umf_os_memory_provider_params_handle_t os_params = NULL;
+
+    umf_result = umfOsMemoryProviderParamsCreate(&os_params);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "error: umfOsMemoryProviderParamsCreate() failed\n");
+        exit(-1);
+    }
+
+    umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(), os_params,
                                          &os_memory_provider);
+    umfOsMemoryProviderParamsDestroy(os_params);
     if (umf_result != UMF_RESULT_SUCCESS) {
         fprintf(stderr, "error: umfMemoryProviderCreate() failed\n");
         exit(-1);
@@ -329,9 +337,17 @@ UBENCH_EX(simple, jemalloc_pool_with_os_memory_provider) {
 
     umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = NULL;
-    umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(),
-                                         &UMF_OS_MEMORY_PROVIDER_PARAMS,
+    umf_os_memory_provider_params_handle_t os_params = NULL;
+
+    umf_result = umfOsMemoryProviderParamsCreate(&os_params);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "error: umfOsMemoryProviderParamsCreate() failed\n");
+        exit(-1);
+    }
+
+    umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(), os_params,
                                          &os_memory_provider);
+    umfOsMemoryProviderParamsDestroy(os_params);
     if (umf_result != UMF_RESULT_SUCCESS) {
         fprintf(stderr, "error: umfMemoryProviderCreate() failed\n");
         exit(-1);
@@ -367,9 +383,17 @@ UBENCH_EX(simple, scalable_pool_with_os_memory_provider) {
 
     umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = NULL;
-    umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(),
-                                         &UMF_OS_MEMORY_PROVIDER_PARAMS,
+    umf_os_memory_provider_params_handle_t os_params = NULL;
+
+    umf_result = umfOsMemoryProviderParamsCreate(&os_params);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "error: umfOsMemoryProviderParamsCreate() failed\n");
+        exit(-1);
+    }
+
+    umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(), os_params,
                                          &os_memory_provider);
+    umfOsMemoryProviderParamsDestroy(os_params);
     if (umf_result != UMF_RESULT_SUCCESS) {
         fprintf(stderr, "error: umfMemoryProviderCreate() failed\n");
         exit(-1);

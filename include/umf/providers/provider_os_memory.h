@@ -60,32 +60,77 @@ typedef struct umf_numa_split_partition_t {
     unsigned target;
 } umf_numa_split_partition_t;
 
-/// @brief Memory provider settings struct
-typedef struct umf_os_memory_provider_params_t {
-    /// Combination of 'umf_mem_protection_flags_t' flags
-    unsigned protection;
-    /// memory visibility mode
-    umf_memory_visibility_t visibility;
-    /// (optional) a name of a shared memory file (valid only in case of the shared memory visibility)
-    char *shm_name;
+struct umf_os_memory_provider_params_t;
 
-    // NUMA config
-    /// ordered list of numa nodes
-    unsigned *numa_list;
-    /// length of numa_list
-    unsigned numa_list_len;
+typedef struct umf_os_memory_provider_params_t
+    *umf_os_memory_provider_params_handle_t;
 
-    /// Describes how node list is interpreted
-    umf_numa_mode_t numa_mode;
-    /// part size for interleave mode - 0 means default (system specific)
-    /// It might be rounded up because of HW constraints
-    size_t part_size;
+/// @brief  Create a struct to store parameters of the OS memory provider.
+/// @param  hParams [out] handle to the newly created parameters struct.
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+umf_result_t umfOsMemoryProviderParamsCreate(
+    umf_os_memory_provider_params_handle_t *hParams);
 
-    /// ordered list of the partitions for the split mode
-    umf_numa_split_partition_t *partitions;
-    /// len of the partitions array
-    unsigned partitions_len;
-} umf_os_memory_provider_params_t;
+/// @brief  Destroy parameters struct.
+/// @param  hParams handle to the parameters of the OS memory provider.
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+umf_result_t umfOsMemoryProviderParamsDestroy(
+    umf_os_memory_provider_params_handle_t hParams);
+
+/// @brief  Set protection flags for the OS memory provider.
+/// @param  hParams handle to the parameters of the OS memory provider.
+/// @param  protection combination of \p umf_mem_protection_flags_t flags.
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+umf_result_t umfOsMemoryProviderParamsSetProtection(
+    umf_os_memory_provider_params_handle_t hParams, unsigned protection);
+
+/// @brief  Set visibility mode for the OS memory provider.
+/// @param  hParams handle to the parameters of the OS memory provider.
+/// @param  visibility memory visibility mode.
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+umf_result_t umfOsMemoryProviderParamsSetVisibility(
+    umf_os_memory_provider_params_handle_t hParams,
+    umf_memory_visibility_t visibility);
+
+/// @brief  Set a name of a shared memory file for the OS memory provider.
+/// @param  hParams handle to the parameters of the OS memory provider.
+/// @param  shm_name a name of a shared memory file.
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+umf_result_t umfOsMemoryProviderParamsSetShmName(
+    umf_os_memory_provider_params_handle_t hParams, const char *shm_name);
+
+/// @brief  Set NUMA nodes for the OS memory provider.
+/// @param  hParams handle to the parameters of the OS memory provider.
+/// @param  numa_list ordered list of NUMA nodes.
+/// @param  numa_list_len length of the numa_list.
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+umf_result_t umfOsMemoryProviderParamsSetNumaList(
+    umf_os_memory_provider_params_handle_t hParams, unsigned *numa_list,
+    unsigned numa_list_len);
+
+/// @brief  Set NUMA mode for the OS memory provider.
+/// @param  hParams handle to the parameters of the OS memory provider.
+/// @param  numa_mode NUMA mode. Describes how node list is interpreted.
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+umf_result_t umfOsMemoryProviderParamsSetNumaMode(
+    umf_os_memory_provider_params_handle_t hParams, umf_numa_mode_t numa_mode);
+
+/// @brief  Set part size for the interleave mode. 0 means default (system specific)
+///         It might be rounded up because of HW constraints.
+/// @param  hParams handle to the parameters of the OS memory provider.
+/// @param  part_size part size for interleave mode.
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+umf_result_t umfOsMemoryProviderParamsSetPartSize(
+    umf_os_memory_provider_params_handle_t hParams, size_t part_size);
+
+/// @brief  Set partitions for the split mode.
+/// @param  hParams handle to the parameters of the OS memory provider.
+/// @param  partitions ordered list of the partitions for the split mode.
+/// @param  partitions_len length of the partitions array.
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+umf_result_t umfOsMemoryProviderParamsSetPartitions(
+    umf_os_memory_provider_params_handle_t hParams,
+    umf_numa_split_partition_t *partitions, unsigned partitions_len);
 
 /// @brief OS Memory Provider operation results
 typedef enum umf_os_memory_provider_native_error {
@@ -100,23 +145,6 @@ typedef enum umf_os_memory_provider_native_error {
 } umf_os_memory_provider_native_error_t;
 
 umf_memory_provider_ops_t *umfOsMemoryProviderOps(void);
-
-/// @brief Create default params for os memory provider
-static inline umf_os_memory_provider_params_t
-umfOsMemoryProviderParamsDefault(void) {
-    umf_os_memory_provider_params_t params = {
-        UMF_PROTECTION_READ | UMF_PROTECTION_WRITE, /* protection */
-        UMF_MEM_MAP_PRIVATE,                        /* visibility mode */
-        NULL, /* (optional) a name of a shared memory file (valid only in case of the shared memory visibility) */
-        NULL, /* numa_list */
-        0,    /* numa_list_len */
-        UMF_NUMA_MODE_DEFAULT, /* numa_mode */
-        0,                     /* part_size */
-        NULL,                  /* partitions */
-        0};                    /* partitions_len*/
-
-    return params;
-}
 
 #ifdef __cplusplus
 }

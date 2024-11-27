@@ -60,11 +60,15 @@ createScalablePool(umf_memory_provider_handle_t provider) {
 #define ALLOC_SIZE 64
 
 int main(void) {
-    umf_os_memory_provider_params_t params = umfOsMemoryProviderParamsDefault();
+    umf_os_memory_provider_params_handle_t params = NULL;
+    umf_result_t ret = umfOsMemoryProviderParamsCreate(&params);
+    UT_ASSERTeq(ret, UMF_RESULT_SUCCESS);
 
     umf_memory_provider_handle_t hProvider;
-    umf_result_t ret =
-        umfMemoryProviderCreate(umfOsMemoryProviderOps(), &params, &hProvider);
+    ret = umfMemoryProviderCreate(umfOsMemoryProviderOps(), params, &hProvider);
+    UT_ASSERTeq(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfOsMemoryProviderParamsDestroy(params);
     UT_ASSERTeq(ret, UMF_RESULT_SUCCESS);
 
     umf_memory_pool_handle_t pools[4];

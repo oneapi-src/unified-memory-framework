@@ -21,11 +21,16 @@ static umf_memory_pool_handle_t create_dram_pool(void) {
     umf_memory_pool_handle_t pool_dram;
     umf_result_t umf_result;
 
-    umf_os_memory_provider_params_t params_dram =
-        umfOsMemoryProviderParamsDefault();
+    umf_os_memory_provider_params_handle_t params_dram = NULL;
+    umf_result = umfOsMemoryProviderParamsCreate(&params_dram);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "Failed to create OS memory provider params!\n");
+        return NULL;
+    }
 
-    umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(), &params_dram,
+    umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(), params_dram,
                                          &provider_dram);
+    umfOsMemoryProviderParamsDestroy(params_dram);
     if (umf_result != UMF_RESULT_SUCCESS) {
         fprintf(stderr, "Creation of the OS memory provider failed");
         return NULL;

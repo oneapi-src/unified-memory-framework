@@ -138,16 +138,23 @@ static umf_result_t create_os_provider_with_mode(umf_numa_mode_t mode,
                                                  unsigned node_list_size) {
     umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = nullptr;
-    umf_os_memory_provider_params_t os_memory_provider_params =
-        umfOsMemoryProviderParamsDefault();
+    umf_os_memory_provider_params_handle_t os_memory_provider_params = nullptr;
 
-    os_memory_provider_params.numa_mode = mode;
-    os_memory_provider_params.numa_list = node_list;
-    os_memory_provider_params.numa_list_len = node_list_size;
+    umf_result = umfOsMemoryProviderParamsCreate(&os_memory_provider_params);
+    EXPECT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
-    umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(),
-                                         &os_memory_provider_params,
-                                         &os_memory_provider);
+    umf_result =
+        umfOsMemoryProviderParamsSetNumaMode(os_memory_provider_params, mode);
+    EXPECT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umf_result = umfOsMemoryProviderParamsSetNumaList(
+        os_memory_provider_params, node_list, node_list_size);
+    EXPECT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umf_result =
+        umfMemoryProviderCreate(umfOsMemoryProviderOps(),
+                                os_memory_provider_params, &os_memory_provider);
+    umfOsMemoryProviderParamsDestroy(os_memory_provider_params);
     if (umf_result == UMF_RESULT_SUCCESS) {
         EXPECT_NE(os_memory_provider, nullptr);
         umfMemoryProviderDestroy(os_memory_provider);
@@ -193,18 +200,28 @@ TEST_F(test, create_ZERO_WEIGHT_PARTITION) {
     umf_numa_split_partition_t p = {0, 0};
     umf_result_t umf_result;
     umf_memory_provider_handle_t os_memory_provider = nullptr;
-    umf_os_memory_provider_params_t os_memory_provider_params =
-        umfOsMemoryProviderParamsDefault();
+    umf_os_memory_provider_params_handle_t os_memory_provider_params = NULL;
 
-    os_memory_provider_params.numa_mode = UMF_NUMA_MODE_SPLIT;
-    os_memory_provider_params.numa_list = &valid_list;
-    os_memory_provider_params.numa_list_len = valid_list_len;
-    os_memory_provider_params.partitions = &p;
-    os_memory_provider_params.partitions_len = 1;
+    umf_result = umfOsMemoryProviderParamsCreate(&os_memory_provider_params);
+    EXPECT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umf_result = umfOsMemoryProviderParamsSetNumaMode(os_memory_provider_params,
+                                                      UMF_NUMA_MODE_SPLIT);
+    EXPECT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umf_result = umfOsMemoryProviderParamsSetNumaList(
+        os_memory_provider_params, &valid_list, valid_list_len);
+    EXPECT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umf_result = umfOsMemoryProviderParamsSetPartitions(
+        os_memory_provider_params, &p, 1);
+    EXPECT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
     umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(),
                                          &os_memory_provider_params,
                                          &os_memory_provider);
+
+    umfOsMemoryProviderParamsDestroy(os_memory_provider_params);
 
     EXPECT_EQ(os_memory_provider, nullptr);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
@@ -212,10 +229,24 @@ TEST_F(test, create_ZERO_WEIGHT_PARTITION) {
 
 // positive tests using test_alloc_free_success
 
-auto defaultParams = umfOsMemoryProviderParamsDefault();
+using os_params_unique_handle_t =
+    std::unique_ptr<umf_os_memory_provider_params_t,
+                    decltype(&umfOsMemoryProviderParamsDestroy)>;
+
+os_params_unique_handle_t createOsMemoryProviderParams() {
+    umf_os_memory_provider_params_handle_t params = nullptr;
+    umf_result_t res = umfOsMemoryProviderParamsCreate(&params);
+    if (res != UMF_RESULT_SUCCESS) {
+        throw std::runtime_error("Failed to create os memory provider params");
+    }
+
+    return os_params_unique_handle_t(params, &umfOsMemoryProviderParamsDestroy);
+}
+auto defaultParams = createOsMemoryProviderParams();
+
 INSTANTIATE_TEST_SUITE_P(osProviderTest, umfProviderTest,
                          ::testing::Values(providerCreateExtParams{
-                             umfOsMemoryProviderOps(), &defaultParams}));
+                             umfOsMemoryProviderOps(), defaultParams.get()}));
 
 TEST_P(umfProviderTest, create_destroy) {}
 
@@ -376,10 +407,22 @@ TEST_P(umfProviderTest, close_ipc_handle_wrong_visibility) {
 
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(umfIpcTest);
 
-umf_os_memory_provider_params_t osMemoryProviderParamsShared() {
-    auto params = umfOsMemoryProviderParamsDefault();
-    params.visibility = UMF_MEM_MAP_SHARED;
-    return params;
+using os_params_unique_handle_t =
+    std::unique_ptr<umf_os_memory_provider_params_t,
+                    decltype(&umfOsMemoryProviderParamsDestroy)>;
+
+os_params_unique_handle_t osMemoryProviderParamsShared() {
+    umf_os_memory_provider_params_handle_t params = nullptr;
+    umf_result_t res = umfOsMemoryProviderParamsCreate(&params);
+    if (res != UMF_RESULT_SUCCESS) {
+        throw std::runtime_error("Failed to create os memory provider params");
+    }
+    res = umfOsMemoryProviderParamsSetVisibility(params, UMF_MEM_MAP_SHARED);
+    if (res != UMF_RESULT_SUCCESS) {
+        throw std::runtime_error("Failed to set protection");
+    }
+
+    return os_params_unique_handle_t(params, &umfOsMemoryProviderParamsDestroy);
 }
 auto os_params = osMemoryProviderParamsShared();
 
@@ -422,10 +465,10 @@ disjoint_params_unique_handle_t disjointParams = disjointPoolParams();
 static std::vector<ipcTestParams> ipcTestParamsList = {
 #if (defined UMF_POOL_DISJOINT_ENABLED)
     {umfDisjointPoolOps(), disjointParams.get(), umfOsMemoryProviderOps(),
-     &os_params, &hostAccessor, false},
+     os_params.get(), &hostAccessor, false},
 #endif
 #ifdef UMF_POOL_JEMALLOC_ENABLED
-    {umfJemallocPoolOps(), nullptr, umfOsMemoryProviderOps(), &os_params,
+    {umfJemallocPoolOps(), nullptr, umfOsMemoryProviderOps(), os_params.get(),
      &hostAccessor, false},
 #endif
 };
