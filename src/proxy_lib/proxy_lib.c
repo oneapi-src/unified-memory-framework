@@ -170,13 +170,6 @@ static int get_system_allocator_symbols(void) {
         return 0;
     }
 
-    *((void **)(&System_aligned_alloc)) = NULL;
-    *((void **)(&System_calloc)) = NULL;
-    *((void **)(&System_free)) = NULL;
-    *((void **)(&System_malloc)) = NULL;
-    *((void **)(&System_malloc_usable_size)) = NULL;
-    *((void **)(&System_realloc)) = NULL;
-
     return -1;
 }
 #endif /* _WIN32 */
@@ -323,26 +316,26 @@ static void ba_leak_init_once(void) {
     utils_init_once(&Base_alloc_leak_initialized, ba_leak_create);
 }
 
-static inline void *ba_leak_malloc(size_t size) {
+static inline void *ba_leak_aligned_alloc(size_t alignment, size_t size) {
     ba_leak_init_once();
-    return umf_ba_linear_alloc(Base_alloc_leak, size);
+    void *ptr = umf_ba_linear_alloc(Base_alloc_leak, size + alignment);
+    return (void *)ALIGN_UP_SAFE((uintptr_t)ptr, alignment);
+}
+
+static inline void *ba_leak_malloc(size_t size) {
+    return ba_leak_aligned_alloc(0, size);
 }
 
 static inline void *ba_leak_calloc(size_t nmemb, size_t size) {
     ba_leak_init_once();
     // umf_ba_linear_alloc() returns zeroed memory
-    return umf_ba_linear_alloc(Base_alloc_leak, nmemb * size);
+    // so ba_leak_aligned_alloc() does too
+    return ba_leak_aligned_alloc(0, nmemb * size);
 }
 
 static inline void *ba_leak_realloc(void *ptr, size_t size, size_t max_size) {
     ba_leak_init_once();
     return ba_generic_realloc(Base_alloc_leak, ptr, size, max_size);
-}
-
-static inline void *ba_leak_aligned_alloc(size_t alignment, size_t size) {
-    ba_leak_init_once();
-    void *ptr = umf_ba_linear_alloc(Base_alloc_leak, size + alignment);
-    return (void *)ALIGN_UP_SAFE((uintptr_t)ptr, alignment);
 }
 
 static inline int ba_leak_free(void *ptr) {
