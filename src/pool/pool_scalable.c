@@ -19,6 +19,7 @@
 #include <umf/pools/pool_scalable.h>
 
 #include "base_alloc_global.h"
+#include "libumf.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
 #include "utils_load_library.h"
@@ -175,6 +176,7 @@ static void tbb_raw_free_wrapper(intptr_t pool_id, void *ptr, size_t bytes) {
 
 umf_result_t
 umfScalablePoolParamsCreate(umf_scalable_pool_params_handle_t *hParams) {
+    libumfInit();
     if (!hParams) {
         LOG_ERR("scalable pool params handle is NULL");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
