@@ -68,6 +68,7 @@ umf_memory_provider_ops_t *umfCUDAMemoryProviderOps(void) {
 #endif // _MSC_VER
 
 #include "base_alloc_global.h"
+#include "libumf.h"
 #include "utils_assert.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
@@ -201,6 +202,7 @@ static void init_cu_global_state(void) {
 
 umf_result_t umfCUDAMemoryProviderParamsCreate(
     umf_cuda_memory_provider_params_handle_t *hParams) {
+    libumfInit();
     if (!hParams) {
         LOG_ERR("CUDA Memory Provider params handle is NULL");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
