@@ -326,7 +326,47 @@ TEST_P(umfProviderTest, purge_force_INVALID_POINTER) {
                              UMF_DEVDAX_RESULT_ERROR_PURGE_FORCE_FAILED);
 }
 
-// negative tests
+// params tests
+
+TEST_F(test, params_protection_flag) {
+    umf_devdax_memory_provider_params_handle_t params = nullptr;
+    umf_result_t ret =
+        umfDevDaxMemoryProviderParamsCreate(&params, "/dev/dax0.0", 4096);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(params, nullptr);
+
+    //test all valid combinations
+    for (unsigned protection = UMF_PROTECTION_NONE;
+         protection < (UMF_PROTECTION_MAX - 1) << 1; ++protection) {
+        ret = umfDevDaxMemoryProviderParamsSetProtection(params, protection);
+        ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    }
+
+    umfDevDaxMemoryProviderParamsDestroy(params);
+}
+
+// negative params tests
+
+TEST_F(test, params_invalid_protection_flag) {
+    umf_devdax_memory_provider_params_handle_t params = nullptr;
+    umf_result_t ret =
+        umfDevDaxMemoryProviderParamsCreate(&params, "/dev/dax0.0", 4096);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(params, nullptr);
+
+    ret = umfDevDaxMemoryProviderParamsSetProtection(params, 0);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    for (unsigned protection = UMF_PROTECTION_NONE;
+         protection < (UMF_PROTECTION_MAX - 1) << 1; ++protection) {
+        unsigned invalid_protection = protection | (UMF_PROTECTION_MAX << 1);
+        ret = umfDevDaxMemoryProviderParamsSetProtection(params,
+                                                         invalid_protection);
+        ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    }
+
+    umfDevDaxMemoryProviderParamsDestroy(params);
+}
 
 TEST_F(test, params_null_handle) {
     auto ret =

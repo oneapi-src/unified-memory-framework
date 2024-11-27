@@ -641,6 +641,16 @@ umf_result_t umfDevDaxMemoryProviderParamsSetProtection(
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
+    // verify that protection contains only valid bits set
+    // (UMF_PROTECTION_MAX-1) - highest possible bit
+    // (UMF_PROTECTION_MAX-1) << 1 - next after highest possible bit
+    // ((UMF_PROTECTION_MAX-1) << 1) - 1 - all valid bits set
+    const unsigned VALID_FLAGS_ALL = ((UMF_PROTECTION_MAX - 1) << 1) - 1;
+    if (protection & ~VALID_FLAGS_ALL || protection == 0) {
+        LOG_ERR("Incorrect memory protection flags: %u", protection);
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     hParams->protection = protection;
 
     return UMF_RESULT_SUCCESS;
