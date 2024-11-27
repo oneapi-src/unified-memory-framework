@@ -345,6 +345,13 @@ else()
         LIBS ${UMF_UTILS_FOR_TEST})
 endif()
 
+if(UMF_DISABLE_HWLOC)
+    add_umf_test(
+        NAME provider_os_memory_not_impl
+        SRCS provider_os_memory_not_impl.cpp
+        LIBS ${UMF_UTILS_FOR_TEST})
+endif()
+
 if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
     # we have two test binaries here that use the same sources, but differ in
     # the way they are linked to the Level Zero (statically or at runtime using
