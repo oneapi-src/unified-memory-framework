@@ -18,15 +18,43 @@ extern "C" {
 #define UMF_DEVDAX_RESULTS_START_FROM 2000
 /// @endcond
 
-/// @brief Memory provider settings struct
-typedef struct umf_devdax_memory_provider_params_t {
-    /// path of the device DAX
-    char *path;
-    /// size of the device DAX in bytes
-    size_t size;
-    /// combination of 'umf_mem_protection_flags_t' flags
-    unsigned protection;
-} umf_devdax_memory_provider_params_t;
+struct umf_devdax_memory_provider_params_t;
+
+typedef struct umf_devdax_memory_provider_params_t
+    *umf_devdax_memory_provider_params_handle_t;
+
+/// @brief  Create a struct to store parameters of the Devdax Memory Provider.
+/// @param  hParams [out] handle to the newly created parameters struct.
+/// @param  path [in] path of the device DAX.
+/// @param  size [in] size of the device DAX in bytes.
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+umf_result_t umfDevDaxMemoryProviderParamsCreate(
+    umf_devdax_memory_provider_params_handle_t *hParams, const char *path,
+    size_t size);
+
+/// @brief  Destroy parameters struct.
+/// @param  hParams [in] handle to the parameters of the Devdax Memory Provider.
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+umf_result_t umfDevDaxMemoryProviderParamsDestroy(
+    umf_devdax_memory_provider_params_handle_t hParams);
+
+/// @brief  Set a device DAX in the parameters struct. Overwrites the previous value.
+///         It provides an ability to use the same instance of params to create multiple
+///         instances of the provider for different DAX devices.
+/// @param  hParams [in] handle to the parameters of the Devdax Memory Provider.
+/// @param  path [in] path of the device DAX.
+/// @param  size [in] size of the device DAX in bytes.
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+umf_result_t umfDevDaxMemoryProviderParamsSetDeviceDax(
+    umf_devdax_memory_provider_params_handle_t hParams, const char *path,
+    size_t size);
+
+/// @brief  Set the protection flags in the parameters struct.
+/// @param  hParams [in] handle to the parameters of the Devdax Memory Provider.
+/// @param  protection [in] combination of 'umf_mem_protection_flags_t' flags.
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+umf_result_t umfDevDaxMemoryProviderParamsSetProtection(
+    umf_devdax_memory_provider_params_handle_t hParams, unsigned protection);
 
 /// @brief Devdax Memory Provider operation results
 typedef enum umf_devdax_memory_provider_native_error {
@@ -38,18 +66,6 @@ typedef enum umf_devdax_memory_provider_native_error {
 } umf_devdax_memory_provider_native_error_t;
 
 umf_memory_provider_ops_t *umfDevDaxMemoryProviderOps(void);
-
-/// @brief Create default params for the devdax memory provider
-static inline umf_devdax_memory_provider_params_t
-umfDevDaxMemoryProviderParamsDefault(char *path, size_t size) {
-    umf_devdax_memory_provider_params_t params = {
-        path, /* path of the device DAX */
-        size, /* size of the device DAX in bytes */
-        UMF_PROTECTION_READ | UMF_PROTECTION_WRITE, /* protection */
-    };
-
-    return params;
-}
 
 #ifdef __cplusplus
 }

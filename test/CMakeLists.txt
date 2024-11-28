@@ -343,6 +343,10 @@ else()
         NAME provider_file_memory_not_impl
         SRCS provider_file_memory_not_impl.cpp
         LIBS ${UMF_UTILS_FOR_TEST})
+    add_umf_test(
+        NAME provider_devdax_memory_not_impl
+        SRCS provider_devdax_memory_not_impl.cpp
+        LIBS ${UMF_UTILS_FOR_TEST})
 endif()
 
 if(UMF_DISABLE_HWLOC)
