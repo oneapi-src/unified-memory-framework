@@ -306,9 +306,10 @@ static int init_level_zero_lib(void) {
     return 0;
 }
 
-UTIL_ONCE_FLAG level_zero_init_flag;
-int InitResult;
-void init_level_zero_once() {
+static UTIL_ONCE_FLAG level_zero_init_flag = UTIL_ONCE_FLAG_INIT;
+static int InitResult;
+
+static void init_level_zero_once(void) {
     InitResult = InitLevelZeroOps();
     if (InitResult != 0) {
         return;
@@ -316,7 +317,7 @@ void init_level_zero_once() {
     InitResult = init_level_zero_lib();
 }
 
-int init_level_zero() {
+static int init_level_zero(void) {
     utils_init_once(&level_zero_init_flag, init_level_zero_once);
 
     return InitResult;
