@@ -65,6 +65,10 @@ jobs:
         working-directory: ${{env.BUILD_DIR}}
         run: LD_PRELOAD=./lib/libumf_proxy.so ctest --output-on-failure -E provider_file_memory_ipc
 
+      - name: aaa
+        working-directory: ${{env.BUILD_DIR}}
+        run: UMF_LOG="level:debug;flush:debug;output:stderr;pid:no" LD_PRELOAD=./lib/libumf_proxy.so ctest --output-on-failure -R disjointPool 
+
       - name: Run "./test/umf_test-memoryPool" with proxy library
         working-directory: ${{env.BUILD_DIR}}
         run: LD_PRELOAD=./lib/libumf_proxy.so ./test/umf_test-memoryPool

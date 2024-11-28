@@ -284,7 +284,7 @@ TEST_F(test, getLastFailedMemoryProvider) {
 
         umf_result_t alloc(size_t size, size_t, void **ptr) noexcept {
             if (allocResult == UMF_RESULT_SUCCESS) {
-                *ptr = malloc(size);
+                *ptr = umf_ba_global_alloc(size);
             } else {
                 *ptr = nullptr;
             }
@@ -293,7 +293,7 @@ TEST_F(test, getLastFailedMemoryProvider) {
         }
 
         umf_result_t free(void *ptr, [[maybe_unused]] size_t size) noexcept {
-            ::free(ptr);
+            umf_ba_global_free(ptr);
             return UMF_RESULT_SUCCESS;
         }
 
