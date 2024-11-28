@@ -32,7 +32,7 @@
 
 #if (defined UMF_BUILD_LIBUMF_POOL_DISJOINT &&                                 \
      defined UMF_BUILD_LEVEL_ZERO_PROVIDER && defined UMF_BUILD_GPU_TESTS)
-#include "utils_level_zero.h"
+#include "examples_level_zero.h"
 #endif
 
 // NOTE: with strict compilation flags, ubench compilation throws some
