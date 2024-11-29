@@ -13,7 +13,7 @@
 #include <umf/pools/pool_disjoint.h>
 #include <umf/providers/provider_level_zero.h>
 
-#include "examples_level_zero.h"
+#include "examples_level_zero_helpers.h"
 
 int main(void) {
     // A result object for storing UMF API result status

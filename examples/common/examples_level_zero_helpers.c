@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "examples_level_zero.h"
+#include "examples_level_zero_helpers.h"
 
 int init_level_zero(void) {
     ze_init_flag_t flags = ZE_INIT_FLAG_GPU_ONLY;

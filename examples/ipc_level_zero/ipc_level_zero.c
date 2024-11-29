@@ -15,7 +15,7 @@
 #include "umf/pools/pool_disjoint.h"
 #include "umf/providers/provider_level_zero.h"
 
-#include "examples_level_zero.h"
+#include "examples_level_zero_helpers.h"
 
 int create_level_zero_pool(ze_context_handle_t context,
                            ze_device_handle_t device,
