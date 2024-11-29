@@ -124,7 +124,8 @@ jobs:
         ssh testuser@127.0.0.1 -p 2222 -t "sudo chown -R testuser:users /home/testuser"
 
         ssh testuser@127.0.0.1 -p 2222 -t "bash /home/testuser/scripts/qemu/run-build.sh COVERAGE"
-        ssh testuser@127.0.0.1 -p 2222 -t "sudo shutdown -h now"
+        # ssh may return non-zero error code on closing the connection in Ubuntu 22.04
+        ssh testuser@127.0.0.1 -p 2222 -t "sudo shutdown -h now" || true
 
     - name: Run tests in QEMU
       run: |
@@ -143,7 +144,8 @@ jobs:
 
           ssh testuser@127.0.0.1 -p 2222 -t "export SHORT_RUN=${SHORT_RUN} OS_FULL_NAME=${{matrix.os}} && /home/testuser/scripts/qemu/run-tests.sh COVERAGE ${config_name}"
           scp -r -P 2222 testuser@127.0.0.1:/home/testuser/coverage ./
-          ssh testuser@127.0.0.1 -p 2222 -t "sudo shutdown -h now"
+          # ssh may return non-zero error code on closing the connection in Ubuntu 22.04
+          ssh testuser@127.0.0.1 -p 2222 -t "sudo shutdown -h now" || true
         done
         ls -al ./coverage
 
