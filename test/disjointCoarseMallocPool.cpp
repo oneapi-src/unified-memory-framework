@@ -7,39 +7,40 @@
 
 #include <random>
 
-#include "provider.hpp"
-
 #include <umf/pools/pool_disjoint.h>
-#include <umf/providers/provider_coarse.h>
+#include <umf/providers/provider_file_memory.h>
+
+#include "coarse.h"
+#include "provider.hpp"
 
 using umf_test::KB;
 using umf_test::MB;
 using umf_test::test;
 
-#define GetStats umfCoarseMemoryProviderGetStats
+#define FILE_PATH ((char *)"tmp_file")
 
 umf_memory_provider_ops_t UMF_MALLOC_MEMORY_PROVIDER_OPS =
     umf::providerMakeCOps<umf_test::provider_ba_global, void>();
 
-struct CoarseWithMemoryStrategyTest
+struct FileWithMemoryStrategyTest
     : umf_test::test,
-      ::testing::WithParamInterface<coarse_memory_provider_strategy_t> {
+      ::testing::WithParamInterface<coarse_strategy_t> {
     void SetUp() override {
         test::SetUp();
         allocation_strategy = this->GetParam();
     }
 
-    coarse_memory_provider_strategy_t allocation_strategy;
+    coarse_strategy_t allocation_strategy;
 };
 
 INSTANTIATE_TEST_SUITE_P(
-    CoarseWithMemoryStrategyTest, CoarseWithMemoryStrategyTest,
+    FileWithMemoryStrategyTest, FileWithMemoryStrategyTest,
     ::testing::Values(UMF_COARSE_MEMORY_STRATEGY_FASTEST,
                       UMF_COARSE_MEMORY_STRATEGY_FASTEST_BUT_ONE,
                       UMF_COARSE_MEMORY_STRATEGY_CHECK_ALL_SIZE));
 
-TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMallocPool_basic) {
-    umf_memory_provider_handle_t malloc_memory_provider;
+TEST_P(FileWithMemoryStrategyTest, disjointFileMallocPool_simple1) {
+    umf_memory_provider_handle_t malloc_memory_provider = nullptr;
     umf_result_t umf_result;
 
     umf_result = umfMemoryProviderCreate(&UMF_MALLOC_MEMORY_PROVIDER_OPS, NULL,
@@ -47,217 +48,19 @@ TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMallocPool_basic) {
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(malloc_memory_provider, nullptr);
 
-    const size_t init_buffer_size = 20 * MB;
-
-    coarse_memory_provider_params_t coarse_memory_provider_params;
-    // make sure there are no undefined members - prevent a UB
-    memset(&coarse_memory_provider_params, 0,
-           sizeof(coarse_memory_provider_params));
-    coarse_memory_provider_params.allocation_strategy = allocation_strategy;
-    coarse_memory_provider_params.upstream_memory_provider =
-        malloc_memory_provider;
-    coarse_memory_provider_params.destroy_upstream_memory_provider = true;
-    coarse_memory_provider_params.immediate_init_from_upstream = true;
-    coarse_memory_provider_params.init_buffer = nullptr;
-    coarse_memory_provider_params.init_buffer_size = init_buffer_size;
-
-    umf_memory_provider_handle_t coarse_memory_provider;
-    umf_result = umfMemoryProviderCreate(umfCoarseMemoryProviderOps(),
-                                         &coarse_memory_provider_params,
-                                         &coarse_memory_provider);
+    umf_file_memory_provider_params_handle_t file_params = nullptr;
+    umf_result = umfFileMemoryProviderParamsCreate(&file_params, FILE_PATH);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(coarse_memory_provider, nullptr);
+    ASSERT_NE(file_params, nullptr);
 
-    umf_disjoint_pool_params_handle_t disjoint_pool_params = NULL;
-    umf_result = umfDisjointPoolParamsCreate(&disjoint_pool_params);
+    umf_memory_provider_handle_t file_memory_provider;
+    umf_result = umfMemoryProviderCreate(umfFileMemoryProviderOps(),
+                                         file_params, &file_memory_provider);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(disjoint_pool_params, nullptr);
-    umf_result =
-        umfDisjointPoolParamsSetSlabMinSize(disjoint_pool_params, 4096);
+    ASSERT_NE(file_memory_provider, nullptr);
+
+    umf_result = umfFileMemoryProviderParamsDestroy(file_params);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    umf_result =
-        umfDisjointPoolParamsSetMaxPoolableSize(disjoint_pool_params, 4096);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    umf_result = umfDisjointPoolParamsSetCapacity(disjoint_pool_params, 4);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    umf_result =
-        umfDisjointPoolParamsSetMinBucketSize(disjoint_pool_params, 64);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    umf_result = umfDisjointPoolParamsSetTrace(disjoint_pool_params, 1);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-
-    umf_memory_pool_handle_t pool;
-    umf_result = umfPoolCreate(umfDisjointPoolOps(), coarse_memory_provider,
-                               disjoint_pool_params,
-                               UMF_POOL_CREATE_FLAG_OWN_PROVIDER, &pool);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(pool, nullptr);
-
-    umf_result = umfDisjointPoolParamsDestroy(disjoint_pool_params);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-
-    // test
-
-    umf_memory_provider_handle_t prov = NULL;
-    umf_result = umfPoolGetMemoryProvider(pool, &prov);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(prov, nullptr);
-
-    // alloc 2x 2MB
-    void *p1 = umfPoolMalloc(pool, 2 * MB);
-    ASSERT_NE(p1, nullptr);
-    ASSERT_EQ(GetStats(prov).used_size, 2 * MB);
-    ASSERT_EQ(GetStats(prov).alloc_size, init_buffer_size);
-    ASSERT_EQ(GetStats(prov).num_all_blocks, 2);
-
-    void *p2 = umfPoolMalloc(pool, 2 * MB);
-    ASSERT_NE(p2, nullptr);
-    ASSERT_EQ(GetStats(prov).used_size, 4 * MB);
-    ASSERT_EQ(GetStats(prov).alloc_size, init_buffer_size);
-    ASSERT_EQ(GetStats(prov).num_all_blocks, 3);
-    ASSERT_NE(p1, p2);
-
-    // swap pointers to get p1 < p2
-    if (p1 > p2) {
-        std::swap(p1, p2);
-    }
-
-    // free + alloc first block
-    // the block should be reused
-    // currently there is no purging, so the alloc size shouldn't change
-    // there should be no block merging between used and not-used blocks
-    umf_result = umfPoolFree(pool, p1);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_EQ(GetStats(prov).used_size, 2 * MB);
-    ASSERT_EQ(GetStats(prov).alloc_size, init_buffer_size);
-    ASSERT_EQ(GetStats(prov).num_all_blocks, 3);
-
-    p1 = umfPoolMalloc(pool, 2 * MB);
-    ASSERT_EQ(GetStats(prov).used_size, 4 * MB);
-    ASSERT_EQ(GetStats(prov).alloc_size, init_buffer_size);
-    ASSERT_EQ(GetStats(prov).num_all_blocks, 3);
-
-    // free all allocs
-    // overall alloc size shouldn't change
-    // block p2 should merge with the prev free block p1
-    // and the remaining init block
-    umf_result = umfPoolFree(pool, p1);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_EQ(GetStats(prov).num_all_blocks, 3);
-    umf_result = umfPoolFree(pool, p2);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_EQ(GetStats(prov).used_size, 0 * MB);
-    ASSERT_EQ(GetStats(prov).alloc_size, init_buffer_size);
-    ASSERT_EQ(GetStats(prov).num_all_blocks, 1);
-
-    // test allocations with alignment
-    // TODO: what about holes?
-    p1 = umfPoolAlignedMalloc(pool, 1 * MB - 4, 128);
-    ASSERT_NE(p1, nullptr);
-    ASSERT_EQ((uintptr_t)p1 & 127, 0);
-    p2 = umfPoolAlignedMalloc(pool, 1 * MB - 4, 128);
-    ASSERT_NE(p2, nullptr);
-    ASSERT_EQ((uintptr_t)p1 & 127, 0);
-    umf_result = umfPoolFree(pool, p1);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    umf_result = umfPoolFree(pool, p2);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-
-    // alloc whole buffer
-    // after this, there should be one single block
-    p1 = umfPoolMalloc(pool, init_buffer_size);
-    ASSERT_EQ(GetStats(prov).used_size, init_buffer_size);
-    ASSERT_EQ(GetStats(prov).alloc_size, init_buffer_size);
-    ASSERT_EQ(GetStats(prov).num_all_blocks, 1);
-
-    // free all memory
-    // alloc 2 MB block - the init block should be split
-    umf_result = umfPoolFree(pool, p1);
-    p1 = umfPoolMalloc(pool, 2 * MB);
-    ASSERT_EQ(GetStats(prov).used_size, 2 * MB);
-    ASSERT_EQ(GetStats(prov).alloc_size, init_buffer_size);
-    ASSERT_EQ(GetStats(prov).num_all_blocks, 2);
-
-    // alloc additional 2 MB
-    // the non-used block should be used
-    p2 = umfPoolMalloc(pool, 2 * MB);
-    ASSERT_EQ(GetStats(prov).used_size, 4 * MB);
-    ASSERT_EQ(GetStats(prov).alloc_size, init_buffer_size);
-    ASSERT_EQ(GetStats(prov).num_all_blocks, 3);
-    ASSERT_NE(p1, p2);
-
-    // make sure that p1 < p2
-    if (p1 > p2) {
-        std::swap(p1, p2);
-    }
-
-    // free blocks in order: p2, p1
-    // block p1 should merge with the next block p2
-    // swap pointers to get p1 < p2
-    umfPoolFree(pool, p2);
-    umfPoolFree(pool, p1);
-    ASSERT_EQ(GetStats(prov).used_size, 0 * MB);
-    ASSERT_EQ(GetStats(prov).alloc_size, init_buffer_size);
-    ASSERT_EQ(GetStats(prov).num_all_blocks, 1);
-
-    // alloc 10x 2 MB - this should occupy all allocated memory
-    constexpr int allocs_size = 10;
-    void *allocs[allocs_size] = {0};
-    for (int i = 0; i < allocs_size; i++) {
-        ASSERT_EQ(GetStats(prov).used_size, i * 2 * MB);
-        allocs[i] = umfPoolMalloc(pool, 2 * MB);
-        ASSERT_NE(allocs[i], nullptr);
-    }
-    ASSERT_EQ(GetStats(prov).used_size, 20 * MB);
-    ASSERT_EQ(GetStats(prov).alloc_size, init_buffer_size);
-    // there should be no block with the free memory
-    ASSERT_EQ(GetStats(prov).num_all_blocks, allocs_size);
-
-    // free all memory
-    for (int i = 0; i < allocs_size; i++) {
-        umf_result = umfPoolFree(pool, allocs[i]);
-        ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    }
-
-    ASSERT_EQ(GetStats(prov).num_all_blocks, 1);
-    ASSERT_EQ(GetStats(prov).used_size, 0 * MB);
-    ASSERT_EQ(GetStats(prov).alloc_size, init_buffer_size);
-
-    umfPoolDestroy(pool);
-    // Both coarse_memory_provider and malloc_memory_provider
-    // have already been destroyed by umfPoolDestroy(), because:
-    // UMF_POOL_CREATE_FLAG_OWN_PROVIDER was set in umfPoolCreate() and
-    // coarse_memory_provider_params.destroy_upstream_memory_provider = true;
-}
-
-TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMallocPool_simple1) {
-    umf_memory_provider_handle_t malloc_memory_provider;
-    umf_result_t umf_result;
-
-    umf_result = umfMemoryProviderCreate(&UMF_MALLOC_MEMORY_PROVIDER_OPS, NULL,
-                                         &malloc_memory_provider);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(malloc_memory_provider, nullptr);
-
-    const size_t init_buffer_size = 20 * MB;
-
-    coarse_memory_provider_params_t coarse_memory_provider_params;
-    // make sure there are no undefined members - prevent a UB
-    memset(&coarse_memory_provider_params, 0,
-           sizeof(coarse_memory_provider_params));
-    coarse_memory_provider_params.allocation_strategy = allocation_strategy;
-    coarse_memory_provider_params.upstream_memory_provider =
-        malloc_memory_provider;
-    coarse_memory_provider_params.immediate_init_from_upstream = true;
-    coarse_memory_provider_params.init_buffer = NULL;
-    coarse_memory_provider_params.init_buffer_size = init_buffer_size;
-
-    umf_memory_provider_handle_t coarse_memory_provider;
-    umf_result = umfMemoryProviderCreate(umfCoarseMemoryProviderOps(),
-                                         &coarse_memory_provider_params,
-                                         &coarse_memory_provider);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(coarse_memory_provider, nullptr);
 
     umf_disjoint_pool_params_handle_t disjoint_pool_params = NULL;
     umf_result = umfDisjointPoolParamsCreate(&disjoint_pool_params);
@@ -279,7 +82,7 @@ TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMallocPool_simple1) {
 
     umf_memory_pool_handle_t pool;
     umf_result =
-        umfPoolCreate(umfDisjointPoolOps(), coarse_memory_provider,
+        umfPoolCreate(umfDisjointPoolOps(), file_memory_provider,
                       disjoint_pool_params, UMF_POOL_CREATE_FLAG_NONE, &pool);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(pool, nullptr);
@@ -295,8 +98,6 @@ TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMallocPool_simple1) {
     size_t s1 = 74659 * KB;
     size_t s2 = 8206 * KB;
 
-    size_t max_alloc_size = 0;
-
     const int nreps = 2;
     const int nptrs = 6;
 
@@ -306,10 +107,6 @@ TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMallocPool_simple1) {
         for (int i = 0; i < nptrs; i++) {
             t[i] = umfPoolMalloc(pool, s1);
             ASSERT_NE(t[i], nullptr);
-        }
-
-        if (max_alloc_size == 0) {
-            max_alloc_size = GetStats(prov).alloc_size;
         }
 
         for (int i = 0; i < nptrs; i++) {
@@ -326,9 +123,6 @@ TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMallocPool_simple1) {
             ASSERT_NE(t[i], nullptr);
         }
 
-        // all s2 should fit into single block leaved after freeing s1
-        ASSERT_LE(GetStats(prov).alloc_size, max_alloc_size);
-
         for (int i = 0; i < nptrs; i++) {
             umf_result = umfPoolFree(pool, t[i]);
             ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
@@ -336,12 +130,12 @@ TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMallocPool_simple1) {
     }
 
     umfPoolDestroy(pool);
-    umfMemoryProviderDestroy(coarse_memory_provider);
+    umfMemoryProviderDestroy(file_memory_provider);
     umfMemoryProviderDestroy(malloc_memory_provider);
 }
 
-TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMallocPool_simple2) {
-    umf_memory_provider_handle_t malloc_memory_provider;
+TEST_P(FileWithMemoryStrategyTest, disjointFileMallocPool_simple2) {
+    umf_memory_provider_handle_t malloc_memory_provider = nullptr;
     umf_result_t umf_result;
 
     umf_result = umfMemoryProviderCreate(&UMF_MALLOC_MEMORY_PROVIDER_OPS, NULL,
@@ -349,25 +143,19 @@ TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMallocPool_simple2) {
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(malloc_memory_provider, nullptr);
 
-    const size_t init_buffer_size = 20 * MB;
-
-    coarse_memory_provider_params_t coarse_memory_provider_params;
-    // make sure there are no undefined members - prevent a UB
-    memset(&coarse_memory_provider_params, 0,
-           sizeof(coarse_memory_provider_params));
-    coarse_memory_provider_params.allocation_strategy = allocation_strategy;
-    coarse_memory_provider_params.upstream_memory_provider =
-        malloc_memory_provider;
-    coarse_memory_provider_params.immediate_init_from_upstream = true;
-    coarse_memory_provider_params.init_buffer = NULL;
-    coarse_memory_provider_params.init_buffer_size = init_buffer_size;
-
-    umf_memory_provider_handle_t coarse_memory_provider;
-    umf_result = umfMemoryProviderCreate(umfCoarseMemoryProviderOps(),
-                                         &coarse_memory_provider_params,
-                                         &coarse_memory_provider);
+    umf_file_memory_provider_params_handle_t file_params = nullptr;
+    umf_result = umfFileMemoryProviderParamsCreate(&file_params, FILE_PATH);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(coarse_memory_provider, nullptr);
+    ASSERT_NE(file_params, nullptr);
+
+    umf_memory_provider_handle_t file_memory_provider;
+    umf_result = umfMemoryProviderCreate(umfFileMemoryProviderOps(),
+                                         file_params, &file_memory_provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(file_memory_provider, nullptr);
+
+    umf_result = umfFileMemoryProviderParamsDestroy(file_params);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
     umf_disjoint_pool_params_handle_t disjoint_pool_params = NULL;
     umf_result = umfDisjointPoolParamsCreate(&disjoint_pool_params);
@@ -389,7 +177,7 @@ TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMallocPool_simple2) {
 
     umf_memory_pool_handle_t pool;
     umf_result =
-        umfPoolCreate(umfDisjointPoolOps(), coarse_memory_provider,
+        umfPoolCreate(umfDisjointPoolOps(), file_memory_provider,
                       disjoint_pool_params, UMF_POOL_CREATE_FLAG_NONE, &pool);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(pool, nullptr);
@@ -415,7 +203,7 @@ TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMallocPool_simple2) {
     }
 
     umfPoolDestroy(pool);
-    umfMemoryProviderDestroy(coarse_memory_provider);
+    umfMemoryProviderDestroy(file_memory_provider);
     umfMemoryProviderDestroy(malloc_memory_provider);
 }
 
@@ -431,7 +219,7 @@ struct alloc_ptr_size {
     }
 };
 
-TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMMapPool_random) {
+TEST_P(FileWithMemoryStrategyTest, disjointFileMMapPool_random) {
     umf_result_t umf_result;
 
     const size_t init_buffer_size = 200 * MB;
@@ -443,22 +231,19 @@ TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMMapPool_random) {
 
     const unsigned char alloc_check_val = 11;
 
-    coarse_memory_provider_params_t coarse_memory_provider_params;
-    // make sure there are no undefined members - prevent a UB
-    memset(&coarse_memory_provider_params, 0,
-           sizeof(coarse_memory_provider_params));
-    coarse_memory_provider_params.allocation_strategy = allocation_strategy;
-    coarse_memory_provider_params.upstream_memory_provider = NULL;
-    coarse_memory_provider_params.immediate_init_from_upstream = false;
-    coarse_memory_provider_params.init_buffer = buf;
-    coarse_memory_provider_params.init_buffer_size = init_buffer_size;
-
-    umf_memory_provider_handle_t coarse_memory_provider;
-    umf_result = umfMemoryProviderCreate(umfCoarseMemoryProviderOps(),
-                                         &coarse_memory_provider_params,
-                                         &coarse_memory_provider);
+    umf_file_memory_provider_params_handle_t file_params = nullptr;
+    umf_result = umfFileMemoryProviderParamsCreate(&file_params, FILE_PATH);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(coarse_memory_provider, nullptr);
+    ASSERT_NE(file_params, nullptr);
+
+    umf_memory_provider_handle_t file_memory_provider;
+    umf_result = umfMemoryProviderCreate(umfFileMemoryProviderOps(),
+                                         file_params, &file_memory_provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(file_memory_provider, nullptr);
+
+    umf_result = umfFileMemoryProviderParamsDestroy(file_params);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
     umf_disjoint_pool_params_handle_t disjoint_pool_params = NULL;
     umf_result = umfDisjointPoolParamsCreate(&disjoint_pool_params);
@@ -480,7 +265,7 @@ TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMMapPool_random) {
 
     umf_memory_pool_handle_t pool;
     umf_result =
-        umfPoolCreate(umfDisjointPoolOps(), coarse_memory_provider,
+        umfPoolCreate(umfDisjointPoolOps(), file_memory_provider,
                       disjoint_pool_params, UMF_POOL_CREATE_FLAG_NONE, &pool);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(pool, nullptr);
@@ -520,9 +305,7 @@ TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMMapPool_random) {
 
             // alloc
             for (size_t j = 0; j < count; j++) {
-                void *ptr = umfPoolMalloc(pool, size);
-                ASSERT_NE(ptr, nullptr);
-
+                void *ptr = umfPoolCalloc(pool, 1, size);
                 if (ptr == nullptr) {
                     break;
                 }
@@ -576,5 +359,5 @@ TEST_P(CoarseWithMemoryStrategyTest, disjointCoarseMMapPool_random) {
     }
 
     umfPoolDestroy(pool);
-    umfMemoryProviderDestroy(coarse_memory_provider);
+    umfMemoryProviderDestroy(file_memory_provider);
 }

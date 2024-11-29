@@ -23,11 +23,9 @@ file_params_unique_handle_t get_file_params_default(char *path) {
                                        &umfFileMemoryProviderParamsDestroy);
 }
 
-auto coarseParams = umfCoarseMemoryProviderParamsDefault();
 file_params_unique_handle_t fileParams = get_file_params_default(FILE_PATH);
 
 INSTANTIATE_TEST_SUITE_P(scalableCoarseFileTest, umfPoolTest,
                          ::testing::Values(poolCreateExtParams{
                              umfScalablePoolOps(), nullptr,
-                             umfFileMemoryProviderOps(), fileParams.get(),
-                             &coarseParams}));
+                             umfFileMemoryProviderOps(), fileParams.get()}));
