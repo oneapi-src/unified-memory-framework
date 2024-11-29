@@ -42,11 +42,8 @@ function(add_umf_benchmark)
         LIBS ${BENCH_LIBS})
 
     target_include_directories(
-        ${BENCH_NAME}
-        PRIVATE ${UMF_CMAKE_SOURCE_DIR}/include
-                ${UMF_CMAKE_SOURCE_DIR}/src/utils
-                ${UMF_CMAKE_SOURCE_DIR}/test/common
-                ${UMF_CMAKE_SOURCE_DIR}/examples/common)
+        ${BENCH_NAME} PRIVATE ${UMF_CMAKE_SOURCE_DIR}/include
+                              ${UMF_CMAKE_SOURCE_DIR}/src/utils)
 
     target_link_directories(${BENCH_NAME} PRIVATE ${ARG_LIBDIRS})
 
@@ -84,6 +81,9 @@ function(add_umf_benchmark)
     if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
         target_compile_definitions(${BENCH_NAME}
                                    PRIVATE UMF_BUILD_LEVEL_ZERO_PROVIDER=1)
+        target_include_directories(
+            ${BENCH_NAME} PRIVATE ${UMF_CMAKE_SOURCE_DIR}/test/common
+                                  ${LEVEL_ZERO_INCLUDE_DIRS})
     endif()
     if(UMF_BUILD_CUDA_PROVIDER)
         target_compile_definitions(${BENCH_NAME}
@@ -108,6 +108,7 @@ if(LINUX)
     set(LIBS_OPTIONAL ${LIBS_OPTIONAL} m)
 endif()
 if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
+    set(SRCS_OPTIONAL ${SRCS_OPTIONAL} ../src/utils/utils_level_zero.cpp)
     set(LIBS_OPTIONAL ${LIBS_OPTIONAL} ze_loader)
     # TODO add CUDA
 endif()
@@ -116,7 +117,7 @@ endif()
 
 add_umf_benchmark(
     NAME ubench
-    SRCS ubench.c
+    SRCS ubench.c ${SRCS_OPTIONAL}
     LIBS ${LIBS_OPTIONAL}
     LIBDIRS ${LIB_DIRS})
 

@@ -22,6 +22,7 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 
 set(UMF_TEST_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(UMF_UTILS_DIR ${UMF_CMAKE_SOURCE_DIR}/src/utils)
 
 function(build_umf_test)
     # Parameters: * NAME - a name of the test * SRCS - source files * LIBS -
@@ -136,20 +137,22 @@ if(UMF_BUILD_SHARED_LIBRARY)
     set(UMF_UTILS_FOR_TEST umf_utils)
     if(LINUX OR MACOSX)
         set(UMF_UTILS_SOURCES
-            ../src/utils/utils_common.c ../src/utils/utils_posix_common.c
-            ../src/utils/utils_posix_concurrency.c)
+            ${UMF_UTILS_DIR}/utils_common.c
+            ${UMF_UTILS_DIR}/utils_posix_common.c
+            ${UMF_UTILS_DIR}/utils_posix_concurrency.c)
         if(LINUX)
             set(UMF_UTILS_SOURCES ${UMF_UTILS_SOURCES}
-                                  ../src/utils/utils_linux_common.c)
+                                  ${UMF_UTILS_DIR}/utils_linux_common.c)
             set(UMF_LOGGER_LIBS rt) # librt for shm_open()
         elseif(MACOSX)
             set(UMF_UTILS_SOURCES ${UMF_UTILS_SOURCES}
-                                  ../src/utils/utils_macosx_common.c)
+                                  ${UMF_UTILS_DIR}/utils_macosx_common.c)
         endif()
     elseif(WINDOWS)
         set(UMF_UTILS_SOURCES
-            ../src/utils/utils_common.c ../src/utils/utils_windows_common.c
-            ../src/utils/utils_windows_concurrency.c)
+            ${UMF_UTILS_DIR}/utils_common.c
+            ${UMF_UTILS_DIR}/utils_windows_common.c
+            ${UMF_UTILS_DIR}/utils_windows_concurrency.c)
     endif()
 endif()
 
@@ -362,16 +365,16 @@ if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
     # dlopen)
     add_umf_test(
         NAME provider_level_zero
-        SRCS providers/provider_level_zero.cpp providers/level_zero_helpers.cpp
-             ${BA_SOURCES_FOR_TEST}
+        SRCS providers/provider_level_zero.cpp
+             ${UMF_UTILS_DIR}/utils_level_zero.cpp ${BA_SOURCES_FOR_TEST}
         LIBS ${UMF_UTILS_FOR_TEST} ze_loader)
     target_include_directories(umf_test-provider_level_zero
                                PRIVATE ${LEVEL_ZERO_INCLUDE_DIRS})
 
     add_umf_test(
         NAME provider_level_zero_dlopen
-        SRCS providers/provider_level_zero.cpp providers/level_zero_helpers.cpp
-             ${BA_SOURCES_FOR_TEST}
+        SRCS providers/provider_level_zero.cpp
+             ${UMF_UTILS_DIR}/utils_level_zero.cpp ${BA_SOURCES_FOR_TEST}
         LIBS ${UMF_UTILS_FOR_TEST})
     target_compile_definitions(umf_test-provider_level_zero_dlopen
                                PUBLIC USE_DLOPEN=1)
@@ -584,7 +587,7 @@ if(LINUX)
             providers/ipc_level_zero_prov_consumer.c
             common/ipc_common.c
             providers/ipc_level_zero_prov_common.c
-            providers/level_zero_helpers.cpp
+            ${UMF_UTILS_DIR}/utils_level_zero.cpp
             LIBS
             ze_loader
             disjoint_pool
@@ -596,7 +599,7 @@ if(LINUX)
             providers/ipc_level_zero_prov_producer.c
             common/ipc_common.c
             providers/ipc_level_zero_prov_common.c
-            providers/level_zero_helpers.cpp
+            ${UMF_UTILS_DIR}/utils_level_zero.cpp
             LIBS
             ze_loader
             disjoint_pool

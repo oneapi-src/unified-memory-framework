@@ -12,8 +12,8 @@
 #include <umf/providers/provider_level_zero.h>
 
 #include "ipcFixtures.hpp"
-#include "level_zero_helpers.h"
 #include "pool.hpp"
+#include "utils_level_zero.h"
 #include "utils_load_library.h"
 
 using umf_test::test;
@@ -25,7 +25,7 @@ class LevelZeroTestHelper {
 
     ~LevelZeroTestHelper() {
         if (hContext_) {
-            destroy_context(hContext_);
+            utils_ze_destroy_context(hContext_);
         }
     }
 
@@ -42,21 +42,21 @@ class LevelZeroTestHelper {
 LevelZeroTestHelper::LevelZeroTestHelper() {
     uint32_t driver_idx = 0;
 
-    int ret = find_driver_with_gpu(&driver_idx, &hDriver_);
+    int ret = utils_ze_find_driver_with_gpu(&driver_idx, &hDriver_);
     if (ret != 0 || hDriver_ == NULL) {
-        fprintf(stderr, "find_driver_with_gpu() failed!\n");
+        fprintf(stderr, "utils_ze_find_driver_with_gpu() failed!\n");
         return;
     }
 
-    ret = find_gpu_device(hDriver_, &hDevice_);
+    ret = utils_ze_find_gpu_device(hDriver_, &hDevice_);
     if (ret != 0 || hDevice_ == NULL) {
-        fprintf(stderr, "find_gpu_device() failed!\n");
+        fprintf(stderr, "utils_ze_find_gpu_device() failed!\n");
         return;
     }
 
-    ret = create_context(hDriver_, &hContext_);
+    ret = utils_ze_create_context(hDriver_, &hContext_);
     if (ret != 0) {
-        fprintf(stderr, "create_context() failed!\n");
+        fprintf(stderr, "utils_ze_create_context() failed!\n");
         return;
     }
 }
@@ -218,8 +218,8 @@ class LevelZeroMemoryAccessor : public MemoryAccessor {
               size_t pattern_size) {
         ASSERT_NE(ptr, nullptr);
 
-        int ret = level_zero_fill(hContext_, hDevice_, ptr, size, pattern,
-                                  pattern_size);
+        int ret = utils_ze_level_zero_fill(hContext_, hDevice_, ptr, size,
+                                           pattern, pattern_size);
         ASSERT_EQ(ret, 0);
     }
 
@@ -227,7 +227,8 @@ class LevelZeroMemoryAccessor : public MemoryAccessor {
         ASSERT_NE(dst_ptr, nullptr);
         ASSERT_NE(src_ptr, nullptr);
 
-        int ret = level_zero_copy(hContext_, hDevice_, dst_ptr, src_ptr, size);
+        int ret = utils_ze_level_zero_copy(hContext_, hDevice_, dst_ptr,
+                                           src_ptr, size);
         ASSERT_EQ(ret, 0);
     }
 
@@ -301,7 +302,7 @@ TEST_P(umfLevelZeroProviderTest, basic) {
     // use the allocated memory - fill it with a 0xAB pattern
     memAccessor->fill(ptr, size, &pattern, sizeof(pattern));
 
-    ze_memory_type_t zeMemoryTypeActual = get_mem_type(hContext, ptr);
+    ze_memory_type_t zeMemoryTypeActual = utils_ze_get_mem_type(hContext, ptr);
     ASSERT_EQ(zeMemoryTypeActual, zeMemoryTypeExpected);
 
     // check if the pattern was successfully applied

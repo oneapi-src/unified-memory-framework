@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "utils_examples.h"
+#include "examples_utils.h"
 
 // Function to create a memory provider which allocates memory from the specified NUMA node
 // by using umfMemspaceCreateFromNumaArray
