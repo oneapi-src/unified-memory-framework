@@ -40,12 +40,26 @@ function(build_umf_test)
 
     set(LIB_DIRS ${LIB_DIRS} ${LIBHWLOC_LIBRARY_DIRS})
 
-    if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
-        set(LIB_DIRS ${LIB_DIRS} ${JEMALLOC_LIBRARY_DIRS})
+    if(UMF_BUILD_CUDA_PROVIDER)
+        set(INC_DIRS ${INC_DIRS} ${CUDA_INCLUDE_DIRS})
+        set(LIB_DIRS ${LIB_DIRS} ${CUDA_LIBRARY_DIRS})
     endif()
 
-    if(UMF_BUILD_CUDA_PROVIDER)
-        set(LIB_DIRS ${LIB_DIRS} ${CUDA_LIBRARY_DIRS})
+    if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
+        set(INC_DIRS ${INC_DIRS} ${LEVEL_ZERO_INCLUDE_DIRS})
+    endif()
+
+    if(UMF_POOL_JEMALLOC_ENABLED)
+        set(LIB_DIRS ${LIB_DIRS} ${JEMALLOC_LIBRARY_DIRS})
+        set(CPL_DEFS ${CPL_DEFS} UMF_POOL_JEMALLOC_ENABLED=1)
+    endif()
+
+    if(UMF_POOL_SCALABLE_ENABLED)
+        set(CPL_DEFS ${CPL_DEFS} UMF_POOL_SCALABLE_ENABLED=1)
+    endif()
+
+    if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
+        set(CPL_DEFS ${CPL_DEFS} UMF_POOL_DISJOINT_ENABLED=1)
     endif()
 
     set(TEST_LIBS
@@ -60,15 +74,7 @@ function(build_umf_test)
         SRCS ${ARG_SRCS}
         LIBS ${TEST_LIBS})
 
-    if(UMF_POOL_JEMALLOC_ENABLED)
-        target_compile_definitions(${TEST_TARGET_NAME}
-                                   PRIVATE UMF_POOL_JEMALLOC_ENABLED=1)
-    endif()
-
-    if(UMF_POOL_SCALABLE_ENABLED)
-        target_compile_definitions(${TEST_TARGET_NAME}
-                                   PRIVATE UMF_POOL_SCALABLE_ENABLED=1)
-    endif()
+    target_compile_definitions(${TEST_TARGET_NAME} PRIVATE ${CPL_DEFS})
 
     if(NOT MSVC)
         # Suppress 'cast discards const qualifier' warnings. Parametrized GTEST
@@ -80,6 +86,7 @@ function(build_umf_test)
             target_compile_options(${TEST_TARGET_NAME} PRIVATE -Werror)
         endif()
     endif()
+
     target_link_directories(${TEST_TARGET_NAME} PRIVATE ${LIB_DIRS})
 
     target_include_directories(
@@ -89,7 +96,8 @@ function(build_umf_test)
                 ${UMF_CMAKE_SOURCE_DIR}/src/base_alloc
                 ${UMF_CMAKE_SOURCE_DIR}/src/utils
                 ${UMF_TEST_DIR}/common
-                ${UMF_TEST_DIR})
+                ${UMF_TEST_DIR}
+                ${INC_DIRS})
 endfunction()
 
 function(add_umf_test)
@@ -155,6 +163,10 @@ endif()
 
 if(UMF_POOL_JEMALLOC_ENABLED)
     set(LIB_JEMALLOC_POOL jemalloc_pool)
+endif()
+
+if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
+    set(LIB_DISJOINT_POOL disjoint_pool)
 endif()
 
 if(UMF_BUILD_SHARED_LIBRARY)
@@ -245,13 +257,7 @@ if(LINUX AND (NOT UMF_DISABLE_HWLOC)) # OS-specific functions are implemented
     add_umf_test(
         NAME provider_os_memory
         SRCS provider_os_memory.cpp ${BA_SOURCES_FOR_TEST}
-        LIBS ${UMF_UTILS_FOR_TEST} ${LIB_JEMALLOC_POOL})
-    if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
-        target_compile_definitions(umf_test-provider_os_memory
-                                   PRIVATE UMF_POOL_DISJOINT_ENABLED=1)
-        target_link_libraries(umf_test-provider_os_memory PRIVATE disjoint_pool)
-    endif()
-
+        LIBS ${UMF_UTILS_FOR_TEST} ${LIB_JEMALLOC_POOL} ${LIB_DISJOINT_POOL})
     add_umf_test(
         NAME provider_os_memory_multiple_numa_nodes
         SRCS provider_os_memory_multiple_numa_nodes.cpp
@@ -365,8 +371,6 @@ if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
         SRCS providers/provider_level_zero.cpp providers/level_zero_helpers.cpp
              ${BA_SOURCES_FOR_TEST}
         LIBS ${UMF_UTILS_FOR_TEST} ze_loader)
-    target_include_directories(umf_test-provider_level_zero
-                               PRIVATE ${LEVEL_ZERO_INCLUDE_DIRS})
 
     add_umf_test(
         NAME provider_level_zero_dlopen
@@ -375,8 +379,6 @@ if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
         LIBS ${UMF_UTILS_FOR_TEST})
     target_compile_definitions(umf_test-provider_level_zero_dlopen
                                PUBLIC USE_DLOPEN=1)
-    target_include_directories(umf_test-provider_level_zero_dlopen
-                               PRIVATE ${LEVEL_ZERO_INCLUDE_DIRS})
 endif()
 
 if(NOT UMF_BUILD_LEVEL_ZERO_PROVIDER)
@@ -396,10 +398,6 @@ if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_CUDA_PROVIDER)
             SRCS providers/provider_cuda.cpp providers/cuda_helpers.cpp
                  ${BA_SOURCES_FOR_TEST}
             LIBS ${UMF_UTILS_FOR_TEST} cuda)
-        target_include_directories(umf_test-provider_cuda
-                                   PRIVATE ${CUDA_INCLUDE_DIRS})
-        target_link_directories(umf_test-provider_cuda PRIVATE
-                                ${CUDA_LIBRARY_DIRS})
 
         add_umf_test(
             NAME provider_cuda_dlopen
@@ -408,8 +406,6 @@ if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_CUDA_PROVIDER)
             LIBS ${UMF_UTILS_FOR_TEST})
         target_compile_definitions(umf_test-provider_cuda_dlopen
                                    PUBLIC USE_DLOPEN=1)
-        target_include_directories(umf_test-provider_cuda_dlopen
-                                   PRIVATE ${CUDA_INCLUDE_DIRS})
     else()
         message(
             STATUS
@@ -601,10 +597,6 @@ if(LINUX)
             ze_loader
             disjoint_pool
             ${UMF_UTILS_FOR_TEST})
-        target_include_directories(umf_test-ipc_level_zero_prov_producer
-                                   PRIVATE ${LEVEL_ZERO_INCLUDE_DIRS})
-        target_include_directories(umf_test-ipc_level_zero_prov_consumer
-                                   PRIVATE ${LEVEL_ZERO_INCLUDE_DIRS})
         add_umf_ipc_test(TEST ipc_level_zero_prov SRC_DIR providers)
     endif()
 
@@ -635,10 +627,6 @@ if(LINUX)
             cuda
             disjoint_pool
             ${UMF_UTILS_FOR_TEST})
-        target_include_directories(umf_test-ipc_cuda_prov_producer
-                                   PRIVATE ${CUDA_INCLUDE_DIRS})
-        target_include_directories(umf_test-ipc_cuda_prov_consumer
-                                   PRIVATE ${CUDA_INCLUDE_DIRS})
         add_umf_ipc_test(TEST ipc_cuda_prov SRC_DIR providers)
     endif()
 else()
