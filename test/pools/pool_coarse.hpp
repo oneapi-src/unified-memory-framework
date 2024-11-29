@@ -5,8 +5,6 @@
 #ifndef UMF_TEST_POOL_COARSE_HPP
 #define UMF_TEST_POOL_COARSE_HPP 1
 
-#include "umf/providers/provider_coarse.h"
-
 #include "pool.hpp"
 #include "poolFixtures.hpp"
 

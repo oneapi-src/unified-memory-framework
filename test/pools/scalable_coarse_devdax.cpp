@@ -31,15 +31,13 @@ devdax_params_unique_handle_t create_devdax_params() {
                                          &umfDevDaxMemoryProviderParamsDestroy);
 }
 
-auto coarseParams = umfCoarseMemoryProviderParamsDefault();
 auto devdaxParams = create_devdax_params();
 
 static std::vector<poolCreateExtParams> poolParamsList =
-    devdaxParams.get()
-        ? std::vector<poolCreateExtParams>{poolCreateExtParams{
-              umfScalablePoolOps(), nullptr, umfDevDaxMemoryProviderOps(),
-              devdaxParams.get(), &coarseParams}}
-        : std::vector<poolCreateExtParams>{};
+    devdaxParams.get() ? std::vector<poolCreateExtParams>{poolCreateExtParams{
+                             umfScalablePoolOps(), nullptr,
+                             umfDevDaxMemoryProviderOps(), devdaxParams.get()}}
+                       : std::vector<poolCreateExtParams>{};
 
 INSTANTIATE_TEST_SUITE_P(scalableCoarseDevDaxTest, umfPoolTest,
                          ::testing::ValuesIn(poolParamsList));

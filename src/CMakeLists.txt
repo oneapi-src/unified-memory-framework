@@ -59,7 +59,6 @@ set(UMF_SOURCES
     memspaces/memspace_highest_bandwidth.c
     memspaces/memspace_lowest_latency.c
     memspaces/memspace_numa.c
-    provider/provider_coarse.c
     provider/provider_cuda.c
     provider/provider_devdax_memory.c
     provider/provider_file_memory.c

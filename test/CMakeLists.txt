@@ -200,11 +200,6 @@ if(LINUX)
 endif()
 
 add_umf_test(
-    NAME provider_coarse
-    SRCS provider_coarse.cpp ${BA_SOURCES_FOR_TEST}
-    LIBS ${UMF_UTILS_FOR_TEST})
-
-add_umf_test(
     NAME coarse_lib
     SRCS coarse_lib.cpp ${BA_SOURCES_FOR_TEST}
     LIBS ${UMF_UTILS_FOR_TEST} coarse)
@@ -218,10 +213,12 @@ if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
         NAME c_api_disjoint_pool
         SRCS c_api/disjoint_pool.c
         LIBS disjoint_pool)
-    add_umf_test(
-        NAME disjointCoarseMallocPool
-        SRCS disjointCoarseMallocPool.cpp
-        LIBS disjoint_pool)
+    if(LINUX AND (NOT UMF_DISABLE_HWLOC))
+        add_umf_test(
+            NAME disjointCoarseMallocPool
+            SRCS disjointCoarseMallocPool.cpp
+            LIBS disjoint_pool)
+    endif()
 endif()
 
 if(UMF_BUILD_LIBUMF_POOL_DISJOINT
