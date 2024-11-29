@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  */
 
-#include "level_zero_helpers.h"
+#include "utils_level_zero.h"
 
 #include <memory>
 #include <stdlib.h>
@@ -297,7 +297,7 @@ int InitLevelZeroOps() {
 }
 #endif // USE_DLOPEN
 
-static int init_level_zero_lib(void) {
+static int utils_ze_init_level_zero_lib(void) {
     ze_init_flag_t flags = ZE_INIT_FLAG_GPU_ONLY;
     ze_result_t result = libze_ops.zeInit(flags);
     if (result != ZE_RESULT_SUCCESS) {
@@ -309,29 +309,30 @@ static int init_level_zero_lib(void) {
 static UTIL_ONCE_FLAG level_zero_init_flag = UTIL_ONCE_FLAG_INIT;
 static int InitResult;
 
-static void init_level_zero_once(void) {
+static void utils_ze_init_level_zero_once(void) {
     InitResult = InitLevelZeroOps();
     if (InitResult != 0) {
         return;
     }
-    InitResult = init_level_zero_lib();
+    InitResult = utils_ze_init_level_zero_lib();
 }
 
-static int init_level_zero(void) {
-    utils_init_once(&level_zero_init_flag, init_level_zero_once);
+int utils_ze_init_level_zero(void) {
+    utils_init_once(&level_zero_init_flag, utils_ze_init_level_zero_once);
 
     return InitResult;
 }
 
-int get_drivers(uint32_t *drivers_num_, ze_driver_handle_t **drivers_) {
+int utils_ze_get_drivers(uint32_t *drivers_num_,
+                         ze_driver_handle_t **drivers_) {
     int ret = 0;
     ze_result_t ze_result;
     ze_driver_handle_t *drivers = NULL;
     uint32_t drivers_num = 0;
 
-    ret = init_level_zero();
+    ret = utils_ze_init_level_zero();
     if (ret != 0) {
-        fprintf(stderr, "init_level_zero() failed!\n");
+        fprintf(stderr, "utils_ze_init_level_zero() failed!\n");
         goto init_fail;
     }
 
@@ -375,16 +376,16 @@ init_fail:
     return ret;
 }
 
-int get_devices(ze_driver_handle_t driver, uint32_t *devices_num_,
-                ze_device_handle_t **devices_) {
+int utils_ze_get_devices(ze_driver_handle_t driver, uint32_t *devices_num_,
+                         ze_device_handle_t **devices_) {
     ze_result_t ze_result;
     int ret = 0;
     uint32_t devices_num = 0;
     ze_device_handle_t *devices = NULL;
 
-    ret = init_level_zero();
+    ret = utils_ze_init_level_zero();
     if (ret != 0) {
-        fprintf(stderr, "init_level_zero() failed!\n");
+        fprintf(stderr, "utils_ze_init_level_zero() failed!\n");
         goto init_fail;
     }
 
@@ -427,7 +428,8 @@ init_fail:
     return ret;
 }
 
-int find_driver_with_gpu(uint32_t *driver_idx, ze_driver_handle_t *driver_) {
+int utils_ze_find_driver_with_gpu(uint32_t *driver_idx,
+                                  ze_driver_handle_t *driver_) {
     int ret = 0;
     ze_result_t ze_result;
     uint32_t drivers_num = 0;
@@ -435,7 +437,7 @@ int find_driver_with_gpu(uint32_t *driver_idx, ze_driver_handle_t *driver_) {
     ze_driver_handle_t *drivers = NULL;
     ze_driver_handle_t driver_with_gpus = NULL;
 
-    ret = get_drivers(&drivers_num, &drivers);
+    ret = utils_ze_get_drivers(&drivers_num, &drivers);
     if (ret) {
         goto fn_fail;
     }
@@ -445,7 +447,7 @@ int find_driver_with_gpu(uint32_t *driver_idx, ze_driver_handle_t *driver_) {
         uint32_t devices_num = 0;
         ze_driver_handle_t driver = drivers[i];
 
-        ret = get_devices(driver, &devices_num, &devices);
+        ret = utils_ze_get_devices(driver, &devices_num, &devices);
         if (ret) {
             goto fn_fail;
         }
@@ -494,13 +496,14 @@ fn_exit:
     return ret;
 }
 
-int find_gpu_device(ze_driver_handle_t driver, ze_device_handle_t *device_) {
+int utils_ze_find_gpu_device(ze_driver_handle_t driver,
+                             ze_device_handle_t *device_) {
     int ret = -1;
     uint32_t devices_num = 0;
     ze_device_handle_t *devices = NULL;
     ze_device_handle_t device;
 
-    ret = get_devices(driver, &devices_num, &devices);
+    ret = utils_ze_get_devices(driver, &devices_num, &devices);
     if (ret) {
         return ret;
     }
@@ -532,9 +535,9 @@ int find_gpu_device(ze_driver_handle_t driver, ze_device_handle_t *device_) {
     return ret;
 }
 
-int level_zero_fill(ze_context_handle_t context, ze_device_handle_t device,
-                    void *ptr, size_t size, const void *pattern,
-                    size_t pattern_size) {
+int utils_ze_level_zero_fill(ze_context_handle_t context,
+                             ze_device_handle_t device, void *ptr, size_t size,
+                             const void *pattern, size_t pattern_size) {
     int ret = 0;
 
     ze_command_queue_desc_t commandQueueDesc = {
@@ -618,8 +621,9 @@ err_queue_destroy:
     return ret;
 }
 
-int level_zero_copy(ze_context_handle_t context, ze_device_handle_t device,
-                    void *dst_ptr, const void *src_ptr, size_t size) {
+int utils_ze_level_zero_copy(ze_context_handle_t context,
+                             ze_device_handle_t device, void *dst_ptr,
+                             const void *src_ptr, size_t size) {
     int ret = 0;
     ze_command_queue_desc_t commandQueueDesc = {
         ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC,
@@ -701,7 +705,8 @@ err_queue_destroy:
     return ret;
 }
 
-int create_context(ze_driver_handle_t driver, ze_context_handle_t *context) {
+int utils_ze_create_context(ze_driver_handle_t driver,
+                            ze_context_handle_t *context) {
     ze_result_t ze_result;
     ze_context_desc_t ctxtDesc;
     ctxtDesc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
@@ -717,7 +722,7 @@ int create_context(ze_driver_handle_t driver, ze_context_handle_t *context) {
     return 0;
 }
 
-int destroy_context(ze_context_handle_t context) {
+int utils_ze_destroy_context(ze_context_handle_t context) {
     ze_result_t ze_result;
     ze_result = libze_ops.zeContextDestroy(context);
     if (ze_result != ZE_RESULT_SUCCESS) {
@@ -728,7 +733,7 @@ int destroy_context(ze_context_handle_t context) {
     return 0;
 }
 
-ze_memory_type_t get_mem_type(ze_context_handle_t context, void *ptr) {
+ze_memory_type_t utils_ze_get_mem_type(ze_context_handle_t context, void *ptr) {
     ze_device_handle_t device = NULL;
     ze_memory_allocation_properties_t alloc_props;
     alloc_props.stype = ZE_STRUCTURE_TYPE_MEMORY_ALLOCATION_PROPERTIES;

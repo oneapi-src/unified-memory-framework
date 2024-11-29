@@ -13,7 +13,7 @@
 
 #include "ipc_common.h"
 #include "ipc_level_zero_prov_common.h"
-#include "level_zero_helpers.h"
+#include "utils_level_zero.h"
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
@@ -27,21 +27,21 @@ int main(int argc, char *argv[]) {
     ze_device_handle_t hDevice = NULL;
     ze_context_handle_t hContext = NULL;
 
-    int ret = find_driver_with_gpu(&driver_idx, &hDriver);
+    int ret = utils_ze_find_driver_with_gpu(&driver_idx, &hDriver);
     if (ret != 0 || hDriver == NULL) {
-        fprintf(stderr, "find_driver_with_gpu() failed!\n");
+        fprintf(stderr, "utils_ze_find_driver_with_gpu() failed!\n");
         return -1;
     }
 
-    ret = find_gpu_device(hDriver, &hDevice);
+    ret = utils_ze_find_gpu_device(hDriver, &hDevice);
     if (ret != 0 || hDevice == NULL) {
-        fprintf(stderr, "find_gpu_device() failed!\n");
+        fprintf(stderr, "utils_ze_find_gpu_device() failed!\n");
         return -1;
     }
 
-    ret = create_context(hDriver, &hContext);
+    ret = utils_ze_create_context(hDriver, &hContext);
     if (ret != 0) {
-        fprintf(stderr, "create_context() failed!\n");
+        fprintf(stderr, "utils_ze_create_context() failed!\n");
         return -1;
     }
 
@@ -103,7 +103,7 @@ destroy_provider_params:
     umfLevelZeroMemoryProviderParamsDestroy(l0_params);
 
 destroy_context:
-    destroy_context(hContext);
+    utils_ze_destroy_context(hContext);
 
     return ret;
 }

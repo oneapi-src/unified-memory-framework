@@ -32,7 +32,7 @@
 
 #if (defined UMF_BUILD_LIBUMF_POOL_DISJOINT &&                                 \
      defined UMF_BUILD_LEVEL_ZERO_PROVIDER && defined UMF_BUILD_GPU_TESTS)
-#include "examples_level_zero.h"
+#include "utils_level_zero.h"
 #endif
 
 // NOTE: with strict compilation flags, ubench compilation throws some
@@ -450,28 +450,28 @@ int create_level_zero_params(ze_context_handle_t *context,
     uint32_t driver_idx = 0;
     ze_driver_handle_t driver = NULL;
 
-    int ret = init_level_zero();
+    int ret = utils_ze_init_level_zero();
     if (ret != 0) {
         fprintf(stderr, "Failed to init Level 0!\n");
         return ret;
     }
 
-    ret = find_driver_with_gpu(&driver_idx, &driver);
+    ret = utils_ze_find_driver_with_gpu(&driver_idx, &driver);
     if (ret || driver == NULL) {
         fprintf(stderr, "Cannot find L0 driver with GPU device!\n");
         return ret;
     }
 
-    ret = create_context(driver, context);
+    ret = utils_ze_create_context(driver, context);
     if (ret != 0) {
         fprintf(stderr, "Failed to create L0 context!\n");
         return ret;
     }
 
-    ret = find_gpu_device(driver, device);
+    ret = utils_ze_find_gpu_device(driver, device);
     if (ret) {
         fprintf(stderr, "Cannot find GPU device!\n");
-        destroy_context(*context);
+        utils_ze_destroy_context(*context);
         return ret;
     }
 
@@ -628,7 +628,7 @@ err_destroy_params:
     umfLevelZeroMemoryProviderParamsDestroy(level_zero_params);
 
 err_destroy_context:
-    destroy_context(context);
+    utils_ze_destroy_context(context);
 }
 #endif /* (defined UMF_BUILD_LIBUMF_POOL_DISJOINT && defined UMF_BUILD_LEVEL_ZERO_PROVIDER && defined UMF_BUILD_GPU_TESTS) */
 
