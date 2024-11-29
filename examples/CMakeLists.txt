@@ -49,6 +49,7 @@ if(UMF_BUILD_GPU_EXAMPLES
     add_umf_executable(
         NAME ${EXAMPLE_NAME}
         SRCS level_zero_shared_memory/level_zero_shared_memory.c
+             common/examples_level_zero_helpers.c
         LIBS disjoint_pool ze_loader umf)
 
     target_include_directories(
@@ -127,6 +128,7 @@ if(UMF_BUILD_GPU_EXAMPLES
     add_umf_executable(
         NAME ${EXAMPLE_NAME}
         SRCS ipc_level_zero/ipc_level_zero.c
+             common/examples_level_zero_helpers.c
         LIBS disjoint_pool ze_loader umf)
 
     target_include_directories(

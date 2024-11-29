@@ -7,21 +7,12 @@
  *
  */
 
-#ifndef UMF_EXAMPLE_UTILS_LEVEL_ZERO_H
-#define UMF_EXAMPLE_UTILS_LEVEL_ZERO_H
-
 #include <stdio.h>
 #include <stdlib.h>
 
-// To use the Level Zero API, the Level Zero SDK has to be installed
-// on the system
-#ifdef _WIN32
-#include <ze_api.h>
-#else
-#include <level_zero/ze_api.h>
-#endif
+#include "examples_level_zero_helpers.h"
 
-static int init_level_zero(void) {
+int init_level_zero(void) {
     ze_init_flag_t flags = ZE_INIT_FLAG_GPU_ONLY;
     ze_result_t result = zeInit(flags);
     if (result != ZE_RESULT_SUCCESS) {
@@ -118,8 +109,7 @@ fn_fail:
     return ret;
 }
 
-static inline int find_driver_with_gpu(uint32_t *driver_idx,
-                                       ze_driver_handle_t *driver_) {
+int find_driver_with_gpu(uint32_t *driver_idx, ze_driver_handle_t *driver_) {
     int ret = 0;
     ze_result_t ze_result;
     uint32_t drivers_num = 0;
@@ -184,8 +174,7 @@ fn_exit:
     return ret;
 }
 
-static inline int find_gpu_device(ze_driver_handle_t driver,
-                                  ze_device_handle_t *device_) {
+int find_gpu_device(ze_driver_handle_t driver, ze_device_handle_t *device_) {
     int ret = -1;
     uint32_t devices_num = 0;
     ze_device_handle_t *devices = NULL;
@@ -415,5 +404,3 @@ int destroy_context(ze_context_handle_t context) {
 
     return 0;
 }
-
-#endif // UMF_EXAMPLE_UTILS_LEVEL_ZERO_H
