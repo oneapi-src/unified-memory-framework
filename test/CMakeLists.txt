@@ -88,6 +88,7 @@ function(build_umf_test)
         PRIVATE ${UMF_CMAKE_SOURCE_DIR}/include
                 ${UMF_CMAKE_SOURCE_DIR}/src
                 ${UMF_CMAKE_SOURCE_DIR}/src/base_alloc
+                ${UMF_CMAKE_SOURCE_DIR}/src/coarse
                 ${UMF_CMAKE_SOURCE_DIR}/src/utils
                 ${UMF_TEST_DIR}/common
                 ${UMF_TEST_DIR})
@@ -195,6 +196,11 @@ add_umf_test(
     NAME provider_coarse
     SRCS provider_coarse.cpp ${BA_SOURCES_FOR_TEST}
     LIBS ${UMF_UTILS_FOR_TEST})
+
+add_umf_test(
+    NAME coarse_lib
+    SRCS coarse_lib.cpp ${BA_SOURCES_FOR_TEST}
+    LIBS ${UMF_UTILS_FOR_TEST} coarse)
 
 if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
     add_umf_test(
