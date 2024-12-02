@@ -387,7 +387,8 @@ function(add_umf_library)
         ${ARG_NAME}
         PRIVATE ${UMF_CMAKE_SOURCE_DIR}/include
                 ${UMF_CMAKE_SOURCE_DIR}/src/utils
-                ${UMF_CMAKE_SOURCE_DIR}/src/base_alloc)
+                ${UMF_CMAKE_SOURCE_DIR}/src/base_alloc
+                ${UMF_CMAKE_SOURCE_DIR}/src/coarse)
     add_umf_target_compile_options(${ARG_NAME})
     add_umf_target_link_options(${ARG_NAME})
 endfunction()
