@@ -28,7 +28,7 @@ extern "C" {
 #define UMF_MINOR_VERSION(_ver) (_ver & 0x0000ffff)
 
 /// @brief Current version of the UMF headers
-#define UMF_VERSION_CURRENT UMF_MAKE_VERSION(0, 10)
+#define UMF_VERSION_CURRENT UMF_MAKE_VERSION(0, 11)
 
 /// @brief Operation results
 typedef enum umf_result_t {

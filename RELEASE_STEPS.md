@@ -42,7 +42,7 @@ Do changes for a release:
 - Update project's version in a few places:
   - For major and minor releases: `UMF_VERSION_CURRENT` in `include/umf/base.h` (the API version)
   - `release` variable in `scripts/docs_config/conf.py` (for docs)
-  - `UMF_VERSION` variable in `.github/workflows/basic.yml` (for installation test)
+  - `UMF_VERSION` variable in `.github/workflows/reusable_basic.yml` (for installation test)
 - For major releases update ABI version in `.map` and `.def` files
   - These files are defined for all public libraries (`libumf` and `proxy_lib`, at the moment)
 - Commit these changes and tag the release:
