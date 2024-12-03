@@ -465,11 +465,11 @@ disjoint_params_unique_handle_t disjointParams = disjointPoolParams();
 static std::vector<ipcTestParams> ipcTestParamsList = {
 #if (defined UMF_POOL_DISJOINT_ENABLED)
     {umfDisjointPoolOps(), disjointParams.get(), umfOsMemoryProviderOps(),
-     os_params.get(), &hostAccessor, false},
+     os_params.get(), &hostAccessor},
 #endif
 #ifdef UMF_POOL_JEMALLOC_ENABLED
     {umfJemallocPoolOps(), nullptr, umfOsMemoryProviderOps(), os_params.get(),
-     &hostAccessor, false},
+     &hostAccessor},
 #endif
 };
 

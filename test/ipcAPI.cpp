@@ -116,4 +116,4 @@ HostMemoryAccessor hostMemoryAccessor;
 INSTANTIATE_TEST_SUITE_P(umfIpcTestSuite, umfIpcTest,
                          ::testing::Values(ipcTestParams{
                              umfProxyPoolOps(), nullptr, &IPC_MOCK_PROVIDER_OPS,
-                             nullptr, &hostMemoryAccessor, false}));
+                             nullptr, &hostMemoryAccessor}));
