@@ -176,6 +176,10 @@ int utils_fallocate(int fd, long offset, long len);
 
 long utils_get_size_threshold(char *str_threshold);
 
+size_t utils_max(size_t a, size_t b);
+
+size_t utils_min(size_t a, size_t b);
+
 #ifdef __cplusplus
 }
 #endif
