@@ -129,3 +129,6 @@ umf_result_t utils_translate_flags(unsigned in_flags, unsigned max,
     *out_flags = out_f;
     return UMF_RESULT_SUCCESS;
 }
+
+size_t utils_max(size_t a, size_t b) { return a > b ? a : b; }
+size_t utils_min(size_t a, size_t b) { return a < b ? a : b; }
