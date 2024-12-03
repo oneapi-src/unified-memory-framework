@@ -237,30 +237,29 @@ TEST_P(umfProviderTest, purge_force) {
 
 TEST_P(umfProviderTest, alloc_page64_align_page_minus_1_WRONG_ALIGNMENT_1) {
     test_alloc_failure(provider.get(), page_plus_64, page_size - 1,
-                       UMF_RESULT_ERROR_INVALID_ARGUMENT, 0);
+                       UMF_RESULT_ERROR_INVALID_ALIGNMENT, 0);
 }
 
 TEST_P(umfProviderTest, alloc_page64_align_one_half_pages_WRONG_ALIGNMENT_2) {
     test_alloc_failure(provider.get(), page_plus_64,
                        page_size + (page_size / 2),
-                       UMF_RESULT_ERROR_INVALID_ARGUMENT, 0);
+                       UMF_RESULT_ERROR_INVALID_ALIGNMENT, 0);
 }
 
 TEST_P(umfProviderTest, alloc_page64_WRONG_ALIGNMENT_3_pages) {
     test_alloc_failure(provider.get(), page_plus_64, 3 * page_size,
-                       UMF_RESULT_ERROR_INVALID_ARGUMENT, 0);
+                       UMF_RESULT_ERROR_INVALID_ALIGNMENT, 0);
 }
 
 TEST_P(umfProviderTest, alloc_3_pages_WRONG_ALIGNMENT_3_pages) {
     test_alloc_failure(provider.get(), 3 * page_size, 3 * page_size,
-                       UMF_RESULT_ERROR_INVALID_ARGUMENT, 0);
+                       UMF_RESULT_ERROR_INVALID_ALIGNMENT, 0);
 }
 
 TEST_P(umfProviderTest, alloc_WRONG_SIZE) {
     size_t size = (size_t)(-1) & ~(page_size - 1);
     test_alloc_failure(provider.get(), size, 0,
-                       UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC,
-                       UMF_DEVDAX_RESULT_ERROR_ALLOC_FAILED);
+                       UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY, 0);
 }
 
 // other positive tests
