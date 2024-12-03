@@ -150,6 +150,15 @@ OS memory provider supports two types of memory mappings (set by the `visibility
 IPC API requires the `UMF_MEM_MAP_SHARED` memory `visibility` mode
 (`UMF_RESULT_ERROR_INVALID_ARGUMENT` is returned otherwise).
 
+IPC API uses the file descriptor duplication. It requires using `pidfd_getfd(2)` to obtain
+a duplicate of another process's file descriptor (`pidfd_getfd(2)` is supported since Linux 5.6).
+Permission to duplicate another process's file descriptor is governed by a ptrace access mode
+`PTRACE_MODE_ATTACH_REALCREDS` check (see `ptrace(2)`) that can be changed using
+the `/proc/sys/kernel/yama/ptrace_scope` interface in the following way:
+```sh
+$ sudo bash -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
+```
+
 There are available two mechanisms for the shared memory mapping:
 1) a named shared memory object (used if the `shm_name` parameter is not NULL) or
 2) an anonymous file descriptor (used if the `shm_name` parameter is NULL)
@@ -162,23 +171,37 @@ An anonymous file descriptor for the shared memory mapping will be created using
 
 ##### Requirements
 
-Required packages for tests (Linux-only yet):
+IPC API on Linux requires the `PTRACE_MODE_ATTACH_REALCREDS` permission (see `ptrace(2)`)
+to duplicate another process's file descriptor (see above).
+
+Packages required for tests (Linux-only yet):
    - libnuma-dev
 
 #### Level Zero memory provider
 
 A memory provider that provides memory from L0 device.
 
+IPC API uses the file descriptor duplication. It requires using `pidfd_getfd(2)` to obtain
+a duplicate of another process's file descriptor (`pidfd_getfd(2)` is supported since Linux 5.6).
+Permission to duplicate another process's file descriptor is governed by a ptrace access mode
+`PTRACE_MODE_ATTACH_REALCREDS` check (see `ptrace(2)`) that can be changed using
+the `/proc/sys/kernel/yama/ptrace_scope` interface in the following way:
+```sh
+$ sudo bash -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
+```
+
 ##### Requirements
 
 1) Linux or Windows OS
 2) The `UMF_BUILD_LEVEL_ZERO_PROVIDER` option turned `ON` (by default)
+3) IPC API on Linux requires the `PTRACE_MODE_ATTACH_REALCREDS` permission (see `ptrace(2)`)
+   to duplicate another process's file descriptor (see above).
 
 Additionally, required for tests:
 
-3) The `UMF_BUILD_GPU_TESTS` option turned `ON`
-4) System with Level Zero compatible GPU
-5) Required packages:
+4) The `UMF_BUILD_GPU_TESTS` option turned `ON`
+5) System with Level Zero compatible GPU
+6) Required packages:
    - liblevel-zero-dev (Linux) or level-zero-sdk (Windows)
 
 #### DevDax memory provider (Linux only)
