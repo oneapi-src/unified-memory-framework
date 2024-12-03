@@ -112,6 +112,7 @@ jobs:
         run: ctest --output-on-failure --test-dir examples -C ${{matrix.build_type}}
 
       - name: Run benchmarks
+        if: matrix.build_type == 'Release'
         working-directory: ${{env.BUILD_DIR}}
         run: ctest --output-on-failure --test-dir benchmark -C ${{matrix.build_type}} --exclude-regex umf-bench-multithreaded
 
