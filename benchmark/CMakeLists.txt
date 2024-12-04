@@ -1,6 +1,23 @@
-# Copyright (C) 2023 Intel Corporation
+# Copyright (C) 2023-2024 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
+include(FetchContent)
+FetchContent_Declare(
+    googlebenchmark
+    GIT_REPOSITORY https://github.com/google/benchmark.git
+    GIT_TAG v1.9.0)
+
+set(BENCHMARK_ENABLE_GTEST_TESTS
+    OFF
+    CACHE BOOL "" FORCE)
+set(BENCHMARK_ENABLE_TESTING
+    OFF
+    CACHE BOOL "" FORCE)
+set(BENCHMARK_ENABLE_INSTALL
+    OFF
+    CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googlebenchmark)
 
 # In MSVC builds, there is no way to determine the actual build type during the
 # CMake configuration step. Therefore, this message is printed in all MSVC
@@ -32,7 +49,7 @@ function(add_umf_benchmark)
         "${multiValueArgs}"
         ${ARGN})
 
-    set(BENCH_NAME umf-bench-${ARG_NAME})
+    set(BENCH_NAME umf-${ARG_NAME})
 
     set(BENCH_LIBS ${ARG_LIBS} umf)
 
@@ -52,13 +69,17 @@ function(add_umf_benchmark)
         COMMAND ${BENCH_NAME}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
-    # Benchmark passes if it prints "PASSED" in the output, because ubench of
-    # scalable pool fails if the confidence interval exceeds maximum permitted
-    # 2.5%.
-    set_tests_properties(
-        ${BENCH_NAME} PROPERTIES
-        LABELS "benchmark"
-        PASS_REGULAR_EXPRESSION "PASSED")
+    if("${BENCH_NAME}" STREQUAL "umf-ubench")
+        # Benchmark passes if it prints "PASSED" in the output, because ubench
+        # of scalable pool fails if the confidence interval exceeds maximum
+        # permitted 2.5%.
+        set_tests_properties(
+            ${BENCH_NAME} PROPERTIES
+            LABELS "benchmark"
+            PASS_REGULAR_EXPRESSION "PASSED")
+    else()
+        set_tests_properties(${BENCH_NAME} PROPERTIES LABELS "benchmark")
+    endif()
 
     if(WINDOWS)
         # append PATH to DLLs
@@ -68,11 +89,11 @@ function(add_umf_benchmark)
 
     if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
         target_compile_definitions(${BENCH_NAME}
-                                   PRIVATE UMF_BUILD_LIBUMF_POOL_DISJOINT=1)
+                                   PRIVATE UMF_POOL_DISJOINT_ENABLED=1)
     endif()
-    if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
+    if(UMF_POOL_JEMALLOC_ENABLED)
         target_compile_definitions(${BENCH_NAME}
-                                   PRIVATE UMF_BUILD_LIBUMF_POOL_JEMALLOC=1)
+                                   PRIVATE UMF_POOL_JEMALLOC_ENABLED=1)
     endif()
     if(UMF_POOL_SCALABLE_ENABLED)
         target_compile_definitions(${BENCH_NAME}
@@ -80,7 +101,7 @@ function(add_umf_benchmark)
     endif()
     if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
         target_compile_definitions(${BENCH_NAME}
-                                   PRIVATE UMF_BUILD_LEVEL_ZERO_PROVIDER=1)
+                                   PRIVATE UMF_PROVIDER_LEVEL_ZERO_ENABLED=1)
         target_include_directories(
             ${BENCH_NAME} PRIVATE ${UMF_CMAKE_SOURCE_DIR}/test/common
                                   ${LEVEL_ZERO_INCLUDE_DIRS})
@@ -119,6 +140,12 @@ add_umf_benchmark(
     NAME ubench
     SRCS ubench.c ${SRCS_OPTIONAL}
     LIBS ${LIBS_OPTIONAL}
+    LIBDIRS ${LIB_DIRS})
+
+add_umf_benchmark(
+    NAME benchmark
+    SRCS benchmark.cpp
+    LIBS ${LIBS_OPTIONAL} benchmark::benchmark
     LIBDIRS ${LIB_DIRS})
 
 if(UMF_BUILD_BENCHMARKS_MT)

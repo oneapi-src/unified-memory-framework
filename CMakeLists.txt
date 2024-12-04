@@ -320,7 +320,7 @@ endif()
 # compiler is required. Moreover, if these options are not set, CMake will set
 # up a strict C build, without C++ support.
 set(OPTIONS_REQUIRING_CXX "UMF_BUILD_TESTS" "UMF_BUILD_LIBUMF_POOL_DISJOINT"
-                          "UMF_BUILD_BENCHMARKS_MT")
+                          "UMF_BUILD_BENCHMARKS_MT" "UMF_BUILD_BENCHMARKS")
 foreach(option_name ${OPTIONS_REQUIRING_CXX})
     if(${option_name})
         enable_language(CXX)

@@ -20,11 +20,11 @@
 #include <umf/providers/provider_level_zero.h>
 #include <umf/providers/provider_os_memory.h>
 
-#ifdef UMF_BUILD_LIBUMF_POOL_DISJOINT
+#ifdef UMF_POOL_DISJOINT_ENABLED
 #include <umf/pools/pool_disjoint.h>
 #endif
 
-#ifdef UMF_BUILD_LIBUMF_POOL_JEMALLOC
+#ifdef UMF_POOL_JEMALLOC_ENABLED
 #include <umf/pools/pool_jemalloc.h>
 #endif
 
@@ -244,7 +244,7 @@ UBENCH_EX(simple, proxy_pool_with_os_memory_provider) {
     free(array);
 }
 
-#if (defined UMF_BUILD_LIBUMF_POOL_DISJOINT)
+#if (defined UMF_POOL_DISJOINT_ENABLED)
 ////////////////// DISJOINT POOL WITH OS MEMORY PROVIDER
 
 UBENCH_EX(simple, disjoint_pool_with_os_memory_provider) {
@@ -327,9 +327,9 @@ UBENCH_EX(simple, disjoint_pool_with_os_memory_provider) {
     umfMemoryProviderDestroy(os_memory_provider);
     free(array);
 }
-#endif /* (defined UMF_BUILD_LIBUMF_POOL_DISJOINT) */
+#endif /* (defined UMF_POOL_DISJOINT_ENABLED) */
 
-#if (defined UMF_BUILD_LIBUMF_POOL_JEMALLOC)
+#if (defined UMF_POOL_JEMALLOC_ENABLED)
 ////////////////// JEMALLOC POOL WITH OS MEMORY PROVIDER
 
 UBENCH_EX(simple, jemalloc_pool_with_os_memory_provider) {
@@ -373,7 +373,7 @@ UBENCH_EX(simple, jemalloc_pool_with_os_memory_provider) {
     umfMemoryProviderDestroy(os_memory_provider);
     free(array);
 }
-#endif /* (defined UMF_BUILD_LIBUMF_POOL_JEMALLOC) */
+#endif /* (defined UMF_POOL_JEMALLOC_ENABLED) */
 
 #if (defined UMF_POOL_SCALABLE_ENABLED)
 ////////////////// SCALABLE (TBB) POOL WITH OS MEMORY PROVIDER
@@ -421,7 +421,7 @@ UBENCH_EX(simple, scalable_pool_with_os_memory_provider) {
 }
 #endif /* (defined UMF_POOL_SCALABLE_ENABLED) */
 
-#if (defined UMF_BUILD_LIBUMF_POOL_DISJOINT &&                                 \
+#if (defined UMF_POOL_DISJOINT_ENABLED &&                                      \
      defined UMF_BUILD_LEVEL_ZERO_PROVIDER && defined UMF_BUILD_GPU_TESTS)
 static void do_ipc_get_put_benchmark(alloc_t *allocs, size_t num_allocs,
                                      size_t repeats,
@@ -630,7 +630,7 @@ err_destroy_params:
 err_destroy_context:
     utils_ze_destroy_context(context);
 }
-#endif /* (defined UMF_BUILD_LIBUMF_POOL_DISJOINT && defined UMF_BUILD_LEVEL_ZERO_PROVIDER && defined UMF_BUILD_GPU_TESTS) */
+#endif /* (defined UMF_POLL_DISJOINT_ENABLED && defined UMF_BUILD_LEVEL_ZERO_PROVIDER && defined UMF_BUILD_GPU_TESTS) */
 
 // TODO add IPC benchmark for CUDA
 

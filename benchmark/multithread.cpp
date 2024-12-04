@@ -113,7 +113,7 @@ int main() {
     std::cout << "skipping scalable_pool mt_alloc_free" << std::endl;
 #endif
 
-#if defined(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
+#if defined(UMF_POOL_JEMALLOC_ENABLED)
     std::cout << "jemalloc_pool mt_alloc_free: ";
     mt_alloc_free(poolCreateExtParams{umfJemallocPoolOps(), nullptr,
                                       umfOsMemoryProviderOps(), osParams});
@@ -121,7 +121,7 @@ int main() {
     std::cout << "skipping jemalloc_pool mt_alloc_free" << std::endl;
 #endif
 
-#if defined(UMF_BUILD_LIBUMF_POOL_DISJOINT)
+#if defined(UMF_POOL_DISJOINT_ENABLED)
     umf_disjoint_pool_params_handle_t hDisjointParams = nullptr;
     umf_result_t ret = umfDisjointPoolParamsCreate(&hDisjointParams);
     if (ret != UMF_RESULT_SUCCESS) {
