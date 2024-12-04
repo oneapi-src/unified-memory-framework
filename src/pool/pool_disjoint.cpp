@@ -177,6 +177,12 @@ umfDisjointPoolParamsSetSlabMinSize(umf_disjoint_pool_params_handle_t hParams,
     return UMF_RESULT_SUCCESS;
 }
 
+size_t
+umfDisjointPoolParamsGetSlabMinSize(umf_disjoint_pool_params_handle_t hParams)
+{
+    return hParams->SlabMinSize;
+}
+
 umf_result_t umfDisjointPoolParamsSetMaxPoolableSize(
     umf_disjoint_pool_params_handle_t hParams, size_t maxPoolableSize) {
     if (!hParams) {
@@ -188,6 +194,12 @@ umf_result_t umfDisjointPoolParamsSetMaxPoolableSize(
     return UMF_RESULT_SUCCESS;
 }
 
+size_t
+umfDisjointPoolParamsGetMaxPoolableSize(umf_disjoint_pool_params_handle_t hParams) {
+    return hParams->MaxPoolableSize;
+}
+
+
 umf_result_t
 umfDisjointPoolParamsSetCapacity(umf_disjoint_pool_params_handle_t hParams,
                                  size_t maxCapacity) {
@@ -198,6 +210,11 @@ umfDisjointPoolParamsSetCapacity(umf_disjoint_pool_params_handle_t hParams,
 
     hParams->Capacity = maxCapacity;
     return UMF_RESULT_SUCCESS;
+}
+
+size_t
+umfDisjointPoolParamsGetCapacity(umf_disjoint_pool_params_handle_t hParams) {
+    return hParams->Capacity;
 }
 
 umf_result_t
@@ -218,6 +235,11 @@ umfDisjointPoolParamsSetMinBucketSize(umf_disjoint_pool_params_handle_t hParams,
     return UMF_RESULT_SUCCESS;
 }
 
+size_t
+umfDisjointPoolParamsGetMinBucketSize(umf_disjoint_pool_params_handle_t hParams) {
+    return hParams->MinBucketSize;
+}
+
 umf_result_t
 umfDisjointPoolParamsSetTrace(umf_disjoint_pool_params_handle_t hParams,
                               int poolTrace) {
@@ -230,6 +252,10 @@ umfDisjointPoolParamsSetTrace(umf_disjoint_pool_params_handle_t hParams,
     return UMF_RESULT_SUCCESS;
 }
 
+int umfDisjointPoolParamsGetTrace(umf_disjoint_pool_params_handle_t hParams){
+    return hParams->PoolTrace;
+}
+
 umf_result_t umfDisjointPoolParamsSetSharedLimits(
     umf_disjoint_pool_params_handle_t hParams,
     umf_disjoint_pool_shared_limits_handle_t hSharedLimits) {
@@ -240,6 +266,11 @@ umf_result_t umfDisjointPoolParamsSetSharedLimits(
 
     hParams->SharedLimits = hSharedLimits;
     return UMF_RESULT_SUCCESS;
+}
+
+umf_disjoint_pool_shared_limits_handle_t
+umfDisjointPoolParamsGetSharedLimits(umf_disjoint_pool_params_handle_t hParams) {
+    return hParams->SharedLimits;
 }
 
 umf_result_t
@@ -262,6 +293,12 @@ umfDisjointPoolParamsSetName(umf_disjoint_pool_params_handle_t hParams,
 
     return UMF_RESULT_SUCCESS;
 }
+
+const char *
+umfDisjointPoolParamsGetName(umf_disjoint_pool_params_handle_t hParams) {
+    return hParams->Name;
+}
+
 
 // Allocations are a minimum of 4KB/64KB/2MB even when a smaller size is
 // requested. The implementation distinguishes between allocations of size

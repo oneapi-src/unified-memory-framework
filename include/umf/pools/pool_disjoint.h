@@ -52,6 +52,8 @@ umfDisjointPoolParamsDestroy(umf_disjoint_pool_params_handle_t hParams);
 umf_result_t
 umfDisjointPoolParamsSetSlabMinSize(umf_disjoint_pool_params_handle_t hParams,
                                     size_t slabMinSize);
+size_t
+umfDisjointPoolParamsGetSlabMinSize(umf_disjoint_pool_params_handle_t hParams);
 
 /// @brief Set size limit for allocations that are subject to pooling.
 /// @param hParams handle to the parameters of the disjoint pool.
@@ -59,6 +61,8 @@ umfDisjointPoolParamsSetSlabMinSize(umf_disjoint_pool_params_handle_t hParams,
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 umf_result_t umfDisjointPoolParamsSetMaxPoolableSize(
     umf_disjoint_pool_params_handle_t hParams, size_t maxPoolableSize);
+size_t
+umfDisjointPoolParamsGetMaxPoolableSize(umf_disjoint_pool_params_handle_t hParams);
 
 /// @brief Set maximum capacity of each bucket. Each bucket will hold a
 ///        max of \p maxCapacity unfreed slabs.
@@ -68,6 +72,8 @@ umf_result_t umfDisjointPoolParamsSetMaxPoolableSize(
 umf_result_t
 umfDisjointPoolParamsSetCapacity(umf_disjoint_pool_params_handle_t hParams,
                                  size_t maxCapacity);
+size_t
+umfDisjointPoolParamsGetCapacity(umf_disjoint_pool_params_handle_t hParams);
 
 /// @brief Set minimum bucket allocation size.
 /// @param hParams handle to the parameters of the disjoint pool.
@@ -76,6 +82,8 @@ umfDisjointPoolParamsSetCapacity(umf_disjoint_pool_params_handle_t hParams,
 umf_result_t
 umfDisjointPoolParamsSetMinBucketSize(umf_disjoint_pool_params_handle_t hParams,
                                       size_t minBucketSize);
+size_t
+umfDisjointPoolParamsGetMinBucketSize(umf_disjoint_pool_params_handle_t hParams);
 
 /// @brief Set trace level for pool usage statistics.
 /// @param hParams handle to the parameters of the disjoint pool.
@@ -84,6 +92,7 @@ umfDisjointPoolParamsSetMinBucketSize(umf_disjoint_pool_params_handle_t hParams,
 umf_result_t
 umfDisjointPoolParamsSetTrace(umf_disjoint_pool_params_handle_t hParams,
                               int poolTrace);
+int umfDisjointPoolParamsGetTrace(umf_disjoint_pool_params_handle_t hParams);
 
 /// @brief Set shared limits for disjoint pool.
 /// @param hParams handle to the parameters of the disjoint pool.
@@ -93,6 +102,9 @@ umf_result_t umfDisjointPoolParamsSetSharedLimits(
     umf_disjoint_pool_params_handle_t hParams,
     umf_disjoint_pool_shared_limits_handle_t hSharedLimits);
 
+umf_disjoint_pool_shared_limits_handle_t
+umfDisjointPoolParamsGetSharedLimits(umf_disjoint_pool_params_handle_t hParams);
+
 /// @brief Set custom name of the disjoint pool to be used in the traces.
 /// @param hParams handle to the parameters of the disjoint pool.
 /// @param name custom name of the pool.
@@ -100,6 +112,9 @@ umf_result_t umfDisjointPoolParamsSetSharedLimits(
 umf_result_t
 umfDisjointPoolParamsSetName(umf_disjoint_pool_params_handle_t hParams,
                              const char *name);
+
+const char *
+umfDisjointPoolParamsGetName(umf_disjoint_pool_params_handle_t hParams);
 
 umf_memory_pool_ops_t *umfDisjointPoolOps(void);
 
