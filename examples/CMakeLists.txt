@@ -282,7 +282,7 @@ if(LINUX)
         add_umf_executable(
             NAME ${EXAMPLE_NAME}
             SRCS dram_and_fsdax/dram_and_fsdax.c
-            LIBS umf jemalloc_pool)
+            LIBS umf)
 
         target_link_options(${EXAMPLE_NAME} PRIVATE "-Wl,--no-as-needed,-ldl")
 

@@ -69,7 +69,18 @@ set(UMF_SOURCES
     critnib/critnib.c
     ravl/ravl.c
     pool/pool_proxy.c
+    pool/pool_jemalloc.c
     pool/pool_scalable.c)
+
+if(UMF_POOL_JEMALLOC_ENABLED)
+    set(UMF_LIBS ${UMF_LIBS} ${JEMALLOC_LIBRARIES})
+    set(UMF_PRIVATE_LIBRARY_DIRS ${UMF_PRIVATE_LIBRARY_DIRS}
+                                 ${JEMALLOC_LIBRARY_DIRS})
+    set(UMF_PRIVATE_INCLUDE_DIRS ${UMF_PRIVATE_INCLUDE_DIRS}
+                                 ${JEMALLOC_INCLUDE_DIRS})
+    set(UMF_COMMON_COMPILE_DEFINITIONS ${UMF_COMMON_COMPILE_DEFINITIONS}
+                                       "UMF_POOL_JEMALLOC_ENABLED=1")
+endif()
 
 if(NOT UMF_DISABLE_HWLOC)
     set(UMF_SOURCES ${UMF_SOURCES} ${HWLOC_DEPENDENT_SOURCES}
@@ -146,15 +157,19 @@ else()
         LIBS ${UMF_LIBS})
 endif()
 
+target_include_directories(umf PRIVATE ${UMF_PRIVATE_INCLUDE_DIRS})
+target_link_directories(umf PRIVATE ${UMF_PRIVATE_LIBRARY_DIRS})
+target_compile_definitions(umf PRIVATE ${UMF_COMMON_COMPILE_DEFINITIONS})
+
 add_dependencies(umf coarse)
 
 if(UMF_LINK_HWLOC_STATICALLY)
     add_dependencies(umf ${UMF_HWLOC_NAME})
 endif()
 
-target_link_directories(umf PRIVATE ${UMF_PRIVATE_LIBRARY_DIRS})
-
-target_compile_definitions(umf PRIVATE ${UMF_COMMON_COMPILE_DEFINITIONS})
+if(NOT WINDOWS AND UMF_POOL_JEMALLOC_ENABLED)
+    add_dependencies(umf jemalloc)
+endif()
 
 if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
     if(LINUX)

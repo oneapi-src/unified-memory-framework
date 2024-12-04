@@ -113,6 +113,8 @@ endif()
 
 if(NOT UMF_BUILD_LIBUMF_POOL_JEMALLOC)
     set(UMF_POOL_JEMALLOC_ENABLED FALSE)
+    set(JEMALLOC_FOUND FALSE)
+    set(JEMALLOC_LIBRARIES FALSE)
 elseif(WINDOWS)
     pkg_check_modules(JEMALLOC jemalloc)
     if(NOT JEMALLOC_FOUND)
@@ -190,6 +192,12 @@ if(JEMALLOC_FOUND OR JEMALLOC_LIBRARIES)
     message(STATUS "    JEMALLOC_LIBRARIES = ${JEMALLOC_LIBRARIES}")
     message(STATUS "    JEMALLOC_INCLUDE_DIRS = ${JEMALLOC_INCLUDE_DIRS}")
     message(STATUS "    JEMALLOC_LIBRARY_DIRS = ${JEMALLOC_LIBRARY_DIRS}")
+else()
+    set(UMF_POOL_JEMALLOC_ENABLED FALSE)
+    message(
+        STATUS
+            "Disabling the Jemalloc Pool and tests and benchmarks that use it because jemalloc was not built/found."
+    )
 endif()
 
 if(UMF_DISABLE_HWLOC)
@@ -523,14 +531,14 @@ elseif(UMF_PROXY_LIB_BASED_ON_POOL STREQUAL SCALABLE)
         )
     endif()
 elseif(UMF_PROXY_LIB_BASED_ON_POOL STREQUAL JEMALLOC)
-    if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
+    if(UMF_POOL_JEMALLOC_ENABLED)
         set(UMF_PROXY_LIB_ENABLED ON)
         set(PROXY_LIB_USES_JEMALLOC_POOL ON)
-        set(PROXY_LIBS jemalloc_pool umf)
+        set(PROXY_LIBS umf)
     else()
         message(
             STATUS
-                "Disabling the proxy library, because UMF_PROXY_LIB_BASED_ON_POOL==JEMALLOC but UMF_BUILD_LIBUMF_POOL_JEMALLOC is OFF"
+                "Disabling the proxy library, because UMF_PROXY_LIB_BASED_ON_POOL==JEMALLOC but the jemalloc pool is disabled"
         )
     endif()
 else()

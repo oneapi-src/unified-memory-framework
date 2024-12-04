@@ -298,8 +298,9 @@ The default jemalloc package is required on Windows.
 ##### Requirements
 
 1) The `UMF_BUILD_LIBUMF_POOL_JEMALLOC` option turned `ON`
-2) Required packages:
-   - jemalloc (Windows only)
+2) jemalloc is required:
+- on Linux and MacOS: jemalloc is fetched and built from sources (a custom build),
+- on Windows: the default jemalloc package is required
 
 #### Scalable Pool (part of libumf)
 
