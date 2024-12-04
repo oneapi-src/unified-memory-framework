@@ -5,13 +5,21 @@
  * ctl.c -- implementation of the interface for examination and modification of
  *	the library's internal state
  */
+#include "base_alloc/base_alloc_global.h"
 #include "ctl.h"
-#include "alloc.h"
-#include "os.h"
+#include "utils/utils_common.h"
+#include "utlist.h"
+
 #include <ctype.h>
 #include <limits.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+
+#ifdef _WIN32
+#define strtok_r strtok_s
+#endif
 
 #define CTL_MAX_ENTRIES 100
 
@@ -39,6 +47,27 @@ struct ctl {
     struct ctl_node root[CTL_MAX_ENTRIES];
     int first_free;
 };
+
+void *Malloc(size_t sz) { return umf_ba_global_alloc(sz); }
+
+void *Zalloc(size_t sz) {
+    void *ptr = umf_ba_global_alloc(sz);
+    if (ptr) {
+        memset(ptr, 0, sz);
+    }
+    return ptr;
+}
+
+void Free(void *ptr) { umf_ba_global_free(ptr); }
+
+char *Strdup(const char *s) {
+    size_t len = strlen(s) + 1;
+    char *p = umf_ba_global_alloc(len);
+    if (p) {
+        memcpy(p, s, len);
+    }
+    return p;
+}
 
 /*
  * ctl_find_node -- (internal) searches for a matching entry point in the
@@ -315,7 +344,7 @@ static int ctl_parse_query(char *qbuf, char **name, char **value) {
         return -1;
     }
 
-    char *sptr;
+    char *sptr = NULL;
     *name = strtok_r(qbuf, CTL_NAME_VALUE_SEPARATOR, &sptr);
     if (*name == NULL) {
         return -1;
@@ -389,13 +418,14 @@ int ctl_load_config_from_string(struct ctl *ctl, void *ctx,
  * This function opens up the config file, allocates a buffer of size equal to
  * the size of the file, reads its content and sanitizes it for ctl_load_config.
  */
+#ifdef WINDOWS_API_NEEDED
 int ctl_load_config_from_file(struct ctl *ctl, void *ctx,
                               const char *cfg_file) {
     int ret = -1;
     long fsize = 0;
     char *buf = NULL;
 
-    FILE *fp = os_fopen(cfg_file, "r");
+    FILE *fp = utils_file_open(cfg_file, "r");
     if (fp == NULL) {
         return ret;
     }
@@ -446,6 +476,7 @@ error_file_parse:
     (void)fclose(fp);
     return ret;
 }
+#endif
 
 /*
  * ctl_new -- allocates and initializes ctl data structures

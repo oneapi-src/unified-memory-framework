@@ -4,8 +4,8 @@
 /*
  * ctl_debug.h -- definitions for CTL test
  */
-#ifndef LIBPMEMOBJ_CTL_DEBUG_H
-#define LIBPMEMOBJ_CTL_DEBUG_H 1
+#ifndef CTL_DEBUG_H
+#define CTL_DEBUG_H 1
 
 #include "ctl.h"
 
