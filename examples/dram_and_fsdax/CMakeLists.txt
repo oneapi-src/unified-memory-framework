@@ -21,10 +21,8 @@ if(NOT LIBHWLOC_FOUND)
     find_package(LIBHWLOC 2.3.0 REQUIRED hwloc)
 endif()
 
-pkg_check_modules(JEMALLOC jemalloc)
-if(NOT JEMALLOC_FOUND)
-    find_package(JEMALLOC REQUIRED jemalloc)
-endif()
+# find the custom jemalloc pointed by CMAKE_PREFIX_PATH
+find_package(JEMALLOC REQUIRED jemalloc)
 
 # build the example
 set(EXAMPLE_NAME umf_example_dram_and_fsdax)

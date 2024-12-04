@@ -124,7 +124,7 @@ jobs:
     - name: Install apt packages
       run: |
         sudo apt-get update
-        sudo apt-get install -y clang cmake libnuma-dev libjemalloc-dev lcov
+        sudo apt-get install -y clang cmake libnuma-dev lcov
 
     - name: Install TBB apt package
       if: matrix.install_tbb == 'ON'
@@ -469,7 +469,7 @@ jobs:
         python3 -m pip install -r third_party/requirements.txt
 
     - name: Install hwloc
-      run: brew install hwloc jemalloc tbb
+      run: brew install hwloc tbb automake
 
     - name: Configure build
       run: >

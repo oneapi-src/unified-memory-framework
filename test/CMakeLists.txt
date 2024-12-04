@@ -747,6 +747,13 @@ if(LINUX
         set(STANDALONE_CMAKE_OPTIONS
             "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
         )
+        if(JEMALLOC_INCLUDE_DIRS)
+            # add custom jemalloc installation
+            set(STANDALONE_CMAKE_OPTIONS
+                "${STANDALONE_CMAKE_OPTIONS} -DCMAKE_PREFIX_PATH=${JEMALLOC_INCLUDE_DIRS}/../"
+            )
+        endif()
+
         add_test(
             NAME umf-standalone_examples
             COMMAND

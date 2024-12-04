@@ -445,8 +445,8 @@ static void do_ipc_get_put_benchmark(alloc_t *allocs, size_t num_allocs,
     }
 }
 
-int create_level_zero_params(ze_context_handle_t *context,
-                             ze_device_handle_t *device) {
+static int create_level_zero_params(ze_context_handle_t *context,
+                                    ze_device_handle_t *device) {
     uint32_t driver_idx = 0;
     ze_driver_handle_t driver = NULL;
 

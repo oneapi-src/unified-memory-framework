@@ -1,27 +1,8 @@
 {
-   False-positive Race in libjemalloc.so
+   False-positive Race in jemalloc
    Helgrind:Race
-   obj:*/libjemalloc.so*
    ...
-   fun:mallocx
-   ...
-}
-
-{
-   False-positive Race in libjemalloc.so
-   Helgrind:Race
-   obj:*/libjemalloc.so*
-   ...
-   fun:op_free
-   ...
-}
-
-{
-   False-positive Race in libjemalloc.so
-   Helgrind:Race
-   obj:*/libjemalloc.so*
-   ...
-   fun:__nptl_deallocate_tsd
+   fun:je_*
    ...
 }
 

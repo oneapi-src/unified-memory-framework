@@ -1,27 +1,8 @@
 {
-   False-positive ConflictingAccess in libjemalloc.so
+   False-positive ConflictingAccess in jemalloc
    drd:ConflictingAccess
-   obj:*/libjemalloc.so*
    ...
-   fun:mallocx
-   ...
-}
-
-{
-   False-positive ConflictingAccess in libjemalloc.so
-   drd:ConflictingAccess
-   obj:*/libjemalloc.so*
-   ...
-   fun:op_free
-   ...
-}
-
-{
-   False-positive ConflictingAccess in libjemalloc.so
-   drd:ConflictingAccess
-   obj:*/libjemalloc.so*
-   ...
-   fun:__nptl_deallocate_tsd
+   fun:je_*
    ...
 }
 

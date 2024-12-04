@@ -62,7 +62,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake clang libhwloc-dev libnuma-dev libjemalloc-dev libtbb-dev
+        sudo apt-get install -y cmake clang libhwloc-dev libnuma-dev libtbb-dev
 
     # Latest distros do not allow global pip installation
     - name: "[Lin] Install Python requirements in venv"

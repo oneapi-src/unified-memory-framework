@@ -284,8 +284,11 @@ if(LINUX)
             SRCS dram_and_fsdax/dram_and_fsdax.c
             LIBS umf jemalloc_pool)
 
-        target_link_directories(${EXAMPLE_NAME} PRIVATE
-                                ${LIBHWLOC_LIBRARY_DIRS})
+        target_link_options(${EXAMPLE_NAME} PRIVATE "-Wl,--no-as-needed,-ldl")
+
+        target_link_directories(
+            ${EXAMPLE_NAME} PRIVATE ${LIBHWLOC_LIBRARY_DIRS}
+            ${JEMALLOC_LIBRARY_DIRS})
 
         add_test(
             NAME ${EXAMPLE_NAME}

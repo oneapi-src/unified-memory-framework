@@ -32,7 +32,7 @@ jobs:
       - name: Install apt packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake libhwloc-dev libjemalloc-dev libtbb-dev lcov
+          sudo apt-get install -y cmake libhwloc-dev libtbb-dev lcov
 
       - name: Set ptrace value for IPC test
         run: sudo bash -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"

@@ -14,7 +14,7 @@ pwd
 
 echo password | sudo -Sk apt-get update
 echo password | sudo -Sk apt-get install -y git cmake gcc g++ pkg-config \
-    numactl libnuma-dev hwloc libhwloc-dev libjemalloc-dev libtbb-dev valgrind lcov
+    numactl libnuma-dev hwloc libhwloc-dev libtbb-dev valgrind lcov
 
 mkdir build
 cd build

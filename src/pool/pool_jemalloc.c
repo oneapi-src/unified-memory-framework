@@ -22,16 +22,6 @@
 
 #include <jemalloc/jemalloc.h>
 
-// The Windows version of jemalloc uses API with je_ prefix,
-// while the Linux one does not.
-#ifndef _WIN32
-#define je_mallocx mallocx
-#define je_dallocx dallocx
-#define je_rallocx rallocx
-#define je_mallctl mallctl
-#define je_malloc_usable_size malloc_usable_size
-#endif
-
 #define MALLOCX_ARENA_MAX (MALLCTL_ARENAS_ALL - 1)
 
 typedef struct jemalloc_memory_pool_t {

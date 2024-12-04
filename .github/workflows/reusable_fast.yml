@@ -79,13 +79,13 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake libjemalloc-dev libhwloc-dev libnuma-dev libtbb-dev
+        sudo apt-get install -y cmake libhwloc-dev libnuma-dev libtbb-dev
 
     - name: Install dependencies (ubuntu-20.04)
       if: matrix.os == 'ubuntu-20.04'
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake libjemalloc-dev libnuma-dev libtbb-dev
+        sudo apt-get install -y cmake libnuma-dev libtbb-dev
         .github/scripts/install_hwloc.sh # install hwloc-2.3.0 instead of hwloc-2.1.0 present in the OS package
 
     - name: Set ptrace value for IPC test (on Linux only)
