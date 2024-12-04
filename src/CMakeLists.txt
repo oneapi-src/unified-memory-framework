@@ -26,12 +26,14 @@ add_subdirectory(coarse)
 
 set(UMF_LIBS $<BUILD_INTERFACE:umf_utils> $<BUILD_INTERFACE:coarse>)
 
-if(LINUX OR MACOSX)
-    set(CTL_SOURCES
-        ${CMAKE_CURRENT_SOURCE_DIR}/ctl/alloc.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/ctl/ctl.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/ctl/ctl_debug.c)
-endif()
+<<<<<<< HEAD
+set(CTL_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/ctl/ctl.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/ctl/ctl_debug.c)
+=======
+set(CTL_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/ctl/ctl.c
+                ${CMAKE_CURRENT_SOURCE_DIR}/ctl/ctl_debug.c)
+>>>>>>> 662a1ba (Enable Windows build)
 
 if(LINUX)
     set(BA_SOURCES ${BA_SOURCES}
