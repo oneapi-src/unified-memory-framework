@@ -154,9 +154,6 @@ typedef struct umf_tracking_memory_provider_t {
     umf_memory_pool_handle_t pool;
     critnib *ipcCache;
     ipc_mapped_handle_cache_handle_t hIpcMappedCache;
-
-    // the upstream provider does not support the free() operation
-    bool upstreamDoesNotFree;
 } umf_tracking_memory_provider_t;
 
 typedef struct umf_tracking_memory_provider_t umf_tracking_memory_provider_t;
@@ -422,8 +419,7 @@ static umf_result_t trackingInitialize(void *params, void **ret) {
 // TODO clearing the tracker is a temporary solution and should be removed.
 // The tracker should be cleared using the provider's free() operation.
 static void clear_tracker_for_the_pool(umf_memory_tracker_handle_t hTracker,
-                                       umf_memory_pool_handle_t pool,
-                                       bool upstreamDoesNotFree) {
+                                       umf_memory_pool_handle_t pool) {
     uintptr_t rkey;
     void *rvalue;
     size_t n_items = 0;
@@ -448,7 +444,7 @@ static void clear_tracker_for_the_pool(umf_memory_tracker_handle_t hTracker,
 
 #ifndef NDEBUG
     // print error messages only if provider supports the free() operation
-    if (n_items && !upstreamDoesNotFree) {
+    if (n_items) {
         if (pool) {
             LOG_ERR(
                 "tracking provider of pool %p is not empty! (%zu items left)",
@@ -459,13 +455,12 @@ static void clear_tracker_for_the_pool(umf_memory_tracker_handle_t hTracker,
         }
     }
 #else  /* DEBUG */
-    (void)upstreamDoesNotFree; // unused in DEBUG build
-    (void)n_items;             // unused in DEBUG build
+    (void)n_items; // unused in DEBUG build
 #endif /* DEBUG */
 }
 
 static void clear_tracker(umf_memory_tracker_handle_t hTracker) {
-    clear_tracker_for_the_pool(hTracker, NULL, false);
+    clear_tracker_for_the_pool(hTracker, NULL);
 }
 
 static void trackingFinalize(void *provider) {
@@ -480,8 +475,7 @@ static void trackingFinalize(void *provider) {
     // because it may need those resources till
     // the very end of exiting the application.
     if (!utils_is_running_in_proxy_lib()) {
-        clear_tracker_for_the_pool(p->hTracker, p->pool,
-                                   p->upstreamDoesNotFree);
+        clear_tracker_for_the_pool(p->hTracker, p->pool);
     }
 
     umf_ba_global_free(provider);
@@ -760,11 +754,11 @@ umf_memory_provider_ops_t UMF_TRACKING_MEMORY_PROVIDER_OPS = {
     .initialize = trackingInitialize,
     .finalize = trackingFinalize,
     .alloc = trackingAlloc,
+    .free = trackingFree,
     .get_last_native_error = trackingGetLastError,
     .get_min_page_size = trackingGetMinPageSize,
     .get_recommended_page_size = trackingGetRecommendedPageSize,
     .get_name = trackingName,
-    .ext.free = trackingFree,
     .ext.purge_force = trackingPurgeForce,
     .ext.purge_lazy = trackingPurgeLazy,
     .ext.allocation_split = trackingAllocationSplit,
@@ -777,11 +771,10 @@ umf_memory_provider_ops_t UMF_TRACKING_MEMORY_PROVIDER_OPS = {
 
 umf_result_t umfTrackingMemoryProviderCreate(
     umf_memory_provider_handle_t hUpstream, umf_memory_pool_handle_t hPool,
-    umf_memory_provider_handle_t *hTrackingProvider, bool upstreamDoesNotFree) {
+    umf_memory_provider_handle_t *hTrackingProvider) {
 
     umf_tracking_memory_provider_t params;
     params.hUpstream = hUpstream;
-    params.upstreamDoesNotFree = upstreamDoesNotFree;
     params.hTracker = TRACKER;
     if (!params.hTracker) {
         LOG_ERR("failed, TRACKER is NULL");

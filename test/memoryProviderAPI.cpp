@@ -89,19 +89,6 @@ TEST_F(test, memoryProviderTrace) {
     ASSERT_EQ(calls.size(), ++call_count);
 }
 
-TEST_F(test, memoryProviderOpsNullFreeField) {
-    umf_memory_provider_ops_t provider_ops = UMF_NULL_PROVIDER_OPS;
-    provider_ops.ext.free = nullptr;
-    umf_memory_provider_handle_t hProvider;
-    auto ret = umfMemoryProviderCreate(&provider_ops, nullptr, &hProvider);
-    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
-
-    ret = umfMemoryProviderFree(hProvider, nullptr, 0);
-    ASSERT_EQ(ret, UMF_RESULT_ERROR_NOT_SUPPORTED);
-
-    umfMemoryProviderDestroy(hProvider);
-}
-
 TEST_F(test, memoryProviderOpsNullPurgeLazyField) {
     umf_memory_provider_ops_t provider_ops = UMF_NULL_PROVIDER_OPS;
     provider_ops.ext.purge_lazy = nullptr;
@@ -199,6 +186,14 @@ TEST_F(test, memoryProviderNullPoolHandle) {
 TEST_F(test, memoryProviderOpsNullAllocField) {
     umf_memory_provider_ops_t provider_ops = UMF_NULL_PROVIDER_OPS;
     provider_ops.alloc = nullptr;
+    umf_memory_provider_handle_t hProvider;
+    auto ret = umfMemoryProviderCreate(&provider_ops, nullptr, &hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, memoryProviderOpsNullFreeField) {
+    umf_memory_provider_ops_t provider_ops = UMF_NULL_PROVIDER_OPS;
+    provider_ops.free = nullptr;
     umf_memory_provider_handle_t hProvider;
     auto ret = umfMemoryProviderCreate(&provider_ops, nullptr, &hProvider);
     ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);

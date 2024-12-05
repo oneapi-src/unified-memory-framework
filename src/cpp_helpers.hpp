@@ -84,7 +84,7 @@ template <typename T> constexpr umf_memory_provider_ops_t providerOpsBase() {
     ops.version = UMF_VERSION_CURRENT;
     ops.finalize = [](void *obj) { delete reinterpret_cast<T *>(obj); };
     UMF_ASSIGN_OP(ops, T, alloc, UMF_RESULT_ERROR_UNKNOWN);
-    UMF_ASSIGN_OP(ops.ext, T, free, UMF_RESULT_ERROR_UNKNOWN);
+    UMF_ASSIGN_OP(ops, T, free, UMF_RESULT_ERROR_UNKNOWN);
     UMF_ASSIGN_OP_NORETURN(ops, T, get_last_native_error);
     UMF_ASSIGN_OP(ops, T, get_recommended_page_size, UMF_RESULT_ERROR_UNKNOWN);
     UMF_ASSIGN_OP(ops, T, get_min_page_size, UMF_RESULT_ERROR_UNKNOWN);

@@ -20,7 +20,6 @@ extern "C" {
 
 void *umfMemoryProviderGetPriv(umf_memory_provider_handle_t hProvider);
 umf_memory_provider_handle_t *umfGetLastFailedMemoryProviderPtr(void);
-bool umfIsFreeOpDefault(umf_memory_provider_handle_t hProvider);
 
 #ifdef __cplusplus
 }
