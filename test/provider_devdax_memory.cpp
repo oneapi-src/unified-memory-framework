@@ -233,6 +233,13 @@ TEST_P(umfProviderTest, purge_force) {
     test_alloc_free_success(provider.get(), page_size, 0, PURGE_FORCE);
 }
 
+TEST_P(umfProviderTest, purge_force_unalligned_alloc) {
+    void *ptr;
+    auto ret = umfMemoryProviderAlloc(provider.get(), page_size / 2, 0, &ptr);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    test_alloc_free_success(provider.get(), page_size, 0, PURGE_FORCE);
+    umfMemoryProviderFree(provider.get(), ptr, page_size / 2);
+}
 // negative tests using test_alloc_failure
 
 TEST_P(umfProviderTest, alloc_page64_align_page_minus_1_WRONG_ALIGNMENT_1) {
