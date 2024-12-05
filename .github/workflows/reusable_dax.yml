@@ -106,8 +106,6 @@ jobs:
           UMF_TESTS_FSDAX_PATH_2=${{env.UMF_TESTS_FSDAX_PATH_2}}
           ctest -C ${{matrix.build_type}} -V -R "file|fsdax"
 
-      # TODO: enable the provider_devdax_memory_ipc test when the IPC tests with the proxy library are fixed
-      # see the issue: https://github.com/oneapi-src/unified-memory-framework/issues/864
       - name: Run the DEVDAX tests with the proxy library
         # proxy library is built only if libumf is a shared library
         if: ${{ matrix.shared_library == 'ON' }}
@@ -116,10 +114,8 @@ jobs:
           LD_PRELOAD=./lib/libumf_proxy.so
           UMF_TESTS_DEVDAX_PATH="/dev/dax${{env.DEVDAX_NAMESPACE}}"
           UMF_TESTS_DEVDAX_SIZE="$(ndctl list --namespace=namespace${{env.DEVDAX_NAMESPACE}} | grep size | cut -d':' -f2 | cut -d',' -f1)"
-          ctest -C ${{matrix.build_type}} -V -R devdax -E provider_devdax_memory_ipc
+          ctest -C ${{matrix.build_type}} -V -R devdax
 
-      # TODO: enable the provider_file_memory_ipc test when the IPC tests with the proxy library are fixed
-      # see the issue: https://github.com/oneapi-src/unified-memory-framework/issues/864
       - name: Run the FSDAX tests with the proxy library
         # proxy library is built only if libumf is a shared library
         if: ${{ matrix.shared_library == 'ON' }}
@@ -128,7 +124,7 @@ jobs:
           LD_PRELOAD=./lib/libumf_proxy.so
           UMF_TESTS_FSDAX_PATH=${{env.UMF_TESTS_FSDAX_PATH}}
           UMF_TESTS_FSDAX_PATH_2=${{env.UMF_TESTS_FSDAX_PATH_2}}
-          ctest -C ${{matrix.build_type}} -V -R "file|fsdax" -E provider_file_memory_ipc
+          ctest -C ${{matrix.build_type}} -V -R "file|fsdax"
 
       - name: Check coverage
         if:  ${{ matrix.build_type == 'Debug' }}
