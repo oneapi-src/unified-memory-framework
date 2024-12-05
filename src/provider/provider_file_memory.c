@@ -485,6 +485,8 @@ static umf_result_t file_alloc_cb(void *provider, size_t size, size_t alignment,
 
     file_memory_provider_t *file_provider = (file_memory_provider_t *)provider;
 
+    *resultPtr = NULL;
+
     // alignment must be a power of two and a multiple or a divider of the page size
     if (alignment && ((alignment & (alignment - 1)) ||
                       ((alignment % file_provider->page_size) &&
@@ -517,7 +519,14 @@ static umf_result_t file_alloc_cb(void *provider, size_t size, size_t alignment,
         LOG_ERR("inserting a value to the file descriptor offset map failed "
                 "(addr=%p, offset=%zu)",
                 addr, alloc_offset_fd);
+        // We cannot undo the file_alloc_aligned() call here,
+        // because the file memory provider does not support the free operation.
+        return UMF_RESULT_ERROR_UNKNOWN;
     }
+
+    LOG_DEBUG("inserted a value to the file descriptor offset map (addr=%p, "
+              "offset=%zu)",
+              addr, alloc_offset_fd);
 
     *resultPtr = addr;
 
@@ -623,22 +632,30 @@ static umf_result_t file_allocation_split_cb(void *provider, void *ptr,
 
     void *value = critnib_get(file_provider->fd_offset_map, (uintptr_t)ptr);
     if (value == NULL) {
-        LOG_ERR("file_allocation_split(): getting a value from the file "
-                "descriptor offset map failed (addr=%p)",
+        LOG_ERR("getting a value from the file descriptor offset map failed "
+                "(addr=%p)",
                 ptr);
         return UMF_RESULT_ERROR_UNKNOWN;
     }
+
+    LOG_DEBUG("split the value from the file descriptor offset map (addr=%p) "
+              "from size %zu to %zu + %zu",
+              ptr, totalSize, firstSize, totalSize - firstSize);
 
     uintptr_t new_key = (uintptr_t)ptr + firstSize;
     void *new_value = (void *)((uintptr_t)value + firstSize);
     int ret = critnib_insert(file_provider->fd_offset_map, new_key, new_value,
                              0 /* update */);
     if (ret) {
-        LOG_ERR("file_allocation_split(): inserting a value to the file "
-                "descriptor offset map failed (addr=%p, offset=%zu)",
+        LOG_ERR("inserting a value to the file descriptor offset map failed "
+                "(addr=%p, offset=%zu)",
                 (void *)new_key, (size_t)new_value - 1);
         return UMF_RESULT_ERROR_UNKNOWN;
     }
+
+    LOG_DEBUG("inserted a value to the file descriptor offset map (addr=%p, "
+              "offset=%zu)",
+              (void *)new_key, (size_t)new_value - 1);
 
     return UMF_RESULT_SUCCESS;
 }
@@ -662,11 +679,15 @@ static umf_result_t file_allocation_merge_cb(void *provider, void *lowPtr,
     void *value =
         critnib_remove(file_provider->fd_offset_map, (uintptr_t)highPtr);
     if (value == NULL) {
-        LOG_ERR("file_allocation_merge(): removing a value from the file "
-                "descriptor offset map failed (addr=%p)",
+        LOG_ERR("removing a value from the file descriptor offset map failed "
+                "(addr=%p)",
                 highPtr);
         return UMF_RESULT_ERROR_UNKNOWN;
     }
+
+    LOG_DEBUG("removed a value from the file descriptor offset map (addr=%p) - "
+              "merged with %p",
+              highPtr, lowPtr);
 
     return UMF_RESULT_SUCCESS;
 }
@@ -701,9 +722,7 @@ static umf_result_t file_get_ipc_handle(void *provider, const void *ptr,
 
     void *value = critnib_get(file_provider->fd_offset_map, (uintptr_t)ptr);
     if (value == NULL) {
-        LOG_ERR("file_get_ipc_handle(): getting a value from the IPC cache "
-                "failed (addr=%p)",
-                ptr);
+        LOG_ERR("getting a value from the IPC cache failed (addr=%p)", ptr);
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
