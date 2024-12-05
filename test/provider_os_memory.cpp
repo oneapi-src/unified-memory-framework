@@ -441,18 +441,22 @@ disjoint_params_unique_handle_t disjointPoolParams() {
     }
     res = umfDisjointPoolParamsSetSlabMinSize(params, 4096);
     if (res != UMF_RESULT_SUCCESS) {
+        umfDisjointPoolParamsDestroy(params);
         throw std::runtime_error("Failed to set slab min size");
     }
     res = umfDisjointPoolParamsSetMaxPoolableSize(params, 4096);
     if (res != UMF_RESULT_SUCCESS) {
+        umfDisjointPoolParamsDestroy(params);
         throw std::runtime_error("Failed to set max poolable size");
     }
     res = umfDisjointPoolParamsSetCapacity(params, 4);
     if (res != UMF_RESULT_SUCCESS) {
+        umfDisjointPoolParamsDestroy(params);
         throw std::runtime_error("Failed to set capacity");
     }
     res = umfDisjointPoolParamsSetMinBucketSize(params, 64);
     if (res != UMF_RESULT_SUCCESS) {
+        umfDisjointPoolParamsDestroy(params);
         throw std::runtime_error("Failed to set min bucket size");
     }
 
