@@ -51,7 +51,6 @@ function(build_umf_test)
     endif()
 
     if(UMF_POOL_JEMALLOC_ENABLED)
-        set(LIB_DIRS ${LIB_DIRS} ${JEMALLOC_LIBRARY_DIRS})
         set(CPL_DEFS ${CPL_DEFS} UMF_POOL_JEMALLOC_ENABLED=1)
     endif()
 
