@@ -111,6 +111,95 @@ else()
     message(FATAL_ERROR "Unknown OS type")
 endif()
 
+if(NOT UMF_BUILD_LIBUMF_POOL_JEMALLOC)
+    set(UMF_POOL_JEMALLOC_ENABLED FALSE)
+    set(JEMALLOC_FOUND FALSE)
+    set(JEMALLOC_LIBRARIES FALSE)
+elseif(WINDOWS)
+    pkg_check_modules(JEMALLOC jemalloc)
+    if(NOT JEMALLOC_FOUND)
+        find_package(JEMALLOC REQUIRED jemalloc)
+    endif()
+else()
+    if(NOT DEFINED UMF_JEMALLOC_REPO)
+        set(UMF_JEMALLOC_REPO "https://github.com/jemalloc/jemalloc.git")
+    endif()
+
+    if(NOT DEFINED UMF_JEMALLOC_TAG)
+        set(UMF_JEMALLOC_TAG 5.3.0)
+    endif()
+
+    include(FetchContent)
+    message(
+        STATUS
+            "Will fetch jemalloc from ${UMF_JEMALLOC_REPO} (tag: ${UMF_JEMALLOC_TAG})"
+    )
+
+    FetchContent_Declare(
+        jemalloc_targ
+        GIT_REPOSITORY ${UMF_JEMALLOC_REPO}
+        GIT_TAG ${UMF_JEMALLOC_TAG})
+    FetchContent_MakeAvailable(jemalloc_targ)
+
+    add_custom_command(
+        COMMAND ./autogen.sh
+        WORKING_DIRECTORY ${jemalloc_targ_SOURCE_DIR}
+        OUTPUT ${jemalloc_targ_SOURCE_DIR}/configure)
+    add_custom_command(
+        # Custom jemalloc build. Non-default options used:
+        # --with-jemalloc-prefix=je_ - add je_ prefix to all public APIs
+        # --disable-cxx - Disable C++ integration. This will cause new and
+        # delete operators implementations to be omitted.
+        # --disable-initial-exec-tls - Disable the initial-exec TLS model for
+        # jemalloc's internal thread-local storage (on those platforms that
+        # support explicit settings). This can allow jemalloc to be dynamically
+        # loaded after program startup (e.g. using dlopen).
+        COMMAND
+            ./configure --prefix=${jemalloc_targ_BINARY_DIR}
+            --with-jemalloc-prefix=je_ --disable-cxx --disable-initial-exec-tls
+            CFLAGS=-fPIC
+        WORKING_DIRECTORY ${jemalloc_targ_SOURCE_DIR}
+        OUTPUT ${jemalloc_targ_SOURCE_DIR}/Makefile
+        DEPENDS ${jemalloc_targ_SOURCE_DIR}/configure)
+    add_custom_command(
+        COMMAND make
+        WORKING_DIRECTORY ${jemalloc_targ_SOURCE_DIR}
+        OUTPUT ${jemalloc_targ_SOURCE_DIR}/lib/libjemalloc.la
+        DEPENDS ${jemalloc_targ_SOURCE_DIR}/Makefile)
+    add_custom_command(
+        COMMAND make install
+        WORKING_DIRECTORY ${jemalloc_targ_SOURCE_DIR}
+        OUTPUT ${jemalloc_targ_BINARY_DIR}/lib/libjemalloc.a
+        DEPENDS ${jemalloc_targ_SOURCE_DIR}/lib/libjemalloc.la)
+
+    add_custom_target(jemalloc_prod
+                      DEPENDS ${jemalloc_targ_BINARY_DIR}/lib/libjemalloc.a)
+    add_library(jemalloc INTERFACE)
+    target_link_libraries(
+        jemalloc INTERFACE ${jemalloc_targ_BINARY_DIR}/lib/libjemalloc.a)
+    add_dependencies(jemalloc jemalloc_prod)
+
+    set(JEMALLOC_LIBRARY_DIRS ${jemalloc_targ_BINARY_DIR}/lib)
+    set(JEMALLOC_INCLUDE_DIRS ${jemalloc_targ_BINARY_DIR}/include)
+    set(JEMALLOC_LIBRARIES ${jemalloc_targ_BINARY_DIR}/lib/libjemalloc.a)
+endif()
+
+if(JEMALLOC_FOUND OR JEMALLOC_LIBRARIES)
+    set(UMF_POOL_JEMALLOC_ENABLED TRUE)
+    # add PATH to DLL on Windows
+    set(DLL_PATH_LIST
+        "${DLL_PATH_LIST};PATH=path_list_append:${JEMALLOC_DLL_DIRS}")
+    message(STATUS "    JEMALLOC_LIBRARIES = ${JEMALLOC_LIBRARIES}")
+    message(STATUS "    JEMALLOC_INCLUDE_DIRS = ${JEMALLOC_INCLUDE_DIRS}")
+    message(STATUS "    JEMALLOC_LIBRARY_DIRS = ${JEMALLOC_LIBRARY_DIRS}")
+else()
+    set(UMF_POOL_JEMALLOC_ENABLED FALSE)
+    message(
+        STATUS
+            "Disabling the Jemalloc Pool and tests and benchmarks that use it because jemalloc was not built/found."
+    )
+endif()
+
 if(UMF_DISABLE_HWLOC)
     message(STATUS "hwloc is disabled, hence OS provider, memtargets, "
                    "topology discovery, examples won't be available!")
@@ -402,19 +491,6 @@ else()
     set(UMF_POOL_SCALABLE_ENABLED FALSE)
 endif()
 
-if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
-    pkg_check_modules(JEMALLOC jemalloc)
-    if(NOT JEMALLOC_FOUND)
-        find_package(JEMALLOC REQUIRED jemalloc)
-    endif()
-    if(JEMALLOC_FOUND OR JEMALLOC_LIBRARIES)
-        set(UMF_POOL_JEMALLOC_ENABLED TRUE)
-        # add PATH to DLL on Windows
-        set(DLL_PATH_LIST
-            "${DLL_PATH_LIST};PATH=path_list_append:${JEMALLOC_DLL_DIRS}")
-    endif()
-endif()
-
 if(WINDOWS)
     # TODO: enable the proxy library in the Debug build on Windows
     #
@@ -455,14 +531,14 @@ elseif(UMF_PROXY_LIB_BASED_ON_POOL STREQUAL SCALABLE)
         )
     endif()
 elseif(UMF_PROXY_LIB_BASED_ON_POOL STREQUAL JEMALLOC)
-    if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
+    if(UMF_POOL_JEMALLOC_ENABLED)
         set(UMF_PROXY_LIB_ENABLED ON)
         set(PROXY_LIB_USES_JEMALLOC_POOL ON)
-        set(PROXY_LIBS jemalloc_pool umf)
+        set(PROXY_LIBS umf)
     else()
         message(
             STATUS
-                "Disabling the proxy library, because UMF_PROXY_LIB_BASED_ON_POOL==JEMALLOC but UMF_BUILD_LIBUMF_POOL_JEMALLOC is OFF"
+                "Disabling the proxy library, because UMF_PROXY_LIB_BASED_ON_POOL==JEMALLOC but the jemalloc pool is disabled"
         )
     endif()
 else()

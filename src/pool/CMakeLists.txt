@@ -38,17 +38,3 @@ if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
 
     install(TARGETS disjoint_pool EXPORT ${PROJECT_NAME}-targets)
 endif()
-
-# libumf_pool_jemalloc
-if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
-    add_umf_library(
-        NAME jemalloc_pool
-        TYPE STATIC
-        SRCS pool_jemalloc.c ${POOL_EXTRA_SRCS}
-        LIBS jemalloc ${POOL_EXTRA_LIBS})
-    target_include_directories(jemalloc_pool PRIVATE ${JEMALLOC_INCLUDE_DIRS})
-    target_compile_definitions(jemalloc_pool
-                               PRIVATE ${POOL_COMPILE_DEFINITIONS})
-    add_library(${PROJECT_NAME}::jemalloc_pool ALIAS jemalloc_pool)
-    install(TARGETS jemalloc_pool EXPORT ${PROJECT_NAME}-targets)
-endif()

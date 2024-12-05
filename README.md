@@ -281,11 +281,26 @@ pool manager built as a separate static library: libjemalloc_pool.a on Linux and
 jemalloc_pool.lib on Windows.
 The `UMF_BUILD_LIBUMF_POOL_JEMALLOC` option has to be turned `ON` to build this library.
 
+[jemalloc](https://github.com/jemalloc/jemalloc) is required to build the jemalloc pool.
+
+In case of Linux OS jemalloc is built from the (fetched) sources with the following
+non-default options enabled:
+- `--with-jemalloc-prefix=je_` - adds the `je_` prefix to all public APIs,
+- `--disable-cxx` - disables C++ integration, it will cause the `new` and the `delete`
+                    operators implementations to be omitted.
+- `--disable-initial-exec-tls` - disables the initial-exec TLS model for jemalloc's
+                    internal thread-local storage (on those platforms that support
+                    explicit settings), it can allow jemalloc to be dynamically
+                    loaded after program startup (e.g. using `dlopen()`).
+
+The default jemalloc package is required on Windows.
+
 ##### Requirements
 
 1) The `UMF_BUILD_LIBUMF_POOL_JEMALLOC` option turned `ON`
-2) Required packages:
-   - libjemalloc-dev (Linux) or jemalloc (Windows)
+2) jemalloc is required:
+- on Linux and MacOS: jemalloc is fetched and built from sources (a custom build),
+- on Windows: the default jemalloc package is required
 
 #### Scalable Pool (part of libumf)
 

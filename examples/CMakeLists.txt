@@ -282,10 +282,13 @@ if(LINUX)
         add_umf_executable(
             NAME ${EXAMPLE_NAME}
             SRCS dram_and_fsdax/dram_and_fsdax.c
-            LIBS umf jemalloc_pool)
+            LIBS umf)
 
-        target_link_directories(${EXAMPLE_NAME} PRIVATE
-                                ${LIBHWLOC_LIBRARY_DIRS})
+        target_link_options(${EXAMPLE_NAME} PRIVATE "-Wl,--no-as-needed,-ldl")
+
+        target_link_directories(
+            ${EXAMPLE_NAME} PRIVATE ${LIBHWLOC_LIBRARY_DIRS}
+            ${JEMALLOC_LIBRARY_DIRS})
 
         add_test(
             NAME ${EXAMPLE_NAME}

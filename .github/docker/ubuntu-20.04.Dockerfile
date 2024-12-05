@@ -24,7 +24,6 @@ ARG BASE_DEPS="\
 
 # UMF's dependencies
 ARG UMF_DEPS="\
-	libjemalloc-dev \
 	libhwloc-dev \
 	libtbb-dev"
 
@@ -34,6 +33,7 @@ ARG TEST_DEPS="\
 
 # Miscellaneous for our builds/CI (optional)
 ARG MISC_DEPS="\
+	automake \
 	clang \
 	g++-7 \
 	python3-pip \

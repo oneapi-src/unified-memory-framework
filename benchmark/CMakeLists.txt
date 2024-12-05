@@ -51,7 +51,7 @@ function(add_umf_benchmark)
 
     set(BENCH_NAME umf-${ARG_NAME})
 
-    set(BENCH_LIBS ${ARG_LIBS} umf)
+    set(BENCH_LIBS ${ARG_LIBS} umf umf_utils)
 
     add_umf_executable(
         NAME ${BENCH_NAME}
@@ -121,8 +121,7 @@ set(LIB_DIRS ${LIBHWLOC_LIBRARY_DIRS})
 if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
     set(LIBS_OPTIONAL ${LIBS_OPTIONAL} disjoint_pool)
 endif()
-if(UMF_BUILD_LIBUMF_POOL_JEMALLOC)
-    set(LIBS_OPTIONAL ${LIBS_OPTIONAL} jemalloc_pool ${JEMALLOC_LIBRARIES})
+if(UMF_POOL_JEMALLOC_ENABLED)
     set(LIB_DIRS ${LIB_DIRS} ${JEMALLOC_LIBRARY_DIRS})
 endif()
 if(LINUX)

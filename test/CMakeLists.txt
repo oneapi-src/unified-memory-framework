@@ -165,10 +165,6 @@ if(UMF_BUILD_SHARED_LIBRARY)
     endif()
 endif()
 
-if(UMF_POOL_JEMALLOC_ENABLED)
-    set(LIB_JEMALLOC_POOL jemalloc_pool)
-endif()
-
 if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
     set(LIB_DISJOINT_POOL disjoint_pool)
 endif()
@@ -236,14 +232,15 @@ if(UMF_BUILD_LIBUMF_POOL_DISJOINT
     add_umf_test(
         NAME c_api_multi_pool
         SRCS c_api/multi_pool.c
-        LIBS disjoint_pool jemalloc_pool ${JEMALLOC_LIBRARIES})
+        LIBS disjoint_pool)
 endif()
 
 if(UMF_POOL_JEMALLOC_ENABLED AND (NOT UMF_DISABLE_HWLOC))
     add_umf_test(
         NAME jemalloc_pool
         SRCS pools/jemalloc_pool.cpp malloc_compliance_tests.cpp
-        LIBS jemalloc_pool)
+             ${BA_SOURCES_FOR_TEST}
+        LIBS ${UMF_UTILS_FOR_TEST})
 endif()
 
 if(UMF_POOL_SCALABLE_ENABLED AND (NOT UMF_DISABLE_HWLOC))
@@ -266,7 +263,7 @@ if(LINUX AND (NOT UMF_DISABLE_HWLOC)) # OS-specific functions are implemented
     add_umf_test(
         NAME provider_os_memory
         SRCS provider_os_memory.cpp ${BA_SOURCES_FOR_TEST}
-        LIBS ${UMF_UTILS_FOR_TEST} ${LIB_JEMALLOC_POOL} ${LIB_DISJOINT_POOL})
+        LIBS ${UMF_UTILS_FOR_TEST} ${LIB_DISJOINT_POOL})
     add_umf_test(
         NAME provider_os_memory_multiple_numa_nodes
         SRCS provider_os_memory_multiple_numa_nodes.cpp
@@ -314,7 +311,7 @@ if(LINUX AND (NOT UMF_DISABLE_HWLOC)) # OS-specific functions are implemented
     add_umf_test(
         NAME provider_devdax_memory_ipc
         SRCS provider_devdax_memory_ipc.cpp ${BA_SOURCES_FOR_TEST}
-        LIBS ${UMF_UTILS_FOR_TEST} ${LIB_JEMALLOC_POOL})
+        LIBS ${UMF_UTILS_FOR_TEST})
     add_umf_test(
         NAME provider_file_memory
         SRCS provider_file_memory.cpp
@@ -322,18 +319,20 @@ if(LINUX AND (NOT UMF_DISABLE_HWLOC)) # OS-specific functions are implemented
     add_umf_test(
         NAME provider_file_memory_ipc
         SRCS provider_file_memory_ipc.cpp ${BA_SOURCES_FOR_TEST}
-        LIBS ${UMF_UTILS_FOR_TEST} ${LIB_JEMALLOC_POOL})
+        LIBS ${UMF_UTILS_FOR_TEST})
 
     # This test requires Linux-only file memory provider
     if(UMF_POOL_JEMALLOC_ENABLED)
         add_umf_test(
             NAME jemalloc_coarse_file
             SRCS pools/jemalloc_coarse_file.cpp malloc_compliance_tests.cpp
-            LIBS jemalloc_pool)
+                 ${BA_SOURCES_FOR_TEST}
+            LIBS ${UMF_UTILS_FOR_TEST})
         add_umf_test(
             NAME jemalloc_coarse_devdax
             SRCS pools/jemalloc_coarse_devdax.cpp malloc_compliance_tests.cpp
-            LIBS jemalloc_pool)
+                 ${BA_SOURCES_FOR_TEST}
+            LIBS ${UMF_UTILS_FOR_TEST})
     endif()
 
     # This test requires Linux-only file memory provider
@@ -739,7 +738,7 @@ if(LINUX
     else()
         message(
             STATUS
-                "The dram_and_fsdax example is supported on Linux only and requires UMF_BUILD_LIBUMF_POOL_JEMALLOC to be turned ON - skipping"
+                "The dram_and_fsdax example is supported on Linux only and requires the jemalloc pool, but it is disabled - skipping"
         )
     endif()
 
@@ -747,6 +746,13 @@ if(LINUX
         set(STANDALONE_CMAKE_OPTIONS
             "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
         )
+        if(JEMALLOC_INCLUDE_DIRS)
+            # add custom jemalloc installation
+            set(STANDALONE_CMAKE_OPTIONS
+                "${STANDALONE_CMAKE_OPTIONS} -DCMAKE_PREFIX_PATH=${JEMALLOC_INCLUDE_DIRS}/../"
+            )
+        endif()
+
         add_test(
             NAME umf-standalone_examples
             COMMAND

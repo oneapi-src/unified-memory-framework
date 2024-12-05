@@ -124,7 +124,7 @@ jobs:
     - name: Install apt packages
       run: |
         sudo apt-get update
-        sudo apt-get install -y clang cmake libnuma-dev libjemalloc-dev lcov
+        sudo apt-get install -y clang cmake libnuma-dev lcov
 
     - name: Install TBB apt package
       if: matrix.install_tbb == 'ON'
@@ -209,7 +209,6 @@ jobs:
         --install-dir ${{env.INSTL_DIR}}
         --build-type ${{matrix.build_type}}
         --disjoint-pool
-        --jemalloc-pool
         ${{ matrix.install_tbb == 'ON' && matrix.disable_hwloc != 'ON' && matrix.shared_library == 'ON' && '--proxy' || '' }}
         --umf-version ${{env.UMF_VERSION}}
         ${{ matrix.shared_library == 'ON' && '--shared-library' || '' }}
@@ -300,7 +299,6 @@ jobs:
         --install-dir ${{env.INSTL_DIR}}
         --build-type ${{matrix.build_type}}
         --disjoint-pool
-        --jemalloc-pool
         ${{matrix.shared_library == 'ON' && '--proxy' || '' }}
         --umf-version ${{env.UMF_VERSION}}
         ${{ matrix.shared_library == 'ON' && '--shared-library' || ''}}
@@ -469,7 +467,7 @@ jobs:
         python3 -m pip install -r third_party/requirements.txt
 
     - name: Install hwloc
-      run: brew install hwloc jemalloc tbb
+      run: brew install hwloc tbb automake
 
     - name: Configure build
       run: >
@@ -495,7 +493,6 @@ jobs:
         --install-dir ${{env.INSTL_DIR}}
         --build-type ${{env.BUILD_TYPE}}
         --disjoint-pool
-        --jemalloc-pool
         --proxy
         --umf-version ${{env.UMF_VERSION}}
         --shared-library

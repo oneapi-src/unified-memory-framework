@@ -284,11 +284,6 @@ class UmfInstallationTester:
             help="Add this argument if the UMF was built with Disjoint Pool enabled",
         )
         self.parser.add_argument(
-            "--jemalloc-pool",
-            action="store_true",
-            help="Add this argument if the UMF was built with Jemalloc Pool enabled",
-        )
-        self.parser.add_argument(
             "--umf-version",
             action="store",
             help="Current version of the UMF, e.g. 1.0.0",
@@ -306,8 +301,6 @@ class UmfInstallationTester:
         pools = []
         if self.args.disjoint_pool:
             pools.append("disjoint_pool")
-        if self.args.jemalloc_pool:
-            pools.append("jemalloc_pool")
 
         umf_version = Version(self.args.umf_version)
 

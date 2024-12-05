@@ -21,26 +21,15 @@ if(NOT LIBHWLOC_FOUND)
     find_package(LIBHWLOC 2.3.0 REQUIRED hwloc)
 endif()
 
-pkg_check_modules(JEMALLOC jemalloc)
-if(NOT JEMALLOC_FOUND)
-    find_package(JEMALLOC REQUIRED jemalloc)
-endif()
-
 # build the example
 set(EXAMPLE_NAME umf_example_dram_and_fsdax)
 add_executable(${EXAMPLE_NAME} dram_and_fsdax.c)
 target_include_directories(${EXAMPLE_NAME} PRIVATE ${LIBUMF_INCLUDE_DIRS})
 
-target_link_directories(
-    ${EXAMPLE_NAME}
-    PRIVATE
-    ${LIBUMF_LIBRARY_DIRS}
-    ${LIBHWLOC_LIBRARY_DIRS}
-    ${JEMALLOC_LIBRARY_DIRS})
+target_link_directories(${EXAMPLE_NAME} PRIVATE ${LIBUMF_LIBRARY_DIRS}
+                        ${LIBHWLOC_LIBRARY_DIRS})
 
-target_link_libraries(
-    ${EXAMPLE_NAME} PRIVATE hwloc jemalloc_pool ${JEMALLOC_LIBRARIES}
-                            ${LIBUMF_LIBRARIES})
+target_link_libraries(${EXAMPLE_NAME} PRIVATE hwloc ${LIBUMF_LIBRARIES})
 
 # an optional part - adds a test of this example
 add_test(
@@ -56,6 +45,6 @@ if(LINUX)
         TEST ${EXAMPLE_NAME}
         PROPERTY
             ENVIRONMENT_MODIFICATION
-            "LD_LIBRARY_PATH=path_list_append:${LIBUMF_LIBRARY_DIRS};LD_LIBRARY_PATH=path_list_append:${LIBHWLOC_LIBRARY_DIRS};LD_LIBRARY_PATH=path_list_append:${JEMALLOC_LIBRARY_DIRS}"
+            "LD_LIBRARY_PATH=path_list_append:${LIBUMF_LIBRARY_DIRS};LD_LIBRARY_PATH=path_list_append:${LIBHWLOC_LIBRARY_DIRS}"
     )
 endif()

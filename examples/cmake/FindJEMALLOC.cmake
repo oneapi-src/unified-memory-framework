@@ -2,9 +2,11 @@
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-message(STATUS "Checking for module 'jemalloc' using find_library()")
+message(
+    STATUS "Looking for the static 'libjemalloc.a' library using find_library()"
+)
 
-find_library(JEMALLOC_LIBRARY NAMES libjemalloc jemalloc)
+find_library(JEMALLOC_LIBRARY NAMES libjemalloc.a jemalloc.a)
 set(JEMALLOC_LIBRARIES ${JEMALLOC_LIBRARY})
 
 get_filename_component(JEMALLOC_LIB_DIR ${JEMALLOC_LIBRARIES} DIRECTORY)

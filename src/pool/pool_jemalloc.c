@@ -20,17 +20,33 @@
 #include <umf/memory_pool_ops.h>
 #include <umf/pools/pool_jemalloc.h>
 
-#include <jemalloc/jemalloc.h>
+#ifndef UMF_POOL_JEMALLOC_ENABLED
 
-// The Windows version of jemalloc uses API with je_ prefix,
-// while the Linux one does not.
-#ifndef _WIN32
-#define je_mallocx mallocx
-#define je_dallocx dallocx
-#define je_rallocx rallocx
-#define je_mallctl mallctl
-#define je_malloc_usable_size malloc_usable_size
-#endif
+umf_memory_pool_ops_t *umfJemallocPoolOps(void) { return NULL; }
+
+umf_result_t
+umfJemallocPoolParamsCreate(umf_jemalloc_pool_params_handle_t *hParams) {
+    (void)hParams; // unused
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+umf_result_t
+umfJemallocPoolParamsDestroy(umf_jemalloc_pool_params_handle_t hParams) {
+    (void)hParams; // unused
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+umf_result_t
+umfJemallocPoolParamsSetKeepAllMemory(umf_jemalloc_pool_params_handle_t hParams,
+                                      bool keepAllMemory) {
+    (void)hParams;       // unused
+    (void)keepAllMemory; // unused
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+#else
+
+#include <jemalloc/jemalloc.h>
 
 #define MALLOCX_ARENA_MAX (MALLCTL_ARENAS_ALL - 1)
 
@@ -545,3 +561,4 @@ static umf_memory_pool_ops_t UMF_JEMALLOC_POOL_OPS = {
 umf_memory_pool_ops_t *umfJemallocPoolOps(void) {
     return &UMF_JEMALLOC_POOL_OPS;
 }
+#endif /* UMF_POOL_JEMALLOC_ENABLED */
