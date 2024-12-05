@@ -59,10 +59,6 @@ typedef struct coarse_memory_provider_t {
     // "coarse (<name_of_upstream_provider>)"
     // for example: "coarse (L0)"
     char *name;
-
-    // Set to true if the free() operation of the upstream memory provider is not supported
-    // (i.e. if (umfMemoryProviderFree(upstream_memory_provider, NULL, 0) == UMF_RESULT_ERROR_NOT_SUPPORTED)
-    bool disable_upstream_provider_free;
 } coarse_memory_provider_t;
 
 typedef struct ravl_node ravl_node_t;
@@ -918,13 +914,6 @@ static umf_result_t coarse_memory_provider_initialize(void *params,
     coarse_provider->allocation_strategy = coarse_params->allocation_strategy;
     coarse_provider->init_buffer = coarse_params->init_buffer;
 
-    if (coarse_provider->upstream_memory_provider) {
-        coarse_provider->disable_upstream_provider_free =
-            umfIsFreeOpDefault(coarse_provider->upstream_memory_provider);
-    } else {
-        coarse_provider->disable_upstream_provider_free = false;
-    }
-
     umf_result_t umf_result = coarse_memory_provider_set_name(coarse_provider);
     if (umf_result != UMF_RESULT_SUCCESS) {
         LOG_ERR("name initialization failed");
@@ -1027,8 +1016,7 @@ static void coarse_ravl_cb_rm_upstream_blocks_node(void *data, void *arg) {
     block_t *alloc = node_data->value;
     assert(alloc);
 
-    if (coarse_provider->upstream_memory_provider &&
-        !coarse_provider->disable_upstream_provider_free) {
+    if (coarse_provider->upstream_memory_provider) {
         // We continue to deallocate alloc blocks even if the upstream provider doesn't return success.
         umfMemoryProviderFree(coarse_provider->upstream_memory_provider,
                               alloc->data, alloc->size);
@@ -1288,10 +1276,8 @@ static umf_result_t coarse_memory_provider_alloc(void *provider, size_t size,
 
     umf_result = coarse_add_upstream_block(coarse_provider, *resultPtr, size);
     if (umf_result != UMF_RESULT_SUCCESS) {
-        if (!coarse_provider->disable_upstream_provider_free) {
-            umfMemoryProviderFree(coarse_provider->upstream_memory_provider,
-                                  *resultPtr, size);
-        }
+        umfMemoryProviderFree(coarse_provider->upstream_memory_provider,
+                              *resultPtr, size);
         goto err_unlock;
     }
 
@@ -1657,12 +1643,12 @@ umf_memory_provider_ops_t UMF_COARSE_MEMORY_PROVIDER_OPS = {
     .initialize = coarse_memory_provider_initialize,
     .finalize = coarse_memory_provider_finalize,
     .alloc = coarse_memory_provider_alloc,
+    .free = coarse_memory_provider_free,
     .get_last_native_error = coarse_memory_provider_get_last_native_error,
     .get_recommended_page_size =
         coarse_memory_provider_get_recommended_page_size,
     .get_min_page_size = coarse_memory_provider_get_min_page_size,
     .get_name = coarse_memory_provider_get_name,
-    .ext.free = coarse_memory_provider_free,
     .ext.purge_lazy = coarse_memory_provider_purge_lazy,
     .ext.purge_force = coarse_memory_provider_purge_force,
     .ext.allocation_merge = coarse_memory_provider_allocation_merge,

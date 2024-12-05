@@ -599,11 +599,11 @@ static struct umf_memory_provider_ops_t UMF_CUDA_MEMORY_PROVIDER_OPS = {
     .initialize = cu_memory_provider_initialize,
     .finalize = cu_memory_provider_finalize,
     .alloc = cu_memory_provider_alloc,
+    .free = cu_memory_provider_free,
     .get_last_native_error = cu_memory_provider_get_last_native_error,
     .get_recommended_page_size = cu_memory_provider_get_recommended_page_size,
     .get_min_page_size = cu_memory_provider_get_min_page_size,
     .get_name = cu_memory_provider_get_name,
-    .ext.free = cu_memory_provider_free,
     // TODO
     /*
     .ext.purge_lazy = cu_memory_provider_purge_lazy,

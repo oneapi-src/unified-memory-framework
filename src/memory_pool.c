@@ -42,10 +42,7 @@ static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
 
     if (!(flags & UMF_POOL_CREATE_FLAG_DISABLE_TRACKING)) {
         // Wrap provider with memory tracking provider.
-        // Check if the provider supports the free() operation.
-        bool upstreamDoesNotFree = umfIsFreeOpDefault(provider);
-        ret = umfTrackingMemoryProviderCreate(provider, pool, &pool->provider,
-                                              upstreamDoesNotFree);
+        ret = umfTrackingMemoryProviderCreate(provider, pool, &pool->provider);
         if (ret != UMF_RESULT_SUCCESS) {
             goto err_provider_create;
         }
