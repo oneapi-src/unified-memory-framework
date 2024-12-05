@@ -43,8 +43,8 @@ TEST_P(FileWithMemoryStrategyTest, disjointFileMallocPool_simple1) {
     umf_memory_provider_handle_t malloc_memory_provider = nullptr;
     umf_result_t umf_result;
 
-    umf_result = umfMemoryProviderCreate(&UMF_MALLOC_MEMORY_PROVIDER_OPS, NULL,
-                                         &malloc_memory_provider);
+    umf_result = umfMemoryProviderCreate(&UMF_MALLOC_MEMORY_PROVIDER_OPS,
+                                         nullptr, &malloc_memory_provider);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(malloc_memory_provider, nullptr);
 
@@ -62,7 +62,7 @@ TEST_P(FileWithMemoryStrategyTest, disjointFileMallocPool_simple1) {
     umf_result = umfFileMemoryProviderParamsDestroy(file_params);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
-    umf_disjoint_pool_params_handle_t disjoint_pool_params = NULL;
+    umf_disjoint_pool_params_handle_t disjoint_pool_params = nullptr;
     umf_result = umfDisjointPoolParamsCreate(&disjoint_pool_params);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(disjoint_pool_params, nullptr);
@@ -89,7 +89,7 @@ TEST_P(FileWithMemoryStrategyTest, disjointFileMallocPool_simple1) {
 
     umf_result = umfDisjointPoolParamsDestroy(disjoint_pool_params);
 
-    umf_memory_provider_handle_t prov = NULL;
+    umf_memory_provider_handle_t prov = nullptr;
     umfPoolGetMemoryProvider(pool, &prov);
     ASSERT_NE(prov, nullptr);
 
@@ -138,8 +138,8 @@ TEST_P(FileWithMemoryStrategyTest, disjointFileMallocPool_simple2) {
     umf_memory_provider_handle_t malloc_memory_provider = nullptr;
     umf_result_t umf_result;
 
-    umf_result = umfMemoryProviderCreate(&UMF_MALLOC_MEMORY_PROVIDER_OPS, NULL,
-                                         &malloc_memory_provider);
+    umf_result = umfMemoryProviderCreate(&UMF_MALLOC_MEMORY_PROVIDER_OPS,
+                                         nullptr, &malloc_memory_provider);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(malloc_memory_provider, nullptr);
 
@@ -157,7 +157,7 @@ TEST_P(FileWithMemoryStrategyTest, disjointFileMallocPool_simple2) {
     umf_result = umfFileMemoryProviderParamsDestroy(file_params);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
-    umf_disjoint_pool_params_handle_t disjoint_pool_params = NULL;
+    umf_disjoint_pool_params_handle_t disjoint_pool_params = nullptr;
     umf_result = umfDisjointPoolParamsCreate(&disjoint_pool_params);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(disjoint_pool_params, nullptr);
@@ -245,7 +245,7 @@ TEST_P(FileWithMemoryStrategyTest, disjointFileMMapPool_random) {
     umf_result = umfFileMemoryProviderParamsDestroy(file_params);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
-    umf_disjoint_pool_params_handle_t disjoint_pool_params = NULL;
+    umf_disjoint_pool_params_handle_t disjoint_pool_params = nullptr;
     umf_result = umfDisjointPoolParamsCreate(&disjoint_pool_params);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(disjoint_pool_params, nullptr);
