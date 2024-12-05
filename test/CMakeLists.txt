@@ -214,9 +214,10 @@ if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
         SRCS c_api/disjoint_pool.c
         LIBS disjoint_pool)
     if(LINUX AND (NOT UMF_DISABLE_HWLOC))
+        # this test uses the file provider
         add_umf_test(
-            NAME disjointCoarseMallocPool
-            SRCS disjointCoarseMallocPool.cpp
+            NAME disjointPoolFileProv
+            SRCS disjointPoolFileProv.cpp
             LIBS disjoint_pool)
     endif()
 endif()
