@@ -128,13 +128,6 @@ static umf_memory_pool_handle_t Proxy_pool = NULL;
 // it protects us from recursion in umfPool*()
 static __TLS int was_called_from_umfPool = 0;
 
-// This WA for the issue:
-// https://github.com/oneapi-src/unified-memory-framework/issues/894
-// It protects us from a recursion in malloc_usable_size()
-// when the JEMALLOC proxy_lib_pool is used.
-// TODO remove this WA when the issue is fixed.
-static __TLS int was_called_from_malloc_usable_size = 0;
-
 /*****************************************************************************/
 /*** The constructor and destructor of the proxy library *********************/
 /*****************************************************************************/
@@ -478,18 +471,15 @@ size_t malloc_usable_size(void *ptr) {
         return 0; // unsupported in case of the ba_leak allocator
     }
 
-    if (!was_called_from_malloc_usable_size && Proxy_pool &&
-        (umfPoolByPtr(ptr) == Proxy_pool)) {
-        was_called_from_malloc_usable_size = 1;
+    if (Proxy_pool && (umfPoolByPtr(ptr) == Proxy_pool)) {
         was_called_from_umfPool = 1;
         size_t size = umfPoolMallocUsableSize(Proxy_pool, ptr);
         was_called_from_umfPool = 0;
-        was_called_from_malloc_usable_size = 0;
         return size;
     }
 
 #ifndef _WIN32
-    if (!was_called_from_malloc_usable_size && Size_threshold_value) {
+    if (Size_threshold_value) {
         return System_malloc_usable_size(ptr);
     }
 #endif /* _WIN32 */
