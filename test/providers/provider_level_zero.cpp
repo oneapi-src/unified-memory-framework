@@ -454,9 +454,9 @@ INSTANTIATE_TEST_SUITE_P(
 #ifdef _WIN32
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(umfIpcTest);
 #else
-INSTANTIATE_TEST_SUITE_P(
-    umfLevelZeroProviderTestSuite, umfIpcTest,
-    ::testing::Values(ipcTestParams{
-        umfProxyPoolOps(), nullptr, umfLevelZeroMemoryProviderOps(),
-        l0Params_device_memory.get(), &l0Accessor, false}));
+INSTANTIATE_TEST_SUITE_P(umfLevelZeroProviderTestSuite, umfIpcTest,
+                         ::testing::Values(ipcTestParams{
+                             umfProxyPoolOps(), nullptr,
+                             umfLevelZeroMemoryProviderOps(),
+                             l0Params_device_memory.get(), &l0Accessor}));
 #endif

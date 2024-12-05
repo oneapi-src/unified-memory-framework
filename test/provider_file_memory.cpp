@@ -98,7 +98,7 @@ static void test_alloc_free_success(umf_memory_provider_handle_t provider,
     }
 
     umf_result = umfMemoryProviderFree(provider, ptr, size);
-    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 }
 
 static void verify_last_native_error(umf_memory_provider_handle_t provider,
@@ -159,7 +159,7 @@ TEST_F(test, test_if_mapped_with_MAP_SYNC) {
     bool flag_found = is_mapped_with_MAP_SYNC(path, buf, size);
 
     umf_result = umfMemoryProviderFree(hProvider, buf, size);
-    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
     umfMemoryProviderDestroy(hProvider);
 
@@ -244,10 +244,10 @@ TEST_P(FileProviderParamsDefault, two_allocations) {
     memset(ptr2, 0x22, size);
 
     umf_result = umfMemoryProviderFree(provider.get(), ptr1, size);
-    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
     umf_result = umfMemoryProviderFree(provider.get(), ptr2, size);
-    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 }
 
 TEST_P(FileProviderParamsDefault, alloc_page64_align_0) {
@@ -366,12 +366,12 @@ TEST_P(FileProviderParamsDefault, get_name) {
 TEST_P(FileProviderParamsDefault, free_size_0_ptr_not_null) {
     umf_result_t umf_result =
         umfMemoryProviderFree(provider.get(), INVALID_PTR, 0);
-    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 }
 
 TEST_P(FileProviderParamsDefault, free_NULL) {
     umf_result_t umf_result = umfMemoryProviderFree(provider.get(), nullptr, 0);
-    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 }
 
 // other negative tests
@@ -449,7 +449,7 @@ TEST_F(test, set_null_path) {
 TEST_P(FileProviderParamsDefault, free_INVALID_POINTER_SIZE_GT_0) {
     umf_result_t umf_result =
         umfMemoryProviderFree(provider.get(), INVALID_PTR, page_plus_64);
-    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 }
 
 TEST_P(FileProviderParamsDefault, purge_lazy_INVALID_POINTER) {
@@ -512,7 +512,7 @@ TEST_P(FileProviderParamsShared, IPC_base_success_test) {
     ASSERT_EQ(ret, 0);
 
     umf_result = umfMemoryProviderFree(provider.get(), ptr, size);
-    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 }
 
 TEST_P(FileProviderParamsShared, IPC_file_not_exist) {
@@ -552,5 +552,5 @@ TEST_P(FileProviderParamsShared, IPC_file_not_exist) {
     ASSERT_EQ(new_ptr, nullptr);
 
     umf_result = umfMemoryProviderFree(provider.get(), ptr, size);
-    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 }

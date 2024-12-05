@@ -100,7 +100,7 @@ static void test_alloc_free_success(umf_memory_provider_handle_t provider,
     }
 
     umf_result = umfMemoryProviderFree(provider, ptr, size);
-    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 }
 
 static void verify_last_native_error(umf_memory_provider_handle_t provider,
@@ -162,7 +162,7 @@ TEST_F(test, test_if_mapped_with_MAP_SYNC) {
     bool flag_found = is_mapped_with_MAP_SYNC(path, buf, size);
 
     umf_result = umfMemoryProviderFree(hProvider, buf, size);
-    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
     umfMemoryProviderDestroy(hProvider);
 
@@ -237,30 +237,29 @@ TEST_P(umfProviderTest, purge_force) {
 
 TEST_P(umfProviderTest, alloc_page64_align_page_minus_1_WRONG_ALIGNMENT_1) {
     test_alloc_failure(provider.get(), page_plus_64, page_size - 1,
-                       UMF_RESULT_ERROR_INVALID_ARGUMENT, 0);
+                       UMF_RESULT_ERROR_INVALID_ALIGNMENT, 0);
 }
 
 TEST_P(umfProviderTest, alloc_page64_align_one_half_pages_WRONG_ALIGNMENT_2) {
     test_alloc_failure(provider.get(), page_plus_64,
                        page_size + (page_size / 2),
-                       UMF_RESULT_ERROR_INVALID_ARGUMENT, 0);
+                       UMF_RESULT_ERROR_INVALID_ALIGNMENT, 0);
 }
 
 TEST_P(umfProviderTest, alloc_page64_WRONG_ALIGNMENT_3_pages) {
     test_alloc_failure(provider.get(), page_plus_64, 3 * page_size,
-                       UMF_RESULT_ERROR_INVALID_ARGUMENT, 0);
+                       UMF_RESULT_ERROR_INVALID_ALIGNMENT, 0);
 }
 
 TEST_P(umfProviderTest, alloc_3_pages_WRONG_ALIGNMENT_3_pages) {
     test_alloc_failure(provider.get(), 3 * page_size, 3 * page_size,
-                       UMF_RESULT_ERROR_INVALID_ARGUMENT, 0);
+                       UMF_RESULT_ERROR_INVALID_ALIGNMENT, 0);
 }
 
 TEST_P(umfProviderTest, alloc_WRONG_SIZE) {
     size_t size = (size_t)(-1) & ~(page_size - 1);
     test_alloc_failure(provider.get(), size, 0,
-                       UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC,
-                       UMF_DEVDAX_RESULT_ERROR_ALLOC_FAILED);
+                       UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY, 0);
 }
 
 // other positive tests
@@ -295,12 +294,12 @@ TEST_P(umfProviderTest, get_name) {
 TEST_P(umfProviderTest, free_size_0_ptr_not_null) {
     umf_result_t umf_result =
         umfMemoryProviderFree(provider.get(), INVALID_PTR, 0);
-    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 }
 
 TEST_P(umfProviderTest, free_NULL) {
     umf_result_t umf_result = umfMemoryProviderFree(provider.get(), nullptr, 0);
-    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 }
 
 // other negative tests
@@ -308,7 +307,7 @@ TEST_P(umfProviderTest, free_NULL) {
 TEST_P(umfProviderTest, free_INVALID_POINTER_SIZE_GT_0) {
     umf_result_t umf_result =
         umfMemoryProviderFree(provider.get(), INVALID_PTR, page_plus_64);
-    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 }
 
 TEST_P(umfProviderTest, purge_lazy_INVALID_POINTER) {
