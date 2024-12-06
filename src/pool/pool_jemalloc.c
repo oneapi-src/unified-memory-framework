@@ -504,7 +504,7 @@ static umf_result_t op_initialize(umf_memory_provider_handle_t provider,
     err = je_mallctl(cmd, NULL, NULL, (void *)&pHooks, sizeof(void *));
     if (err) {
         snprintf(cmd, sizeof(cmd), "arena.%u.destroy", arena_index);
-        je_mallctl(cmd, NULL, 0, NULL, 0);
+        (void)je_mallctl(cmd, NULL, 0, NULL, 0);
         LOG_ERR("Could not setup extent_hooks for newly created arena.");
         goto err_free_pool;
     }
@@ -528,7 +528,7 @@ static void op_finalize(void *pool) {
     jemalloc_memory_pool_t *je_pool = (jemalloc_memory_pool_t *)pool;
     char cmd[64];
     snprintf(cmd, sizeof(cmd), "arena.%u.destroy", je_pool->arena_index);
-    je_mallctl(cmd, NULL, 0, NULL, 0);
+    (void)je_mallctl(cmd, NULL, 0, NULL, 0);
     pool_by_arena_index[je_pool->arena_index] = NULL;
     umf_ba_global_free(je_pool);
 
