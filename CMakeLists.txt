@@ -164,13 +164,13 @@ else()
     add_custom_command(
         COMMAND make
         WORKING_DIRECTORY ${jemalloc_targ_SOURCE_DIR}
-        OUTPUT ${jemalloc_targ_SOURCE_DIR}/lib/libjemalloc.la
+        OUTPUT ${jemalloc_targ_SOURCE_DIR}/lib/libjemalloc.a
         DEPENDS ${jemalloc_targ_SOURCE_DIR}/Makefile)
     add_custom_command(
         COMMAND make install
         WORKING_DIRECTORY ${jemalloc_targ_SOURCE_DIR}
         OUTPUT ${jemalloc_targ_BINARY_DIR}/lib/libjemalloc.a
-        DEPENDS ${jemalloc_targ_SOURCE_DIR}/lib/libjemalloc.la)
+        DEPENDS ${jemalloc_targ_SOURCE_DIR}/lib/libjemalloc.a)
 
     add_custom_target(jemalloc_prod
                       DEPENDS ${jemalloc_targ_BINARY_DIR}/lib/libjemalloc.a)
