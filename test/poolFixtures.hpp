@@ -7,7 +7,6 @@
 
 #include "pool.hpp"
 #include "provider.hpp"
-#include "umf/providers/provider_coarse.h"
 #include "umf/providers/provider_devdax_memory.h"
 #include "utils/utils_sanitizers.h"
 
@@ -20,13 +19,11 @@
 
 #include "../malloc_compliance_tests.hpp"
 
-using poolCreateExtParams =
-    std::tuple<umf_memory_pool_ops_t *, void *, umf_memory_provider_ops_t *,
-               void *, void *>;
+using poolCreateExtParams = std::tuple<umf_memory_pool_ops_t *, void *,
+                                       umf_memory_provider_ops_t *, void *>;
 
 umf::pool_unique_handle_t poolCreateExtUnique(poolCreateExtParams params) {
-    auto [pool_ops, pool_params, provider_ops, provider_params, coarse_params] =
-        params;
+    auto [pool_ops, pool_params, provider_ops, provider_params] = params;
 
     umf_memory_provider_handle_t upstream_provider = nullptr;
     umf_memory_provider_handle_t provider = nullptr;
@@ -39,22 +36,6 @@ umf::pool_unique_handle_t poolCreateExtUnique(poolCreateExtParams params) {
     EXPECT_NE(upstream_provider, nullptr);
 
     provider = upstream_provider;
-
-    if (coarse_params) {
-        coarse_memory_provider_params_t *coarse_memory_provider_params =
-            (coarse_memory_provider_params_t *)coarse_params;
-        coarse_memory_provider_params->upstream_memory_provider =
-            upstream_provider;
-        coarse_memory_provider_params->destroy_upstream_memory_provider = true;
-
-        umf_memory_provider_handle_t coarse_provider = nullptr;
-        ret = umfMemoryProviderCreate(umfCoarseMemoryProviderOps(),
-                                      coarse_params, &coarse_provider);
-        EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
-        EXPECT_NE(coarse_provider, nullptr);
-
-        provider = coarse_provider;
-    }
 
     ret = umfPoolCreate(pool_ops, provider, pool_params,
                         UMF_POOL_CREATE_FLAG_OWN_PROVIDER, &hPool);

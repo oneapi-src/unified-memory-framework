@@ -48,4 +48,4 @@ umf_memory_pool_ops_t BA_POOL_OPS = umf::poolMakeCOps<base_alloc_pool, void>();
 INSTANTIATE_TEST_SUITE_P(baPool, umfPoolTest,
                          ::testing::Values(poolCreateExtParams{
                              &BA_POOL_OPS, nullptr,
-                             &umf_test::BASE_PROVIDER_OPS, nullptr, nullptr}));
+                             &umf_test::BASE_PROVIDER_OPS, nullptr}));
