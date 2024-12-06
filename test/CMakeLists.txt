@@ -317,6 +317,10 @@ if(LINUX AND (NOT UMF_DISABLE_HWLOC)) # OS-specific functions are implemented
         NAME provider_file_memory_ipc
         SRCS provider_file_memory_ipc.cpp ${BA_SOURCES_FOR_TEST}
         LIBS ${UMF_UTILS_FOR_TEST})
+    add_umf_test(
+        NAME provider_fixed_memory
+        SRCS provider_fixed_memory.cpp
+        LIBS ${UMF_UTILS_FOR_TEST})
 
     # This test requires Linux-only file memory provider
     if(UMF_POOL_JEMALLOC_ENABLED)
