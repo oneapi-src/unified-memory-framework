@@ -209,12 +209,6 @@ Additionally, required for tests:
 A memory provider that provides memory from a device DAX (a character device file /dev/daxX.Y).
 It can be used when large memory mappings are needed.
 
-The DevDax memory provider does not support the free operation
-(`umfMemoryProviderFree()` always returns `UMF_RESULT_ERROR_NOT_SUPPORTED`),
-so it should be used with a pool manager that will take over
-the managing of the provided memory - for example the jemalloc pool
-with the `disable_provider_free` parameter set to true.
-
 ##### Requirements
 
 1) Linux OS
@@ -223,12 +217,6 @@ with the `disable_provider_free` parameter set to true.
 #### File memory provider (Linux only yet)
 
 A memory provider that provides memory by mapping a regular, extendable file.
-
-The file memory provider does not support the free operation
-(`umfMemoryProviderFree()` always returns `UMF_RESULT_ERROR_NOT_SUPPORTED`),
-so it should be used with a pool manager that will take over
-the managing of the provided memory - for example the jemalloc pool
-with the `disable_provider_free` parameter set to true.
 
 IPC API requires the `UMF_MEM_MAP_SHARED` memory `visibility` mode
 (`UMF_RESULT_ERROR_INVALID_ARGUMENT` is returned otherwise).
