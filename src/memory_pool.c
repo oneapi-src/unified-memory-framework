@@ -52,6 +52,13 @@ static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
 
     pool->flags = flags;
     pool->ops = *ops;
+    pool->tag = NULL;
+
+    if (NULL == utils_mutex_init(&pool->lock)) {
+        LOG_ERR("Failed to initialize mutex for pool");
+        ret = UMF_RESULT_ERROR_UNKNOWN;
+        goto err_lock_init;
+    }
 
     ret = ops->initialize(pool->provider, params, &pool->pool_priv);
     if (ret != UMF_RESULT_SUCCESS) {
@@ -63,6 +70,8 @@ static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
     return UMF_RESULT_SUCCESS;
 
 err_pool_init:
+    utils_mutex_destroy_not_free(&pool->lock);
+err_lock_init:
     if (!(flags & UMF_POOL_CREATE_FLAG_DISABLE_TRACKING)) {
         umfMemoryProviderDestroy(pool->provider);
     }
@@ -86,6 +95,8 @@ void umfPoolDestroy(umf_memory_pool_handle_t hPool) {
         // Destroy associated memory provider.
         umfMemoryProviderDestroy(hUpstreamProvider);
     }
+
+    utils_mutex_destroy_not_free(&hPool->lock);
 
     LOG_INFO("Memory pool destroyed: %p", (void *)hPool);
 
@@ -171,4 +182,25 @@ umf_result_t umfPoolFree(umf_memory_pool_handle_t hPool, void *ptr) {
 umf_result_t umfPoolGetLastAllocationError(umf_memory_pool_handle_t hPool) {
     UMF_CHECK((hPool != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
     return hPool->ops.get_last_allocation_error(hPool->pool_priv);
+}
+
+umf_result_t umfPoolSetTag(umf_memory_pool_handle_t hPool, void *tag,
+                           void **oldTag) {
+    UMF_CHECK((hPool != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    utils_mutex_lock(&hPool->lock);
+    if (oldTag) {
+        *oldTag = hPool->tag;
+    }
+    hPool->tag = tag;
+    utils_mutex_unlock(&hPool->lock);
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t umfPoolGetTag(umf_memory_pool_handle_t hPool, void **tag) {
+    UMF_CHECK((hPool != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    UMF_CHECK((tag != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    utils_mutex_lock(&hPool->lock);
+    *tag = hPool->tag;
+    utils_mutex_unlock(&hPool->lock);
+    return UMF_RESULT_SUCCESS;
 }

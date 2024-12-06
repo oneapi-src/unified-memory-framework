@@ -170,6 +170,22 @@ umf_memory_pool_handle_t umfPoolByPtr(const void *ptr);
 umf_result_t umfPoolGetMemoryProvider(umf_memory_pool_handle_t hPool,
                                       umf_memory_provider_handle_t *hProvider);
 
+///
+/// @brief Set a custom tag on the memory pool that can be later retrieved using umfPoolGetTag.
+/// @param hPool specified memory pool
+/// @param tag tag to be set
+/// @param oldTag [out][optional] previous tag set on the memory pool
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+umf_result_t umfPoolSetTag(umf_memory_pool_handle_t hPool, void *tag,
+                           void **oldTag);
+
+///
+/// @brief Retrieve the tag associated with the memory pool or NULL if no tag is set.
+/// @param hPool specified memory pool
+/// @param tag [out] tag associated with the memory pool
+/// @return UMF_RESULT_SUCCESS on success.
+umf_result_t umfPoolGetTag(umf_memory_pool_handle_t hPool, void **tag);
+
 #ifdef __cplusplus
 }
 #endif

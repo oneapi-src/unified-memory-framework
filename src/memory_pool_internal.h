@@ -22,6 +22,7 @@ extern "C" {
 #endif
 
 #include "base_alloc.h"
+#include "utils_concurrency.h"
 
 typedef struct umf_memory_pool_t {
     void *pool_priv;
@@ -30,6 +31,9 @@ typedef struct umf_memory_pool_t {
 
     // Memory provider used by the pool.
     umf_memory_provider_handle_t provider;
+
+    utils_mutex_t lock;
+    void *tag;
 } umf_memory_pool_t;
 
 #ifdef __cplusplus

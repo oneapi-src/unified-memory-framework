@@ -178,6 +178,121 @@ TEST_F(test, BasicPoolByPtrTest) {
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 }
 
+struct tagTest : umf_test::test {
+    void SetUp() override {
+        test::SetUp();
+        provider = umf_test::wrapProviderUnique(nullProviderCreate());
+        pool = umf_test::wrapPoolUnique(
+            createPoolChecked(umfProxyPoolOps(), provider.get(), nullptr));
+    }
+
+    umf::provider_unique_handle_t provider;
+    umf::pool_unique_handle_t pool;
+};
+
+TEST_F(tagTest, SetAndGet) {
+    umf_result_t ret = umfPoolSetTag(pool.get(), (void *)0x99, nullptr);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    void *tag;
+    ret = umfPoolGetTag(pool.get(), &tag);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(tag, (void *)0x99);
+
+    void *oldTag;
+    ret = umfPoolSetTag(pool.get(), (void *)0x100, &oldTag);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(oldTag, (void *)0x99);
+
+    ret = umfPoolGetTag(pool.get(), &tag);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(tag, (void *)0x100);
+}
+
+TEST_F(tagTest, SetAndGetNull) {
+    umf_result_t ret = umfPoolSetTag(pool.get(), nullptr, nullptr);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    void *tag;
+    ret = umfPoolGetTag(pool.get(), &tag);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(tag, nullptr);
+}
+
+TEST_F(tagTest, NoSetAndGet) {
+    void *tag;
+    umf_result_t ret = umfPoolGetTag(pool.get(), &tag);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(tag, nullptr);
+}
+
+TEST_F(tagTest, SetAndGetMt) {
+    static constexpr size_t NUM_THREADS = 8;
+    static constexpr size_t NUM_OPS_PER_THREAD = 16;
+
+    std::vector<std::thread> threads;
+
+    auto encodeTag = [](size_t thread, size_t op) -> void * {
+        return reinterpret_cast<void *>(thread * NUM_OPS_PER_THREAD + op);
+    };
+
+    auto decodeTag = [](void *tag) -> std::pair<size_t, size_t> {
+        auto op = reinterpret_cast<size_t>(tag) & (NUM_OPS_PER_THREAD - 1);
+        auto thread = reinterpret_cast<size_t>(tag) / NUM_OPS_PER_THREAD;
+        return {thread, op};
+    };
+
+    for (size_t i = 0; i < NUM_THREADS; i++) {
+        threads.emplace_back([this, i, encodeTag, decodeTag] {
+            for (size_t j = 0; j < NUM_OPS_PER_THREAD; j++) {
+                void *oldTag;
+                umf_result_t ret =
+                    umfPoolSetTag(pool.get(), encodeTag(i, j), &oldTag);
+                ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+                void *queriedTag;
+                ret = umfPoolGetTag(pool.get(), &queriedTag);
+                ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+                auto [t1, op1] = decodeTag(oldTag);
+                auto [t2, op2] = decodeTag(queriedTag);
+                // if the tag was set by the same thread, the op part should be the same or higher
+                ASSERT_TRUE(t1 != t2 || op2 >= op1);
+            }
+        });
+    }
+
+    for (auto &thread : threads) {
+        thread.join();
+    }
+
+    void *tag;
+    auto ret = umfPoolGetTag(pool.get(), &tag);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    auto [t, op] = decodeTag(tag);
+    ASSERT_TRUE(t < NUM_THREADS);
+    ASSERT_TRUE(op == NUM_OPS_PER_THREAD - 1);
+}
+
+TEST_F(tagTest, SetAndGetInvalidPtr) {
+    umf_result_t ret = umfPoolSetTag(pool.get(), nullptr, nullptr);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfPoolGetTag(pool.get(), nullptr);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(tagTest, SetAndGetInvalidPool) {
+    umf_result_t ret =
+        umfPoolSetTag(nullptr, reinterpret_cast<void *>(0x1), nullptr);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    void *tag;
+    ret = umfPoolGetTag(nullptr, &tag);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
 INSTANTIATE_TEST_SUITE_P(
     mallocPoolTest, umfPoolTest,
     ::testing::Values(poolCreateExtParams{&MALLOC_POOL_OPS, nullptr,
