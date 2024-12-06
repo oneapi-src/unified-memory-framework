@@ -24,26 +24,6 @@
 
 umf_memory_pool_ops_t *umfJemallocPoolOps(void) { return NULL; }
 
-umf_result_t
-umfJemallocPoolParamsCreate(umf_jemalloc_pool_params_handle_t *hParams) {
-    (void)hParams; // unused
-    return UMF_RESULT_ERROR_NOT_SUPPORTED;
-}
-
-umf_result_t
-umfJemallocPoolParamsDestroy(umf_jemalloc_pool_params_handle_t hParams) {
-    (void)hParams; // unused
-    return UMF_RESULT_ERROR_NOT_SUPPORTED;
-}
-
-umf_result_t
-umfJemallocPoolParamsSetKeepAllMemory(umf_jemalloc_pool_params_handle_t hParams,
-                                      bool keepAllMemory) {
-    (void)hParams;       // unused
-    (void)keepAllMemory; // unused
-    return UMF_RESULT_ERROR_NOT_SUPPORTED;
-}
-
 #else
 
 #include <jemalloc/jemalloc.h>
@@ -53,15 +33,7 @@ umfJemallocPoolParamsSetKeepAllMemory(umf_jemalloc_pool_params_handle_t hParams,
 typedef struct jemalloc_memory_pool_t {
     umf_memory_provider_handle_t provider;
     unsigned int arena_index; // index of jemalloc arena
-    // set to true if umfMemoryProviderFree() should never be called
-    bool disable_provider_free;
 } jemalloc_memory_pool_t;
-
-// Configuration of Jemalloc Pool
-typedef struct umf_jemalloc_pool_params_t {
-    /// Set to true if umfMemoryProviderFree() should never be called.
-    bool disable_provider_free;
-} umf_jemalloc_pool_params_t;
 
 static __TLS umf_result_t TLS_last_allocation_error;
 
@@ -73,52 +45,6 @@ static jemalloc_memory_pool_t *get_pool_by_arena_index(unsigned arena_ind) {
     assert(arena_ind < MALLOCX_ARENA_MAX);
 
     return pool_by_arena_index[arena_ind];
-}
-
-umf_result_t
-umfJemallocPoolParamsCreate(umf_jemalloc_pool_params_handle_t *hParams) {
-    if (!hParams) {
-        LOG_ERR("jemalloc pool params handle is NULL");
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
-    umf_jemalloc_pool_params_t *params_data =
-        umf_ba_global_alloc(sizeof(*params_data));
-    if (!params_data) {
-        LOG_ERR("cannot allocate memory for jemalloc poolparams");
-        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-    }
-
-    params_data->disable_provider_free = false;
-
-    *hParams = (umf_jemalloc_pool_params_handle_t)params_data;
-
-    return UMF_RESULT_SUCCESS;
-}
-
-umf_result_t
-umfJemallocPoolParamsDestroy(umf_jemalloc_pool_params_handle_t hParams) {
-    if (!hParams) {
-        LOG_ERR("jemalloc pool params handle is NULL");
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
-    umf_ba_global_free(hParams);
-
-    return UMF_RESULT_SUCCESS;
-}
-
-umf_result_t
-umfJemallocPoolParamsSetKeepAllMemory(umf_jemalloc_pool_params_handle_t hParams,
-                                      bool keepAllMemory) {
-    if (!hParams) {
-        LOG_ERR("jemalloc pool params handle is NULL");
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
-    hParams->disable_provider_free = keepAllMemory;
-
-    return UMF_RESULT_SUCCESS;
 }
 
 // arena_extent_alloc - an extent allocation function conforms to the extent_alloc_t type and upon
@@ -150,9 +76,7 @@ static void *arena_extent_alloc(extent_hooks_t *extent_hooks, void *new_addr,
     }
 
     if (new_addr != NULL && ptr != new_addr) {
-        if (!pool->disable_provider_free) {
-            umfMemoryProviderFree(pool->provider, ptr, size);
-        }
+        umfMemoryProviderFree(pool->provider, ptr, size);
         return NULL;
     }
 
@@ -186,10 +110,6 @@ static void arena_extent_destroy(extent_hooks_t *extent_hooks, void *addr,
 
     jemalloc_memory_pool_t *pool = get_pool_by_arena_index(arena_ind);
 
-    if (pool->disable_provider_free) {
-        return;
-    }
-
     umf_result_t ret;
     ret = umfMemoryProviderFree(pool->provider, addr, size);
     if (ret != UMF_RESULT_SUCCESS) {
@@ -211,10 +131,6 @@ static bool arena_extent_dalloc(extent_hooks_t *extent_hooks, void *addr,
     (void)committed;    // unused
 
     jemalloc_memory_pool_t *pool = get_pool_by_arena_index(arena_ind);
-
-    if (pool->disable_provider_free) {
-        return true; // opt-out from deallocation
-    }
 
     umf_result_t ret;
     ret = umfMemoryProviderFree(pool->provider, addr, size);
@@ -466,11 +382,9 @@ static void *op_aligned_alloc(void *pool, size_t size, size_t alignment) {
 
 static umf_result_t op_initialize(umf_memory_provider_handle_t provider,
                                   void *params, void **out_pool) {
+    (void)params; // unused
     assert(provider);
     assert(out_pool);
-
-    umf_jemalloc_pool_params_handle_t je_params =
-        (umf_jemalloc_pool_params_handle_t)params;
 
     extent_hooks_t *pHooks = &arena_extent_hooks;
     size_t unsigned_size = sizeof(unsigned);
@@ -483,12 +397,6 @@ static umf_result_t op_initialize(umf_memory_provider_handle_t provider,
     }
 
     pool->provider = provider;
-
-    if (je_params) {
-        pool->disable_provider_free = je_params->disable_provider_free;
-    } else {
-        pool->disable_provider_free = false;
-    }
 
     unsigned arena_index;
     err = je_mallctl("arenas.create", (void *)&arena_index, &unsigned_size,
