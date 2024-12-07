@@ -4,7 +4,7 @@
 
 # linker VERSION script
 
-{
+PROXY_LIB_0.10 {
     global:
         aligned_alloc;
         calloc;
@@ -12,6 +12,8 @@
         malloc;
         malloc_usable_size;
         realloc;
+    # handlers
+        umfSetProxyLibHandlerFreePost;
     local:
         *;
 };

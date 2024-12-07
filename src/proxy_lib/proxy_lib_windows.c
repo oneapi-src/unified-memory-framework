@@ -9,7 +9,10 @@
 
 #include <Windows.h>
 
-#include "proxy_lib.h"
+#include <umf/proxy_lib_handlers.h>
+
+void proxy_lib_create_common(void);
+void proxy_lib_destroy_common(void);
 
 static void proxy_lib_create(void) { proxy_lib_create_common(); }
 
