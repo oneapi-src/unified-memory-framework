@@ -165,7 +165,6 @@ jobs:
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
-        -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
         -DUMF_TESTS_FAIL_ON_SKIP=ON
         -DUMF_DISABLE_HWLOC=${{matrix.disable_hwloc}}
         -DUMF_LINK_HWLOC_STATICALLY=${{matrix.link_hwloc_statically}}
@@ -208,7 +207,6 @@ jobs:
         --build-dir ${{env.BUILD_DIR}}
         --install-dir ${{env.INSTL_DIR}}
         --build-type ${{matrix.build_type}}
-        --disjoint-pool
         ${{ matrix.install_tbb == 'ON' && matrix.disable_hwloc != 'ON' && matrix.shared_library == 'ON' && '--proxy' || '' }}
         --umf-version ${{env.UMF_VERSION}}
         ${{ matrix.shared_library == 'ON' && '--shared-library' || '' }}
@@ -278,7 +276,6 @@ jobs:
         -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
-        -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=${{matrix.level_zero_provider}}
         -DUMF_BUILD_CUDA_PROVIDER=${{matrix.cuda_provider}}
@@ -298,7 +295,6 @@ jobs:
         --build-dir ${{env.BUILD_DIR}}
         --install-dir ${{env.INSTL_DIR}}
         --build-type ${{matrix.build_type}}
-        --disjoint-pool
         ${{matrix.shared_library == 'ON' && '--proxy' || '' }}
         --umf-version ${{env.UMF_VERSION}}
         ${{ matrix.shared_library == 'ON' && '--shared-library' || ''}}
@@ -336,7 +332,6 @@ jobs:
         -DUMF_BUILD_EXAMPLES=OFF
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
-        -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=OFF
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
         -DUMF_BUILD_CUDA_PROVIDER=ON
@@ -379,7 +374,6 @@ jobs:
         -DUMF_BUILD_EXAMPLES=OFF
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
-        -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=OFF
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
         -DUMF_BUILD_CUDA_PROVIDER=ON
@@ -478,7 +472,6 @@ jobs:
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
-        -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
         -DUMF_BUILD_SHARED_LIBRARY=ON
         -DUMF_TESTS_FAIL_ON_SKIP=ON
@@ -492,7 +485,6 @@ jobs:
         --build-dir ${{env.BUILD_DIR}}
         --install-dir ${{env.INSTL_DIR}}
         --build-type ${{env.BUILD_TYPE}}
-        --disjoint-pool
         --proxy
         --umf-version ${{env.UMF_VERSION}}
         --shared-library

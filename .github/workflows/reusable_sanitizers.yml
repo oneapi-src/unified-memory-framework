@@ -59,7 +59,6 @@ jobs:
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
-        -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
         -DUMF_USE_ASAN=${{matrix.sanitizers.asan}}
         -DUMF_USE_UBSAN=${{matrix.sanitizers.ubsan}}
         -DUMF_USE_TSAN=${{matrix.sanitizers.tsan}}
@@ -132,7 +131,6 @@ jobs:
         -DUMF_BUILD_SHARED_LIBRARY=OFF
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
-        -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
         -DUMF_USE_ASAN=${{matrix.sanitizers.asan}}
         -DUMF_BUILD_EXAMPLES=ON
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
