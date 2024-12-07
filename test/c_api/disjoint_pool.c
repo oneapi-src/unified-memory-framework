@@ -4,7 +4,8 @@
 
 #include <stdlib.h>
 
-#include "pool_disjoint.h"
+#include <umf/pools/pool_disjoint.h>
+
 #include "provider_null.h"
 #include "test_helpers.h"
 #include "test_ut_asserts.h"

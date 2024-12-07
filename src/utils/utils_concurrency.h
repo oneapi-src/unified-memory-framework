@@ -45,10 +45,26 @@ typedef struct utils_mutex_t {
 } utils_mutex_t;
 
 size_t utils_mutex_get_size(void);
-utils_mutex_t *utils_mutex_init(void *ptr);
+utils_mutex_t *utils_mutex_init(utils_mutex_t *ptr);
 void utils_mutex_destroy_not_free(utils_mutex_t *m);
 int utils_mutex_lock(utils_mutex_t *mutex);
 int utils_mutex_unlock(utils_mutex_t *mutex);
+
+typedef struct utils_rwlock_t {
+#ifdef _WIN32
+    // Slim Read/Wrtiter lock
+    SRWLOCK lock;
+#else
+    pthread_rwlock_t rwlock;
+#endif
+} utils_rwlock_t;
+
+utils_rwlock_t *utils_rwlock_init(utils_rwlock_t *ptr);
+void utils_rwlock_destroy_not_free(utils_rwlock_t *rwlock);
+int utils_read_lock(utils_rwlock_t *rwlock);
+int utils_write_lock(utils_rwlock_t *rwlock);
+int utils_read_unlock(utils_rwlock_t *rwlock);
+int utils_write_unlock(utils_rwlock_t *rwlock);
 
 #if defined(_WIN32)
 #define UTIL_ONCE_FLAG INIT_ONCE

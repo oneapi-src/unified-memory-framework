@@ -58,10 +58,6 @@ function(build_umf_test)
         set(CPL_DEFS ${CPL_DEFS} UMF_POOL_SCALABLE_ENABLED=1)
     endif()
 
-    if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
-        set(CPL_DEFS ${CPL_DEFS} UMF_POOL_DISJOINT_ENABLED=1)
-    endif()
-
     set(TEST_LIBS
         umf_test_common
         ${ARG_LIBS}
@@ -164,10 +160,6 @@ if(UMF_BUILD_SHARED_LIBRARY)
     endif()
 endif()
 
-if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
-    set(LIB_DISJOINT_POOL disjoint_pool)
-endif()
-
 if(UMF_BUILD_SHARED_LIBRARY)
     # if build as shared library, ba symbols won't be visible in tests
     set(BA_SOURCES_FOR_TEST ${BA_SOURCES})
@@ -204,32 +196,29 @@ add_umf_test(
     SRCS coarse_lib.cpp ${BA_SOURCES_FOR_TEST}
     LIBS ${UMF_UTILS_FOR_TEST} coarse)
 
-if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
+add_umf_test(
+    NAME disjointPool
+    SRCS pools/disjoint_pool.cpp malloc_compliance_tests.cpp
+         ${BA_SOURCES_FOR_TEST}
+    LIBS ${UMF_UTILS_FOR_TEST})
+
+add_umf_test(
+    NAME c_api_disjoint_pool
+    SRCS c_api/disjoint_pool.c ${BA_SOURCES_FOR_TEST}
+    LIBS ${UMF_UTILS_FOR_TEST})
+
+if(LINUX AND (NOT UMF_DISABLE_HWLOC))
+    # this test uses the file provider
     add_umf_test(
-        NAME disjointPool
-        SRCS pools/disjoint_pool.cpp malloc_compliance_tests.cpp
-        LIBS disjoint_pool)
-    add_umf_test(
-        NAME c_api_disjoint_pool
-        SRCS c_api/disjoint_pool.c
-        LIBS disjoint_pool)
-    if(LINUX AND (NOT UMF_DISABLE_HWLOC))
-        # this test uses the file provider
-        add_umf_test(
-            NAME disjointPoolFileProv
-            SRCS disjointPoolFileProv.cpp
-            LIBS disjoint_pool)
-    endif()
+        NAME disjointPoolFileProv
+        SRCS disjointPoolFileProv.cpp ${BA_SOURCES_FOR_TEST}
+        LIBS ${UMF_UTILS_FOR_TEST})
 endif()
 
-if(UMF_BUILD_LIBUMF_POOL_DISJOINT
-   AND UMF_POOL_JEMALLOC_ENABLED
+if(UMF_POOL_JEMALLOC_ENABLED
    AND UMF_POOL_SCALABLE_ENABLED
    AND (NOT UMF_DISABLE_HWLOC))
-    add_umf_test(
-        NAME c_api_multi_pool
-        SRCS c_api/multi_pool.c
-        LIBS disjoint_pool)
+    add_umf_test(NAME c_api_multi_pool SRCS c_api/multi_pool.c)
 endif()
 
 if(UMF_POOL_JEMALLOC_ENABLED AND (NOT UMF_DISABLE_HWLOC))
@@ -260,7 +249,7 @@ if(LINUX AND (NOT UMF_DISABLE_HWLOC)) # OS-specific functions are implemented
     add_umf_test(
         NAME provider_os_memory
         SRCS provider_os_memory.cpp ${BA_SOURCES_FOR_TEST}
-        LIBS ${UMF_UTILS_FOR_TEST} ${LIB_DISJOINT_POOL})
+        LIBS ${UMF_UTILS_FOR_TEST})
     add_umf_test(
         NAME provider_os_memory_multiple_numa_nodes
         SRCS provider_os_memory_multiple_numa_nodes.cpp
@@ -575,9 +564,7 @@ if(LINUX)
 
     # TODO add IPC tests for CUDA
 
-    if(UMF_BUILD_GPU_TESTS
-       AND UMF_BUILD_LEVEL_ZERO_PROVIDER
-       AND UMF_BUILD_LIBUMF_POOL_DISJOINT)
+    if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
         build_umf_test(
             NAME
             ipc_level_zero_prov_consumer
@@ -588,7 +575,6 @@ if(LINUX)
             ${UMF_UTILS_DIR}/utils_level_zero.cpp
             LIBS
             ze_loader
-            disjoint_pool
             ${UMF_UTILS_FOR_TEST})
         build_umf_test(
             NAME
@@ -600,14 +586,11 @@ if(LINUX)
             ${UMF_UTILS_DIR}/utils_level_zero.cpp
             LIBS
             ze_loader
-            disjoint_pool
             ${UMF_UTILS_FOR_TEST})
         add_umf_ipc_test(TEST ipc_level_zero_prov SRC_DIR providers)
     endif()
 
-    if(UMF_BUILD_GPU_TESTS
-       AND UMF_BUILD_CUDA_PROVIDER
-       AND UMF_BUILD_LIBUMF_POOL_DISJOINT)
+    if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_CUDA_PROVIDER)
         build_umf_test(
             NAME
             ipc_cuda_prov_consumer
@@ -618,7 +601,6 @@ if(LINUX)
             providers/cuda_helpers.cpp
             LIBS
             cuda
-            disjoint_pool
             ${UMF_UTILS_FOR_TEST})
         build_umf_test(
             NAME
@@ -630,7 +612,6 @@ if(LINUX)
             providers/cuda_helpers.cpp
             LIBS
             cuda
-            disjoint_pool
             ${UMF_UTILS_FOR_TEST})
         add_umf_ipc_test(TEST ipc_cuda_prov SRC_DIR providers)
     endif()
@@ -684,41 +665,34 @@ if(LINUX
         )
     endif()
 
-    if(UMF_BUILD_GPU_EXAMPLES
-       AND UMF_BUILD_LIBUMF_POOL_DISJOINT
-       AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
+    if(UMF_BUILD_GPU_EXAMPLES AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
         set(EXAMPLES ${EXAMPLES} level_zero_shared_memory)
     else()
         message(
             STATUS
-                "GPU level zero shared memory example requires UMF_BUILD_GPU_EXAMPLES, "
-                "UMF_BUILD_LEVEL_ZERO_PROVIDER and UMF_BUILD_LIBUMF_POOL_DISJOINT "
-                "to be turned ON - skipping")
+                "GPU level zero shared memory example requires UMF_BUILD_GPU_EXAMPLES and "
+                "UMF_BUILD_LEVEL_ZERO_PROVIDER to be turned ON - skipping")
     endif()
 
     if(UMF_BUILD_GPU_EXAMPLES
-       AND UMF_BUILD_LIBUMF_POOL_DISJOINT
        AND UMF_BUILD_CUDA_PROVIDER
        AND UMF_CUDA_ENABLED)
         set(EXAMPLES ${EXAMPLES} cuda_shared_memory)
     else()
         message(
             STATUS
-                "GPU CUDA shared memory example requires UMF_BUILD_GPU_EXAMPLES, "
-                "UMF_BUILD_CUDA_PROVIDER, UMF_BUILD_LIBUMF_POOL_DISJOINT "
-                "to be turned ON and installed CUDA libraries - skipping")
+                "GPU CUDA shared memory example requires UMF_BUILD_GPU_EXAMPLES "
+                "and UMF_BUILD_CUDA_PROVIDER to be turned ON and installed CUDA "
+                "libraries - skipping")
     endif()
 
     # TODO add IPC examples for CUDA
-    if(UMF_BUILD_GPU_EXAMPLES
-       AND UMF_BUILD_LIBUMF_POOL_DISJOINT
-       AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
+    if(UMF_BUILD_GPU_EXAMPLES AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
         set(EXAMPLES ${EXAMPLES} ipc_level_zero)
     else()
         message(
-            STATUS
-                "IPC Level 0 example requires UMF_BUILD_GPU_EXAMPLES, UMF_BUILD_LEVEL_ZERO_PROVIDER and UMF_BUILD_LIBUMF_POOL_DISJOINT to be turned ON - skipping"
-        )
+            STATUS "IPC Level 0 example requires UMF_BUILD_GPU_EXAMPLES and "
+                   "UMF_BUILD_LEVEL_ZERO_PROVIDER to be turned ON - skipping")
     endif()
 
     if(UMF_POOL_SCALABLE_ENABLED)
