@@ -61,11 +61,13 @@ int utils_mutex_unlock(utils_mutex_t *mutex);
 void utils_init_once(UTIL_ONCE_FLAG *flag, void (*onceCb)(void));
 
 #if defined(_WIN32)
+
 static __inline unsigned char utils_lssb_index(long long value) {
     unsigned long ret;
     _BitScanForward64(&ret, value);
     return (unsigned char)ret;
 }
+
 static __inline unsigned char utils_mssb_index(long long value) {
     unsigned long ret;
     _BitScanReverse64(&ret, value);
@@ -81,15 +83,25 @@ static __inline unsigned char utils_mssb_index(long long value) {
 
 #define utils_atomic_store_release(object, desired)                            \
     InterlockedExchange64((LONG64 volatile *)object, (LONG64)desired)
+
 #define utils_atomic_increment(object)                                         \
     InterlockedIncrement64((LONG64 volatile *)object)
+
 #define utils_atomic_decrement(object)                                         \
     InterlockedDecrement64((LONG64 volatile *)object)
+
 #define utils_fetch_and_add64(ptr, value)                                      \
     InterlockedExchangeAdd64((LONG64 *)(ptr), value)
-#else
+
+// NOTE: windows version have different order of args
+#define utils_compare_exchange(object, desired, expected)                      \
+    InterlockedCompareExchange64((LONG64 volatile *)object, *expected, *desired)
+
+#else // !defined(_WIN32)
+
 #define utils_lssb_index(x) ((unsigned char)__builtin_ctzll(x))
 #define utils_mssb_index(x) ((unsigned char)(63 - __builtin_clzll(x)))
+
 #define utils_atomic_load_acquire(object, dest)                                \
     do {                                                                       \
         utils_annotate_acquire((void *)object);                                \
@@ -103,12 +115,19 @@ static __inline unsigned char utils_mssb_index(long long value) {
     } while (0)
 
 #define utils_atomic_increment(object)                                         \
-    __atomic_add_fetch(object, 1, __ATOMIC_ACQ_REL)
-#define utils_atomic_decrement(object)                                         \
-    __atomic_sub_fetch(object, 1, __ATOMIC_ACQ_REL)
-#define utils_fetch_and_add64 __sync_fetch_and_add
+    __atomic_add_fetch(object, 1, memory_order_acq_rel)
 
-#endif
+#define utils_atomic_decrement(object)                                         \
+    __atomic_sub_fetch(object, 1, memory_order_acq_rel)
+
+#define utils_fetch_and_add64(object, value)                                   \
+    __atomic_fetch_add(object, value, memory_order_acq_rel)
+
+#define utils_compare_exchange(object, expected, desired)                      \
+    __atomic_compare_exchange(object, expected, desired, 0 /* strong */,       \
+                              memory_order_acq_rel, memory_order_relaxed)
+
+#endif // !defined(_WIN32)
 
 #ifdef __cplusplus
 }
