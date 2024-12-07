@@ -50,9 +50,9 @@
 #include <umf/memory_pool.h>
 #include <umf/memory_provider.h>
 #include <umf/providers/provider_os_memory.h>
+#include <umf/proxy_lib_handlers.h>
 
 #include "base_alloc_linear.h"
-#include "proxy_lib.h"
 #include "utils_common.h"
 #include "utils_load_library.h"
 #include "utils_log.h"
@@ -127,6 +127,9 @@ static umf_memory_pool_handle_t Proxy_pool = NULL;
 
 // it protects us from recursion in umfPool*()
 static __TLS int was_called_from_umfPool = 0;
+
+// malloc API handlers
+static umf_proxy_lib_handler_free_post_t Handler_free_post = NULL;
 
 /*****************************************************************************/
 /*** The constructor and destructor of the proxy library *********************/
@@ -380,29 +383,37 @@ void *calloc(size_t nmemb, size_t size) {
 }
 
 void free(void *ptr) {
+    umf_memory_pool_handle_t pool = NULL;
+
     if (ptr == NULL) {
-        return;
+        goto call_handler_post;
     }
 
     if (ba_leak_free(ptr) == 0) {
-        return;
+        goto call_handler_post;
     }
 
-    if (Proxy_pool && (umfPoolByPtr(ptr) == Proxy_pool)) {
+    pool = umfPoolByPtr(ptr);
+    if (Proxy_pool && (pool == Proxy_pool)) {
         if (umfPoolFree(Proxy_pool, ptr) != UMF_RESULT_SUCCESS) {
             LOG_ERR("umfPoolFree() failed");
         }
-        return;
+        goto call_handler_post;
     }
 
 #ifndef _WIN32
     if (Size_threshold_value) {
         System_free(ptr);
-        return;
+        goto call_handler_post;
     }
 #endif /* _WIN32 */
 
     LOG_ERR("free() failed: %p", ptr);
+
+call_handler_post:
+    if (Handler_free_post) {
+        Handler_free_post(ptr, pool);
+    }
 
     return;
 }
@@ -545,3 +556,9 @@ void *_aligned_offset_recalloc(void *ptr, size_t num, size_t size,
 }
 
 #endif
+
+// malloc API handlers
+
+void umfSetProxyLibHandlerFreePost(umf_proxy_lib_handler_free_post_t handler) {
+    Handler_free_post = handler;
+}
