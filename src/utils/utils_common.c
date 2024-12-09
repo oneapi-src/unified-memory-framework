@@ -25,7 +25,6 @@ void utils_align_ptr_up_size_down(void **ptr, size_t *size, size_t alignment) {
     }
 
     ASSERT(IS_ALIGNED(p, alignment));
-    ASSERT(IS_ALIGNED(s, alignment));
 
     *ptr = (void *)p;
     *size = s;

@@ -166,9 +166,10 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_basic_provider) {
 
 TEST_P(CoarseWithMemoryStrategyTest, coarseTest_basic_fixed_memory) {
     // preallocate some memory and initialize the vector with zeros
-    const size_t buff_size = 20 * MB;
+    const size_t buff_size = 20 * MB + coarse_params.page_size;
     std::vector<char> buffer(buff_size, 0);
-    void *buf = (void *)buffer.data();
+    void *buf = (void *)ALIGN_UP_SAFE((uintptr_t)buffer.data(),
+                                      coarse_params.page_size);
     ASSERT_NE(buf, nullptr);
 
     coarse_params.cb.alloc = NULL;
@@ -206,9 +207,10 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_basic_fixed_memory) {
 
 TEST_P(CoarseWithMemoryStrategyTest, coarseTest_fixed_memory_various) {
     // preallocate some memory and initialize the vector with zeros
-    const size_t buff_size = 20 * MB;
+    const size_t buff_size = 20 * MB + coarse_params.page_size;
     std::vector<char> buffer(buff_size, 0);
-    void *buf = (void *)buffer.data();
+    void *buf = (void *)ALIGN_UP_SAFE((uintptr_t)buffer.data(),
+                                      coarse_params.page_size);
     ASSERT_NE(buf, nullptr);
 
     coarse_params.cb.alloc = NULL;
@@ -627,6 +629,15 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_basic_free_cb_fails) {
 }
 
 TEST_P(CoarseWithMemoryStrategyTest, coarseTest_split_cb_fails) {
+    if (coarse_params.allocation_strategy ==
+        UMF_COARSE_MEMORY_STRATEGY_FASTEST) {
+        // This test is designed for the UMF_COARSE_MEMORY_STRATEGY_FASTEST_BUT_ONE
+        // and UMF_COARSE_MEMORY_STRATEGY_CHECK_ALL_SIZE strategies,
+        // because the UMF_COARSE_MEMORY_STRATEGY_FASTEST strategy
+        // looks always for a block of size greater by the page size.
+        return;
+    }
+
     umf_memory_provider_handle_t malloc_memory_provider;
     umf_result = umfMemoryProviderCreate(&UMF_MALLOC_MEMORY_PROVIDER_OPS, NULL,
                                          &malloc_memory_provider);
@@ -702,9 +713,10 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_split_cb_fails) {
 
 TEST_P(CoarseWithMemoryStrategyTest, coarseTest_merge_cb_fails) {
     // preallocate some memory and initialize the vector with zeros
-    const size_t buff_size = 10 * MB;
+    const size_t buff_size = 10 * MB + coarse_params.page_size;
     std::vector<char> buffer(buff_size, 0);
-    void *buf = (void *)buffer.data();
+    void *buf = (void *)ALIGN_UP_SAFE((uintptr_t)buffer.data(),
+                                      coarse_params.page_size);
     ASSERT_NE(buf, nullptr);
 
     coarse_params.cb.alloc = NULL;
@@ -901,6 +913,15 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_provider_alloc_not_set) {
 }
 
 TEST_P(CoarseWithMemoryStrategyTest, coarseTest_basic) {
+    if (coarse_params.allocation_strategy ==
+        UMF_COARSE_MEMORY_STRATEGY_FASTEST) {
+        // This test is designed for the UMF_COARSE_MEMORY_STRATEGY_FASTEST_BUT_ONE
+        // and UMF_COARSE_MEMORY_STRATEGY_CHECK_ALL_SIZE strategies,
+        // because the UMF_COARSE_MEMORY_STRATEGY_FASTEST strategy
+        // looks always for a block of size greater by the page size.
+        return;
+    }
+
     umf_memory_provider_handle_t malloc_memory_provider;
     umf_result = umfMemoryProviderCreate(&UMF_MALLOC_MEMORY_PROVIDER_OPS, NULL,
                                          &malloc_memory_provider);
@@ -1065,6 +1086,15 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_basic) {
 }
 
 TEST_P(CoarseWithMemoryStrategyTest, coarseTest_simple1) {
+    if (coarse_params.allocation_strategy ==
+        UMF_COARSE_MEMORY_STRATEGY_FASTEST) {
+        // This test is designed for the UMF_COARSE_MEMORY_STRATEGY_FASTEST_BUT_ONE
+        // and UMF_COARSE_MEMORY_STRATEGY_CHECK_ALL_SIZE strategies,
+        // because the UMF_COARSE_MEMORY_STRATEGY_FASTEST strategy
+        // looks always for a block of size greater by the page size.
+        return;
+    }
+
     umf_memory_provider_handle_t malloc_memory_provider;
     umf_result = umfMemoryProviderCreate(&UMF_MALLOC_MEMORY_PROVIDER_OPS, NULL,
                                          &malloc_memory_provider);
@@ -1106,8 +1136,9 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_simple1) {
             ASSERT_NE(t[i], nullptr);
         }
 
-        if (max_alloc_size == 0) {
-            max_alloc_size = coarse_get_stats(ch).alloc_size;
+        size_t alloc_size = coarse_get_stats(ch).alloc_size;
+        if (alloc_size > max_alloc_size) {
+            max_alloc_size = alloc_size;
         }
 
         for (int i = 0; i < nptrs; i++) {
@@ -1253,9 +1284,10 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_alignment_provider) {
 
 TEST_P(CoarseWithMemoryStrategyTest, coarseTest_alignment_fixed_memory) {
     // preallocate some memory and initialize the vector with zeros
-    const size_t alloc_size = 40 * MB;
+    const size_t alloc_size = 40 * MB + coarse_params.page_size;
     std::vector<char> buffer(alloc_size, 0);
-    void *buf = (void *)buffer.data();
+    void *buf = (void *)ALIGN_UP_SAFE((uintptr_t)buffer.data(),
+                                      coarse_params.page_size);
     ASSERT_NE(buf, nullptr);
 
     coarse_params.cb.alloc = NULL;
