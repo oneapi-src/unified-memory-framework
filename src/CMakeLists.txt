@@ -62,6 +62,7 @@ set(UMF_SOURCES
     provider/provider_cuda.c
     provider/provider_devdax_memory.c
     provider/provider_file_memory.c
+    provider/provider_fixed_memory.c
     provider/provider_level_zero.c
     provider/provider_os_memory.c
     provider/provider_tracking.c
