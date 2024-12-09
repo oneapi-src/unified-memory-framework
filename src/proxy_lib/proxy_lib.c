@@ -50,9 +50,9 @@
 #include <umf/memory_pool.h>
 #include <umf/memory_provider.h>
 #include <umf/providers/provider_os_memory.h>
+#include <umf/proxy_lib_handlers.h>
 
 #include "base_alloc_linear.h"
-#include "proxy_lib.h"
 #include "utils_common.h"
 #include "utils_load_library.h"
 #include "utils_log.h"
@@ -134,6 +134,9 @@ static __TLS int was_called_from_umfPool = 0;
 // when the JEMALLOC proxy_lib_pool is used.
 // TODO remove this WA when the issue is fixed.
 static __TLS int was_called_from_malloc_usable_size = 0;
+
+// malloc API handlers
+static umf_proxy_lib_handler_free_pre_t Handler_free_pre = NULL;
 
 /*****************************************************************************/
 /*** The constructor and destructor of the proxy library *********************/
@@ -391,11 +394,19 @@ void free(void *ptr) {
         return;
     }
 
+    // NOTE: for system allocations made during UMF and Proxy Lib
+    // initialisation, we never call free handlers, as they should handle
+    // only user-made allocations
     if (ba_leak_free(ptr) == 0) {
         return;
     }
 
-    if (Proxy_pool && (umfPoolByPtr(ptr) == Proxy_pool)) {
+    umf_memory_pool_handle_t pool = umfPoolByPtr(ptr);
+    if (Proxy_pool && (pool == Proxy_pool)) {
+        if (Handler_free_pre) {
+            Handler_free_pre(ptr, pool);
+        }
+
         if (umfPoolFree(Proxy_pool, ptr) != UMF_RESULT_SUCCESS) {
             LOG_ERR("umfPoolFree() failed");
         }
@@ -404,6 +415,9 @@ void free(void *ptr) {
 
 #ifndef _WIN32
     if (Size_threshold_value) {
+        if (Handler_free_pre) {
+            Handler_free_pre(ptr, NULL);
+        }
         System_free(ptr);
         return;
     }
@@ -555,3 +569,9 @@ void *_aligned_offset_recalloc(void *ptr, size_t num, size_t size,
 }
 
 #endif
+
+// malloc API handlers
+
+void umfSetProxyLibHandlerFreePre(umf_proxy_lib_handler_free_pre_t handler) {
+    Handler_free_pre = handler;
+}
