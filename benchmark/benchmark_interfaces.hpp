@@ -55,7 +55,7 @@ struct benchmark_interface : public benchmark::Fixture {
         return res;
     }
     static std::string name() { return Allocator::name(); }
-
+    static int64_t iterations() { return 10000; }
     Size alloc_size;
     Allocator allocator;
 };
