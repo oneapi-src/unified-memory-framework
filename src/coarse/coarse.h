@@ -34,16 +34,16 @@ typedef struct coarse_callbacks_t {
 
 // coarse library allocation strategy
 typedef enum coarse_strategy_t {
+    // Check if the first free block of the 'size' size has the correct alignment.
+    // If not, use the `UMF_COARSE_MEMORY_STRATEGY_FASTEST` strategy.
+    UMF_COARSE_MEMORY_STRATEGY_FASTEST_BUT_ONE = 0,
+
     // Always allocate a free block of the (size + alignment) size
     // and cut out the properly aligned part leaving two remaining parts.
     // It is the fastest strategy but causes memory fragmentation
     // when alignment is greater than 0.
     // It is the best strategy when alignment always equals 0.
-    UMF_COARSE_MEMORY_STRATEGY_FASTEST = 0,
-
-    // Check if the first free block of the 'size' size has the correct alignment.
-    // If not, use the `UMF_COARSE_MEMORY_STRATEGY_FASTEST` strategy.
-    UMF_COARSE_MEMORY_STRATEGY_FASTEST_BUT_ONE,
+    UMF_COARSE_MEMORY_STRATEGY_FASTEST,
 
     // Look through all free blocks of the 'size' size
     // and choose the first one with the correct alignment.
