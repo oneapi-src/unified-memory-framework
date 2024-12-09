@@ -231,12 +231,14 @@ class alloc_benchmark : public benchmark_interface<Size, Alloc> {
             state.ResumeTiming();
         }
     }
+
     static std::vector<std::string> argsName() {
         auto n = benchmark_interface<Size, Alloc>::argsName();
         std::vector<std::string> res = {"max_allocs", "pre_allocs"};
         res.insert(res.end(), n.begin(), n.end());
         return res;
     }
+
     static std::string name() { return base::name() + "/alloc"; }
 
   protected:
@@ -318,12 +320,14 @@ class multiple_malloc_free_benchmark : public alloc_benchmark<Size, Alloc> {
     static std::string name() {
         return base::base::name() + "/multiple_malloc_free";
     }
+
     static std::vector<std::string> argsName() {
         auto n = benchmark_interface<Size, Alloc>::argsName();
         std::vector<std::string> res = {"max_allocs"};
         res.insert(res.end(), n.begin(), n.end());
         return res;
     }
+
     std::default_random_engine generator;
     distribution dist;
 };
@@ -349,9 +353,11 @@ class provider_allocator : public allocator_interface {
         }
         return ptr;
     }
+
     void benchFree(void *ptr, size_t size) override {
         umfMemoryProviderFree(provider.provider, ptr, size);
     }
+
     static std::string name() { return Provider::name(); }
 
   private:
@@ -371,6 +377,7 @@ template <typename Pool> class pool_allocator : public allocator_interface {
     virtual void *benchAlloc(size_t size) override {
         return umfPoolMalloc(pool.pool, size);
     }
+
     virtual void benchFree(void *ptr, [[maybe_unused]] size_t size) override {
         umfPoolFree(pool.pool, ptr);
     }
