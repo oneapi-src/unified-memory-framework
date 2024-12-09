@@ -69,7 +69,7 @@ jobs:
             --gtest_filter="-*checkModeLocal/*:*checkModePreferredEmptyNodeset/*:testNuma.checkModeInterleave"
 
       - name: Check coverage
-        if: matrix.os == 'ubuntu-22.04'
+        if: ${{ matrix.build_type == 'Debug' && matrix.os == 'ubuntu-22.04' }}
         working-directory: ${{env.BUILD_DIR}}
         run: |
           export COVERAGE_FILE_NAME=${{env.COVERAGE_NAME}}-${{matrix.os}}-shared-${{matrix.shared_library}}
@@ -79,7 +79,7 @@ jobs:
           mv ./$COVERAGE_FILE_NAME ${{env.COVERAGE_DIR}}
 
       - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
-        if: matrix.os == 'ubuntu-22.04'
+        if: ${{ matrix.build_type == 'Debug' && matrix.os == 'ubuntu-22.04' }}
         with:
-          name: ${{env.COVERAGE_NAME}}-${{matrix.os}}-${{matrix.build_type}}-shared-${{matrix.shared_library}}
+          name: ${{env.COVERAGE_NAME}}-${{matrix.os}}-shared-${{matrix.shared_library}}
           path: ${{env.COVERAGE_DIR}}

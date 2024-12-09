@@ -194,12 +194,15 @@ to another process it can be opened by the :any:`umfOpenIPCHandle` function.
 
 .. code-block:: c
 
-    void *mapped_buf = NULL;
-    umf_result = umfOpenIPCHandle(consumer_pool, ipc_handle, &mapped_buf);
+    umf_ipc_handler_handle_t ipc_handler = 0;
+    umf_result = umfPoolGetIPCHandler(consumer_pool, &ipc_handler);
 
-The :any:`umfOpenIPCHandle` function requires the memory pool handle and the IPC handle as input parameters. It maps
+    void *mapped_buf = NULL;
+    umf_result = umfOpenIPCHandle(ipc_handler, ipc_handle, &mapped_buf);
+
+The :any:`umfOpenIPCHandle` function requires the IPC handler and the IPC handle as input parameters. The IPC handler maps
 the handle to the current process address space and returns the pointer to the same memory region that was allocated
-in the producer process.
+in the producer process. To retrieve the IPC handler, the :any:`umfPoolGetIPCHandler` function is used.
 
 .. note::
     The virtual addresses of the memory region referred to by the IPC handle may not be the same in the producer and consumer processes.

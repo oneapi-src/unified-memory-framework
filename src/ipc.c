@@ -119,12 +119,18 @@ umf_result_t umfPutIPCHandle(umf_ipc_handle_t umfIPCHandle) {
     return ret;
 }
 
-umf_result_t umfOpenIPCHandle(umf_memory_pool_handle_t hPool,
+umf_result_t umfOpenIPCHandle(umf_ipc_handler_handle_t hIPCHandler,
                               umf_ipc_handle_t umfIPCHandle, void **ptr) {
 
-    // We cannot use umfPoolGetMemoryProvider function because it returns
-    // upstream provider but we need tracking one
-    umf_memory_provider_handle_t hProvider = hPool->provider;
+    // IPC handler is an instance of tracking memory provider
+    if (*(uint32_t *)hIPCHandler != UMF_VERSION_CURRENT) {
+        // It is a temporary hack to verify that user passes correct IPC handler,
+        // not a pool handle, as it was required in previous version.
+        LOG_ERR("Invalid IPC handler.");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    umf_memory_provider_handle_t hProvider = hIPCHandler;
     void *base = NULL;
 
     umf_result_t ret = umfMemoryProviderOpenIPCHandle(
@@ -152,4 +158,27 @@ umf_result_t umfCloseIPCHandle(void *ptr) {
 
     return umfMemoryProviderCloseIPCHandle(hProvider, allocInfo.base,
                                            allocInfo.baseSize);
+}
+
+umf_result_t umfPoolGetIPCHandler(umf_memory_pool_handle_t hPool,
+                                  umf_ipc_handler_handle_t *hIPCHandler) {
+    if (hPool == NULL) {
+        LOG_ERR("Pool handle is NULL.");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (hIPCHandler == NULL) {
+        LOG_ERR("hIPCHandler is NULL.");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    // We cannot use umfPoolGetMemoryProvider function because it returns
+    // upstream provider but we need tracking one
+    umf_memory_provider_handle_t hProvider = hPool->provider;
+
+    // We are using tracking provider as an IPC handler because
+    // it is doing IPC caching.
+    *hIPCHandler = (umf_ipc_handler_handle_t)hProvider;
+
+    return UMF_RESULT_SUCCESS;
 }
