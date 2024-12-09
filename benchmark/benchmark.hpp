@@ -95,7 +95,8 @@ struct alloc_data {
         ->ArgNames(                                                            \
             BENCHMARK_PRIVATE_CONCAT_NAME(BaseClass, Method)::argsName())      \
         ->Name(BENCHMARK_PRIVATE_CONCAT_NAME(BaseClass, Method)::name())       \
-        ->MinWarmUpTime(1)
+        ->Iterations(                                                          \
+            BENCHMARK_PRIVATE_CONCAT_NAME(BaseClass, Method)::iterations())
 
 class fixed_alloc_size : public alloc_size_interface {
   public:
@@ -238,6 +239,7 @@ class alloc_benchmark : public benchmark_interface<Size, Alloc> {
         return res;
     }
     static std::string name() { return base::name() + "/alloc"; }
+    static int64_t iterations() { return 200000; }
 
   protected:
     using base = benchmark_interface<Size, Alloc>;
@@ -324,6 +326,7 @@ class multiple_malloc_free_benchmark : public alloc_benchmark<Size, Alloc> {
         res.insert(res.end(), n.begin(), n.end());
         return res;
     }
+    static int64_t iterations() { return 2000; }
     std::default_random_engine generator;
     distribution dist;
 };
