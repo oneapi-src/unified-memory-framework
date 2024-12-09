@@ -19,24 +19,20 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            disjoint: 'OFF'
             build_tests: 'ON'
             simple_cmake: 'OFF'
           # pure C build (Windows)
           - os: windows-latest
-            disjoint: 'OFF'
             # Tests' building is off for a pure C build
             build_tests: 'OFF'
             simple_cmake: 'OFF'
           - os: ubuntu-latest
-            disjoint: 'ON'
             build_tests: 'ON'
             # Windows doesn't recognize 'CMAKE_BUILD_TYPE', it uses '--config' param in build command
             extra_build_options: '-DCMAKE_BUILD_TYPE=Release -DUMF_BUILD_BENCHMARKS=ON -DUMF_BUILD_BENCHMARKS_MT=ON'
             simple_cmake: 'OFF'
           # pure C build (Linux)
           - os: ubuntu-latest
-            disjoint: 'OFF'
             # Windows doesn't recognize 'CMAKE_BUILD_TYPE', it uses '--config' param in build command
             # Tests' building is off for a pure C build
             build_tests: 'OFF'
@@ -44,13 +40,11 @@ jobs:
             simple_cmake: 'OFF'
           # simplest CMake on ubuntu-latest
           - os: ubuntu-latest
-            disjoint: 'OFF'
             build_tests: 'ON'
             extra_build_options: '-DCMAKE_BUILD_TYPE=Release'
             simple_cmake: 'ON'
           # simplest CMake ubuntu-20.04
           - os: ubuntu-20.04
-            disjoint: 'OFF'
             build_tests: 'ON'
             extra_build_options: '-DCMAKE_BUILD_TYPE=Release'
             simple_cmake: 'ON'
@@ -101,7 +95,6 @@ jobs:
         -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
-        -DUMF_BUILD_LIBUMF_POOL_DISJOINT=${{matrix.disjoint}}
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
         -DUMF_BUILD_TESTS=${{matrix.build_tests}}
         -DUMF_BUILD_EXAMPLES=ON

@@ -41,16 +41,14 @@ if(UMF_POOL_SCALABLE_ENABLED)
     endif()
 endif()
 
-if(UMF_BUILD_GPU_EXAMPLES
-   AND UMF_BUILD_LIBUMF_POOL_DISJOINT
-   AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
+if(UMF_BUILD_GPU_EXAMPLES AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
     set(EXAMPLE_NAME umf_example_level_zero_shared_memory)
 
     add_umf_executable(
         NAME ${EXAMPLE_NAME}
         SRCS level_zero_shared_memory/level_zero_shared_memory.c
              common/examples_level_zero_helpers.c
-        LIBS disjoint_pool ze_loader umf)
+        LIBS ze_loader umf)
 
     target_include_directories(
         ${EXAMPLE_NAME}
@@ -74,12 +72,11 @@ if(UMF_BUILD_GPU_EXAMPLES
     endif()
 else()
     message(STATUS "GPU Level Zero shared memory example requires "
-                   "UMF_BUILD_GPU_EXAMPLES, UMF_BUILD_LEVEL_ZERO_PROVIDER and "
-                   "UMF_BUILD_LIBUMF_POOL_DISJOINT to be turned ON - skipping")
+                   "UMF_BUILD_GPU_EXAMPLES and UMF_BUILD_LEVEL_ZERO_PROVIDER "
+                   "to be turned ON - skipping")
 endif()
 
 if(UMF_BUILD_GPU_EXAMPLES
-   AND UMF_BUILD_LIBUMF_POOL_DISJOINT
    AND UMF_BUILD_CUDA_PROVIDER
    AND UMF_CUDA_ENABLED)
     set(EXAMPLE_NAME umf_example_cuda_shared_memory)
@@ -87,7 +84,7 @@ if(UMF_BUILD_GPU_EXAMPLES
     add_umf_executable(
         NAME ${EXAMPLE_NAME}
         SRCS cuda_shared_memory/cuda_shared_memory.c
-        LIBS disjoint_pool cuda umf)
+        LIBS cuda umf)
 
     target_include_directories(
         ${EXAMPLE_NAME}
@@ -113,14 +110,13 @@ if(UMF_BUILD_GPU_EXAMPLES
 else()
     message(
         STATUS
-            "GPU CUDA shared memory example requires UMF_BUILD_GPU_EXAMPLES, UMF_BUILD_CUDA_PROVIDER, UMF_BUILD_LIBUMF_POOL_DISJOINT to be turned ON and installed CUDA libraries - skipping"
+            "GPU CUDA shared memory example requires UMF_BUILD_GPU_EXAMPLES and UMF_BUILD_CUDA_PROVIDER to be turned ON and installed CUDA libraries - skipping"
     )
 endif()
 
 # TODO: it looks like there is some problem with IPC implementation in Level
 # Zero on windows
 if(UMF_BUILD_GPU_EXAMPLES
-   AND UMF_BUILD_LIBUMF_POOL_DISJOINT
    AND UMF_BUILD_LEVEL_ZERO_PROVIDER
    AND LINUX)
     set(EXAMPLE_NAME umf_example_ipc_level_zero)
@@ -129,7 +125,7 @@ if(UMF_BUILD_GPU_EXAMPLES
         NAME ${EXAMPLE_NAME}
         SRCS ipc_level_zero/ipc_level_zero.c
              common/examples_level_zero_helpers.c
-        LIBS disjoint_pool ze_loader umf)
+        LIBS ze_loader umf)
 
     target_include_directories(
         ${EXAMPLE_NAME}
@@ -154,7 +150,7 @@ if(UMF_BUILD_GPU_EXAMPLES
 else()
     message(
         STATUS
-            "IPC Level 0 example requires UMF_BUILD_GPU_EXAMPLES, UMF_BUILD_LEVEL_ZERO_PROVIDER and UMF_BUILD_LIBUMF_POOL_DISJOINT to be turned ON - skipping"
+            "IPC Level 0 example requires UMF_BUILD_GPU_EXAMPLES and UMF_BUILD_LEVEL_ZERO_PROVIDER to be turned ON - skipping"
     )
 endif()
 
