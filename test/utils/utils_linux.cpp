@@ -2,6 +2,7 @@
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
+#include <cstdint>
 #include <sys/mman.h>
 
 #include "base.hpp"
@@ -168,4 +169,20 @@ TEST_F(test, utils_open) {
     EXPECT_EQ(utils_devdax_open(NULL), -1);
     EXPECT_EQ(utils_file_open(NULL), -1);
     EXPECT_EQ(utils_file_open_or_create(NULL), -1);
+}
+
+TEST_F(test, utils_align_ptr_up_size_down) {
+    uintptr_t ptr = 0x4000;
+    size_t size = 0x8000;
+    size_t alignment = 0x4000;
+    utils_align_ptr_up_size_down((void **)&ptr, &size, alignment);
+    EXPECT_EQ(ptr, 0x4000);
+    EXPECT_EQ(size, 0x8000);
+
+    ptr = 0x4001;
+    size = 0x8000;
+    alignment = 0x4000;
+    utils_align_ptr_up_size_down((void **)&ptr, &size, alignment);
+    EXPECT_EQ(ptr, 0x8000);
+    EXPECT_EQ(size, 0x4001);
 }
