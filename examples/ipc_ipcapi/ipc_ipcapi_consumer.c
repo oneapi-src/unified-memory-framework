@@ -142,6 +142,13 @@ int main(int argc, char *argv[]) {
         goto err_destroy_OS_memory_provider;
     }
 
+    umf_ipc_handler_handle_t ipc_handler;
+    umf_result = umfPoolGetIPCHandler(scalable_pool, &ipc_handler);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "[producer] ERROR: get IPC handler failed\n");
+        goto err_destroy_scalable_pool;
+    }
+
     // connect to the producer
     producer_socket = consumer_connect_to_producer(port);
     if (producer_socket < 0) {
@@ -209,7 +216,7 @@ int main(int argc, char *argv[]) {
         len);
 
     void *SHM_ptr;
-    umf_result = umfOpenIPCHandle(scalable_pool, IPC_handle, &SHM_ptr);
+    umf_result = umfOpenIPCHandle(ipc_handler, IPC_handle, &SHM_ptr);
     if (umf_result == UMF_RESULT_ERROR_NOT_SUPPORTED) {
         fprintf(stderr,
                 "[consumer] SKIP: opening the IPC handle is not supported\n");
