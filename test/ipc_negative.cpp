@@ -47,7 +47,11 @@ TEST_F(IpcNotSupported, OpenIPCHandleNotSupported) {
     // This data doesn't matter, as the ipc call is no-op
     std::array<uint8_t, 128> ipc_data = {};
     void *ptr;
-    auto ret = umfOpenIPCHandle(
-        pool, reinterpret_cast<umf_ipc_handle_t>(&ipc_data), &ptr);
+    umf_ipc_handler_handle_t ipc_handler;
+    auto ret = umfPoolGetIPCHandler(pool, &ipc_handler);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfOpenIPCHandle(ipc_handler,
+                           reinterpret_cast<umf_ipc_handle_t>(&ipc_data), &ptr);
     EXPECT_EQ(ret, UMF_RESULT_ERROR_NOT_SUPPORTED);
 }

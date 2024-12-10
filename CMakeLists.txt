@@ -265,8 +265,8 @@ else()
                 ./configure --prefix=${hwloc_targ_BINARY_DIR}
                 --enable-static=yes --enable-shared=no --disable-libxml2
                 --disable-pci --disable-levelzero --disable-opencl
-                --disable-cuda --disable-nvml --disable-libudev CFLAGS=-fPIC
-                CXXFLAGS=-fPIC
+                --disable-cuda --disable-nvml --disable-libudev --disable-rsmi
+                CFLAGS=-fPIC CXXFLAGS=-fPIC
             WORKING_DIRECTORY ${hwloc_targ_SOURCE_DIR}
             OUTPUT ${hwloc_targ_SOURCE_DIR}/Makefile
             DEPENDS ${hwloc_targ_SOURCE_DIR}/configure)

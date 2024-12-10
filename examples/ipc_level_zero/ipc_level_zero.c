@@ -180,14 +180,21 @@ int main(void) {
 
     fprintf(stdout, "Consumer pool created.\n");
 
+    umf_ipc_handler_handle_t ipc_handler = 0;
+    umf_result = umfPoolGetIPCHandler(consumer_pool, &ipc_handler);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "ERROR: Failed to get IPC handler!\n");
+        return -1;
+    }
+
     void *mapped_buf = NULL;
-    umf_result = umfOpenIPCHandle(consumer_pool, ipc_handle, &mapped_buf);
+    umf_result = umfOpenIPCHandle(ipc_handler, ipc_handle, &mapped_buf);
     if (umf_result != UMF_RESULT_SUCCESS) {
         fprintf(stderr, "ERROR: Failed to open IPC handle!\n");
         return -1;
     }
 
-    fprintf(stdout, "IPC handle opened in the consumer pool.\n");
+    fprintf(stdout, "IPC handle opened.\n");
 
     size_t *tmp_buf = malloc(BUFFER_SIZE);
     ret = level_zero_copy(consumer_context, device, tmp_buf, mapped_buf,

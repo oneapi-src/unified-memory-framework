@@ -129,5 +129,5 @@ jobs:
       - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         if: ${{ matrix.build_type == 'Debug' && matrix.os == 'Ubuntu' }}
         with:
-          name: ${{env.COVERAGE_NAME}}-${{matrix.os}}-${{matrix.build_type}}-shared-${{matrix.shared_library}}
+          name: ${{env.COVERAGE_NAME}}-shared-${{matrix.shared_library}}
           path: ${{env.COVERAGE_DIR}}
