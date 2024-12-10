@@ -7,6 +7,8 @@ on:
     branches-ignore:
       - 'dependabot/**'
   pull_request:
+  schedule:
+    - cron:  '0 1 * * *'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -53,7 +55,7 @@ jobs:
     needs: [FastBuild]
     uses: ./.github/workflows/reusable_qemu.yml
     with:
-      short_run: true
+      short_run: ${{ github.event_name == 'schedule' && 'false' || 'true' }}
   Benchmarks:
     needs: [Build]
     uses: ./.github/workflows/reusable_benchmarks.yml
