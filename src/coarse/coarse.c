@@ -744,12 +744,18 @@ static block_t *find_free_block(struct ravl *free_blocks, size_t size,
                                 size_t alignment,
                                 coarse_strategy_t allocation_strategy) {
     block_t *block;
+    size_t new_size = size + alignment;
 
     switch (allocation_strategy) {
     case UMF_COARSE_MEMORY_STRATEGY_FASTEST:
         // Always allocate a free block of the (size + alignment) size
         // and later cut out the properly aligned part leaving two remaining parts.
-        return free_blocks_rm_ge(free_blocks, size + alignment, 0,
+        if (new_size < size) {
+            LOG_ERR("arithmetic overflow (size + alignment)");
+            return NULL;
+        }
+
+        return free_blocks_rm_ge(free_blocks, new_size, 0,
                                  CHECK_ONLY_THE_FIRST_BLOCK);
 
     case UMF_COARSE_MEMORY_STRATEGY_FASTEST_BUT_ONE:
@@ -760,8 +766,13 @@ static block_t *find_free_block(struct ravl *free_blocks, size_t size,
             return block;
         }
 
+        if (new_size < size) {
+            LOG_ERR("arithmetic overflow (size + alignment)");
+            return NULL;
+        }
+
         // If not, use the `UMF_COARSE_MEMORY_STRATEGY_FASTEST` strategy.
-        return free_blocks_rm_ge(free_blocks, size + alignment, 0,
+        return free_blocks_rm_ge(free_blocks, new_size, 0,
                                  CHECK_ONLY_THE_FIRST_BLOCK);
 
     case UMF_COARSE_MEMORY_STRATEGY_CHECK_ALL_SIZE:
@@ -773,9 +784,14 @@ static block_t *find_free_block(struct ravl *free_blocks, size_t size,
             return block;
         }
 
+        if (new_size < size) {
+            LOG_ERR("arithmetic overflow (size + alignment)");
+            return NULL;
+        }
+
         // If none of them had the correct alignment,
         // use the `UMF_COARSE_MEMORY_STRATEGY_FASTEST` strategy.
-        return free_blocks_rm_ge(free_blocks, size + alignment, 0,
+        return free_blocks_rm_ge(free_blocks, new_size, 0,
                                  CHECK_ONLY_THE_FIRST_BLOCK);
     }
 
@@ -1017,17 +1033,17 @@ umf_result_t coarse_alloc(coarse_t *coarse, size_t size, size_t alignment,
     }
 
     // alignment must be a power of two and a multiple or a divider of the page size
-    if (alignment &&
-        ((alignment & (alignment - 1)) || ((alignment % coarse->page_size) &&
-                                           (coarse->page_size % alignment)))) {
+    if (alignment == 0) {
+        alignment = coarse->page_size;
+    } else if ((alignment & (alignment - 1)) ||
+               ((alignment % coarse->page_size) &&
+                (coarse->page_size % alignment))) {
         LOG_ERR("wrong alignment: %zu (not a power of 2 or a multiple or a "
                 "divider of the page size (%zu))",
                 alignment, coarse->page_size);
         return UMF_RESULT_ERROR_INVALID_ALIGNMENT;
-    }
-
-    if (IS_NOT_ALIGNED(alignment, coarse->page_size)) {
-        alignment = ALIGN_UP(alignment, coarse->page_size);
+    } else if (IS_NOT_ALIGNED(alignment, coarse->page_size)) {
+        alignment = ALIGN_UP_SAFE(alignment, coarse->page_size);
     }
 
     if (utils_mutex_lock(&coarse->lock) != 0) {
