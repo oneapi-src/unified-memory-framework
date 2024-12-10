@@ -14,7 +14,7 @@ on:
 permissions:
   actions: read
   checks: read
-  contents: write
+  contents: read
   pull-requests: write
 
 jobs:
@@ -37,7 +37,3 @@ jobs:
       - name: Run codespell
         run: |
           bash .github/scripts/codespell.sh
-      
-            
-      - name: Codespell check
-        run: echo Done!
