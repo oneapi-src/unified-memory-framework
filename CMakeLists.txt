@@ -55,7 +55,7 @@ option(
     OFF)
 option(
     UMF_LINK_HWLOC_STATICALLY
-    "Link UMF with HWLOC library statically (supported for Linux, MacOS and Release build on Windows)"
+    "Link UMF with HWLOC library statically (proxy library will be disabled on Windows+Debug build)"
     OFF)
 option(UMF_FORMAT_CODE_STYLE
        "Add clang, cmake, and black -format-check and -format-apply targets"
