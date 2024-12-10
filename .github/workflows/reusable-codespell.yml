@@ -1,0 +1,43 @@
+name: ci-demo
+on:
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      DEMO_BRANCH: 
+        required: true
+      DEMO_REPOSITORY:
+        required: true
+        default: https://github.com/luszczewskakasia1/unified-memory-framework.git
+
+
+permissions:
+  actions: read
+  checks: read
+  contents: write
+  pull-requests: write
+
+
+  codespell:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install codespell
+        run: |
+          pip install codespell
+
+      - name: Run codespell
+        run: |
+          bash .github/scripts/codespell.sh
+      
+            
+      - name: Codespell check
+        run: echo Done!
