@@ -6,6 +6,7 @@
  *
  */
 
+#include <memory>
 #include <string>
 #include <thread>
 #include <vector>
@@ -39,6 +40,7 @@ struct benchmark_interface : public benchmark::Fixture {
         int argPos = alloc_size.SetUp(state, 0);
         allocator.SetUp(state, argPos);
     }
+
     void TearDown(::benchmark::State &state) {
         alloc_size.TearDown(state);
         allocator.TearDown(state);
@@ -54,6 +56,7 @@ struct benchmark_interface : public benchmark::Fixture {
         res.insert(res.end(), a.begin(), a.end());
         return res;
     }
+
     static std::string name() { return Allocator::name(); }
     static int64_t iterations() { return 10000; }
     Size alloc_size;
@@ -61,13 +64,16 @@ struct benchmark_interface : public benchmark::Fixture {
 };
 
 struct provider_interface {
+    using params_ptr = std::unique_ptr<void, void (*)(void *)>;
+
     umf_memory_provider_handle_t provider = NULL;
     virtual void SetUp(::benchmark::State &state) {
         if (state.thread_index() != 0) {
             return;
         }
+        auto params = getParams(state);
         auto umf_result =
-            umfMemoryProviderCreate(getOps(), getParams(), &provider);
+            umfMemoryProviderCreate(getOps(state), params.get(), &provider);
         if (umf_result != UMF_RESULT_SUCCESS) {
             state.SkipWithError("umfMemoryProviderCreate() failed");
         }
@@ -83,21 +89,30 @@ struct provider_interface {
         }
     }
 
-    virtual umf_memory_provider_ops_t *getOps() { return nullptr; }
-    virtual void *getParams() { return nullptr; }
+    virtual umf_memory_provider_ops_t *
+    getOps([[maybe_unused]] ::benchmark::State &state) {
+        return nullptr;
+    }
+
+    virtual params_ptr getParams([[maybe_unused]] ::benchmark::State &state) {
+        return {nullptr, [](void *) {}};
+    }
 };
 
 template <typename T,
           typename =
               std::enable_if_t<std::is_base_of<provider_interface, T>::value>>
 struct pool_interface {
+    using params_ptr = std::unique_ptr<void, void (*)(void *)>;
+
     virtual void SetUp(::benchmark::State &state) {
         provider.SetUp(state);
         if (state.thread_index() != 0) {
             return;
         }
+        auto params = getParams(state);
         auto umf_result = umfPoolCreate(getOps(state), provider.provider,
-                                        getParams(state), 0, &pool);
+                                        params.get(), 0, &pool);
         if (umf_result != UMF_RESULT_SUCCESS) {
             state.SkipWithError("umfPoolCreate() failed");
         }
@@ -121,8 +136,8 @@ struct pool_interface {
     getOps([[maybe_unused]] ::benchmark::State &state) {
         return nullptr;
     }
-    virtual void *getParams([[maybe_unused]] ::benchmark::State &state) {
-        return nullptr;
+    virtual params_ptr getParams([[maybe_unused]] ::benchmark::State &state) {
+        return {nullptr, [](void *) {}};
     }
     T provider;
     umf_memory_pool_handle_t pool;
