@@ -17,27 +17,27 @@ permissions:
   contents: write
   pull-requests: write
 
+  jobs:
+    codespell:
+      runs-on: windows-latest
 
-  codespell:
-    runs-on: windows-latest
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v3
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+        - name: Set up Python
+          uses: actions/setup-python@v4
+          with:
+            python-version: '3.x'
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.x'
+        - name: Install codespell
+          run: |
+            pip install codespell
 
-      - name: Install codespell
-        run: |
-          pip install codespell
-
-      - name: Run codespell
-        run: |
-          bash .github/scripts/codespell.sh
-      
-            
-      - name: Codespell check
-        run: echo Done!
+        - name: Run codespell
+          run: |
+            bash .github/scripts/codespell.sh
+        
+              
+        - name: Codespell check
+          run: echo Done!
