@@ -4,12 +4,11 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
     inputs:
-      DEMO_BRANCH: 
+      UMF_BRANCH: 
         required: true
-      DEMO_REPOSITORY:
+      UMF_REPOSITORY:
         required: true
-        default: https://github.com/luszczewskakasia1/unified-memory-framework.git
-
+        default: https://github.com/oneapi-src/unified-memory-framework.git
 
 permissions:
   actions: read
