@@ -1,5 +1,4 @@
 # Basic checks on the code, incl. coding style, spelling, bandit analysis.
-# TODO: add license check
 name: Basic checks
 
 on: workflow_call
@@ -51,6 +50,12 @@ jobs:
 
     - name: Check Python formatting
       run: cmake --build build --target black-format-check
+
+    - name: Run check-license
+      run: cmake --build build --target check-license
+
+    - name: Run copyright-format
+      run: cmake --build build --target copyright-format
 
     - name: Run a spell check
       uses: crate-ci/typos@b63f421581dce830bda2f597a678cb7776b41877 # v1.18.2
