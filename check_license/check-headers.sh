@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: BSD-3-Clause
-# Copyright 2016-2022, Intel Corporation
+# Copyright (C) 2024 Intel Corporation
+# Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 # check-headers.sh - check copyright and license in source files
 
 SELF=$0
 
 function usage() {
-	echo "Usage: $SELF <source_root_path> <license_tag> [-h|-v|-a]"
+	echo "Usage: $SELF <source_root_path> <license_tag> [-h|-v|-a|-d]"
 	echo "   -h, --help          this help message"
 	echo "   -v, --verbose       verbose mode"
 	echo "   -a, --all           check all files (only modified files are checked by default)"
@@ -83,18 +84,15 @@ else
 	GIT_COMMAND="diff --name-only $MERGE_BASE $CURRENT_COMMIT"
 fi
 
-FILES=$($GIT $GIT_COMMAND | ${SOURCE_ROOT}/utils/check_license/file-exceptions.sh | \
-	grep    -E -e '*\.[chs]$' -e '*\.[ch]pp$' -e '*\.sh$' -e '*\.py$' \
-		   -e 'TEST*' -e 'Makefile*' -e 'CMakeLists.txt$' -e '*\.cmake$' \
-		   -e '*\.link$' -e '*\.map$' -e '*\.Dockerfile$' -e 'LICENSE$' \
-		   -e '/common.inc$' -e '/match$' -e '/check_whitespace$' -e '/cppstyle$' | \
-	xargs)
+FILES=$($GIT $GIT_COMMAND | ${SOURCE_ROOT}/check_license/file-exceptions.sh)
 
 RV=0
+
 for file in $FILES ; do
 	if [ $VERBOSE -eq 1 ]; then
 		echo "Checking file: $file"
 	fi
+
 	# The src_path is a path which should be used in every command except git.
 	# git is called with -C flag so filepaths should be relative to SOURCE_ROOT
 	src_path="${SOURCE_ROOT}/$file"
@@ -130,10 +128,10 @@ for file in $FILES ; do
 	FIRST=`head -n1 $TMP2`
 	LAST=` tail -n1 $TMP2`
 
-	YEARS=`sed '
-/Copyright [0-9-]\+.*, Intel Corporation/!d
-s/.*Copyright \([0-9]\+\)-\([0-9]\+\),.*/\1-\2/
-s/.*Copyright \([0-9]\+\),.*/\1-\1/' $src_path`
+	YEARS=$(sed '
+/.*Copyright (C) \+.*[0-9-]\+ Intel Corporation/!d
+s/.*Copyright (C) \([0-9]\+\)-\([0-9]\+\).*/\1-\2/
+s/.*Copyright (C) \([0-9]\+\).*/\1/' "$src_path")
 	if [ -z "$YEARS" ]; then
 		echo >&2 "No copyright years in $src_path"
 		RV=1
@@ -145,22 +143,36 @@ s/.*Copyright \([0-9]\+\),.*/\1-\1/' $src_path`
 
 	COMMIT_FIRST=`echo $FIRST | cut -d"-" -f1`
 	COMMIT_LAST=` echo $LAST  | cut -d"-" -f1`
+
 	if [ "$COMMIT_FIRST" != "" -a "$COMMIT_LAST" != "" ]; then
-		if [ $HEADER_LAST -lt $COMMIT_LAST ]; then
-			if [ $HEADER_FIRST -lt $COMMIT_FIRST ]; then
-				COMMIT_FIRST=$HEADER_FIRST
+		if [[ -n "$COMMIT_FIRST" && -n "$COMMIT_LAST" ]]; then
+			FL=0
+			if [[ $HEADER_FIRST -lt $COMMIT_FIRST ]]; then
+				FL=1
 			fi
+
 			COMMIT_LAST=`date +%G`
-			if [ $COMMIT_FIRST -eq $COMMIT_LAST ]; then
-				NEW=$COMMIT_LAST
+
+			if [[ $FL -eq 1 ]]; then
+				NEW=$HEADER_FIRST-$COMMIT_LAST
 			else
-				NEW=$COMMIT_FIRST-$COMMIT_LAST
+
+				if [[ $COMMIT_FIRST -eq $COMMIT_LAST ]]; then
+					NEW=$COMMIT_LAST
+				else
+					NEW=$COMMIT_FIRST-$COMMIT_LAST
+				fi
 			fi
-			if [ ${UPDATE_DATES} -eq 1 ]; then
-				sed -i "s/Copyright ${YEARS}/Copyright ${NEW}/g" "${src_path}"
-			else
-				echo "$file:1: error: wrong copyright date: (is: $YEARS, should be: $NEW)" >&2
-				RV=1
+
+			if [[ "$YEARS" == "$NEW" ]]; then
+				echo "No change needed: $YEARS"
+			else 
+				if [[ ${UPDATE_DATES} -eq 1 ]]; then
+					sed -i "s/Copyright ${YEARS}/Copyright ${NEW}/g" "${src_path}"
+				else
+					echo "$file:1: error: wrong copyright date: (is: $YEARS, should be: $NEW)" >&2
+					RV=1
+				fi
 			fi
 		fi
 	else
