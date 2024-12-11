@@ -59,7 +59,7 @@ jobs:
     
     - name: Run codespell
       run: |
-        bash .github/scripts/codespell.sh codespell.log
+        bash .github/scripts/codespell.sh
 
     # Run Bandit recursively, but omit _deps directory (with 3rd party code) and python's venv
     - name: Run Bandit
