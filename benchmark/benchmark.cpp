@@ -37,20 +37,27 @@ struct glibc_malloc : public allocator_interface {
 };
 
 struct os_provider : public provider_interface {
-    umf_os_memory_provider_params_handle_t params = NULL;
-    os_provider() {
-        umfOsMemoryProviderParamsCreate(&params);
-        return;
-    }
-
-    ~os_provider() {
-        if (params != NULL) {
-            umfOsMemoryProviderParamsDestroy(params);
+    provider_interface::params_ptr
+    getParams(::benchmark::State &state) override {
+        umf_os_memory_provider_params_handle_t raw_params = nullptr;
+        umfOsMemoryProviderParamsCreate(&raw_params);
+        if (!raw_params) {
+            state.SkipWithError("Failed to create os provider params");
+            return {nullptr, [](void *) {}};
         }
+
+        // Use a lambda as the custom deleter
+        auto deleter = [](void *p) {
+            auto handle =
+                static_cast<umf_os_memory_provider_params_handle_t>(p);
+            umfOsMemoryProviderParamsDestroy(handle);
+        };
+
+        return {static_cast<void *>(raw_params), deleter};
     }
 
-    void *getParams() override { return params; }
-    umf_memory_provider_ops_t *getOps() override {
+    umf_memory_provider_ops_t *
+    getOps([[maybe_unused]] ::benchmark::State &state) override {
         return umfOsMemoryProviderOps();
     }
     static std::string name() { return "os_provider"; }
@@ -62,73 +69,60 @@ struct proxy_pool : public pool_interface<Provider> {
     getOps([[maybe_unused]] ::benchmark::State &state) override {
         return umfProxyPoolOps();
     }
-    void *getParams([[maybe_unused]] ::benchmark::State &state) override {
-        return nullptr;
-    }
+
     static std::string name() { return "proxy_pool<" + Provider::name() + ">"; }
 };
 
 #ifdef UMF_POOL_DISJOINT_ENABLED
 template <typename Provider>
 struct disjoint_pool : public pool_interface<Provider> {
-    umf_disjoint_pool_params_handle_t disjoint_memory_pool_params;
-
-    disjoint_pool() {
-        disjoint_memory_pool_params = NULL;
-        auto ret = umfDisjointPoolParamsCreate(&disjoint_memory_pool_params);
-        if (ret != UMF_RESULT_SUCCESS) {
-            return;
-        }
-
-        // those function should never fail, so error handling is minimal.
-        ret = umfDisjointPoolParamsSetSlabMinSize(disjoint_memory_pool_params,
-                                                  4096);
-        if (ret != UMF_RESULT_SUCCESS) {
-            goto err;
-        }
-
-        ret = umfDisjointPoolParamsSetCapacity(disjoint_memory_pool_params, 4);
-        if (ret != UMF_RESULT_SUCCESS) {
-            goto err;
-        }
-
-        ret = umfDisjointPoolParamsSetMinBucketSize(disjoint_memory_pool_params,
-                                                    4096);
-        if (ret != UMF_RESULT_SUCCESS) {
-            goto err;
-        }
-
-        ret = umfDisjointPoolParamsSetMaxPoolableSize(
-            disjoint_memory_pool_params, 4096 * 16);
-
-        if (ret != UMF_RESULT_SUCCESS) {
-            goto err;
-        }
-        return;
-    err:
-
-        umfDisjointPoolParamsDestroy(disjoint_memory_pool_params);
-        disjoint_memory_pool_params = NULL;
-    }
-
-    ~disjoint_pool() {
-        if (disjoint_memory_pool_params != NULL) {
-            umfDisjointPoolParamsDestroy(disjoint_memory_pool_params);
-        }
-    }
-
     umf_memory_pool_ops_t *
     getOps([[maybe_unused]] ::benchmark::State &state) override {
         return umfDisjointPoolOps();
     }
-    void *getParams([[maybe_unused]] ::benchmark::State &state) override {
 
-        if (disjoint_memory_pool_params == NULL) {
+    typename pool_interface<Provider>::params_ptr
+    getParams(::benchmark::State &state) override {
+        umf_disjoint_pool_params_handle_t raw_params = nullptr;
+        auto ret = umfDisjointPoolParamsCreate(&raw_params);
+        if (ret != UMF_RESULT_SUCCESS) {
             state.SkipWithError("Failed to create disjoint pool params");
+            return {nullptr, [](void *) {}};
         }
 
-        return disjoint_memory_pool_params;
+        typename pool_interface<Provider>::params_ptr params(
+            raw_params, [](void *p) {
+                umfDisjointPoolParamsDestroy(
+                    static_cast<umf_disjoint_pool_params_handle_t>(p));
+            });
+
+        ret = umfDisjointPoolParamsSetSlabMinSize(raw_params, 4096);
+        if (ret != UMF_RESULT_SUCCESS) {
+            state.SkipWithError("Failed to set slab min size");
+            return {nullptr, [](void *) {}};
+        }
+
+        ret = umfDisjointPoolParamsSetCapacity(raw_params, 4);
+        if (ret != UMF_RESULT_SUCCESS) {
+            state.SkipWithError("Failed to set capacity");
+            return {nullptr, [](void *) {}};
+        }
+
+        ret = umfDisjointPoolParamsSetMinBucketSize(raw_params, 4096);
+        if (ret != UMF_RESULT_SUCCESS) {
+            state.SkipWithError("Failed to set min bucket size");
+            return {nullptr, [](void *) {}};
+        }
+
+        ret = umfDisjointPoolParamsSetMaxPoolableSize(raw_params, 4096 * 16);
+        if (ret != UMF_RESULT_SUCCESS) {
+            state.SkipWithError("Failed to set max poolable size");
+            return {nullptr, [](void *) {}};
+        }
+
+        return params;
     }
+
     static std::string name() {
         return "disjoint_pool<" + Provider::name() + ">";
     }
@@ -142,9 +136,7 @@ struct jemalloc_pool : public pool_interface<Provider> {
     getOps([[maybe_unused]] ::benchmark::State &state) override {
         return umfJemallocPoolOps();
     }
-    void *getParams([[maybe_unused]] ::benchmark::State &state) override {
-        return NULL;
-    }
+
     static std::string name() {
         return "jemalloc_pool<" + Provider::name() + ">";
     }
@@ -158,10 +150,7 @@ struct scalable_pool : public pool_interface<Provider> {
     getOps([[maybe_unused]] ::benchmark::State &state) override {
         return umfScalablePoolOps();
     }
-    virtual void *
-    getParams([[maybe_unused]] ::benchmark::State &state) override {
-        return NULL;
-    }
+
     static std::string name() {
         return "scalable_pool<" + Provider::name() + ">";
     }
