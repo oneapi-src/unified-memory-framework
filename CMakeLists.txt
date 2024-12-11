@@ -175,13 +175,11 @@ else()
     add_custom_target(
         check-license
         COMMAND ${PMEMSTREAM_ROOT_DIR}/check_license/check-headers.sh
-                ${PMEMSTREAM_ROOT_DIR} Apache-2.0 WITH LLVM-exception -v
-    )
+                ${PMEMSTREAM_ROOT_DIR} Apache-2.0 WITH LLVM-exception -v)
     add_custom_target(
         copyright-format
         COMMAND ${PMEMSTREAM_ROOT_DIR}/check_license/check-headers.sh
-                ${PMEMSTREAM_ROOT_DIR} Apache-2.0 WITH LLVM-exception -d
-    )
+                ${PMEMSTREAM_ROOT_DIR} Apache-2.0 WITH LLVM-exception -d)
 
     add_library(jemalloc INTERFACE)
     target_link_libraries(
