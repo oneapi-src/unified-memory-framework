@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   codespell:
-    runs-on: windows-latest
+    runs-on: [windows-2022, ubuntu-20.04]
 
     steps:
       - name: Checkout code
