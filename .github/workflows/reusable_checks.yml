@@ -29,7 +29,7 @@ jobs:
         python3 -m venv .venv
         . .venv/bin/activate
         echo "$PATH" >> $GITHUB_PATH
-        python3 -m pip install bandit
+        python3 -m pip install bandit codespell
 
     - name: Configure CMake
       run: >
@@ -57,10 +57,9 @@ jobs:
       with:
         config: ./.github/workflows/.spellcheck-conf.toml 
     
-    - name: Install and run codespell
+    - name: Run codespell
       run: |
-        pip install codespell
-        codespell --quiet-level=2 --skip "*.h,*.cmake,*.c,*.hpp,*.cpp,*.sh,*.py,test/supp/*.supp" -i 0 -L "ASSER,Tne,ba,BA"
+        bash .github/scripts/codespell.sh codespell.log
 
     # Run Bandit recursively, but omit _deps directory (with 3rd party code) and python's venv
     - name: Run Bandit
