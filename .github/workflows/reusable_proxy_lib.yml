@@ -51,7 +51,6 @@ jobs:
           -DUMF_FORMAT_CODE_STYLE=OFF
           -DUMF_DEVELOPER_MODE=OFF
           -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
-          -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
           -DUMF_TESTS_FAIL_ON_SKIP=ON
           -DUMF_PROXY_LIB_BASED_ON_POOL=${{matrix.proxy_lib_pool}}
           ${{ matrix.build_type == 'Debug' && '-DUMF_USE_COVERAGE=ON' || '' }}
