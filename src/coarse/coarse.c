@@ -1046,6 +1046,11 @@ umf_result_t coarse_alloc(coarse_t *coarse, size_t size, size_t alignment,
         alignment = ALIGN_UP_SAFE(alignment, coarse->page_size);
     }
 
+    if (size + alignment < size) {
+        LOG_ERR("size + alignment overflow");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     if (utils_mutex_lock(&coarse->lock) != 0) {
         LOG_ERR("locking the lock failed");
         return UMF_RESULT_ERROR_UNKNOWN;
