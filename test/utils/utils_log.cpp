@@ -110,6 +110,9 @@ const char *env_variable = "";
 #ifndef UMF_VERSION
 #define UMF_VERSION "test version"
 #endif
+#ifndef UMF_ALL_CMAKE_VARIABLES
+#define UMF_ALL_CMAKE_VARIABLES "test UMF_ALL_CMAKE_VARIABLES"
+#endif
 #include "utils/utils_log.c"
 #undef utils_env_var
 #undef fopen

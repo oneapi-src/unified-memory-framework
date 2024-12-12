@@ -32,6 +32,29 @@
 #include "utils_common.h"
 #include "utils_log.h"
 
+#define UMF_MAGIC_STR "\x00@(#) "
+#define UMF_PREF_STR "Intel(R) "
+#define UMF_PREFIX UMF_MAGIC_STR UMF_PREF_STR
+
+// convert a define to a C string
+#define STR_(X) #X
+#define STR(X) STR_(X)
+
+#ifdef UMF_VERSION
+#define STR_UMF_VERSION "UMF version: " STR(UMF_VERSION)
+#define LOG_STR_UMF_VERSION STR_UMF_VERSION ", "
+char const __umf_str_2_version[] = UMF_PREFIX STR_UMF_VERSION;
+#else /* !UMF_VERSION */
+#error "UMF_VERSION not defined!"
+#endif /* !UMF_VERSION */
+
+#ifdef UMF_ALL_CMAKE_VARIABLES
+char const __umf_str_1__all_cmake_vars[] =
+    UMF_PREFIX "UMF CMake variables: " STR(UMF_ALL_CMAKE_VARIABLES);
+#else /* !UMF_ALL_CMAKE_VARIABLES */
+#error "UMF_ALL_CMAKE_VARIABLES not defined!"
+#endif /* !UMF_ALL_CMAKE_VARIABLES */
+
 #define LOG_MAX 8192
 #define LOG_HEADER 256
 #define MAX_FILE_PATH 256
@@ -305,17 +328,8 @@ void utils_log_init(void) {
         loggerConfig.flushLevel = LOG_FATAL;
     }
 
-#ifdef UMF_VERSION
-// convert a define to a C string
-#define STR_(X) #X
-#define STR(X) STR_(X)
-#define STR_UMF_VERSION "UMF version: " STR(UMF_VERSION) ", "
-#else /* !UMF_VERSION */
-#error "UMF_VERSION not defined!"
-#endif /* !UMF_VERSION */
-
     LOG_INFO(
-        "Logger enabled (" STR_UMF_VERSION
+        "Logger enabled (" LOG_STR_UMF_VERSION
         "level: %s, flush: %s, pid: %s, timestamp: %s)",
         level_to_str(loggerConfig.level), level_to_str(loggerConfig.flushLevel),
         bool_to_str(loggerConfig.pid), bool_to_str(loggerConfig.timestamp));
