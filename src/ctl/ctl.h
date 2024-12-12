@@ -1,3 +1,13 @@
+/*
+ *
+ * Copyright (C) 2016-2024 Intel Corporation
+ *
+ * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+ *
+ */
+
+// This file was originally under following license:
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* Copyright 2016-2020, Intel Corporation */
 
@@ -5,12 +15,11 @@
  * ctl.h -- internal declaration of statistics and control related structures
  */
 
-#ifndef PMDK_CTL_H
-#define PMDK_CTL_H 1
+#ifndef UMF_CTL_H
+#define UMF_CTL_H 1
 
-#include "errno.h"
-#include "out.h"
-#include "queue.h"
+#include <errno.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,13 +27,11 @@ extern "C" {
 
 struct ctl;
 
-struct ctl_index {
+struct ctl_index_utlist {
     const char *name;
     long value;
-    PMDK_SLIST_ENTRY(ctl_index) entry;
+    struct ctl_index_utlist *next;
 };
-
-PMDK_SLIST_HEAD(ctl_indexes, ctl_index);
 
 enum ctl_query_source {
     CTL_UNKNOWN_QUERY_SOURCE,
@@ -45,7 +52,7 @@ enum ctl_query_type {
 };
 
 typedef int (*node_callback)(void *ctx, enum ctl_query_source type, void *arg,
-                             struct ctl_indexes *indexes);
+                             struct ctl_index_utlist *indexes);
 
 enum ctl_node_type {
     CTL_NODE_UNKNOWN,
@@ -65,7 +72,7 @@ struct ctl_argument_parser {
 };
 
 struct ctl_argument {
-    size_t dest_size;                     /* sizeof the entire argument */
+    size_t dest_size;                     /* size of the entire argument */
     struct ctl_argument_parser parsers[]; /* array of 'fields' in arg */
 };
 
@@ -114,8 +121,11 @@ int ctl_arg_integer(const void *arg, void *dest, size_t dest_size);
     {sizeof(int), {{0, sizeof(int), ctl_arg_integer}, CTL_ARG_PARSER_END}};
 
 #define CTL_ARG_LONG_LONG                                                      \
-    {sizeof(long long),                                                        \
-     {{0, sizeof(long long), ctl_arg_integer}, CTL_ARG_PARSER_END}};
+    {                                                                          \
+        sizeof(long long), {                                                   \
+            {0, sizeof(long long), ctl_arg_integer}, CTL_ARG_PARSER_END        \
+        }                                                                      \
+    }
 
 int ctl_arg_string(const void *arg, void *dest, size_t dest_size);
 #define CTL_ARG_STRING(len)                                                    \
@@ -191,13 +201,13 @@ int ctl_query(struct ctl *ctl, void *ctx, enum ctl_query_source source,
 #define CTL_LEAF_RW(name)                                                      \
     {                                                                          \
         CTL_STR(name), CTL_NODE_LEAF,                                          \
-            {CTL_READ_HANDLER(name), CTL_WRITE_HANDLER(name), NULL},           \
+            {CTL_READ_HANDLER(name, ), CTL_WRITE_HANDLER(name, ), NULL},       \
             &CTL_ARG(name), NULL                                               \
     }
 
 #define CTL_REGISTER_MODULE(_ctl, name)                                        \
     ctl_register_module_node((_ctl), CTL_STR(name),                            \
-                             (struct ctl_node *)CTL_NODE(name))
+                             (struct ctl_node *)CTL_NODE(name, ))
 
 #ifdef __cplusplus
 }

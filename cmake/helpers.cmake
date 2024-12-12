@@ -233,7 +233,8 @@ function(add_umf_target_compile_options name)
                     -Wall
                     -Wextra
                     -Wformat-security
-                    -Wno-cast-qual
+                    -Wno-cast-qual # TODO: remove this when const qualifier drop
+                                   # will be solved in CTL
                     $<$<CXX_COMPILER_ID:GNU>:-fdiagnostics-color=auto>)
         if(CMAKE_BUILD_TYPE STREQUAL "Release")
             target_compile_definitions(${name} PRIVATE -D_FORTIFY_SOURCE=2)

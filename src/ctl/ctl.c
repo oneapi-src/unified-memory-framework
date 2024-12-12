@@ -1,13 +1,38 @@
+/*
+ *
+ * Copyright (C) 2016-2024 Intel Corporation
+ *
+ * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+ *
+ */
+
+// This file was originally under following license:
 // SPDX-License-Identifier: BSD-3-Clause
-/* Copyright 2016-2020, Intel Corporation */
+/* Copyright 2016-2024, Intel Corporation */
 
 /*
  * ctl.c -- implementation of the interface for examination and modification of
- *	the library's internal state
+ *    the library's internal state
  */
+
 #include "ctl.h"
-#include "alloc.h"
-#include "os.h"
+
+#include <ctype.h>
+#include <limits.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "base_alloc/base_alloc_global.h"
+#include "utils/utils_common.h"
+#include "utlist.h"
+
+#ifdef _WIN32
+#define strtok_r strtok_s
+#else
+#include <stdio.h>
+#endif
 
 #define CTL_MAX_ENTRIES 100
 
@@ -19,7 +44,7 @@
 #define CTL_VALUE_ARG_SEPARATOR ","
 
 static int ctl_global_first_free = 0;
-static struct ctl_node CTL_NODE(global)[CTL_MAX_ENTRIES];
+static struct ctl_node CTL_NODE(global, )[CTL_MAX_ENTRIES];
 
 /*
  * This is the top level node of the ctl tree structure. Each node can contain
@@ -36,18 +61,33 @@ struct ctl {
     int first_free;
 };
 
+void *Zalloc(size_t sz) {
+    void *ptr = umf_ba_global_alloc(sz);
+    if (ptr) {
+        memset(ptr, 0, sz);
+    }
+    return ptr;
+}
+
+char *Strdup(const char *s) {
+    size_t len = strlen(s) + 1;
+    char *p = umf_ba_global_alloc(len);
+    if (p) {
+        memcpy(p, s, len);
+    }
+    return p;
+}
+
 /*
  * ctl_find_node -- (internal) searches for a matching entry point in the
- *	provided nodes
+ *    provided nodes
  *
  * The caller is responsible for freeing all of the allocated indexes,
  * regardless of the return value.
  */
 static const struct ctl_node *ctl_find_node(const struct ctl_node *nodes,
                                             const char *name,
-                                            struct ctl_indexes *indexes) {
-    LOG(3, "nodes %p name %s indexes %p", nodes, name, indexes);
-
+                                            struct ctl_index_utlist *indexes) {
     const struct ctl_node *n = NULL;
     char *sptr = NULL;
     char *parse_str = Strdup(name);
@@ -58,27 +98,27 @@ static const struct ctl_node *ctl_find_node(const struct ctl_node *nodes,
     char *node_name = strtok_r(parse_str, CTL_QUERY_NODE_SEPARATOR, &sptr);
 
     /*
-	 * Go through the string and separate tokens that correspond to nodes
-	 * in the main ctl tree.
-	 */
+     * Go through the string and separate tokens that correspond to nodes
+     * in the main ctl tree.
+     */
     while (node_name != NULL) {
         char *endptr;
         /*
-		 * Ignore errno from strtol: FreeBSD returns EINVAL if no
-		 * conversion is performed. Linux does not, but endptr
-		 * check is valid in both cases.
-		 */
+         * Ignore errno from strtol: FreeBSD returns EINVAL if no
+         * conversion is performed. Linux does not, but endptr
+         * check is valid in both cases.
+         */
         int tmp_errno = errno;
         long index_value = strtol(node_name, &endptr, 0);
         errno = tmp_errno;
-        struct ctl_index *index_entry = NULL;
+        struct ctl_index_utlist *index_entry = NULL;
         if (endptr != node_name) { /* a valid index */
-            index_entry = Malloc(sizeof(*index_entry));
+            index_entry = umf_ba_global_alloc(sizeof(*index_entry));
             if (index_entry == NULL) {
                 goto error;
             }
             index_entry->value = index_value;
-            PMDK_SLIST_INSERT_HEAD(indexes, index_entry, entry);
+            LL_PREPEND(indexes, index_entry);
         }
 
         for (n = &nodes[0]; n->name != NULL; ++n) {
@@ -100,36 +140,38 @@ static const struct ctl_node *ctl_find_node(const struct ctl_node *nodes,
         node_name = strtok_r(NULL, CTL_QUERY_NODE_SEPARATOR, &sptr);
     }
 
-    Free(parse_str);
+    umf_ba_global_free(parse_str);
     return n;
 
 error:
-    Free(parse_str);
+    umf_ba_global_free(parse_str);
     return NULL;
 }
 
 /*
  * ctl_delete_indexes --
- *	(internal) removes and frees all entries on the index list
+ *    (internal) removes and frees all entries on the index list
  */
-static void ctl_delete_indexes(struct ctl_indexes *indexes) {
-    while (!PMDK_SLIST_EMPTY(indexes)) {
-        struct ctl_index *index = PMDK_SLIST_FIRST(indexes);
-        PMDK_SLIST_REMOVE_HEAD(indexes, entry);
-        Free(index);
+static void ctl_delete_indexes(struct ctl_index_utlist *indexes) {
+    if (!indexes) {
+        return;
+    }
+    struct ctl_index_utlist *elem, *tmp;
+    LL_FOREACH_SAFE(indexes, elem, tmp) {
+        LL_DELETE(indexes, elem);
+        if (elem) {
+            umf_ba_global_free(elem);
+        }
     }
 }
 
 /*
  * ctl_parse_args -- (internal) parses a string argument based on the node
- *	structure
+ *    structure
  */
 static void *ctl_parse_args(const struct ctl_argument *arg_proto, char *arg) {
-    ASSERTne(arg, NULL);
-
-    char *dest_arg = Malloc(arg_proto->dest_size);
+    char *dest_arg = umf_ba_global_alloc(arg_proto->dest_size);
     if (dest_arg == NULL) {
-        ERR("!Malloc");
         return NULL;
     }
 
@@ -137,9 +179,7 @@ static void *ctl_parse_args(const struct ctl_argument *arg_proto, char *arg) {
     char *arg_sep = strtok_r(arg, CTL_VALUE_ARG_SEPARATOR, &sptr);
     for (const struct ctl_argument_parser *p = arg_proto->parsers;
          p->parser != NULL; ++p) {
-        ASSERT(p->dest_offset + p->dest_size <= arg_proto->dest_size);
         if (arg_sep == NULL) {
-            ERR("!strtok_r");
             goto error_parsing;
         }
 
@@ -153,13 +193,13 @@ static void *ctl_parse_args(const struct ctl_argument *arg_proto, char *arg) {
     return dest_arg;
 
 error_parsing:
-    Free(dest_arg);
+    umf_ba_global_free(dest_arg);
     return NULL;
 }
 
 /*
  * ctl_query_get_real_args -- (internal) returns a pointer with actual argument
- *	structure as required by the node callback
+ *    structure as required by the node callback
  */
 static void *ctl_query_get_real_args(const struct ctl_node *n, void *write_arg,
                                      enum ctl_query_source source) {
@@ -172,7 +212,6 @@ static void *ctl_query_get_real_args(const struct ctl_node *n, void *write_arg,
         real_arg = write_arg;
         break;
     default:
-        ASSERT(0);
         break;
     }
 
@@ -181,19 +220,21 @@ static void *ctl_query_get_real_args(const struct ctl_node *n, void *write_arg,
 
 /*
  * ctl_query_cleanup_real_args -- (internal) cleanups relevant argument
- *	structures allocated as a result of the get_real_args call
+ *    structures allocated as a result of the get_real_args call
  */
 static void ctl_query_cleanup_real_args(const struct ctl_node *n,
                                         void *real_arg,
                                         enum ctl_query_source source) {
+    /* suppress unused-parameter errors */
+    (void)n;
+
     switch (source) {
     case CTL_QUERY_CONFIG_INPUT:
-        Free(real_arg);
+        umf_ba_global_free(real_arg);
         break;
     case CTL_QUERY_PROGRAMMATIC:
         break;
     default:
-        ASSERT(0);
         break;
     }
 }
@@ -203,9 +244,8 @@ static void ctl_query_cleanup_real_args(const struct ctl_node *n,
  */
 static int ctl_exec_query_read(void *ctx, const struct ctl_node *n,
                                enum ctl_query_source source, void *arg,
-                               struct ctl_indexes *indexes) {
+                               struct ctl_index_utlist *indexes) {
     if (arg == NULL) {
-        ERR("read queries require non-NULL argument");
         errno = EINVAL;
         return -1;
     }
@@ -218,16 +258,14 @@ static int ctl_exec_query_read(void *ctx, const struct ctl_node *n,
  */
 static int ctl_exec_query_write(void *ctx, const struct ctl_node *n,
                                 enum ctl_query_source source, void *arg,
-                                struct ctl_indexes *indexes) {
+                                struct ctl_index_utlist *indexes) {
     if (arg == NULL) {
-        ERR("write queries require non-NULL argument");
         errno = EINVAL;
         return -1;
     }
 
     void *real_arg = ctl_query_get_real_args(n, arg, source);
     if (real_arg == NULL) {
-        LOG(1, "Invalid arguments");
         return -1;
     }
 
@@ -242,13 +280,13 @@ static int ctl_exec_query_write(void *ctx, const struct ctl_node *n,
  */
 static int ctl_exec_query_runnable(void *ctx, const struct ctl_node *n,
                                    enum ctl_query_source source, void *arg,
-                                   struct ctl_indexes *indexes) {
+                                   struct ctl_index_utlist *indexes) {
     return n->cb[CTL_QUERY_RUNNABLE](ctx, source, arg, indexes);
 }
 
 static int (*ctl_exec_query[MAX_CTL_QUERY_TYPE])(
     void *ctx, const struct ctl_node *n, enum ctl_query_source source,
-    void *arg, struct ctl_indexes *indexes) = {
+    void *arg, struct ctl_index_utlist *indexes) = {
     ctl_exec_query_read,
     ctl_exec_query_write,
     ctl_exec_query_runnable,
@@ -256,46 +294,45 @@ static int (*ctl_exec_query[MAX_CTL_QUERY_TYPE])(
 
 /*
  * ctl_query -- (internal) parses the name and calls the appropriate methods
- *	from the ctl tree
+ *    from the ctl tree
  */
 int ctl_query(struct ctl *ctl, void *ctx, enum ctl_query_source source,
               const char *name, enum ctl_query_type type, void *arg) {
-    LOG(3, "ctl %p ctx %p source %d name %s type %d arg %p", ctl, ctx, source,
-        name, type, arg);
-
     if (name == NULL) {
-        ERR("invalid query");
         errno = EINVAL;
         return -1;
     }
 
     /*
-	 * All of the indexes are put on this list so that the handlers can
-	 * easily retrieve the index values. The list is cleared once the ctl
-	 * query has been handled.
-	 */
-    struct ctl_indexes indexes;
-    PMDK_SLIST_INIT(&indexes);
+     * All of the indexes are put on this list so that the handlers can
+     * easily retrieve the index values. The list is cleared once the ctl
+     * query has been handled.
+     */
+    struct ctl_index_utlist *indexes = NULL;
+    indexes = Zalloc(sizeof(*indexes));
+    if (!indexes) {
+        return -1;
+    }
 
     int ret = -1;
 
-    const struct ctl_node *n = ctl_find_node(CTL_NODE(global), name, &indexes);
+    const struct ctl_node *n = ctl_find_node(CTL_NODE(global, ), name, indexes);
 
     if (n == NULL && ctl) {
-        ctl_delete_indexes(&indexes);
-        n = ctl_find_node(ctl->root, name, &indexes);
+        ctl_delete_indexes(indexes);
+        indexes = NULL;
+        n = ctl_find_node(ctl->root, name, indexes);
     }
 
     if (n == NULL || n->type != CTL_NODE_LEAF || n->cb[type] == NULL) {
-        ERR("invalid query entry point %s", name);
         errno = EINVAL;
         goto out;
     }
 
-    ret = ctl_exec_query[type](ctx, n, source, arg, &indexes);
+    ret = ctl_exec_query[type](ctx, n, source, arg, indexes);
 
 out:
-    ctl_delete_indexes(&indexes);
+    ctl_delete_indexes(indexes);
 
     return ret;
 }
@@ -306,7 +343,7 @@ out:
 void ctl_register_module_node(struct ctl *c, const char *name,
                               struct ctl_node *n) {
     struct ctl_node *nnode = c == NULL
-                                 ? &CTL_NODE(global)[ctl_global_first_free++]
+                                 ? &CTL_NODE(global, )[ctl_global_first_free++]
                                  : &c->root[c->first_free++];
 
     nnode->children = n;
@@ -316,14 +353,14 @@ void ctl_register_module_node(struct ctl *c, const char *name,
 
 /*
  * ctl_parse_query -- (internal) splits an entire query string
- *	into name and value
+ *    into name and value
  */
 static int ctl_parse_query(char *qbuf, char **name, char **value) {
     if (qbuf == NULL) {
         return -1;
     }
 
-    char *sptr;
+    char *sptr = NULL;
     *name = strtok_r(qbuf, CTL_NAME_VALUE_SEPARATOR, &sptr);
     if (*name == NULL) {
         return -1;
@@ -351,14 +388,11 @@ static int ctl_load_config(struct ctl *ctl, void *ctx, char *buf) {
     char *sptr = NULL; /* for internal use of strtok */
     char *name;
     char *value;
-
-    ASSERTne(buf, NULL);
-
     char *qbuf = strtok_r(buf, CTL_STRING_QUERY_SEPARATOR, &sptr);
+
     while (qbuf != NULL) {
         r = ctl_parse_query(qbuf, &name, &value);
         if (r != 0) {
-            ERR("failed to parse query %s", qbuf);
             return -1;
         }
 
@@ -380,17 +414,14 @@ static int ctl_load_config(struct ctl *ctl, void *ctx, char *buf) {
  */
 int ctl_load_config_from_string(struct ctl *ctl, void *ctx,
                                 const char *cfg_string) {
-    LOG(3, "ctl %p ctx %p cfg_string \"%s\"", ctl, ctx, cfg_string);
-
     char *buf = Strdup(cfg_string);
     if (buf == NULL) {
-        ERR("!Strdup");
         return -1;
     }
 
     int ret = ctl_load_config(ctl, ctx, buf);
 
-    Free(buf);
+    umf_ba_global_free(buf);
     return ret;
 }
 
@@ -400,13 +431,14 @@ int ctl_load_config_from_string(struct ctl *ctl, void *ctx,
  * This function opens up the config file, allocates a buffer of size equal to
  * the size of the file, reads its content and sanitizes it for ctl_load_config.
  */
+#ifndef _WIN32 // TODO: implement for Windows
 int ctl_load_config_from_file(struct ctl *ctl, void *ctx,
                               const char *cfg_file) {
-    LOG(3, "ctl %p ctx %p cfg_file \"%s\"", ctl, ctx, cfg_file);
-
     int ret = -1;
+    long fsize = 0;
+    char *buf = NULL;
 
-    FILE *fp = os_fopen(cfg_file, "r");
+    FILE *fp = fopen(cfg_file, "r");
     if (fp == NULL) {
         return ret;
     }
@@ -416,13 +448,12 @@ int ctl_load_config_from_file(struct ctl *ctl, void *ctx,
         goto error_file_parse;
     }
 
-    long fsize = ftell(fp);
+    fsize = ftell(fp);
     if (fsize == -1) {
         goto error_file_parse;
     }
 
     if (fsize > MAX_CONFIG_FILE_LEN) {
-        ERR("Config file too large");
         goto error_file_parse;
     }
 
@@ -430,34 +461,35 @@ int ctl_load_config_from_file(struct ctl *ctl, void *ctx,
         goto error_file_parse;
     }
 
-    char *buf = Zalloc((size_t)fsize + 1); /* +1 for NULL-termination */
+    buf = Zalloc((size_t)fsize + 1); /* +1 for NULL-termination */
     if (buf == NULL) {
-        ERR("!Zalloc");
         goto error_file_parse;
     }
 
-    size_t bufpos = 0;
-
-    int c;
-    int is_comment_section = 0;
-    while ((c = fgetc(fp)) != EOF) {
-        if (c == '#') {
-            is_comment_section = 1;
-        } else if (c == '\n') {
-            is_comment_section = 0;
-        } else if (!is_comment_section && !isspace(c)) {
-            buf[bufpos++] = (char)c;
+    {
+        size_t bufpos = 0;
+        int c;
+        int is_comment_section = 0;
+        while ((c = fgetc(fp)) != EOF) {
+            if (c == '#') {
+                is_comment_section = 1;
+            } else if (c == '\n') {
+                is_comment_section = 0;
+            } else if (!is_comment_section && !isspace(c)) {
+                buf[bufpos++] = (char)c;
+            }
         }
     }
 
     ret = ctl_load_config(ctl, ctx, buf);
 
-    Free(buf);
+    umf_ba_global_free(buf);
 
 error_file_parse:
     (void)fclose(fp);
     return ret;
 }
+#endif
 
 /*
  * ctl_new -- allocates and initializes ctl data structures
@@ -465,7 +497,6 @@ error_file_parse:
 struct ctl *ctl_new(void) {
     struct ctl *c = Zalloc(sizeof(struct ctl));
     if (c == NULL) {
-        ERR("!Zalloc");
         return NULL;
     }
 
@@ -476,7 +507,7 @@ struct ctl *ctl_new(void) {
 /*
  * ctl_delete -- deletes ctl
  */
-void ctl_delete(struct ctl *c) { Free(c); }
+void ctl_delete(struct ctl *c) { umf_ba_global_free(c); }
 
 /*
  * ctl_parse_ll -- (internal) parses and returns a long long signed integer
@@ -496,11 +527,14 @@ static long long ctl_parse_ll(const char *str) {
 
 /*
  * ctl_arg_boolean -- checks whether the provided argument contains
- *	either a 1 or y or Y.
+ *    either a 1 or y or Y.
  */
 int ctl_arg_boolean(const void *arg, void *dest, size_t dest_size) {
+    /* suppress unused-parameter errors */
+    (void)dest_size;
+
     int *intp = dest;
-    char in = ((char *)arg)[0];
+    char in = ((const char *)arg)[0];
 
     if (tolower(in) == 'y' || in == '1') {
         *intp = 1;
@@ -539,7 +573,6 @@ int ctl_arg_integer(const void *arg, void *dest, size_t dest_size) {
         *(uint8_t *)dest = (uint8_t)val;
         break;
     default:
-        ERR("invalid destination size %zu", dest_size);
         errno = EINVAL;
         return -1;
     }
@@ -549,7 +582,7 @@ int ctl_arg_integer(const void *arg, void *dest, size_t dest_size) {
 
 /*
  * ctl_arg_string -- verifies length and copies a string argument into a zeroed
- *	buffer
+ *    buffer
  */
 int ctl_arg_string(const void *arg, void *dest, size_t dest_size) {
     /* check if the incoming string is longer or equal to dest_size */
