@@ -1,0 +1,7 @@
+#!/bin/sh -e
+# Copyright (C) 2024 Intel Corporation
+# Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
+# You can add an exception file
+grep -v -E -e 'src\topology.c'
