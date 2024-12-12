@@ -55,9 +55,8 @@ target_link_directories(
     ${LIBHWLOC_LIBRARY_DIRS}
     ${CUDA_LIBRARY_DIRS})
 target_link_options(${EXAMPLE_NAME} PRIVATE "-Wl,--start-group")
-target_link_libraries(
-    ${EXAMPLE_NAME} PRIVATE stdc++ libdisjoint_pool.a ${CUDA_LIBRARIES}
-                            ${LIBUMF_LIBRARIES})
+target_link_libraries(${EXAMPLE_NAME} PRIVATE stdc++ ${CUDA_LIBRARIES}
+                                              ${LIBUMF_LIBRARIES})
 
 # an optional part - adds a test of this example
 add_test(

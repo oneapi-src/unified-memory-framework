@@ -7,14 +7,12 @@
  */
 
 #include <benchmark/benchmark.h>
+#include <umf/pools/pool_disjoint.h>
 #include <umf/pools/pool_proxy.h>
-#ifdef UMF_POOL_SCALABLE_ENABLED
-#include <umf/pools/pool_scalable.h>
-#endif
 #include <umf/providers/provider_os_memory.h>
 
-#ifdef UMF_POOL_DISJOINT_ENABLED
-#include <umf/pools/pool_disjoint.h>
+#ifdef UMF_POOL_SCALABLE_ENABLED
+#include <umf/pools/pool_scalable.h>
 #endif
 
 #ifdef UMF_POOL_JEMALLOC_ENABLED
@@ -73,7 +71,6 @@ struct proxy_pool : public pool_interface<Provider> {
     static std::string name() { return "proxy_pool<" + Provider::name() + ">"; }
 };
 
-#ifdef UMF_POOL_DISJOINT_ENABLED
 template <typename Provider>
 struct disjoint_pool : public pool_interface<Provider> {
     umf_memory_pool_ops_t *
@@ -127,7 +124,6 @@ struct disjoint_pool : public pool_interface<Provider> {
         return "disjoint_pool<" + Provider::name() + ">";
     }
 };
-#endif
 
 #ifdef UMF_POOL_JEMALLOC_ENABLED
 template <typename Provider>
@@ -195,7 +191,6 @@ UMF_BENCHMARK_REGISTER_F(alloc_benchmark, proxy_pool)
     ->Threads(4)
     ->Threads(1);
 
-#ifdef UMF_POOL_DISJOINT_ENABLED
 UMF_BENCHMARK_TEMPLATE_DEFINE(alloc_benchmark, disjoint_pool_fix,
                               fixed_alloc_size,
                               pool_allocator<disjoint_pool<os_provider>>);
@@ -206,15 +201,13 @@ UMF_BENCHMARK_REGISTER_F(alloc_benchmark, disjoint_pool_fix)
     ->Threads(1);
 
 // TODO: debug why this crashes
-/*UMF_BENCHMARK_TEMPLATE_DEFINE(alloc_benchmark, disjoint_pool_uniform,
+UMF_BENCHMARK_TEMPLATE_DEFINE(alloc_benchmark, disjoint_pool_uniform,
                               uniform_alloc_size,
                               pool_allocator<disjoint_pool<os_provider>>);
 UMF_BENCHMARK_REGISTER_F(alloc_benchmark, disjoint_pool_uniform)
     ->Args({10000, 0, 8, 64 * 1024, 8})
-    //    ->Threads(4)
+    ->Threads(4)
     ->Threads(1);
-*/
-#endif
 
 #ifdef UMF_POOL_JEMALLOC_ENABLED
 UMF_BENCHMARK_TEMPLATE_DEFINE(alloc_benchmark, jemalloc_pool_fix,
@@ -289,7 +282,6 @@ UMF_BENCHMARK_REGISTER_F(multiple_malloc_free_benchmark, os_provider)
     ->Threads(4)
     ->Threads(1);
 
-#ifdef UMF_POOL_DISJOINT_ENABLED
 UMF_BENCHMARK_TEMPLATE_DEFINE(multiple_malloc_free_benchmark, disjoint_pool_fix,
                               fixed_alloc_size,
                               pool_allocator<disjoint_pool<os_provider>>);
@@ -299,15 +291,13 @@ UMF_BENCHMARK_REGISTER_F(multiple_malloc_free_benchmark, disjoint_pool_fix)
     ->Threads(1);
 
 // TODO: debug why this crashes
-/*UMF_BENCHMARK_TEMPLATE_DEFINE(multiple_malloc_free_benchmark,
+UMF_BENCHMARK_TEMPLATE_DEFINE(multiple_malloc_free_benchmark,
                               disjoint_pool_uniform, uniform_alloc_size,
                               pool_allocator<disjoint_pool<os_provider>>);
 UMF_BENCHMARK_REGISTER_F(multiple_malloc_free_benchmark, disjoint_pool_uniform)
-    ->Args({10000, 0, 8, 64 * 1024, 8})
+    ->Args({10000, 8, 64 * 1024, 8})
     ->Threads(4)
     ->Threads(1);
-*/
-#endif
 
 #ifdef UMF_POOL_JEMALLOC_ENABLED
 UMF_BENCHMARK_TEMPLATE_DEFINE(multiple_malloc_free_benchmark, jemalloc_pool_fix,

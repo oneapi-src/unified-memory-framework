@@ -4,9 +4,11 @@
 
 #include <memory>
 
+#include <umf/pools/pool_disjoint.h>
+
 #include "pool.hpp"
+#include "pool/pool_disjoint_internal.h"
 #include "poolFixtures.hpp"
-#include "pool_disjoint.h"
 #include "provider.hpp"
 #include "provider_null.h"
 #include "provider_trace.h"
@@ -57,18 +59,142 @@ disjoint_params_unique_handle_t poolConfig() {
 using umf_test::test;
 using namespace umf_test;
 
-TEST_F(test, freeErrorPropagation) {
+TEST_F(test, internals) {
     static umf_result_t expectedResult = UMF_RESULT_SUCCESS;
     struct memory_provider : public umf_test::provider_base_t {
-        umf_result_t alloc(size_t size, size_t, void **ptr) noexcept {
-            *ptr = malloc(size);
+        umf_result_t alloc(size_t size, size_t alignment, void **ptr) noexcept {
+            // aligned alloc expects alignment to be > 0
+            if (alignment == 0) {
+                alignment = sizeof(void *);
+            }
+#ifdef _WIN32
+            *ptr = _aligned_malloc(size, alignment);
+#else
+            *ptr = ::aligned_alloc(alignment, size);
+#endif
             return UMF_RESULT_SUCCESS;
         }
 
         umf_result_t free(void *ptr, [[maybe_unused]] size_t size) noexcept {
             // do the actual free only when we expect the success
             if (expectedResult == UMF_RESULT_SUCCESS) {
+#ifdef _WIN32
+                _aligned_free(ptr);
+#else
                 ::free(ptr);
+#endif
+            }
+            return expectedResult;
+        }
+
+        umf_result_t
+        get_min_page_size([[maybe_unused]] void *ptr,
+                          [[maybe_unused]] size_t *pageSize) noexcept {
+            *pageSize = 1024;
+            return UMF_RESULT_SUCCESS;
+        }
+    };
+    umf_memory_provider_ops_t provider_ops =
+        umf::providerMakeCOps<memory_provider, void>();
+
+    auto providerUnique =
+        wrapProviderUnique(createProviderChecked(&provider_ops, nullptr));
+
+    umf_memory_provider_handle_t provider_handle;
+    provider_handle = providerUnique.get();
+
+    umf_disjoint_pool_params_t params = *poolConfig();
+    // set to maximum tracing
+    params.pool_trace = 3;
+    params.max_poolable_size = 1024 * 1024;
+    const char *pool_name = "test";
+    params.name = (char *)pool_name;
+
+    // in "internals" test we use ops interface to directly manipulate the pool
+    // structure
+    umf_memory_pool_ops_t *ops = umfDisjointPoolOps();
+    EXPECT_NE(ops, nullptr);
+
+    disjoint_pool_t *pool;
+    umf_result_t res =
+        ops->initialize(provider_handle, &params, (void **)&pool);
+    EXPECT_EQ(res, UMF_RESULT_SUCCESS);
+    EXPECT_NE(pool, nullptr);
+    EXPECT_EQ(pool->provider_min_page_size, 1024);
+
+    // test small allocations
+    size_t size = 8;
+    void *ptr = ops->malloc(pool, size);
+    EXPECT_NE(ptr, nullptr);
+
+    // get bucket - because of small size this should be the first bucket in
+    // the pool
+    bucket_t *bucket = pool->buckets[0];
+    EXPECT_NE(bucket, nullptr);
+
+    // check bucket stats
+    EXPECT_EQ(bucket->alloc_count, 1);
+
+    // first allocation will always use external memory (newly added to the
+    // pool) and this is counted as allocation from the outside of the pool
+    EXPECT_EQ(bucket->alloc_pool_count, 0);
+    EXPECT_EQ(bucket->curr_slabs_in_use, 1);
+
+    // check slab - there should be only single slab allocated
+    EXPECT_NE(bucket->available_slabs, nullptr);
+    EXPECT_EQ(bucket->available_slabs_num, 1);
+    EXPECT_EQ(bucket->available_slabs->next, nullptr);
+    slab_t *slab = bucket->available_slabs->val;
+
+    // check slab stats
+    EXPECT_GE(slab->slab_size, params.slab_min_size);
+    EXPECT_GE(slab->num_chunks, slab->slab_size / bucket->size);
+
+    // check allocation in slab
+    EXPECT_EQ(slab->chunks[0], true);
+    EXPECT_EQ(slab->chunks[1], false);
+    EXPECT_EQ(slab->first_free_chunk_idx, 1);
+
+    // TODO:
+    // * multiple alloc + free from single bucket
+    // * alignments
+    // * full slab alloc
+    // * slab overflow
+    // * chunked slabs
+    // * multiple alloc + free from different buckets
+    // * alloc something outside pool (> MaxPoolableSize)
+    // * test capacity
+    // * check minBucketSize
+    // * test large objects
+
+    // cleanup
+    ops->finalize(pool);
+}
+
+TEST_F(test, freeErrorPropagation) {
+    static umf_result_t expectedResult = UMF_RESULT_SUCCESS;
+    struct memory_provider : public umf_test::provider_base_t {
+        umf_result_t alloc(size_t size, size_t alignment, void **ptr) noexcept {
+            // aligned alloc expects alignment to be > 0
+            if (alignment == 0) {
+                alignment = sizeof(void *);
+            }
+#ifdef _WIN32
+            *ptr = _aligned_malloc(size, alignment);
+#else
+            *ptr = ::aligned_alloc(alignment, size);
+#endif
+            return UMF_RESULT_SUCCESS;
+        }
+
+        umf_result_t free(void *ptr, [[maybe_unused]] size_t size) noexcept {
+            // do the actual free only when we expect the success
+            if (expectedResult == UMF_RESULT_SUCCESS) {
+#ifdef _WIN32
+                _aligned_free(ptr);
+#else
+                ::free(ptr);
+#endif
             }
             return expectedResult;
         }
@@ -113,13 +239,25 @@ TEST_F(test, sharedLimits) {
     static size_t numFrees = 0;
 
     struct memory_provider : public umf_test::provider_base_t {
-        umf_result_t alloc(size_t size, size_t, void **ptr) noexcept {
-            *ptr = malloc(size);
+        umf_result_t alloc(size_t size, size_t alignment, void **ptr) noexcept {
+            // aligned alloc expects alignment to be > 0
+            if (alignment == 0) {
+                alignment = sizeof(void *);
+            }
+#ifdef _WIN32
+            *ptr = _aligned_malloc(size, alignment);
+#else
+            *ptr = ::aligned_alloc(alignment, size);
+#endif
             numAllocs++;
             return UMF_RESULT_SUCCESS;
         }
         umf_result_t free(void *ptr, [[maybe_unused]] size_t size) noexcept {
+#ifdef _WIN32
+            _aligned_free(ptr);
+#else
             ::free(ptr);
+#endif
             numFrees++;
             return UMF_RESULT_SUCCESS;
         }
