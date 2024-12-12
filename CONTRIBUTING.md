@@ -2,15 +2,19 @@
 
 
 <!-- TODO: Add [Naming convention](#naming-convention) section -->
-- [Opening new issues](#opening-new-issues)
-- [Submitting Pull Requests](#submitting-pull-requests)
+- [Contributing to UMF (Unified Memory Framework)](#contributing-to-umf-unified-memory-framework)
+  - [Opening new issues](#opening-new-issues)
+  - [Submitting Pull Requests](#submitting-pull-requests)
     - [Building and testing](#building-and-testing)
     - [Code style](#code-style)
-    - [When my PR is merged?](#when-my-PR-is-merged)
+    - [When my PR is merged?](#when-my-pr-is-merged)
     - [Extending public API](#extending-public-api)
     - [License](#license)
     - [Adding new dependency](#adding-new-dependency)
-- [Code coverage](#code-coverage)
+  - [Code coverage](#code-coverage)
+  - [Debugging](#debugging)
+    - [Checking the UMF version and CMake variables (Linux only)](#checking-the-umf-version-and-cmake-variables-linux-only)
+      - [Requirements](#requirements)
 
 Below you'll find instructions on how to contribute to UMF, either with code changes
 or issues. All contributions are most welcome!
@@ -222,3 +226,19 @@ $ apt install lcov
 $ lcov --capture --directory . --output-file coverage.info
 $ genhtml -o html_report coverage.info
 ```
+
+## Debugging
+
+### Checking the UMF version and CMake variables (Linux only)
+
+Strings with the UMF version and useful CMake variables can be grepped in the following way:
+
+```bash
+$ strings libumf.so | grep "@(#)"
+@(#) Intel(R) UMF version: 0.11.0-dev.git66.g89e3831d
+@(#) Intel(R) UMF CMake variables: "CMAKE_BUILD_TYPE:Debug,...
+```
+
+#### Requirements
+
+- binutils package (Linux)

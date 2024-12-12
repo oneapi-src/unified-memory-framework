@@ -33,36 +33,47 @@ include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 find_package(PkgConfig)
 
+# Define a list to store the names of all options
+set(UMF_OPTIONS_LIST "")
+list(APPEND UMF_OPTIONS_LIST CMAKE_BUILD_TYPE)
+
+# Define a macro to wrap the option() command and track the options
+macro(umf_option)
+    list(APPEND UMF_OPTIONS_LIST ${ARGV0})
+    option(${ARGV})
+endmacro()
+
 # Build Options
-option(UMF_BUILD_SHARED_LIBRARY "Build UMF as shared library" OFF)
-option(UMF_BUILD_LEVEL_ZERO_PROVIDER "Build Level Zero memory provider" ON)
-option(UMF_BUILD_CUDA_PROVIDER "Build CUDA memory provider" ON)
-option(UMF_BUILD_LIBUMF_POOL_DISJOINT
-       "Build the libumf_pool_disjoint static library" OFF)
-option(UMF_BUILD_LIBUMF_POOL_JEMALLOC
-       "Build the libumf_pool_jemalloc static library" OFF)
-option(UMF_BUILD_TESTS "Build UMF tests" ON)
-option(UMF_BUILD_GPU_TESTS "Build UMF GPU tests" OFF)
-option(UMF_BUILD_BENCHMARKS "Build UMF benchmarks" OFF)
-option(UMF_BUILD_BENCHMARKS_MT "Build UMF multithreaded benchmarks" OFF)
-option(UMF_BUILD_EXAMPLES "Build UMF examples" ON)
-option(UMF_BUILD_FUZZTESTS "Build UMF fuzz tests" OFF)
-option(UMF_BUILD_GPU_EXAMPLES "Build UMF GPU examples" OFF)
-option(UMF_DEVELOPER_MODE "Enable additional developer checks" OFF)
-option(
+umf_option(UMF_BUILD_SHARED_LIBRARY "Build UMF as shared library" OFF)
+umf_option(UMF_BUILD_LEVEL_ZERO_PROVIDER "Build Level Zero memory provider" ON)
+umf_option(UMF_BUILD_CUDA_PROVIDER "Build CUDA memory provider" ON)
+umf_option(UMF_BUILD_LIBUMF_POOL_DISJOINT
+           "Build the libumf_pool_disjoint static library" OFF)
+umf_option(UMF_BUILD_LIBUMF_POOL_JEMALLOC
+           "Build the libumf_pool_jemalloc static library" OFF)
+umf_option(UMF_BUILD_TESTS "Build UMF tests" ON)
+umf_option(UMF_BUILD_GPU_TESTS "Build UMF GPU tests" OFF)
+umf_option(UMF_BUILD_BENCHMARKS "Build UMF benchmarks" OFF)
+umf_option(UMF_BUILD_BENCHMARKS_MT "Build UMF multithreaded benchmarks" OFF)
+umf_option(UMF_BUILD_EXAMPLES "Build UMF examples" ON)
+umf_option(UMF_BUILD_FUZZTESTS "Build UMF fuzz tests" OFF)
+umf_option(UMF_BUILD_GPU_EXAMPLES "Build UMF GPU examples" OFF)
+umf_option(UMF_DEVELOPER_MODE "Enable additional developer checks" OFF)
+umf_option(
     UMF_DISABLE_HWLOC
     "Disable hwloc and UMF features requiring it (OS provider, memtargets, topology discovery)"
     OFF)
-option(
+umf_option(
     UMF_LINK_HWLOC_STATICALLY
     "Link UMF with HWLOC library statically (supported for Linux, MacOS and Release build on Windows)"
     OFF)
-option(UMF_FORMAT_CODE_STYLE
-       "Add clang, cmake, and black -format-check and -format-apply targets"
-       OFF)
+umf_option(
+    UMF_FORMAT_CODE_STYLE
+    "Add clang, cmake, and black -format-check and -format-apply targets" OFF)
 set(UMF_HWLOC_NAME
     "hwloc"
     CACHE STRING "Custom name for hwloc library w/o extension")
+list(APPEND UMF_OPTIONS_LIST UMF_HWLOC_NAME)
 set(UMF_INSTALL_RPATH
     ""
     CACHE
@@ -71,13 +82,13 @@ set(UMF_INSTALL_RPATH
 )
 
 # Only a part of skips is treated as a failure now. TODO: extend to all tests
-option(UMF_TESTS_FAIL_ON_SKIP "Treat skips in tests as fail" OFF)
-option(UMF_USE_ASAN "Enable AddressSanitizer checks" OFF)
-option(UMF_USE_UBSAN "Enable UndefinedBehaviorSanitizer checks" OFF)
-option(UMF_USE_TSAN "Enable ThreadSanitizer checks" OFF)
-option(UMF_USE_MSAN "Enable MemorySanitizer checks" OFF)
-option(UMF_USE_VALGRIND "Enable Valgrind instrumentation" OFF)
-option(UMF_USE_COVERAGE "Build with coverage enabled (Linux only)" OFF)
+umf_option(UMF_TESTS_FAIL_ON_SKIP "Treat skips in tests as fail" OFF)
+umf_option(UMF_USE_ASAN "Enable AddressSanitizer checks" OFF)
+umf_option(UMF_USE_UBSAN "Enable UndefinedBehaviorSanitizer checks" OFF)
+umf_option(UMF_USE_TSAN "Enable ThreadSanitizer checks" OFF)
+umf_option(UMF_USE_MSAN "Enable MemorySanitizer checks" OFF)
+umf_option(UMF_USE_VALGRIND "Enable Valgrind instrumentation" OFF)
+umf_option(UMF_USE_COVERAGE "Build with coverage enabled (Linux only)" OFF)
 
 # set UMF_PROXY_LIB_BASED_ON_POOL to one of: SCALABLE or JEMALLOC
 set(KNOWN_PROXY_LIB_POOLS SCALABLE JEMALLOC)
@@ -87,6 +98,7 @@ set(UMF_PROXY_LIB_BASED_ON_POOL
           "A UMF pool the proxy library is based on (SCALABLE or JEMALLOC)")
 set_property(CACHE UMF_PROXY_LIB_BASED_ON_POOL
              PROPERTY STRINGS ${KNOWN_PROXY_LIB_POOLS})
+list(APPEND UMF_OPTIONS_LIST UMF_PROXY_LIB_BASED_ON_POOL)
 
 if(UMF_BUILD_TESTS
    AND DEFINED ENV{CI}

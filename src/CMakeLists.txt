@@ -11,10 +11,24 @@ set(UMF_CUDA_INCLUDE_DIR
     ""
     CACHE PATH "Directory containing the CUDA headers")
 
+# Compose the UMF_ALL_CMAKE_VARIABLES variable containing CMake options that
+# will be saved in the constant string.
+list(SORT UMF_OPTIONS_LIST ORDER DESCENDING)
+foreach(_var ${UMF_OPTIONS_LIST})
+    # Preprocessor definitions containing '#' cannot be passed on to the
+    # compiler command line because many compilers do not support it.
+    if(NOT "${${_var}}" MATCHES "#")
+        set(UMF_ALL_CMAKE_VARIABLES
+            "${_var}:${${_var}},${UMF_ALL_CMAKE_VARIABLES}")
+    endif()
+endforeach()
+
 # Compile definitions for UMF library.
 #
 # TODO: Cleanup the compile definitions across all the CMake files
-set(UMF_COMMON_COMPILE_DEFINITIONS UMF_VERSION=${UMF_VERSION})
+set(UMF_COMMON_COMPILE_DEFINITIONS
+    UMF_VERSION=${UMF_VERSION}
+    UMF_ALL_CMAKE_VARIABLES="${UMF_ALL_CMAKE_VARIABLES}")
 
 add_subdirectory(utils)
 
