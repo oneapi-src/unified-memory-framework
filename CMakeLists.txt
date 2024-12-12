@@ -161,8 +161,13 @@ else()
         WORKING_DIRECTORY ${jemalloc_targ_SOURCE_DIR}
         OUTPUT ${jemalloc_targ_SOURCE_DIR}/Makefile
         DEPENDS ${jemalloc_targ_SOURCE_DIR}/configure)
+
+    if(NOT UMF_QEMU_BUILD)
+        set(MAKE_ARGUMENTS "-j$(nproc)")
+    endif()
+
     add_custom_command(
-        COMMAND make
+        COMMAND make ${MAKE_ARGUMENTS}
         WORKING_DIRECTORY ${jemalloc_targ_SOURCE_DIR}
         OUTPUT ${jemalloc_targ_SOURCE_DIR}/lib/libjemalloc.a
         DEPENDS ${jemalloc_targ_SOURCE_DIR}/Makefile)
