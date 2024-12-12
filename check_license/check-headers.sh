@@ -84,7 +84,7 @@ else
 	GIT_COMMAND="diff --name-only $MERGE_BASE $CURRENT_COMMIT"
 fi
 
-FILES=$($GIT $GIT_COMMAND | ./check_license/file-exceptions.sh | \
+FILES=$($GIT $GIT_COMMAND | \
 	grep    -E -e '*\.[chs]$' -e '*\.[ch]pp$' -e '*\.sh$' -e '*\.py$' \
 		   -e 'TEST*' -e 'Makefile*' -e 'CMakeLists.txt$' -e '*\.cmake$' \
 		   -e '*\.link$' -e '*\.map$' -e '*\.Dockerfile$' -e 'LICENSE$' \
