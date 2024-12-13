@@ -239,6 +239,25 @@ $ strings libumf.so | grep "@(#)"
 @(#) Intel(R) UMF CMake variables: "CMAKE_BUILD_TYPE:Debug,...
 ```
 
+or using the dedicated `scripts/get_umf_debug_info.sh` script with any user binary:
+
+```bash
+$ scripts/get_umf_debug_info.sh ./build/test/umf_test-base
+./build/test/umf_test-base is not linked with the UMF library.
+
+$ scripts/get_umf_debug_info.sh ./build/test/umf_test-ipc
+./build/test/umf_test-ipc is statically linked with the UMF library.
+Strings:
+@(#) Intel(R) UMF version: 0.10.0-git4.gbf701ee8
+@(#) Intel(R) UMF CMake variables: "CMAKE_BUILD_TYPE:Debug,UMF_BUILD_BENCHMARKS:OFF, ..."
+
+$ scripts/get_umf_debug_info.sh ./build/test/umf_test-c_api_disjoint_pool
+./build/test/umf_test-c_api_disjoint_pool is dynamically linked with the UMF library.
+Strings:
+@(#) Intel(R) UMF version: 0.10.0-git4.gbf701ee8
+@(#) Intel(R) UMF CMake variables: "CMAKE_BUILD_TYPE:Debug,UMF_BUILD_BENCHMARKS:OFF, ..."
+```
+
 #### Requirements
 
 - binutils package (Linux)
