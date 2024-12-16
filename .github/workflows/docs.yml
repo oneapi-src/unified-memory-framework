@@ -41,13 +41,15 @@ jobs:
       run: echo "$HOME/.local/bin" >> $GITHUB_PATH
 
     - name: Build the documentation
-      working-directory: scripts
-      run: python3 generate_docs.py
+      run: |
+        mkdir build
+        cd build
+        python3 ../docs/generate_docs.py
 
     - name: Upload artifact
       uses: actions/upload-pages-artifact@0252fc4ba7626f0298f0cf00902a25c6afc77fa8 # v3.0.0
       with:
-        path: docs/html
+        path: build/docs_build/generated/html
 
   deploy:
     name: Deploy docs to GitHub Pages
