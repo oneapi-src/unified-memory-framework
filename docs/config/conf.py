@@ -49,7 +49,9 @@ html_theme = "sphinx_book_theme"
 # -- Extension configuration -------------------------------------------------
 
 # -- Options for breathe extension -------------------------------------------
-breathe_projects = {project: "../../docs/xml"}
+# 'doxyxml' dir is generated with Doxygen; it's supposed to be in a directory
+# one above the config directory.
+breathe_projects = {project: "../doxyxml"}
 breathe_default_project = project
 breathe_show_include = False
 breathe_default_members = ("members", "undoc-members")
