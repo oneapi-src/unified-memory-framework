@@ -162,6 +162,7 @@ TEST_F(test, test_if_mapped_with_MAP_SYNC) {
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
     umfMemoryProviderDestroy(hProvider);
+    umfFileMemoryProviderParamsDestroy(params);
 
     // fail test if the "sf" flag was not found
     ASSERT_EQ(flag_found, true);
