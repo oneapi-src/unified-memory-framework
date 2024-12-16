@@ -674,16 +674,16 @@ TEST_P(testNumaSplit, checkModeSplit) {
     auto [required_numa_nodes, pages, in, out] = param;
     umf_result_t umf_result;
 
-    umf_os_memory_provider_params_handle_t os_memory_provider_params = nullptr;
-
-    umf_result = umfOsMemoryProviderParamsCreate(&os_memory_provider_params);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-
     std::vector<unsigned> numa_nodes = get_available_numa_nodes();
 
     if (numa_nodes.size() < required_numa_nodes) {
         GTEST_SKIP_("Not enough numa nodes");
     }
+
+    umf_os_memory_provider_params_handle_t os_memory_provider_params = nullptr;
+
+    umf_result = umfOsMemoryProviderParamsCreate(&os_memory_provider_params);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
     ASSERT_EQ(out.size(), pages)
         << "Wrong test input - out array size doesn't match page count";
