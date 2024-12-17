@@ -42,9 +42,8 @@ jobs:
 
     - name: Build the documentation
       run: |
-        mkdir build
-        cd build
-        python3 ../docs/generate_docs.py
+        cmake -B build -DUMF_TESTS_FAIL_ON_SKIP=ON
+        cmake --build build --target docs
 
     - name: Upload artifact
       uses: actions/upload-pages-artifact@0252fc4ba7626f0298f0cf00902a25c6afc77fa8 # v3.0.0
