@@ -12,6 +12,12 @@
         malloc;
         malloc_usable_size;
         realloc;
+    # handlers
+        umfSetProxyLibHandlerMallocPre;
+        umfSetProxyLibHandlerAlignedMallocPre;
+        umfSetProxyLibHandlerFreePre;
+        umfSetProxyLibHandlerMallocPost;
+        umfSetProxyLibHandlerAlignedMallocPost;
     local:
         *;
 };

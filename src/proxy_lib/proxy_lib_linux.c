@@ -7,7 +7,10 @@
  *
  */
 
-#include "proxy_lib.h"
+#include <umf/proxy_lib_handlers.h>
+
+void proxy_lib_create_common(void);
+void proxy_lib_destroy_common(void);
 
 // The priority 102 is used, because the constructor should be called as the second one
 // (just after the first constructor of the base allocator with priority 101)
