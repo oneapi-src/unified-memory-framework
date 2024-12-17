@@ -760,6 +760,17 @@ if(UMF_FORMAT_CODE_STYLE)
     endif()
 endif()
 
+find_package(Python3 3.8)
+if(Python3_FOUND)
+    message(STATUS "Adding 'docs' target for creating a documentation.")
+    add_custom_target(
+        docs
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMAND ${Python3_EXECUTABLE}
+                ${UMF_CMAKE_SOURCE_DIR}/docs/generate_docs.py
+        COMMENT "Generate HTML documentation using Doxygen")
+endif()
+
 # --------------------------------------------------------------------------- #
 # Configure make install/uninstall and packages
 # --------------------------------------------------------------------------- #
