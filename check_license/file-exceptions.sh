@@ -4,4 +4,4 @@
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 # You can add an exception file
-grep -v -E -e 'src\topology.c'
+grep -v -E -e 'src\topology.c' 

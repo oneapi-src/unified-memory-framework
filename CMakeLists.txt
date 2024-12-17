@@ -172,6 +172,9 @@ else()
         OUTPUT ${jemalloc_targ_BINARY_DIR}/lib/libjemalloc.a
         DEPENDS ${jemalloc_targ_SOURCE_DIR}/lib/libjemalloc.a)
 
+    add_custom_target(jemalloc_prod
+                      DEPENDS ${jemalloc_targ_BINARY_DIR}/lib/libjemalloc.a)
+
     add_custom_target(
         check-license
         COMMAND ${UMF_CMAKE_SOURCE_DIR}/check_license/check-headers.sh

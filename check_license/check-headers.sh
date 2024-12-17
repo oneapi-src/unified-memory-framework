@@ -8,7 +8,7 @@
 SELF=$0
 
 function usage() {
-	echo "Usage: $SELF <source_root_path> <license_tag> [-h|-v|-a]"
+	echo "Usage: $SELF <source_root_path> <license_tag> [-h|-v|-a|-d]"
 	echo "   -h, --help          this help message"
 	echo "   -v, --verbose       verbose mode"
 	echo "   -a, --all           check all files (only modified files are checked by default)"
