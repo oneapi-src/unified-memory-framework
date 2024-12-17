@@ -62,7 +62,8 @@ static umf_result_t file_init(void *params, void **provider) {
     // Open the file
     file_provider->fd = open(file_params->filename, O_RDWR | O_CREAT, 0666);
     if (file_provider->fd < 0) {
-        perror("Failed to open file");
+        perror("open()");
+        fprintf(stderr, "Failed to open the file: %s\n", file_params->filename);
         ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
         goto cleanup_malloc;
     }
