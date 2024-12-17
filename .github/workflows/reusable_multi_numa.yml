@@ -15,11 +15,11 @@ jobs:
   multi_numa:
     name: "${{matrix.os}}, ${{matrix.build_type}}, shared=${{matrix.shared_library}}"
     # run only on upstream; forks will not have the HW
-    if: github.repository == 'oneapi-src/unified-memory-framework'
+    #if: github.repository == 'oneapi-src/unified-memory-framework'
 
     strategy:
       matrix:
-        os: [ubuntu-22.04, rhel-9.1]
+        os: [ubuntu-22.04, rhel-9.1, sles15]
         build_type: [Debug, Release]
         shared_library: ['ON', 'OFF']
     runs-on:  ["DSS-MULTI-NUMA", "DSS-${{matrix.os}}"]
@@ -53,13 +53,20 @@ jobs:
         run: cmake --build ${{github.workspace}}/build -j $(nproc)
 
       - name: Run tests
-        if: matrix.os != 'rhel-9.1'
+        if: (matrix.os != 'rhel-9.1') && (matrix.os != 'sles15')
         working-directory: ${{github.workspace}}/build
         run: ctest --output-on-failure --test-dir test
 
         # On RHEL, hwloc version is just a little too low.
         # Skip some tests until we upgrade hwloc and update CMake to properly handle local hwloc installation.
         # TODO: fix issue #560
+      - name: Run tests (on SLES15)
+        if: matrix.os == 'sles15'
+        working-directory: ${{github.workspace}}/build
+        run: |
+          ctest --output-on-failure --test-dir test -E "umf-provider_os_memory_multiple_numa_nodes"
+          ./test/umf_test-provider_os_memory_multiple_numa_nodes \
+            --gtest_filter="-*checkModeLocal/*:*checkModePreferredEmptyNodeset/*:testNuma.checkModeInterleave"
       - name: Run tests (on RHEL)
         if: matrix.os == 'rhel-9.1'
         working-directory: ${{github.workspace}}/build
