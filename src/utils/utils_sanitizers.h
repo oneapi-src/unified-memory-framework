@@ -21,6 +21,11 @@
 #define __SANITIZE_ADDRESS__ 1
 #endif
 #endif
+#if __has_feature(undefined)
+#ifndef __SANITIZE_UNDEFINED__
+#define __SANITIZE_UNDEFINED__ 1
+#endif
+#endif
 #endif
 
 #if UMF_VG_ENABLED

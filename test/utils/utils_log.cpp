@@ -4,18 +4,20 @@
 
 #include "base.hpp"
 #include "test_helpers.h"
+#include "utils/utils_sanitizers.h"
 
 #define MOCK_FILE_PTR (FILE *)0xBADBEEF
 #define INVALID_ERRNO 42
 std::string expected_filename;
 int expect_fopen_count = 0;
 int fopen_count = 0;
+FILE *fopen_return = MOCK_FILE_PTR;
 
 FILE *mock_fopen(const char *filename, const char *mode) {
     fopen_count++;
     EXPECT_STREQ(filename, expected_filename.c_str());
     EXPECT_STREQ(mode, "a");
-    return MOCK_FILE_PTR;
+    return fopen_return;
 }
 
 const std::string MOCK_FN_NAME = "MOCK_FUNCTION_NAME";
@@ -110,11 +112,18 @@ const char *env_variable = "";
 #ifndef UMF_VERSION
 #define UMF_VERSION "test version"
 #endif
+// This trick to not work on windows
+#ifndef _WIN32
+#define abort()
+#endif
 #include "utils/utils_log.c"
 #undef utils_env_var
 #undef fopen
 #undef fputs
 #undef fflush
+#ifndef _WIN32
+#undef abort
+#endif
 }
 using umf_test::test;
 
@@ -139,6 +148,7 @@ void helper_checkConfig(utils_log_config_t *expected, utils_log_config_t *is) {
 TEST_F(test, parseEnv_errors) {
     expected_message = "";
     loggerConfig = {0, 0, LOG_ERROR, LOG_ERROR, NULL};
+    fopen_return = MOCK_FILE_PTR;
 
     expect_fput_count = 0;
     expected_stream = stderr;
@@ -164,6 +174,7 @@ TEST_F(test, parseEnv_errors) {
 TEST_F(test, parseEnv) {
     utils_log_config_t b = loggerConfig;
     expected_message = "";
+    fopen_return = MOCK_FILE_PTR;
 
     std::vector<std::pair<std::string, int>> logLevels = {
         {"level:debug", LOG_DEBUG},
@@ -250,6 +261,20 @@ TEST_F(test, parseEnv) {
         }
     }
 }
+TEST_F(test, fopen_fail) {
+    expected_stream = stderr;
+    expect_fopen_count = 1;
+    loggerConfig = {0, 0, LOG_ERROR, LOG_ERROR, NULL};
+    utils_log_config_t b = loggerConfig = {0, 0, LOG_ERROR, LOG_ERROR, NULL};
+
+    expected_filename = "filepath";
+    expected_message = "[ERROR UMF] utils_log_init: Cannot open output file "
+                       "filepath - logging disabled: \n";
+
+    fopen_return = NULL;
+    helper_log_init("output:file,filepath");
+    helper_checkConfig(&b, &loggerConfig);
+}
 
 template <typename... Args> void helper_test_log(Args... args) {
     fput_count = 0;
@@ -279,6 +304,7 @@ static std::string helper_log_str(int l) {
 
 TEST_F(test, log_levels) {
     expected_stream = stderr;
+    fopen_return = MOCK_FILE_PTR;
     for (int i = LOG_DEBUG; i <= LOG_ERROR; i++) {
         for (int j = LOG_DEBUG; j <= LOG_ERROR; j++) {
             loggerConfig = {0, 0, (utils_log_level_t)i, LOG_DEBUG, stderr};
@@ -302,6 +328,7 @@ TEST_F(test, log_outputs) {
     std::vector<FILE *> outs = {stdout, stderr, MOCK_FILE_PTR};
     expect_fput_count = 1;
     expect_fflush_count = 1;
+    fopen_return = MOCK_FILE_PTR;
     expected_message = "[DEBUG UMF] " + MOCK_FN_NAME + ": example log\n";
     for (auto o : outs) {
         loggerConfig = {0, 0, LOG_DEBUG, LOG_DEBUG, o};
@@ -313,6 +340,7 @@ TEST_F(test, log_outputs) {
 TEST_F(test, flush_levels) {
     expected_stream = stderr;
     expect_fput_count = 1;
+    fopen_return = MOCK_FILE_PTR;
     for (int i = LOG_DEBUG; i <= LOG_ERROR; i++) {
         for (int j = LOG_DEBUG; j <= LOG_ERROR; j++) {
             loggerConfig = {0, 0, LOG_DEBUG, (utils_log_level_t)i, stderr};
@@ -332,6 +360,7 @@ TEST_F(test, flush_levels) {
 TEST_F(test, long_log) {
     expect_fput_count = 1;
     expect_fflush_count = 1;
+    fopen_return = MOCK_FILE_PTR;
     loggerConfig = {0, 0, LOG_DEBUG, LOG_DEBUG, stderr};
     expected_message = "[DEBUG UMF] " + MOCK_FN_NAME + ": " +
                        std::string(8189 - MOCK_FN_NAME.size(), 'x') + "\n";
@@ -347,6 +376,7 @@ TEST_F(test, long_log) {
 TEST_F(test, timestamp_log) {
     expect_fput_count = 1;
     expect_fflush_count = 1;
+    fopen_return = MOCK_FILE_PTR;
     loggerConfig = {1, 0, LOG_DEBUG, LOG_DEBUG, stderr};
     // TODO: for now we do not check output message,
     // as it requires more sophisticated message validation (a.k.a regrex)
@@ -357,6 +387,7 @@ TEST_F(test, timestamp_log) {
 TEST_F(test, pid_log) {
     expect_fput_count = 1;
     expect_fflush_count = 1;
+    fopen_return = MOCK_FILE_PTR;
     loggerConfig = {0, 1, LOG_DEBUG, LOG_DEBUG, stderr};
     // TODO: for now we do not check output message,
     // as it requires more sophisticated message validation (a.k.a regrex)
@@ -369,6 +400,7 @@ TEST_F(test, log_fatal) {
     expected_stream = stderr;
     expect_fput_count = 1;
     expect_fflush_count = 1;
+    fopen_return = MOCK_FILE_PTR;
 
     expected_message = "[FATAL UMF] " + MOCK_FN_NAME + ": example log\n";
     strerror_ret_static = 0;
@@ -379,6 +411,7 @@ TEST_F(test, log_macros) {
     expected_stream = stderr;
     expect_fput_count = 1;
     expect_fflush_count = 1;
+    fopen_return = MOCK_FILE_PTR;
     loggerConfig = {0, 0, LOG_DEBUG, LOG_DEBUG, stderr};
 
     expected_message = "[DEBUG UMF] TestBody: example log\n";
@@ -428,6 +461,7 @@ template <typename... Args> void helper_test_plog(Args... args) {
 TEST_F(test, plog_basic) {
     loggerConfig = {0, 0, LOG_DEBUG, LOG_DEBUG, stderr};
     expected_stream = stderr;
+    fopen_return = MOCK_FILE_PTR;
     errno = 1;
     strerr = "test error";
     expect_fput_count = 1;
@@ -448,6 +482,7 @@ TEST_F(test, plog_invalid) {
     strerr = "test error";
     expect_fput_count = 1;
     expect_fflush_count = 1;
+    fopen_return = MOCK_FILE_PTR;
 
     expected_message =
         "[DEBUG UMF] " + MOCK_FN_NAME + ": example log: unknown error\n";
@@ -465,6 +500,7 @@ TEST_F(test, plog_long_message) {
     strerror_ret_static = 0;
     strerr = "test error";
     errno = 1;
+    fopen_return = MOCK_FILE_PTR;
 
     expected_message = "[DEBUG UMF] " + MOCK_FN_NAME + ": " +
                        std::string(8178 - MOCK_FN_NAME.length(), 'x') +
@@ -487,6 +523,7 @@ TEST_F(test, plog_long_error) {
     std::string tmp = std::string(2000, 'x');
     strerr = tmp.c_str();
     errno = 1;
+    fopen_return = MOCK_FILE_PTR;
 #ifdef WIN32
     /* On windows limit is shorter, and there is no truncated detection*/
     expected_message = "[DEBUG UMF] " + MOCK_FN_NAME +
@@ -508,6 +545,7 @@ TEST_F(test, log_pmacros) {
     loggerConfig = {0, 0, LOG_DEBUG, LOG_DEBUG, stderr};
     errno = 1;
     strerr = "test error";
+    fopen_return = MOCK_FILE_PTR;
 
     expected_message = "[DEBUG UMF] TestBody: example log: test error\n";
     fput_count = 0;
@@ -544,3 +582,24 @@ TEST_F(test, log_pmacros) {
     EXPECT_EQ(fput_count, expect_fput_count);
     EXPECT_EQ(fflush_count, expect_fflush_count);
 }
+
+// this test doesn't work on windows as we cannot mock abort on windows
+// also it is not supported if UndefinedBehaviorSanitizer is enabled
+#if !defined(_WIN32) && !defined(__SANITIZE_UNDEFINED__)
+TEST_F(test, invalid_log_level) {
+    fopen_return = MOCK_FILE_PTR;
+    loggerConfig = {0, 0, LOG_DEBUG, LOG_DEBUG, stderr};
+#ifndef NDEBUG
+    expect_fput_count = 2;
+    expect_fflush_count = 2;
+#else
+    expect_fput_count = 1;
+    expect_fflush_count = 1;
+#endif
+    // TODO: we do not check output message, as there will be two separate messages
+    // which is not supported by this simple test framework.
+    expected_message = "";
+    helper_test_log((utils_log_level_t)10, MOCK_FN_NAME.c_str(), "%s",
+                    "example log");
+}
+#endif
