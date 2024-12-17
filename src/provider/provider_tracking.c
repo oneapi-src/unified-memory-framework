@@ -709,7 +709,7 @@ static umf_result_t trackingOpenIpcHandle(void *provider, void *providerIpcData,
 
     void *mapped_ptr = NULL;
     utils_atomic_load_acquire(&(cache_entry->mapped_base_ptr), &mapped_ptr);
-    if (mapped_ptr == NULL) {
+    if (mapped_ptr == NULL) { // new cache entry
         utils_mutex_lock(&(cache_entry->mmap_lock));
         utils_atomic_load_acquire(&(cache_entry->mapped_base_ptr), &mapped_ptr);
         if (mapped_ptr == NULL) {
@@ -734,6 +734,10 @@ static umf_result_t trackingOpenIpcHandle(void *provider, void *providerIpcData,
 
 static umf_result_t trackingCloseIpcHandle(void *provider, void *ptr,
                                            size_t size) {
+#if 0
+    umf_tracking_memory_provider_t *p =
+        (umf_tracking_memory_provider_t *)provider;
+#else
     (void)provider;
     (void)ptr;
     (void)size;
@@ -746,6 +750,7 @@ static umf_result_t trackingCloseIpcHandle(void *provider, void *ptr,
     // we need to introduce a reference counting mechanism.
     // The trackingOpenIpcHandle will increment the refcount for the corresponding entry.
     // The trackingCloseIpcHandle will decrement the refcount for the corresponding cache entry.
+#endif
     return UMF_RESULT_SUCCESS;
 }
 
