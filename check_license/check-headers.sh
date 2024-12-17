@@ -148,17 +148,27 @@ s/.*Copyright (C) \([0-9]\+\).*/\1/' "$src_path")
 
 	COMMIT_FIRST=`echo $FIRST | cut -d"-" -f1`
 	COMMIT_LAST=` echo $LAST  | cut -d"-" -f1`
+
 	if [ "$COMMIT_FIRST" != "" -a "$COMMIT_LAST" != "" ]; then
 		if [[ -n "$COMMIT_FIRST" && -n "$COMMIT_LAST" ]]; then
+			FL=0
 			if [[ $HEADER_FIRST -lt $COMMIT_FIRST ]]; then
-				HEADER_FIRST=$COMMIT_FIRST
+				FL=1
 			fi
+
 			COMMIT_LAST=`date +%G`
-			if [[ $COMMIT_FIRST -eq $COMMIT_LAST ]]; then
-				NEW=$COMMIT_LAST
+
+			if [[ $FL -eq 1 ]]; then
+				NEW=$HEADER_FIRST-$COMMIT_LAST
 			else
-				NEW=$COMMIT_FIRST-$COMMIT_LAST
+
+				if [[ $COMMIT_FIRST -eq $COMMIT_LAST ]]; then
+					NEW=$COMMIT_LAST
+				else
+					NEW=$COMMIT_FIRST-$COMMIT_LAST
+				fi
 			fi
+
 			if [[ "$YEARS" == "$NEW" ]]; then
 				echo "No change needed: $YEARS"
 			else 
@@ -184,3 +194,4 @@ else
 	echo "Error(s) in copyright headers found!" >&2
 fi
 exit $RV
+
