@@ -54,6 +54,22 @@ typedef struct ipc_mapped_handle_cache_t {
 
 ipc_mapped_handle_cache_global_t *IPC_MAPPED_CACHE_GLOBAL = NULL;
 
+// Returns value of the UMF_MAX_OPENED_IPC_HANDLES environment variable
+// or 0 if it is not set.
+static size_t umfIpcCacheGlobalInitMaxOpenedHandles(void) {
+    const char *max_size_str = getenv("UMF_MAX_OPENED_IPC_HANDLES");
+    if (max_size_str) {
+        char *endptr;
+        size_t max_size = strtoul(max_size_str, &endptr, 10);
+        if (*endptr == '\0') {
+            return max_size;
+        }
+        LOG_ERR("Invalid value of UMF_MAX_OPENED_IPC_HANDLES: %s",
+                max_size_str);
+    }
+    return 0;
+}
+
 umf_result_t umfIpcCacheGlobalInit(void) {
     umf_result_t ret = UMF_RESULT_SUCCESS;
     ipc_mapped_handle_cache_global_t *cache_global =
@@ -78,8 +94,7 @@ umf_result_t umfIpcCacheGlobalInit(void) {
         goto err_mutex_destroy;
     }
 
-    // TODO: make max_size configurable via environment variable
-    cache_global->max_size = 0;
+    cache_global->max_size = umfIpcCacheGlobalInitMaxOpenedHandles();
     cache_global->cur_size = 0;
     cache_global->lru_list = NULL;
 
