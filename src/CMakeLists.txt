@@ -14,7 +14,8 @@ set(UMF_CUDA_INCLUDE_DIR
 # Compile definitions for UMF library.
 #
 # TODO: Cleanup the compile definitions across all the CMake files
-set(UMF_COMMON_COMPILE_DEFINITIONS UMF_VERSION=${UMF_VERSION})
+set(UMF_COMMON_COMPILE_DEFINITIONS ${UMF_COMMON_COMPILE_DEFINITIONS}
+                                   UMF_VERSION=${UMF_VERSION})
 
 set(BA_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/base_alloc/base_alloc.c

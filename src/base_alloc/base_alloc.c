@@ -303,7 +303,13 @@ void umf_ba_destroy(umf_ba_pool_t *pool) {
 #ifndef NDEBUG
     ba_debug_checks(pool);
     if (pool->metadata.n_allocs) {
-        LOG_ERR("pool->metadata.n_allocs = %zu", pool->metadata.n_allocs);
+        LOG_ERR("number of base allocator memory leaks: %zu",
+                pool->metadata.n_allocs);
+
+#ifdef UMF_DEVELOPER_MODE
+        assert(pool->metadata.n_allocs == 0 &&
+               "memory leaks in base allocator occurred");
+#endif
     }
 #endif /* NDEBUG */
 
