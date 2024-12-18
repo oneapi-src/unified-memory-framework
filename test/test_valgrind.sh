@@ -8,11 +8,16 @@ set -e
 WORKSPACE=$1
 BUILD_DIR=$2
 TOOL=$3
+TESTS=$4
 
 function print_usage() {
-	echo "$(basename $0) - run all UMF tests and examples under a valgrind tool (memcheck, drd or helgrind)"
-	echo "This script looks for './test/umf_test-*' and './examples/umf_example_*' executables in the UMF build directory."
-	echo "Usage: $(basename $0) <workspace_dir> <build_dir> <memcheck|drd|helgrind>"
+	echo "$(basename $0) - run UMF tests and examples under a valgrind tool (memcheck, drd or helgrind)"
+	echo "Usage: $(basename $0) <workspace_dir> <build_dir> <memcheck|drd|helgrind> [tests_examples]"
+	echo "Where:"
+	echo
+	echo "tests_examples - (optional) list of tests or examples to be run (paths relative to the <build_dir> build directory)."
+	echo "                 If it is empty, all tests (./test/umf_test-*) and examples (./examples/umf_example_*)"
+	echo "                 found in <build_dir> will be run."
 }
 
 if ! valgrind --version > /dev/null; then
@@ -71,7 +76,14 @@ echo "Running: \"valgrind $OPTION\" for the following tests:"
 ANY_TEST_FAILED=0
 rm -f umf_test-*.log umf_test-*.err
 
-for test in $(ls -1 ./test/umf_test-* ./examples/umf_example_*); do
+[ "$TESTS" = "" ] && TESTS=$(ls -1 ./test/umf_test-* ./examples/umf_example_*)
+
+for test in $TESTS; do
+	if [ ! -f $test ]; then
+		echo
+		echo "error: the $test (${BUILD_DIR}/$test) file does not exist"
+		exit 1
+	fi
 	[ ! -x $test ] && continue
 	echo "$test - starting ..."
 	echo -n "$test "
