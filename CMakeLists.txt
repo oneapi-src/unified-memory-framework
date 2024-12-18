@@ -111,6 +111,11 @@ else()
     message(FATAL_ERROR "Unknown OS type")
 endif()
 
+if(UMF_DEVELOPER_MODE)
+    set(UMF_COMMON_COMPILE_DEFINITIONS ${UMF_COMMON_COMPILE_DEFINITIONS}
+                                       UMF_DEVELOPER_MODE=1)
+endif()
+
 if(NOT UMF_BUILD_LIBUMF_POOL_JEMALLOC)
     set(UMF_POOL_JEMALLOC_ENABLED FALSE)
     set(JEMALLOC_FOUND FALSE)
