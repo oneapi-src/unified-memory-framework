@@ -31,6 +31,7 @@ env:
   INSTL_DIR : "${{github.workspace}}/../install-dir"
   COVERAGE_DIR : "${{github.workspace}}/coverage"
   COVERAGE_NAME : "exports-coverage-dax"
+  DAX_TESTS: "./test/umf_test-provider_file_memory ./test/umf_test-provider_devdax_memory"
 
 jobs:
   dax:
@@ -125,6 +126,12 @@ jobs:
           UMF_TESTS_FSDAX_PATH=${{env.UMF_TESTS_FSDAX_PATH}}
           UMF_TESTS_FSDAX_PATH_2=${{env.UMF_TESTS_FSDAX_PATH_2}}
           ctest -C ${{matrix.build_type}} -V -R "file|fsdax"
+
+      - name: Run DAX tests under valgrind
+        run: |
+          ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{env.BUILD_DIR}} memcheck "${{env.DAX_TESTS}}"
+          ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{env.BUILD_DIR}} drd "${{env.DAX_TESTS}}"
+          ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{env.BUILD_DIR}} helgrind "${{env.DAX_TESTS}}"
 
       - name: Check coverage
         if:  ${{ matrix.build_type == 'Debug' }}
