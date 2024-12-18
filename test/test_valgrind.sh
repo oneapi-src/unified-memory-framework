@@ -10,8 +10,8 @@ BUILD_DIR=$2
 TOOL=$3
 
 function print_usage() {
-	echo "$(basename $0) - run all UMF tests under a valgrind tool (memcheck, drd or helgrind)"
-	echo "This script looks for './test/umf_test-*' test executables in the UMF build directory."
+	echo "$(basename $0) - run all UMF tests and examples under a valgrind tool (memcheck, drd or helgrind)"
+	echo "This script looks for './test/umf_test-*' and './examples/umf_example_*' executables in the UMF build directory."
 	echo "Usage: $(basename $0) <workspace_dir> <build_dir> <memcheck|drd|helgrind>"
 }
 
@@ -58,7 +58,7 @@ esac
 WORKSPACE=$(realpath $WORKSPACE)
 BUILD_DIR=$(realpath $BUILD_DIR)
 
-cd ${BUILD_DIR}/test/
+cd ${BUILD_DIR}
 mkdir -p cpuid
 
 echo "Gathering data for hwloc so it can be run under valgrind:"
@@ -71,20 +71,21 @@ echo "Running: \"valgrind $OPTION\" for the following tests:"
 ANY_TEST_FAILED=0
 rm -f umf_test-*.log umf_test-*.err
 
-for test in $(ls -1 umf_test-*); do
+for test in $(ls -1 ./test/umf_test-* ./examples/umf_example_*); do
 	[ ! -x $test ] && continue
 	echo "$test - starting ..."
 	echo -n "$test "
 	LOG=${test}.log
 	ERR=${test}.err
-	SUP="${WORKSPACE}/test/supp/${TOOL}-${test}.supp"
+	NAME=$(basename $test)
+	SUP="${WORKSPACE}/test/supp/${TOOL}-${NAME}.supp"
 	OPT_SUP=""
-	[ -f ${SUP} ] && OPT_SUP="--suppressions=${SUP}" && echo -n "(${TOOL}-${test}.supp) "
+	[ -f ${SUP} ] && OPT_SUP="--suppressions=${SUP}" && echo -n "($(basename ${SUP})) "
 
 	# skip tests incompatible with valgrind
 	FILTER=""
 	case $test in
-	umf_test-disjointPool)
+	./test/umf_test-disjointPool)
 		if [ "$TOOL" = "helgrind" ]; then
 			# skip because of the assert in helgrind:
 			# Helgrind: hg_main.c:308 (lockN_acquire_reader): Assertion 'lk->kind == LK_rdwr' failed.
@@ -92,53 +93,61 @@ for test in $(ls -1 umf_test-*); do
 			continue;
 		fi
 		;;
-	umf_test-ipc_os_prov_*)
+	./test/umf_test-ipc_os_prov_*)
 		echo "- SKIPPED"
 		continue; # skip testing helper binaries used by the ipc_os_prov_* tests
 		;;
-	umf_test-ipc_devdax_prov_*)
+	./test/umf_test-ipc_devdax_prov_*)
 		echo "- SKIPPED"
 		continue; # skip testing helper binaries used by the ipc_devdax_prov_* tests
 		;;
-	umf_test-ipc_file_prov_*)
+	./test/umf_test-ipc_file_prov_*)
 		echo "- SKIPPED"
 		continue; # skip testing helper binaries used by the ipc_file_prov_* tests
 		;;
-	umf_test-memspace_host_all)
+	./test/umf_test-memspace_host_all)
 		FILTER='--gtest_filter="-*allocsSpreadAcrossAllNumaNodes"'
 		;;
-	umf_test-provider_os_memory)
+	./test/umf_test-provider_os_memory)
 		FILTER='--gtest_filter="-osProviderTest/umfIpcTest*"'
 		;;
-	umf_test-provider_os_memory_config)
+	./test/umf_test-provider_os_memory_config)
 		FILTER='--gtest_filter="-*protection_flag_none:*protection_flag_read:*providerConfigTestNumaMode*"'
 		;;
-	umf_test-memspace_highest_capacity)
+	./test/umf_test-memspace_highest_capacity)
 		FILTER='--gtest_filter="-*highestCapacityVerify*"'
 		;;
-	umf_test-provider_os_memory_multiple_numa_nodes)
+	./test/umf_test-provider_os_memory_multiple_numa_nodes)
 		FILTER='--gtest_filter="-testNuma.checkModeInterleave*:testNumaNodesAllocations/testNumaOnEachNode.checkNumaNodesAllocations*:testNumaNodesAllocations/testNumaOnEachNode.checkModePreferred*:testNumaNodesAllocations/testNumaOnEachNode.checkModeInterleaveSingleNode*:testNumaNodesAllocationsAllCpus/testNumaOnEachCpu.checkModePreferredEmptyNodeset*:testNumaNodesAllocationsAllCpus/testNumaOnEachCpu.checkModeLocal*"'
 		;;
-	umf_test-memspace_highest_bandwidth)
+	./test/umf_test-memspace_highest_bandwidth)
 		FILTER='--gtest_filter="-*allocLocalMt*"'
 		;;
-	umf_test-memspace_lowest_latency)
+	./test/umf_test-memspace_lowest_latency)
 		FILTER='--gtest_filter="-*allocLocalMt*"'
 		;;
-	umf_test-memoryPool)
+	./test/umf_test-memoryPool)
 		FILTER='--gtest_filter="-*allocMaxSize*"'
+		;;
+	./examples/umf_example_ipc_ipcapi_*)
+		echo "- SKIPPED"
+		continue; # skip testing helper binaries used by the umf_example_ipc_ipcapi_* examples
 		;;
 	esac
 
 	[ "$FILTER" != "" ] && echo -n "($FILTER) "
 
 	LAST_TEST_FAILED=0
-
-	if ! HWLOC_CPUID_PATH=./cpuid valgrind $OPTION $OPT_SUP --gen-suppressions=all ./$test $FILTER >$LOG 2>&1; then
+	set +e
+	HWLOC_CPUID_PATH=./cpuid valgrind $OPTION $OPT_SUP --gen-suppressions=all $test $FILTER >$LOG 2>&1
+	RET=$?
+	set -e
+	# 125 is the return code when the test is skipped
+	if [ $RET -ne 0 -a $RET -ne 125 ]; then
 		LAST_TEST_FAILED=1
 		ANY_TEST_FAILED=1
-		echo "(valgrind FAILED) "
-		echo "Command: HWLOC_CPUID_PATH=./cpuid valgrind $OPTION $OPT_SUP --gen-suppressions=all ./$test $FILTER >$LOG 2>&1"
+		echo "(valgrind FAILED RV=$RET) "
+		echo "Command: HWLOC_CPUID_PATH=./cpuid valgrind $OPTION $OPT_SUP --gen-suppressions=all $test $FILTER >$LOG 2>&1"
 		echo "Output:"
 		cat $LOG
 		echo "====================="
@@ -147,7 +156,7 @@ for test in $(ls -1 umf_test-*); do
 	# grep for "ERROR SUMMARY" with errors (there can be many lines with "ERROR SUMMARY")
 	grep -e "ERROR SUMMARY:" $LOG | grep -v -e "ERROR SUMMARY: 0 errors from 0 contexts" > $ERR || true
 	if [ $LAST_TEST_FAILED -eq 0 -a $(cat $ERR | wc -l) -eq 0 ]; then
-		echo "- OK"
+		[ $RET -eq 0 ] && echo "- OK" || echo "- SKIPPED"
 		rm -f $LOG $ERR
 	else
 		echo "- FAILED!"
