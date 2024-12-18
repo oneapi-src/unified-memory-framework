@@ -53,7 +53,7 @@ jobs:
         run: cmake --build ${{github.workspace}}/build -j $(nproc)
 
       - name: Run tests
-        if: (matrix.os != 'rhel-9.1') && (matrix.os != 'sles15')
+        if: matrix.os != 'rhel-9.1'
         working-directory: ${{github.workspace}}/build
         run: ctest --output-on-failure --test-dir test
 
@@ -61,7 +61,7 @@ jobs:
         # Skip some tests until we upgrade hwloc and update CMake to properly handle local hwloc installation.
         # TODO: fix issue #560
       - name: Run tests (on RHEL/SLES15)
-        if: (matrix.os == 'rhel-9.1') || (matrix.os == 'sles15')
+        if: matrix.os == 'rhel-9.1'
         working-directory: ${{github.workspace}}/build
         run: |
           ctest --output-on-failure --test-dir test -E "umf-provider_os_memory_multiple_numa_nodes"
