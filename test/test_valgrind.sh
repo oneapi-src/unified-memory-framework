@@ -67,7 +67,7 @@ cd ${BUILD_DIR}
 mkdir -p cpuid
 
 echo "Gathering data for hwloc so it can be run under valgrind:"
-hwloc-gather-cpuid ./cpuid
+hwloc-gather-cpuid ./cpuid >/dev/null
 
 echo
 echo "Working directory: $(pwd)"
