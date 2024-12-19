@@ -86,7 +86,12 @@ fi
 
 chmod +x "${SOURCE_ROOT}/check_license/file-exceptions.sh"
 
-FILES=$($GIT $GIT_COMMAND | ${SOURCE_ROOT}/check_license/file-exceptions.sh)
+FILES=$($GIT $GIT_COMMAND | ${SOURCE_ROOT}/check_license/file-exceptions.sh\
+	grep    -E -e '*\.[chs]$' -e '*\.[ch]pp$' -e '*\.sh$' -e '*\.py$' \
+		   -e 'Makefile*' -e 'CMakeLists.txt$' -e '*\.cmake$' \
+		   -e '*\.link$' -e '*\.map$' -e '*\.Dockerfile$' -e 'LICENSE$' \
+		   -e '/match$' | \
+	xargs)
 
 RV=0
 for file in $FILES ; do

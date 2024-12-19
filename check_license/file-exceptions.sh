@@ -9,8 +9,4 @@ grep -v -E -e '\src\uthash' \
            -e 'include/umf/proxy_lib_new_delete.h' \
            -e 'scripts/docs_config/conf.py' \
            -e 'src/uthash/utlist.h' \
-           -e '\.md$' \
-           -e '\.clang-format$' \
-           -e '\.cmake-format$' \
-           -e 'CODEOWNERS$' \
-           -e '\.ym$'
+           -e '\.yml$'
