@@ -1,7 +1,3 @@
-# Copyright (C) 2023-2024 Intel Corporation
-# Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
-# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-
 # Configuration file for the Sphinx documentation builder.
 #
 # This file only contains a selection of the most common options. For a full

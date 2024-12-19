@@ -4,4 +4,13 @@
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 # You can add an exception file
-grep -v -E -e '\src\uthash' -e 'benchmark/ubench.h' -e 'include/umf/proxy_lib_new_delete.h' -e 'scripts/docs_config/conf.py' -e 'src/uthash/utlist.h'
+grep -v -E -e '\src\uthash' \
+           -e 'benchmark/ubench.h' \
+           -e 'include/umf/proxy_lib_new_delete.h' \
+           -e 'scripts/docs_config/conf.py' \
+           -e 'src/uthash/utlist.h' \
+           -e '\.md$' \
+           -e '\.clang-format$' \
+           -e '\.cmake-format$' \
+           -e 'CODEOWNERS$' \
+           -e '\.ym$'
