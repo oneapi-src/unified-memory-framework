@@ -84,8 +84,6 @@ else
 	GIT_COMMAND="diff --name-only $MERGE_BASE $CURRENT_COMMIT"
 fi
 
-chmod +x "${SOURCE_ROOT}/check_license/file-exceptions.sh"
-
 FILES=$($GIT $GIT_COMMAND | ${SOURCE_ROOT}/check_license/file-exceptions.sh)
 
 RV=0
@@ -189,4 +187,3 @@ else
 	echo "Error(s) in copyright headers found!" >&2
 fi
 exit $RV
-
