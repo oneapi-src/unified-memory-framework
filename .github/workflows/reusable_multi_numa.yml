@@ -10,6 +10,7 @@ env:
   BUILD_DIR : "${{github.workspace}}/build"
   COVERAGE_DIR : "${{github.workspace}}/coverage"
   COVERAGE_NAME : "exports-coverage-multinuma"
+  NUMA_TESTS: "./test/umf_test-memspace_numa ./test/umf_test-provider_os_memory_multiple_numa_nodes"
 
 jobs:
   multi_numa:
@@ -67,6 +68,13 @@ jobs:
           ctest --output-on-failure --test-dir test -E "umf-provider_os_memory_multiple_numa_nodes"
           ./test/umf_test-provider_os_memory_multiple_numa_nodes \
             --gtest_filter="-*checkModeLocal/*:*checkModePreferredEmptyNodeset/*:testNuma.checkModeInterleave"
+
+      - name: Run NUMA tests under valgrind
+        if: matrix.os != 'rhel-9.1'
+        run: |
+          ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{env.BUILD_DIR}} memcheck "${{env.NUMA_TESTS}}"
+          ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{env.BUILD_DIR}} drd "${{env.NUMA_TESTS}}"
+          ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{env.BUILD_DIR}} helgrind "${{env.NUMA_TESTS}}"
 
       - name: Check coverage
         if: ${{ matrix.build_type == 'Debug' && matrix.os == 'ubuntu-22.04' }}
