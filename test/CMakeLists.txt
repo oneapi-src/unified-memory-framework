@@ -455,10 +455,10 @@ if(UMF_PROXY_LIB_ENABLED AND UMF_BUILD_SHARED_LIBRARY)
     # TODO enable this test on Windows
     if(LINUX)
         add_umf_test(
-            NAME test_proxy_lib_size_threshold
+            NAME proxy_lib_size_threshold
             SRCS ${BA_SOURCES_FOR_TEST} test_proxy_lib_size_threshold.cpp
             LIBS ${UMF_UTILS_FOR_TEST} umf_proxy)
-        set_property(TEST umf-test_proxy_lib_size_threshold
+        set_property(TEST umf-proxy_lib_size_threshold
                      PROPERTY ENVIRONMENT UMF_PROXY="size.threshold=64")
     endif()
 
