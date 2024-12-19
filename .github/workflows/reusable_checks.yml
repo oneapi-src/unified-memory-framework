@@ -52,12 +52,10 @@ jobs:
       run: cmake --build build --target black-format-check
 
     - name: Run check-license
-      run: |
-        bash ./check_license/check-headers.sh ./ "Apache-2.0 WITH LLVM-exception" -v
+      run: cmake --build build --target check-license
 
     - name: Run copyright-format
-      run: |
-        bash ./check_license/check-headers.sh ./ "Apache-2.0 WITH LLVM-exception" -d
+      run: cmake --build build --target copyright-format
 
     - name: Run a spell check
       uses: crate-ci/typos@b63f421581dce830bda2f597a678cb7776b41877 # v1.18.2
