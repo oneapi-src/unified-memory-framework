@@ -14,7 +14,6 @@ env:
 jobs:
   multi_numa:
     name: "${{matrix.os}}, ${{matrix.build_type}}, shared=${{matrix.shared_library}}"
-    
     # run only on upstream; forks will not have the HW
     # if: github.repository == 'oneapi-src/unified-memory-framework'
 
