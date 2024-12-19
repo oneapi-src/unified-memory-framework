@@ -201,13 +201,13 @@ int ctl_query(struct ctl *ctl, void *ctx, enum ctl_query_source source,
 #define CTL_LEAF_RW(name)                                                      \
     {                                                                          \
         CTL_STR(name), CTL_NODE_LEAF,                                          \
-            {CTL_READ_HANDLER(name, ), CTL_WRITE_HANDLER(name, ), NULL},       \
+            {CTL_READ_HANDLER(name), CTL_WRITE_HANDLER(name), NULL},           \
             &CTL_ARG(name), NULL                                               \
     }
 
 #define CTL_REGISTER_MODULE(_ctl, name)                                        \
     ctl_register_module_node((_ctl), CTL_STR(name),                            \
-                             (struct ctl_node *)CTL_NODE(name, ))
+                             (struct ctl_node *)CTL_NODE(name))
 
 #ifdef __cplusplus
 }
