@@ -29,7 +29,7 @@ jobs:
         python3 -m venv .venv
         . .venv/bin/activate
         echo "$PATH" >> $GITHUB_PATH
-        python3 -m pip install bandit
+        python3 -m pip install bandit codespell
 
     - name: Configure CMake
       run: >
@@ -56,6 +56,9 @@ jobs:
       uses: crate-ci/typos@b63f421581dce830bda2f597a678cb7776b41877 # v1.18.2
       with:
         config: ./.github/workflows/.spellcheck-conf.toml
+
+    - name: Run codespell
+      run: python3 ./.github/scripts/run-codespell.py
 
     # Run Bandit recursively, but omit _deps directory (with 3rd party code) and python's venv
     - name: Run Bandit
