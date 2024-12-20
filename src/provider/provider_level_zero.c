@@ -14,17 +14,23 @@
 #include <umf/memory_provider_ops.h>
 #include <umf/providers/provider_level_zero.h>
 
+#include "utils_log.h"
+
 #if defined(UMF_NO_LEVEL_ZERO_PROVIDER)
 
 umf_result_t umfLevelZeroMemoryProviderParamsCreate(
     umf_level_zero_memory_provider_params_handle_t *hParams) {
     (void)hParams;
+    LOG_ERR("L0 memory provider is disabled! (UMF_BUILD_LEVEL_ZERO_PROVIDER is "
+            "OFF)");
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
 umf_result_t umfLevelZeroMemoryProviderParamsDestroy(
     umf_level_zero_memory_provider_params_handle_t hParams) {
     (void)hParams;
+    LOG_ERR("L0 memory provider is disabled! (UMF_BUILD_LEVEL_ZERO_PROVIDER is "
+            "OFF)");
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
@@ -33,6 +39,8 @@ umf_result_t umfLevelZeroMemoryProviderParamsSetContext(
     ze_context_handle_t hContext) {
     (void)hParams;
     (void)hContext;
+    LOG_ERR("L0 memory provider is disabled! (UMF_BUILD_LEVEL_ZERO_PROVIDER is "
+            "OFF)");
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
@@ -41,6 +49,8 @@ umf_result_t umfLevelZeroMemoryProviderParamsSetDevice(
     ze_device_handle_t hDevice) {
     (void)hParams;
     (void)hDevice;
+    LOG_ERR("L0 memory provider is disabled! (UMF_BUILD_LEVEL_ZERO_PROVIDER is "
+            "OFF)");
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
@@ -49,6 +59,8 @@ umf_result_t umfLevelZeroMemoryProviderParamsSetMemoryType(
     umf_usm_memory_type_t memoryType) {
     (void)hParams;
     (void)memoryType;
+    LOG_ERR("L0 memory provider is disabled! (UMF_BUILD_LEVEL_ZERO_PROVIDER is "
+            "OFF)");
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
@@ -58,11 +70,15 @@ umf_result_t umfLevelZeroMemoryProviderParamsSetResidentDevices(
     (void)hParams;
     (void)hDevices;
     (void)deviceCount;
+    LOG_ERR("L0 memory provider is disabled! (UMF_BUILD_LEVEL_ZERO_PROVIDER is "
+            "OFF)");
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
 umf_memory_provider_ops_t *umfLevelZeroMemoryProviderOps(void) {
     // not supported
+    LOG_ERR("L0 memory provider is disabled! (UMF_BUILD_LEVEL_ZERO_PROVIDER is "
+            "OFF)");
     return NULL;
 }
 
