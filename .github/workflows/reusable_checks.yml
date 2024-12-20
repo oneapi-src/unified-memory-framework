@@ -53,11 +53,11 @@ jobs:
 
     - name: Run check-license
       run: |
-        bash ./check_license/check-headers.sh ./ "Apache-2.0 WITH LLVM-exception" -v
+        bash ./check_license/check-headers.sh . "Apache-2.0 WITH LLVM-exception" -v
 
     - name: Run copyright-format
       run: |
-        bash ./check_license/check-headers.sh ./ "Apache-2.0 WITH LLVM-exception" -d
+        bash ./check_license/check-headers.sh . "Apache-2.0 WITH LLVM-exception" -d
 
     - name: Run a spell check
       uses: crate-ci/typos@b63f421581dce830bda2f597a678cb7776b41877 # v1.18.2

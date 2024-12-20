@@ -87,10 +87,12 @@ fi
 FILES=$($GIT $GIT_COMMAND | ${SOURCE_ROOT}/check_license/file-exceptions.sh)
 
 RV=0
+
 for file in $FILES ; do
 	if [ $VERBOSE -eq 1 ]; then
 		echo "Checking file: $file"
 	fi
+
 	# The src_path is a path which should be used in every command except git.
 	# git is called with -C flag so filepaths should be relative to SOURCE_ROOT
 	src_path="${SOURCE_ROOT}/$file"
