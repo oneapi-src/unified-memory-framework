@@ -44,7 +44,7 @@
 #define CTL_VALUE_ARG_SEPARATOR ","
 
 static int ctl_global_first_free = 0;
-static struct ctl_node CTL_NODE(global, )[CTL_MAX_ENTRIES];
+static struct ctl_node CTL_NODE(global)[CTL_MAX_ENTRIES];
 
 /*
  * This is the top level node of the ctl tree structure. Each node can contain
@@ -316,7 +316,7 @@ int ctl_query(struct ctl *ctl, void *ctx, enum ctl_query_source source,
 
     int ret = -1;
 
-    const struct ctl_node *n = ctl_find_node(CTL_NODE(global, ), name, indexes);
+    const struct ctl_node *n = ctl_find_node(CTL_NODE(global), name, indexes);
 
     if (n == NULL && ctl) {
         ctl_delete_indexes(indexes);
@@ -343,7 +343,7 @@ out:
 void ctl_register_module_node(struct ctl *c, const char *name,
                               struct ctl_node *n) {
     struct ctl_node *nnode = c == NULL
-                                 ? &CTL_NODE(global, )[ctl_global_first_free++]
+                                 ? &CTL_NODE(global)[ctl_global_first_free++]
                                  : &c->root[c->first_free++];
 
     nnode->children = n;

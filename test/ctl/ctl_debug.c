@@ -24,10 +24,10 @@ struct ctl *get_debug_ctl(void) { return ctl_debug; }
 /*
  * CTL_WRITE_HANDLER(alloc_pattern) -- sets the alloc_pattern field in heap
  */
-static int
-CTL_WRITE_HANDLER(alloc_pattern, )(void *ctx, enum ctl_query_source source,
-                                   void *arg,
-                                   struct ctl_index_utlist *indexes) {
+static int CTL_WRITE_HANDLER(alloc_pattern)(void *ctx,
+                                            enum ctl_query_source source,
+                                            void *arg,
+                                            struct ctl_index_utlist *indexes) {
     /* suppress unused-parameter errors */
     (void)source, (void)indexes, (void)ctx;
 
@@ -39,10 +39,10 @@ CTL_WRITE_HANDLER(alloc_pattern, )(void *ctx, enum ctl_query_source source,
 /*
  * CTL_READ_HANDLER(alloc_pattern) -- returns alloc_pattern heap field
  */
-static int CTL_READ_HANDLER(alloc_pattern, )(void *ctx,
-                                             enum ctl_query_source source,
-                                             void *arg,
-                                             struct ctl_index_utlist *indexes) {
+static int CTL_READ_HANDLER(alloc_pattern)(void *ctx,
+                                           enum ctl_query_source source,
+                                           void *arg,
+                                           struct ctl_index_utlist *indexes) {
     /* suppress unused-parameter errors */
     (void)source, (void)indexes, (void)ctx;
 
@@ -51,10 +51,10 @@ static int CTL_READ_HANDLER(alloc_pattern, )(void *ctx,
     return 0;
 }
 
-static int
-CTL_WRITE_HANDLER(enable_logging, )(void *ctx, enum ctl_query_source source,
-                                    void *arg,
-                                    struct ctl_index_utlist *indexes) {
+static int CTL_WRITE_HANDLER(enable_logging)(void *ctx,
+                                             enum ctl_query_source source,
+                                             void *arg,
+                                             struct ctl_index_utlist *indexes) {
     /* suppress unused-parameter errors */
     (void)source, (void)indexes, (void)ctx;
 
@@ -63,10 +63,10 @@ CTL_WRITE_HANDLER(enable_logging, )(void *ctx, enum ctl_query_source source,
     return 0;
 }
 
-static int
-CTL_READ_HANDLER(enable_logging, )(void *ctx, enum ctl_query_source source,
-                                   void *arg,
-                                   struct ctl_index_utlist *indexes) {
+static int CTL_READ_HANDLER(enable_logging)(void *ctx,
+                                            enum ctl_query_source source,
+                                            void *arg,
+                                            struct ctl_index_utlist *indexes) {
     /* suppress unused-parameter errors */
     (void)source, (void)indexes, (void)ctx;
 
@@ -75,10 +75,9 @@ CTL_READ_HANDLER(enable_logging, )(void *ctx, enum ctl_query_source source,
     return 0;
 }
 
-static int CTL_WRITE_HANDLER(log_level, )(void *ctx,
-                                          enum ctl_query_source source,
-                                          void *arg,
-                                          struct ctl_index_utlist *indexes) {
+static int CTL_WRITE_HANDLER(log_level)(void *ctx, enum ctl_query_source source,
+                                        void *arg,
+                                        struct ctl_index_utlist *indexes) {
     /* suppress unused-parameter errors */
     (void)source, (void)indexes, (void)ctx;
 
@@ -87,10 +86,9 @@ static int CTL_WRITE_HANDLER(log_level, )(void *ctx,
     return 0;
 }
 
-static int CTL_READ_HANDLER(log_level, )(void *ctx,
-                                         enum ctl_query_source source,
-                                         void *arg,
-                                         struct ctl_index_utlist *indexes) {
+static int CTL_READ_HANDLER(log_level)(void *ctx, enum ctl_query_source source,
+                                       void *arg,
+                                       struct ctl_index_utlist *indexes) {
     /* suppress unused-parameter errors */
     (void)source, (void)indexes, (void)ctx;
 
@@ -105,15 +103,15 @@ static const struct ctl_argument CTL_ARG(enable_logging) = CTL_ARG_BOOLEAN;
 
 static const struct ctl_argument CTL_ARG(log_level) = CTL_ARG_INT;
 
-static const struct ctl_node CTL_NODE(heap, )[] = {CTL_LEAF_RW(alloc_pattern),
-                                                   CTL_LEAF_RW(enable_logging),
-                                                   CTL_LEAF_RW(log_level),
+static const struct ctl_node CTL_NODE(heap)[] = {CTL_LEAF_RW(alloc_pattern),
+                                                 CTL_LEAF_RW(enable_logging),
+                                                 CTL_LEAF_RW(log_level),
 
-                                                   CTL_NODE_END};
+                                                 CTL_NODE_END};
 
-static const struct ctl_node CTL_NODE(debug, )[] = {CTL_CHILD(heap, ),
+static const struct ctl_node CTL_NODE(debug)[] = {CTL_CHILD(heap),
 
-                                                    CTL_NODE_END};
+                                                  CTL_NODE_END};
 
 /*
  * debug_ctl_register -- registers ctl nodes for "debug" module
