@@ -6,17 +6,20 @@
 """
 
 from pathlib import Path
-from shutil import rmtree
+from shutil import rmtree, copytree
 import subprocess  # nosec B404
 import time
 
 
 def _check_cwd() -> None:
-    script_path = Path(__file__).resolve().parent
     cwd = Path.cwd()
-    if script_path != cwd:
+    include_dir = Path(cwd, "../include")
+    # Verify if include dir is one level up (as defined in Doxyfile)
+    if not include_dir.exists():
         print(
-            f"{__file__} script has to be run from the 'scripts' directory. Terminating..."
+            f"Include directory {include_dir.resolve()} not found! "
+            "Please run this script from <repo_root_dir>/build!",
+            flush=True,
         )
         exit(1)
 
@@ -66,8 +69,17 @@ def _generate_html(config_path: Path, docs_path: Path) -> None:
 
 def main() -> None:
     _check_cwd()
-    config_path = Path("docs_config").resolve()
-    docs_path = Path("..", "docs").resolve()
+
+    script_dir = Path(__file__).resolve().parent
+    docs_build_path = Path("docs_build").resolve()
+
+    # Sphinx and breathe require access to a Doxygen generated dir ('doxyxml')
+    # so we copy the whole content of the 'docs' dir to the build dir.
+    copytree(Path(script_dir), docs_build_path, dirs_exist_ok=True)
+
+    config_path = Path(docs_build_path, "config").resolve()
+    docs_path = Path(docs_build_path, "generated").resolve()
+
     start = time.time()
     _prepare_docs_dir(docs_path)
     _generate_xml(config_path, docs_path)
