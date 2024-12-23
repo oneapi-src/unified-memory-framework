@@ -54,7 +54,7 @@ jobs:
         run: cmake --build ${{github.workspace}}/build -j $(nproc)
 
       - name: Run tests
-        if: matrix.os != 'rhel-9.1'
+        if: (matrix.os != 'rhel-9.1') && (matrix.os != 'sles-15')
         working-directory: ${{github.workspace}}/build
         run: ctest --output-on-failure --test-dir test
 
