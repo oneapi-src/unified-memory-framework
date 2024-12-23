@@ -46,7 +46,6 @@ jobs:
           -DUMF_DEVELOPER_MODE=ON
           -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
           -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=${{ matrix.os == 'rhel-9.1' && 'OFF' || 'ON' }}
-          -DUMF_LINK_HWLOC_STATICALLY=${{ matrix.os == 'sles15' && 'ON' || 'OFF' }}
           -DUMF_TESTS_FAIL_ON_SKIP=ON
           ${{ matrix.build_type == 'Debug' && matrix.os == 'ubuntu-22.04' && '-DUMF_USE_COVERAGE=ON' || '' }}
 
