@@ -74,9 +74,12 @@ echo "Working directory: $(pwd)"
 echo "Running: \"valgrind $OPTION\" for the following tests:"
 
 ANY_TEST_FAILED=0
-rm -f umf_test-*.log umf_test-*.err
+PATH_TESTS="./test/umf_test-*"
+PATH_EXAMPLES="./examples/umf_example_*"
 
-[ "$TESTS" = "" ] && TESTS=$(ls -1 ./test/umf_test-* ./examples/umf_example_*)
+rm -f ${PATH_TESTS}.log ${PATH_TESTS}.err ${PATH_EXAMPLES}.log ${PATH_EXAMPLES}.err
+
+[ "$TESTS" = "" ] && TESTS=$(ls -1 ${PATH_TESTS} ${PATH_EXAMPLES})
 
 for test in $TESTS; do
 	if [ ! -f $test ]; then
@@ -185,7 +188,7 @@ echo
 echo "======================================================================"
 echo
 
-for log in $(ls -1 umf_test-*.log); do
+for log in $(ls -1 ${PATH_TESTS}.log ${PATH_EXAMPLES}.log); do
 	echo ">>>>>>> LOG $log"
 	cat $log
 	echo
