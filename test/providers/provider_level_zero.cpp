@@ -347,6 +347,18 @@ TEST_P(umfLevelZeroProviderTest, getPageSize) {
 
     ASSERT_GE(recommendedPageSize, minPageSize);
 
+    void *ptr;
+    umf_result = umfMemoryProviderAlloc(provider, 1, 0, &ptr);
+
+    size_t actualPageSize = 0;
+    umf_result =
+        umfMemoryProviderGetMinPageSize(provider, ptr, &actualPageSize);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_GE(actualPageSize, minPageSize);
+
+    umf_result = umfMemoryProviderFree(provider, ptr, 1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
     umfMemoryProviderDestroy(provider);
 }
 
@@ -421,6 +433,39 @@ TEST_P(umfLevelZeroProviderTest, levelZeroProviderNullParams) {
     res = umfLevelZeroMemoryProviderParamsSetMemoryType(nullptr,
                                                         UMF_MEMORY_TYPE_DEVICE);
     EXPECT_EQ(res, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    res = umfLevelZeroMemoryProviderParamsSetDeviceOrdinal(nullptr, 0);
+    EXPECT_EQ(res, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_P(umfLevelZeroProviderTest, setDeviceOrdinalValid) {
+    int64_t numProps =
+        utils_ze_get_num_memory_properties(l0TestHelper.get_test_device());
+    ASSERT_GE(numProps, 0);
+
+    for (uint32_t ordinal = 0; ordinal < static_cast<uint32_t>(numProps);
+         ordinal++) {
+        umf_memory_provider_handle_t provider = nullptr;
+        umf_result_t res =
+            umfLevelZeroMemoryProviderParamsSetDeviceOrdinal(params, ordinal);
+        EXPECT_EQ(res, UMF_RESULT_SUCCESS);
+
+        res = umfMemoryProviderCreate(umfLevelZeroMemoryProviderOps(), params,
+                                      &provider);
+        ASSERT_EQ(res, UMF_RESULT_SUCCESS);
+        ASSERT_NE(provider, nullptr);
+
+        size_t size = 1024;
+        void *ptr = nullptr;
+        res = umfMemoryProviderAlloc(provider, size, 0, &ptr);
+        ASSERT_EQ(res, UMF_RESULT_SUCCESS);
+        ASSERT_NE(ptr, nullptr);
+
+        res = umfMemoryProviderFree(provider, ptr, size);
+        ASSERT_EQ(res, UMF_RESULT_SUCCESS);
+
+        umfMemoryProviderDestroy(provider);
+    }
 }
 
 // TODO add tests that mixes Level Zero Memory Provider and Disjoint Pool

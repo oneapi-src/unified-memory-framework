@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -60,6 +60,9 @@ struct libze_ops {
                                     const ze_device_mem_alloc_desc_t *, size_t,
                                     size_t, ze_device_handle_t, void **);
     ze_result_t (*zeMemFree)(ze_context_handle_t, void *);
+    ze_result_t (*zeDeviceGetMemoryProperties)(
+        ze_device_handle_t hDevice, uint32_t *pCount,
+        ze_device_memory_properties_t *pMemProperties);
 } libze_ops;
 
 #if USE_DLOPEN
@@ -123,6 +126,9 @@ struct DlHandleCloser {
                 return noop_stub(args...);
             };
             libze_ops.zeMemFree = [](auto... args) {
+                return noop_stub(args...);
+            };
+            libze_ops.zeDeviceGetMemoryProperties = [](auto... args) {
                 return noop_stub(args...);
             };
             utils_close_library(dlHandle);
@@ -265,6 +271,13 @@ int InitLevelZeroOps() {
         fprintf(stderr, "zeMemFree symbol not found in %s\n", lib_name);
         return -1;
     }
+    *(void **)&libze_ops.zeDeviceGetMemoryProperties = utils_get_symbol_addr(
+        zeDlHandle.get(), "zeDeviceGetMemoryProperties", lib_name);
+    if (libze_ops.zeDeviceGetMemoryProperties == nullptr) {
+        fprintf(stderr, "zeDeviceGetMemoryProperties symbol not found in %s\n",
+                lib_name);
+        return -1;
+    }
 
     return 0;
 }
@@ -292,6 +305,7 @@ int InitLevelZeroOps() {
     libze_ops.zeMemGetAllocProperties = zeMemGetAllocProperties;
     libze_ops.zeMemAllocDevice = zeMemAllocDevice;
     libze_ops.zeMemFree = zeMemFree;
+    libze_ops.zeDeviceGetMemoryProperties = zeDeviceGetMemoryProperties;
 
     return 0;
 }
@@ -744,4 +758,16 @@ ze_memory_type_t utils_ze_get_mem_type(ze_context_handle_t context, void *ptr) {
 
     libze_ops.zeMemGetAllocProperties(context, ptr, &alloc_props, &device);
     return alloc_props.type;
+}
+
+int64_t utils_ze_get_num_memory_properties(ze_device_handle_t device) {
+    uint32_t pCount = 0;
+    ze_result_t ze_result =
+        libze_ops.zeDeviceGetMemoryProperties(device, &pCount, nullptr);
+    if (ze_result != ZE_RESULT_SUCCESS) {
+        fprintf(stderr, "zeDeviceGetMemoryProperties() failed!\n");
+        return -1;
+    }
+
+    return static_cast<int64_t>(pCount);
 }

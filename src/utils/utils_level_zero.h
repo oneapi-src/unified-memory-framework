@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -44,6 +44,8 @@ int utils_ze_create_context(ze_driver_handle_t driver,
 int utils_ze_destroy_context(ze_context_handle_t context);
 
 ze_memory_type_t utils_ze_get_mem_type(ze_context_handle_t context, void *ptr);
+
+int64_t utils_ze_get_num_memory_properties(ze_device_handle_t device);
 
 #ifdef __cplusplus
 }
