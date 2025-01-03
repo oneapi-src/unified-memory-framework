@@ -68,6 +68,21 @@ umf_result_t umfLevelZeroMemoryProviderParamsSetResidentDevices(
     umf_level_zero_memory_provider_params_handle_t hParams,
     ze_device_handle_t *hDevices, uint32_t deviceCount);
 
+typedef enum umf_level_zero_memory_provider_free_policy_t {
+    UMF_LEVEL_ZERO_MEMORY_PROVIDER_FREE_POLICY_DEFAULT =
+        0, ///< Free memory immediately. Default.
+    UMF_LEVEL_ZERO_MEMORY_PROVIDER_FREE_POLICY_BLOCKING_FREE, ///< Blocks until all commands using the memory are complete before freeing.
+    UMF_LEVEL_ZERO_MEMORY_PROVIDER_FREE_POLICY_DEFER_FREE, ///< Schedules the memory to be freed but does not free immediately.
+} umf_level_zero_memory_provider_free_policy_t;
+
+/// @brief  Set the memory free policy.
+/// @param  hParams handle to the parameters of the Level Zero Memory Provider.
+/// @param  policy memory free policy.
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+umf_result_t umfLevelZeroMemoryProviderParamsSetFreePolicy(
+    umf_level_zero_memory_provider_params_handle_t hParams,
+    umf_level_zero_memory_provider_free_policy_t policy);
+
 umf_memory_provider_ops_t *umfLevelZeroMemoryProviderOps(void);
 
 #ifdef __cplusplus
