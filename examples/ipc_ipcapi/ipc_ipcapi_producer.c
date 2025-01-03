@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/prctl.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -68,6 +69,21 @@ int main(int argc, char *argv[]) {
     }
 
     int port = atoi(argv[1]);
+
+    // The prctl() function with PR_SET_PTRACER is used here to allow parent process and its children
+    // to ptrace the current process. This is necessary because UMF's memory providers on Linux (except CUDA)
+    // use the pidfd_getfd(2) system call to duplicate another process's file descriptor, which is
+    // governed by ptrace permissions. By default on Ubuntu /proc/sys/kernel/yama/ptrace_scope is
+    // set to 1 ("restricted ptrace"), which prevents pidfd_getfd from working unless ptrace_scope
+    // is set to 0.
+    // To overcome this limitation without requiring users to change the ptrace_scope
+    // setting (which requires root privileges), we use prctl() to allow the consumer process
+    // to copy producer's file descriptor, even when ptrace_scope is set to 1.
+    ret = prctl(PR_SET_PTRACER, getppid());
+    if (ret == -1) {
+        perror("PR_SET_PTRACER may be not supported. prctl() call failed");
+        goto err_end;
+    }
 
     umf_memory_provider_handle_t OS_memory_provider = NULL;
     umf_os_memory_provider_params_handle_t os_params = NULL;
@@ -259,6 +275,7 @@ err_destroy_OS_memory_provider:
 err_destroy_OS_params:
     umfOsMemoryProviderParamsDestroy(os_params);
 
+err_end:
     if (ret == 0) {
         fprintf(stderr, "[producer] Shutting down (status OK) ...\n");
     } else if (ret == 1) {

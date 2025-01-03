@@ -88,10 +88,6 @@ jobs:
         sudo apt-get install -y cmake libnuma-dev libtbb-dev
         .github/scripts/install_hwloc.sh # install hwloc-2.3.0 instead of hwloc-2.1.0 present in the OS package
 
-    - name: Set ptrace value for IPC test (on Linux only)
-      if: ${{ matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-20.04' }}
-      run: sudo bash -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
-
     - name: Configure CMake
       if: matrix.simple_cmake == 'OFF'
       run: >

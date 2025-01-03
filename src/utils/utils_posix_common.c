@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -91,9 +91,8 @@ umf_result_t utils_duplicate_fd(int pid, int fd_in, int *fd_out) {
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 #else
     // pidfd_getfd(2) is used to obtain a duplicate of another process's file descriptor.
-    // Permission to duplicate another process's file descriptor
-    // is governed by a ptrace access mode PTRACE_MODE_ATTACH_REALCREDS check (see ptrace(2))
-    // that can be changed using the /proc/sys/kernel/yama/ptrace_scope interface.
+    // Calling prctl(PR_SET_PTRACER, getppid()) in a producer binary that creates IPC handle
+    // allows file descriptor duplication for parent process and its children.
     // pidfd_getfd(2) is supported since Linux 5.6
     // pidfd_open(2) is supported since Linux 5.3
     errno = 0;
