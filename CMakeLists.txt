@@ -184,6 +184,7 @@ else()
 
     add_custom_target(jemalloc_prod
                       DEPENDS ${jemalloc_targ_BINARY_DIR}/lib/libjemalloc.a)
+
     add_library(jemalloc INTERFACE)
     target_link_libraries(
         jemalloc INTERFACE ${jemalloc_targ_BINARY_DIR}/lib/libjemalloc.a)
