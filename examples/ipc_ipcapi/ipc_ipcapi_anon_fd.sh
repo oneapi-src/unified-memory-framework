@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2024 Intel Corporation
+# Copyright (C) 2024-2025 Intel Corporation
 #
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -16,16 +16,8 @@ PORT=$(( 1024 + ( $$ % ( 65535 - 1024 ))))
 # to obtain a duplicate of another process's file descriptor.
 # Permission to duplicate another process's file descriptor
 # is governed by a ptrace access mode PTRACE_MODE_ATTACH_REALCREDS check (see ptrace(2))
-# that can be changed using the /proc/sys/kernel/yama/ptrace_scope interface.
-PTRACE_SCOPE_FILE="/proc/sys/kernel/yama/ptrace_scope"
-VAL=0
-if [ -f $PTRACE_SCOPE_FILE ]; then
-	PTRACE_SCOPE_VAL=$(cat $PTRACE_SCOPE_FILE)
-	if [ $PTRACE_SCOPE_VAL -ne $VAL ]; then
-		echo "SKIP: ptrace_scope is not set to 0 (classic ptrace permissions) - skipping the test"
-		exit 125 # skip code defined in CMakeLists.txt
-	fi
-fi
+# In the producer binary used in this example prctl(PR_SET_PTRACER, getppid()) is used
+# to allow consumer to duplicate file descriptor of producer.
 
 UMF_LOG_VAL="level:debug;flush:debug;output:stderr;pid:yes"
 

@@ -6,9 +6,11 @@
  */
 
 #include <arpa/inet.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/prctl.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -335,6 +337,14 @@ int run_producer(int port, umf_memory_pool_ops_t *pool_ops, void *pool_params,
     umf_result_t umf_result = UMF_RESULT_ERROR_UNKNOWN;
     int producer_socket = -1;
     char consumer_message[MSG_SIZE];
+
+    ret = prctl(PR_SET_PTRACER, getppid());
+    if (ret == -1) {
+        printf("prctl() call failed with errno %d (%s). This may indicate that "
+               "PR_SET_PTRACER"
+               " is not supported on this system.\n",
+               errno, strerror(errno));
+    }
 
     // create OS memory provider
     umf_result =
