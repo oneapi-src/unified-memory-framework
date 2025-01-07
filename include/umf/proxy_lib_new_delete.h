@@ -1,6 +1,6 @@
 /* ----------------------------------------------------------------------------
 Copyright (c) 2018-2020 Microsoft Research, Daan Leijen
-Copyright (C) 2024 Intel Corporation
+Copyright (C) 2024-2025 Intel Corporation
 
 This is free software; you can redistribute it and/or modify it under the
 terms of the MIT license:
