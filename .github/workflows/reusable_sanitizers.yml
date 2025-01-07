@@ -77,7 +77,6 @@ jobs:
         ASAN_OPTIONS: allocator_may_return_null=1
         TSAN_OPTIONS: allocator_may_return_null=1
       run: |
-        ${{ matrix.compiler.cxx == 'icpx' && '. /opt/intel/oneapi/setvars.sh' || true }}
         ctest --output-on-failure
 
   windows-build:

@@ -33,6 +33,12 @@ include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 find_package(PkgConfig)
 
+if(CMAKE_C_COMPILER_ID STREQUAL "IntelLLVM")
+    # Compiler dependencies needs to be in library path or to be linked
+    # statically
+    add_link_options(-static-intel)
+endif()
+
 # Build Options
 option(UMF_BUILD_SHARED_LIBRARY "Build UMF as shared library" OFF)
 option(UMF_BUILD_LEVEL_ZERO_PROVIDER "Build Level Zero memory provider" ON)

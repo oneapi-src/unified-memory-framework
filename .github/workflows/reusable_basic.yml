@@ -182,8 +182,7 @@ jobs:
     - name: Run tests
       working-directory: ${{env.BUILD_DIR}}
       run: |
-        ${{ matrix.compiler.cxx == 'icpx' && '. /opt/intel/oneapi/setvars.sh' || true }}
-        ctest --output-on-failure # run all tests for better coverage
+        LD_LIBRARY_PATH=${{env.BUILD_DIR}}/lib/ ctest --output-on-failure # run all tests for better coverage
 
     - name: Check coverage
       if:  ${{ matrix.build_type == 'Debug' && matrix.compiler.c == 'gcc' }}
