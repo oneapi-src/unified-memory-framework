@@ -1,3 +1,5 @@
+import os
+
 # Configuration file for the Sphinx documentation builder.
 #
 # This file only contains a selection of the most common options. For a full
@@ -18,12 +20,16 @@
 # -- Project information -----------------------------------------------------
 
 project = "Intel Unified Memory Framework"
-copyright = "2023-2024, Intel"
+copyright = "2023-2025, Intel"
 author = "Intel"
 
 # The full version, including alpha/beta/rc tags
-release = "0.11.0"
-
+release = os.getenv("UMF_VERSION", "")
+print(
+    f"UMF_VERSION used in docs: {release}"
+    if release != ""
+    else "please set UMF_VERSION environment variable before running this script"
+)
 
 # -- General configuration ---------------------------------------------------
 
