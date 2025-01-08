@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2016-2024 Intel Corporation
+ * Copyright (C) 2016-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -9,7 +9,7 @@
 
 // This file was originally under following license:
 // SPDX-License-Identifier: BSD-3-Clause
-/* Copyright 2016-2024, Intel Corporation */
+/* Copyright 2024, Intel Corporation */
 
 /*
  * ctl.c -- implementation of the interface for examination and modification of
