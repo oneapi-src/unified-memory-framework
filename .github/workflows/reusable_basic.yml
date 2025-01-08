@@ -7,8 +7,6 @@ permissions:
   contents: read
 
 env:
-  # for installation testing - it should match with version set in git
-  UMF_VERSION: 0.11.0
   BUILD_DIR : "${{github.workspace}}/build"
   INSTL_DIR : "${{github.workspace}}/../install-dir"
   COVERAGE_DIR : "${{github.workspace}}/coverage"
@@ -150,6 +148,11 @@ jobs:
     - name: Set ptrace value for IPC test
       run: sudo bash -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
 
+    - name: Get UMF version
+      run: |
+        VERSION=$(git describe --tags --abbrev=0 | grep -oP '\d+\.\d+\.\d+')
+        echo "UMF_VERSION=$VERSION" >> $GITHUB_ENV
+
     - name: Configure build
       run: >
         ${{ matrix.compiler.cxx == 'icpx' && '. /opt/intel/oneapi/setvars.sh &&' || ''}} 
@@ -265,6 +268,12 @@ jobs:
     - name: Install dependencies
       run: vcpkg install
       shell: pwsh # Specifies PowerShell as the shell for running the script.
+
+    - name: Get UMF version
+      run: |
+        $version = (git describe --tags --abbrev=0 | Select-String -Pattern '\d+\.\d+\.\d+').Matches.Value
+        echo "UMF_VERSION=$version" >> $env:GITHUB_ENV
+      shell: pwsh
 
     - name: Configure build
       run: >
@@ -468,6 +477,11 @@ jobs:
 
     - name: Install hwloc
       run: brew install hwloc tbb automake
+
+    - name: Get UMF version
+      run: |
+        VERSION=$(git describe --tags --abbrev=0 | grep -Eo '\d+\.\d+\.\d+')
+        echo "UMF_VERSION=$VERSION" >> $GITHUB_ENV
 
     - name: Configure build
       run: >
