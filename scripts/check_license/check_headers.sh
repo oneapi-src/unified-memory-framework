@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
- # Copyright (C) 2016-2024 Intel Corporation
- # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
- # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+# Copyright (C) 2016-2025 Intel Corporation
+# Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 # check-headers.sh - check copyright and license in source files
 
@@ -68,10 +68,10 @@ while [ "$1" != "" ]; do
 done
 
 if [ $CHECK_ALL -eq 0 ]; then
-	CURRENT_COMMIT=$($GIT log --pretty=%H -1)
-	MERGE_BASE=$($GIT merge-base HEAD origin/master 2>/dev/null)
+	CURRENT_COMMIT=$($GIT --no-pager log --pretty=%H -1)
+	MERGE_BASE=$($GIT merge-base HEAD origin/main 2>/dev/null)
 	[ -z $MERGE_BASE ] && \
-		MERGE_BASE=$($GIT log --pretty="%cN:%H" | grep GitHub | head -n1 | cut -d: -f2)
+		MERGE_BASE=$($GIT --no-pager log --pretty="%cN:%H" | grep GitHub 2>/dev/null | head -n1 | cut -d: -f2)
 	[ -z $MERGE_BASE -o "$CURRENT_COMMIT" = "$MERGE_BASE" ] && \
 		CHECK_ALL=1
 fi
@@ -127,7 +127,7 @@ for file in $FILES ; do
 	LAST=` tail -n1 $TMP2`
 
 	YEARS=$(sed '
-/.*Copyright (C) \+.*[0-9-]\+ Intel Corporation/!d
+/.*Copyright (C) [0-9-]\+ Intel Corporation/!d
 s/.*Copyright (C) \([0-9]\+\)-\([0-9]\+\).*/\1-\2/
 s/.*Copyright (C) \([0-9]\+\).*/\1/' "$src_path")
 	if [ -z "$YEARS" ]; then
@@ -142,29 +142,49 @@ s/.*Copyright (C) \([0-9]\+\).*/\1/' "$src_path")
 	COMMIT_FIRST=`echo $FIRST | cut -d"-" -f1`
 	COMMIT_LAST=` echo $LAST  | cut -d"-" -f1`
 
-    if [ "$COMMIT_FIRST" != "" -a "$COMMIT_LAST" != "" ]; then
-        if [[ -n "$COMMIT_FIRST" && -n "$COMMIT_LAST" ]]; then
-            if [[ $COMMIT_FIRST -eq $COMMIT_LAST ]]; then
-                NEW=$COMMIT_LAST
-            else
-                NEW=$COMMIT_FIRST-$COMMIT_LAST
-            fi
+	if [ "$COMMIT_FIRST" != "" -a "$COMMIT_LAST" != "" ]; then
+    	if [ "$COMMIT_FIRST" -lt "$HEADER_FIRST" ]; then
+    	    RV=1
+    	fi
 
-            if [[ "$YEARS" == "$NEW" ]]; then
-                continue
-            else 
-                if [[ ${UPDATE_DATES} -eq 1 ]]; then
-                    sed -i "s/Copyright ${YEARS}/Copyright ${NEW}/g" "${src_path}"
-                else
-                    echo "$file:1: error: wrong copyright date: (is: $YEARS, should be: $NEW)" >&2
-                    RV=1
-                fi
-            fi
-        fi
-    else
-        echo "error: unknown commit dates in file: $file" >&2
-        RV=1
-    fi
+    	if [[ -n "$COMMIT_FIRST" && -n "$COMMIT_LAST" ]]; then
+    	    if [[ $HEADER_FIRST -le $COMMIT_FIRST ]]; then
+    	        if [[ $HEADER_LAST -eq $COMMIT_LAST ]]; then
+    	            continue
+    	        else
+    	            NEW="$HEADER_FIRST-$COMMIT_LAST"
+    	            if [[ ${UPDATE_DATES} -eq 1 ]]; then
+    	                echo "Updating copyright date in $src_path: $YEARS -> $NEW"
+    	                sed -i "s/Copyright (C) ${YEARS}/Copyright (C) ${NEW}/g" "${src_path}"
+    	            else
+    	                echo "$file:1: error: wrong copyright date: (is: $YEARS, should be: $NEW)" >&2
+    	                RV=1
+    	            fi
+    	        fi
+    	    else
+    	        if [[ $COMMIT_FIRST -eq $COMMIT_LAST ]]; then
+    	            NEW=$COMMIT_LAST
+    	        else
+    	            NEW=$COMMIT_FIRST-$COMMIT_LAST
+    	        fi
+
+    	        if [[ "$YEARS" == "$NEW" ]]; then
+    	            continue
+    	        else
+    	            if [[ ${UPDATE_DATES} -eq 1 ]]; then
+    	                echo "Updating copyright date in $src_path: $YEARS -> $NEW"
+    	                sed -i "s/Copyright (C) ${YEARS}/Copyright (C) ${NEW}/g" "${src_path}"
+    	            else
+    	                echo "$file:1: error: wrong copyright date: (is: $YEARS, should be: $NEW)" >&2
+    	                RV=1
+    	            fi
+    	        fi
+    	    fi
+    	fi
+	else
+	    echo "error: unknown commit dates in file: $file" >&2
+	    RV=1
+	fi
 done
 rm -f $TMP $TMP2 $TEMPFILE
 

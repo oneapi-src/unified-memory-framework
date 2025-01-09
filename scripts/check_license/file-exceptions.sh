@@ -13,11 +13,15 @@ grep -v -E -e 'benchmark/ubench.h' \
            -e 'docs/config/Doxyfile' \
            -e 'include/umf/proxy_lib_new_delete.h' \
            -e 'LICENSE.TXT' \
+           -e 'licensing/third-party-programs.txt' \
            -e 'scripts/assets/images/.*' \
+           -e 'scripts/qemu/requirements.txt' \
            -e 'src/uthash/.*' \
            -e 'src/uthash/utlist.h' \
            -e 'src/uthash/uthash.h' \
+           -e 'test/ctl/config.txt' \
            -e 'test/supp/.*' \
+           -e 'third_party/requirements.txt' \
            -e '.clang-format$' \
            -e '.cmake-format$' \
            -e '.cmake.in$' \
@@ -29,6 +33,5 @@ grep -v -E -e 'benchmark/ubench.h' \
            -e '.rst$' \
            -e '.spellcheck-conf.toml' \
            -e '.trivyignore' \
-           -e '.txt$' \
            -e '.xml$' \
            -e '.yml$'
