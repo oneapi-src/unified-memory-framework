@@ -766,7 +766,7 @@ if(Python3_FOUND)
     add_custom_target(
         docs
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-        COMMAND ${Python3_EXECUTABLE}
+        COMMAND UMF_VERSION=${UMF_CMAKE_VERSION} ${Python3_EXECUTABLE}
                 ${UMF_CMAKE_SOURCE_DIR}/docs/generate_docs.py
         COMMENT "Generate HTML documentation using Doxygen")
 endif()
