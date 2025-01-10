@@ -1,9 +1,15 @@
-# Copyright (C) 2022-2024 Intel Corporation
+# Copyright (C) 2022-2025 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
+
+if(CMAKE_C_COMPILER_ID STREQUAL "IntelLLVM")
+    # Compiler dependencies needs to be in library path or to be linked
+    # statically
+    add_link_options(-static-intel)
+endif()
 
 include(FetchContent)
 FetchContent_Declare(

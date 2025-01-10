@@ -74,15 +74,15 @@ jobs:
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
           # test icx compiler
-          # - os: 'ubuntu-22.04'
-            # build_type: Release
-            # compiler: {c: icx, cxx: icpx}
-            # shared_library: 'ON'
-            # level_zero_provider: 'ON'
-            # cuda_provider: 'ON'
-            # install_tbb: 'ON'
-            # disable_hwloc: 'OFF'
-            # link_hwloc_statically: 'OFF'
+          - os: 'ubuntu-22.04'
+            build_type: Release
+            compiler: {c: icx, cxx: icpx}
+            shared_library: 'ON'
+            level_zero_provider: 'ON'
+            cuda_provider: 'ON'
+            install_tbb: 'ON'
+            disable_hwloc: 'OFF'
+            link_hwloc_statically: 'OFF'
           # test without installing TBB
           - os: 'ubuntu-22.04'
             build_type: Release
@@ -182,8 +182,7 @@ jobs:
     - name: Run tests
       working-directory: ${{env.BUILD_DIR}}
       run: |
-        ${{ matrix.compiler.cxx == 'icpx' && '. /opt/intel/oneapi/setvars.sh' || true }}
-        ctest --output-on-failure # run all tests for better coverage
+        LD_LIBRARY_PATH=${{env.BUILD_DIR}}/lib/ ctest --output-on-failure # run all tests for better coverage
 
     - name: Check coverage
       if:  ${{ matrix.build_type == 'Debug' && matrix.compiler.c == 'gcc' }}
