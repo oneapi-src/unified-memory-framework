@@ -20,6 +20,8 @@ jobs:
     uses: ./.github/workflows/reusable_checks.yml
   DocsBuild:
     uses: ./.github/workflows/reusable_docs_build.yml
+  Nightly:
+    uses: ./.github/workflows/nightly.yml
   FastBuild:
     name: Fast builds
     needs: [CodeChecks, DocsBuild]
