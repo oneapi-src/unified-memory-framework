@@ -178,7 +178,7 @@ by a different library and the caller of the :any:`umfGetIPCHandle` function may
 The :any:`umfGetIPCHandle` function returns the IPC handle and its size. The IPC handle is a byte-copyable opaque
 data structure. The :any:`umf_ipc_handle_t` type is defined as a pointer to a byte array. The size of the handle
 might be different for different memory provider types. The code snippet below demonstrates how the IPC handle can
-be serialized for marshalling purposes.
+be serialized for marshaling purposes.
 
 .. code-block:: c
 

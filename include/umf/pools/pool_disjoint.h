@@ -1,6 +1,11 @@
-// Copyright (C) 2023-2024 Intel Corporation
-// Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+/*
+ *
+ * Copyright (C) 2023-2025 Intel Corporation
+ *
+ * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+ *
+ */
 
 #pragma once
 #ifdef __cplusplus
@@ -87,7 +92,7 @@ umfDisjointPoolParamsSetTrace(umf_disjoint_pool_params_handle_t hParams,
 
 /// @brief Set shared limits for disjoint pool.
 /// @param hParams handle to the parameters of the disjoint pool.
-/// @param hSharedLimits handle tp the shared limits.
+/// @param hSharedLimits handle to the shared limits.
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 umf_result_t umfDisjointPoolParamsSetSharedLimits(
     umf_disjoint_pool_params_handle_t hParams,
