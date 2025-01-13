@@ -18,7 +18,7 @@ For a quick introduction to UMF usage, please see
 [examples](https://oneapi-src.github.io/unified-memory-framework/examples.html)
 documentation, which includes the code of the
 [basic example](https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/basic/basic.c).
-The are also more advanced that allocates USM memory from the 
+The are also more advanced that allocates USM memory from the
 [Level Zero device](https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/level_zero_shared_memory/level_zero_shared_memory.c)
 using the Level Zero API and UMF Level Zero memory provider and [CUDA device](https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/cuda_shared_memory/cuda_shared_memory.c)
 using the CUDA API and UMF CUDA memory provider.
@@ -28,19 +28,23 @@ using the CUDA API and UMF CUDA memory provider.
 ### Requirements
 
 Required packages:
+
 - libhwloc-dev >= 2.3.0 (Linux) / hwloc >= 2.3.0 (Windows)
 - C compiler
 - [CMake](https://cmake.org/) >= 3.14.0
 
 For development and contributions:
+
 - clang-format-15.0 (can be installed with `python -m pip install clang-format==15.0.7`)
 - cmake-format-0.6 (can be installed with `python -m pip install cmake-format==0.6.13`)
 - black (can be installed with `python -m pip install black==24.3.0`)
 
 For building tests, multithreaded benchmarks and Disjoint Pool:
+
 - C++ compiler with C++17 support
 
 For Level Zero memory provider tests:
+
 - Level Zero headers and libraries
 - compatible GPU with installed driver
 
@@ -50,8 +54,8 @@ Executable and binaries will be in **build/bin**.
 The `{build_config}` can be either `Debug` or `Release`.
 
 ```bash
-$ cmake -B build -DCMAKE_BUILD_TYPE={build_config}
-$ cmake --build build -j $(nproc)
+cmake -B build -DCMAKE_BUILD_TYPE={build_config}
+cmake --build build -j $(nproc)
 ```
 
 ### Windows
@@ -60,8 +64,8 @@ Generating Visual Studio Project. EXE and binaries will be in **build/bin/{build
 The `{build_config}` can be either `Debug` or `Release`.
 
 ```bash
-$ cmake -B build -G "Visual Studio 15 2017 Win64"
-$ cmake --build build --config {build_config} -j $Env:NUMBER_OF_PROCESSORS
+cmake -B build -G "Visual Studio 15 2017 Win64"
+cmake --build build --config {build_config} -j $Env:NUMBER_OF_PROCESSORS
 ```
 
 ### Benchmark
@@ -73,20 +77,22 @@ UMF also provides multithreaded benchmarks that can be enabled by setting both
 `UMF_BUILD_BENCHMARKS` and `UMF_BUILD_BENCHMARKS_MT` CMake
 configuration flags to `ON`. Multithreaded benchmarks require a C++ support.
 
-The Scalable Pool requirements can be found in the relevant 'Memory Pool 
+The Scalable Pool requirements can be found in the relevant 'Memory Pool
 managers' section below.
 
 ### Sanitizers
 
 List of sanitizers available on Linux:
+
 - AddressSanitizer
 - UndefinedBehaviorSanitizer
 - ThreadSanitizer
-   - Is mutually exclusive with other sanitizers.
+  - Is mutually exclusive with other sanitizers.
 - MemorySanitizer
-   - Requires linking against MSan-instrumented libraries to prevent false positive reports. More information [here](https://github.com/google/sanitizers/wiki/MemorySanitizerLibcxxHowTo).
+  - Requires linking against MSan-instrumented libraries to prevent false positive reports. More information [here](https://github.com/google/sanitizers/wiki/MemorySanitizerLibcxxHowTo).
 
 List of sanitizers available on Windows:
+
 - AddressSanitizer
 
 Listed sanitizers can be enabled with appropriate [CMake options](#cmake-standard-options).
@@ -133,7 +139,7 @@ UMF comes with predefined pool allocators (see [`include/umf/pools`](include/umf
 providers that implement a specific interface (see [`include/umf/memory_pool_ops.h`](include/umf/memory_pool_ops.h)
 and [`include/umf/memory_provider_ops.h`](include/umf/memory_provider_ops.h)).
 
-More detailed documentation is available here: https://oneapi-src.github.io/unified-memory-framework/
+More detailed documentation is available here: <https://oneapi-src.github.io/unified-memory-framework/>
 
 ### Memory providers
 
@@ -146,6 +152,7 @@ A memory provider that can provide memory from a given pre-allocated buffer.
 A memory provider that provides memory from an operating system.
 
 OS memory provider supports two types of memory mappings (set by the `visibility` parameter):
+
 1) private memory mapping (`UMF_MEM_MAP_PRIVATE`)
 2) shared memory mapping (`UMF_MEM_MAP_SHARED` - supported on Linux only yet)
 
@@ -159,16 +166,18 @@ Permission to duplicate another process's file descriptor is governed by a ptrac
 the `/proc/sys/kernel/yama/ptrace_scope` interface in the following way:
 
 ```sh
-$ sudo bash -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
+sudo bash -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
 ```
 
 There are available two mechanisms for the shared memory mapping:
+
 1) a named shared memory object (used if the `shm_name` parameter is not NULL) or
 2) an anonymous file descriptor (used if the `shm_name` parameter is NULL)
 
 The `shm_name` parameter should be a null-terminated string of up to NAME_MAX (i.e., 255) characters none of which are slashes.
 
 An anonymous file descriptor for the shared memory mapping will be created using:
+
 1) `memfd_secret()` syscall - (if it is implemented and) if the `UMF_MEM_FD_FUNC` environment variable does not contain the "memfd_create" string or
 2) `memfd_create()` syscall - otherwise (and if it is implemented).
 
@@ -178,7 +187,8 @@ IPC API on Linux requires the `PTRACE_MODE_ATTACH_REALCREDS` permission (see `pt
 to duplicate another process's file descriptor (see above).
 
 Packages required for tests (Linux-only yet):
-   - libnuma-dev
+
+- libnuma-dev
 
 #### Level Zero memory provider
 
@@ -191,7 +201,7 @@ Permission to duplicate another process's file descriptor is governed by a ptrac
 the `/proc/sys/kernel/yama/ptrace_scope` interface in the following way:
 
 ```sh
-$ sudo bash -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
+sudo bash -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
 ```
 
 ##### Requirements
@@ -266,7 +276,7 @@ To enable this feature, the `UMF_BUILD_LIBUMF_POOL_DISJOINT` option needs to be 
 
 #### Jemalloc pool
 
-Jemalloc pool is a [jemalloc](https://github.com/jemalloc/jemalloc)-based memory 
+Jemalloc pool is a [jemalloc](https://github.com/jemalloc/jemalloc)-based memory
 pool manager built as a separate static library: libjemalloc_pool.a on Linux and
 jemalloc_pool.lib on Windows.
 The `UMF_BUILD_LIBUMF_POOL_JEMALLOC` option has to be turned `ON` to build this library.
@@ -275,6 +285,7 @@ The `UMF_BUILD_LIBUMF_POOL_JEMALLOC` option has to be turned `ON` to build this 
 
 In case of Linux OS jemalloc is built from the (fetched) sources with the following
 non-default options enabled:
+
 - `--with-jemalloc-prefix=je_` - adds the `je_` prefix to all public APIs,
 - `--disable-cxx` - disables C++ integration, it will cause the `new` and the `delete`
                     operators implementations to be omitted.
@@ -289,6 +300,7 @@ The default jemalloc package is required on Windows.
 
 1) The `UMF_BUILD_LIBUMF_POOL_JEMALLOC` option turned `ON`
 2) jemalloc is required:
+
 - on Linux and MacOS: jemalloc is fetched and built from sources (a custom build),
 - on Windows: the default jemalloc package is required
 
@@ -300,7 +312,8 @@ It is distributed as part of libumf. To use this pool, TBB must be installed in 
 ##### Requirements
 
 Packages required for using this pool and executing tests/benchmarks (not required for build):
-   - libtbb-dev (libtbbmalloc.so.2) on Linux or tbb (tbbmalloc.dll) on Windows
+
+- libtbb-dev (libtbbmalloc.so.2) on Linux or tbb (tbbmalloc.dll) on Windows
 
 ### Memspaces (Linux-only)
 
@@ -338,10 +351,11 @@ To enable this feature, the `UMF_BUILD_SHARED_LIBRARY` option needs to be turned
 In case of Linux it can be done without any code changes using the `LD_PRELOAD` environment variable:
 
 ```sh
-$ LD_PRELOAD=/usr/lib/libumf_proxy.so myprogram
+LD_PRELOAD=/usr/lib/libumf_proxy.so myprogram
 ```
 
 The memory used by the proxy memory allocator is mmap'ed:
+
 1) with the `MAP_PRIVATE` flag by default or
 2) with the `MAP_SHARED` flag if the `UMF_PROXY` environment variable contains one of two following strings: `page.disposition=shared-shm` or `page.disposition=shared-fd`. These two options differ in a mechanism used during IPC:
    - `page.disposition=shared-shm` - IPC uses the named shared memory. An SHM name is generated using the `umf_proxy_lib_shm_pid_$PID` pattern, where `$PID` is the PID of the process. It creates the `/dev/shm/umf_proxy_lib_shm_pid_$PID` file.
@@ -357,6 +371,7 @@ It can be enabled by adding the `size.threshold=<value>` string to the `UMF_PROX
 #### Windows
 
 In case of Windows it requires:
+
 1) explicitly linking your program dynamically with the `umf_proxy.dll` library
 2) (C++ code only) including `proxy_lib_new_delete.h` in a single(!) source file in your project
    to override also the `new`/`delete` operations.
@@ -370,3 +385,7 @@ an issue or a Pull Request, please read [Contribution Guide](./CONTRIBUTING.md).
 
 To enable logging in UMF source files please follow the guide in the
 [web documentation](https://oneapi-src.github.io/unified-memory-framework/introduction.html#logging).
+
+## Notices
+
+The contents of this repository may have been developed with support from one or more Intel-operated generative artificial intelligence solutions.
