@@ -36,7 +36,10 @@ print(
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ["breathe"]
+extensions = ["breathe", "sphinxcontrib.spelling"]
+
+spelling_show_suggestions = True
+spelling_word_list_filename = "spelling_exceptions.txt"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
