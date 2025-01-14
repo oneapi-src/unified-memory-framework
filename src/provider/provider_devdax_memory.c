@@ -17,10 +17,13 @@
 #include <umf/memory_provider_ops.h>
 #include <umf/providers/provider_devdax_memory.h>
 
+#include "utils_log.h"
+
 #if defined(_WIN32) || defined(UMF_NO_HWLOC)
 
 umf_memory_provider_ops_t *umfDevDaxMemoryProviderOps(void) {
     // not supported
+    LOG_ERR("DevDax memory provider is disabled!");
     return NULL;
 }
 
@@ -30,12 +33,14 @@ umf_result_t umfDevDaxMemoryProviderParamsCreate(
     (void)hParams;
     (void)path;
     (void)size;
+    LOG_ERR("DevDax memory provider is disabled!");
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
 umf_result_t umfDevDaxMemoryProviderParamsDestroy(
     umf_devdax_memory_provider_params_handle_t hParams) {
     (void)hParams;
+    LOG_ERR("DevDax memory provider is disabled!");
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
@@ -45,6 +50,7 @@ umf_result_t umfDevDaxMemoryProviderParamsSetDeviceDax(
     (void)hParams;
     (void)path;
     (void)size;
+    LOG_ERR("DevDax memory provider is disabled!");
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
@@ -52,6 +58,7 @@ umf_result_t umfDevDaxMemoryProviderParamsSetProtection(
     umf_devdax_memory_provider_params_handle_t hParams, unsigned protection) {
     (void)hParams;
     (void)protection;
+    LOG_ERR("DevDax memory provider is disabled!");
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
