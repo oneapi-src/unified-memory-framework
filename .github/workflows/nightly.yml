@@ -39,8 +39,8 @@ jobs:
             --env BUILD_TYPE=${{matrix.build_type}} \
             umf-ubuntu-20.04 \
             bash -c "
-              sudo apt-get update &&
-              sudo apt-get install -y cmake hwloc libhwloc-dev libnuma-dev libtbb-dev &&
+              apt-get update &&
+              apt-get install -y cmake hwloc libhwloc-dev libnuma-dev libtbb-dev &&
               cmake -B /workspace/build \
                 -DCMAKE_BUILD_TYPE=\$BUILD_TYPE \
                 -DCMAKE_C_COMPILER=${{matrix.compiler.c}} \
@@ -75,10 +75,11 @@ jobs:
         docker run --rm \
           -v ${{github.workspace}}:/workspace \
           -w /workspace \
+          --env TOOL=${{ matrix.tool }} \
           umf-ubuntu-20.04 \
           bash -c "\
-            sudo apt-get update &&
-            sudo apt-get install -y cmake hwloc libhwloc-dev libnuma-dev libtbb-dev valgrind &&
+            apt-get update &&
+            apt-get install -y cmake hwloc libhwloc-dev libnuma-dev libtbb-dev valgrind &&
             cmake -B /workspace/build \
               -DCMAKE_BUILD_TYPE=Debug \
               -DUMF_FORMAT_CODE_STYLE=OFF \
@@ -90,7 +91,7 @@ jobs:
               -DUMF_USE_VALGRIND=1 \
               -DUMF_TESTS_FAIL_ON_SKIP=ON &&
             cmake --build /workspace/build --config Debug -j$(nproc) &&
-            /workspace/test/test_valgrind.sh /workspace /workspace/build ${matrix.tool}
+            /workspace/test/test_valgrind.sh /workspace /workspace/build \$TOOL
         "
 
   # TODO fix #843
