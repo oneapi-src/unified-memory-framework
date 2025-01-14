@@ -36,19 +36,20 @@ jobs:
           docker run --rm \
             -v ${{github.workspace}}:/workspace \
             -w /workspace \
+            --env BUILD_TYPE=${{matrix.build_type}} \
             umf-ubuntu-20.04 \
             bash -c "
               sudo apt-get update &&
               sudo apt-get install -y cmake hwloc libhwloc-dev libnuma-dev libtbb-dev &&
               cmake -B /workspace/build \
-                -DCMAKE_BUILD_TYPE=${{matrix.build_type}} \
+                -DCMAKE_BUILD_TYPE=\$BUILD_TYPE \
                 -DCMAKE_C_COMPILER=${{matrix.compiler.c}} \
                 -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}} \
                 -DUMF_TESTS_FAIL_ON_SKIP=ON \
                 -DUMF_DEVELOPER_MODE=ON \
                 -DUMF_BUILD_FUZZTESTS=ON &&
-              cmake --build /workspace/build --config ${matrix.build_type} --verbose -j$(nproc) &&
-              ctest -C ${matrix.build_type} --output-on-failure --verbose -L fuzz-long
+              cmake --build /workspace/build --config \$BUILD_TYPE --verbose -j$(nproc) &&
+              ctest -C \$BUILD_TYPE --output-on-failure --verbose -L "fuzz-long"
           "
 
   valgrind:
