@@ -1,4 +1,4 @@
-# Runs tests on multi-numa machine
+# Runs tests on multi-numa machines
 name: MultiNuma
 
 on: [workflow_call]
@@ -15,7 +15,7 @@ jobs:
   multi_numa:
     name: "${{matrix.os}}, ${{matrix.build_type}}, shared=${{matrix.shared_library}}"
     # run only on upstream; forks will not have the HW
-    # if: github.repository == 'oneapi-src/unified-memory-framework'
+    if: github.repository == 'oneapi-src/unified-memory-framework'
 
     strategy:
       matrix:
