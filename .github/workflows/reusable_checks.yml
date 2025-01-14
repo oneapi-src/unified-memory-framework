@@ -52,6 +52,10 @@ jobs:
     - name: Check Python formatting
       run: cmake --build build --target black-format-check
 
+    - name: Run check-license
+      run: |
+        ./scripts/check_license/check_headers.sh . "Apache-2.0 WITH LLVM-exception" -v
+
     - name: Run a spell check
       uses: crate-ci/typos@b63f421581dce830bda2f597a678cb7776b41877 # v1.18.2
       with:
