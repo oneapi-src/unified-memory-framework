@@ -50,9 +50,9 @@
 #include <umf/memory_pool.h>
 #include <umf/memory_provider.h>
 #include <umf/providers/provider_os_memory.h>
+#include <umf/proxy_lib_handlers.h>
 
 #include "base_alloc_linear.h"
-#include "proxy_lib.h"
 #include "utils_common.h"
 #include "utils_load_library.h"
 #include "utils_log.h"
@@ -134,6 +134,22 @@ static __TLS int was_called_from_umfPool = 0;
 // when the JEMALLOC proxy_lib_pool is used.
 // TODO remove this WA when the issue is fixed.
 static __TLS int was_called_from_malloc_usable_size = 0;
+
+// malloc API handlers
+static umf_proxy_lib_handler_malloc_pre_t Handler_malloc_pre = NULL;
+static umf_proxy_lib_handler_aligned_malloc_pre_t Handler_aligned_malloc_pre =
+    NULL;
+static umf_proxy_lib_handler_free_pre_t Handler_free_pre = NULL;
+
+static umf_proxy_lib_handler_malloc_post_t Handler_malloc_post = NULL;
+static umf_proxy_lib_handler_aligned_malloc_post_t Handler_aligned_malloc_post =
+    NULL;
+
+static void *Handler_malloc_pre_user_data = NULL;
+static void *Handler_aligned_malloc_pre_user_data = NULL;
+static void *Handler_free_pre_user_data = NULL;
+static void *Handler_malloc_post_user_data = NULL;
+static void *Handler_aligned_malloc_post_user_data = NULL;
 
 /*****************************************************************************/
 /*** The constructor and destructor of the proxy library *********************/
@@ -353,20 +369,34 @@ static inline size_t ba_leak_pool_contains_pointer(void *ptr) {
 /*****************************************************************************/
 
 void *malloc(size_t size) {
+    if (Handler_malloc_pre) {
+        Handler_malloc_pre(Handler_malloc_pre_user_data, &size);
+    }
+
+    void *ptr = NULL;
 #ifndef _WIN32
     if (size < Size_threshold_value) {
-        return System_malloc(size);
+        ptr = System_malloc(size);
+        goto handler_post;
     }
 #endif /* _WIN32 */
 
-    if (!was_called_from_umfPool && Proxy_pool) {
+    umf_memory_pool_handle_t pool = Proxy_pool;
+    if (!was_called_from_umfPool && pool) {
         was_called_from_umfPool = 1;
-        void *ptr = umfPoolMalloc(Proxy_pool, size);
+        ptr = umfPoolMalloc(pool, size);
         was_called_from_umfPool = 0;
-        return ptr;
+        goto handler_post;
     }
 
-    return ba_leak_malloc(size);
+    ptr = ba_leak_malloc(size);
+
+handler_post:
+    if (Handler_malloc_post) {
+        Handler_malloc_post(Handler_malloc_post_user_data, &ptr, pool);
+    }
+
+    return ptr;
 }
 
 void *calloc(size_t nmemb, size_t size) {
@@ -387,15 +417,28 @@ void *calloc(size_t nmemb, size_t size) {
 }
 
 void free(void *ptr) {
+    umf_memory_pool_handle_t pool = NULL;
+    if (Handler_free_pre) {
+        pool = umfPoolByPtr(ptr);
+        Handler_free_pre(Handler_free_pre_user_data, &ptr, pool);
+    }
+
     if (ptr == NULL) {
         return;
     }
 
+    // NOTE: for system allocations made during UMF and Proxy Lib
+    // initialisation, we never call free handlers, as they should handle
+    // only user-made allocations
     if (ba_leak_free(ptr) == 0) {
         return;
     }
 
-    if (Proxy_pool && (umfPoolByPtr(ptr) == Proxy_pool)) {
+    if (Proxy_pool && pool == NULL) {
+        pool = umfPoolByPtr(ptr);
+    }
+
+    if (pool == Proxy_pool) {
         if (umfPoolFree(Proxy_pool, ptr) != UMF_RESULT_SUCCESS) {
             LOG_ERR("umfPoolFree() failed");
         }
@@ -448,20 +491,36 @@ void *realloc(void *ptr, size_t size) {
 }
 
 void *aligned_alloc(size_t alignment, size_t size) {
+    umf_memory_pool_handle_t pool = Proxy_pool;
+    if (Handler_aligned_malloc_pre) {
+        Handler_aligned_malloc_pre(Handler_aligned_malloc_pre_user_data, &pool,
+                                   &size, &alignment);
+    }
+
+    void *ptr = NULL;
 #ifndef _WIN32
     if (size < Size_threshold_value) {
-        return System_aligned_alloc(alignment, size);
+        ptr = System_aligned_alloc(alignment, size);
+        goto handler_post;
     }
 #endif /* _WIN32 */
 
     if (!was_called_from_umfPool && Proxy_pool) {
         was_called_from_umfPool = 1;
-        void *ptr = umfPoolAlignedMalloc(Proxy_pool, size, alignment);
+        ptr = umfPoolAlignedMalloc(Proxy_pool, size, alignment);
         was_called_from_umfPool = 0;
-        return ptr;
+        goto handler_post;
     }
 
-    return ba_leak_aligned_alloc(alignment, size);
+    ptr = ba_leak_aligned_alloc(alignment, size);
+
+handler_post:
+    if (Handler_aligned_malloc_post) {
+        Handler_aligned_malloc_post(Handler_aligned_malloc_post_user_data, &ptr,
+                                    pool);
+    }
+
+    return ptr;
 }
 
 #ifdef _WIN32
@@ -555,3 +614,35 @@ void *_aligned_offset_recalloc(void *ptr, size_t num, size_t size,
 }
 
 #endif
+
+// malloc API handlers
+
+void umfSetProxyLibHandlerMallocPre(umf_proxy_lib_handler_malloc_pre_t handler,
+                                    void *user_data) {
+    Handler_malloc_pre = handler;
+    Handler_malloc_pre_user_data = user_data;
+}
+
+void umfSetProxyLibHandlerAlignedMallocPre(
+    umf_proxy_lib_handler_aligned_malloc_pre_t handler, void *user_data) {
+    Handler_aligned_malloc_pre = handler;
+    Handler_aligned_malloc_pre_user_data = user_data;
+}
+
+void umfSetProxyLibHandlerFreePre(umf_proxy_lib_handler_free_pre_t handler,
+                                  void *user_data) {
+    Handler_free_pre = handler;
+    Handler_free_pre_user_data = user_data;
+}
+
+void umfSetProxyLibHandlerMallocPost(
+    umf_proxy_lib_handler_malloc_post_t handler, void *user_data) {
+    Handler_malloc_post = handler;
+    Handler_malloc_post_user_data = user_data;
+}
+
+void umfSetProxyLibHandlerAlignedMallocPost(
+    umf_proxy_lib_handler_aligned_malloc_post_t handler, void *user_data) {
+    Handler_aligned_malloc_post = handler;
+    Handler_aligned_malloc_post_user_data = user_data;
+}
