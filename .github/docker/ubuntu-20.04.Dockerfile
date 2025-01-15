@@ -53,7 +53,6 @@ RUN apt-get update \
 # Install hwloc
 COPY .github/scripts/install_hwloc.sh /opt/umf/install_hwloc.sh
 RUN /opt/umf/install_hwloc.sh \
- && /opt/umf/install_hwloc.sh \
  && ldconfig \
  && rm -f /opt/umf/install_hwloc.sh
 
