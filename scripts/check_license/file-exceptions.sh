@@ -9,6 +9,7 @@ grep -v -E -e 'benchmark/ubench.h' \
            -e 'ChangeLog' \
            -e 'CODEOWNERS$' \
            -e 'docs/assets/.*' \
+           -e 'docs/config/spelling_exceptions.txt' \
            -e 'docs/config/conf.py' \
            -e 'docs/config/Doxyfile' \
            -e 'include/umf/proxy_lib_new_delete.h' \

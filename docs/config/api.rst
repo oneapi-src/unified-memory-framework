@@ -86,7 +86,7 @@ and operate on the provider.
 Fixed Memory Provider
 ------------------------------------------
 
-A memory provider that can provide memory from a given pre-allocated buffer.
+A memory provider that can provide memory from a given preallocated buffer.
 
 .. doxygenfile:: provider_fixed_memory.h
     :sections: define enum typedef func var
