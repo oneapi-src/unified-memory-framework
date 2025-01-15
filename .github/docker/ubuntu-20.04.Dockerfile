@@ -50,6 +50,13 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/* \
  && apt-get clean all
 
+# Install hwloc
+COPY .github/scripts/install_hwloc.sh /opt/umf/install_hwloc.sh
+RUN /opt/umf/install_hwloc.sh \
+ && /opt/umf/install_hwloc.sh \
+ && ldconfig \
+ && rm -f /opt/umf/install_hwloc.sh
+
 # Prepare a dir (accessible by anyone)
 RUN mkdir --mode 777 /opt/umf/
 
