@@ -52,12 +52,15 @@ RUN apt-get update \
 
 # Install hwloc
 COPY .github/scripts/install_hwloc.sh /opt/umf/install_hwloc.sh
-RUN /opt/umf/install_hwloc.sh \
- && ldconfig \
- && rm -f /opt/umf/install_hwloc.sh
+RUN apt-get update \
+	&& apt-get install -y dos2unix libtool \
+	&& dos2unix /opt/umf/install_hwloc.sh \
+	&& bash -x /opt/umf/install_hwloc.sh \
+	&& ldconfig \
+	&& rm -f /opt/umf/install_hwloc.sh
 
 # Prepare a dir (accessible by anyone)
-RUN mkdir --mode 777 /opt/umf/
+RUN mkdir -p --mode 777 /opt/umf/
 
 # Additional dependencies (installed via pip)
 COPY third_party/requirements.txt /opt/umf/requirements.txt
