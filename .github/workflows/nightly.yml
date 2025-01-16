@@ -27,9 +27,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Build Docker image
-        run: |
-          docker build -f .github/docker/ubuntu-20.04.Dockerfile -t umf-ubuntu-20.04 .   
+      # - name: Build Docker image
+      #   run: |
+      #     docker build -f .github/docker/ubuntu-20.04.Dockerfile -t umf-ubuntu-20.04 .   
 
       - name: Fuzz long test in Docker container
         run: |
@@ -68,9 +68,9 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Build Docker image
-      run: |
-        docker build -f .github/docker/ubuntu-20.04.Dockerfile -t umf-ubuntu-20.04 .
+    # - name: Build Docker image
+    #   run: |
+    #     docker build -f .github/docker/ubuntu-20.04.Dockerfile -t umf-ubuntu-20.04 .
 
     - name: Run tests under valgrind in Docker
       run: |
