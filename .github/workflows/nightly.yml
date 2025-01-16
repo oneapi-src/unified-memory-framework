@@ -40,6 +40,7 @@ jobs:
             --user root \
             umf-ubuntu-20.04 \
             bash -c "
+              export VALGRIND_LIB=/usr/lib/valgrind/ &&
               apt-get update &&
               apt-get install -y cmake hwloc libhwloc-dev libnuma-dev libtbb-dev &&
               cmake -B /workspace/build \
