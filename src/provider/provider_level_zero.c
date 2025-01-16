@@ -75,6 +75,14 @@ umf_result_t umfLevelZeroMemoryProviderParamsSetResidentDevices(
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
+umf_result_t umfLevelZeroMemoryProviderParamsSetFreePolicy(
+    umf_level_zero_memory_provider_params_handle_t hParams,
+    umf_level_zero_memory_provider_free_policy_t policy) {
+    (void)hParams;
+    (void)policy;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
 umf_memory_provider_ops_t *umfLevelZeroMemoryProviderOps(void) {
     // not supported
     LOG_ERR("L0 memory provider is disabled! (UMF_BUILD_LEVEL_ZERO_PROVIDER is "
@@ -107,6 +115,9 @@ typedef struct umf_level_zero_memory_provider_params_t {
         resident_device_handles; ///< Array of devices for which the memory should be made resident
     uint32_t
         resident_device_count; ///< Number of devices for which the memory should be made resident
+
+    umf_level_zero_memory_provider_free_policy_t
+        freePolicy; ///< Memory free policy
 } umf_level_zero_memory_provider_params_t;
 
 typedef struct ze_memory_provider_t {
@@ -118,6 +129,8 @@ typedef struct ze_memory_provider_t {
     uint32_t resident_device_count;
 
     ze_device_properties_t device_properties;
+
+    ze_driver_memory_free_policy_ext_flags_t freePolicyFlags;
 } ze_memory_provider_t;
 
 typedef struct ze_ops_t {
@@ -144,6 +157,8 @@ typedef struct ze_ops_t {
                                                size_t);
     ze_result_t (*zeDeviceGetProperties)(ze_device_handle_t,
                                          ze_device_properties_t *);
+    ze_result_t (*zeMemFreeExt)(ze_context_handle_t,
+                                ze_memory_free_ext_desc_t *, void *);
 } ze_ops_t;
 
 static ze_ops_t g_ze_ops;
@@ -197,6 +212,8 @@ static void init_ze_global_state(void) {
         utils_get_symbol_addr(0, "zeContextMakeMemoryResident", lib_name);
     *(void **)&g_ze_ops.zeDeviceGetProperties =
         utils_get_symbol_addr(0, "zeDeviceGetProperties", lib_name);
+    *(void **)&g_ze_ops.zeMemFreeExt =
+        utils_get_symbol_addr(0, "zeMemFreeExt", lib_name);
 
     if (!g_ze_ops.zeMemAllocHost || !g_ze_ops.zeMemAllocDevice ||
         !g_ze_ops.zeMemAllocShared || !g_ze_ops.zeMemFree ||
@@ -232,6 +249,7 @@ umf_result_t umfLevelZeroMemoryProviderParamsCreate(
     params->memory_type = UMF_MEMORY_TYPE_UNKNOWN;
     params->resident_device_handles = NULL;
     params->resident_device_count = 0;
+    params->freePolicy = UMF_LEVEL_ZERO_MEMORY_PROVIDER_FREE_POLICY_DEFAULT;
 
     *hParams = params;
 
@@ -308,6 +326,32 @@ umf_result_t umfLevelZeroMemoryProviderParamsSetResidentDevices(
     return UMF_RESULT_SUCCESS;
 }
 
+umf_result_t umfLevelZeroMemoryProviderParamsSetFreePolicy(
+    umf_level_zero_memory_provider_params_handle_t hParams,
+    umf_level_zero_memory_provider_free_policy_t policy) {
+    if (!hParams) {
+        LOG_ERR("Level zero memory provider params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    hParams->freePolicy = policy;
+    return UMF_RESULT_SUCCESS;
+}
+
+static ze_driver_memory_free_policy_ext_flags_t
+umfFreePolicyToZePolicy(umf_level_zero_memory_provider_free_policy_t policy) {
+    switch (policy) {
+    case UMF_LEVEL_ZERO_MEMORY_PROVIDER_FREE_POLICY_DEFAULT:
+        return 0;
+    case UMF_LEVEL_ZERO_MEMORY_PROVIDER_FREE_POLICY_BLOCKING_FREE:
+        return ZE_DRIVER_MEMORY_FREE_POLICY_EXT_FLAG_BLOCKING_FREE;
+    case UMF_LEVEL_ZERO_MEMORY_PROVIDER_FREE_POLICY_DEFER_FREE:
+        return ZE_DRIVER_MEMORY_FREE_POLICY_EXT_FLAG_DEFER_FREE;
+    default:
+        return 0;
+    }
+}
+
 static umf_result_t ze_memory_provider_initialize(void *params,
                                                   void **provider) {
     if (params == NULL) {
@@ -351,6 +395,8 @@ static umf_result_t ze_memory_provider_initialize(void *params,
     ze_provider->context = ze_params->level_zero_context_handle;
     ze_provider->device = ze_params->level_zero_device_handle;
     ze_provider->memory_type = (ze_memory_type_t)ze_params->memory_type;
+    ze_provider->freePolicyFlags =
+        umfFreePolicyToZePolicy(ze_params->freePolicy);
 
     memset(&ze_provider->device_properties, 0,
            sizeof(ze_provider->device_properties));
@@ -493,8 +539,18 @@ static umf_result_t ze_memory_provider_free(void *provider, void *ptr,
     }
 
     ze_memory_provider_t *ze_provider = (ze_memory_provider_t *)provider;
-    ze_result_t ze_result = g_ze_ops.zeMemFree(ze_provider->context, ptr);
-    return ze2umf_result(ze_result);
+
+    if (ze_provider->freePolicyFlags == 0) {
+        return ze2umf_result(g_ze_ops.zeMemFree(ze_provider->context, ptr));
+    }
+
+    ze_memory_free_ext_desc_t desc = {
+        .stype = ZE_STRUCTURE_TYPE_MEMORY_FREE_EXT_DESC,
+        .pNext = NULL,
+        .freePolicy = ze_provider->freePolicyFlags};
+
+    return ze2umf_result(
+        g_ze_ops.zeMemFreeExt(ze_provider->context, &desc, ptr));
 }
 
 static void ze_memory_provider_get_last_native_error(void *provider,
