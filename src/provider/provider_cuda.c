@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -313,7 +313,7 @@ static umf_result_t cu_memory_provider_initialize(void *params,
     CUmemAllocationProp allocProps = {0};
     allocProps.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
     allocProps.type = CU_MEM_ALLOCATION_TYPE_PINNED;
-    allocProps.location.id = cu_provider->device;
+    allocProps.location.id = cu_params->cuda_device_handle;
     CUresult cu_result = g_cu_ops.cuMemGetAllocationGranularity(
         &min_alignment, &allocProps, CU_MEM_ALLOC_GRANULARITY_MINIMUM);
     if (cu_result != CUDA_SUCCESS) {
