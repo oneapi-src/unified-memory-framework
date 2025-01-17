@@ -159,11 +159,12 @@ OS memory provider supports two types of memory mappings (set by the `visibility
 IPC API requires the `UMF_MEM_MAP_SHARED` memory `visibility` mode
 (`UMF_RESULT_ERROR_INVALID_ARGUMENT` is returned otherwise).
 
-IPC API uses the file descriptor duplication. It requires using `pidfd_getfd(2)` to obtain
-a duplicate of another process's file descriptor (`pidfd_getfd(2)` is supported since Linux 5.6).
-Permission to duplicate another process's file descriptor is governed by a ptrace access mode
-`PTRACE_MODE_ATTACH_REALCREDS` check (see `ptrace(2)`) that can be changed using
-the `/proc/sys/kernel/yama/ptrace_scope` interface in the following way:
+IPC API uses file descriptor duplication, which requires the `pidfd_getfd(2)` system call to obtain
+a duplicate of another process's file descriptor. This system call is supported since Linux 5.6.
+Required permission ("restricted ptrace") is governed by the `PTRACE_MODE_ATTACH_REALCREDS` check
+(see `ptrace(2)`). To allow file descriptor duplication in a binary that opens IPC handle, you can call
+`prctl(PR_SET_PTRACER, ...)` in the producer binary that gets the IPC handle.
+Alternatively you can change the `ptrace_scope` globally in the system, e.g.:
 
 ```sh
 sudo bash -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
@@ -194,16 +195,16 @@ Packages required for tests (Linux-only yet):
 
 A memory provider that provides memory from L0 device.
 
-IPC API uses the file descriptor duplication. It requires using `pidfd_getfd(2)` to obtain
-a duplicate of another process's file descriptor (`pidfd_getfd(2)` is supported since Linux 5.6).
-Permission to duplicate another process's file descriptor is governed by a ptrace access mode
-`PTRACE_MODE_ATTACH_REALCREDS` check (see `ptrace(2)`) that can be changed using
-the `/proc/sys/kernel/yama/ptrace_scope` interface in the following way:
+IPC API uses file descriptor duplication, which requires the `pidfd_getfd(2)` system call to obtain
+a duplicate of another process's file descriptor. This system call is supported since Linux 5.6.
+Required permission ("restricted ptrace") is governed by the `PTRACE_MODE_ATTACH_REALCREDS` check
+(see `ptrace(2)`). To allow file descriptor duplication in a binary that opens IPC handle, you can call
+`prctl(PR_SET_PTRACER, ...)` in the producer binary that gets the IPC handle.
+Alternatively you can change the `ptrace_scope` globally in the system, e.g.:
 
 ```sh
 sudo bash -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
 ```
-
 ##### Requirements
 
 1) Linux or Windows OS
@@ -359,7 +360,7 @@ The memory used by the proxy memory allocator is mmap'ed:
 1) with the `MAP_PRIVATE` flag by default or
 2) with the `MAP_SHARED` flag if the `UMF_PROXY` environment variable contains one of two following strings: `page.disposition=shared-shm` or `page.disposition=shared-fd`. These two options differ in a mechanism used during IPC:
    - `page.disposition=shared-shm` - IPC uses the named shared memory. An SHM name is generated using the `umf_proxy_lib_shm_pid_$PID` pattern, where `$PID` is the PID of the process. It creates the `/dev/shm/umf_proxy_lib_shm_pid_$PID` file.
-   - `page.disposition=shared-fd` - IPC uses the file descriptor duplication. It requires using `pidfd_getfd(2)` to obtain a duplicate of another process's file descriptor. Permission to duplicate another process's file descriptor is governed by a ptrace access mode `PTRACE_MODE_ATTACH_REALCREDS` check (see `ptrace(2)`) that can be changed using the `/proc/sys/kernel/yama/ptrace_scope` interface. `pidfd_getfd(2)` is supported since Linux 5.6.
+   - `page.disposition=shared-fd` -  IPC API uses file descriptor duplication, which requires the `pidfd_getfd(2)` system call to obtain a duplicate of another process's file descriptor. This system call is supported since Linux 5.6. Required permission ("restricted ptrace") is governed by the `PTRACE_MODE_ATTACH_REALCREDS` check (see `ptrace(2)`). To allow file descriptor duplication in a binary that opens IPC handle, you can call `prctl(PR_SET_PTRACER, ...)` in the producer binary that gets the IPC handle. Alternatively you can change the `ptrace_scope` globally in the system, e.g.: `sudo bash -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"`.
 
 **Size threshold**
 

@@ -145,9 +145,6 @@ jobs:
     - name: Install libhwloc
       run: .github/scripts/install_hwloc.sh
 
-    - name: Set ptrace value for IPC test
-      run: sudo bash -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
-
     - name: Get UMF version
       run: |
         VERSION=$(git describe --tags --abbrev=0 | grep -oP '\d+\.\d+\.\d+')
