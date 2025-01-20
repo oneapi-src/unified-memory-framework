@@ -471,8 +471,12 @@ jobs:
         echo "$PATH" >> $GITHUB_PATH
         python3 -m pip install -r third_party/requirements.txt
 
+    - name: Install dependencies
+      run: brew install jemalloc tbb automake
+
     - name: Install hwloc
-      run: brew install hwloc tbb automake
+      if: matrix.os == 'macos-14'
+      run: brew install hwloc
 
     - name: Get UMF version
       run: |
@@ -492,6 +496,7 @@ jobs:
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
         -DUMF_BUILD_SHARED_LIBRARY=ON
         -DUMF_TESTS_FAIL_ON_SKIP=ON
+        ${{ matrix.os != 'macos-14' && '-DUMF_LINK_HWLOC_STATICALLY=ON' || '' }}
 
     - name: Build UMF
       run: cmake --build ${{env.BUILD_DIR}} -j $(sysctl -n hw.logicalcpu)
