@@ -453,6 +453,9 @@ jobs:
     strategy:
       matrix:
         os: ['macos-13', 'macos-14']
+        include:
+          - os: macos-14
+            static_hwloc: '-DUMF_LINK_HWLOC_STATICALLY=ON'
     env:
       BUILD_TYPE : "Release"
     runs-on: ${{matrix.os}}
@@ -471,8 +474,12 @@ jobs:
         echo "$PATH" >> $GITHUB_PATH
         python3 -m pip install -r third_party/requirements.txt
 
+    - name: Install dependencies
+      run: brew install jemalloc tbb automake libtool
+
     - name: Install hwloc
-      run: brew install hwloc tbb automake
+      if: ${{ !matrix.static_hwloc }}
+      run: brew install hwloc
 
     - name: Get UMF version
       run: |
@@ -492,6 +499,7 @@ jobs:
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
         -DUMF_BUILD_SHARED_LIBRARY=ON
         -DUMF_TESTS_FAIL_ON_SKIP=ON
+        ${{matrix.static_hwloc}}
 
     - name: Build UMF
       run: cmake --build ${{env.BUILD_DIR}} -j $(sysctl -n hw.logicalcpu)
