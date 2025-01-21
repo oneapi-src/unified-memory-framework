@@ -49,6 +49,11 @@ Do changes for a release:
   - If stable branch for this release is required, create it:
     - `git checkout -b v$VER.x`
     - For some early versions (like `0.1.0`) we may omit creation of the branch
+- For major/minor release, when release is done, add an extra "dev" tag on the `main` branch:
+  - `git tag -a -s -m "Development version $VERSION+1" v$VERSION+1-dev`
+    - for example, when `v0.1.0` is released, the dev tag would be `v0.2.0-dev`
+    - if needed, further in time, an extra dev tag can be introduced, e.g. `v0.2.0-dev1`
+  - This way, the `main` branch will introduce itself as the next version
 
 ## Publish changes
 
