@@ -433,6 +433,14 @@ static umf_result_t cu_memory_provider_free(void *provider, void *ptr,
 
     cu_memory_provider_t *cu_provider = (cu_memory_provider_t *)provider;
 
+    // Remember current context and set the one from the provider
+    CUcontext restore_ctx = NULL;
+    umf_result_t umf_result = set_context(cu_provider->context, &restore_ctx);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        LOG_ERR("Failed to set CUDA context, ret = %d", umf_result);
+        return umf_result;
+    }
+
     CUresult cu_result = CUDA_SUCCESS;
     switch (cu_provider->memory_type) {
     case UMF_MEMORY_TYPE_HOST: {
@@ -449,6 +457,11 @@ static umf_result_t cu_memory_provider_free(void *provider, void *ptr,
         // the initialization
         LOG_ERR("unsupported USM memory type");
         return UMF_RESULT_ERROR_UNKNOWN;
+    }
+
+    umf_result = set_context(restore_ctx, &restore_ctx);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        LOG_ERR("Failed to restore CUDA context, ret = %d", umf_result);
     }
 
     return cu2umf_result(cu_result);
