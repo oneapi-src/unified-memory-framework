@@ -1,4 +1,4 @@
-# Copyright (C) 2023-2024 Intel Corporation
+# Copyright (C) 2023-2025 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -182,6 +182,18 @@ add_dependencies(umf coarse)
 
 if(UMF_LINK_HWLOC_STATICALLY)
     add_dependencies(umf ${UMF_HWLOC_NAME})
+    # On Darwin, link with the IOKit and Foundation frameworks, if they are
+    # available in the system. This is to comply with hwloc which links these,
+    # if available. There is no option to disable these frameworks on Darwin
+    # hwloc builds.
+    if(MACOSX)
+        find_library(IOKIT_LIBRARY IOKit)
+        find_library(FOUNDATION_LIBRARY Foundation)
+        if(IOKIT_LIBRARY OR FOUNDATION_LIBRARY)
+            target_link_libraries(umf PRIVATE ${IOKIT_LIBRARY}
+                                              ${FOUNDATION_LIBRARY})
+        endif()
+    endif()
 endif()
 
 if(NOT WINDOWS AND UMF_POOL_JEMALLOC_ENABLED)
