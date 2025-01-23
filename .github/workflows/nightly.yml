@@ -63,10 +63,15 @@ jobs:
 
     - name: Run BasicBuilds
       run: |
-        docker run --rm umf-ubuntu-20.04 sh -c "
-          apt-get update && apt-get install -y curl gnupg lsb-release && \
+        docker run --rm \
+        --user root \
+        umf-ubuntu-20.04 \
+        bash -c "
+          apt-get update && 
+          apt-get install -y curl gnupg lsb-release && \
           curl -fsSL https://cli.github.com/packages/githubcli.repo | tee /etc/apt/sources.list.d/github-cli.list && \
-          apt-get update && apt-get install gh && \
+          apt-get update && \
+          apt-get install gh && \
           gh workflow run ./.github/workflows/reusable_basic.yml
         "
 
