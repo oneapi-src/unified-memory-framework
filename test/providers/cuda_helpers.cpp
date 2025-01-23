@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -251,7 +251,7 @@ int InitCUDAOps() {
 }
 #endif // USE_DLOPEN
 
-static CUresult set_context(CUcontext required_ctx, CUcontext *restore_ctx) {
+CUresult set_context(CUcontext required_ctx, CUcontext *restore_ctx) {
     CUcontext current_ctx = NULL;
     CUresult cu_result = libcu_ops.cuCtxGetCurrent(&current_ctx);
     if (cu_result != CUDA_SUCCESS) {
@@ -259,7 +259,10 @@ static CUresult set_context(CUcontext required_ctx, CUcontext *restore_ctx) {
         return cu_result;
     }
 
-    *restore_ctx = current_ctx;
+    if (restore_ctx != NULL) {
+        *restore_ctx = current_ctx;
+    }
+
     if (current_ctx != required_ctx) {
         cu_result = libcu_ops.cuCtxSetCurrent(required_ctx);
         if (cu_result != CUDA_SUCCESS) {
