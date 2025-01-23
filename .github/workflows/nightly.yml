@@ -2,10 +2,10 @@
 name: Nightly
 
 # This job is run at 00:00 UTC every day or on demand.
-on:
-  workflow_dispatch:
-  schedule:
-    - cron:  '0 0 * * *'
+on: workflow_call
+  # workflow_dispatch:
+  # schedule:
+  #   - cron:  '0 0 * * *'
 
 permissions:
   contents: read
@@ -52,7 +52,6 @@ jobs:
 
   build-docker-BasicBuilds:
     name: Build Docker image
-    needs: [FastBuild]
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
