@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Intel Corporation
+# Copyright (C) 2024-2025 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -190,6 +190,7 @@ function(add_umf_ipc_example script)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
     set_tests_properties(${EXAMPLE_NAME} PROPERTIES LABELS "example")
+    set_tests_properties(${EXAMPLE_NAME} PROPERTIES TIMEOUT 60)
     if(NOT UMF_TESTS_FAIL_ON_SKIP)
         set_tests_properties(${EXAMPLE_NAME} PROPERTIES SKIP_RETURN_CODE 125)
     endif()
