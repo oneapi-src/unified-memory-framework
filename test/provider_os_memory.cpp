@@ -10,7 +10,7 @@
 
 #include <umf/memory_provider.h>
 #include <umf/providers/provider_os_memory.h>
-#if (defined UMF_POOL_DISJOINT_ENABLED)
+#ifdef UMF_POOL_DISJOINT_ENABLED
 #include <umf/pools/pool_disjoint.h>
 #endif
 #ifdef UMF_POOL_JEMALLOC_ENABLED
@@ -407,11 +407,7 @@ TEST_P(umfProviderTest, close_ipc_handle_wrong_visibility) {
 
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(umfIpcTest);
 
-using os_params_unique_handle_t =
-    std::unique_ptr<umf_os_memory_provider_params_t,
-                    decltype(&umfOsMemoryProviderParamsDestroy)>;
-
-os_params_unique_handle_t osMemoryProviderParamsShared() {
+void *createOsMemoryProviderParamsShared() {
     umf_os_memory_provider_params_handle_t params = nullptr;
     umf_result_t res = umfOsMemoryProviderParamsCreate(&params);
     if (res != UMF_RESULT_SUCCESS) {
@@ -422,18 +418,19 @@ os_params_unique_handle_t osMemoryProviderParamsShared() {
         throw std::runtime_error("Failed to set protection");
     }
 
-    return os_params_unique_handle_t(params, &umfOsMemoryProviderParamsDestroy);
+    return params;
 }
-auto os_params = osMemoryProviderParamsShared();
+
+umf_result_t destroyOsMemoryProviderParamsShared(void *params) {
+    return umfOsMemoryProviderParamsDestroy(
+        static_cast<umf_os_memory_provider_params_handle_t>(params));
+}
 
 HostMemoryAccessor hostAccessor;
 
-#if (defined UMF_POOL_DISJOINT_ENABLED)
-using disjoint_params_unique_handle_t =
-    std::unique_ptr<umf_disjoint_pool_params_t,
-                    decltype(&umfDisjointPoolParamsDestroy)>;
+#ifdef UMF_POOL_DISJOINT_ENABLED
 
-disjoint_params_unique_handle_t disjointPoolParams() {
+void *createDisjointPoolParams() {
     umf_disjoint_pool_params_handle_t params = nullptr;
     umf_result_t res = umfDisjointPoolParamsCreate(&params);
     if (res != UMF_RESULT_SUCCESS) {
@@ -460,19 +457,25 @@ disjoint_params_unique_handle_t disjointPoolParams() {
         throw std::runtime_error("Failed to set min bucket size");
     }
 
-    return disjoint_params_unique_handle_t(params,
-                                           &umfDisjointPoolParamsDestroy);
+    return params;
 }
-disjoint_params_unique_handle_t disjointParams = disjointPoolParams();
+
+umf_result_t destroyDisjointPoolParams(void *params) {
+    return umfDisjointPoolParamsDestroy(
+        static_cast<umf_disjoint_pool_params_handle_t>(params));
+}
+
 #endif
 
 static std::vector<ipcTestParams> ipcTestParamsList = {
-#if (defined UMF_POOL_DISJOINT_ENABLED)
-    {umfDisjointPoolOps(), disjointParams.get(), umfOsMemoryProviderOps(),
-     os_params.get(), &hostAccessor},
+#ifdef UMF_POOL_DISJOINT_ENABLED
+    {umfDisjointPoolOps(), createDisjointPoolParams, destroyDisjointPoolParams,
+     umfOsMemoryProviderOps(), createOsMemoryProviderParamsShared,
+     destroyOsMemoryProviderParamsShared, &hostAccessor},
 #endif
 #ifdef UMF_POOL_JEMALLOC_ENABLED
-    {umfJemallocPoolOps(), nullptr, umfOsMemoryProviderOps(), os_params.get(),
+    {umfJemallocPoolOps(), nullptr, nullptr, umfOsMemoryProviderOps(),
+     createOsMemoryProviderParamsShared, destroyOsMemoryProviderParamsShared,
      &hostAccessor},
 #endif
 };

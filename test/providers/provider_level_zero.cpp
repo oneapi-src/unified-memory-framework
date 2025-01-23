@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2025 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -61,11 +61,7 @@ LevelZeroTestHelper::LevelZeroTestHelper() {
     }
 }
 
-using level_zero_params_unique_handle_t =
-    std::unique_ptr<umf_level_zero_memory_provider_params_t,
-                    decltype(&umfLevelZeroMemoryProviderParamsDestroy)>;
-
-level_zero_params_unique_handle_t
+umf_level_zero_memory_provider_params_handle_t
 create_level_zero_prov_params(ze_context_handle_t context,
                               ze_device_handle_t device,
                               umf_usm_memory_type_t memory_type) {
@@ -73,36 +69,28 @@ create_level_zero_prov_params(ze_context_handle_t context,
 
     umf_result_t res = umfLevelZeroMemoryProviderParamsCreate(&params);
     if (res != UMF_RESULT_SUCCESS) {
-        return level_zero_params_unique_handle_t(
-            nullptr, &umfLevelZeroMemoryProviderParamsDestroy);
+        return nullptr;
     }
 
     res = umfLevelZeroMemoryProviderParamsSetContext(params, context);
     if (res != UMF_RESULT_SUCCESS) {
         umfLevelZeroMemoryProviderParamsDestroy(params);
-        return level_zero_params_unique_handle_t(
-            nullptr, &umfLevelZeroMemoryProviderParamsDestroy);
-        ;
+        return nullptr;
     }
 
     res = umfLevelZeroMemoryProviderParamsSetDevice(params, device);
     if (res != UMF_RESULT_SUCCESS) {
         umfLevelZeroMemoryProviderParamsDestroy(params);
-        return level_zero_params_unique_handle_t(
-            nullptr, &umfLevelZeroMemoryProviderParamsDestroy);
-        ;
+        return nullptr;
     }
 
     res = umfLevelZeroMemoryProviderParamsSetMemoryType(params, memory_type);
     if (res != UMF_RESULT_SUCCESS) {
         umfLevelZeroMemoryProviderParamsDestroy(params);
-        return level_zero_params_unique_handle_t(
-            nullptr, &umfLevelZeroMemoryProviderParamsDestroy);
-        ;
+        return nullptr;
     }
 
-    return level_zero_params_unique_handle_t(
-        params, &umfLevelZeroMemoryProviderParamsDestroy);
+    return params;
 }
 
 struct LevelZeroProviderInit
@@ -237,8 +225,11 @@ class LevelZeroMemoryAccessor : public MemoryAccessor {
     ze_context_handle_t hContext_;
 };
 
+typedef void *(*pfnProviderParamsCreate)();
+typedef umf_result_t (*pfnProviderParamsDestroy)(void *);
+
 using LevelZeroProviderTestParams =
-    std::tuple<umf_level_zero_memory_provider_params_handle_t,
+    std::tuple<pfnProviderParamsCreate, pfnProviderParamsDestroy,
                ze_context_handle_t, umf_usm_memory_type_t, MemoryAccessor *>;
 
 struct umfLevelZeroProviderTest
@@ -248,8 +239,16 @@ struct umfLevelZeroProviderTest
     void SetUp() override {
         test::SetUp();
 
-        auto [l0_params, ze_context, memory_type, accessor] = this->GetParam();
-        params = l0_params;
+        auto [params_create, params_destroy, ze_context, memory_type,
+              accessor] = this->GetParam();
+
+        params = nullptr;
+        if (params_create) {
+            params =
+                (umf_level_zero_memory_provider_params_handle_t)params_create();
+        }
+        paramsDestroy = params_destroy;
+
         memAccessor = accessor;
         hContext = ze_context;
 
@@ -273,9 +272,17 @@ struct umfLevelZeroProviderTest
         ASSERT_NE(zeMemoryTypeExpected, ZE_MEMORY_TYPE_UNKNOWN);
     }
 
-    void TearDown() override { test::TearDown(); }
+    void TearDown() override {
+        if (paramsDestroy) {
+            paramsDestroy(params);
+        }
+
+        test::TearDown();
+    }
 
     umf_level_zero_memory_provider_params_handle_t params;
+    pfnProviderParamsDestroy paramsDestroy = nullptr;
+
     MemoryAccessor *memAccessor = nullptr;
     ze_context_handle_t hContext = nullptr;
     ze_memory_type_t zeMemoryTypeExpected = ZE_MEMORY_TYPE_UNKNOWN;
@@ -418,17 +425,27 @@ TEST_P(umfLevelZeroProviderTest, levelZeroProviderNullParams) {
 
 // TODO add tests that mixes Level Zero Memory Provider and Disjoint Pool
 
-level_zero_params_unique_handle_t l0Params_device_memory =
-    create_level_zero_prov_params(l0TestHelper.get_test_context(),
-                                  l0TestHelper.get_test_device(),
-                                  UMF_MEMORY_TYPE_DEVICE);
-level_zero_params_unique_handle_t l0Params_shared_memory =
-    create_level_zero_prov_params(l0TestHelper.get_test_context(),
-                                  l0TestHelper.get_test_device(),
-                                  UMF_MEMORY_TYPE_SHARED);
-level_zero_params_unique_handle_t l0Params_host_memory =
-    create_level_zero_prov_params(l0TestHelper.get_test_context(), nullptr,
-                                  UMF_MEMORY_TYPE_HOST);
+void *createL0ParamsDeviceMemory() {
+    return create_level_zero_prov_params(l0TestHelper.get_test_context(),
+                                         l0TestHelper.get_test_device(),
+                                         UMF_MEMORY_TYPE_DEVICE);
+}
+
+void *createL0ParamsSharedMemory() {
+    return create_level_zero_prov_params(l0TestHelper.get_test_context(),
+                                         l0TestHelper.get_test_device(),
+                                         UMF_MEMORY_TYPE_SHARED);
+}
+
+void *createL0ParamsHostMemory() {
+    return create_level_zero_prov_params(l0TestHelper.get_test_context(),
+                                         nullptr, UMF_MEMORY_TYPE_HOST);
+}
+
+umf_result_t destroyL0Params(void *params) {
+    return umfLevelZeroMemoryProviderParamsDestroy(
+        static_cast<umf_level_zero_memory_provider_params_handle_t>(params));
+}
 
 LevelZeroMemoryAccessor
     l0Accessor((ze_context_handle_t)l0TestHelper.get_test_context(),
@@ -439,13 +456,13 @@ HostMemoryAccessor hostAccessor;
 INSTANTIATE_TEST_SUITE_P(
     umfLevelZeroProviderTestSuite, umfLevelZeroProviderTest,
     ::testing::Values(
-        LevelZeroProviderTestParams{l0Params_device_memory.get(),
+        LevelZeroProviderTestParams{createL0ParamsDeviceMemory, destroyL0Params,
                                     l0TestHelper.get_test_context(),
                                     UMF_MEMORY_TYPE_DEVICE, &l0Accessor},
-        LevelZeroProviderTestParams{l0Params_shared_memory.get(),
+        LevelZeroProviderTestParams{createL0ParamsSharedMemory, destroyL0Params,
                                     l0TestHelper.get_test_context(),
                                     UMF_MEMORY_TYPE_SHARED, &hostAccessor},
-        LevelZeroProviderTestParams{l0Params_host_memory.get(),
+        LevelZeroProviderTestParams{createL0ParamsHostMemory, destroyL0Params,
                                     l0TestHelper.get_test_context(),
                                     UMF_MEMORY_TYPE_HOST, &hostAccessor}));
 
@@ -454,9 +471,9 @@ INSTANTIATE_TEST_SUITE_P(
 #ifdef _WIN32
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(umfIpcTest);
 #else
-INSTANTIATE_TEST_SUITE_P(umfLevelZeroProviderTestSuite, umfIpcTest,
-                         ::testing::Values(ipcTestParams{
-                             umfProxyPoolOps(), nullptr,
-                             umfLevelZeroMemoryProviderOps(),
-                             l0Params_device_memory.get(), &l0Accessor}));
+INSTANTIATE_TEST_SUITE_P(
+    umfLevelZeroProviderTestSuite, umfIpcTest,
+    ::testing::Values(ipcTestParams{
+        umfProxyPoolOps(), nullptr, nullptr, umfLevelZeroMemoryProviderOps(),
+        createL0ParamsDeviceMemory, destroyL0Params, &l0Accessor}));
 #endif

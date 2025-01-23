@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2025 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -46,23 +46,36 @@ class HostMemoryAccessor : public MemoryAccessor {
     }
 };
 
+typedef void *(*pfnPoolParamsCreate)();
+typedef umf_result_t (*pfnPoolParamsDestroy)(void *);
+
+typedef void *(*pfnProviderParamsCreate)();
+typedef umf_result_t (*pfnProviderParamsDestroy)(void *);
+
 // ipcTestParams:
-// pool_ops, pool_params, provider_ops, provider_params, memoryAccessor
+// pool_ops, pfnPoolParamsCreate,pfnPoolParamsDestroy,
+// provider_ops, pfnProviderParamsCreate, pfnProviderParamsDestroy,
+// memoryAccessor
 using ipcTestParams =
-    std::tuple<umf_memory_pool_ops_t *, void *, umf_memory_provider_ops_t *,
-               void *, MemoryAccessor *>;
+    std::tuple<umf_memory_pool_ops_t *, pfnPoolParamsCreate,
+               pfnPoolParamsDestroy, umf_memory_provider_ops_t *,
+               pfnProviderParamsCreate, pfnProviderParamsDestroy,
+               MemoryAccessor *>;
 
 struct umfIpcTest : umf_test::test,
                     ::testing::WithParamInterface<ipcTestParams> {
     umfIpcTest() {}
     void SetUp() override {
         test::SetUp();
-        auto [pool_ops, pool_params, provider_ops, provider_params, accessor] =
+        auto [pool_ops, pool_params_create, pool_params_destroy, provider_ops,
+              provider_params_create, provider_params_destroy, accessor] =
             this->GetParam();
         poolOps = pool_ops;
-        poolParams = pool_params;
+        poolParamsCreate = pool_params_create;
+        poolParamsDestroy = pool_params_destroy;
         providerOps = provider_ops;
-        providerParams = provider_params;
+        providerParamsCreate = provider_params_create;
+        providerParamsDestroy = provider_params_destroy;
         memAccessor = accessor;
     }
 
@@ -74,9 +87,18 @@ struct umfIpcTest : umf_test::test,
         umf_memory_provider_handle_t hProvider = NULL;
         umf_memory_pool_handle_t hPool = NULL;
 
+        void *providerParams = nullptr;
+        if (providerParamsCreate) {
+            providerParams = providerParamsCreate();
+        }
+
         auto ret =
             umfMemoryProviderCreate(providerOps, providerParams, &hProvider);
         EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+
+        if (providerParamsDestroy) {
+            providerParamsDestroy(providerParams);
+        }
 
         auto trace = [](void *trace_context, const char *name) {
             stats_type *stat = static_cast<stats_type *>(trace_context);
@@ -96,9 +118,18 @@ struct umfIpcTest : umf_test::test,
         umf_memory_provider_handle_t hTraceProvider =
             traceProviderCreate(hProvider, true, (void *)&stat, trace);
 
+        void *poolParams = nullptr;
+        if (poolParamsCreate) {
+            poolParams = poolParamsCreate();
+        }
+
         ret = umfPoolCreate(poolOps, hTraceProvider, poolParams,
                             UMF_POOL_CREATE_FLAG_OWN_PROVIDER, &hPool);
         EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+
+        if (poolParamsDestroy) {
+            poolParamsDestroy(poolParams);
+        }
 
         return umf::pool_unique_handle_t(hPool, &umfPoolDestroy);
     }
@@ -118,10 +149,14 @@ struct umfIpcTest : umf_test::test,
     static constexpr int NTHREADS = 10;
     stats_type stat;
     MemoryAccessor *memAccessor = nullptr;
+
     umf_memory_pool_ops_t *poolOps = nullptr;
-    void *poolParams = nullptr;
+    pfnPoolParamsCreate poolParamsCreate = nullptr;
+    pfnPoolParamsDestroy poolParamsDestroy = nullptr;
+
     umf_memory_provider_ops_t *providerOps = nullptr;
-    void *providerParams = nullptr;
+    pfnProviderParamsCreate providerParamsCreate = nullptr;
+    pfnProviderParamsDestroy providerParamsDestroy = nullptr;
 };
 
 TEST_P(umfIpcTest, GetIPCHandleSize) {

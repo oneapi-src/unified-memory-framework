@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2025 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -15,16 +15,21 @@
 
 using umf_test::test;
 
-using devdax_params_unique_handle_t =
-    std::unique_ptr<umf_devdax_memory_provider_params_t,
-                    decltype(&umfDevDaxMemoryProviderParamsDestroy)>;
-
-devdax_params_unique_handle_t create_devdax_params() {
+bool devDaxEnvSet() {
     char *path = getenv("UMF_TESTS_DEVDAX_PATH");
     char *size = getenv("UMF_TESTS_DEVDAX_SIZE");
     if (path == nullptr || path[0] == 0 || size == nullptr || size[0] == 0) {
-        return devdax_params_unique_handle_t(
-            nullptr, &umfDevDaxMemoryProviderParamsDestroy);
+        return false;
+    }
+
+    return true;
+}
+
+void *defaultDevDaxParamsCreate() {
+    char *path = getenv("UMF_TESTS_DEVDAX_PATH");
+    char *size = getenv("UMF_TESTS_DEVDAX_SIZE");
+    if (path == nullptr || path[0] == 0 || size == nullptr || size[0] == 0) {
+        return nullptr;
     }
 
     umf_devdax_memory_provider_params_handle_t params = NULL;
@@ -35,32 +40,34 @@ devdax_params_unique_handle_t create_devdax_params() {
             "Failed to create DevDax Memory Provider params");
     }
 
-    return devdax_params_unique_handle_t(params,
-                                         &umfDevDaxMemoryProviderParamsDestroy);
+    return params;
 }
 
-auto defaultDevDaxParams = create_devdax_params();
+umf_result_t defaultDevDaxParamsDestroy(void *params) {
+    return umfDevDaxMemoryProviderParamsDestroy(
+        (umf_devdax_memory_provider_params_handle_t)params);
+}
 
 HostMemoryAccessor hostAccessor;
 
 static std::vector<ipcTestParams> getIpcProxyPoolTestParamsList(void) {
     std::vector<ipcTestParams> ipcProxyPoolTestParamsList = {};
 
-    if (!defaultDevDaxParams.get()) {
+    if (!devDaxEnvSet()) {
         // return empty list to skip the test
         return ipcProxyPoolTestParamsList;
     }
 
     ipcProxyPoolTestParamsList = {
-        {umfProxyPoolOps(), nullptr, umfDevDaxMemoryProviderOps(),
-         defaultDevDaxParams.get(), &hostAccessor},
+        {umfProxyPoolOps(), nullptr, nullptr, umfDevDaxMemoryProviderOps(),
+         defaultDevDaxParamsCreate, defaultDevDaxParamsDestroy, &hostAccessor},
 #ifdef UMF_POOL_JEMALLOC_ENABLED
-        {umfJemallocPoolOps(), nullptr, umfDevDaxMemoryProviderOps(),
-         defaultDevDaxParams.get(), &hostAccessor},
+        {umfJemallocPoolOps(), nullptr, nullptr, umfDevDaxMemoryProviderOps(),
+         defaultDevDaxParamsCreate, defaultDevDaxParamsDestroy, &hostAccessor},
 #endif
 #ifdef UMF_POOL_SCALABLE_ENABLED
-        {umfScalablePoolOps(), nullptr, umfDevDaxMemoryProviderOps(),
-         defaultDevDaxParams.get(), &hostAccessor},
+        {umfScalablePoolOps(), nullptr, nullptr, umfDevDaxMemoryProviderOps(),
+         defaultDevDaxParamsCreate, defaultDevDaxParamsDestroy, &hostAccessor},
 #endif
     };
 
