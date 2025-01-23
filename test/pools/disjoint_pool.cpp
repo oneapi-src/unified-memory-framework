@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 Intel Corporation
+// Copyright (C) 2023-2025 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -61,14 +61,14 @@ TEST_F(test, freeErrorPropagation) {
     static umf_result_t expectedResult = UMF_RESULT_SUCCESS;
     struct memory_provider : public umf_test::provider_base_t {
         umf_result_t alloc(size_t size, size_t, void **ptr) noexcept {
-            *ptr = malloc(size);
+            *ptr = umf_ba_global_alloc(size);
             return UMF_RESULT_SUCCESS;
         }
 
         umf_result_t free(void *ptr, [[maybe_unused]] size_t size) noexcept {
             // do the actual free only when we expect the success
             if (expectedResult == UMF_RESULT_SUCCESS) {
-                ::free(ptr);
+                umf_ba_global_free(ptr);
             }
             return expectedResult;
         }
@@ -114,12 +114,12 @@ TEST_F(test, sharedLimits) {
 
     struct memory_provider : public umf_test::provider_base_t {
         umf_result_t alloc(size_t size, size_t, void **ptr) noexcept {
-            *ptr = malloc(size);
+            *ptr = umf_ba_global_alloc(size);
             numAllocs++;
             return UMF_RESULT_SUCCESS;
         }
         umf_result_t free(void *ptr, [[maybe_unused]] size_t size) noexcept {
-            ::free(ptr);
+            umf_ba_global_free(ptr);
             numFrees++;
             return UMF_RESULT_SUCCESS;
         }
