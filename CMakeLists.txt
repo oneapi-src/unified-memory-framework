@@ -33,13 +33,6 @@ include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 find_package(PkgConfig)
 
-find_package(Valgrind REQUIRED)
-if(Valgrind_FOUND)
-    message(STATUS "Found Valgrind!")
-else()
-    message(FATAL_ERROR "Valgrind not found!")
-endif()
-
 # Define a list to store the names of all options
 set(UMF_OPTIONS_LIST "")
 list(APPEND UMF_OPTIONS_LIST CMAKE_BUILD_TYPE)
