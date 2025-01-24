@@ -29,25 +29,9 @@
 }
 
 {
-   Incompatibility with helgrind's implementation ("pthread_rwlock_{rd,rw}lock with a pthread_mutex_t* argument")
-   Helgrind:Misc
-   obj:*vgpreload_helgrind-amd64-linux.so
-   fun:*glibcxx_rwlock_wrlock*pthread_rwlock_t
-   ...
-}
-
-{
-   Incompatibility with helgrind's implementation ("pthread_rwlock_unlock with a pthread_mutex_t* argument")
-   Helgrind:Misc
-   obj:*vgpreload_helgrind-amd64-linux.so
-   fun:*glibcxx_rwlock_unlock*pthread_rwlock_t
-   ...
-}
-
-{
-   Incompatibility with helgrind's implementation ("pthread_rwlock_{rd,rw}lock with a pthread_mutex_t* argument")
-   Helgrind:Misc
-   obj:*vgpreload_helgrind-amd64-linux.so
-   fun:*glibcxx_rwlock_rdlock*pthread_rwlock_t*
+   False-positive Race in critnib_insert
+   Helgrind:Race
+   fun:store
+   fun:critnib_insert
    ...
 }

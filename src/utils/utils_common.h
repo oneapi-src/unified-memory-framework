@@ -38,6 +38,8 @@ typedef enum umf_purge_advise_t {
         expression;                                                            \
     } while (0)
 
+#define IS_POWER_OF_2(value) ((value) != 0 && ((value) & ((value)-1)) == 0)
+
 #define IS_ALIGNED(value, align)                                               \
     ((align == 0 || (((value) & ((align)-1)) == 0)))
 #define IS_NOT_ALIGNED(value, align)                                           \

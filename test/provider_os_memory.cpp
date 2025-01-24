@@ -9,10 +9,8 @@
 #include "test_helpers.h"
 
 #include <umf/memory_provider.h>
-#include <umf/providers/provider_os_memory.h>
-#ifdef UMF_POOL_DISJOINT_ENABLED
 #include <umf/pools/pool_disjoint.h>
-#endif
+#include <umf/providers/provider_os_memory.h>
 #ifdef UMF_POOL_JEMALLOC_ENABLED
 #include <umf/pools/pool_jemalloc.h>
 #endif
@@ -428,8 +426,6 @@ umf_result_t destroyOsMemoryProviderParamsShared(void *params) {
 
 HostMemoryAccessor hostAccessor;
 
-#ifdef UMF_POOL_DISJOINT_ENABLED
-
 void *createDisjointPoolParams() {
     umf_disjoint_pool_params_handle_t params = nullptr;
     umf_result_t res = umfDisjointPoolParamsCreate(&params);
@@ -465,14 +461,10 @@ umf_result_t destroyDisjointPoolParams(void *params) {
         static_cast<umf_disjoint_pool_params_handle_t>(params));
 }
 
-#endif
-
 static std::vector<ipcTestParams> ipcTestParamsList = {
-#ifdef UMF_POOL_DISJOINT_ENABLED
     {umfDisjointPoolOps(), createDisjointPoolParams, destroyDisjointPoolParams,
      umfOsMemoryProviderOps(), createOsMemoryProviderParamsShared,
      destroyOsMemoryProviderParamsShared, &hostAccessor},
-#endif
 #ifdef UMF_POOL_JEMALLOC_ENABLED
     {umfJemallocPoolOps(), nullptr, nullptr, umfOsMemoryProviderOps(),
      createOsMemoryProviderParamsShared, destroyOsMemoryProviderParamsShared,
