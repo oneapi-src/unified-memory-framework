@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -45,7 +45,7 @@ class uniform_alloc_size : public alloc_size_interface {
             state.SkipWithError("min and max must be divisible by granularity");
             return argPos;
         }
-
+        generator.seed(0);
         dist.param(distribution::param_type(min / gran, max / gran));
         multiplier = gran;
         return argPos;
@@ -53,11 +53,11 @@ class uniform_alloc_size : public alloc_size_interface {
     void TearDown([[maybe_unused]] ::benchmark::State &state) override {}
     size_t nextSize() override { return dist(generator) * multiplier; }
     static std::vector<std::string> argsName() {
-        return {"min size", "max size", "granularity"};
+        return {"min_size", "max_size", "granularity"};
     }
 
   private:
     std::default_random_engine generator;
     distribution dist;
-    size_t multiplier;
+    size_t multiplier = 1;
 };
