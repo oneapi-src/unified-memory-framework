@@ -15,21 +15,26 @@ using os_params_unique_handle_t =
     std::unique_ptr<umf_os_memory_provider_params_t,
                     decltype(&umfOsMemoryProviderParamsDestroy)>;
 
-os_params_unique_handle_t createOsMemoryProviderParams() {
+void *createOsMemoryProviderParams() {
     umf_os_memory_provider_params_handle_t params = nullptr;
     umf_result_t res = umfOsMemoryProviderParamsCreate(&params);
     if (res != UMF_RESULT_SUCCESS) {
         throw std::runtime_error("Failed to create os memory provider params");
     }
 
-    return os_params_unique_handle_t(params, &umfOsMemoryProviderParamsDestroy);
+    return params;
 }
-auto defaultParams = createOsMemoryProviderParams();
 
-INSTANTIATE_TEST_SUITE_P(jemallocPoolTest, umfPoolTest,
-                         ::testing::Values(poolCreateExtParams{
-                             umfJemallocPoolOps(), nullptr,
-                             umfOsMemoryProviderOps(), defaultParams.get()}));
+umf_result_t destroyOsMemoryProviderParams(void *params) {
+    return umfOsMemoryProviderParamsDestroy(
+        (umf_os_memory_provider_params_handle_t)params);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    jemallocPoolTest, umfPoolTest,
+    ::testing::Values(poolCreateExtParams{
+        umfJemallocPoolOps(), nullptr, nullptr, umfOsMemoryProviderOps(),
+        createOsMemoryProviderParams, destroyOsMemoryProviderParams}));
 
 // this test makes sure that jemalloc does not use
 // memory provider to allocate metadata (and hence
@@ -41,17 +46,41 @@ TEST_F(test, metadataNotAllocatedUsingProvider) {
 
     // set coarse grain allocations to PROT_NONE so that we can be sure
     // jemalloc does not touch any of the allocated memory
-    umf_os_memory_provider_params_handle_t params = nullptr;
-    umf_result_t res = umfOsMemoryProviderParamsCreate(&params);
-    ASSERT_EQ(res, UMF_RESULT_SUCCESS);
-    res = umfOsMemoryProviderParamsSetProtection(params, UMF_PROTECTION_NONE);
-    ASSERT_EQ(res, UMF_RESULT_SUCCESS);
 
-    auto pool = poolCreateExtUnique(
-        {umfJemallocPoolOps(), nullptr, umfOsMemoryProviderOps(), params});
+    auto providerParamsCreate = []() {
+        umf_os_memory_provider_params_handle_t params = nullptr;
+        umf_result_t res = umfOsMemoryProviderParamsCreate(&params);
+        if (res != UMF_RESULT_SUCCESS) {
+            throw std::runtime_error(
+                "Failed to create OS Memory Provider params");
+        }
+        res =
+            umfOsMemoryProviderParamsSetProtection(params, UMF_PROTECTION_NONE);
+        if (res != UMF_RESULT_SUCCESS) {
+            throw std::runtime_error(
+                "Failed to set OS Memory Provider params protection");
+        }
+        return (void *)params;
+    };
 
-    res = umfOsMemoryProviderParamsDestroy(params);
-    ASSERT_EQ(res, UMF_RESULT_SUCCESS);
+    auto providerParamsDestroy = [](void *params) {
+        umf_result_t res = umfOsMemoryProviderParamsDestroy(
+            (umf_os_memory_provider_params_handle_t)params);
+        if (res != UMF_RESULT_SUCCESS) {
+            throw std::runtime_error(
+                "Failed to destroy OS Memory Provider params");
+        }
+        return res;
+    };
+
+    auto pool = poolCreateExtUnique({
+        umfJemallocPoolOps(),
+        nullptr,
+        nullptr,
+        umfOsMemoryProviderOps(),
+        (pfnProviderParamsCreate)providerParamsCreate,
+        (pfnProviderParamsDestroy)providerParamsDestroy,
+    });
 
     std::vector<std::shared_ptr<void>> allocs;
     for (size_t i = 0; i < numAllocs; i++) {
