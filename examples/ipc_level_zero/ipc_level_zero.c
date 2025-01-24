@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -104,7 +104,7 @@ int main(void) {
     const size_t BUFFER_PATTERN = 0x42;
     int ret = init_level_zero();
     if (ret != 0) {
-        fprintf(stderr, "ERROR: Failed to init Level 0!\n");
+        fprintf(stderr, "ERROR: Failed to init Level Zero!\n");
         return ret;
     }
 

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -27,7 +27,7 @@ int main(void) {
     // Initialize Level Zero
     int ret = init_level_zero();
     if (ret != 0) {
-        fprintf(stderr, "Failed to init Level 0!\n");
+        fprintf(stderr, "Failed to init Level Zero!\n");
         return ret;
     }
 

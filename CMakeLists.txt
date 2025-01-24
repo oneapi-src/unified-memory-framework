@@ -10,6 +10,10 @@ list(APPEND CMAKE_MODULE_PATH "${UMF_CMAKE_SOURCE_DIR}/cmake")
 # Use full path of the helpers module (to omit potential conflicts with others)
 include(${UMF_CMAKE_SOURCE_DIR}/cmake/helpers.cmake)
 
+# --------------------------------------------------------------------------- #
+# Set UMF version variables, define project, and add basic modules
+# --------------------------------------------------------------------------- #
+
 # We use semver aligned version, set via git tags. We parse git output to
 # establish the version of UMF to be used in CMake, Win dll's, and within the
 # code (e.g. in logger). We have 3-component releases (e.g. 1.5.1) plus release
@@ -22,6 +26,12 @@ project(
     umf
     VERSION ${UMF_CMAKE_VERSION}
     LANGUAGES C)
+if(UMF_CMAKE_VERSION VERSION_EQUAL "0.0.0")
+    message(
+        WARNING
+            "UMF version is set to 0.0.0, which most likely is not expected! "
+            "Please checkout the git tags to get a proper version.")
+endif()
 
 if(PROJECT_VERSION_PATCH GREATER 0)
     # set extra variable for Windows dll metadata
@@ -33,6 +43,10 @@ include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 find_package(PkgConfig)
 
+# --------------------------------------------------------------------------- #
+# Set UMF build options (and CACHE variables)
+# --------------------------------------------------------------------------- #
+
 # Define a list to store the names of all options
 set(UMF_OPTIONS_LIST "")
 list(APPEND UMF_OPTIONS_LIST CMAKE_BUILD_TYPE)
@@ -43,7 +57,6 @@ macro(umf_option)
     option(${ARGV})
 endmacro()
 
-# Build Options
 umf_option(UMF_BUILD_SHARED_LIBRARY "Build UMF as shared library" OFF)
 umf_option(UMF_BUILD_LEVEL_ZERO_PROVIDER "Build Level Zero memory provider" ON)
 umf_option(UMF_BUILD_CUDA_PROVIDER "Build CUDA memory provider" ON)
@@ -56,9 +69,8 @@ umf_option(UMF_BUILD_GPU_TESTS "Build UMF GPU tests" OFF)
 umf_option(UMF_BUILD_BENCHMARKS "Build UMF benchmarks" OFF)
 umf_option(UMF_BUILD_BENCHMARKS_MT "Build UMF multithreaded benchmarks" OFF)
 umf_option(UMF_BUILD_EXAMPLES "Build UMF examples" ON)
-umf_option(UMF_BUILD_FUZZTESTS "Build UMF fuzz tests" OFF)
 umf_option(UMF_BUILD_GPU_EXAMPLES "Build UMF GPU examples" OFF)
-umf_option(UMF_DEVELOPER_MODE "Enable additional developer checks" OFF)
+umf_option(UMF_BUILD_FUZZTESTS "Build UMF fuzz tests" OFF)
 umf_option(
     UMF_DISABLE_HWLOC
     "Disable hwloc and UMF features requiring it (OS provider, memtargets, topology discovery)"
@@ -67,9 +79,6 @@ umf_option(
     UMF_LINK_HWLOC_STATICALLY
     "Link UMF with HWLOC library statically (proxy library will be disabled on Windows+Debug build)"
     OFF)
-umf_option(
-    UMF_FORMAT_CODE_STYLE
-    "Add clang, cmake, and black -format-check and -format-apply targets" OFF)
 set(UMF_HWLOC_NAME
     "hwloc"
     CACHE STRING "Custom name for hwloc library w/o extension")
@@ -81,6 +90,10 @@ set(UMF_INSTALL_RPATH
         "Set the runtime search path to the directory with dependencies (e.g. hwloc)"
 )
 
+umf_option(UMF_DEVELOPER_MODE "Enable additional developer checks" OFF)
+umf_option(
+    UMF_FORMAT_CODE_STYLE
+    "Add clang, cmake, and black -format-check and -format-apply targets" OFF)
 # Only a part of skips is treated as a failure now. TODO: extend to all tests
 umf_option(UMF_TESTS_FAIL_ON_SKIP "Treat skips in tests as fail" OFF)
 umf_option(UMF_USE_ASAN "Enable AddressSanitizer checks" OFF)
@@ -99,6 +112,11 @@ set(UMF_PROXY_LIB_BASED_ON_POOL
 set_property(CACHE UMF_PROXY_LIB_BASED_ON_POOL
              PROPERTY STRINGS ${KNOWN_PROXY_LIB_POOLS})
 list(APPEND UMF_OPTIONS_LIST UMF_PROXY_LIB_BASED_ON_POOL)
+
+# --------------------------------------------------------------------------- #
+# Setup required variables, definitions; fetch dependencies; include
+# sub_directories based on build options; set flags; etc.
+# --------------------------------------------------------------------------- #
 
 if(UMF_BUILD_TESTS
    AND DEFINED ENV{CI}
@@ -711,7 +729,7 @@ if(UMF_FORMAT_CODE_STYLE)
         add_custom_target(
             cmake-format-apply
             COMMAND ${CMAKE_FORMAT} --in-place ${format_cmake_list}
-            COMMENT "Format Cmake files using cmake-format")
+            COMMENT "Format CMake files using cmake-format")
     endif()
 
     if(BLACK)
