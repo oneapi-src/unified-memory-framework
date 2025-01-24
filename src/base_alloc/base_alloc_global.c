@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -208,7 +208,8 @@ void umf_ba_global_free(void *ptr) {
     }
 
     if (ba_is_destroyed) {
-        LOG_WARN("base_alloc: calling free after the base alloc is destroyed");
+        LOG_WARN(
+            "base_alloc: calling free() after the base allocator is destroyed");
         return;
     }
 

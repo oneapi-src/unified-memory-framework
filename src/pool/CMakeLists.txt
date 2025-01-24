@@ -8,33 +8,3 @@ if(UMF_BUILD_SHARED_LIBRARY)
 endif()
 
 set(POOL_COMPILE_DEFINITIONS ${UMF_COMMON_COMPILE_DEFINITIONS})
-
-# libumf_pool_disjoint
-if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
-    add_umf_library(
-        NAME disjoint_pool
-        TYPE STATIC
-        SRCS pool_disjoint.cpp ${POOL_EXTRA_SRCS}
-        LIBS ${POOL_EXTRA_LIBS})
-
-    target_compile_definitions(disjoint_pool
-                               PRIVATE ${POOL_COMPILE_DEFINITIONS})
-
-    if(WINDOWS)
-        target_compile_options(disjoint_pool PRIVATE /DWIN32_LEAN_AND_MEAN
-                                                     /DNOMINMAX)
-    endif()
-
-    add_library(${PROJECT_NAME}::disjoint_pool ALIAS disjoint_pool)
-
-    add_dependencies(disjoint_pool umf)
-
-    target_link_libraries(disjoint_pool PRIVATE umf)
-
-    target_include_directories(
-        disjoint_pool
-        PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/umf/pools>
-               $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
-
-    install(TARGETS disjoint_pool EXPORT ${PROJECT_NAME}-targets)
-endif()

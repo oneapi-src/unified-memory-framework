@@ -24,7 +24,7 @@ cleans up and exits with an error status.
 ### Requirements
 * Level Zero headers and libraries
 * compatible GPU with installed driver
-* set UMF_BUILD_GPU_EXAMPLES, UMF_BUILD_LIBUMF_POOL_DISJOINT and UMF_BUILD_LEVEL_ZERO_PROVIDER CMake configuration flags to ON
+* set UMF_BUILD_GPU_EXAMPLES and UMF_BUILD_LEVEL_ZERO_PROVIDER CMake configuration flags to ON
 
 ## IPC example with Level Zero memory provider
 This example demonstrates how to use UMF IPC API. The example creates two
@@ -35,7 +35,7 @@ and build this example Level Zero development package should be installed.
 ### Requirements
 * Level Zero headers and libraries
 * compatible GPU with installed driver
-* set UMF_BUILD_GPU_EXAMPLES, UMF_BUILD_LIBUMF_POOL_DISJOINT and UMF_BUILD_LEVEL_ZERO_PROVIDER CMake configuration flags to ON
+* set UMF_BUILD_GPU_EXAMPLES and UMF_BUILD_LEVEL_ZERO_PROVIDER CMake configuration flags to ON
 
 ## IPC example with shared memory
 This example also demonstrates how to use UMF IPC API. The example creates two

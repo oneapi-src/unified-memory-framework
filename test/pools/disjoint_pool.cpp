@@ -4,9 +4,11 @@
 
 #include <memory>
 
+#include <umf/pools/pool_disjoint.h>
+
 #include "pool.hpp"
+#include "pool/pool_disjoint_internal.h"
 #include "poolFixtures.hpp"
-#include "pool_disjoint.h"
 #include "provider.hpp"
 #include "provider_null.h"
 #include "provider_trace.h"
@@ -57,11 +59,130 @@ umf_result_t poolConfigDestroy(void *config) {
 using umf_test::test;
 using namespace umf_test;
 
+TEST_F(test, internals) {
+    static umf_result_t expectedResult = UMF_RESULT_SUCCESS;
+    struct memory_provider : public umf_test::provider_base_t {
+        umf_result_t alloc(size_t size, size_t alignment, void **ptr) noexcept {
+            *ptr = umf_ba_global_aligned_alloc(size, alignment);
+            return UMF_RESULT_SUCCESS;
+        }
+
+        umf_result_t free(void *ptr, [[maybe_unused]] size_t size) noexcept {
+            // do the actual free only when we expect the success
+            if (expectedResult == UMF_RESULT_SUCCESS) {
+                umf_ba_global_free(ptr);
+            }
+            return expectedResult;
+        }
+
+        umf_result_t
+        get_min_page_size([[maybe_unused]] void *ptr,
+                          [[maybe_unused]] size_t *pageSize) noexcept {
+            *pageSize = 1024;
+            return UMF_RESULT_SUCCESS;
+        }
+    };
+    umf_memory_provider_ops_t provider_ops =
+        umf::providerMakeCOps<memory_provider, void>();
+
+    auto providerUnique =
+        wrapProviderUnique(createProviderChecked(&provider_ops, nullptr));
+
+    umf_memory_provider_handle_t provider_handle;
+    provider_handle = providerUnique.get();
+
+    umf_disjoint_pool_params_handle_t params =
+        (umf_disjoint_pool_params_handle_t)defaultPoolConfig();
+    // set to maximum tracing
+    params->pool_trace = 3;
+    params->max_poolable_size = 1024 * 1024;
+
+    // in "internals" test we use ops interface to directly manipulate the pool
+    // structure
+    umf_memory_pool_ops_t *ops = umfDisjointPoolOps();
+    EXPECT_NE(ops, nullptr);
+
+    disjoint_pool_t *pool;
+    umf_result_t res = ops->initialize(provider_handle, params, (void **)&pool);
+    EXPECT_EQ(res, UMF_RESULT_SUCCESS);
+    EXPECT_NE(pool, nullptr);
+    EXPECT_EQ(pool->provider_min_page_size, 1024);
+
+    // check buckets sizes
+    size_t expected_size = DEFAULT_DISJOINT_MIN_BUCKET_SIZE;
+    EXPECT_EQ(pool->buckets[0]->size, expected_size);
+    EXPECT_EQ(pool->buckets[pool->buckets_num - 1]->size,
+              (size_t)1 << 31); // 2GB
+    for (size_t i = 0; i < pool->buckets_num; i++) {
+        bucket_t *bucket = pool->buckets[i];
+        EXPECT_NE(bucket, nullptr);
+        EXPECT_EQ(bucket->size, expected_size);
+
+        // assuming DEFAULT_DISJOINT_MIN_BUCKET_SIZE = 64, expected bucket
+        // sizes are: 64, 96, 128, 192, 256, ..., 2GB
+        if (i % 2 == 0) {
+            expected_size += expected_size / 2;
+        } else {
+            expected_size = DEFAULT_DISJOINT_MIN_BUCKET_SIZE << ((i + 1) / 2);
+        }
+    }
+
+    // test small allocations
+    size_t size = 8;
+    void *ptr = ops->malloc(pool, size);
+    EXPECT_NE(ptr, nullptr);
+
+    // get bucket - because of small size this should be the first bucket in
+    // the pool
+    bucket_t *bucket = pool->buckets[0];
+    EXPECT_NE(bucket, nullptr);
+
+    // check bucket stats
+    EXPECT_EQ(bucket->alloc_count, 1);
+
+    // first allocation will always use external memory (newly added to the
+    // pool) and this is counted as allocation from the outside of the pool
+    EXPECT_EQ(bucket->alloc_pool_count, 0);
+    EXPECT_EQ(bucket->curr_slabs_in_use, 1);
+
+    // check slab - there should be only single slab allocated
+    EXPECT_NE(bucket->available_slabs, nullptr);
+    EXPECT_EQ(bucket->available_slabs_num, 1);
+    EXPECT_EQ(bucket->available_slabs->next, nullptr);
+    slab_t *slab = bucket->available_slabs->val;
+
+    // check slab stats
+    EXPECT_GE(slab->slab_size, params->slab_min_size);
+    EXPECT_GE(slab->num_chunks_total, slab->slab_size / bucket->size);
+
+    // check allocation in slab
+    EXPECT_EQ(slab->chunks[0], true);
+    EXPECT_EQ(slab->chunks[1], false);
+    EXPECT_EQ(slab->first_free_chunk_idx, 1);
+
+    // TODO:
+    // * multiple alloc + free from single bucket
+    // * alignments
+    // * full slab alloc
+    // * slab overflow
+    // * chunked slabs
+    // * multiple alloc + free from different buckets
+    // * alloc something outside pool (> MaxPoolableSize)
+    // * test capacity
+    // * check minBucketSize
+    // * test large objects
+    // * check available_slabs_num
+
+    // cleanup
+    ops->finalize(pool);
+    umfDisjointPoolParamsDestroy(params);
+}
+
 TEST_F(test, freeErrorPropagation) {
     static umf_result_t expectedResult = UMF_RESULT_SUCCESS;
     struct memory_provider : public umf_test::provider_base_t {
-        umf_result_t alloc(size_t size, size_t, void **ptr) noexcept {
-            *ptr = umf_ba_global_alloc(size);
+        umf_result_t alloc(size_t size, size_t alignment, void **ptr) noexcept {
+            *ptr = umf_ba_global_aligned_alloc(size, alignment);
             return UMF_RESULT_SUCCESS;
         }
 
@@ -117,8 +238,8 @@ TEST_F(test, sharedLimits) {
     static size_t numFrees = 0;
 
     struct memory_provider : public umf_test::provider_base_t {
-        umf_result_t alloc(size_t size, size_t, void **ptr) noexcept {
-            *ptr = umf_ba_global_alloc(size);
+        umf_result_t alloc(size_t size, size_t alignment, void **ptr) noexcept {
+            *ptr = umf_ba_global_aligned_alloc(size, alignment);
             numAllocs++;
             return UMF_RESULT_SUCCESS;
         }

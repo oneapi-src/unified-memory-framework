@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Intel Corporation
+# Copyright (C) 2024-2025 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -55,9 +55,8 @@ target_link_directories(
     ${LIBHWLOC_LIBRARY_DIRS}
     ${CUDA_LIBRARY_DIRS})
 target_link_options(${EXAMPLE_NAME} PRIVATE "-Wl,--start-group")
-target_link_libraries(
-    ${EXAMPLE_NAME} PRIVATE stdc++ libdisjoint_pool.a ${CUDA_LIBRARIES}
-                            ${LIBUMF_LIBRARIES})
+target_link_libraries(${EXAMPLE_NAME} PRIVATE stdc++ ${CUDA_LIBRARIES}
+                                              ${LIBUMF_LIBRARIES})
 
 # an optional part - adds a test of this example
 add_test(

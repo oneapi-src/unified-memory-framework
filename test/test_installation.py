@@ -1,4 +1,4 @@
-#  Copyright (C) 2024 Intel Corporation
+#  Copyright (C) 2024-2025 Intel Corporation
 #
 #  Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 #  SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -279,11 +279,6 @@ class UmfInstallationTester:
             help="Add this argument if the proxy library should be built together with the UMF library",
         )
         self.parser.add_argument(
-            "--disjoint-pool",
-            action="store_true",
-            help="Add this argument if the UMF was built with Disjoint Pool enabled",
-        )
-        self.parser.add_argument(
             "--umf-version",
             action="store",
             help="Current version of the UMF, e.g. 1.0.0",
@@ -299,8 +294,6 @@ class UmfInstallationTester:
         build_dir = Path(workspace_dir, self.args.build_dir)
         install_dir = Path(workspace_dir, self.args.install_dir)
         pools = []
-        if self.args.disjoint_pool:
-            pools.append("disjoint_pool")
 
         umf_version = Version(self.args.umf_version)
 
