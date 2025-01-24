@@ -26,10 +26,13 @@ os_params_unique_handle_t createOsMemoryProviderParams() {
 }
 auto defaultParams = createOsMemoryProviderParams();
 
-INSTANTIATE_TEST_SUITE_P(jemallocPoolTest, umfPoolTest,
-                         ::testing::Values(poolCreateExtParams{
-                             umfJemallocPoolOps(), nullptr,
-                             umfOsMemoryProviderOps(), defaultParams.get()}));
+INSTANTIATE_TEST_SUITE_P(
+    jemallocPoolTest, umfPoolTest,
+    ::testing::Values(poolCreateExtParams{umfJemallocPoolOps(), nullptr,
+                                          umfOsMemoryProviderOps(),
+                                          defaultParams.get()},
+                      poolCreateExtParams{umfJemallocPoolOps(), nullptr,
+                                          &BA_GLOBAL_PROVIDER_OPS, nullptr}));
 
 // this test makes sure that jemalloc does not use
 // memory provider to allocate metadata (and hence
