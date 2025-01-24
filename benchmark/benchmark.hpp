@@ -70,8 +70,10 @@
  * - Additional benchmarking scenarios can be created by extending `benchmark_interface`.
  */
 
-#include <benchmark/benchmark.h>
+#include <malloc.h>
 #include <random>
+
+#include <benchmark/benchmark.h>
 #include <umf/memory_pool.h>
 #include <umf/memory_provider.h>
 
@@ -82,6 +84,82 @@ struct alloc_data {
     void *ptr;
     size_t size;
 };
+
+struct next_alloc_data {
+    size_t offset;
+    size_t size;
+};
+
+#ifndef WIN32
+std::vector<cpu_set_t> affinityMask;
+
+int initAffinityMask() {
+    cpu_set_t mask;
+    CPU_ZERO(&mask);
+
+    if (sched_getaffinity(0, sizeof(mask), &mask) == -1) {
+        perror("sched_getaffinity");
+        return 1;
+    }
+
+    for (int cpu = 0; cpu < CPU_SETSIZE; cpu++) {
+        if (CPU_ISSET(cpu, &mask)) {
+            cpu_set_t mask;
+            CPU_ZERO(&mask);
+            CPU_SET(cpu, &mask);
+            affinityMask.push_back(mask);
+        }
+    }
+    return 0;
+}
+
+void setAffinity(benchmark::State &state) {
+    size_t tid = state.thread_index();
+    if (tid >= affinityMask.size()) {
+        state.SkipWithError("Not enough CPUs available to set affinity");
+    }
+
+    auto &mask = affinityMask[tid];
+
+    if (sched_setaffinity(0, sizeof(mask), &mask) != 0) {
+        state.SkipWithError("Failed to set affinity");
+    }
+}
+
+#else
+int initAffinityMask() {
+    printf(
+        "Affinity set not supported on Windows, benchmark can be unstable\n");
+    return 0;
+}
+
+void setAffinity([[maybe_unused]] benchmark::State &state) {
+    // Not implemented for Windows
+}
+
+#endif
+
+// function that ensures that all threads have reached the same point
+inline void waitForAllThreads(const benchmark::State &state) {
+    static std::atomic<int> count{0};
+    static std::atomic<int> generation{0};
+
+    const int totalThreads = state.threads();
+    int gen = generation.load(std::memory_order_relaxed);
+
+    int c = count.fetch_add(1, std::memory_order_acq_rel) + 1;
+
+    if (c == totalThreads) {
+        // Last thread - reset count and bump generation
+        count.store(0, std::memory_order_relaxed);
+        generation.fetch_add(1, std::memory_order_acq_rel);
+    } else {
+        // Not the last thread: spin until the generation changes
+        while (generation.load(std::memory_order_acquire) == gen) {
+            std::this_thread::yield();
+        }
+    }
+}
 
 template <typename Provider, typename = std::enable_if_t<std::is_base_of<
                                  provider_interface, Provider>::value>>
@@ -141,19 +219,28 @@ template <typename Pool> class pool_allocator : public allocator_interface {
 
 template <typename Size, typename Allocator>
 struct benchmark_interface : public benchmark::Fixture {
-    void SetUp(::benchmark::State &state) {
-        int argPos = alloc_size.SetUp(state, 0);
-        allocator.SetUp(state, argPos);
+    int parseArgs(::benchmark::State &state, int argPos) {
+        Size generator;
+        argPos = generator.SetUp(state, argPos);
+        argPos = allocator.SetUp(state, argPos);
+        alloc_sizes.resize(state.threads());
+        for (auto &i : alloc_sizes) {
+            i = generator;
+        }
+        return argPos;
     }
+    void SetUp(::benchmark::State &state) { parseArgs(state, 0); }
 
     void TearDown(::benchmark::State &state) {
-        alloc_size.TearDown(state);
+        for (auto &i : alloc_sizes) {
+            i.TearDown(state);
+        }
         allocator.TearDown(state);
     }
 
     virtual void bench(::benchmark::State &state) = 0;
 
-    static std::vector<std::string> argsName() {
+    virtual std::vector<std::string> argsName() {
         auto s = Size::argsName();
         auto a = Allocator::argsName();
         std::vector<std::string> res = {};
@@ -163,124 +250,15 @@ struct benchmark_interface : public benchmark::Fixture {
     }
 
     virtual std::string name() { return Allocator::name(); }
-    virtual int64_t iterations() { return 10000; }
+
     static void defaultArgs(Benchmark *benchmark) {
         auto *bench =
             static_cast<benchmark_interface<Size, Allocator> *>(benchmark);
-        benchmark->ArgNames(bench->argsName())
-            ->Name(bench->name())
-            ->Iterations(bench->iterations());
+        benchmark->ArgNames(bench->argsName())->Name(bench->name());
     }
-    Size alloc_size;
+
+    std::vector<Size> alloc_sizes;
     Allocator allocator;
-};
-
-// This class benchmarks speed of alloc() operations.
-template <
-    typename Size, typename Alloc,
-    typename =
-        std::enable_if_t<std::is_base_of<alloc_size_interface, Size>::value>,
-    typename =
-        std::enable_if_t<std::is_base_of<allocator_interface, Alloc>::value>>
-class alloc_benchmark : public benchmark_interface<Size, Alloc> {
-  public:
-    size_t max_allocs = 1000;
-    size_t pre_allocs = 0;
-    void SetUp(::benchmark::State &state) override {
-        if (state.thread_index() != 0) {
-            return;
-        }
-
-        // unpack arguments
-        int argPos = 0;
-        max_allocs = state.range(argPos++);
-        pre_allocs = state.range(argPos++);
-        // pass rest of the arguments to "alloc_size" and "allocator"
-        argPos = base::alloc_size.SetUp(state, argPos);
-        base::allocator.SetUp(state, argPos);
-
-        // initialize allocations tracking vectors (one per thread)
-        // and iterators for these vectors.
-        allocations.resize(state.threads());
-        iters.resize(state.threads());
-
-        for (auto &i : iters) {
-            i = pre_allocs;
-        }
-
-        // do "pre_alloc" allocations before actual benchmark.
-        for (auto &i : allocations) {
-            i.resize(max_allocs + pre_allocs);
-
-            for (size_t j = 0; j < pre_allocs; j++) {
-                i[j].ptr =
-                    base::allocator.benchAlloc(base::alloc_size.nextSize());
-                if (i[j].ptr == NULL) {
-                    state.SkipWithError("preallocation failed");
-                    return;
-                }
-                i[j].size = base::alloc_size.nextSize();
-            }
-        }
-    }
-
-    void TearDown(::benchmark::State &state) override {
-        if (state.thread_index() != 0) {
-            return;
-        }
-        for (auto &i : allocations) {
-            for (auto &j : i) {
-                if (j.ptr != NULL) {
-                    base::allocator.benchFree(j.ptr, j.size);
-                    j.ptr = NULL;
-                    j.size = 0;
-                }
-            }
-        }
-
-        base::TearDown(state);
-    }
-
-    void bench(benchmark::State &state) override {
-        auto tid = state.thread_index();
-        auto s = base::alloc_size.nextSize();
-        auto &i = iters[tid];
-        allocations[tid][i].ptr = base::allocator.benchAlloc(s);
-        if (allocations[tid][i].ptr == NULL) {
-            state.SkipWithError("allocation failed");
-            return;
-        }
-        allocations[tid][i].size = s;
-        i++;
-        if (i >= max_allocs + pre_allocs) {
-            // This benchmark tests only allocations -
-            // if allocation tracker is full we pause benchmark to dealloc all allocations -
-            // excluding pre-allocated ones.
-            state.PauseTiming();
-            while (i > pre_allocs) {
-                auto &allocation = allocations[tid][--i];
-                base::allocator.benchFree(allocation.ptr, allocation.size);
-                allocation.ptr = NULL;
-                allocation.size = 0;
-            }
-            state.ResumeTiming();
-        }
-    }
-
-    virtual std::vector<std::string> argsName() {
-        auto n = benchmark_interface<Size, Alloc>::argsName();
-        std::vector<std::string> res = {"max_allocs", "pre_allocs"};
-        res.insert(res.end(), n.begin(), n.end());
-        return res;
-    }
-
-    virtual std::string name() { return base::name() + "/alloc"; }
-    virtual int64_t iterations() { return 200000; }
-
-  protected:
-    using base = benchmark_interface<Size, Alloc>;
-    std::vector<std::vector<alloc_data>> allocations;
-    std::vector<size_t> iters;
 };
 
 // This class benchmarks performance of random deallocations and (re)allocations
@@ -290,82 +268,146 @@ template <
         std::enable_if_t<std::is_base_of<alloc_size_interface, Size>::value>,
     typename =
         std::enable_if_t<std::is_base_of<allocator_interface, Alloc>::value>>
-class multiple_malloc_free_benchmark : public alloc_benchmark<Size, Alloc> {
+class multiple_malloc_free_benchmark : public benchmark_interface<Size, Alloc> {
     using distribution = std::uniform_int_distribution<size_t>;
-    using base = alloc_benchmark<Size, Alloc>;
+    template <class T> using vector2d = std::vector<std::vector<T>>;
+    using base = benchmark_interface<Size, Alloc>;
+
+    int allocsPerIterations = 10;
+    bool thread_local_allocations = true;
+    size_t max_allocs = 0;
+
+    vector2d<alloc_data> allocations;
+    std::vector<unsigned> iters;
+
+    vector2d<next_alloc_data> next;
+    std::vector<std::vector<next_alloc_data>::const_iterator> next_iter;
+    int64_t iterations;
 
   public:
-    int reallocs = 100;
     void SetUp(::benchmark::State &state) override {
-        if (state.thread_index() != 0) {
-            return;
+        auto tid = state.thread_index();
+
+        if (tid == 0) {
+            // unpack arguments
+            iterations = state.max_iterations;
+            int argPos = 0;
+            max_allocs = state.range(argPos++);
+            thread_local_allocations = state.range(argPos++);
+            base::parseArgs(state, argPos);
+
+            allocations.resize(state.threads());
+            next.resize(state.threads());
+            next_iter.resize(state.threads());
+
+#ifndef WIN32
+            // ensure that system malloc has not memory pooled on heap
+            malloc_trim(0);
+#endif
         }
-        // unpack arguments
-        int argPos = 0;
-        base::max_allocs = state.range(argPos++);
+        setAffinity(state);
+        waitForAllThreads(state);
 
-        // pass rest of the arguments to "alloc_size" and "allocator"
-        argPos = base::alloc_size.SetUp(state, argPos);
-        base::allocator.SetUp(state, argPos);
-
-        // perform initial allocations which will be later freed and reallocated
-        base::allocations.resize(state.threads());
-        for (auto &i : base::allocations) {
-            i.resize(base::max_allocs);
-
-            for (size_t j = 0; j < base::max_allocs; j++) {
-                i[j].ptr =
-                    base::allocator.benchAlloc(base::alloc_size.nextSize());
-                if (i[j].ptr == NULL) {
-                    state.SkipWithError("preallocation failed");
-                    return;
-                }
-                i[j].size = base::alloc_size.nextSize();
-            }
+        prealloc(state);
+        prepareWorkload(state);
+        waitForAllThreads(state);
+        // warm up
+        for (int j = 0; j < iterations; j++) {
+            bench(state);
         }
-        dist.param(distribution::param_type(0, base::max_allocs - 1));
+        waitForAllThreads(state);
+
+        freeAllocs(state);
+        prealloc(state);
+        prepareWorkload(state);
+    }
+
+    void TearDown(::benchmark::State &state) override {
+        auto tid = state.thread_index();
+
+        freeAllocs(state);
+        waitForAllThreads(state);
+        if (tid == 0) {
+            // release memory used by benchmark
+            next.clear();
+            next_iter.clear();
+            allocations.clear();
+            iters.clear();
+        }
+        base::TearDown(state);
     }
 
     void bench(benchmark::State &state) override {
         auto tid = state.thread_index();
-        auto &allocation = base::allocations[tid];
-        std::vector<size_t> to_alloc;
-        for (int j = 0; j < reallocs; j++) {
-            auto idx = dist(generator);
-            if (allocation[idx].ptr == NULL) {
-                continue;
-            }
-            to_alloc.push_back(idx);
+        auto &allocation = allocations[tid];
+        for (int i = 0; i < allocsPerIterations; i++) {
+            auto &n = *next_iter[tid]++;
+            auto &alloc = allocation[n.offset];
+            base::allocator.benchFree(alloc.ptr, alloc.size);
 
-            base::allocator.benchFree(allocation[idx].ptr,
-                                      allocation[idx].size);
-            allocation[idx].ptr = NULL;
-            allocation[idx].size = 0;
-        }
+            alloc.size = n.size;
+            alloc.ptr = base::allocator.benchAlloc(alloc.size);
 
-        for (auto idx : to_alloc) {
-            auto s = base::alloc_size.nextSize();
-            allocation[idx].ptr = base::allocator.benchAlloc(s);
-            if (allocation[idx].ptr == NULL) {
+            if (alloc.ptr == NULL) {
                 state.SkipWithError("allocation failed");
             }
-            allocation[idx].size = s;
         }
     }
 
     virtual std::string name() {
-        return base::base::name() + "/multiple_malloc_free";
+        return base::name() + "/multiple_malloc_free";
     }
 
     virtual std::vector<std::string> argsName() {
         auto n = benchmark_interface<Size, Alloc>::argsName();
-        std::vector<std::string> res = {"max_allocs"};
+        std::vector<std::string> res = {"max_allocs",
+                                        "thread_local_allocations"};
         res.insert(res.end(), n.begin(), n.end());
         return res;
     }
 
-    virtual int64_t iterations() { return 2000; }
+  private:
+    void prealloc(benchmark::State &state) {
+        auto tid = state.thread_index();
+        auto &i = allocations[tid];
+        i.resize(max_allocs);
+        auto sizeGenerator = base::alloc_sizes[tid];
+        for (size_t j = 0; j < max_allocs; j++) {
+            auto size = sizeGenerator.nextSize();
+            i[j].ptr = base::allocator.benchAlloc(size);
+            if (i[j].ptr == NULL) {
+                state.SkipWithError("preallocation failed");
+                return;
+            }
+            i[j].size = size;
+        }
+    }
 
-    std::default_random_engine generator;
-    distribution dist;
+    void freeAllocs(benchmark::State &state) {
+        auto tid = state.thread_index();
+        auto &i = allocations[tid];
+        for (auto &j : i) {
+            if (j.ptr != NULL) {
+                base::allocator.benchFree(j.ptr, j.size);
+                j.ptr = NULL;
+                j.size = 0;
+            }
+        }
+    }
+
+    void prepareWorkload(benchmark::State &state) {
+        auto tid = state.thread_index();
+        auto &n = next[tid];
+        std::default_random_engine generator;
+        distribution dist;
+        generator.seed(0);
+        dist.param(distribution::param_type(0, max_allocs - 1));
+        auto sizeGenerator = base::alloc_sizes[tid];
+
+        n.clear();
+        for (int64_t j = 0; j < state.max_iterations * 10; j++) {
+            n.push_back({dist(generator), sizeGenerator.nextSize()});
+        }
+        next_iter[tid] = n.cbegin();
+    }
 };
