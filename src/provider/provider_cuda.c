@@ -594,7 +594,10 @@ static umf_result_t cu_memory_provider_open_ipc_handle(void *provider,
         LOG_ERR("cuIpcOpenMemHandle() failed.");
     }
 
-    set_context(restore_ctx, &restore_ctx);
+    umf_result = set_context(restore_ctx, &restore_ctx);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        LOG_ERR("Failed to restore CUDA context, ret = %d", umf_result);
+    }
 
     return cu2umf_result(cu_result);
 }
