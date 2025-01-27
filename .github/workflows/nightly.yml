@@ -9,7 +9,6 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   fuzz-test:
@@ -198,6 +197,9 @@ jobs:
 
   Benchmarks:
     uses: ./.github/workflows/reusable_benchmarks.yml
+    permissions:
+      contents: read
+      pull-requests: write
     with:
       pr_no: '0'
       bench_script_params: ''

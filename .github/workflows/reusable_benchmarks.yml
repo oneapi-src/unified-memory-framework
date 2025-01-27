@@ -1,11 +1,12 @@
 # Executes benchmarks implemented in this repository
+# using scripts for benchmark results visualisation,
+# which are downloaded from Unified Runtime repository. 
 name: Benchmarks
 
 on:
   workflow_call:
     inputs:
       pr_no:
-        required: true
         # even though this is a number, this is a workaround for issues with
         # reusable workflow calls that result in "Unexpected value '0'" error.
         type: string
@@ -24,24 +25,26 @@ permissions:
   pull-requests: write
 
 env:
-  BUILD_DIR : "${{github.workspace}}/build"
-  INSTL_DIR : "${{github.workspace}}/../install-dir"
+  UMF_DIR: "${{github.workspace}}/umf-repo"
+  BUILD_DIR : "${{github.workspace}}/umf-repo/build"
 
 jobs:
   benchmarks:
     name: Benchmarks
-    # env:
-      # VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
     strategy:
       matrix:
-        os: ['ubuntu-latest'] #, 'windows-latest']
-        include: 
-          # Windows doesn't recognize 'CMAKE_BUILD_TYPE', it uses '--config' param in build command to determine the build type
-          - os: ubuntu-latest
-            extra_build_option: '-DCMAKE_BUILD_TYPE=Release'
+        os: ['ubuntu-latest']
     runs-on: ${{matrix.os}}
 
     steps:
+    # Workspace on self-hosted runners is not cleaned automatically.
+    # We have to delete the files created outside of using actions.
+    - name: Cleanup self-hosted workspace
+      if: always()
+      run: |
+        ls -la ./
+        rm -rf ./* || true
+
     - name: Add comment to PR
       uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
       if: ${{ always() && inputs.pr_no != 0 }}
@@ -59,14 +62,16 @@ jobs:
             body: body
           })
 
-    - name: Checkout
+    - name: Checkout UMF
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
+        path: ${{env.UMF_DIR}}
         fetch-depth: 0
 
     # We need to fetch special ref for proper PR's merge commit. Note, this ref may be absent if the PR is already merged.
     - name: Fetch PR's merge commit
       if: ${{ inputs.pr_no != 0 }}
+      working-directory: ${{env.UMF_DIR}}
       env:
         PR_NO: ${{ inputs.pr_no }}
       run: |
@@ -75,31 +80,16 @@ jobs:
         git rev-parse origin/pr/${PR_NO}/merge
 
     - name: Install apt packages
-      if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
         sudo apt-get install -y cmake libhwloc-dev libnuma-dev libtbb-dev
 
-    # - name: Initialize vcpkg
-    #   if: matrix.os == 'windows-latest'
-    #   uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
-    #   with:
-    #     vcpkgGitCommitId: 3dd44b931481d7a8e9ba412621fa810232b66289
-    #     vcpkgDirectory: ${{env.BUILD_DIR}}/vcpkg
-    #     vcpkgJsonGlob: '**/vcpkg.json'
-
-    # - name: Install vcpkg packages
-    #   if: matrix.os == 'windows-latest'
-    #   run: vcpkg install
-    #   shell: pwsh # Specifies PowerShell as the shell for running the script.
-
-    # -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
     - name: Configure build
       run: >
         cmake
+        -S ${{env.UMF_DIR}}
         -B ${{env.BUILD_DIR}}
-        ${{matrix.extra_build_option}}
-        -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
+        -DCMAKE_BUILD_TYPE=Release
         -DUMF_BUILD_SHARED_LIBRARY=ON
         -DUMF_BUILD_BENCHMARKS=ON
         -DUMF_BUILD_BENCHMARKS_MT=ON
@@ -110,15 +100,13 @@ jobs:
         -DUMF_BUILD_CUDA_PROVIDER=ON
         -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
+        -DUMF_BUILD_EXAMPLES=OFF
 
-    - name: Build UMF on Linux
-      if: matrix.os == 'ubuntu-latest'
+    - name: Build UMF
       run: cmake --build ${{env.BUILD_DIR}} -j $(nproc)
 
-    # - name: Build UMF on Windows
-    #   if: matrix.os == 'windows-latest'
-    #   run: cmake --build ${{env.BUILD_DIR}} --config Release -j $Env:NUMBER_OF_PROCESSORS
-
+    # We are going to clone Unified Runtime repository in order to run
+    # the most up-to-date UR scripts for benchmark data visualisation
     - name: Checkout UR
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
@@ -127,19 +115,12 @@ jobs:
         fetch-depth: 1
         fetch-tags: false
 
-    - name: Install pip packages
+    - name: Install pip packages for benchmarking scripts from UR
       run: |
         pip install --force-reinstall -r ${{github.workspace}}/ur-repo/third_party/benchmark_requirements.txt
 
-    - name: Install HWLOC
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        sudo apt-get update
-        sudo apt-get install libhwloc-dev
-
-    - name: Run benchmarks
+    - name: Run dedicated for UMF benchmarking scripts from UR
       id: benchmarks
-      if: matrix.os == 'ubuntu-latest'
       working-directory: ${{env.BUILD_DIR}}
       run: >
         ${{ github.workspace }}/ur-repo/scripts/benchmarks/main.py
@@ -147,20 +128,6 @@ jobs:
         --umf  ${{env.BUILD_DIR}}
         ${{ inputs.upload_report && '--output-html' || '' }}
         ${{ inputs.bench_script_params }}
-
-    - name: Test output
-      run: >
-        echo 'out: ${{ steps.benchmarks.outcome }}'
-
-    # - name: Run benchmarks
-    #   if: matrix.os == 'windows-latest'
-    #   working-directory: ${{env.BUILD_DIR}}
-    #   run: >
-    #     python3 ${{ github.workspace }}/ur-repo/scripts/benchmarks/main.py
-    #     ~/bench_workdir
-    #     --umf  ${{env.BUILD_DIR}}
-    #     ${{ inputs.upload_report && '--output-html' || '' }}
-    #     ${{ inputs.bench_script_params }}
 
     - name: Add comment to PR
       uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
