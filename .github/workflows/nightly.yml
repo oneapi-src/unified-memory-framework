@@ -2,10 +2,10 @@
 name: Nightly
 
 # This job is run at 00:00 UTC every day or on demand.
-on:
-  workflow_dispatch:
-  schedule:
-    - cron:  '0 0 * * *'
+on: workflow_call
+  # workflow_dispatch:
+  # schedule:
+  #   - cron:  '0 0 * * *'
 
 permissions:
   contents: read
@@ -49,6 +49,10 @@ jobs:
       - name: Fuzz long test
         working-directory: ${{github.workspace}}/build
         run: ctest -C ${{matrix.build_type}} --output-on-failure --verbose -L "fuzz-long"
+
+  FastBuild:
+    name: Fast builds
+    uses: ./.github/workflows/reusable_fast.yml
 
   valgrind:
     name: Valgrind
