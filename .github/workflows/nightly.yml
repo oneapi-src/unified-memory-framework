@@ -10,6 +10,9 @@ on:
 permissions:
   contents: read
 
+env:
+  BUILD_DIR : "${{github.workspace}}/build"
+
 jobs:
   fuzz-test:
       name: Fuzz test
@@ -88,18 +91,16 @@ jobs:
     - name: Run tests under valgrind
       run: ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{github.workspace}}/build ${{matrix.tool}}
 
-  Windows-Ninja-cl:
-    name: Windows-Ninja-cl
-    env:
-      VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
-      BUILD_DIR : "${{github.workspace}}/build"
+  Windows-generators:
+    name: Windows ${{matrix.generator}} generator
     strategy:
       matrix:
         os: ['windows-2019', 'windows-2022']
-        build_type: [Debug, Release]
+        build_type: [Release]
         compiler: [{c: cl, cxx: cl}]
         shared_library: ['ON', 'OFF']
         static_hwloc: ['ON', 'OFF']
+        generator: ['Ninja', 'NMake Makefiles']
 
     runs-on: ${{matrix.os}}
 
@@ -109,8 +110,18 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Set VCPKG_PATH with hwloc
+      if: matrix.static_hwloc == 'OFF'
+      run: echo "VCPKG_PATH='${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows'" >> $env:GITHUB_ENV
+
+    - name: Set VCPKG_PATH without hwloc
+      if: matrix.static_hwloc == 'ON'
+      run: echo "VCPKG_PATH='${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows'" >> $env:GITHUB_ENV
+
     - name: Initialize vcpkg
       uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
+      env: 
+        VCPKG_PATH: ${{env.VCPKG_PATH}}
       with:
         vcpkgGitCommitId: 3dd44b931481d7a8e9ba412621fa810232b66289
         vcpkgDirectory: ${{env.BUILD_DIR}}/vcpkg
@@ -120,6 +131,7 @@ jobs:
       run: vcpkg install
 
     - name: Install Ninja
+      if: matrix.generator == 'Ninja'
       uses: seanmiddleditch/gha-setup-ninja@96bed6edff20d1dd61ecff9b75cc519d516e6401 # v5
 
     - name: Configure MSVC environment
@@ -132,7 +144,7 @@ jobs:
         -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
         -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
         -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
-        -G Ninja
+        -G "${{matrix.generator}}"
         -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
         -DUMF_LINK_HWLOC_STATICALLY=${{matrix.static_hwloc}}
         -DUMF_FORMAT_CODE_STYLE=OFF
@@ -151,71 +163,10 @@ jobs:
       working-directory: ${{env.BUILD_DIR}}
       run: ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
 
-  Windows-NMake:
-    name: Windows-NMake
-    env:
-      VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
-      BUILD_DIR : "${{github.workspace}}/build"
-    strategy:
-      matrix:
-        os: ['windows-2019', 'windows-2022']
-        build_type: [Debug, Release]
-        compiler: [{c: cl, cxx: cl}]
-        shared_library: ['ON', 'OFF']
-
-    runs-on: ${{matrix.os}}
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      with:
-        fetch-depth: 0
-
-    - name: Initialize vcpkg
-      uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
-      with:
-        vcpkgGitCommitId: 3dd44b931481d7a8e9ba412621fa810232b66289
-        vcpkgDirectory: ${{env.BUILD_DIR}}/vcpkg
-        vcpkgJsonGlob: '**/vcpkg.json'
-
-    - name: Install dependencies
-      run: vcpkg install
-
-    - name: Configure MSVC environment
-      uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
-
-    - name: Configure build
-      run: >
-        cmake
-        -B ${{env.BUILD_DIR}}
-        -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
-        -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
-        -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
-        -G "NMake Makefiles"
-        -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
-        -DUMF_LINK_HWLOC_STATICALLY=ON
-        -DUMF_FORMAT_CODE_STYLE=OFF
-        -DUMF_DEVELOPER_MODE=ON
-        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
-        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
-        -DUMF_BUILD_CUDA_PROVIDER=ON
-        -DUMF_TESTS_FAIL_ON_SKIP=ON
-
-    - name: Build UMF
-      shell: cmd
-      run: cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j %NUMBER_OF_PROCESSORS%
-
-    - name: Run tests
-      shell: cmd
-      working-directory: ${{env.BUILD_DIR}}
-      run: ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
-
-
   icx:
    name: ICX
    env:
      VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
-     BUILD_DIR : "${{github.workspace}}/build"
    strategy:
      matrix:
        os: ['windows-2019', 'windows-2022']
@@ -296,6 +247,54 @@ jobs:
        call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
        call "C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat"
        ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
+
+  hwloc-fallback:
+  # Scenarios where UMF_LINK_HWLOC_STATICALLY is set to OFF and hwloc is not installed in the system
+  # The hwloc library is fetched implicitly
+    name: "Fallback to static hwloc build"
+    strategy:
+      matrix:
+        include:
+          - os: 'ubuntu-latest'
+            build_type: Release
+            number_of_processors: '$(nproc)'
+          - os: 'windows-latest'
+            build_type: Release
+            number_of_processors: '$Env:NUMBER_OF_PROCESSORS'
+    
+    runs-on: ${{matrix.os}}
+
+    steps:
+    - name: Install dependencies
+      if: matrix.os == 'ubuntu-latest'
+      run: sudo apt-get install -y libnuma-dev
+
+    - name: Checkout
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        fetch-depth: 0
+
+    - name: Configure build
+      run: >
+        cmake
+        -B ${{env.BUILD_DIR}}
+        -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+        -DUMF_BUILD_SHARED_LIBRARY=ON
+        -DUMF_BUILD_EXAMPLES=OFF
+        -DUMF_DEVELOPER_MODE=ON
+        -DUMF_LINK_HWLOC_STATICALLY=OFF
+        -DUMF_TESTS_FAIL_ON_SKIP=ON
+
+    - name: Build UMF
+      run: >
+        cmake
+        --build ${{env.BUILD_DIR}}
+        --config ${{matrix.build_type}}
+        -j ${{matrix.number_of_processors}}
+
+    - name: Run tests
+      working-directory: ${{env.BUILD_DIR}}
+      run: ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
 
   L0:
     uses: ./.github/workflows/reusable_gpu.yml
