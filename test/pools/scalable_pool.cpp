@@ -9,25 +9,26 @@
 #include "poolFixtures.hpp"
 #include "provider.hpp"
 
-using os_params_unique_handle_t =
-    std::unique_ptr<umf_os_memory_provider_params_t,
-                    decltype(&umfOsMemoryProviderParamsDestroy)>;
-
-os_params_unique_handle_t createOsMemoryProviderParams() {
+void *createOsMemoryProviderParams() {
     umf_os_memory_provider_params_handle_t params = nullptr;
     umf_result_t res = umfOsMemoryProviderParamsCreate(&params);
     if (res != UMF_RESULT_SUCCESS) {
         throw std::runtime_error("Failed to create os memory provider params");
     }
 
-    return os_params_unique_handle_t(params, &umfOsMemoryProviderParamsDestroy);
+    return params;
 }
-auto defaultParams = createOsMemoryProviderParams();
 
-INSTANTIATE_TEST_SUITE_P(scalablePoolTest, umfPoolTest,
-                         ::testing::Values(poolCreateExtParams{
-                             umfScalablePoolOps(), nullptr,
-                             umfOsMemoryProviderOps(), defaultParams.get()}));
+umf_result_t destroyOsMemoryProviderParams(void *params) {
+    return umfOsMemoryProviderParamsDestroy(
+        (umf_os_memory_provider_params_handle_t)params);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    scalablePoolTest, umfPoolTest,
+    ::testing::Values(poolCreateExtParams{
+        umfScalablePoolOps(), nullptr, nullptr, umfOsMemoryProviderOps(),
+        createOsMemoryProviderParams, destroyOsMemoryProviderParams}));
 
 using scalablePoolParams = std::tuple<size_t, bool>;
 struct umfScalablePoolParamsTest

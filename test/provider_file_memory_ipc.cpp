@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2025 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -17,13 +17,10 @@ using umf_test::test;
 
 #define FILE_PATH ((char *)"tmp_file")
 
-using file_params_unique_handle_t =
-    std::unique_ptr<umf_file_memory_provider_params_t,
-                    decltype(&umfFileMemoryProviderParamsDestroy)>;
-
-file_params_unique_handle_t get_file_params_shared(char *path) {
+void *createFileParamsShared() {
     umf_file_memory_provider_params_handle_t file_params = NULL;
-    umf_result_t res = umfFileMemoryProviderParamsCreate(&file_params, path);
+    umf_result_t res =
+        umfFileMemoryProviderParamsCreate(&file_params, FILE_PATH);
     if (res != UMF_RESULT_SUCCESS) {
         throw std::runtime_error(
             "Failed to create File Memory Provider params");
@@ -37,20 +34,21 @@ file_params_unique_handle_t get_file_params_shared(char *path) {
                                  "Memory Provider params");
     }
 
-    return file_params_unique_handle_t(file_params,
-                                       &umfFileMemoryProviderParamsDestroy);
+    return file_params;
 }
 
-file_params_unique_handle_t file_params_shared =
-    get_file_params_shared(FILE_PATH);
+umf_result_t destroyFileParamsShared(void *params) {
+    return umfFileMemoryProviderParamsDestroy(
+        (umf_file_memory_provider_params_handle_t)params);
+}
 
-file_params_unique_handle_t get_file_params_fsdax(char *path) {
+void *createFileParamsFSDAX() {
     umf_file_memory_provider_params_handle_t file_params = NULL;
-    umf_result_t res = umfFileMemoryProviderParamsCreate(&file_params, path);
+    umf_result_t res = umfFileMemoryProviderParamsCreate(
+        &file_params, getenv("UMF_TESTS_FSDAX_PATH"));
     if (res != UMF_RESULT_SUCCESS) {
         //test will be skipped.
-        return file_params_unique_handle_t(nullptr,
-                                           &umfFileMemoryProviderParamsDestroy);
+        return nullptr;
     }
 
     res = umfFileMemoryProviderParamsSetVisibility(file_params,
@@ -61,12 +59,13 @@ file_params_unique_handle_t get_file_params_fsdax(char *path) {
                                  "Memory Provider params");
     }
 
-    return file_params_unique_handle_t(file_params,
-                                       &umfFileMemoryProviderParamsDestroy);
+    return file_params;
 }
 
-file_params_unique_handle_t file_params_fsdax =
-    get_file_params_fsdax(getenv("UMF_TESTS_FSDAX_PATH"));
+umf_result_t destroyFileParamsFSDAX(void *params) {
+    return umfFileMemoryProviderParamsDestroy(
+        (umf_file_memory_provider_params_handle_t)params);
+}
 
 HostMemoryAccessor hostAccessor;
 
@@ -75,12 +74,12 @@ static std::vector<ipcTestParams> ipcManyPoolsTestParamsList = {
 //    {umfProxyPoolOps(), nullptr, umfFileMemoryProviderOps(),
 //     file_params_shared.get(), &hostAccessor},
 #ifdef UMF_POOL_JEMALLOC_ENABLED
-    {umfJemallocPoolOps(), nullptr, umfFileMemoryProviderOps(),
-     file_params_shared.get(), &hostAccessor},
+    {umfJemallocPoolOps(), nullptr, nullptr, umfFileMemoryProviderOps(),
+     createFileParamsShared, destroyFileParamsShared, &hostAccessor},
 #endif
 #ifdef UMF_POOL_SCALABLE_ENABLED
-    {umfScalablePoolOps(), nullptr, umfFileMemoryProviderOps(),
-     file_params_shared.get(), &hostAccessor},
+    {umfScalablePoolOps(), nullptr, nullptr, umfFileMemoryProviderOps(),
+     createFileParamsShared, destroyFileParamsShared, &hostAccessor},
 #endif
 };
 
@@ -98,12 +97,12 @@ static std::vector<ipcTestParams> getIpcFsDaxTestParamsList(void) {
 //        {umfProxyPoolOps(), nullptr, umfFileMemoryProviderOps(),
 //         file_params_fsdax.get(), &hostAccessor},
 #ifdef UMF_POOL_JEMALLOC_ENABLED
-        {umfJemallocPoolOps(), nullptr, umfFileMemoryProviderOps(),
-         file_params_fsdax.get(), &hostAccessor},
+        {umfJemallocPoolOps(), nullptr, nullptr, umfFileMemoryProviderOps(),
+         createFileParamsFSDAX, destroyFileParamsFSDAX, &hostAccessor},
 #endif
 #ifdef UMF_POOL_SCALABLE_ENABLED
-        {umfScalablePoolOps(), nullptr, umfFileMemoryProviderOps(),
-         file_params_fsdax.get(), &hostAccessor},
+        {umfScalablePoolOps(), nullptr, nullptr, umfFileMemoryProviderOps(),
+         createFileParamsFSDAX, destroyFileParamsFSDAX, &hostAccessor},
 #endif
     };
 

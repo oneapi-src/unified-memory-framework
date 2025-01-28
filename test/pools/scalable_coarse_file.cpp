@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2025 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -7,25 +7,25 @@
 
 #include "pool_coarse.hpp"
 
-using file_params_unique_handle_t =
-    std::unique_ptr<umf_file_memory_provider_params_t,
-                    decltype(&umfFileMemoryProviderParamsDestroy)>;
-
-file_params_unique_handle_t get_file_params_default(char *path) {
+void *getFileParamsDefault() {
     umf_file_memory_provider_params_handle_t file_params = NULL;
-    umf_result_t res = umfFileMemoryProviderParamsCreate(&file_params, path);
+    umf_result_t res =
+        umfFileMemoryProviderParamsCreate(&file_params, FILE_PATH);
     if (res != UMF_RESULT_SUCCESS) {
         throw std::runtime_error(
             "Failed to create File Memory Provider params");
     }
 
-    return file_params_unique_handle_t(file_params,
-                                       &umfFileMemoryProviderParamsDestroy);
+    return file_params;
 }
 
-file_params_unique_handle_t fileParams = get_file_params_default(FILE_PATH);
+umf_result_t destroyFileParams(void *params) {
+    return umfFileMemoryProviderParamsDestroy(
+        (umf_file_memory_provider_params_handle_t)params);
+}
 
 INSTANTIATE_TEST_SUITE_P(scalableCoarseFileTest, umfPoolTest,
                          ::testing::Values(poolCreateExtParams{
-                             umfScalablePoolOps(), nullptr,
-                             umfFileMemoryProviderOps(), fileParams.get()}));
+                             umfScalablePoolOps(), nullptr, nullptr,
+                             umfFileMemoryProviderOps(), getFileParamsDefault,
+                             destroyFileParams}));

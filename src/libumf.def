@@ -31,9 +31,6 @@ EXPORTS
     umfFileMemoryProviderParamsSetPath
     umfFileMemoryProviderParamsSetProtection
     umfFileMemoryProviderParamsSetVisibility
-    umfFixedMemoryProviderOps
-    umfFixedMemoryProviderParamsCreate
-    umfFixedMemoryProviderParamsDestroy
     umfFree
     umfGetIPCHandle
     umfGetLastFailedMemoryProvider
@@ -120,3 +117,8 @@ EXPORTS
     umfScalablePoolParamsDestroy
     umfScalablePoolParamsSetGranularity
     umfScalablePoolParamsSetKeepAllMemory
+; Added in UMF_0.11
+    umfFixedMemoryProviderOps
+    umfFixedMemoryProviderParamsCreate
+    umfFixedMemoryProviderParamsDestroy
+    umfLevelZeroMemoryProviderParamsSetFreePolicy

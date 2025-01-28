@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -162,8 +162,15 @@ struct benchmark_interface : public benchmark::Fixture {
         return res;
     }
 
-    static std::string name() { return Allocator::name(); }
-    static int64_t iterations() { return 10000; }
+    virtual std::string name() { return Allocator::name(); }
+    virtual int64_t iterations() { return 10000; }
+    static void defaultArgs(Benchmark *benchmark) {
+        auto *bench =
+            static_cast<benchmark_interface<Size, Allocator> *>(benchmark);
+        benchmark->ArgNames(bench->argsName())
+            ->Name(bench->name())
+            ->Iterations(bench->iterations());
+    }
     Size alloc_size;
     Allocator allocator;
 };
@@ -260,15 +267,15 @@ class alloc_benchmark : public benchmark_interface<Size, Alloc> {
         }
     }
 
-    static std::vector<std::string> argsName() {
+    virtual std::vector<std::string> argsName() {
         auto n = benchmark_interface<Size, Alloc>::argsName();
         std::vector<std::string> res = {"max_allocs", "pre_allocs"};
         res.insert(res.end(), n.begin(), n.end());
         return res;
     }
 
-    static std::string name() { return base::name() + "/alloc"; }
-    static int64_t iterations() { return 200000; }
+    virtual std::string name() { return base::name() + "/alloc"; }
+    virtual int64_t iterations() { return 200000; }
 
   protected:
     using base = benchmark_interface<Size, Alloc>;
@@ -346,18 +353,18 @@ class multiple_malloc_free_benchmark : public alloc_benchmark<Size, Alloc> {
         }
     }
 
-    static std::string name() {
+    virtual std::string name() {
         return base::base::name() + "/multiple_malloc_free";
     }
 
-    static std::vector<std::string> argsName() {
+    virtual std::vector<std::string> argsName() {
         auto n = benchmark_interface<Size, Alloc>::argsName();
         std::vector<std::string> res = {"max_allocs"};
         res.insert(res.end(), n.begin(), n.end());
         return res;
     }
 
-    static int64_t iterations() { return 2000; }
+    virtual int64_t iterations() { return 2000; }
 
     std::default_random_engine generator;
     distribution dist;

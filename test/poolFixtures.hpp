@@ -19,17 +19,30 @@
 
 #include "../malloc_compliance_tests.hpp"
 
-using poolCreateExtParams = std::tuple<umf_memory_pool_ops_t *, void *,
-                                       umf_memory_provider_ops_t *, void *>;
+typedef void *(*pfnPoolParamsCreate)();
+typedef umf_result_t (*pfnPoolParamsDestroy)(void *);
+
+typedef void *(*pfnProviderParamsCreate)();
+typedef umf_result_t (*pfnProviderParamsDestroy)(void *);
+
+using poolCreateExtParams =
+    std::tuple<umf_memory_pool_ops_t *, pfnPoolParamsCreate,
+               pfnPoolParamsDestroy, umf_memory_provider_ops_t *,
+               pfnProviderParamsCreate, pfnProviderParamsDestroy>;
 
 umf::pool_unique_handle_t poolCreateExtUnique(poolCreateExtParams params) {
-    auto [pool_ops, pool_params, provider_ops, provider_params] = params;
+    auto [pool_ops, poolParamsCreate, poolParamsDestroy, provider_ops,
+          providerParamsCreate, providerParamsDestroy] = params;
 
     umf_memory_provider_handle_t upstream_provider = nullptr;
     umf_memory_provider_handle_t provider = nullptr;
     umf_memory_pool_handle_t hPool = nullptr;
     umf_result_t ret;
 
+    void *provider_params = NULL;
+    if (providerParamsCreate) {
+        provider_params = providerParamsCreate();
+    }
     ret = umfMemoryProviderCreate(provider_ops, provider_params,
                                   &upstream_provider);
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
@@ -37,10 +50,26 @@ umf::pool_unique_handle_t poolCreateExtUnique(poolCreateExtParams params) {
 
     provider = upstream_provider;
 
+    void *pool_params = NULL;
+    if (poolParamsCreate) {
+        pool_params = poolParamsCreate();
+    }
+
+    // NOTE: we set the UMF_POOL_CREATE_FLAG_OWN_PROVIDER flag here so the pool
+    // will destroy the provider when it is destroyed
     ret = umfPoolCreate(pool_ops, provider, pool_params,
                         UMF_POOL_CREATE_FLAG_OWN_PROVIDER, &hPool);
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
     EXPECT_NE(hPool, nullptr);
+
+    // we do not need params anymore
+    if (poolParamsDestroy) {
+        poolParamsDestroy(pool_params);
+    }
+
+    if (providerParamsDestroy) {
+        providerParamsDestroy(provider_params);
+    }
 
     return umf::pool_unique_handle_t(hPool, &umfPoolDestroy);
 }

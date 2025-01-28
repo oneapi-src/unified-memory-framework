@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 Intel Corporation
+// Copyright (C) 2023-2025 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // This file contains tests for UMF pool API
@@ -115,5 +115,6 @@ HostMemoryAccessor hostMemoryAccessor;
 
 INSTANTIATE_TEST_SUITE_P(umfIpcTestSuite, umfIpcTest,
                          ::testing::Values(ipcTestParams{
-                             umfProxyPoolOps(), nullptr, &IPC_MOCK_PROVIDER_OPS,
-                             nullptr, &hostMemoryAccessor}));
+                             umfProxyPoolOps(), nullptr, nullptr,
+                             &IPC_MOCK_PROVIDER_OPS, nullptr, nullptr,
+                             &hostMemoryAccessor}));

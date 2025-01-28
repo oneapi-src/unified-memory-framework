@@ -9,31 +9,31 @@ with section("parse"):
       "pargs": 0,
       "flags": [],
       'kwargs': {
-        'NAME': '*', 
-        'SRCS': '*', 
-        'LIBS': '*' , 
+        'NAME': '*',
+        'SRCS': '*',
+        'LIBS': '*' ,
         'LIBDIRS': '*'}},
     'add_umf_executable': {
       "pargs": 0,
       "flags": [],
       'kwargs': {
-        'NAME': '*', 
-        'SRCS': '*', 
+        'NAME': '*',
+        'SRCS': '*',
         'LIBS': '*'}},
     'add_umf_test': {
       "pargs": 0,
       "flags": [],
       'kwargs': {
-        'NAME': '*', 
-        'SRCS': '*', 
+        'NAME': '*',
+        'SRCS': '*',
         'LIBS': '*'}},
     'add_umf_library': {
       "pargs": 0,
       "flags": [],
       'kwargs': {
-        'NAME': '*', 
-        'TYPE': '*', 
-        'SRCS': '*', 
+        'NAME': '*',
+        'TYPE': '*',
+        'SRCS': '*',
         'LIBS': '*',
         'LINUX_MAP_FILE': '*',
         'WINDOWS_DEF_FILE': '*'}},
@@ -43,7 +43,20 @@ with section("parse"):
       'kwargs': {
         'LABELS': '*', 
         'PASS_REGULAR_EXPRESSION': '*'}},
-  }    
+    'build_umf_test': {
+      "pargs": 0,
+      "flags": [],
+      'kwargs': {
+        'NAME': '*',
+        'SRCS': '*',
+        'LIBS': '*' }},
+    'add_umf_ipc_test': {
+      "pargs": 0,
+      "flags": [],
+      'kwargs': {
+        'TEST': '*',
+        'SRC_DIR': '*'}},
+  }
 
   # Override configurations per-command where available
   override_spec = {}

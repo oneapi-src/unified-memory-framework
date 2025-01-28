@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/prctl.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -336,6 +337,12 @@ int run_producer(int port, umf_memory_pool_ops_t *pool_ops, void *pool_params,
     int producer_socket = -1;
     char consumer_message[MSG_SIZE];
 
+    ret = prctl(PR_SET_PTRACER, getppid());
+    if (ret == -1) {
+        perror("PR_SET_PTRACER may be not supported. prctl() call failed");
+        goto err_end;
+    }
+
     // create OS memory provider
     umf_result =
         umfMemoryProviderCreate(provider_ops, provider_params, &provider);
@@ -528,6 +535,7 @@ err_umfMemoryPoolDestroy:
 err_umfMemoryProviderDestroy:
     umfMemoryProviderDestroy(provider);
 
+err_end:
     if (ret == 0) {
         fprintf(stderr, "[producer] Shutting down (status OK) ...\n");
     } else if (ret == 1) {

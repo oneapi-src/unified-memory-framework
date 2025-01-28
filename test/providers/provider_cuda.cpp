@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2025 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -52,47 +52,35 @@ CUDATestHelper::CUDATestHelper() {
     }
 }
 
-using cuda_params_unique_handle_t =
-    std::unique_ptr<umf_cuda_memory_provider_params_t,
-                    decltype(&umfCUDAMemoryProviderParamsDestroy)>;
-
-cuda_params_unique_handle_t
+umf_cuda_memory_provider_params_handle_t
 create_cuda_prov_params(CUcontext context, CUdevice device,
                         umf_usm_memory_type_t memory_type) {
     umf_cuda_memory_provider_params_handle_t params = nullptr;
 
     umf_result_t res = umfCUDAMemoryProviderParamsCreate(&params);
     if (res != UMF_RESULT_SUCCESS) {
-        return cuda_params_unique_handle_t(nullptr,
-                                           &umfCUDAMemoryProviderParamsDestroy);
+        return nullptr;
     }
 
     res = umfCUDAMemoryProviderParamsSetContext(params, context);
     if (res != UMF_RESULT_SUCCESS) {
         umfCUDAMemoryProviderParamsDestroy(params);
-        return cuda_params_unique_handle_t(nullptr,
-                                           &umfCUDAMemoryProviderParamsDestroy);
-        ;
+        return nullptr;
     }
 
     res = umfCUDAMemoryProviderParamsSetDevice(params, device);
     if (res != UMF_RESULT_SUCCESS) {
         umfCUDAMemoryProviderParamsDestroy(params);
-        return cuda_params_unique_handle_t(nullptr,
-                                           &umfCUDAMemoryProviderParamsDestroy);
-        ;
+        return nullptr;
     }
 
     res = umfCUDAMemoryProviderParamsSetMemoryType(params, memory_type);
     if (res != UMF_RESULT_SUCCESS) {
         umfCUDAMemoryProviderParamsDestroy(params);
-        return cuda_params_unique_handle_t(nullptr,
-                                           &umfCUDAMemoryProviderParamsDestroy);
-        ;
+        return nullptr;
     }
 
-    return cuda_params_unique_handle_t(params,
-                                       &umfCUDAMemoryProviderParamsDestroy);
+    return params;
 }
 
 class CUDAMemoryAccessor : public MemoryAccessor {
@@ -126,8 +114,11 @@ class CUDAMemoryAccessor : public MemoryAccessor {
     CUcontext hContext_;
 };
 
+typedef void *(*pfnProviderParamsCreate)();
+typedef umf_result_t (*pfnProviderParamsDestroy)(void *);
+
 using CUDAProviderTestParams =
-    std::tuple<umf_cuda_memory_provider_params_handle_t, CUcontext,
+    std::tuple<pfnProviderParamsCreate, pfnProviderParamsDestroy, CUcontext,
                umf_usm_memory_type_t, MemoryAccessor *>;
 
 struct umfCUDAProviderTest
@@ -137,17 +128,31 @@ struct umfCUDAProviderTest
     void SetUp() override {
         test::SetUp();
 
-        auto [cuda_params, cu_context, memory_type, accessor] =
-            this->GetParam();
-        params = cuda_params;
+        auto [params_create, params_destroy, cu_context, memory_type,
+              accessor] = this->GetParam();
+
+        params = nullptr;
+        if (params_create) {
+            params = (umf_cuda_memory_provider_params_handle_t)params_create();
+        }
+        paramsDestroy = params_destroy;
+
         memAccessor = accessor;
         expected_context = cu_context;
         expected_memory_type = memory_type;
     }
 
-    void TearDown() override { test::TearDown(); }
+    void TearDown() override {
+        if (paramsDestroy) {
+            paramsDestroy(params);
+        }
+
+        test::TearDown();
+    }
 
     umf_cuda_memory_provider_params_handle_t params;
+    pfnProviderParamsDestroy paramsDestroy = nullptr;
+
     MemoryAccessor *memAccessor = nullptr;
     CUcontext expected_context;
     umf_usm_memory_type_t expected_memory_type;
@@ -315,34 +320,113 @@ TEST_P(umfCUDAProviderTest, cudaProviderNullParams) {
     EXPECT_EQ(res, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 }
 
+TEST_P(umfCUDAProviderTest, multiContext) {
+    CUdevice device;
+    int ret = get_cuda_device(&device);
+    ASSERT_EQ(ret, 0);
+
+    // create two CUDA contexts and two providers
+    CUcontext ctx1, ctx2;
+    ret = create_context(device, &ctx1);
+    ASSERT_EQ(ret, 0);
+    ret = create_context(device, &ctx2);
+    ASSERT_EQ(ret, 0);
+
+    umf_cuda_memory_provider_params_handle_t params1 =
+        create_cuda_prov_params(ctx1, device, UMF_MEMORY_TYPE_HOST);
+    ASSERT_NE(params1, nullptr);
+    umf_memory_provider_handle_t provider1;
+    umf_result_t umf_result = umfMemoryProviderCreate(
+        umfCUDAMemoryProviderOps(), params1, &provider1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(provider1, nullptr);
+    umf_result = umfCUDAMemoryProviderParamsDestroy(params1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umf_cuda_memory_provider_params_handle_t params2 =
+        create_cuda_prov_params(ctx2, device, UMF_MEMORY_TYPE_HOST);
+    ASSERT_NE(params2, nullptr);
+    umf_memory_provider_handle_t provider2;
+    umf_result = umfMemoryProviderCreate(umfCUDAMemoryProviderOps(), params2,
+                                         &provider2);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(provider2, nullptr);
+    umf_result = umfCUDAMemoryProviderParamsDestroy(params2);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    // use the providers
+    // allocate from 1, then from 2, then free 1, then free 2
+    void *ptr1, *ptr2;
+    const int size = 128;
+    // NOTE: we use ctx1 here
+    umf_result = umfMemoryProviderAlloc(provider1, size, 0, &ptr1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(ptr1, nullptr);
+
+    // NOTE: we use ctx2 here
+    umf_result = umfMemoryProviderAlloc(provider2, size, 0, &ptr2);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(ptr2, nullptr);
+
+    // even if we change the context, we should be able to free the memory
+    ret = set_context(ctx2, NULL);
+    ASSERT_EQ(ret, 0);
+    // free memory from ctx1
+    umf_result = umfMemoryProviderFree(provider1, ptr1, size);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    ret = set_context(ctx1, NULL);
+    ASSERT_EQ(ret, 0);
+    umf_result = umfMemoryProviderFree(provider2, ptr2, size);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    // cleanup
+    umfMemoryProviderDestroy(provider2);
+    umfMemoryProviderDestroy(provider1);
+    ret = destroy_context(ctx1);
+    ASSERT_EQ(ret, 0);
+    ret = destroy_context(ctx2);
+    ASSERT_EQ(ret, 0);
+}
+
 // TODO add tests that mixes CUDA Memory Provider and Disjoint Pool
 
 CUDATestHelper cudaTestHelper;
 
-cuda_params_unique_handle_t cuParams_device_memory = create_cuda_prov_params(
-    cudaTestHelper.get_test_context(), cudaTestHelper.get_test_device(),
-    UMF_MEMORY_TYPE_DEVICE);
-cuda_params_unique_handle_t cuParams_shared_memory = create_cuda_prov_params(
-    cudaTestHelper.get_test_context(), cudaTestHelper.get_test_device(),
-    UMF_MEMORY_TYPE_SHARED);
-cuda_params_unique_handle_t cuParams_host_memory = create_cuda_prov_params(
-    cudaTestHelper.get_test_context(), cudaTestHelper.get_test_device(),
-    UMF_MEMORY_TYPE_HOST);
+void *createCuParamsDeviceMemory() {
+    return create_cuda_prov_params(cudaTestHelper.get_test_context(),
+                                   cudaTestHelper.get_test_device(),
+                                   UMF_MEMORY_TYPE_DEVICE);
+}
+void *createCuParamsSharedMemory() {
+    return create_cuda_prov_params(cudaTestHelper.get_test_context(),
+                                   cudaTestHelper.get_test_device(),
+                                   UMF_MEMORY_TYPE_SHARED);
+}
+void *createCuParamsHostMemory() {
+    return create_cuda_prov_params(cudaTestHelper.get_test_context(),
+                                   cudaTestHelper.get_test_device(),
+                                   UMF_MEMORY_TYPE_HOST);
+}
+
+umf_result_t destroyCuParams(void *params) {
+    return umfCUDAMemoryProviderParamsDestroy(
+        (umf_cuda_memory_provider_params_handle_t)params);
+}
 
 CUDAMemoryAccessor cuAccessor(cudaTestHelper.get_test_context(),
                               cudaTestHelper.get_test_device());
 HostMemoryAccessor hostAccessor;
-
 INSTANTIATE_TEST_SUITE_P(
     umfCUDAProviderTestSuite, umfCUDAProviderTest,
     ::testing::Values(
-        CUDAProviderTestParams{cuParams_device_memory.get(),
+        CUDAProviderTestParams{createCuParamsDeviceMemory, destroyCuParams,
                                cudaTestHelper.get_test_context(),
                                UMF_MEMORY_TYPE_DEVICE, &cuAccessor},
-        CUDAProviderTestParams{cuParams_shared_memory.get(),
+        CUDAProviderTestParams{createCuParamsSharedMemory, destroyCuParams,
                                cudaTestHelper.get_test_context(),
                                UMF_MEMORY_TYPE_SHARED, &hostAccessor},
-        CUDAProviderTestParams{cuParams_host_memory.get(),
+        CUDAProviderTestParams{createCuParamsHostMemory, destroyCuParams,
                                cudaTestHelper.get_test_context(),
                                UMF_MEMORY_TYPE_HOST, &hostAccessor}));
 

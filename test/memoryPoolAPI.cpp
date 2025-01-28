@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 Intel Corporation
+// Copyright (C) 2023-2025 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // This file contains tests for UMF pool API
@@ -295,15 +295,17 @@ TEST_F(tagTest, SetAndGetInvalidPool) {
 
 INSTANTIATE_TEST_SUITE_P(
     mallocPoolTest, umfPoolTest,
-    ::testing::Values(poolCreateExtParams{&MALLOC_POOL_OPS, nullptr,
-                                          &UMF_NULL_PROVIDER_OPS, nullptr},
-                      poolCreateExtParams{umfProxyPoolOps(), nullptr,
-                                          &BA_GLOBAL_PROVIDER_OPS, nullptr}));
+    ::testing::Values(poolCreateExtParams{&MALLOC_POOL_OPS, nullptr, nullptr,
+                                          &UMF_NULL_PROVIDER_OPS, nullptr,
+                                          nullptr},
+                      poolCreateExtParams{umfProxyPoolOps(), nullptr, nullptr,
+                                          &BA_GLOBAL_PROVIDER_OPS, nullptr,
+                                          nullptr}));
 
 INSTANTIATE_TEST_SUITE_P(mallocMultiPoolTest, umfMultiPoolTest,
                          ::testing::Values(poolCreateExtParams{
-                             umfProxyPoolOps(), nullptr,
-                             &BA_GLOBAL_PROVIDER_OPS, nullptr}));
+                             umfProxyPoolOps(), nullptr, nullptr,
+                             &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr}));
 
 INSTANTIATE_TEST_SUITE_P(umfPoolWithCreateFlagsTest, umfPoolWithCreateFlagsTest,
                          ::testing::Values(0,
