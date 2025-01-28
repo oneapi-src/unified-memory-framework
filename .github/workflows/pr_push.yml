@@ -22,10 +22,10 @@ jobs:
     uses: ./.github/workflows/reusable_docs_build.yml
   Nightly:
     uses: ./.github/workflows/nightly.yml
-  # FastBuild:
-  #   name: Fast builds
-  #   needs: [CodeChecks, DocsBuild]
-  #   uses: ./.github/workflows/reusable_fast.yml
+  FastBuild:
+    name: Fast builds
+    needs: [CodeChecks, DocsBuild]
+    uses: ./.github/workflows/reusable_fast.yml
   Build:
     name: Basic builds
     needs: [FastBuild]
