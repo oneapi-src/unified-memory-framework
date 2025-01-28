@@ -251,7 +251,7 @@ umf_result_t umfLevelZeroMemoryProviderParamsCreate(
     umf_level_zero_memory_provider_params_handle_t *hParams) {
     libumfInit();
     if (!hParams) {
-        LOG_ERR("Level zero memory provider params handle is NULL");
+        LOG_ERR("Level Zero memory provider params handle is NULL");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -287,12 +287,12 @@ umf_result_t umfLevelZeroMemoryProviderParamsSetContext(
     umf_level_zero_memory_provider_params_handle_t hParams,
     ze_context_handle_t hContext) {
     if (!hParams) {
-        LOG_ERR("Level zero memory provider params handle is NULL");
+        LOG_ERR("Level Zero memory provider params handle is NULL");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
     if (!hContext) {
-        LOG_ERR("Level zero context handle is NULL");
+        LOG_ERR("Level Zero context handle is NULL");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -305,7 +305,7 @@ umf_result_t umfLevelZeroMemoryProviderParamsSetDevice(
     umf_level_zero_memory_provider_params_handle_t hParams,
     ze_device_handle_t hDevice) {
     if (!hParams) {
-        LOG_ERR("Level zero memory provider params handle is NULL");
+        LOG_ERR("Level Zero memory provider params handle is NULL");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -318,7 +318,7 @@ umf_result_t umfLevelZeroMemoryProviderParamsSetMemoryType(
     umf_level_zero_memory_provider_params_handle_t hParams,
     umf_usm_memory_type_t memoryType) {
     if (!hParams) {
-        LOG_ERR("Level zero memory provider params handle is NULL");
+        LOG_ERR("Level Zero memory provider params handle is NULL");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -331,7 +331,7 @@ umf_result_t umfLevelZeroMemoryProviderParamsSetDeviceOrdinal(
     umf_level_zero_memory_provider_params_handle_t hParams,
     uint32_t deviceOrdinal) {
     if (!hParams) {
-        LOG_ERR("Level zero memory provider params handle is NULL");
+        LOG_ERR("Level Zero memory provider params handle is NULL");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
     hParams->device_ordinal = deviceOrdinal;
@@ -343,7 +343,7 @@ umf_result_t umfLevelZeroMemoryProviderParamsSetResidentDevices(
     umf_level_zero_memory_provider_params_handle_t hParams,
     ze_device_handle_t *hDevices, uint32_t deviceCount) {
     if (!hParams) {
-        LOG_ERR("Level zero memory provider params handle is NULL");
+        LOG_ERR("Level Zero memory provider params handle is NULL");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -362,7 +362,7 @@ umf_result_t umfLevelZeroMemoryProviderParamsSetFreePolicy(
     umf_level_zero_memory_provider_params_handle_t hParams,
     umf_level_zero_memory_provider_free_policy_t policy) {
     if (!hParams) {
-        LOG_ERR("Level zero memory provider params handle is NULL");
+        LOG_ERR("Level Zero memory provider params handle is NULL");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
