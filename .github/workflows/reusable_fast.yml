@@ -16,6 +16,8 @@ jobs:
     container:
       image: rbanka974/umf-ubuntu-20.04:latest
       options: --user root --privileged
+      volumes:
+        - /home/runner/work/unified-memory-framework/unified-memory-framework:/home/runner/work/unified-memory-framework/unified-memory-framework
 
     env:
       VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
@@ -95,6 +97,9 @@ jobs:
 
     - name: Build
       run: cmake --build ${{env.BUILD_DIR}} --config Release -j
+
+    - name: Create build directory
+      run: mkdir -p ${{env.BUILD_DIR}}
 
     - name: Run examples
       working-directory: ${{env.BUILD_DIR}}
