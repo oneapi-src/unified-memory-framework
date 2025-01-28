@@ -52,7 +52,6 @@ jobs:
 
   FastBuild:
     name: Fast builds
-    needs: [CodeChecks, DocsBuild]
     uses: ./.github/workflows/reusable_fast.yml
 
   valgrind:
