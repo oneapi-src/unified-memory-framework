@@ -29,7 +29,7 @@ using the CUDA API and UMF CUDA memory provider.
 
 Required packages:
 
-- libhwloc-dev >= 2.3.0 (Linux) / hwloc >= 2.3.0 (Windows)
+- libhwloc-dev >= 2.3.0 (Linux) / hwloc >= 2.3.0 (Windows) (required for examples)
 - C compiler
 - [CMake](https://cmake.org/) >= 3.14.0
 
