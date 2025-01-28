@@ -55,7 +55,7 @@ if(WINDOWS)
 endif()
 
 if(LIBHWLOC_LIBRARY)
-    message(STATUS "  Found libhwloc using find_library()")
+    message(STATUS "  Found libhwloc: ${LIBHWLOC_LIBRARY}")
 
     if(LIBHWLOC_FIND_VERSION)
         if(NOT LIBHWLOC_API_VERSION)
