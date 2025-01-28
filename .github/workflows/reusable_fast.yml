@@ -18,6 +18,7 @@ jobs:
 
     env:
       VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
+      RUNNER_TEMP: /tmp/_runner_temp
     strategy:
       matrix:
         include:
