@@ -10,9 +10,10 @@ env:
   BUILD_DIR : "${{github.workspace}}/build"
   INSTL_DIR : "${{github.workspace}}/../install-dir"
 
-jobs:
   FastBuild:
     name: Fast builds
+    container: 
+      image: rbanka974/umf-ubuntu-20.04:latest
     env:
       VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
     strategy:

@@ -4,7 +4,7 @@
 
 #
 # Dockerfile - a 'recipe' for Docker to build an image of ubuntu-based
-#              environment for building the Unified Memory Framework project.
+#	  environment for building the Unified Memory Framework project.
 #
 
 # Pull base image ("20.04")
