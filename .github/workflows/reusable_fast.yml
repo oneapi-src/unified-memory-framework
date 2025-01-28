@@ -15,6 +15,7 @@ jobs:
     name: Fast builds
     container: 
       image: rbanka974/umf-ubuntu-20.04:latest
+      if: matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-20.04'
     env:
       VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
     strategy:
