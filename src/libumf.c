@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -11,6 +11,7 @@
 
 #include "base_alloc_global.h"
 #include "ipc_cache.h"
+#include "memory_provider_internal.h"
 #include "memspace_internal.h"
 #include "provider_tracking.h"
 #include "utils_common.h"
@@ -22,6 +23,11 @@
 umf_memory_tracker_handle_t TRACKER = NULL;
 
 static unsigned long long umfRefCount = 0;
+
+static struct ctl_node CTL_NODE(umf)[] = {CTL_CHILD(provider), CTL_CHILD(pool),
+                                          CTL_NODE_END};
+
+void initialize_global_ctl(void) { CTL_REGISTER_MODULE(NULL, umf); }
 
 int umfInit(void) {
     if (utils_fetch_and_add64(&umfRefCount, 1) == 0) {
@@ -41,6 +47,7 @@ int umfInit(void) {
         }
 
         LOG_DEBUG("UMF IPC cache initialized");
+        initialize_global_ctl();
     }
 
     if (TRACKER) {

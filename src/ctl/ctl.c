@@ -25,6 +25,7 @@
 #include <string.h>
 
 #include "base_alloc/base_alloc_global.h"
+#include "umf/base.h"
 #include "utils/utils_common.h"
 #include "utlist.h"
 
@@ -43,6 +44,7 @@
 #define CTL_QUERY_NODE_SEPARATOR "."
 #define CTL_VALUE_ARG_SEPARATOR ","
 
+/* GLOBAL TREE */
 static int ctl_global_first_free = 0;
 static struct ctl_node CTL_NODE(global)[CTL_MAX_ENTRIES];
 
@@ -78,16 +80,33 @@ char *Strdup(const char *s) {
     return p;
 }
 
+int umfCtlGet(const char *name, void *ctx, void *arg) {
+    return ctl_query(NULL, ctx, CTL_QUERY_PROGRAMMATIC, name, CTL_QUERY_READ,
+                     arg);
+}
+
+int umfCtlSet(const char *name, void *ctx, void *arg) {
+    return ctl_query(NULL, ctx, CTL_QUERY_PROGRAMMATIC, name, CTL_QUERY_WRITE,
+                     arg);
+}
+
+int umfCtlExec(const char *name, void *ctx, void *arg) {
+    return ctl_query(NULL, ctx, CTL_QUERY_PROGRAMMATIC, name,
+                     CTL_QUERY_RUNNABLE, arg);
+}
+
 /*
  * ctl_find_node -- (internal) searches for a matching entry point in the
  *    provided nodes
  *
+ * Name offset is used to return the offset of the name in the query string.
  * The caller is responsible for freeing all of the allocated indexes,
  * regardless of the return value.
  */
 static const struct ctl_node *ctl_find_node(const struct ctl_node *nodes,
                                             const char *name,
-                                            struct ctl_index_utlist *indexes) {
+                                            struct ctl_index_utlist *indexes,
+                                            int *name_offset) {
     const struct ctl_node *n = NULL;
     char *sptr = NULL;
     char *parse_str = Strdup(name);
@@ -102,6 +121,10 @@ static const struct ctl_node *ctl_find_node(const struct ctl_node *nodes,
      * in the main ctl tree.
      */
     while (node_name != NULL) {
+        *name_offset = (int)(node_name - parse_str);
+        if (n != NULL && n->type == CTL_NODE_SUBTREE) {
+            break;
+        }
         char *endptr;
         /*
          * Ignore errno from strtol: FreeBSD returns EINVAL if no
@@ -128,6 +151,7 @@ static const struct ctl_node *ctl_find_node(const struct ctl_node *nodes,
                 break;
             }
         }
+
         if (n->name == NULL) {
             goto error;
         }
@@ -244,13 +268,18 @@ static void ctl_query_cleanup_real_args(const struct ctl_node *n,
  */
 static int ctl_exec_query_read(void *ctx, const struct ctl_node *n,
                                enum ctl_query_source source, void *arg,
-                               struct ctl_index_utlist *indexes) {
+                               struct ctl_index_utlist *indexes,
+                               char *extra_name,
+                               umf_ctl_query_type query_type) {
+    (void)extra_name, (void)query_type;
     if (arg == NULL) {
         errno = EINVAL;
         return -1;
     }
 
-    return n->cb[CTL_QUERY_READ](ctx, source, arg, indexes);
+    assert(MAX_CTL_QUERY_TYPE != query_type);
+    return n->cb[CTL_QUERY_READ](ctx, source, arg, indexes, NULL,
+                                 MAX_CTL_QUERY_TYPE);
 }
 
 /*
@@ -258,7 +287,10 @@ static int ctl_exec_query_read(void *ctx, const struct ctl_node *n,
  */
 static int ctl_exec_query_write(void *ctx, const struct ctl_node *n,
                                 enum ctl_query_source source, void *arg,
-                                struct ctl_index_utlist *indexes) {
+                                struct ctl_index_utlist *indexes,
+                                char *extra_name,
+                                umf_ctl_query_type query_type) {
+    (void)extra_name, (void)query_type;
     if (arg == NULL) {
         errno = EINVAL;
         return -1;
@@ -269,7 +301,9 @@ static int ctl_exec_query_write(void *ctx, const struct ctl_node *n,
         return -1;
     }
 
-    int ret = n->cb[CTL_QUERY_WRITE](ctx, source, real_arg, indexes);
+    assert(MAX_CTL_QUERY_TYPE != query_type);
+    int ret = n->cb[CTL_QUERY_WRITE](ctx, source, real_arg, indexes, NULL,
+                                     MAX_CTL_QUERY_TYPE);
     ctl_query_cleanup_real_args(n, real_arg, source);
 
     return ret;
@@ -280,16 +314,32 @@ static int ctl_exec_query_write(void *ctx, const struct ctl_node *n,
  */
 static int ctl_exec_query_runnable(void *ctx, const struct ctl_node *n,
                                    enum ctl_query_source source, void *arg,
-                                   struct ctl_index_utlist *indexes) {
-    return n->cb[CTL_QUERY_RUNNABLE](ctx, source, arg, indexes);
+                                   struct ctl_index_utlist *indexes,
+                                   char *extra_name,
+                                   umf_ctl_query_type query_type) {
+    (void)extra_name, (void)query_type;
+    assert(MAX_CTL_QUERY_TYPE != query_type);
+    return n->cb[CTL_QUERY_RUNNABLE](ctx, source, arg, indexes, NULL,
+                                     MAX_CTL_QUERY_TYPE);
+}
+
+static int ctl_exec_query_subtree(void *ctx, const struct ctl_node *n,
+                                  enum ctl_query_source source, void *arg,
+                                  struct ctl_index_utlist *indexes,
+                                  char *extra_name,
+                                  umf_ctl_query_type query_type) {
+    return n->cb[CTL_QUERY_SUBTREE](ctx, source, arg, indexes, extra_name,
+                                    query_type);
 }
 
 static int (*ctl_exec_query[MAX_CTL_QUERY_TYPE])(
     void *ctx, const struct ctl_node *n, enum ctl_query_source source,
-    void *arg, struct ctl_index_utlist *indexes) = {
+    void *arg, struct ctl_index_utlist *indexes, char *extra_name,
+    umf_ctl_query_type query_type) = {
     ctl_exec_query_read,
     ctl_exec_query_write,
     ctl_exec_query_runnable,
+    ctl_exec_query_subtree,
 };
 
 /*
@@ -297,7 +347,7 @@ static int (*ctl_exec_query[MAX_CTL_QUERY_TYPE])(
  *    from the ctl tree
  */
 int ctl_query(struct ctl *ctl, void *ctx, enum ctl_query_source source,
-              const char *name, enum ctl_query_type type, void *arg) {
+              const char *name, umf_ctl_query_type type, void *arg) {
     if (name == NULL) {
         errno = EINVAL;
         return -1;
@@ -315,22 +365,28 @@ int ctl_query(struct ctl *ctl, void *ctx, enum ctl_query_source source,
     }
 
     int ret = -1;
+    int name_offset = 0;
 
-    const struct ctl_node *n = ctl_find_node(CTL_NODE(global), name, indexes);
+    const struct ctl_node *n =
+        ctl_find_node(CTL_NODE(global), name, indexes, &name_offset);
 
     if (n == NULL && ctl) {
         ctl_delete_indexes(indexes);
         indexes = NULL;
-        n = ctl_find_node(ctl->root, name, indexes);
+        n = ctl_find_node(ctl->root, name, indexes, &name_offset);
     }
 
-    if (n == NULL || n->type != CTL_NODE_LEAF || n->cb[type] == NULL) {
+    if (n == NULL ||
+        (n->type != CTL_NODE_LEAF && n->type != CTL_NODE_SUBTREE) ||
+        n->cb[n->type == CTL_NODE_SUBTREE ? CTL_QUERY_SUBTREE : type] == NULL) {
         errno = EINVAL;
         goto out;
     }
 
-    ret = ctl_exec_query[type](ctx, n, source, arg, indexes);
-
+    char *extra_name = (char *)&name[0] + name_offset;
+    ret =
+        ctl_exec_query[n->type == CTL_NODE_SUBTREE ? CTL_QUERY_SUBTREE : type](
+            ctx, n, source, arg, indexes, extra_name, type);
 out:
     ctl_delete_indexes(indexes);
 
