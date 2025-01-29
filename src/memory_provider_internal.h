@@ -14,6 +14,8 @@
 
 #include <umf/memory_provider.h>
 
+#include "ctl/ctl.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -25,6 +27,9 @@ typedef struct umf_memory_provider_t {
 
 void *umfMemoryProviderGetPriv(umf_memory_provider_handle_t hProvider);
 umf_memory_provider_handle_t *umfGetLastFailedMemoryProviderPtr(void);
+
+extern umf_ctl_node_t CTL_NODE(provider)[];
+extern umf_ctl_node_t CTL_NODE(pool)[];
 
 #ifdef __cplusplus
 }
