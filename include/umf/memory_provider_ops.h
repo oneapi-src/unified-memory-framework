@@ -1,12 +1,11 @@
 /*
  *
- * Copyright (C) 2023-2024 Intel Corporation
+ * Copyright (C) 2023-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
-
 #ifndef UMF_MEMORY_PROVIDER_OPS_H
 #define UMF_MEMORY_PROVIDER_OPS_H 1
 
@@ -77,6 +76,23 @@ typedef struct umf_memory_provider_ext_ops_t {
     ///
     umf_result_t (*allocation_split)(void *hProvider, void *ptr,
                                      size_t totalSize, size_t firstSize);
+
+    ///
+    /// @brief Control operation for the memory provider.
+    ///        The function is used to perform various control operations
+    ///        on the memory provider.
+    ///
+    /// @param hProvider handle to the memory provider.
+    /// @param operationType type of the operation to be performed.
+    /// @param name name associated with the operation.
+    /// @param arg argument for the operation.
+    /// @param extra_name additional name associated with the operation.
+    /// @param query_type type of the query to be performed.
+    ///
+    /// @return umf_result_t result of the control operation.
+    ///
+    umf_result_t (*ctl)(void *hProvider, int operationType, const char *name,
+                        void *arg, umf_ctl_query_type query_type);
 
 } umf_memory_provider_ext_ops_t;
 
