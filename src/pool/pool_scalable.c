@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2024 Intel Corporation
+ * Copyright (C) 2023-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -47,6 +47,7 @@ typedef struct umf_scalable_pool_params_t {
 } umf_scalable_pool_params_t;
 
 typedef struct tbb_callbacks_t {
+    int initialized;
     void *(*pool_malloc)(void *, size_t);
     void *(*pool_realloc)(void *, void *, size_t);
     void *(*pool_aligned_malloc)(void *, size_t, size_t);
@@ -63,10 +64,11 @@ typedef struct tbb_callbacks_t {
 #endif
 } tbb_callbacks_t;
 
+static tbb_callbacks_t tbb_callbacks = {0};
+
 typedef struct tbb_memory_pool_t {
     umf_memory_provider_handle_t mem_provider;
     void *tbb_pool;
-    tbb_callbacks_t tbb_callbacks;
 } tbb_memory_pool_t;
 
 typedef enum tbb_enums_t {
@@ -109,42 +111,46 @@ static const char *tbb_symbol[TBB_POOL_SYMBOLS_MAX] = {
 #endif
 };
 
-static int init_tbb_callbacks(tbb_callbacks_t *tbb_callbacks) {
-    assert(tbb_callbacks);
-
+static int init_tbb_callbacks() {
     const char *lib_name = tbb_symbol[TBB_LIB_NAME];
-    tbb_callbacks->lib_handle = utils_open_library(lib_name, 0);
-    if (!tbb_callbacks->lib_handle) {
-        LOG_ERR("%s required by Scalable Pool not found - install TBB malloc "
+    if (tbb_callbacks.initialized < 1) {
+        tbb_callbacks.lib_handle = utils_open_library(lib_name, 0);
+        if (!tbb_callbacks.lib_handle) {
+            LOG_ERR(
+                "%s required by Scalable Pool not found - install TBB malloc "
                 "or make sure it is in the default search paths.",
                 lib_name);
-        return -1;
+            return -1;
+        }
+        *(void **)&tbb_callbacks.pool_malloc = utils_get_symbol_addr(
+            tbb_callbacks.lib_handle, tbb_symbol[TBB_POOL_MALLOC], lib_name);
+        *(void **)&tbb_callbacks.pool_realloc = utils_get_symbol_addr(
+            tbb_callbacks.lib_handle, tbb_symbol[TBB_POOL_REALLOC], lib_name);
+        *(void **)&tbb_callbacks.pool_aligned_malloc = utils_get_symbol_addr(
+            tbb_callbacks.lib_handle, tbb_symbol[TBB_POOL_ALIGNED_MALLOC],
+            lib_name);
+        *(void **)&tbb_callbacks.pool_free = utils_get_symbol_addr(
+            tbb_callbacks.lib_handle, tbb_symbol[TBB_POOL_FREE], lib_name);
+        *(void **)&tbb_callbacks.pool_create_v1 = utils_get_symbol_addr(
+            tbb_callbacks.lib_handle, tbb_symbol[TBB_POOL_CREATE_V1], lib_name);
+        *(void **)&tbb_callbacks.pool_destroy = utils_get_symbol_addr(
+            tbb_callbacks.lib_handle, tbb_symbol[TBB_POOL_DESTROY], lib_name);
+        *(void **)&tbb_callbacks.pool_identify = utils_get_symbol_addr(
+            tbb_callbacks.lib_handle, tbb_symbol[TBB_POOL_IDENTIFY], lib_name);
+        *(void **)&tbb_callbacks.pool_msize = utils_get_symbol_addr(
+            tbb_callbacks.lib_handle, tbb_symbol[TBB_POOL_MSIZE], lib_name);
     }
+    tbb_callbacks.initialized++;
 
-    *(void **)&tbb_callbacks->pool_malloc = utils_get_symbol_addr(
-        tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_MALLOC], lib_name);
-    *(void **)&tbb_callbacks->pool_realloc = utils_get_symbol_addr(
-        tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_REALLOC], lib_name);
-    *(void **)&tbb_callbacks->pool_aligned_malloc =
-        utils_get_symbol_addr(tbb_callbacks->lib_handle,
-                              tbb_symbol[TBB_POOL_ALIGNED_MALLOC], lib_name);
-    *(void **)&tbb_callbacks->pool_free = utils_get_symbol_addr(
-        tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_FREE], lib_name);
-    *(void **)&tbb_callbacks->pool_create_v1 = utils_get_symbol_addr(
-        tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_CREATE_V1], lib_name);
-    *(void **)&tbb_callbacks->pool_destroy = utils_get_symbol_addr(
-        tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_DESTROY], lib_name);
-    *(void **)&tbb_callbacks->pool_identify = utils_get_symbol_addr(
-        tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_IDENTIFY], lib_name);
-    *(void **)&tbb_callbacks->pool_msize = utils_get_symbol_addr(
-        tbb_callbacks->lib_handle, tbb_symbol[TBB_POOL_MSIZE], lib_name);
-
-    if (!tbb_callbacks->pool_malloc || !tbb_callbacks->pool_realloc ||
-        !tbb_callbacks->pool_aligned_malloc || !tbb_callbacks->pool_free ||
-        !tbb_callbacks->pool_create_v1 || !tbb_callbacks->pool_destroy ||
-        !tbb_callbacks->pool_identify) {
+    if (!tbb_callbacks.pool_malloc || !tbb_callbacks.pool_realloc ||
+        !tbb_callbacks.pool_aligned_malloc || !tbb_callbacks.pool_free ||
+        !tbb_callbacks.pool_create_v1 || !tbb_callbacks.pool_destroy ||
+        !tbb_callbacks.pool_identify) {
         LOG_ERR("Could not find symbols in %s", lib_name);
-        utils_close_library(tbb_callbacks->lib_handle);
+        if (utils_close_library(tbb_callbacks.lib_handle) == 0) {
+            tbb_callbacks.initialized--;
+        }
+
         return -1;
     }
 
@@ -264,15 +270,15 @@ static umf_result_t tbb_pool_initialize(umf_memory_provider_handle_t provider,
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    int ret = init_tbb_callbacks(&pool_data->tbb_callbacks);
+    int ret = init_tbb_callbacks();
     if (ret != 0) {
         LOG_ERR("loading TBB symbols failed");
         return UMF_RESULT_ERROR_UNKNOWN;
     }
 
     pool_data->mem_provider = provider;
-    ret = pool_data->tbb_callbacks.pool_create_v1((intptr_t)pool_data, &policy,
-                                                  &(pool_data->tbb_pool));
+    ret = tbb_callbacks.pool_create_v1((intptr_t)pool_data, &policy,
+                                       &(pool_data->tbb_pool));
     if (ret != 0 /* TBBMALLOC_OK */) {
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
@@ -284,15 +290,22 @@ static umf_result_t tbb_pool_initialize(umf_memory_provider_handle_t provider,
 
 static void tbb_pool_finalize(void *pool) {
     tbb_memory_pool_t *pool_data = (tbb_memory_pool_t *)pool;
-    pool_data->tbb_callbacks.pool_destroy(pool_data->tbb_pool);
-    utils_close_library(pool_data->tbb_callbacks.lib_handle);
+    tbb_callbacks.pool_destroy(pool_data->tbb_pool);
+
+    if (tbb_callbacks.initialized <= 1) {
+        if (utils_close_library(tbb_callbacks.lib_handle)) {
+            LOG_ERR("Could not close TBB lib handler %p",
+                    tbb_callbacks.lib_handle);
+        }
+    }
+    tbb_callbacks.initialized--;
     umf_ba_global_free(pool_data);
 }
 
 static void *tbb_malloc(void *pool, size_t size) {
     tbb_memory_pool_t *pool_data = (tbb_memory_pool_t *)pool;
     TLS_last_allocation_error = UMF_RESULT_SUCCESS;
-    void *ptr = pool_data->tbb_callbacks.pool_malloc(pool_data->tbb_pool, size);
+    void *ptr = tbb_callbacks.pool_malloc(pool_data->tbb_pool, size);
     if (ptr == NULL) {
         if (TLS_last_allocation_error == UMF_RESULT_SUCCESS) {
             TLS_last_allocation_error = UMF_RESULT_ERROR_UNKNOWN;
@@ -319,8 +332,7 @@ static void *tbb_calloc(void *pool, size_t num, size_t size) {
 static void *tbb_realloc(void *pool, void *ptr, size_t size) {
     tbb_memory_pool_t *pool_data = (tbb_memory_pool_t *)pool;
     TLS_last_allocation_error = UMF_RESULT_SUCCESS;
-    void *new_ptr =
-        pool_data->tbb_callbacks.pool_realloc(pool_data->tbb_pool, ptr, size);
+    void *new_ptr = tbb_callbacks.pool_realloc(pool_data->tbb_pool, ptr, size);
     if (new_ptr == NULL) {
         if (TLS_last_allocation_error == UMF_RESULT_SUCCESS) {
             TLS_last_allocation_error = UMF_RESULT_ERROR_UNKNOWN;
@@ -334,8 +346,8 @@ static void *tbb_realloc(void *pool, void *ptr, size_t size) {
 static void *tbb_aligned_malloc(void *pool, size_t size, size_t alignment) {
     tbb_memory_pool_t *pool_data = (tbb_memory_pool_t *)pool;
     TLS_last_allocation_error = UMF_RESULT_SUCCESS;
-    void *ptr = pool_data->tbb_callbacks.pool_aligned_malloc(
-        pool_data->tbb_pool, size, alignment);
+    void *ptr =
+        tbb_callbacks.pool_aligned_malloc(pool_data->tbb_pool, size, alignment);
     if (ptr == NULL) {
         if (TLS_last_allocation_error == UMF_RESULT_SUCCESS) {
             TLS_last_allocation_error = UMF_RESULT_ERROR_UNKNOWN;
@@ -360,7 +372,7 @@ static umf_result_t tbb_free(void *pool, void *ptr) {
     utils_annotate_release(pool);
 
     tbb_memory_pool_t *pool_data = (tbb_memory_pool_t *)pool;
-    if (pool_data->tbb_callbacks.pool_free(pool_data->tbb_pool, ptr)) {
+    if (tbb_callbacks.pool_free(pool_data->tbb_pool, ptr)) {
         return UMF_RESULT_SUCCESS;
     }
 
@@ -373,7 +385,7 @@ static umf_result_t tbb_free(void *pool, void *ptr) {
 
 static size_t tbb_malloc_usable_size(void *pool, void *ptr) {
     tbb_memory_pool_t *pool_data = (tbb_memory_pool_t *)pool;
-    return pool_data->tbb_callbacks.pool_msize(pool_data->tbb_pool, ptr);
+    return tbb_callbacks.pool_msize(pool_data->tbb_pool, ptr);
 }
 
 static umf_result_t tbb_get_last_allocation_error(void *pool) {
