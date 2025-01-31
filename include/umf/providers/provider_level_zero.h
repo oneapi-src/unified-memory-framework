@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -82,6 +82,14 @@ typedef enum umf_level_zero_memory_provider_free_policy_t {
 umf_result_t umfLevelZeroMemoryProviderParamsSetFreePolicy(
     umf_level_zero_memory_provider_params_handle_t hParams,
     umf_level_zero_memory_provider_free_policy_t policy);
+
+/// @brief  Set the device ordinal in the parameters struct.
+/// @param  hParams handle to the parameters of the Level Zero Memory Provider.
+/// @param  deviceOrdinal device ordinal.
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+umf_result_t umfLevelZeroMemoryProviderParamsSetDeviceOrdinal(
+    umf_level_zero_memory_provider_params_handle_t hParams,
+    uint32_t deviceOrdinal);
 
 umf_memory_provider_ops_t *umfLevelZeroMemoryProviderOps(void);
 
