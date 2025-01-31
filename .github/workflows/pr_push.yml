@@ -54,9 +54,6 @@ jobs:
     uses: ./.github/workflows/reusable_qemu.yml
     with:
       short_run: true
-  Benchmarks:
-    needs: [Build]
-    uses: ./.github/workflows/reusable_benchmarks.yml
   ProxyLib:
     needs: [Build]
     uses: ./.github/workflows/reusable_proxy_lib.yml
