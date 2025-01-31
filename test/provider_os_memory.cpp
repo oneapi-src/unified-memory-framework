@@ -16,6 +16,9 @@
 #ifdef UMF_POOL_JEMALLOC_ENABLED
 #include <umf/pools/pool_jemalloc.h>
 #endif
+#ifdef UMF_POOL_SCALABLE_ENABLED
+#include <umf/pools/pool_scalable.h>
+#endif
 
 using umf_test::test;
 
@@ -477,6 +480,10 @@ static std::vector<ipcTestParams> ipcTestParamsList = {
     {umfJemallocPoolOps(), nullptr, nullptr, umfOsMemoryProviderOps(),
      createOsMemoryProviderParamsShared, destroyOsMemoryProviderParamsShared,
      &hostAccessor},
+#endif
+#ifdef UMF_POOL_SCALABLE_ENABLED
+    {umfScalablePoolOps(), nullptr, umfOsMemoryProviderOps(), &os_params,
+     &hostAccessor, false},
 #endif
 };
 
