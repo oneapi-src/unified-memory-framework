@@ -59,6 +59,10 @@ function(build_umf_test)
         set(INC_DIRS ${INC_DIRS} ${LEVEL_ZERO_INCLUDE_DIRS})
     endif()
 
+    if(UMF_LINK_HWLOC_STATICALLY)
+        set(INC_DIRS ${INC_DIRS} ${LIBHWLOC_INCLUDE_DIRS})
+    endif()
+
     if(UMF_POOL_JEMALLOC_ENABLED)
         set(CPL_DEFS ${CPL_DEFS} UMF_POOL_JEMALLOC_ENABLED=1)
     endif()
