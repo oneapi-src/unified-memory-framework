@@ -51,3 +51,11 @@
    fun:*glibcxx_rwlock_rdlock*pthread_rwlock_t*
    ...
 }
+
+{
+   False-positive Race in critnib_insert
+   Helgrind:Race
+   fun:store
+   fun:critnib_insert
+   ...
+}

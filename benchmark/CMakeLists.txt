@@ -1,4 +1,4 @@
-# Copyright (C) 2023-2024 Intel Corporation
+# Copyright (C) 2023-2025 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -87,10 +87,6 @@ function(add_umf_benchmark)
                                                  "${DLL_PATH_LIST}")
     endif()
 
-    if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
-        target_compile_definitions(${BENCH_NAME}
-                                   PRIVATE UMF_POOL_DISJOINT_ENABLED=1)
-    endif()
     if(UMF_POOL_JEMALLOC_ENABLED)
         target_compile_definitions(${BENCH_NAME}
                                    PRIVATE UMF_POOL_JEMALLOC_ENABLED=1)
@@ -118,9 +114,6 @@ endfunction()
 set(LIB_DIRS ${LIBHWLOC_LIBRARY_DIRS})
 
 # optional libraries
-if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
-    set(LIBS_OPTIONAL ${LIBS_OPTIONAL} disjoint_pool)
-endif()
 if(LINUX)
     set(LIBS_OPTIONAL ${LIBS_OPTIONAL} m)
 endif()
