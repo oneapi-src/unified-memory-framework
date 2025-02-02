@@ -90,7 +90,7 @@ static umf_result_t traceGetLastStatus(void *pool) {
 }
 
 umf_memory_pool_ops_t UMF_TRACE_POOL_OPS = {
-    .version = UMF_VERSION_CURRENT,
+    .version = UMF_POOL_OPS_VERSION_CURRENT,
     .initialize = traceInitialize,
     .finalize = traceFinalize,
     .malloc = traceMalloc,

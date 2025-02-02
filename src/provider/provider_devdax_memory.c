@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -529,8 +529,8 @@ static umf_result_t devdax_free(void *provider, void *ptr, size_t size) {
     return coarse_free(devdax_provider->coarse, ptr, size);
 }
 
-static umf_memory_provider_ops_t UMF_DEVDAX_MEMORY_PROVIDER_OPS = {
-    .version = UMF_VERSION_CURRENT,
+umf_memory_provider_ops_0_11_t UMF_DEVDAX_MEMORY_PROVIDER_OPS_0_11 = {
+    .version = UMF_PROVIDER_OPS_VERSION_CURRENT,
     .initialize = devdax_initialize,
     .finalize = devdax_finalize,
     .alloc = devdax_alloc,
@@ -547,10 +547,11 @@ static umf_memory_provider_ops_t UMF_DEVDAX_MEMORY_PROVIDER_OPS = {
     .ipc.get_ipc_handle = devdax_get_ipc_handle,
     .ipc.put_ipc_handle = devdax_put_ipc_handle,
     .ipc.open_ipc_handle = devdax_open_ipc_handle,
-    .ipc.close_ipc_handle = devdax_close_ipc_handle};
+    .ipc.close_ipc_handle = devdax_close_ipc_handle,
+};
 
-umf_memory_provider_ops_t *umfDevDaxMemoryProviderOps(void) {
-    return &UMF_DEVDAX_MEMORY_PROVIDER_OPS;
+umf_memory_provider_ops_0_11_t *umfDevDaxMemoryProviderOps_0_11(void) {
+    return &UMF_DEVDAX_MEMORY_PROVIDER_OPS_0_11;
 }
 
 umf_result_t umfDevDaxMemoryProviderParamsCreate(

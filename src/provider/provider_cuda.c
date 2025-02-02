@@ -618,8 +618,8 @@ cu_memory_provider_close_ipc_handle(void *provider, void *ptr, size_t size) {
     return UMF_RESULT_SUCCESS;
 }
 
-static struct umf_memory_provider_ops_t UMF_CUDA_MEMORY_PROVIDER_OPS = {
-    .version = UMF_VERSION_CURRENT,
+static umf_memory_provider_ops_t UMF_CUDA_MEMORY_PROVIDER_OPS = {
+    .version = UMF_PROVIDER_OPS_VERSION_CURRENT,
     .initialize = cu_memory_provider_initialize,
     .finalize = cu_memory_provider_finalize,
     .alloc = cu_memory_provider_alloc,
