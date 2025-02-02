@@ -625,6 +625,20 @@ if(LINUX
                  "LD_LIBRARY_PATH=path_list_append:${CMAKE_BINARY_DIR}/lib")
 endif()
 
+if(LINUX
+   AND UMF_BUILD_SHARED_LIBRARY
+   AND NOT UMF_DISABLE_HWLOC)
+    add_umf_test(
+        NAME multiple_symbols
+        SRCS test_multiple_symbols.c
+        LIBS dl)
+    # append LD_LIBRARY_PATH to the libumf
+    set_property(
+        TEST umf-multiple_symbols
+        PROPERTY ENVIRONMENT_MODIFICATION
+                 "LD_LIBRARY_PATH=path_list_append:${CMAKE_BINARY_DIR}/lib")
+endif()
+
 # Tests of examples as standalone projects. TODO: enable this for Windows (maybe
 # replace test_examples.sh with CMake script?)
 if(LINUX

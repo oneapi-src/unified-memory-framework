@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2024 Intel Corporation
+ * Copyright (C) 2023-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <umf/memory_provider.h>
 
@@ -18,6 +19,7 @@
 #include "base_alloc_global.h"
 #include "libumf.h"
 #include "memory_provider_internal.h"
+#include "provider_deprecated.h"
 #include "utils_assert.h"
 
 typedef struct umf_memory_provider_t {
@@ -163,9 +165,33 @@ umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
                                      void *params,
                                      umf_memory_provider_handle_t *hProvider) {
     libumfInit();
-    if (!ops || !hProvider || !validateOps(ops)) {
+    if (!ops || !hProvider) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
+
+    umf_memory_provider_ops_t ops_current_ver;
+    if (ops->version != UMF_PROVIDER_OPS_VERSION_CURRENT) {
+        LOG_WARN("Memory Provider ops version \"%d\" is different than current "
+                 "version \"%d\"",
+                 ops->version, UMF_PROVIDER_OPS_VERSION_CURRENT);
+
+        if (ops->version == UMF_MAKE_VERSION(0, 10)) {
+            umf_result_t ret = umfTranslateMemoryProviderOps_0_10(
+                (umf_memory_provider_ops_0_10_t *)ops, &ops_current_ver);
+            if (ret != UMF_RESULT_SUCCESS) {
+                LOG_ERR("can't translate Memory Provider ops");
+            }
+        }
+    } else {
+        ops_current_ver = *ops;
+    }
+
+    if (validateOps(&ops_current_ver) == false) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    assignOpsExtDefaults(&ops_current_ver);
+    assignOpsIpcDefaults(&ops_current_ver);
 
     umf_memory_provider_handle_t provider =
         umf_ba_global_alloc(sizeof(umf_memory_provider_t));
@@ -173,12 +199,7 @@ umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    assert(ops->version == UMF_VERSION_CURRENT);
-
-    provider->ops = *ops;
-
-    assignOpsExtDefaults(&(provider->ops));
-    assignOpsIpcDefaults(&(provider->ops));
+    provider->ops = ops_current_ver;
 
     void *provider_priv;
     umf_result_t ret = ops->initialize(params, &provider_priv);

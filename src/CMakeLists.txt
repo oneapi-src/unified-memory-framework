@@ -76,9 +76,13 @@ set(UMF_SOURCES
     memspaces/memspace_highest_bandwidth.c
     memspaces/memspace_lowest_latency.c
     memspaces/memspace_numa.c
+    provider/provider_coarse_deprecated.c
     provider/provider_cuda.c
+    provider/provider_deprecated.c
     provider/provider_devdax_memory.c
+    provider/provider_devdax_memory_deprecated.c
     provider/provider_file_memory.c
+    provider/provider_file_memory_deprecated.c
     provider/provider_fixed_memory.c
     provider/provider_level_zero.c
     provider/provider_os_memory.c
