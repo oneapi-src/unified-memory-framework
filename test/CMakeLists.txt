@@ -59,7 +59,7 @@ function(build_umf_test)
         set(INC_DIRS ${INC_DIRS} ${LEVEL_ZERO_INCLUDE_DIRS})
     endif()
 
-    if(UMF_LINK_HWLOC_STATICALLY)
+    if(NOT UMF_DISABLE_HWLOC)
         set(INC_DIRS ${INC_DIRS} ${LIBHWLOC_INCLUDE_DIRS})
     endif()
 
