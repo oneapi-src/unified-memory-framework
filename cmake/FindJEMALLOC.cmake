@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Intel Corporation
+# Copyright (C) 2024-2025 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -35,12 +35,6 @@ endif()
 
 if(JEMALLOC_LIBRARY)
     message(STATUS "  Found jemalloc using find_library()")
-    message(STATUS "    JEMALLOC_LIBRARIES = ${JEMALLOC_LIBRARIES}")
-    message(STATUS "    JEMALLOC_INCLUDE_DIRS = ${JEMALLOC_INCLUDE_DIRS}")
-    message(STATUS "    JEMALLOC_LIBRARY_DIRS = ${JEMALLOC_LIBRARY_DIRS}")
-    if(WINDOWS)
-        message(STATUS "    JEMALLOC_DLL_DIRS = ${JEMALLOC_DLL_DIRS}")
-    endif()
 else()
     set(MSG_NOT_FOUND
         "jemalloc NOT found (set CMAKE_PREFIX_PATH to point the location)")
