@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -301,7 +301,9 @@ static inline void *ba_generic_realloc(umf_ba_linear_pool_t *pool, void *ptr,
 /*** The "LEAK" linear base allocator functions ******************************/
 /*****************************************************************************/
 
-static void ba_leak_create(void) { Base_alloc_leak = umf_ba_linear_create(0); }
+static void ba_leak_create(void) {
+    Base_alloc_leak = umf_ba_linear_create(4 * 1024 * 1024);
+}
 
 // it does not implement destroy(), because we cannot destroy non-freed memory
 
