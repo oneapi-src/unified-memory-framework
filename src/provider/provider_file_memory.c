@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -847,8 +847,8 @@ static umf_result_t file_free(void *provider, void *ptr, size_t size) {
     return coarse_free(file_provider->coarse, ptr, size);
 }
 
-static umf_memory_provider_ops_t UMF_FILE_MEMORY_PROVIDER_OPS = {
-    .version = UMF_VERSION_CURRENT,
+umf_memory_provider_ops_0_11_t UMF_FILE_MEMORY_PROVIDER_OPS_0_11 = {
+    .version = UMF_PROVIDER_OPS_VERSION_CURRENT,
     .initialize = file_initialize,
     .finalize = file_finalize,
     .alloc = file_alloc,
@@ -865,10 +865,11 @@ static umf_memory_provider_ops_t UMF_FILE_MEMORY_PROVIDER_OPS = {
     .ipc.get_ipc_handle = file_get_ipc_handle,
     .ipc.put_ipc_handle = file_put_ipc_handle,
     .ipc.open_ipc_handle = file_open_ipc_handle,
-    .ipc.close_ipc_handle = file_close_ipc_handle};
+    .ipc.close_ipc_handle = file_close_ipc_handle,
+};
 
-umf_memory_provider_ops_t *umfFileMemoryProviderOps(void) {
-    return &UMF_FILE_MEMORY_PROVIDER_OPS;
+umf_memory_provider_ops_0_11_t *umfFileMemoryProviderOps_0_11(void) {
+    return &UMF_FILE_MEMORY_PROVIDER_OPS_0_11;
 }
 
 umf_result_t umfFileMemoryProviderParamsCreate(

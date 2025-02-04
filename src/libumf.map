@@ -8,18 +8,20 @@ UMF_0.10 {
         umfTearDown;
         umfGetCurrentVersion;
         umfCloseIPCHandle;
+        umfCoarseMemoryProviderGetStats; # deprecated
+        umfCoarseMemoryProviderOps; # deprecated
         umfCUDAMemoryProviderOps;
         umfCUDAMemoryProviderParamsCreate;
         umfCUDAMemoryProviderParamsDestroy;
         umfCUDAMemoryProviderParamsSetContext;
         umfCUDAMemoryProviderParamsSetDevice;
         umfCUDAMemoryProviderParamsSetMemoryType;
-        umfDevDaxMemoryProviderOps;
+        umfDevDaxMemoryProviderOps; # deprecated
         umfDevDaxMemoryProviderParamsCreate;
         umfDevDaxMemoryProviderParamsDestroy;
         umfDevDaxMemoryProviderParamsSetDeviceDax;
         umfDevDaxMemoryProviderParamsSetProtection;
-        umfFileMemoryProviderOps;
+        umfFileMemoryProviderOps; # deprecated
         umfFileMemoryProviderParamsCreate;
         umfFileMemoryProviderParamsDestroy;
         umfFileMemoryProviderParamsSetPath;
@@ -116,6 +118,8 @@ UMF_0.10 {
 };
 
 UMF_0.11 {
+        umfDevDaxMemoryProviderOps_0_11; # redefined 0.10
+        umfFileMemoryProviderOps_0_11; # redefined 0.10
         umfFixedMemoryProviderOps;
         umfFixedMemoryProviderParamsCreate;
         umfFixedMemoryProviderParamsDestroy;

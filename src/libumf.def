@@ -14,18 +14,20 @@ EXPORTS
     umfTearDown
     umfGetCurrentVersion
     umfCloseIPCHandle
+    umfCoarseMemoryProviderGetStats ; deprecated
+    umfCoarseMemoryProviderOps  ; deprecated
     umfCUDAMemoryProviderOps
     umfCUDAMemoryProviderParamsCreate
     umfCUDAMemoryProviderParamsDestroy
     umfCUDAMemoryProviderParamsSetContext
     umfCUDAMemoryProviderParamsSetDevice
     umfCUDAMemoryProviderParamsSetMemoryType
-    umfDevDaxMemoryProviderOps
+    umfDevDaxMemoryProviderOps=umfDevDaxMemoryProviderOps_0_10 ; deprecated
     umfDevDaxMemoryProviderParamsCreate
     umfDevDaxMemoryProviderParamsDestroy
     umfDevDaxMemoryProviderParamsSetDeviceDax
     umfDevDaxMemoryProviderParamsSetProtection
-    umfFileMemoryProviderOps
+    umfFileMemoryProviderOps=umfFileMemoryProviderOps_0_10 ; deprecated
     umfFileMemoryProviderParamsCreate
     umfFileMemoryProviderParamsDestroy
     umfFileMemoryProviderParamsSetPath
@@ -118,6 +120,8 @@ EXPORTS
     umfScalablePoolParamsSetGranularity
     umfScalablePoolParamsSetKeepAllMemory
 ; Added in UMF_0.11
+    umfDevDaxMemoryProviderOps_0_11 ; redefined 0.10
+    umfFileMemoryProviderOps_0_11   ; redefined 0.10
     umfFixedMemoryProviderOps
     umfFixedMemoryProviderParamsCreate
     umfFixedMemoryProviderParamsDestroy
