@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2024 Intel Corporation
+ * Copyright (C) 2023-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -16,12 +16,17 @@
 extern "C" {
 #endif
 
+/// @brief Version of the Memory Provider ops structure.
+/// NOTE: This is equal to the latest UMF version, in which the ops structure
+/// has been modified.
+#define UMF_PROVIDER_OPS_VERSION_CURRENT UMF_MAKE_VERSION(0, 11)
+
 ///
 /// @brief This structure comprises optional function pointers used
 /// by corresponding umfMemoryProvider* calls. A memory provider implementation
 /// can keep them NULL.
 ///
-typedef struct umf_memory_provider_ext_ops_t {
+typedef struct umf_memory_provider_ext_ops_0_11_t {
     ///
     /// @brief Discard physical pages within the virtual memory mapping associated at the given addr
     ///        and \p size. This call is asynchronous and may delay purging the pages indefinitely.
@@ -78,13 +83,14 @@ typedef struct umf_memory_provider_ext_ops_t {
     umf_result_t (*allocation_split)(void *hProvider, void *ptr,
                                      size_t totalSize, size_t firstSize);
 
-} umf_memory_provider_ext_ops_t;
+} umf_memory_provider_ext_ops_0_11_t;
+typedef umf_memory_provider_ext_ops_0_11_t umf_memory_provider_ext_ops_t;
 
 ///
 /// @brief This structure comprises optional IPC API. The API allows sharing of
 /// memory objects across different processes. A memory provider implementation can keep them NULL.
 ///
-typedef struct umf_memory_provider_ipc_ops_t {
+typedef struct umf_memory_provider_ipc_ops_0_11_t {
     ///
     /// @brief Retrieve the size of opaque data structure required to store IPC data.
     /// @param provider pointer to the memory provider.
@@ -134,16 +140,17 @@ typedef struct umf_memory_provider_ipc_ops_t {
     ///         UMF_RESULT_ERROR_INVALID_ARGUMENT if invalid \p ptr is passed.
     ///         UMF_RESULT_ERROR_NOT_SUPPORTED if IPC functionality is not supported by this provider.
     umf_result_t (*close_ipc_handle)(void *provider, void *ptr, size_t size);
-} umf_memory_provider_ipc_ops_t;
+} umf_memory_provider_ipc_ops_0_11_t;
+typedef umf_memory_provider_ipc_ops_0_11_t umf_memory_provider_ipc_ops_t;
 
 ///
 /// @brief This structure comprises function pointers used by corresponding
 /// umfMemoryProvider* calls. Each memory provider implementation should
 /// initialize all function pointers.
 ///
-typedef struct umf_memory_provider_ops_t {
+typedef struct umf_memory_provider_ops_0_11_t {
     /// Version of the ops structure.
-    /// Should be initialized using UMF_VERSION_CURRENT.
+    /// Should be initialized using UMF_PROVIDER_OPS_VERSION_CURRENT.
     uint32_t version;
 
     ///
@@ -245,7 +252,8 @@ typedef struct umf_memory_provider_ops_t {
     /// @brief Optional IPC ops. The API allows sharing of memory objects across different processes.
     ///
     umf_memory_provider_ipc_ops_t ipc;
-} umf_memory_provider_ops_t;
+} umf_memory_provider_ops_0_11_t;
+typedef umf_memory_provider_ops_0_11_t umf_memory_provider_ops_t;
 
 #ifdef __cplusplus
 }

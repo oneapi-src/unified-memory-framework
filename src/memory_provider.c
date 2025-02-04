@@ -167,6 +167,30 @@ umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
+    umf_memory_provider_ops_t ops_current_ver;
+    if (ops->version != UMF_PROVIDER_OPS_VERSION_CURRENT) {
+        LOG_WARN("Memory Provider ops version \"%d\" is different than the "
+                 "current version \"%d\"",
+                 ops->version, UMF_PROVIDER_OPS_VERSION_CURRENT);
+
+        if (ops->version == UMF_MAKE_VERSION(0, 10)) {
+            umf_result_t ret = umfTranslateMemoryProviderOps_0_10(
+                (umf_memory_provider_ops_0_10_t *)ops, &ops_current_ver);
+            if (ret != UMF_RESULT_SUCCESS) {
+                LOG_ERR("can't translate Memory Provider ops");
+            }
+        }
+    } else {
+        ops_current_ver = *ops;
+    }
+
+    if (validateOps(&ops_current_ver) == false) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    assignOpsExtDefaults(&ops_current_ver);
+    assignOpsIpcDefaults(&ops_current_ver);
+
     umf_memory_provider_handle_t provider =
         umf_ba_global_alloc(sizeof(umf_memory_provider_t));
     if (!provider) {

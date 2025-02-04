@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2024 Intel Corporation
+ * Copyright (C) 2023-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -17,6 +17,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+// Version of the Memtarget ops structure.
+// NOTE: This is equal to the latest UMF version, in which the ops structure
+// has been modified.
+#define UMF_MEMTARGET_OPS_VERSION_CURRENT UMF_MAKE_VERSION(0, 11)
 
 typedef struct umf_memtarget_ops_t {
     /// Version of the ops structure.

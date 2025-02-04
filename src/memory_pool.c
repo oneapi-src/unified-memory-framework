@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2024 Intel Corporation
+ * Copyright (C) 2023-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -38,7 +38,11 @@ static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    assert(ops->version == UMF_VERSION_CURRENT);
+    if (ops->version != UMF_POOL_OPS_VERSION_CURRENT) {
+        LOG_WARN("memory pool ops version \"%d\" is different than the current "
+                 "version \"%d\"",
+                 ops->version, UMF_POOL_OPS_VERSION_CURRENT);
+    }
 
     if (!(flags & UMF_POOL_CREATE_FLAG_DISABLE_TRACKING)) {
         // Wrap provider with memory tracking provider.
