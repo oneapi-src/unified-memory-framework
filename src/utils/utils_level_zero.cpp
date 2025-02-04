@@ -344,12 +344,6 @@ int utils_ze_get_drivers(uint32_t *drivers_num_,
     ze_driver_handle_t *drivers = NULL;
     uint32_t drivers_num = 0;
 
-    ret = utils_ze_init_level_zero();
-    if (ret != 0) {
-        fprintf(stderr, "utils_ze_init_level_zero() failed!\n");
-        goto init_fail;
-    }
-
     ze_result = libze_ops.zeDriverGet(&drivers_num, NULL);
     if (ze_result != ZE_RESULT_SUCCESS) {
         fprintf(stderr, "zeDriverGet() failed!\n");
@@ -386,7 +380,6 @@ fn_fail:
         *drivers_ = NULL;
     }
 
-init_fail:
     return ret;
 }
 
@@ -396,12 +389,6 @@ int utils_ze_get_devices(ze_driver_handle_t driver, uint32_t *devices_num_,
     int ret = 0;
     uint32_t devices_num = 0;
     ze_device_handle_t *devices = NULL;
-
-    ret = utils_ze_init_level_zero();
-    if (ret != 0) {
-        fprintf(stderr, "utils_ze_init_level_zero() failed!\n");
-        goto init_fail;
-    }
 
     ze_result = libze_ops.zeDeviceGet(driver, &devices_num, NULL);
     if (ze_result != ZE_RESULT_SUCCESS) {
@@ -438,7 +425,7 @@ fn_fail:
         free(devices);
         devices = NULL;
     }
-init_fail:
+
     return ret;
 }
 

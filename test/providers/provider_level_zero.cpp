@@ -42,7 +42,13 @@ class LevelZeroTestHelper {
 LevelZeroTestHelper::LevelZeroTestHelper() {
     uint32_t driver_idx = 0;
 
-    int ret = utils_ze_find_driver_with_gpu(&driver_idx, &hDriver_);
+    int ret = utils_ze_init_level_zero();
+    if (ret != 0) {
+        fprintf(stderr, "utils_ze_init_level_zero() failed!\n");
+        return;
+    }
+
+    ret = utils_ze_find_driver_with_gpu(&driver_idx, &hDriver_);
     if (ret != 0 || hDriver_ == NULL) {
         fprintf(stderr, "utils_ze_find_driver_with_gpu() failed!\n");
         return;
@@ -93,16 +99,21 @@ create_level_zero_prov_params(ze_context_handle_t context,
     return params;
 }
 
+umf_result_t destroyL0Params(void *params) {
+    return umfLevelZeroMemoryProviderParamsDestroy(
+        static_cast<umf_level_zero_memory_provider_params_handle_t>(params));
+}
+
 struct LevelZeroProviderInit
     : public test,
-      public ::testing::WithParamInterface<umf_usm_memory_type_t> {};
+      public ::testing::WithParamInterface<umf_usm_memory_type_t> {
+    LevelZeroTestHelper l0TestHelper;
+};
 
 INSTANTIATE_TEST_SUITE_P(, LevelZeroProviderInit,
                          ::testing::Values(UMF_MEMORY_TYPE_HOST,
                                            UMF_MEMORY_TYPE_DEVICE,
                                            UMF_MEMORY_TYPE_SHARED));
-
-LevelZeroTestHelper l0TestHelper;
 
 TEST_P(LevelZeroProviderInit, FailNullContext) {
     umf_memory_provider_ops_t *ops = umfLevelZeroMemoryProviderOps();
@@ -156,12 +167,14 @@ TEST_P(LevelZeroProviderInit, FailNullDevice) {
     umfLevelZeroMemoryProviderParamsDestroy(hParams);
 }
 
-TEST_F(test, FailNonNullDevice) {
+TEST_F(LevelZeroProviderInit, FailNonNullDevice) {
+    if (GetParam() != UMF_MEMORY_TYPE_HOST) {
+        GTEST_SKIP() << "Host memory does not require device handle";
+    }
     umf_memory_provider_ops_t *ops = umfLevelZeroMemoryProviderOps();
     ASSERT_NE(ops, nullptr);
 
-    auto memory_type = UMF_MEMORY_TYPE_HOST;
-
+    auto memory_type = GetParam();
     umf_level_zero_memory_provider_params_handle_t hParams = nullptr;
     umf_result_t result = umfLevelZeroMemoryProviderParamsCreate(&hParams);
     ASSERT_EQ(result, UMF_RESULT_SUCCESS);
@@ -225,44 +238,43 @@ class LevelZeroMemoryAccessor : public MemoryAccessor {
     ze_context_handle_t hContext_;
 };
 
-typedef void *(*pfnProviderParamsCreate)();
-typedef umf_result_t (*pfnProviderParamsDestroy)(void *);
-
-using LevelZeroProviderTestParams =
-    std::tuple<pfnProviderParamsCreate, pfnProviderParamsDestroy,
-               ze_context_handle_t, umf_usm_memory_type_t, MemoryAccessor *>;
-
 struct umfLevelZeroProviderTest
     : umf_test::test,
-      ::testing::WithParamInterface<LevelZeroProviderTestParams> {
+      ::testing::WithParamInterface<umf_usm_memory_type_t> {
 
     void SetUp() override {
         test::SetUp();
 
-        auto [params_create, params_destroy, ze_context, memory_type,
-              accessor] = this->GetParam();
+        umf_usm_memory_type_t memory_type = this->GetParam();
 
         params = nullptr;
-        if (params_create) {
-            params =
-                (umf_level_zero_memory_provider_params_handle_t)params_create();
-        }
-        paramsDestroy = params_destroy;
-
-        memAccessor = accessor;
-        hContext = ze_context;
+        memAccessor = nullptr;
+        hContext = l0TestHelper.get_test_context();
 
         ASSERT_NE(hContext, nullptr);
 
         switch (memory_type) {
         case UMF_MEMORY_TYPE_DEVICE:
             zeMemoryTypeExpected = ZE_MEMORY_TYPE_DEVICE;
+            params = create_level_zero_prov_params(
+                l0TestHelper.get_test_context(), l0TestHelper.get_test_device(),
+                memory_type);
+            memAccessor = std::make_unique<LevelZeroMemoryAccessor>(
+                l0TestHelper.get_test_context(),
+                l0TestHelper.get_test_device());
             break;
         case UMF_MEMORY_TYPE_SHARED:
             zeMemoryTypeExpected = ZE_MEMORY_TYPE_SHARED;
+            params = create_level_zero_prov_params(
+                l0TestHelper.get_test_context(), l0TestHelper.get_test_device(),
+                memory_type);
+            memAccessor = std::make_unique<HostMemoryAccessor>();
             break;
         case UMF_MEMORY_TYPE_HOST:
             zeMemoryTypeExpected = ZE_MEMORY_TYPE_HOST;
+            params = create_level_zero_prov_params(
+                l0TestHelper.get_test_context(), nullptr, memory_type);
+            memAccessor = std::make_unique<HostMemoryAccessor>();
             break;
         case UMF_MEMORY_TYPE_UNKNOWN:
             zeMemoryTypeExpected = ZE_MEMORY_TYPE_UNKNOWN;
@@ -273,17 +285,17 @@ struct umfLevelZeroProviderTest
     }
 
     void TearDown() override {
-        if (paramsDestroy) {
-            paramsDestroy(params);
+        if (params) {
+            destroyL0Params(params);
         }
 
         test::TearDown();
     }
 
-    umf_level_zero_memory_provider_params_handle_t params;
-    pfnProviderParamsDestroy paramsDestroy = nullptr;
+    LevelZeroTestHelper l0TestHelper;
+    umf_level_zero_memory_provider_params_handle_t params = nullptr;
 
-    MemoryAccessor *memAccessor = nullptr;
+    std::unique_ptr<MemoryAccessor> memAccessor = nullptr;
     ze_context_handle_t hContext = nullptr;
     ze_memory_type_t zeMemoryTypeExpected = ZE_MEMORY_TYPE_UNKNOWN;
 };
@@ -470,47 +482,23 @@ TEST_P(umfLevelZeroProviderTest, setDeviceOrdinalValid) {
 
 // TODO add tests that mixes Level Zero Memory Provider and Disjoint Pool
 
+INSTANTIATE_TEST_SUITE_P(umfLevelZeroProviderTestSuite,
+                         umfLevelZeroProviderTest,
+                         ::testing::Values(UMF_MEMORY_TYPE_DEVICE,
+                                           UMF_MEMORY_TYPE_SHARED,
+                                           UMF_MEMORY_TYPE_HOST));
+
+LevelZeroTestHelper l0TestHelper;
+
 void *createL0ParamsDeviceMemory() {
     return create_level_zero_prov_params(l0TestHelper.get_test_context(),
                                          l0TestHelper.get_test_device(),
                                          UMF_MEMORY_TYPE_DEVICE);
 }
 
-void *createL0ParamsSharedMemory() {
-    return create_level_zero_prov_params(l0TestHelper.get_test_context(),
-                                         l0TestHelper.get_test_device(),
-                                         UMF_MEMORY_TYPE_SHARED);
-}
-
-void *createL0ParamsHostMemory() {
-    return create_level_zero_prov_params(l0TestHelper.get_test_context(),
-                                         nullptr, UMF_MEMORY_TYPE_HOST);
-}
-
-umf_result_t destroyL0Params(void *params) {
-    return umfLevelZeroMemoryProviderParamsDestroy(
-        static_cast<umf_level_zero_memory_provider_params_handle_t>(params));
-}
-
 LevelZeroMemoryAccessor
     l0Accessor((ze_context_handle_t)l0TestHelper.get_test_context(),
                (ze_device_handle_t)l0TestHelper.get_test_device());
-
-HostMemoryAccessor hostAccessor;
-
-INSTANTIATE_TEST_SUITE_P(
-    umfLevelZeroProviderTestSuite, umfLevelZeroProviderTest,
-    ::testing::Values(
-        LevelZeroProviderTestParams{createL0ParamsDeviceMemory, destroyL0Params,
-                                    l0TestHelper.get_test_context(),
-                                    UMF_MEMORY_TYPE_DEVICE, &l0Accessor},
-        LevelZeroProviderTestParams{createL0ParamsSharedMemory, destroyL0Params,
-                                    l0TestHelper.get_test_context(),
-                                    UMF_MEMORY_TYPE_SHARED, &hostAccessor},
-        LevelZeroProviderTestParams{createL0ParamsHostMemory, destroyL0Params,
-                                    l0TestHelper.get_test_context(),
-                                    UMF_MEMORY_TYPE_HOST, &hostAccessor}));
-
 // TODO: it looks like there is some problem with IPC implementation in Level
 // Zero on windows. Issue: #494
 #ifdef _WIN32

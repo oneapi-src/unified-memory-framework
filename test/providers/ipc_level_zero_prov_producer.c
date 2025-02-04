@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -27,7 +27,13 @@ int main(int argc, char *argv[]) {
     ze_device_handle_t hDevice = NULL;
     ze_context_handle_t hContext = NULL;
 
-    int ret = utils_ze_find_driver_with_gpu(&driver_idx, &hDriver);
+    int ret = utils_ze_init_level_zero();
+    if (ret != 0) {
+        fprintf(stderr, "utils_ze_init_level_zero() failed!\n");
+        return -1;
+    }
+
+    ret = utils_ze_find_driver_with_gpu(&driver_idx, &hDriver);
     if (ret != 0 || hDriver == NULL) {
         fprintf(stderr, "utils_ze_find_driver_with_gpu() failed!\n");
         return -1;
