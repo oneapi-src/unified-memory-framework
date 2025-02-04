@@ -40,6 +40,9 @@ Do changes for a release:
 - Add an entry to ChangeLog, remember to change the day of the week in the release date
   - For major and minor (prior 1.0.0) releases mention API and ABI compatibility with the previous release
 - For major and minor releases, update `UMF_VERSION_CURRENT` in `include/umf/base.h` (the API version)
+  - In case of any changes to the memory provider or pool operations structures, 
+    ensure that you also update the corresponding `UMF_PROVIDER_OPS_VERSION_CURRENT` 
+    or `UMF_POOL_OPS_VERSION_CURRENT`. Additionally, make sure to implement backward compatibility with older versions
 - For major and minor (prior 1.0.0) releases update ABI version in `.map` and `.def` files
   - These files are defined for all public libraries (`libumf` and `proxy_lib`, at the moment)
 - Commit these changes and tag the release:
