@@ -1,0 +1,224 @@
+# Workflow for checkig the backward compatibility of UMF.
+# Test the latest UMF shared library with binaries compiled using the older UMF 
+# shared library.
+name: Compatibility 
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: Check backward compatibility with this tag
+        type: string
+        default: "v0.10.1"
+
+permissions:
+  contents: read
+
+jobs:
+  ubuntu-build:
+    name: Ubuntu
+    runs-on: 'ubuntu-22.04'
+
+    steps:
+      # NOTE: we need jemalloc for older version of UMF
+    - name: Install apt packages
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang cmake libnuma-dev libjemalloc-dev libtbb-dev
+
+    - name: Checkout "tag" UMF version
+      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      with:
+        fetch-depth: 0
+        ref: refs/tags/${{inputs.tag}}
+        path: ${{github.workspace}}/tag_version
+
+    - name: Install libhwloc
+      working-directory: ${{github.workspace}}/tag_version
+      run: .github/scripts/install_hwloc.sh
+        
+    - name: Get "tag" UMF version
+      working-directory: ${{github.workspace}}/tag_version
+      run: |
+        VERSION=$(git describe --tags)
+        echo "tag version: $VERSION"
+
+    - name: Configure "tag" UMF build
+      working-directory: ${{github.workspace}}/tag_version
+      run: >
+        cmake
+        -B ${{github.workspace}}/tag_version/build
+        -DCMAKE_BUILD_TYPE=Debug
+        -DUMF_BUILD_SHARED_LIBRARY=ON
+        -DCMAKE_C_COMPILER=gcc
+        -DCMAKE_CXX_COMPILER=g++
+        -DUMF_BUILD_TESTS=ON
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
+        -DUMF_BUILD_CUDA_PROVIDER=ON
+        -DUMF_FORMAT_CODE_STYLE=OFF
+        -DUMF_DEVELOPER_MODE=ON
+        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
+        -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
+        -DUMF_TESTS_FAIL_ON_SKIP=ON
+
+    - name: Build "tag" UMF
+      working-directory: ${{github.workspace}}/tag_version
+      run: |
+        cmake --build ${{github.workspace}}/tag_version/build -j $(nproc)
+        
+    # For UMF < 0.11 set ptrace_scope
+    - name: Set ptrace value for IPC test
+      if: ${{ startsWith(inputs.tag, 'v0.10.') || startsWith(inputs.tag, 'v0.9.') }}
+      run: sudo bash -c "echo 0 > /proc/sys/kernel/yama/ptrace_scope"
+
+    - name: Run "tag" UMF tests
+      working-directory: ${{github.workspace}}/tag_version/build
+      run: |
+        LD_LIBRARY_PATH=${{github.workspace}}/tag_version/build/lib/ ctest --output-on-failure
+
+    - name: Checkout latest UMF version
+      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      with:
+        fetch-depth: 0
+        path: ${{github.workspace}}/latest_version
+        
+    - name: Get latest UMF version
+      working-directory: ${{github.workspace}}/latest_version
+      run: |
+        VERSION=$(git describe --tags)
+        echo "checked version: $VERSION"
+        
+    - name: Configure latest UMF build
+      working-directory: ${{github.workspace}}/latest_version
+      run: >
+        cmake
+        -B ${{github.workspace}}/latest_version/build
+        -DCMAKE_BUILD_TYPE=Debug
+        -DUMF_BUILD_SHARED_LIBRARY=ON
+        -DCMAKE_C_COMPILER=gcc
+        -DCMAKE_CXX_COMPILER=g++
+        -DUMF_BUILD_TESTS=OFF
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
+        -DUMF_BUILD_CUDA_PROVIDER=ON
+        -DUMF_FORMAT_CODE_STYLE=OFF
+        -DUMF_DEVELOPER_MODE=ON
+        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
+        -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
+        -DUMF_TESTS_FAIL_ON_SKIP=ON
+
+    - name: Build latest UMF
+      working-directory: ${{github.workspace}}/latest_version
+      run: |
+        cmake --build ${{github.workspace}}/latest_version/build -j $(nproc)
+
+    # NOTE: exclude umf-provider_coarse, umf-disjointCoarseMallocPool, 
+    # umf-jemalloc_coarse_file, umf-scalable_coarse_file as they use Coarse 
+    # Provider which is not supported for UMF > 0.10.0
+    - name: Run "tag" UMF tests with latest UMF libs (warnings enabled)
+      working-directory: ${{github.workspace}}/tag_version/build
+      run: >
+        UMF_LOG="level:warning;flush:debug;output:stderr;pid:no" 
+        LD_LIBRARY_PATH=${{github.workspace}}/latest_version/build/lib/ 
+        ctest --output-on-failure -E "umf-provider_coarse|umf-disjointCoarseMallocPool|umf-jemalloc_coarse_file|umf-scalable_coarse_file"
+ 
+  windows-build:
+    name: Windows
+    env:
+      VCPKG_PATH: "${{github.workspace}}/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/vcpkg/packages/jemalloc_x64-windows"
+    runs-on: "windows-2022"
+
+    steps:
+    - name: Checkout "tag" UMF version
+      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      with:
+        fetch-depth: 0
+        ref: refs/tags/${{inputs.tag}}
+        path: ${{github.workspace}}/tag_version
+
+    - name: Initialize vcpkg
+      uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
+      with:
+        vcpkgGitCommitId: 3dd44b931481d7a8e9ba412621fa810232b66289
+        vcpkgDirectory: ${{github.workspace}}/vcpkg
+        vcpkgJsonGlob: '**/vcpkg.json'
+
+    - name: Install dependencies
+      working-directory: ${{github.workspace}}/tag_version
+      run: vcpkg install
+      shell: pwsh # Specifies PowerShell as the shell for running the script.
+    
+    - name: Get "tag" UMF version
+      working-directory: ${{github.workspace}}/tag_version
+      run: |
+        $version = (git describe --tags)
+        echo "tag version: $VERSION"
+
+    - name: Configure "tag" UMF build
+      working-directory: ${{github.workspace}}/tag_version
+      run: >
+        cmake
+        -B "${{github.workspace}}/tag_version/build"
+        -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
+        -DCMAKE_C_COMPILER=cl
+        -DCMAKE_CXX_COMPILER=cl
+        -DUMF_BUILD_SHARED_LIBRARY=ON
+        -DUMF_BUILD_TESTS=ON
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
+        -DUMF_BUILD_CUDA_PROVIDER=ON
+        -DUMF_FORMAT_CODE_STYLE=OFF
+        -DUMF_DEVELOPER_MODE=ON
+        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
+        -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
+        -DUMF_TESTS_FAIL_ON_SKIP=ON
+
+    - name: Build "tag" UMF
+      run: cmake --build "${{github.workspace}}/tag_version/build" --config Debug -j $Env:NUMBER_OF_PROCESSORS
+
+    - name: Run "tag" UMF tests
+      working-directory: "${{github.workspace}}/tag_version/build"
+      run: ctest -C Debug --output-on-failure --test-dir test
+
+    - name: Checkout latest UMF version
+      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      with:
+        fetch-depth: 0
+        path: ${{github.workspace}}/latest_version
+
+    # NOTE we use vcpkg setup from "tag" version
+    - name: Get latest UMF version
+      working-directory: ${{github.workspace}}/latest_version
+      run: |
+        $version = (git describe --tags)
+        echo "latest version: $VERSION"
+
+    - name: Configure latest UMF build
+      working-directory: ${{github.workspace}}/latest_version
+      run: >
+        cmake
+        -B "${{github.workspace}}/latest_version/build"
+        -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
+        -DCMAKE_C_COMPILER=cl
+        -DCMAKE_CXX_COMPILER=cl
+        -DUMF_BUILD_SHARED_LIBRARY=ON
+        -DUMF_BUILD_TESTS=OFF
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
+        -DUMF_BUILD_CUDA_PROVIDER=ON
+        -DUMF_FORMAT_CODE_STYLE=OFF
+        -DUMF_DEVELOPER_MODE=ON
+        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
+        -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
+        -DUMF_TESTS_FAIL_ON_SKIP=ON
+
+    - name: Build latest UMF
+      run: cmake --build "${{github.workspace}}/latest_version/build" --config Debug -j $Env:NUMBER_OF_PROCESSORS
+
+    # NOTE: exclude umf-provider_coarse, umf-disjointCoarseMallocPool, 
+    # umf-jemalloc_coarse_file, umf-scalable_coarse_file as they use Coarse 
+    # Provider which is not supported for UMF > 0.10.0
+    # NOTE2: on Windows we simply overwrite the umf.dll
+    - name: Run "tag" UMF tests with latest UMF libs (warnings enabled)
+      working-directory: ${{github.workspace}}/tag_version/build
+      run: |
+        $env:UMF_LOG="level:warning;flush:debug;output:stderr;pid:no" 
+        cp ${{github.workspace}}/latest_version/build/bin/Debug/umf.dll ${{github.workspace}}/tag_version/build/bin/Debug/umf.dll
+        ctest -C Debug --output-on-failure --test-dir test -E "umf-provider_coarse|umf-disjointCoarseMallocPool|umf-jemalloc_coarse_file|umf-scalable_coarse_file"
