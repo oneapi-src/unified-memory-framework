@@ -1,6 +1,16 @@
-# Copyright (C) 2024 Intel Corporation
+# Copyright (C) 2024-2025 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
+function(print_hwloc_dirs)
+    message(STATUS "    LIBHWLOC_LIBRARIES = ${LIBHWLOC_LIBRARIES}")
+    message(STATUS "    LIBHWLOC_INCLUDE_DIRS = ${LIBHWLOC_INCLUDE_DIRS}")
+    message(STATUS "    LIBHWLOC_LIBRARY_DIRS = ${LIBHWLOC_LIBRARY_DIRS}")
+    message(STATUS "    LIBHWLOC_API_VERSION = ${LIBHWLOC_API_VERSION}")
+    if(WINDOWS)
+        message(STATUS "    LIBHWLOC_DLL_DIRS = ${LIBHWLOC_DLL_DIRS}")
+    endif()
+endfunction()
 
 message(STATUS "Checking for module 'libhwloc' using find_library()")
 
@@ -46,19 +56,14 @@ endif()
 
 if(LIBHWLOC_LIBRARY)
     message(STATUS "  Found libhwloc using find_library()")
-    message(STATUS "    LIBHWLOC_LIBRARIES = ${LIBHWLOC_LIBRARIES}")
-    message(STATUS "    LIBHWLOC_INCLUDE_DIRS = ${LIBHWLOC_INCLUDE_DIRS}")
-    message(STATUS "    LIBHWLOC_LIBRARY_DIRS = ${LIBHWLOC_LIBRARY_DIRS}")
-    message(STATUS "    LIBHWLOC_API_VERSION = ${LIBHWLOC_API_VERSION}")
-    if(WINDOWS)
-        message(STATUS "    LIBHWLOC_DLL_DIRS = ${LIBHWLOC_DLL_DIRS}")
-    endif()
 
     if(LIBHWLOC_FIND_VERSION)
         if(NOT LIBHWLOC_API_VERSION)
+            print_hwloc_dirs()
             message(FATAL_ERROR "Failed to retrieve libhwloc version")
         elseif(NOT LIBHWLOC_API_VERSION VERSION_GREATER_EQUAL
                LIBHWLOC_FIND_VERSION)
+            print_hwloc_dirs()
             message(
                 FATAL_ERROR
                     "    Required version: ${LIBHWLOC_FIND_VERSION}, found ${LIBHWLOC_API_VERSION}"
