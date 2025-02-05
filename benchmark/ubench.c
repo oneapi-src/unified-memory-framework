@@ -30,8 +30,8 @@
 
 #include "utils_common.h"
 
-#if (defined UMF_BUILD_LIBUMF_POOL_DISJOINT &&                                 \
-     defined UMF_BUILD_LEVEL_ZERO_PROVIDER && defined UMF_BUILD_GPU_TESTS)
+#if (defined UMF_POOL_DISJOINT_ENABLED &&                                      \
+     defined UMF_PROVIDER_LEVEL_ZERO_ENABLED && defined UMF_BUILD_GPU_TESTS)
 #include "utils_level_zero.h"
 #endif
 
@@ -422,7 +422,7 @@ UBENCH_EX(simple, scalable_pool_with_os_memory_provider) {
 #endif /* (defined UMF_POOL_SCALABLE_ENABLED) */
 
 #if (defined UMF_POOL_DISJOINT_ENABLED &&                                      \
-     defined UMF_BUILD_LEVEL_ZERO_PROVIDER && defined UMF_BUILD_GPU_TESTS)
+     defined UMF_PROVIDER_LEVEL_ZERO_ENABLED && defined UMF_BUILD_GPU_TESTS)
 static void do_ipc_get_put_benchmark(alloc_t *allocs, size_t num_allocs,
                                      size_t repeats,
                                      umf_ipc_handle_t *ipc_handles) {
