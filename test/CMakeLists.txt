@@ -145,6 +145,11 @@ function(add_umf_test)
     set_tests_properties(${TEST_NAME} PROPERTIES LABELS "umf")
 
     if(WINDOWS)
+        # add PATH to DLL on Windows
+        set(DLL_PATH_LIST
+            "${DLL_PATH_LIST};PATH=path_list_append:${CMAKE_BINARY_DIR}/bin/;PATH=path_list_append:${CMAKE_BINARY_DIR}/bin/$<CONFIG>/"
+        )
+
         # append PATH to DLLs
         set_property(TEST ${TEST_NAME} PROPERTY ENVIRONMENT_MODIFICATION
                                                 "${DLL_PATH_LIST}")
