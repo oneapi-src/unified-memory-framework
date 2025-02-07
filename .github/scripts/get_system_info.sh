@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (C) 2024 Intel Corporation
+# Copyright (C) 2024-2025 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -26,9 +26,9 @@ function system_info {
 	cat /etc/os-release | grep -oP "PRETTY_NAME=\K.*"
 	cat /proc/version
 
-	# echo "**********SYCL-LS**********"
-	# source /opt/intel/oneapi/setvars.sh
-	# sycl-ls
+	echo "**********SYCL-LS**********"
+	source /opt/intel/oneapi/setvars.sh
+	sycl-ls
 
 	echo "**********numactl topology**********"
 	numactl -H
@@ -36,22 +36,22 @@ function system_info {
 	echo "**********VGA info**********"
 	lspci | grep -i VGA
 
-	# echo "**********CUDA Version**********"
-	# if command -v nvidia-smi &> /dev/null; then
-	# 	nvidia-smi
-	# else
-	# 	echo "CUDA not installed"
-	# fi
+	echo "**********CUDA Version**********"
+	if command -v nvidia-smi &> /dev/null; then
+		nvidia-smi
+	else
+		echo "CUDA not installed"
+	fi
 
 	echo "**********L0 Version**********"
 	check_L0_version
 
-	# echo "**********ROCm Version**********"
-	# if command -v rocminfo &> /dev/null; then
-	# 	rocminfo
-	# else
-	# 	echo "ROCm not installed"
-	# fi
+	echo "**********ROCm Version**********"
+	if command -v rocminfo &> /dev/null; then
+		rocminfo
+	else
+		echo "ROCm not installed"
+	fi
 
 	echo "******OpenCL*******"
 	# The driver version of OpenCL Graphics is the compute-runtime version
@@ -67,11 +67,15 @@ function system_info {
 	cat /proc/meminfo
 
 	echo "**********env variables**********"
-	echo "PATH=${PATH}"
-	echo "CPATH=${CPATH}"
-	echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
-	echo "LIBRARY_PATH=${LIBRARY_PATH}"
-	echo "PKG_CONFIG_PATH=${PKG_CONFIG_PATH}"
+	echo "PATH=$PATH"
+	echo
+	echo "CPATH=$CPATH"
+	echo
+	echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
+	echo
+	echo "LIBRARY_PATH=$LIBRARY_PATH"
+	echo
+	echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
 	echo
 
 	echo "******build tools versions*******"

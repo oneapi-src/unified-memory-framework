@@ -4,6 +4,7 @@ name: GitHubPages
 on:
   push:
     branches: ["main"]
+  workflow_dispatch:
 
 # Cancel previous in-progress workflow, only the latest run is relevant
 concurrency:

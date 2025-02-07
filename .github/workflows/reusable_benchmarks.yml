@@ -1,5 +1,5 @@
 # Executes benchmarks implemented in this repository
-# using scripts for benchmark results visualisation,
+# using scripts for benchmark results visualization,
 # which are downloaded from Unified Runtime repository. 
 name: Benchmarks
 
@@ -31,10 +31,9 @@ env:
 jobs:
   benchmarks:
     name: Benchmarks
-    strategy:
-      matrix:
-        os: ['ubuntu-latest']
-    runs-on: ${{matrix.os}}
+    # run only on upstream; forks will not have the HW
+    if: github.repository == 'oneapi-src/unified-memory-framework'
+    runs-on: L0_PERF
 
     steps:
     # Workspace on self-hosted runners is not cleaned automatically.
@@ -79,12 +78,7 @@ jobs:
         git checkout origin/pr/${PR_NO}/merge
         git rev-parse origin/pr/${PR_NO}/merge
 
-    - name: Install apt packages
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y cmake libhwloc-dev libnuma-dev libtbb-dev
-
-    - name: Configure build
+    - name: Configure UMF
       run: >
         cmake
         -S ${{env.UMF_DIR}}
@@ -94,19 +88,19 @@ jobs:
         -DUMF_BUILD_BENCHMARKS=ON
         -DUMF_BUILD_BENCHMARKS_MT=ON
         -DUMF_BUILD_TESTS=OFF
-        -DUMF_FORMAT_CODE_STYLE=OFF
+        -DUMF_BUILD_EXAMPLES=OFF
         -DUMF_DEVELOPER_MODE=OFF
+        -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
         -DUMF_BUILD_CUDA_PROVIDER=ON
         -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
-        -DUMF_BUILD_EXAMPLES=OFF
 
     - name: Build UMF
       run: cmake --build ${{env.BUILD_DIR}} -j $(nproc)
 
     # We are going to clone Unified Runtime repository in order to run
-    # the most up-to-date UR scripts for benchmark data visualisation
+    # the most up-to-date UR scripts for benchmark data visualization
     - name: Checkout UR
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
@@ -119,15 +113,37 @@ jobs:
       run: |
         pip install --force-reinstall -r ${{github.workspace}}/ur-repo/third_party/benchmark_requirements.txt
 
-    - name: Run dedicated for UMF benchmarking scripts from UR
+    - name: Set core range and GPU mask
+      run: |
+        # Compute the core range for the second NUMA node; first node is for UR jobs.
+        # Skip the first 4 cores - the kernel is likely to schedule more work on these.
+        CORES=$(lscpu | awk '
+          /NUMA node1 CPU|On-line CPU/ {line=$0}
+          END {
+            split(line, a, " ")
+            split(a[4], b, ",")
+            sub(/^0/, "4", b[1])
+            print b[1]
+          }')
+        echo "Selected core: $CORES"
+        echo "CORES=$CORES" >> $GITHUB_ENV
+
+        ZE_AFFINITY_MASK=1
+        echo "ZE_AFFINITY_MASK=$ZE_AFFINITY_MASK" >> $GITHUB_ENV
+
+    - name: Run UMF benchmarks (using scripts from UR)
       id: benchmarks
       working-directory: ${{env.BUILD_DIR}}
       run: >
-        ${{ github.workspace }}/ur-repo/scripts/benchmarks/main.py
-        ~/bench_workdir
-        --umf  ${{env.BUILD_DIR}}
+        taskset -c ${{ env.CORES }} ${{ github.workspace }}/ur-repo/scripts/benchmarks/main.py
+        ~/bench_workdir_umf
+        --umf ${{env.BUILD_DIR}}
         ${{ inputs.upload_report && '--output-html' || '' }}
         ${{ inputs.bench_script_params }}
+
+    - name: Print benchmark results
+      if: ${{ always() }}
+      run: cat ${{env.BUILD_DIR}}/benchmark_results.md
 
     - name: Add comment to PR
       uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
@@ -161,3 +177,8 @@ jobs:
       with:
         path: umf-repo/build/benchmark_results.html
         key: benchmark-results-${{ github.run_id }}
+
+    - name: Get information about platform
+      if: ${{ always() }}
+      working-directory: ${{env.UMF_DIR}}
+      run: .github/scripts/get_system_info.sh
