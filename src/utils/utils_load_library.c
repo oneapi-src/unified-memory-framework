@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -32,7 +32,11 @@
 #ifdef _WIN32
 
 void *utils_open_library(const char *filename, int userFlags) {
-    (void)userFlags; //unused for win
+    if (userFlags & UMF_UTIL_OPEN_LIBRARY_NO_LOAD) {
+        HMODULE hModule;
+        BOOL ret = GetModuleHandleEx(0, TEXT(filename), &hModule);
+        return ret ? hModule : NULL;
+    }
     return LoadLibrary(TEXT(filename));
 }
 
@@ -65,6 +69,9 @@ void *utils_open_library(const char *filename, int userFlags) {
     int dlopenFlags = RTLD_LAZY;
     if (userFlags & UMF_UTIL_OPEN_LIBRARY_GLOBAL) {
         dlopenFlags |= RTLD_GLOBAL;
+    }
+    if (userFlags & UMF_UTIL_OPEN_LIBRARY_NO_LOAD) {
+        dlopenFlags |= RTLD_NOLOAD;
     }
 
     void *handle = dlopen(filename, dlopenFlags);
