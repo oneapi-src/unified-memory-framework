@@ -87,12 +87,12 @@ static slab_t *create_slab(bucket_t *bucket, bool full_size) {
     } else {
         slab->num_chunks_total = bucket_slab_min_size(bucket) / bucket->size;
         slab->chunks =
-            umf_ba_global_alloc(sizeof(bool) * slab->num_chunks_total);
+            umf_ba_global_alloc(sizeof(*slab->chunks) * slab->num_chunks_total);
         if (slab->chunks == NULL) {
             LOG_ERR("allocation of slab chunks failed!");
             goto free_slab_iter;
         }
-        memset(slab->chunks, 0, sizeof(bool) * slab->num_chunks_total);
+        memset(slab->chunks, 0, sizeof(*slab->chunks) * slab->num_chunks_total);
     }
     // if slab_min_size is not a multiple of bucket size, we would have some
     // padding at the end of the slab
@@ -703,8 +703,8 @@ umf_result_t disjoint_pool_initialize(umf_memory_provider_handle_t provider,
     for (; Size2 < CutOff; Size1 *= 2, Size2 *= 2) {
         disjoint_pool->buckets_num += 2;
     }
-    disjoint_pool->buckets =
-        umf_ba_global_alloc(sizeof(bucket_t *) * disjoint_pool->buckets_num);
+    disjoint_pool->buckets = umf_ba_global_alloc(
+        sizeof(*disjoint_pool->buckets) * disjoint_pool->buckets_num);
 
     int i = 0;
     Size1 = ts1;
@@ -964,8 +964,7 @@ umf_memory_pool_ops_t *umfDisjointPoolOps(void) {
 
 umf_disjoint_pool_shared_limits_t *
 umfDisjointPoolSharedLimitsCreate(size_t max_size) {
-    umf_disjoint_pool_shared_limits_t *ptr =
-        umf_ba_global_alloc(sizeof(umf_disjoint_pool_shared_limits_t));
+    umf_disjoint_pool_shared_limits_t *ptr = umf_ba_global_alloc(sizeof(*ptr));
     //umf_ba_global_alloc(sizeof(*ptr));
     ptr->max_size = max_size;
     ptr->total_size = 0;
@@ -1109,7 +1108,7 @@ umfDisjointPoolParamsSetName(umf_disjoint_pool_params_handle_t hParams,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    char *newName = umf_ba_global_alloc(sizeof(char) * (strlen(name) + 1));
+    char *newName = umf_ba_global_alloc(sizeof(*newName) * (strlen(name) + 1));
     if (newName == NULL) {
         LOG_ERR("cannot allocate memory for disjoint pool name");
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
