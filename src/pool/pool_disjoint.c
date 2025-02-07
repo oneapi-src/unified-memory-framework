@@ -16,16 +16,11 @@
 #include "utils_sanitizers.h"
 
 // Forward declarations
-static slab_t *create_slab(bucket_t *bucket, bool full_size);
-static void destroy_slab(slab_t *slab);
-
 static void bucket_update_stats(bucket_t *bucket, int in_use, int in_pool);
 static bool bucket_can_pool(bucket_t *bucket);
 static void bucket_decrement_pool(bucket_t *bucket, bool *from_pool);
 static slab_list_item_t *bucket_get_avail_slab(bucket_t *bucket,
                                                bool *from_pool);
-static slab_list_item_t *bucket_get_avail_full_slab(bucket_t *bucket,
-                                                    bool *from_pool);
 
 static __TLS umf_result_t TLS_last_allocation_error;
 
