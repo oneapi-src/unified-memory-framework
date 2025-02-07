@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -12,6 +12,7 @@
 #include "base_alloc_global.h"
 #include "ipc_cache.h"
 #include "memspace_internal.h"
+#include "provider_level_zero_internal.h"
 #include "provider_tracking.h"
 #include "utils_common.h"
 #include "utils_log.h"
@@ -79,6 +80,7 @@ void umfTearDown(void) {
         LOG_DEBUG("UMF base allocator destroyed");
 
     fini_umfTearDown:
+        fini_ze_global_state();
         LOG_DEBUG("UMF library finalized");
     }
 }
