@@ -378,9 +378,6 @@ function(add_umf_library)
         elseif(LINUX)
             target_link_options(${ARG_NAME} PRIVATE
                                 "-Wl,--version-script=${ARG_LINUX_MAP_FILE}")
-            if(CMAKE_C_COMPILER_ID STREQUAL "IntelLLVM")
-                target_link_options(${ARG_NAME} PRIVATE -no-intel-lib)
-            endif()
         endif()
     endif()
 
