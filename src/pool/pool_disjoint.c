@@ -965,7 +965,10 @@ umf_memory_pool_ops_t *umfDisjointPoolOps(void) {
 umf_disjoint_pool_shared_limits_t *
 umfDisjointPoolSharedLimitsCreate(size_t max_size) {
     umf_disjoint_pool_shared_limits_t *ptr = umf_ba_global_alloc(sizeof(*ptr));
-    //umf_ba_global_alloc(sizeof(*ptr));
+    if (ptr == NULL) {
+        LOG_ERR("cannot allocate memory for disjoint pool shared limits");
+        return NULL;
+    }
     ptr->max_size = max_size;
     ptr->total_size = 0;
     return ptr;
