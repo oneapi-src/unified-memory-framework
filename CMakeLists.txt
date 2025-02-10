@@ -454,11 +454,11 @@ if(UMF_BUILD_CUDA_PROVIDER AND (NOT UMF_CUDA_INCLUDE_DIR))
     set(CUDA_INCLUDE_DIRS
         ${cuda-headers_SOURCE_DIR}
         CACHE PATH "Path to CUDA headers")
-    message(STATUS "CUDA include directory: ${CUDA_INCLUDE_DIRS}")
+    message(STATUS "CUDA_INCLUDE_DIRS = ${CUDA_INCLUDE_DIRS}")
 elseif(UMF_BUILD_CUDA_PROVIDER)
     # Only header is needed to build UMF
     set(CUDA_INCLUDE_DIRS ${UMF_CUDA_INCLUDE_DIR})
-    message(STATUS "CUDA include directory: ${CUDA_INCLUDE_DIRS}")
+    message(STATUS "CUDA_INCLUDE_DIRS = ${CUDA_INCLUDE_DIRS}")
 endif()
 
 # This build type check is not possible on Windows when CMAKE_BUILD_TYPE is not
