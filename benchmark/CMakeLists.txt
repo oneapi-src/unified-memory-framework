@@ -1,4 +1,4 @@
-# Copyright (C) 2023-2024 Intel Corporation
+# Copyright (C) 2023-2025 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -109,6 +109,9 @@ function(add_umf_benchmark)
     if(UMF_BUILD_CUDA_PROVIDER)
         target_compile_definitions(${BENCH_NAME}
                                    PRIVATE UMF_BUILD_CUDA_PROVIDER=1)
+        target_include_directories(
+            ${BENCH_NAME} PRIVATE ${UMF_CMAKE_SOURCE_DIR}/test/common
+                                  ${CUDA_INCLUDE_DIRS})
     endif()
     if(UMF_BUILD_GPU_TESTS)
         target_compile_definitions(${BENCH_NAME} PRIVATE UMF_BUILD_GPU_TESTS=1)
