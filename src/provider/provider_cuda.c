@@ -150,7 +150,6 @@ static umf_result_t cu2umf_result(CUresult result) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     case CUDA_ERROR_INVALID_VALUE:
     case CUDA_ERROR_INVALID_HANDLE:
-    case CUDA_ERROR_INVALID_RESOURCE_TYPE:
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     default:
         cu_store_last_native_error(result);
