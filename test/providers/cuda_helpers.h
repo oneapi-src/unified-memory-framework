@@ -44,6 +44,8 @@ int cuda_copy(CUcontext context, CUdevice device, void *dst_ptr,
 
 umf_usm_memory_type_t get_mem_type(CUcontext context, void *ptr);
 
+unsigned int get_mem_host_alloc_flags(void *ptr);
+
 CUcontext get_mem_context(void *ptr);
 
 CUcontext get_current_context();
