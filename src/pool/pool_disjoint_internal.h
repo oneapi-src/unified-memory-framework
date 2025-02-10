@@ -81,6 +81,11 @@ typedef struct bucket_t {
     size_t max_slabs_in_use;
 } bucket_t;
 
+typedef struct slab_list_item_t {
+    slab_t *val;
+    struct slab_list_item_t *prev, *next;
+} slab_list_item_t;
+
 // Represents the allocated memory block of size 'slab_min_size'
 // Internally, it splits the memory block into chunks. The number of
 // chunks depends on the size of a Bucket which created the Slab.
@@ -107,13 +112,8 @@ typedef struct slab_t {
 
     // Store iterator to the corresponding node in avail/unavail list
     // to achieve O(1) removal
-    slab_list_item_t *iter;
+    slab_list_item_t iter;
 } slab_t;
-
-typedef struct slab_list_item_t {
-    slab_t *val;
-    struct slab_list_item_t *prev, *next;
-} slab_list_item_t;
 
 typedef struct umf_disjoint_pool_shared_limits_t {
     size_t max_size;
