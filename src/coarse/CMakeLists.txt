@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Intel Corporation
+# Copyright (C) 2024-2025 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -6,7 +6,7 @@ include(${UMF_CMAKE_SOURCE_DIR}/cmake/helpers.cmake)
 
 set(COARSE_SOURCES coarse.c ../ravl/ravl.c)
 
-if(UMF_BUILD_SHARED_LIBRARY)
+if(UMF_BUILD_SHARED_LIBRARY AND (NOT WINDOWS))
     set(COARSE_EXTRA_SRCS ${BA_SOURCES})
     set(COARSE_EXTRA_LIBS $<BUILD_INTERFACE:umf_utils>)
 endif()

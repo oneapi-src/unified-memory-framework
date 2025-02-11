@@ -226,14 +226,14 @@ jobs:
         level_zero_provider: ['ON']
         cuda_provider: ['ON']
         include:
-          # temporarily disable failing CI job
-          #- os: 'windows-2022'
-          #  build_type: Release
-          #  compiler: {c: clang-cl, cxx: clang-cl}
-          #  shared_library: 'ON'
-          #  level_zero_provider: 'ON'
-          #  cuda_provider: 'ON'
-          #  toolset: "-T ClangCL"
+          - os: 'windows-2019'
+            # clang build fails on Windows 2022
+            build_type: Release
+            compiler: {c: clang-cl, cxx: clang-cl}
+            shared_library: 'ON'
+            level_zero_provider: 'ON'
+            cuda_provider: 'ON'
+            toolset: "-T ClangCL"
           - os: 'windows-2022'
             build_type: Release
             compiler: {c: cl, cxx: cl}
