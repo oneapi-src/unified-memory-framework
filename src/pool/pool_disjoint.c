@@ -199,9 +199,7 @@ static bool slab_has_avail(const slab_t *slab) {
     return slab->num_chunks_allocated < slab->num_chunks_total;
 }
 
-static umf_result_t slab_reg(slab_t *slab) {
-    bucket_t *bucket = slab->bucket;
-    disjoint_pool_t *pool = bucket->pool;
+static umf_result_t pool_register_slab(disjoint_pool_t *pool, slab_t *slab) {
     critnib *slabs = pool->known_slabs;
 
     // NOTE: changed vs original DisjointPool implementation - currently slab
@@ -225,9 +223,7 @@ static umf_result_t slab_reg(slab_t *slab) {
     return res;
 }
 
-static umf_result_t slab_unreg(slab_t *slab) {
-    bucket_t *bucket = slab->bucket;
-    disjoint_pool_t *pool = bucket->pool;
+static umf_result_t pool_unregister_slab(disjoint_pool_t *pool, slab_t *slab) {
     critnib *slabs = pool->known_slabs;
 
     void *slab_addr = slab_get(slab);
@@ -305,7 +301,7 @@ static void bucket_free_chunk(bucket_t *bucket, void *ptr, slab_t *slab,
             // remove slab
             slab_list_item_t *slab_it = &slab->iter;
             assert(slab_it->val != NULL);
-            slab_unreg(slab_it->val);
+            pool_unregister_slab(bucket->pool, slab_it->val);
             DL_DELETE(bucket->available_slabs, slab_it);
             bucket->available_slabs_num--;
             destroy_slab(slab_it->val);
@@ -348,7 +344,7 @@ static slab_t *bucket_create_slab(bucket_t *bucket) {
         return NULL;
     }
 
-    umf_result_t res = slab_reg(slab);
+    umf_result_t res = pool_register_slab(bucket->pool, slab);
     if (res != UMF_RESULT_SUCCESS) {
         LOG_ERR("slab_reg failed!")
         destroy_slab(slab);
