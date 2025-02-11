@@ -115,7 +115,7 @@ jobs:
       - name: Run benchmarks
         if: matrix.build_type == 'Release'
         working-directory: ${{env.BUILD_DIR}}
-        run: ctest --output-on-failure --test-dir benchmark -C ${{matrix.build_type}} --exclude-regex umf-bench-multithreaded
+        run: ctest --output-on-failure --test-dir benchmark -C ${{matrix.build_type}} --exclude-regex umf-multithreaded
 
       - name: Check coverage
         if: ${{ matrix.build_type == 'Debug' && matrix.os == 'Ubuntu' }}
