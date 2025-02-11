@@ -5,6 +5,7 @@
 cmake_minimum_required(VERSION 3.14.0 FATAL_ERROR)
 # needed when UMF is used as an external project
 set(UMF_CMAKE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(CMAKE_SUPPRESS_REGENERATION true)
 
 list(APPEND CMAKE_MODULE_PATH "${UMF_CMAKE_SOURCE_DIR}/cmake")
 # Use full path of the helpers module (to omit potential conflicts with others)
