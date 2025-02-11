@@ -100,6 +100,7 @@ jobs:
           -DUMF_BUILD_${{inputs.name}}_PROVIDER=ON
           -DUMF_TESTS_FAIL_ON_SKIP=ON
           ${{ matrix.os == 'Ubuntu' && matrix.build_type == 'Debug' && '-DUMF_USE_COVERAGE=ON' || '' }}
+          ${{ inputs.name == 'LEVEL_ZERO' && '-DCMAKE_SUPPRESS_REGENERATION=ON' || '' }}
 
       - name: Build UMF
         run: cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j ${{matrix.number_of_processors}}
