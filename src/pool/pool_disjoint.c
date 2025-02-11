@@ -378,8 +378,8 @@ static slab_list_item_t *bucket_get_avail_slab(bucket_t *bucket,
     return bucket->available_slabs;
 }
 
-static size_t bucket_capacity(bucket_t *bucket) {
-    // For buckets used in chunked mode, just one slab in pool is sufficient.
+static size_t bucket_max_pooled_slabs(bucket_t *bucket) {
+    // For small buckets where slabs are split to chunks, just one pooled slab is sufficient.
     // For larger buckets, the capacity could be more and is adjustable.
     if (bucket->size <= bucket_chunk_cut_off(bucket)) {
         return 1;
@@ -419,7 +419,7 @@ static bool bucket_can_pool(bucket_t *bucket) {
     new_free_slabs_in_bucket = bucket->chunked_slabs_in_pool + 1;
 
     // we keep at most params.capacity slabs in the pool
-    if (bucket_capacity(bucket) >= new_free_slabs_in_bucket) {
+    if (bucket_max_pooled_slabs(bucket) >= new_free_slabs_in_bucket) {
         size_t pool_size = 0;
         utils_atomic_load_acquire(&bucket->shared_limits->total_size,
                                   &pool_size);
