@@ -127,8 +127,7 @@ int run_consumer(int port, umf_memory_pool_ops_t *pool_ops, void *pool_params,
     umf_result =
         umfMemoryProviderCreate(provider_ops, provider_params, &provider);
     if (umf_result != UMF_RESULT_SUCCESS) {
-        fprintf(stderr,
-                "[consumer] ERROR: creating OS memory provider failed\n");
+        fprintf(stderr, "[consumer] ERROR: creating memory provider failed\n");
         return -1;
     }
 
@@ -347,8 +346,7 @@ int run_producer(int port, umf_memory_pool_ops_t *pool_ops, void *pool_params,
     umf_result =
         umfMemoryProviderCreate(provider_ops, provider_params, &provider);
     if (umf_result != UMF_RESULT_SUCCESS) {
-        fprintf(stderr,
-                "[producer] ERROR: creating OS memory provider failed\n");
+        fprintf(stderr, "[producer] ERROR: creating memory provider failed\n");
         return -1;
     }
 

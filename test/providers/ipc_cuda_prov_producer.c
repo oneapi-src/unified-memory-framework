@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -25,7 +25,13 @@ int main(int argc, char *argv[]) {
     CUdevice hDevice = -1;
     CUcontext hContext = NULL;
 
-    int ret = get_cuda_device(&hDevice);
+    int ret = init_cuda();
+    if (ret != 0) {
+        fprintf(stderr, "init_cuda() failed!\n");
+        return -1;
+    }
+
+    ret = get_cuda_device(&hDevice);
     if (ret != 0) {
         fprintf(stderr, "get_cuda_device() failed!\n");
         return -1;

@@ -26,6 +26,8 @@
 extern "C" {
 #endif
 
+int init_cuda(void);
+
 int get_cuda_device(CUdevice *device);
 
 int create_context(CUdevice device, CUcontext *context);

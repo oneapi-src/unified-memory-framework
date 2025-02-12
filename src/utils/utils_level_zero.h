@@ -17,7 +17,6 @@ extern "C" {
 #endif
 
 int utils_ze_init_level_zero(void);
-int utils_ze_init_level_zero(void);
 
 int utils_ze_get_drivers(uint32_t *drivers_num_, ze_driver_handle_t **drivers_);
 

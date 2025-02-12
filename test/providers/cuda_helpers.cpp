@@ -406,7 +406,7 @@ void init_cuda_once() {
     InitResult = init_cuda_lib();
 }
 
-int init_cuda() {
+int init_cuda(void) {
     utils_init_once(&cuda_init_flag, init_cuda_once);
 
     return InitResult;
@@ -414,12 +414,6 @@ int init_cuda() {
 
 int get_cuda_device(CUdevice *device) {
     CUdevice cuDevice = -1;
-
-    int ret = init_cuda();
-    if (ret != 0) {
-        fprintf(stderr, "init_cuda() failed!\n");
-        return ret;
-    }
 
     CUresult res = libcu_ops.cuDeviceGet(&cuDevice, 0);
     if (res != CUDA_SUCCESS || cuDevice < 0) {
@@ -432,12 +426,6 @@ int get_cuda_device(CUdevice *device) {
 
 int create_context(CUdevice device, CUcontext *context) {
     CUcontext cuContext = nullptr;
-
-    int ret = init_cuda();
-    if (ret != 0) {
-        fprintf(stderr, "init_cuda() failed!\n");
-        return ret;
-    }
 
     CUresult res = libcu_ops.cuCtxCreate(&cuContext, 0, device);
     if (res != CUDA_SUCCESS || cuContext == nullptr) {
