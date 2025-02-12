@@ -202,7 +202,7 @@ static void init_cu_global_state(void) {
         !g_cu_ops.cuCtxGetCurrent || !g_cu_ops.cuCtxSetCurrent ||
         !g_cu_ops.cuIpcGetMemHandle || !g_cu_ops.cuIpcOpenMemHandle ||
         !g_cu_ops.cuIpcCloseMemHandle) {
-        LOG_ERR("Required CUDA symbols not found.");
+        LOG_FATAL("Required CUDA symbols not found.");
         Init_cu_global_state_failed = true;
     }
 }
@@ -296,7 +296,7 @@ static umf_result_t cu_memory_provider_initialize(void *params,
 
     utils_init_once(&cu_is_initialized, init_cu_global_state);
     if (Init_cu_global_state_failed) {
-        LOG_ERR("Loading CUDA symbols failed");
+        LOG_FATAL("Loading CUDA symbols failed");
         return UMF_RESULT_ERROR_UNKNOWN;
     }
 
