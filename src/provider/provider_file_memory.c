@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -107,7 +107,7 @@ typedef struct file_memory_provider_t {
     // A critnib map storing (ptr, fd_offset + 1) pairs. We add 1 to fd_offset
     // in order to be able to store fd_offset equal 0, because
     // critnib_get() returns value or NULL, so a value cannot equal 0.
-    // It is needed mainly in the get_ipc_handle and open_ipc_handle hooks
+    // It is needed mainly in the ipc_get_handle and ipc_open_handle hooks
     // to mmap a specific part of a file.
     critnib *fd_offset_map;
 
@@ -848,7 +848,7 @@ static umf_result_t file_free(void *provider, void *ptr, size_t size) {
 }
 
 static umf_memory_provider_ops_t UMF_FILE_MEMORY_PROVIDER_OPS = {
-    .version = UMF_VERSION_CURRENT,
+    .version = UMF_PROVIDER_OPS_VERSION_CURRENT,
     .initialize = file_initialize,
     .finalize = file_finalize,
     .alloc = file_alloc,

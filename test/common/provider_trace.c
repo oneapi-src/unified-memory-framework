@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 Intel Corporation
+// Copyright (C) 2023-2025 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -191,7 +191,7 @@ static umf_result_t traceCloseIpcHandle(void *provider, void *ptr,
 }
 
 umf_memory_provider_ops_t UMF_TRACE_PROVIDER_OPS = {
-    .version = UMF_VERSION_CURRENT,
+    .version = UMF_PROVIDER_OPS_VERSION_CURRENT,
     .initialize = traceInitialize,
     .finalize = traceFinalize,
     .alloc = traceAlloc,

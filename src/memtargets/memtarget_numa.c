@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2024 Intel Corporation
+ * Copyright (C) 2023-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -390,7 +390,7 @@ static umf_result_t numa_compare(void *memTarget, void *otherMemTarget,
 }
 
 struct umf_memtarget_ops_t UMF_MEMTARGET_NUMA_OPS = {
-    .version = UMF_VERSION_CURRENT,
+    .version = UMF_MEMTARGET_OPS_VERSION_CURRENT,
     .initialize = numa_initialize,
     .finalize = numa_finalize,
     .pool_create_from_memspace = numa_pool_create_from_memspace,

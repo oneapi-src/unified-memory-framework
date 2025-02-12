@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2024 Intel Corporation
+ * Copyright (C) 2022-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -1402,7 +1402,7 @@ static umf_result_t os_close_ipc_handle(void *provider, void *ptr,
 }
 
 static umf_memory_provider_ops_t UMF_OS_MEMORY_PROVIDER_OPS = {
-    .version = UMF_VERSION_CURRENT,
+    .version = UMF_PROVIDER_OPS_VERSION_CURRENT,
     .initialize = os_initialize,
     .finalize = os_finalize,
     .alloc = os_alloc,
