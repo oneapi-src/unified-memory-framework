@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2024 Intel Corporation
+ * Copyright (C) 2023-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -15,6 +15,7 @@
 #include "base_alloc_global.h"
 #include "ipc_internal.h"
 #include "memory_pool_internal.h"
+#include "memory_provider_internal.h"
 #include "provider/provider_tracking.h"
 #include "utils_common.h"
 #include "utils_log.h"
@@ -123,14 +124,14 @@ umf_result_t umfOpenIPCHandle(umf_ipc_handler_handle_t hIPCHandler,
                               umf_ipc_handle_t umfIPCHandle, void **ptr) {
 
     // IPC handler is an instance of tracking memory provider
-    if (*(uint32_t *)hIPCHandler != UMF_VERSION_CURRENT) {
+    umf_memory_provider_handle_t hProvider = hIPCHandler;
+    if (hProvider->ops.version != UMF_PROVIDER_OPS_VERSION_CURRENT) {
         // It is a temporary hack to verify that user passes correct IPC handler,
         // not a pool handle, as it was required in previous version.
         LOG_ERR("Invalid IPC handler.");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    umf_memory_provider_handle_t hProvider = hIPCHandler;
     void *base = NULL;
 
     umf_result_t ret = umfMemoryProviderOpenIPCHandle(

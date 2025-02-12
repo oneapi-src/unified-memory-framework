@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2024 Intel Corporation
+ * Copyright (C) 2023-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -382,7 +382,7 @@ static umf_result_t tbb_get_last_allocation_error(void *pool) {
 }
 
 static umf_memory_pool_ops_t UMF_SCALABLE_POOL_OPS = {
-    .version = UMF_VERSION_CURRENT,
+    .version = UMF_POOL_OPS_VERSION_CURRENT,
     .initialize = tbb_pool_initialize,
     .finalize = tbb_pool_finalize,
     .malloc = tbb_malloc,

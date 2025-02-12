@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2025 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -64,7 +64,7 @@ static umf_result_t nullGetLastStatus(void *pool) {
 }
 
 umf_memory_pool_ops_t UMF_NULL_POOL_OPS = {
-    .version = UMF_VERSION_CURRENT,
+    .version = UMF_POOL_OPS_VERSION_CURRENT,
     .initialize = nullInitialize,
     .finalize = nullFinalize,
     .malloc = nullMalloc,

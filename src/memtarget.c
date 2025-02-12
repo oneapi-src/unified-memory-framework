@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2024 Intel Corporation
+ * Copyright (C) 2023-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -15,6 +15,7 @@
 #include "memtarget_internal.h"
 #include "memtarget_ops.h"
 #include "utils_concurrency.h"
+#include "utils_log.h"
 
 umf_result_t umfMemtargetCreate(const umf_memtarget_ops_t *ops, void *params,
                                 umf_memtarget_handle_t *memoryTarget) {
@@ -29,7 +30,11 @@ umf_result_t umfMemtargetCreate(const umf_memtarget_ops_t *ops, void *params,
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    assert(ops->version == UMF_VERSION_CURRENT);
+    if (ops->version != UMF_MEMTARGET_OPS_VERSION_CURRENT) {
+        LOG_WARN("Memtarget ops version \"%d\" is different than the current "
+                 "version \"%d\"",
+                 ops->version, UMF_MEMTARGET_OPS_VERSION_CURRENT);
+    }
 
     target->ops = ops;
 
