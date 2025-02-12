@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -138,7 +138,7 @@ static size_t get_size_threshold(void) {
     LOG_DEBUG("UMF_PROXY[size.threshold] = %s", str_threshold);
     long threshold = utils_get_size_threshold(str_threshold);
     if (threshold < 0) {
-        LOG_ERR("incorrect size threshold: %s", str_threshold);
+        LOG_FATAL("incorrect size threshold: %s", str_threshold);
         exit(-1);
     }
 
@@ -163,6 +163,8 @@ static int get_system_allocator_symbols(void) {
         return 0;
     }
 
+    LOG_FATAL("Required system allocator's symbols not found.");
+
     return -1;
 }
 #endif /* _WIN32 */
@@ -174,7 +176,7 @@ void proxy_lib_create_common(void) {
 
     umf_result = umfOsMemoryProviderParamsCreate(&os_params);
     if (umf_result != UMF_RESULT_SUCCESS) {
-        LOG_ERR("creating OS memory provider params failed");
+        LOG_FATAL("creating OS memory provider params failed");
         exit(-1);
     }
 
@@ -182,7 +184,7 @@ void proxy_lib_create_common(void) {
     size_t _threshold = get_size_threshold();
     if (_threshold > 0) {
         if (get_system_allocator_symbols()) {
-            LOG_ERR("initialization of the system allocator failed!");
+            LOG_FATAL("initialization of the system allocator failed!");
             exit(-1);
         }
 
@@ -197,12 +199,12 @@ void proxy_lib_create_common(void) {
         umf_result = umfOsMemoryProviderParamsSetVisibility(os_params,
                                                             UMF_MEM_MAP_SHARED);
         if (umf_result != UMF_RESULT_SUCCESS) {
-            LOG_ERR("setting visibility mode failed");
+            LOG_FATAL("setting visibility mode failed");
             exit(-1);
         }
         umf_result = umfOsMemoryProviderParamsSetShmName(os_params, NULL);
         if (umf_result != UMF_RESULT_SUCCESS) {
-            LOG_ERR("setting shared memory name failed");
+            LOG_FATAL("setting shared memory name failed");
             exit(-1);
         }
     } else if (utils_env_var_has_str("UMF_PROXY",
@@ -210,7 +212,7 @@ void proxy_lib_create_common(void) {
         umf_result = umfOsMemoryProviderParamsSetVisibility(os_params,
                                                             UMF_MEM_MAP_SHARED);
         if (umf_result != UMF_RESULT_SUCCESS) {
-            LOG_ERR("setting visibility mode failed");
+            LOG_FATAL("setting visibility mode failed");
             exit(-1);
         }
 
@@ -219,7 +221,7 @@ void proxy_lib_create_common(void) {
         sprintf(shm_name, "umf_proxy_lib_shm_pid_%i", utils_getpid());
         umf_result = umfOsMemoryProviderParamsSetShmName(os_params, shm_name);
         if (umf_result != UMF_RESULT_SUCCESS) {
-            LOG_ERR("setting shared memory name failed");
+            LOG_FATAL("setting shared memory name failed");
             exit(-1);
         }
 
@@ -233,14 +235,14 @@ void proxy_lib_create_common(void) {
                                          &OS_memory_provider);
     umfOsMemoryProviderParamsDestroy(os_params);
     if (umf_result != UMF_RESULT_SUCCESS) {
-        LOG_ERR("creating OS memory provider failed");
+        LOG_FATAL("creating OS memory provider failed");
         exit(-1);
     }
 
     umf_result = umfPoolCreate(umfPoolManagerOps(), OS_memory_provider, NULL, 0,
                                &Proxy_pool);
     if (umf_result != UMF_RESULT_SUCCESS) {
-        LOG_ERR("creating UMF pool manager failed");
+        LOG_FATAL("creating UMF pool manager failed");
         exit(-1);
     }
 

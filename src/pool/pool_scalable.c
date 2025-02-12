@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2024 Intel Corporation
+ * Copyright (C) 2023-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -143,7 +143,7 @@ static int init_tbb_callbacks(tbb_callbacks_t *tbb_callbacks) {
         !tbb_callbacks->pool_aligned_malloc || !tbb_callbacks->pool_free ||
         !tbb_callbacks->pool_create_v1 || !tbb_callbacks->pool_destroy ||
         !tbb_callbacks->pool_identify) {
-        LOG_ERR("Could not find symbols in %s", lib_name);
+        LOG_FATAL("Could not find all TBB symbols in %s", lib_name);
         utils_close_library(tbb_callbacks->lib_handle);
         return -1;
     }
@@ -266,7 +266,7 @@ static umf_result_t tbb_pool_initialize(umf_memory_provider_handle_t provider,
 
     int ret = init_tbb_callbacks(&pool_data->tbb_callbacks);
     if (ret != 0) {
-        LOG_ERR("loading TBB symbols failed");
+        LOG_FATAL("loading TBB symbols failed");
         return UMF_RESULT_ERROR_UNKNOWN;
     }
 

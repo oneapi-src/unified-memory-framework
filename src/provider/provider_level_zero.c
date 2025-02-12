@@ -242,7 +242,7 @@ static void init_ze_global_state(void) {
         !g_ze_ops.zeDeviceGetProperties || !g_ze_ops.zeMemGetAllocProperties) {
         // g_ze_ops.zeMemPutIpcHandle can be NULL because it was introduced
         // starting from Level Zero 1.6
-        LOG_ERR("Required Level Zero symbols not found.");
+        LOG_FATAL("Required Level Zero symbols not found.");
         Init_ze_global_state_failed = true;
     }
 }
@@ -550,7 +550,7 @@ static umf_result_t ze_memory_provider_initialize(void *params,
 
     utils_init_once(&ze_is_initialized, init_ze_global_state);
     if (Init_ze_global_state_failed) {
-        LOG_ERR("Loading Level Zero symbols failed");
+        LOG_FATAL("Loading Level Zero symbols failed");
         return UMF_RESULT_ERROR_UNKNOWN;
     }
 
