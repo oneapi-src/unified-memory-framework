@@ -85,3 +85,11 @@ jobs:
       contents: read
       security-events: write
     uses: ./.github/workflows/reusable_trivy.yml
+  Compatibility:
+    needs: [Build]
+    uses: ./.github/workflows/reusable_compatibility.yml
+    strategy:
+      matrix:
+        tag: ["v0.11.0-dev1"]
+    with:
+      tag: ${{matrix.tag}}
