@@ -10,6 +10,7 @@
 
 #define UMF_VERNUMBERS @PROJECT_VERSION_MAJOR@,@PROJECT_VERSION_MINOR@,@PROJECT_VERSION_PATCH@,@UMF_VERSION_REVISION@
 #define _UMF_VERSION "@UMF_VERSION@"
+#define _UMF_CMAKE_VARS "@UMF_ALL_CMAKE_VARIABLES@"
 
 #ifdef _DEBUG
 #define VERSION_DEBUG VS_FF_DEBUG
@@ -58,6 +59,7 @@ BEGIN
             VALUE "ProductVersion", _UMF_VERSION "\0"
             VALUE "PrivateBuild", "\0"
             VALUE "SpecialBuild", "\0"
+            VALUE "BuildOptions", _UMF_CMAKE_VARS "\0"
         END
     END
     BLOCK "VarFileInfo"
