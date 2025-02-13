@@ -10,6 +10,8 @@
 
 #define UMF_VERNUMBERS @PROJECT_VERSION_MAJOR@,@PROJECT_VERSION_MINOR@,@PROJECT_VERSION_PATCH@,@UMF_VERSION_REVISION@
 #define _UMF_VERSION "@UMF_VERSION@"
+// Store our CMake vars in the "FileDescription" block, as the custom fields require special parsing.
+#define _UMF_CMAKE_VARS "@UMF_ALL_CMAKE_VARIABLES@"
 
 #ifdef _DEBUG
 #define VERSION_DEBUG VS_FF_DEBUG
@@ -49,7 +51,7 @@ BEGIN
         BLOCK "040904b0" // U.S. English, Unicode (0x04b0 == 1200)
         BEGIN
             VALUE "CompanyName", "Intel Corporation\0"
-            VALUE "FileDescription", "Unified Memory Framework (UMF) library\0"
+            VALUE "FileDescription", "Unified Memory Framework (UMF) library (build options: " _UMF_CMAKE_VARS ")\0"
             VALUE "FileVersion", _UMF_VERSION "\0"
             VALUE "LegalCopyright", "Copyright 2024-2025, Intel Corporation. All rights reserved.\0"
             VALUE "LegalTrademarks", "\0"
