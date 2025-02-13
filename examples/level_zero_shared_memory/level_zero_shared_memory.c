@@ -189,6 +189,6 @@ provider_params_destroy:
     umfLevelZeroMemoryProviderParamsDestroy(ze_memory_provider_params);
 
 level_zero_destroy:
-    ret = destroy_context(hContext);
+    destroy_context(hContext);
     return ret;
 }
