@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2024 Intel Corporation
+ * Copyright (C) 2023-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -47,6 +47,20 @@ typedef enum umf_result_t {
         6, ///< Failure in user provider code (i.e in user provided callback)
     UMF_RESULT_ERROR_UNKNOWN = 0x7ffffffe ///< Unknown or internal error
 } umf_result_t;
+
+/// @brief Type for determine the type of the CTL query
+typedef enum umf_ctl_query_type {
+    CTL_QUERY_READ,
+    CTL_QUERY_WRITE,
+    CTL_QUERY_RUNNABLE,
+    CTL_QUERY_SUBTREE,
+
+    MAX_CTL_QUERY_TYPE
+} umf_ctl_query_type;
+
+int umfCtlGet(const char *name, void *ctx, void *arg);
+int umfCtlSet(const char *name, void *ctx, void *arg);
+int umfCtlExec(const char *name, void *ctx, void *arg);
 
 #ifdef __cplusplus
 }

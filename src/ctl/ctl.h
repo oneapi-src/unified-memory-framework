@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2016-2024 Intel Corporation
+ * Copyright (C) 2016-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -17,6 +17,8 @@
 
 #ifndef UMF_CTL_H
 #define UMF_CTL_H 1
+
+#include <umf/memory_pool.h>
 
 #include <errno.h>
 #include <stddef.h>
@@ -43,22 +45,16 @@ enum ctl_query_source {
     MAX_CTL_QUERY_SOURCE
 };
 
-enum ctl_query_type {
-    CTL_QUERY_READ,
-    CTL_QUERY_WRITE,
-    CTL_QUERY_RUNNABLE,
-
-    MAX_CTL_QUERY_TYPE
-};
-
 typedef int (*node_callback)(void *ctx, enum ctl_query_source type, void *arg,
-                             struct ctl_index_utlist *indexes);
+                             struct ctl_index_utlist *indexes, char *extra_name,
+                             umf_ctl_query_type query_type);
 
 enum ctl_node_type {
     CTL_NODE_UNKNOWN,
     CTL_NODE_NAMED,
     CTL_NODE_LEAF,
     CTL_NODE_INDEXED,
+    CTL_NODE_SUBTREE,
 
     MAX_CTL_NODE
 };
@@ -104,6 +100,8 @@ struct ctl_node {
 struct ctl *ctl_new(void);
 void ctl_delete(struct ctl *stats);
 
+void initialize_global_ctl(void);
+
 int ctl_load_config_from_string(struct ctl *ctl, void *ctx,
                                 const char *cfg_string);
 int ctl_load_config_from_file(struct ctl *ctl, void *ctx, const char *cfg_file);
@@ -139,7 +137,7 @@ int ctl_arg_string(const void *arg, void *dest, size_t dest_size);
 #define CTL_NODE(name, ...) ctl_node_##__VA_ARGS__##_##name
 
 int ctl_query(struct ctl *ctl, void *ctx, enum ctl_query_source source,
-              const char *name, enum ctl_query_type type, void *arg);
+              const char *name, umf_ctl_query_type type, void *arg);
 
 /* Declaration of a new child node */
 #define CTL_CHILD(name, ...)                                                   \
@@ -161,6 +159,8 @@ int ctl_query(struct ctl *ctl, void *ctx, enum ctl_query_source source,
 
 #define CTL_RUNNABLE_HANDLER(name, ...) ctl_##__VA_ARGS__##_##name##_runnable
 
+#define CTL_SUBTREE_HANDLER(name, ...) ctl_##__VA_ARGS__##_##name##_subtree
+
 #define CTL_ARG(name) ctl_arg_##name
 
 /*
@@ -170,7 +170,8 @@ int ctl_query(struct ctl *ctl, void *ctx, enum ctl_query_source source,
 #define CTL_LEAF_RO(name, ...)                                                 \
     {                                                                          \
         CTL_STR(name), CTL_NODE_LEAF,                                          \
-            {CTL_READ_HANDLER(name, __VA_ARGS__), NULL, NULL}, NULL, NULL      \
+            {CTL_READ_HANDLER(name, __VA_ARGS__), NULL, NULL, NULL}, NULL,     \
+            NULL                                                               \
     }
 
 /*
@@ -180,7 +181,7 @@ int ctl_query(struct ctl *ctl, void *ctx, enum ctl_query_source source,
 #define CTL_LEAF_WO(name, ...)                                                 \
     {                                                                          \
         CTL_STR(name), CTL_NODE_LEAF,                                          \
-            {NULL, CTL_WRITE_HANDLER(name, __VA_ARGS__), NULL},                \
+            {NULL, CTL_WRITE_HANDLER(name, __VA_ARGS__), NULL, NULL},          \
             &CTL_ARG(name), NULL                                               \
     }
 
@@ -191,7 +192,22 @@ int ctl_query(struct ctl *ctl, void *ctx, enum ctl_query_source source,
 #define CTL_LEAF_RUNNABLE(name, ...)                                           \
     {                                                                          \
         CTL_STR(name), CTL_NODE_LEAF,                                          \
-            {NULL, NULL, CTL_RUNNABLE_HANDLER(name, __VA_ARGS__)}, NULL, NULL  \
+            {NULL, NULL, CTL_RUNNABLE_HANDLER(name, __VA_ARGS__), NULL}, NULL, \
+            NULL                                                               \
+    }
+
+#define CTL_LEAF_SUBTREE(name, ...)                                            \
+    {                                                                          \
+        CTL_STR(name), CTL_NODE_SUBTREE,                                       \
+            {NULL, NULL, NULL, CTL_SUBTREE_HANDLER(name, __VA_ARGS__)}, NULL,  \
+            NULL                                                               \
+    }
+
+#define CTL_LEAF_SUBTREE2(name, fun, ...)                                      \
+    {                                                                          \
+        CTL_STR(name), CTL_NODE_SUBTREE,                                       \
+            {NULL, NULL, NULL, CTL_SUBTREE_HANDLER(fun, __VA_ARGS__)}, NULL,   \
+            NULL                                                               \
     }
 
 /*
@@ -201,7 +217,7 @@ int ctl_query(struct ctl *ctl, void *ctx, enum ctl_query_source source,
 #define CTL_LEAF_RW(name)                                                      \
     {                                                                          \
         CTL_STR(name), CTL_NODE_LEAF,                                          \
-            {CTL_READ_HANDLER(name), CTL_WRITE_HANDLER(name), NULL},           \
+            {CTL_READ_HANDLER(name), CTL_WRITE_HANDLER(name), NULL, NULL},     \
             &CTL_ARG(name), NULL                                               \
     }
 

@@ -14,12 +14,16 @@
 
 #include <umf/memory_provider.h>
 
+#include "ctl/ctl.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 void *umfMemoryProviderGetPriv(umf_memory_provider_handle_t hProvider);
 umf_memory_provider_handle_t *umfGetLastFailedMemoryProviderPtr(void);
+
+extern struct ctl_node CTL_NODE(provider)[];
+extern struct ctl_node CTL_NODE(pool)[];
 
 #ifdef __cplusplus
 }
