@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2025 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -24,6 +24,9 @@ TEST_F(test, cuda_provider_not_implemented) {
 
     result = umfCUDAMemoryProviderParamsSetMemoryType(hParams,
                                                       UMF_MEMORY_TYPE_DEVICE);
+    ASSERT_EQ(result, UMF_RESULT_ERROR_NOT_SUPPORTED);
+
+    result = umfCUDAMemoryProviderParamsSetAllocFlags(hParams, 0);
     ASSERT_EQ(result, UMF_RESULT_ERROR_NOT_SUPPORTED);
 
     umf_memory_provider_ops_t *ops = umfCUDAMemoryProviderOps();

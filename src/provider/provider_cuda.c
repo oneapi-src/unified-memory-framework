@@ -55,6 +55,14 @@ umf_result_t umfCUDAMemoryProviderParamsSetMemoryType(
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
+umf_result_t umfCUDAMemoryProviderParamsSetAllocFlags(
+    umf_cuda_memory_provider_params_handle_t hParams, unsigned int flags) {
+    (void)hParams;
+    (void)flags;
+    LOG_ERR("CUDA provider is disabled (UMF_BUILD_CUDA_PROVIDER is OFF)!");
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
 umf_memory_provider_ops_t *umfCUDAMemoryProviderOps(void) {
     // not supported
     LOG_ERR("CUDA provider is disabled (UMF_BUILD_CUDA_PROVIDER is OFF)!");
@@ -89,13 +97,22 @@ typedef struct cu_memory_provider_t {
     CUdevice device;
     umf_usm_memory_type_t memory_type;
     size_t min_alignment;
+    unsigned int alloc_flags;
 } cu_memory_provider_t;
 
 // CUDA Memory Provider settings struct
 typedef struct umf_cuda_memory_provider_params_t {
-    void *cuda_context_handle;         ///< Handle to the CUDA context
-    int cuda_device_handle;            ///< Handle to the CUDA device
-    umf_usm_memory_type_t memory_type; ///< Allocation memory type
+    // Handle to the CUDA context
+    void *cuda_context_handle;
+
+    // Handle to the CUDA device
+    int cuda_device_handle;
+
+    // Allocation memory type
+    umf_usm_memory_type_t memory_type;
+
+    // Allocation flags for cuMemHostAlloc/cuMemAllocManaged
+    unsigned int alloc_flags;
 } umf_cuda_memory_provider_params_t;
 
 typedef struct cu_ops_t {
@@ -103,7 +120,7 @@ typedef struct cu_ops_t {
         size_t *granularity, const CUmemAllocationProp *prop,
         CUmemAllocationGranularity_flags option);
     CUresult (*cuMemAlloc)(CUdeviceptr *dptr, size_t bytesize);
-    CUresult (*cuMemAllocHost)(void **pp, size_t bytesize);
+    CUresult (*cuMemHostAlloc)(void **pp, size_t bytesize, unsigned int flags);
     CUresult (*cuMemAllocManaged)(CUdeviceptr *dptr, size_t bytesize,
                                   unsigned int flags);
     CUresult (*cuMemFree)(CUdeviceptr dptr);
@@ -172,8 +189,8 @@ static void init_cu_global_state(void) {
         utils_get_symbol_addr(0, "cuMemGetAllocationGranularity", lib_name);
     *(void **)&g_cu_ops.cuMemAlloc =
         utils_get_symbol_addr(0, "cuMemAlloc_v2", lib_name);
-    *(void **)&g_cu_ops.cuMemAllocHost =
-        utils_get_symbol_addr(0, "cuMemAllocHost_v2", lib_name);
+    *(void **)&g_cu_ops.cuMemHostAlloc =
+        utils_get_symbol_addr(0, "cuMemHostAlloc", lib_name);
     *(void **)&g_cu_ops.cuMemAllocManaged =
         utils_get_symbol_addr(0, "cuMemAllocManaged", lib_name);
     *(void **)&g_cu_ops.cuMemFree =
@@ -196,7 +213,7 @@ static void init_cu_global_state(void) {
         utils_get_symbol_addr(0, "cuIpcCloseMemHandle", lib_name);
 
     if (!g_cu_ops.cuMemGetAllocationGranularity || !g_cu_ops.cuMemAlloc ||
-        !g_cu_ops.cuMemAllocHost || !g_cu_ops.cuMemAllocManaged ||
+        !g_cu_ops.cuMemHostAlloc || !g_cu_ops.cuMemAllocManaged ||
         !g_cu_ops.cuMemFree || !g_cu_ops.cuMemFreeHost ||
         !g_cu_ops.cuGetErrorName || !g_cu_ops.cuGetErrorString ||
         !g_cu_ops.cuCtxGetCurrent || !g_cu_ops.cuCtxSetCurrent ||
@@ -225,6 +242,7 @@ umf_result_t umfCUDAMemoryProviderParamsCreate(
     params_data->cuda_context_handle = NULL;
     params_data->cuda_device_handle = -1;
     params_data->memory_type = UMF_MEMORY_TYPE_UNKNOWN;
+    params_data->alloc_flags = 0;
 
     *hParams = params_data;
 
@@ -271,6 +289,18 @@ umf_result_t umfCUDAMemoryProviderParamsSetMemoryType(
     }
 
     hParams->memory_type = memoryType;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t umfCUDAMemoryProviderParamsSetAllocFlags(
+    umf_cuda_memory_provider_params_handle_t hParams, unsigned int flags) {
+    if (!hParams) {
+        LOG_ERR("CUDA Memory Provider params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    hParams->alloc_flags = flags;
 
     return UMF_RESULT_SUCCESS;
 }
@@ -324,6 +354,17 @@ static umf_result_t cu_memory_provider_initialize(void *params,
     cu_provider->device = cu_params->cuda_device_handle;
     cu_provider->memory_type = cu_params->memory_type;
     cu_provider->min_alignment = min_alignment;
+
+    // If the memory type is shared (CUDA managed), the allocation flags must
+    // be set. NOTE: we do not check here if the flags are valid -
+    // this will be done by CUDA runtime.
+    if (cu_params->memory_type == UMF_MEMORY_TYPE_SHARED &&
+        cu_params->alloc_flags == 0) {
+        // the default setting is CU_MEM_ATTACH_GLOBAL
+        cu_provider->alloc_flags = CU_MEM_ATTACH_GLOBAL;
+    } else {
+        cu_provider->alloc_flags = cu_params->alloc_flags;
+    }
 
     *provider = cu_provider;
 
@@ -381,7 +422,8 @@ static umf_result_t cu_memory_provider_alloc(void *provider, size_t size,
     CUresult cu_result = CUDA_SUCCESS;
     switch (cu_provider->memory_type) {
     case UMF_MEMORY_TYPE_HOST: {
-        cu_result = g_cu_ops.cuMemAllocHost(resultPtr, size);
+        cu_result =
+            g_cu_ops.cuMemHostAlloc(resultPtr, size, cu_provider->alloc_flags);
         break;
     }
     case UMF_MEMORY_TYPE_DEVICE: {
@@ -390,7 +432,7 @@ static umf_result_t cu_memory_provider_alloc(void *provider, size_t size,
     }
     case UMF_MEMORY_TYPE_SHARED: {
         cu_result = g_cu_ops.cuMemAllocManaged((CUdeviceptr *)resultPtr, size,
-                                               CU_MEM_ATTACH_GLOBAL);
+                                               cu_provider->alloc_flags);
         break;
     }
     default:
