@@ -154,6 +154,16 @@ function(add_umf_test)
         set_property(TEST ${TEST_NAME} PROPERTY ENVIRONMENT_MODIFICATION
                                                 "${DLL_PATH_LIST}")
     endif()
+    if(LINUX)
+        # prepend LD_LIBRARY_PATH with ${CMAKE_BINARY_DIR}/lib it is required
+        # because ${CMAKE_BINARY_DIR}/lib contains libze_loader.so and tests
+        # should use it instead of system one.
+        set_property(
+            TEST ${TEST_NAME}
+            PROPERTY ENVIRONMENT_MODIFICATION
+                     "LD_LIBRARY_PATH=path_list_prepend:${CMAKE_BINARY_DIR}/lib"
+        )
+    endif()
 endfunction()
 
 add_subdirectory(common)
@@ -535,6 +545,16 @@ function(add_umf_ipc_test)
     if(NOT UMF_TESTS_FAIL_ON_SKIP)
         set_tests_properties(${TEST_NAME} PROPERTIES SKIP_RETURN_CODE 125)
     endif()
+    if(LINUX)
+        # prepend LD_LIBRARY_PATH with ${CMAKE_BINARY_DIR}/lib it is required
+        # because ${CMAKE_BINARY_DIR}/lib contains libze_loader.so and tests
+        # should use it instead of system one.
+        set_property(
+            TEST ${TEST_NAME}
+            PROPERTY ENVIRONMENT_MODIFICATION
+                     "LD_LIBRARY_PATH=path_list_prepend:${CMAKE_BINARY_DIR}/lib"
+        )
+    endif()
 endfunction()
 
 if(LINUX)
@@ -740,5 +760,15 @@ if(LINUX
                 "${CMAKE_INSTALL_PREFIX}" "${STANDALONE_CMAKE_OPTIONS}"
                 ${EXAMPLES}
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+        if(LINUX)
+            # prepend LD_LIBRARY_PATH with ${CMAKE_BINARY_DIR}/lib it is
+            # required because ${CMAKE_BINARY_DIR}/lib contains libze_loader.so
+            # and tests should use it instead of system one.
+            set_property(
+                TEST umf-standalone_examples
+                PROPERTY
+                    ENVIRONMENT_MODIFICATION
+                    "LD_LIBRARY_PATH=path_list_prepend:${CMAKE_BINARY_DIR}/lib")
+        endif()
     endif()
 endif()
