@@ -36,3 +36,4 @@ Before checking all the boxes please mark the PR as draft.
 - [ ] All newly added source files have a license
 - [ ] All newly added source files are referenced in CMake files
 - [ ] Logger (with debug/info/... messages) is used
+- [ ] All API changes are reflected in docs and def/map files, and are tested
