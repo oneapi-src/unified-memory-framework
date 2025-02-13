@@ -99,12 +99,14 @@ int umfCtlExec(const char *name, void *ctx, void *arg) {
  * ctl_find_node -- (internal) searches for a matching entry point in the
  *    provided nodes
  *
+ * Name offset is used to return the offset of the name in the query string.
  * The caller is responsible for freeing all of the allocated indexes,
  * regardless of the return value.
  */
 static const struct ctl_node *ctl_find_node(const struct ctl_node *nodes,
                                             const char *name,
-                                            struct ctl_index_utlist *indexes) {
+                                            struct ctl_index_utlist *indexes,
+                                            int *name_offset) {
     const struct ctl_node *n = NULL;
     char *sptr = NULL;
     char *parse_str = Strdup(name);
@@ -119,6 +121,7 @@ static const struct ctl_node *ctl_find_node(const struct ctl_node *nodes,
      * in the main ctl tree.
      */
     while (node_name != NULL) {
+        *name_offset = node_name - parse_str;
         if (n != NULL && n->type == CTL_NODE_SUBTREE) {
             break;
         }
@@ -362,13 +365,15 @@ int ctl_query(struct ctl *ctl, void *ctx, enum ctl_query_source source,
     }
 
     int ret = -1;
+    int name_offset = 0;
 
-    const struct ctl_node *n = ctl_find_node(CTL_NODE(global), name, indexes);
+    const struct ctl_node *n =
+        ctl_find_node(CTL_NODE(global), name, indexes, &name_offset);
 
     if (n == NULL && ctl) {
         ctl_delete_indexes(indexes);
         indexes = NULL;
-        n = ctl_find_node(ctl->root, name, indexes);
+        n = ctl_find_node(ctl->root, name, indexes, &name_offset);
     }
 
     if (n == NULL ||

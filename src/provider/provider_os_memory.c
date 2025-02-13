@@ -185,12 +185,14 @@ CTL_READ_HANDLER(ipc_enabled)(void *ctx, enum ctl_query_source source,
     return 0;
 }
 
-static const struct ctl_node CTL_NODE(by_handle)[] = {CTL_LEAF_RO(ipc_enabled),
-                                                      CTL_NODE_END};
+// static const struct ctl_node CTL_NODE(by_handle)[] = {CTL_LEAF_RO(ipc_enabled),
+//                                                       CTL_NODE_END};
+
+static const struct ctl_node CTL_LEAF_RO(ipc_enabled)[];
 
 void initialize_os_ctl(void) {
     os_memory_ctl_root = ctl_new();
-    CTL_REGISTER_MODULE(os_memory_ctl_root, by_handle);
+    CTL_REGISTER_MODULE(os_memory_ctl_root, ipc_enabled);
 }
 
 static void os_store_last_native_error(int32_t native_error, int errno_value) {
