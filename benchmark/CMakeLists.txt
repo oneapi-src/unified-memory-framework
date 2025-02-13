@@ -86,6 +86,16 @@ function(add_umf_benchmark)
         set_property(TEST ${BENCH_NAME} PROPERTY ENVIRONMENT_MODIFICATION
                                                  "${DLL_PATH_LIST}")
     endif()
+    if(LINUX)
+        # prepend LD_LIBRARY_PATH with ${CMAKE_BINARY_DIR}/lib it is required
+        # because ${CMAKE_BINARY_DIR}/lib contains libze_loader.so and tests
+        # should use it instead of system one.
+        set_property(
+            TEST ${BENCH_NAME}
+            PROPERTY ENVIRONMENT_MODIFICATION
+                     "LD_LIBRARY_PATH=path_list_prepend:${CMAKE_BINARY_DIR}/lib"
+        )
+    endif()
 
     if(UMF_BUILD_LIBUMF_POOL_DISJOINT)
         target_compile_definitions(${BENCH_NAME}
