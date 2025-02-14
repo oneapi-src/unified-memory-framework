@@ -415,12 +415,20 @@ if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
         LIBS ${UMF_UTILS_FOR_TEST} ze_loader)
 
     add_umf_test(
-        NAME provider_level_zero_dlopen
+        NAME provider_level_zero_dlopen_global
         SRCS providers/provider_level_zero.cpp
              ${UMF_UTILS_DIR}/utils_level_zero.cpp ${BA_SOURCES_FOR_TEST}
         LIBS ${UMF_UTILS_FOR_TEST})
-    target_compile_definitions(umf_test-provider_level_zero_dlopen
-                               PUBLIC USE_DLOPEN=1)
+    target_compile_definitions(umf_test-provider_level_zero_dlopen_global
+                               PUBLIC USE_DLOPEN=1 OPEN_ZE_LIBRARY_GLOBAL=1)
+
+    add_umf_test(
+        NAME provider_level_zero_dlopen_local
+        SRCS providers/provider_level_zero.cpp
+             ${UMF_UTILS_DIR}/utils_level_zero.cpp ${BA_SOURCES_FOR_TEST}
+        LIBS ${UMF_UTILS_FOR_TEST})
+    target_compile_definitions(umf_test-provider_level_zero_dlopen_local
+                               PUBLIC USE_DLOPEN=1 OPEN_ZE_LIBRARY_GLOBAL=0)
 endif()
 
 if(NOT UMF_BUILD_LEVEL_ZERO_PROVIDER)

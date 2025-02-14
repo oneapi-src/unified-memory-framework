@@ -144,10 +144,15 @@ int InitLevelZeroOps() {
     const char *lib_name = "libze_loader.so";
 #endif
     // Load Level Zero symbols
-    // NOTE that we use UMF_UTIL_OPEN_LIBRARY_GLOBAL which add all loaded symbols to the
+#if OPEN_ZE_LIBRARY_GLOBAL
+    // NOTE UMF_UTIL_OPEN_LIBRARY_GLOBAL adds all loaded symbols to the
     // global symbol table.
+    int open_flags = UMF_UTIL_OPEN_LIBRARY_GLOBAL;
+#else
+    int open_flags = 0;
+#endif
     zeDlHandle = std::unique_ptr<void, DlHandleCloser>(
-        utils_open_library(lib_name, UMF_UTIL_OPEN_LIBRARY_GLOBAL));
+        utils_open_library(lib_name, open_flags));
     *(void **)&libze_ops.zeInit =
         utils_get_symbol_addr(zeDlHandle.get(), "zeInit", lib_name);
     if (libze_ops.zeInit == nullptr) {
