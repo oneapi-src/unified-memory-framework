@@ -450,12 +450,20 @@ if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_CUDA_PROVIDER)
             LIBS ${UMF_UTILS_FOR_TEST} cuda)
 
         add_umf_test(
-            NAME provider_cuda_dlopen
+            NAME provider_cuda_dlopen_global
             SRCS providers/provider_cuda.cpp providers/cuda_helpers.cpp
                  ${BA_SOURCES_FOR_TEST}
             LIBS ${UMF_UTILS_FOR_TEST})
-        target_compile_definitions(umf_test-provider_cuda_dlopen
-                                   PUBLIC USE_DLOPEN=1)
+        target_compile_definitions(umf_test-provider_cuda_dlopen_global
+                                   PUBLIC USE_DLOPEN=1 OPEN_CU_LIBRARY_GLOBAL=1)
+
+        add_umf_test(
+            NAME provider_cuda_dlopen_local
+            SRCS providers/provider_cuda.cpp providers/cuda_helpers.cpp
+                 ${BA_SOURCES_FOR_TEST}
+            LIBS ${UMF_UTILS_FOR_TEST})
+        target_compile_definitions(umf_test-provider_cuda_dlopen_local
+                                   PUBLIC USE_DLOPEN=1 OPEN_CU_LIBRARY_GLOBAL=0)
     else()
         message(
             STATUS
