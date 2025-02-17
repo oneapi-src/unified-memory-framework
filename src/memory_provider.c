@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2024 Intel Corporation
+ * Copyright (C) 2023-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -19,11 +19,6 @@
 #include "libumf.h"
 #include "memory_provider_internal.h"
 #include "utils_assert.h"
-
-typedef struct umf_memory_provider_t {
-    umf_memory_provider_ops_t ops;
-    void *provider_priv;
-} umf_memory_provider_t;
 
 static umf_result_t umfDefaultPurgeLazy(void *provider, void *ptr,
                                         size_t size) {
@@ -167,13 +162,17 @@ umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
+    if (ops->version != UMF_PROVIDER_OPS_VERSION_CURRENT) {
+        LOG_WARN("Memory Provider ops version \"%d\" is different than the "
+                 "current version \"%d\"",
+                 ops->version, UMF_PROVIDER_OPS_VERSION_CURRENT);
+    }
+
     umf_memory_provider_handle_t provider =
         umf_ba_global_alloc(sizeof(umf_memory_provider_t));
     if (!provider) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
-
-    assert(ops->version == UMF_VERSION_CURRENT);
 
     provider->ops = *ops;
 
