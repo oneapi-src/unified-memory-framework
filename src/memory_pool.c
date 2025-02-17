@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2024 Intel Corporation
+ * Copyright (C) 2023-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -21,6 +21,21 @@
 #include "memory_pool_internal.h"
 #include "memory_provider_internal.h"
 #include "provider_tracking.h"
+
+static int CTL_SUBTREE_HANDLER(by_handle_pool)(void *ctx,
+                                               enum ctl_query_source source,
+                                               void *arg,
+                                               struct ctl_index_utlist *indexes,
+                                               char *extra_name,
+                                               umf_ctl_query_type query_type) {
+    (void)indexes, (void)source;
+    umf_memory_pool_handle_t hPool = (umf_memory_pool_handle_t)ctx;
+    hPool->ops.ext.ctl(hPool, /*unused*/ 0, extra_name, arg, query_type);
+    return 0;
+}
+
+struct ctl_node CTL_NODE(pool)[] = {
+    CTL_LEAF_SUBTREE2(by_handle, by_handle_pool), CTL_NODE_END};
 
 static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
                                           umf_memory_provider_handle_t provider,

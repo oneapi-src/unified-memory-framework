@@ -11,6 +11,7 @@
 
 #include "base_alloc_global.h"
 #include "ipc_cache.h"
+#include "memory_provider_internal.h"
 #include "memspace_internal.h"
 #include "provider_cuda_internal.h"
 #include "provider_level_zero_internal.h"
@@ -24,6 +25,11 @@
 umf_memory_tracker_handle_t TRACKER = NULL;
 
 static unsigned long long umfRefCount = 0;
+
+static struct ctl_node CTL_NODE(umf)[] = {CTL_CHILD(provider), CTL_CHILD(pool),
+                                          CTL_NODE_END};
+
+void initialize_global_ctl(void) { CTL_REGISTER_MODULE(NULL, umf); }
 
 int umfInit(void) {
     if (utils_fetch_and_add64(&umfRefCount, 1) == 0) {
@@ -43,6 +49,7 @@ int umfInit(void) {
         }
 
         LOG_DEBUG("UMF IPC cache initialized");
+        initialize_global_ctl();
     }
 
     if (TRACKER) {

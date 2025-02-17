@@ -1,10 +1,11 @@
 /*
- * Copyright (C) 2022-2024 Intel Corporation
+ * Copyright (C) 2022-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 */
 
+#include "umf/base.h"
 #include <assert.h>
 #include <errno.h>
 #include <limits.h>
@@ -13,10 +14,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <ctl/ctl.h>
 #include <umf.h>
+#include <umf/memory_provider.h>
 #include <umf/memory_provider_ops.h>
 #include <umf/providers/provider_os_memory.h>
-
 // OS Memory Provider requires HWLOC
 #if defined(UMF_NO_HWLOC)
 
@@ -165,6 +167,31 @@ static const char *Native_error_str[] = {
     [_UMF_OS_RESULT_ERROR_TOPO_DISCOVERY_FAILED] =
         "HWLOC topology discovery failed",
 };
+
+struct ctl *os_memory_ctl_root;
+
+static UTIL_ONCE_FLAG ctl_initialized = UTIL_ONCE_FLAG_INIT;
+
+static int
+CTL_READ_HANDLER(ipc_enabled)(void *ctx, enum ctl_query_source source,
+                              void *arg, struct ctl_index_utlist *indexes,
+                              char *extra_name, umf_ctl_query_type query_type) {
+    /* suppress unused-parameter errors */
+    (void)source, (void)indexes, (void)ctx, (void)extra_name, (void)query_type;
+
+    int *arg_out = arg;
+    os_memory_provider_t *os_provider = (os_memory_provider_t *)ctx;
+    *arg_out = os_provider->IPC_enabled;
+    return 0;
+}
+
+static const struct ctl_node CTL_NODE(params)[] = {CTL_LEAF_RO(ipc_enabled),
+                                                   CTL_NODE_END};
+
+void initialize_os_ctl(void) {
+    os_memory_ctl_root = ctl_new();
+    CTL_REGISTER_MODULE(os_memory_ctl_root, params);
+}
 
 static void os_store_last_native_error(int32_t native_error, int errno_value) {
     TLS_last_native_error.native_error = native_error;
@@ -1401,6 +1428,15 @@ static umf_result_t os_close_ipc_handle(void *provider, void *ptr,
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t os_ctl(void *hProvider, int operationType, const char *name,
+                           void *arg, umf_ctl_query_type query_type) {
+    (void)operationType; // unused
+    os_memory_provider_t *os_provider = (os_memory_provider_t *)hProvider;
+    utils_init_once(&ctl_initialized, initialize_os_ctl);
+    return ctl_query(os_memory_ctl_root, os_provider, CTL_QUERY_PROGRAMMATIC,
+                     name, query_type, arg);
+}
+
 static umf_memory_provider_ops_t UMF_OS_MEMORY_PROVIDER_OPS = {
     .version = UMF_VERSION_CURRENT,
     .initialize = os_initialize,
@@ -1411,6 +1447,7 @@ static umf_memory_provider_ops_t UMF_OS_MEMORY_PROVIDER_OPS = {
     .get_recommended_page_size = os_get_recommended_page_size,
     .get_min_page_size = os_get_min_page_size,
     .get_name = os_get_name,
+    .ext.ctl = os_ctl,
     .ext.purge_lazy = os_purge_lazy,
     .ext.purge_force = os_purge_force,
     .ext.allocation_merge = os_allocation_merge,
