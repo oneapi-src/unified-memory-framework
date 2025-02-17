@@ -160,7 +160,7 @@ typedef struct umf_tracking_memory_provider_t {
     umf_memory_tracker_handle_t hTracker;
     umf_memory_pool_handle_t pool;
     critnib *ipcCache;
-    ipc_mapped_handle_cache_handle_t hIpcMappedCache;
+    ipc_opened_cache_handle_t hIpcMappedCache;
 } umf_tracking_memory_provider_t;
 
 typedef struct umf_tracking_memory_provider_t umf_tracking_memory_provider_t;
@@ -477,7 +477,7 @@ static void trackingFinalize(void *provider) {
     umf_tracking_memory_provider_t *p =
         (umf_tracking_memory_provider_t *)provider;
 
-    umfIpcHandleMappedCacheDestroy(p->hIpcMappedCache);
+    umfIpcOpenedCacheDestroy(p->hIpcMappedCache);
 
     critnib_delete(p->ipcCache);
 
@@ -629,8 +629,8 @@ static umf_result_t trackingPutIpcHandle(void *provider,
 }
 
 static void
-ipcMappedCacheEvictionCallback(const ipc_mapped_handle_cache_key_t *key,
-                               const ipc_mapped_handle_cache_value_t *value) {
+ipcOpenedCacheEvictionCallback(const ipc_opened_cache_key_t *key,
+                               const ipc_opened_cache_value_t *value) {
     umf_tracking_memory_provider_t *p =
         (umf_tracking_memory_provider_t *)key->local_provider;
     // umfMemoryTrackerRemove should be called before umfMemoryProviderCloseIPCHandle
@@ -700,16 +700,16 @@ static umf_result_t trackingOpenIpcHandle(void *provider, void *providerIpcData,
 
     umf_ipc_data_t *ipcUmfData = getIpcDataFromIpcHandle(providerIpcData);
 
-    // Compiler may add paddings to the ipc_mapped_handle_cache_key_t structure
+    // Compiler may add paddings to the ipc_opened_cache_key_t structure
     // so we need to zero it out to avoid false cache miss.
-    ipc_mapped_handle_cache_key_t key = {0};
+    ipc_opened_cache_key_t key = {0};
     key.remote_base_ptr = ipcUmfData->base;
     key.local_provider = provider;
     key.remote_pid = ipcUmfData->pid;
 
-    ipc_mapped_handle_cache_value_t *cache_entry = NULL;
-    ret = umfIpcHandleMappedCacheGet(p->hIpcMappedCache, &key,
-                                     ipcUmfData->handle_id, &cache_entry);
+    ipc_opened_cache_value_t *cache_entry = NULL;
+    ret = umfIpcOpenedCacheGet(p->hIpcMappedCache, &key, ipcUmfData->handle_id,
+                               &cache_entry);
     if (ret != UMF_RESULT_SUCCESS) {
         LOG_ERR("failed to get cache entry");
         return ret;
@@ -798,7 +798,7 @@ umf_result_t umfTrackingMemoryProviderCreate(
     }
 
     params.hIpcMappedCache =
-        umfIpcHandleMappedCacheCreate(ipcMappedCacheEvictionCallback);
+        umfIpcOpenedCacheCreate(ipcOpenedCacheEvictionCallback);
 
     LOG_DEBUG("upstream=%p, tracker=%p, "
               "pool=%p, ipcCache=%p, hIpcMappedCache=%p",
