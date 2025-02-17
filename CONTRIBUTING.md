@@ -13,8 +13,9 @@
     - [Adding new dependency](#adding-new-dependency)
   - [Code coverage](#code-coverage)
   - [Debugging](#debugging)
-    - [Checking the UMF version and CMake variables (Linux only)](#checking-the-umf-version-and-cmake-variables-linux-only)
-      - [Requirements](#requirements)
+    - [Checking UMF version and build options](#checking-umf-version-and-build-options)
+      - [Linux](#linux)
+      - [Windows](#windows)
 
 Below you'll find instructions on how to contribute to UMF, either with code changes
 or issues. All contributions are most welcome!
@@ -229,9 +230,17 @@ $ genhtml -o html_report coverage.info
 
 ## Debugging
 
-### Checking the UMF version and CMake variables (Linux only)
+### Checking UMF version and build options
 
-Strings with the UMF version and useful CMake variables can be grepped in the following way:
+From an already built UMF shared library you can obtain UMF precise version and
+CMake variables/options it was built with. It's not only useful to verify what should
+be included within the library, but also for debugging. If you're filing an issue to
+UMF project, please include this information in your ticket.
+
+#### Linux
+
+Make sure the `binutils` package is installed in your system. Then, you can use
+the following grep command:
 
 ```bash
 $ strings libumf.so | grep "@(#)"
@@ -239,6 +248,11 @@ $ strings libumf.so | grep "@(#)"
 @(#) Intel(R) UMF CMake variables: "CMAKE_BUILD_TYPE:Debug,...
 ```
 
-#### Requirements
+Please note, that version available in the name of library file (e.g. `libumf.so.0.11.0`)
+may be not accurate - version coded inside of the library is far more precise.
 
-- binutils package (Linux)
+#### Windows
+
+On Windows, DLL's metadata can be accessed e.g. looking into *Properties* of the dll file
+in the explorer. Look into the *Details* tab for "Product version" and "File description"
+(it contains UMF's build options).
