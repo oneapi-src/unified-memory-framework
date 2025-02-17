@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2024 Intel Corporation
+ * Copyright (C) 2023-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -28,17 +28,23 @@
 
 uint64_t IPC_HANDLE_ID = 0;
 
-typedef struct tracker_value_t {
+struct umf_memory_tracker_t {
+    umf_ba_pool_t *alloc_info_allocator;
+    critnib *alloc_segments_map;
+    utils_mutex_t splitMergeMutex;
+};
+
+typedef struct tracker_alloc_info_t {
     umf_memory_pool_handle_t pool;
     size_t size;
-} tracker_value_t;
+} tracker_alloc_info_t;
 
 static umf_result_t umfMemoryTrackerAdd(umf_memory_tracker_handle_t hTracker,
                                         umf_memory_pool_handle_t pool,
                                         const void *ptr, size_t size) {
     assert(ptr);
 
-    tracker_value_t *value = umf_ba_alloc(hTracker->tracker_allocator);
+    tracker_alloc_info_t *value = umf_ba_alloc(hTracker->alloc_info_allocator);
     if (value == NULL) {
         LOG_ERR("failed to allocate tracker value, ptr=%p, size=%zu", ptr,
                 size);
@@ -48,7 +54,8 @@ static umf_result_t umfMemoryTrackerAdd(umf_memory_tracker_handle_t hTracker,
     value->pool = pool;
     value->size = size;
 
-    int ret = critnib_insert(hTracker->map, (uintptr_t)ptr, value, 0);
+    int ret =
+        critnib_insert(hTracker->alloc_segments_map, (uintptr_t)ptr, value, 0);
 
     if (ret == 0) {
         LOG_DEBUG(
@@ -60,7 +67,7 @@ static umf_result_t umfMemoryTrackerAdd(umf_memory_tracker_handle_t hTracker,
     LOG_ERR("failed to insert tracker value, ret=%d, ptr=%p, pool=%p, size=%zu",
             ret, ptr, (void *)pool, size);
 
-    umf_ba_free(hTracker->tracker_allocator, value);
+    umf_ba_free(hTracker->alloc_info_allocator, value);
 
     if (ret == ENOMEM) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
@@ -78,18 +85,18 @@ static umf_result_t umfMemoryTrackerRemove(umf_memory_tracker_handle_t hTracker,
     // Every umfMemoryTrackerAdd(..., ptr, ...) should have a corresponding
     // umfMemoryTrackerRemove call with the same ptr value.
 
-    void *value = critnib_remove(hTracker->map, (uintptr_t)ptr);
+    void *value = critnib_remove(hTracker->alloc_segments_map, (uintptr_t)ptr);
     if (!value) {
-        LOG_ERR("pointer %p not found in the map", ptr);
+        LOG_ERR("pointer %p not found in the alloc_segments_map", ptr);
         return UMF_RESULT_ERROR_UNKNOWN;
     }
 
-    tracker_value_t *v = value;
+    tracker_alloc_info_t *v = value;
 
     LOG_DEBUG("memory region removed: tracker=%p, ptr=%p, size=%zu",
               (void *)hTracker, ptr, v->size);
 
-    umf_ba_free(hTracker->tracker_allocator, value);
+    umf_ba_free(hTracker->alloc_info_allocator, value);
 
     return UMF_RESULT_SUCCESS;
 }
@@ -117,15 +124,15 @@ umf_result_t umfMemoryTrackerGetAllocInfo(const void *ptr,
         return UMF_RESULT_ERROR_NOT_SUPPORTED;
     }
 
-    if (TRACKER->map == NULL) {
-        LOG_ERR("tracker's map does not exist");
+    if (TRACKER->alloc_segments_map == NULL) {
+        LOG_ERR("tracker's alloc_segments_map does not exist");
         return UMF_RESULT_ERROR_NOT_SUPPORTED;
     }
 
     uintptr_t rkey;
-    tracker_value_t *rvalue;
-    int found = critnib_find(TRACKER->map, (uintptr_t)ptr, FIND_LE,
-                             (void *)&rkey, (void **)&rvalue);
+    tracker_alloc_info_t *rvalue;
+    int found = critnib_find(TRACKER->alloc_segments_map, (uintptr_t)ptr,
+                             FIND_LE, (void *)&rkey, (void **)&rvalue);
     if (!found || (uintptr_t)ptr >= rkey + rvalue->size) {
         LOG_DEBUG("pointer %p not found in the tracker, TRACKER=%p", ptr,
                   (void *)TRACKER);
@@ -188,8 +195,8 @@ static umf_result_t trackingAllocationSplit(void *hProvider, void *ptr,
     umf_tracking_memory_provider_t *provider =
         (umf_tracking_memory_provider_t *)hProvider;
 
-    tracker_value_t *splitValue =
-        umf_ba_alloc(provider->hTracker->tracker_allocator);
+    tracker_alloc_info_t *splitValue =
+        umf_ba_alloc(provider->hTracker->alloc_info_allocator);
     if (!splitValue) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
@@ -202,8 +209,8 @@ static umf_result_t trackingAllocationSplit(void *hProvider, void *ptr,
         goto err_lock;
     }
 
-    tracker_value_t *value =
-        (tracker_value_t *)critnib_get(provider->hTracker->map, (uintptr_t)ptr);
+    tracker_alloc_info_t *value = (tracker_alloc_info_t *)critnib_get(
+        provider->hTracker->alloc_segments_map, (uintptr_t)ptr);
     if (!value) {
         LOG_ERR("region for split is not found in the tracker");
         ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
@@ -240,14 +247,15 @@ static umf_result_t trackingAllocationSplit(void *hProvider, void *ptr,
         goto err;
     }
 
-    int cret = critnib_insert(provider->hTracker->map, (uintptr_t)ptr,
-                              (void *)splitValue, 1 /* update */);
+    int cret =
+        critnib_insert(provider->hTracker->alloc_segments_map, (uintptr_t)ptr,
+                       (void *)splitValue, 1 /* update */);
     // this cannot fail since we know the element exists (nothing to allocate)
     assert(cret == 0);
     (void)cret;
 
     // free the original value
-    umf_ba_free(provider->hTracker->tracker_allocator, value);
+    umf_ba_free(provider->hTracker->alloc_info_allocator, value);
     utils_mutex_unlock(&provider->hTracker->splitMergeMutex);
 
     return UMF_RESULT_SUCCESS;
@@ -255,7 +263,7 @@ static umf_result_t trackingAllocationSplit(void *hProvider, void *ptr,
 err:
     utils_mutex_unlock(&provider->hTracker->splitMergeMutex);
 err_lock:
-    umf_ba_free(provider->hTracker->tracker_allocator, splitValue);
+    umf_ba_free(provider->hTracker->alloc_info_allocator, splitValue);
     return ret;
 }
 
@@ -265,8 +273,8 @@ static umf_result_t trackingAllocationMerge(void *hProvider, void *lowPtr,
     umf_tracking_memory_provider_t *provider =
         (umf_tracking_memory_provider_t *)hProvider;
 
-    tracker_value_t *mergedValue =
-        umf_ba_alloc(provider->hTracker->tracker_allocator);
+    tracker_alloc_info_t *mergedValue =
+        umf_ba_alloc(provider->hTracker->alloc_info_allocator);
 
     if (!mergedValue) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
@@ -280,15 +288,15 @@ static umf_result_t trackingAllocationMerge(void *hProvider, void *lowPtr,
         goto err_lock;
     }
 
-    tracker_value_t *lowValue = (tracker_value_t *)critnib_get(
-        provider->hTracker->map, (uintptr_t)lowPtr);
+    tracker_alloc_info_t *lowValue = (tracker_alloc_info_t *)critnib_get(
+        provider->hTracker->alloc_segments_map, (uintptr_t)lowPtr);
     if (!lowValue) {
         LOG_ERR("no left value");
         ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
         goto err;
     }
-    tracker_value_t *highValue = (tracker_value_t *)critnib_get(
-        provider->hTracker->map, (uintptr_t)highPtr);
+    tracker_alloc_info_t *highValue = (tracker_alloc_info_t *)critnib_get(
+        provider->hTracker->alloc_segments_map, (uintptr_t)highPtr);
     if (!highValue) {
         LOG_ERR("no right value");
         ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
@@ -314,20 +322,21 @@ static umf_result_t trackingAllocationMerge(void *hProvider, void *lowPtr,
 
     // We'll have a duplicate entry for the range [highPtr, highValue->size] but this is fine,
     // the value is the same anyway and we forbid removing that range concurrently
-    int cret = critnib_insert(provider->hTracker->map, (uintptr_t)lowPtr,
-                              (void *)mergedValue, 1 /* update */);
+    int cret =
+        critnib_insert(provider->hTracker->alloc_segments_map,
+                       (uintptr_t)lowPtr, (void *)mergedValue, 1 /* update */);
     // this cannot fail since we know the element exists (nothing to allocate)
     assert(cret == 0);
     (void)cret;
 
     // free old value that we just replaced with mergedValue
-    umf_ba_free(provider->hTracker->tracker_allocator, lowValue);
+    umf_ba_free(provider->hTracker->alloc_info_allocator, lowValue);
 
-    void *erasedhighValue =
-        critnib_remove(provider->hTracker->map, (uintptr_t)highPtr);
+    void *erasedhighValue = critnib_remove(
+        provider->hTracker->alloc_segments_map, (uintptr_t)highPtr);
     assert(erasedhighValue == highValue);
 
-    umf_ba_free(provider->hTracker->tracker_allocator, erasedhighValue);
+    umf_ba_free(provider->hTracker->alloc_info_allocator, erasedhighValue);
 
     utils_mutex_unlock(&provider->hTracker->splitMergeMutex);
 
@@ -340,7 +349,7 @@ not_merged:
     utils_mutex_unlock(&provider->hTracker->splitMergeMutex);
 
 err_lock:
-    umf_ba_free(provider->hTracker->tracker_allocator, mergedValue);
+    umf_ba_free(provider->hTracker->alloc_info_allocator, mergedValue);
     return ret;
 }
 
@@ -425,9 +434,9 @@ static void clear_tracker_for_the_pool(umf_memory_tracker_handle_t hTracker,
     size_t n_items = 0;
     uintptr_t last_key = 0;
 
-    while (1 == critnib_find((critnib *)hTracker->map, last_key, FIND_G, &rkey,
-                             &rvalue)) {
-        tracker_value_t *value = (tracker_value_t *)rvalue;
+    while (1 == critnib_find((critnib *)hTracker->alloc_segments_map, last_key,
+                             FIND_G, &rkey, &rvalue)) {
+        tracker_alloc_info_t *value = (tracker_alloc_info_t *)rvalue;
         if (value->pool != pool && pool != NULL) {
             last_key = rkey;
             continue;
@@ -435,9 +444,10 @@ static void clear_tracker_for_the_pool(umf_memory_tracker_handle_t hTracker,
 
         n_items++;
 
-        void *removed_value = critnib_remove(hTracker->map, rkey);
+        void *removed_value =
+            critnib_remove(hTracker->alloc_segments_map, rkey);
         assert(removed_value == rvalue);
-        umf_ba_free(hTracker->tracker_allocator, removed_value);
+        umf_ba_free(hTracker->alloc_info_allocator, removed_value);
 
         last_key = rkey;
     }
@@ -816,33 +826,33 @@ umf_memory_tracker_handle_t umfMemoryTrackerCreate(void) {
         return NULL;
     }
 
-    umf_ba_pool_t *tracker_allocator =
-        umf_ba_create(sizeof(struct tracker_value_t));
-    if (!tracker_allocator) {
+    umf_ba_pool_t *alloc_info_allocator =
+        umf_ba_create(sizeof(struct tracker_alloc_info_t));
+    if (!alloc_info_allocator) {
         goto err_free_handle;
     }
 
-    handle->tracker_allocator = tracker_allocator;
+    handle->alloc_info_allocator = alloc_info_allocator;
 
     void *mutex_ptr = utils_mutex_init(&handle->splitMergeMutex);
     if (!mutex_ptr) {
-        goto err_destroy_tracker_allocator;
+        goto err_destroy_alloc_info_allocator;
     }
 
-    handle->map = critnib_new();
-    if (!handle->map) {
+    handle->alloc_segments_map = critnib_new();
+    if (!handle->alloc_segments_map) {
         goto err_destroy_mutex;
     }
 
-    LOG_DEBUG("tracker created, handle=%p, segment map=%p", (void *)handle,
-              (void *)handle->map);
+    LOG_DEBUG("tracker created, handle=%p, alloc_segments_map=%p",
+              (void *)handle, (void *)handle->alloc_segments_map);
 
     return handle;
 
 err_destroy_mutex:
     utils_mutex_destroy_not_free(&handle->splitMergeMutex);
-err_destroy_tracker_allocator:
-    umf_ba_destroy(tracker_allocator);
+err_destroy_alloc_info_allocator:
+    umf_ba_destroy(alloc_info_allocator);
 err_free_handle:
     umf_ba_global_free(handle);
     return NULL;
@@ -865,10 +875,10 @@ void umfMemoryTrackerDestroy(umf_memory_tracker_handle_t handle) {
     // We have to zero all inner pointers,
     // because the tracker handle can be copied
     // and used in many places.
-    critnib_delete(handle->map);
-    handle->map = NULL;
+    critnib_delete(handle->alloc_segments_map);
+    handle->alloc_segments_map = NULL;
     utils_mutex_destroy_not_free(&handle->splitMergeMutex);
-    umf_ba_destroy(handle->tracker_allocator);
-    handle->tracker_allocator = NULL;
+    umf_ba_destroy(handle->alloc_info_allocator);
+    handle->alloc_info_allocator = NULL;
     umf_ba_global_free(handle);
 }

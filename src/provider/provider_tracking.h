@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2024 Intel Corporation
+ * Copyright (C) 2023-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -26,12 +26,7 @@
 extern "C" {
 #endif
 
-struct umf_memory_tracker_t {
-    umf_ba_pool_t *tracker_allocator;
-    critnib *map;
-    utils_mutex_t splitMergeMutex;
-};
-
+struct umf_memory_tracker_t;
 typedef struct umf_memory_tracker_t *umf_memory_tracker_handle_t;
 
 extern umf_memory_tracker_handle_t TRACKER;
