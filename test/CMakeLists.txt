@@ -154,6 +154,16 @@ function(add_umf_test)
         set_property(TEST ${TEST_NAME} PROPERTY ENVIRONMENT_MODIFICATION
                                                 "${DLL_PATH_LIST}")
     endif()
+    if(LINUX)
+        # prepend LD_LIBRARY_PATH with ${CMAKE_BINARY_DIR}/lib it is required
+        # because ${CMAKE_BINARY_DIR}/lib contains libze_loader.so and tests
+        # should use it instead of system one.
+        set_property(
+            TEST ${TEST_NAME}
+            PROPERTY ENVIRONMENT_MODIFICATION
+                     "LD_LIBRARY_PATH=path_list_prepend:${CMAKE_BINARY_DIR}/lib"
+        )
+    endif()
 endfunction()
 
 add_subdirectory(common)
@@ -405,12 +415,20 @@ if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
         LIBS ${UMF_UTILS_FOR_TEST} ze_loader)
 
     add_umf_test(
-        NAME provider_level_zero_dlopen
+        NAME provider_level_zero_dlopen_global
         SRCS providers/provider_level_zero.cpp
              ${UMF_UTILS_DIR}/utils_level_zero.cpp ${BA_SOURCES_FOR_TEST}
         LIBS ${UMF_UTILS_FOR_TEST})
-    target_compile_definitions(umf_test-provider_level_zero_dlopen
-                               PUBLIC USE_DLOPEN=1)
+    target_compile_definitions(umf_test-provider_level_zero_dlopen_global
+                               PUBLIC USE_DLOPEN=1 OPEN_ZE_LIBRARY_GLOBAL=1)
+
+    add_umf_test(
+        NAME provider_level_zero_dlopen_local
+        SRCS providers/provider_level_zero.cpp
+             ${UMF_UTILS_DIR}/utils_level_zero.cpp ${BA_SOURCES_FOR_TEST}
+        LIBS ${UMF_UTILS_FOR_TEST})
+    target_compile_definitions(umf_test-provider_level_zero_dlopen_local
+                               PUBLIC USE_DLOPEN=1 OPEN_ZE_LIBRARY_GLOBAL=0)
 endif()
 
 if(NOT UMF_BUILD_LEVEL_ZERO_PROVIDER)
@@ -432,12 +450,20 @@ if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_CUDA_PROVIDER)
             LIBS ${UMF_UTILS_FOR_TEST} cuda)
 
         add_umf_test(
-            NAME provider_cuda_dlopen
+            NAME provider_cuda_dlopen_global
             SRCS providers/provider_cuda.cpp providers/cuda_helpers.cpp
                  ${BA_SOURCES_FOR_TEST}
             LIBS ${UMF_UTILS_FOR_TEST})
-        target_compile_definitions(umf_test-provider_cuda_dlopen
-                                   PUBLIC USE_DLOPEN=1)
+        target_compile_definitions(umf_test-provider_cuda_dlopen_global
+                                   PUBLIC USE_DLOPEN=1 OPEN_CU_LIBRARY_GLOBAL=1)
+
+        add_umf_test(
+            NAME provider_cuda_dlopen_local
+            SRCS providers/provider_cuda.cpp providers/cuda_helpers.cpp
+                 ${BA_SOURCES_FOR_TEST}
+            LIBS ${UMF_UTILS_FOR_TEST})
+        target_compile_definitions(umf_test-provider_cuda_dlopen_local
+                                   PUBLIC USE_DLOPEN=1 OPEN_CU_LIBRARY_GLOBAL=0)
     else()
         message(
             STATUS
@@ -534,6 +560,16 @@ function(add_umf_ipc_test)
     set_tests_properties(${TEST_NAME} PROPERTIES TIMEOUT 60)
     if(NOT UMF_TESTS_FAIL_ON_SKIP)
         set_tests_properties(${TEST_NAME} PROPERTIES SKIP_RETURN_CODE 125)
+    endif()
+    if(LINUX)
+        # prepend LD_LIBRARY_PATH with ${CMAKE_BINARY_DIR}/lib it is required
+        # because ${CMAKE_BINARY_DIR}/lib contains libze_loader.so and tests
+        # should use it instead of system one.
+        set_property(
+            TEST ${TEST_NAME}
+            PROPERTY ENVIRONMENT_MODIFICATION
+                     "LD_LIBRARY_PATH=path_list_prepend:${CMAKE_BINARY_DIR}/lib"
+        )
     endif()
 endfunction()
 
@@ -740,5 +776,15 @@ if(LINUX
                 "${CMAKE_INSTALL_PREFIX}" "${STANDALONE_CMAKE_OPTIONS}"
                 ${EXAMPLES}
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+        if(LINUX)
+            # prepend LD_LIBRARY_PATH with ${CMAKE_BINARY_DIR}/lib it is
+            # required because ${CMAKE_BINARY_DIR}/lib contains libze_loader.so
+            # and tests should use it instead of system one.
+            set_property(
+                TEST umf-standalone_examples
+                PROPERTY
+                    ENVIRONMENT_MODIFICATION
+                    "LD_LIBRARY_PATH=path_list_prepend:${CMAKE_BINARY_DIR}/lib")
+        endif()
     endif()
 endif()

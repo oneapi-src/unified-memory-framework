@@ -12,7 +12,18 @@
 #include <umf.h>
 #include <umf/providers/provider_cuda.h>
 
+#include "provider_cuda_internal.h"
+#include "utils_load_library.h"
 #include "utils_log.h"
+
+static void *cu_lib_handle = NULL;
+
+void fini_cu_global_state(void) {
+    if (cu_lib_handle) {
+        utils_close_library(cu_lib_handle);
+        cu_lib_handle = NULL;
+    }
+}
 
 #if defined(UMF_NO_CUDA_PROVIDER)
 
@@ -88,7 +99,6 @@ umf_memory_provider_ops_t *umfCUDAMemoryProviderOps(void) {
 #include "utils_assert.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
-#include "utils_load_library.h"
 #include "utils_log.h"
 #include "utils_sanitizers.h"
 
@@ -180,37 +190,45 @@ static void init_cu_global_state(void) {
 #else
     const char *lib_name = "libcuda.so";
 #endif
-    // check if CUDA shared library is already loaded
-    // we pass 0 as a handle to search the global symbol table
+    // The CUDA shared library should be already loaded by the user
+    // of the CUDA provider. UMF just want to reuse it
+    // and increase the reference count to the CUDA shared library.
+    void *lib_handle =
+        utils_open_library(lib_name, UMF_UTIL_OPEN_LIBRARY_NO_LOAD);
+    if (!lib_handle) {
+        LOG_ERR("Failed to open CUDA shared library");
+        Init_cu_global_state_failed = true;
+        return;
+    }
 
     // NOTE: some symbols defined in the lib have _vX postfixes - it is
     // important to load the proper version of functions
-    *(void **)&g_cu_ops.cuMemGetAllocationGranularity =
-        utils_get_symbol_addr(0, "cuMemGetAllocationGranularity", lib_name);
+    *(void **)&g_cu_ops.cuMemGetAllocationGranularity = utils_get_symbol_addr(
+        lib_handle, "cuMemGetAllocationGranularity", lib_name);
     *(void **)&g_cu_ops.cuMemAlloc =
-        utils_get_symbol_addr(0, "cuMemAlloc_v2", lib_name);
+        utils_get_symbol_addr(lib_handle, "cuMemAlloc_v2", lib_name);
     *(void **)&g_cu_ops.cuMemHostAlloc =
-        utils_get_symbol_addr(0, "cuMemHostAlloc", lib_name);
+        utils_get_symbol_addr(lib_handle, "cuMemHostAlloc", lib_name);
     *(void **)&g_cu_ops.cuMemAllocManaged =
-        utils_get_symbol_addr(0, "cuMemAllocManaged", lib_name);
+        utils_get_symbol_addr(lib_handle, "cuMemAllocManaged", lib_name);
     *(void **)&g_cu_ops.cuMemFree =
-        utils_get_symbol_addr(0, "cuMemFree_v2", lib_name);
+        utils_get_symbol_addr(lib_handle, "cuMemFree_v2", lib_name);
     *(void **)&g_cu_ops.cuMemFreeHost =
-        utils_get_symbol_addr(0, "cuMemFreeHost", lib_name);
+        utils_get_symbol_addr(lib_handle, "cuMemFreeHost", lib_name);
     *(void **)&g_cu_ops.cuGetErrorName =
-        utils_get_symbol_addr(0, "cuGetErrorName", lib_name);
+        utils_get_symbol_addr(lib_handle, "cuGetErrorName", lib_name);
     *(void **)&g_cu_ops.cuGetErrorString =
-        utils_get_symbol_addr(0, "cuGetErrorString", lib_name);
+        utils_get_symbol_addr(lib_handle, "cuGetErrorString", lib_name);
     *(void **)&g_cu_ops.cuCtxGetCurrent =
-        utils_get_symbol_addr(0, "cuCtxGetCurrent", lib_name);
+        utils_get_symbol_addr(lib_handle, "cuCtxGetCurrent", lib_name);
     *(void **)&g_cu_ops.cuCtxSetCurrent =
-        utils_get_symbol_addr(0, "cuCtxSetCurrent", lib_name);
+        utils_get_symbol_addr(lib_handle, "cuCtxSetCurrent", lib_name);
     *(void **)&g_cu_ops.cuIpcGetMemHandle =
-        utils_get_symbol_addr(0, "cuIpcGetMemHandle", lib_name);
+        utils_get_symbol_addr(lib_handle, "cuIpcGetMemHandle", lib_name);
     *(void **)&g_cu_ops.cuIpcOpenMemHandle =
-        utils_get_symbol_addr(0, "cuIpcOpenMemHandle_v2", lib_name);
+        utils_get_symbol_addr(lib_handle, "cuIpcOpenMemHandle_v2", lib_name);
     *(void **)&g_cu_ops.cuIpcCloseMemHandle =
-        utils_get_symbol_addr(0, "cuIpcCloseMemHandle", lib_name);
+        utils_get_symbol_addr(lib_handle, "cuIpcCloseMemHandle", lib_name);
 
     if (!g_cu_ops.cuMemGetAllocationGranularity || !g_cu_ops.cuMemAlloc ||
         !g_cu_ops.cuMemHostAlloc || !g_cu_ops.cuMemAllocManaged ||
@@ -221,7 +239,10 @@ static void init_cu_global_state(void) {
         !g_cu_ops.cuIpcCloseMemHandle) {
         LOG_FATAL("Required CUDA symbols not found.");
         Init_cu_global_state_failed = true;
+        utils_close_library(lib_handle);
+        return;
     }
+    cu_lib_handle = lib_handle;
 }
 
 umf_result_t umfCUDAMemoryProviderParamsCreate(
@@ -327,7 +348,7 @@ static umf_result_t cu_memory_provider_initialize(void *params,
     utils_init_once(&cu_is_initialized, init_cu_global_state);
     if (Init_cu_global_state_failed) {
         LOG_FATAL("Loading CUDA symbols failed");
-        return UMF_RESULT_ERROR_UNKNOWN;
+        return UMF_RESULT_ERROR_DEPENDENCY_UNAVAILABLE;
     }
 
     cu_memory_provider_t *cu_provider =

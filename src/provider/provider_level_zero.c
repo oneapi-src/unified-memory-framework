@@ -14,7 +14,18 @@
 #include <umf/memory_provider_ops.h>
 #include <umf/providers/provider_level_zero.h>
 
+#include "provider_level_zero_internal.h"
+#include "utils_load_library.h"
 #include "utils_log.h"
+
+static void *ze_lib_handle = NULL;
+
+void fini_ze_global_state(void) {
+    if (ze_lib_handle) {
+        utils_close_library(ze_lib_handle);
+        ze_lib_handle = NULL;
+    }
+}
 
 #if defined(UMF_NO_LEVEL_ZERO_PROVIDER)
 
@@ -105,7 +116,6 @@ umf_memory_provider_ops_t *umfLevelZeroMemoryProviderOps(void) {
 #include "utils_assert.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
-#include "utils_load_library.h"
 #include "utils_log.h"
 #include "utils_sanitizers.h"
 #include "ze_api.h"
@@ -207,32 +217,41 @@ static void init_ze_global_state(void) {
 #else
     const char *lib_name = "libze_loader.so";
 #endif
-    // check if Level Zero shared library is already loaded
-    // we pass 0 as a handle to search the global symbol table
+    // The Level Zero shared library should be already loaded by the user
+    // of the Level Zero provider. UMF just want to reuse it
+    // and increase the reference count to the Level Zero shared library.
+    void *lib_handle =
+        utils_open_library(lib_name, UMF_UTIL_OPEN_LIBRARY_NO_LOAD);
+    if (!lib_handle) {
+        LOG_FATAL("Failed to open Level Zero shared library");
+        Init_ze_global_state_failed = true;
+        return;
+    }
+
     *(void **)&g_ze_ops.zeMemAllocHost =
-        utils_get_symbol_addr(0, "zeMemAllocHost", lib_name);
+        utils_get_symbol_addr(lib_handle, "zeMemAllocHost", lib_name);
     *(void **)&g_ze_ops.zeMemAllocDevice =
-        utils_get_symbol_addr(0, "zeMemAllocDevice", lib_name);
+        utils_get_symbol_addr(lib_handle, "zeMemAllocDevice", lib_name);
     *(void **)&g_ze_ops.zeMemAllocShared =
-        utils_get_symbol_addr(0, "zeMemAllocShared", lib_name);
+        utils_get_symbol_addr(lib_handle, "zeMemAllocShared", lib_name);
     *(void **)&g_ze_ops.zeMemFree =
-        utils_get_symbol_addr(0, "zeMemFree", lib_name);
+        utils_get_symbol_addr(lib_handle, "zeMemFree", lib_name);
     *(void **)&g_ze_ops.zeMemGetIpcHandle =
-        utils_get_symbol_addr(0, "zeMemGetIpcHandle", lib_name);
+        utils_get_symbol_addr(lib_handle, "zeMemGetIpcHandle", lib_name);
     *(void **)&g_ze_ops.zeMemPutIpcHandle =
-        utils_get_symbol_addr(0, "zeMemPutIpcHandle", lib_name);
+        utils_get_symbol_addr(lib_handle, "zeMemPutIpcHandle", lib_name);
     *(void **)&g_ze_ops.zeMemOpenIpcHandle =
-        utils_get_symbol_addr(0, "zeMemOpenIpcHandle", lib_name);
+        utils_get_symbol_addr(lib_handle, "zeMemOpenIpcHandle", lib_name);
     *(void **)&g_ze_ops.zeMemCloseIpcHandle =
-        utils_get_symbol_addr(0, "zeMemCloseIpcHandle", lib_name);
-    *(void **)&g_ze_ops.zeContextMakeMemoryResident =
-        utils_get_symbol_addr(0, "zeContextMakeMemoryResident", lib_name);
+        utils_get_symbol_addr(lib_handle, "zeMemCloseIpcHandle", lib_name);
+    *(void **)&g_ze_ops.zeContextMakeMemoryResident = utils_get_symbol_addr(
+        lib_handle, "zeContextMakeMemoryResident", lib_name);
     *(void **)&g_ze_ops.zeDeviceGetProperties =
-        utils_get_symbol_addr(0, "zeDeviceGetProperties", lib_name);
+        utils_get_symbol_addr(lib_handle, "zeDeviceGetProperties", lib_name);
     *(void **)&g_ze_ops.zeMemFreeExt =
-        utils_get_symbol_addr(0, "zeMemFreeExt", lib_name);
+        utils_get_symbol_addr(lib_handle, "zeMemFreeExt", lib_name);
     *(void **)&g_ze_ops.zeMemGetAllocProperties =
-        utils_get_symbol_addr(0, "zeMemGetAllocProperties", lib_name);
+        utils_get_symbol_addr(lib_handle, "zeMemGetAllocProperties", lib_name);
 
     if (!g_ze_ops.zeMemAllocHost || !g_ze_ops.zeMemAllocDevice ||
         !g_ze_ops.zeMemAllocShared || !g_ze_ops.zeMemFree ||
@@ -244,7 +263,10 @@ static void init_ze_global_state(void) {
         // starting from Level Zero 1.6
         LOG_FATAL("Required Level Zero symbols not found.");
         Init_ze_global_state_failed = true;
+        utils_close_library(lib_handle);
+        return;
     }
+    ze_lib_handle = lib_handle;
 }
 
 umf_result_t umfLevelZeroMemoryProviderParamsCreate(
@@ -551,7 +573,7 @@ static umf_result_t ze_memory_provider_initialize(void *params,
     utils_init_once(&ze_is_initialized, init_ze_global_state);
     if (Init_ze_global_state_failed) {
         LOG_FATAL("Loading Level Zero symbols failed");
-        return UMF_RESULT_ERROR_UNKNOWN;
+        return UMF_RESULT_ERROR_DEPENDENCY_UNAVAILABLE;
     }
 
     ze_memory_provider_t *ze_provider =

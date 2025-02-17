@@ -113,10 +113,15 @@ int InitCUDAOps() {
     const char *lib_name = "libcuda.so";
 #endif
     // CUDA symbols
-    // NOTE that we use UMF_UTIL_OPEN_LIBRARY_GLOBAL which add all loaded
-    // symbols to the global symbol table.
+#if OPEN_CU_LIBRARY_GLOBAL
+    // NOTE UMF_UTIL_OPEN_LIBRARY_GLOBAL adds all loaded symbols to the
+    // global symbol table.
+    int open_flags = UMF_UTIL_OPEN_LIBRARY_GLOBAL;
+#else
+    int open_flags = 0;
+#endif
     cuDlHandle = std::unique_ptr<void, DlHandleCloser>(
-        utils_open_library(lib_name, UMF_UTIL_OPEN_LIBRARY_GLOBAL));
+        utils_open_library(lib_name, open_flags));
 
     // NOTE: some symbols defined in the lib have _vX postfixes - this is
     // important to load the proper version of functions
