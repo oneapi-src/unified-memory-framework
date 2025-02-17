@@ -14,14 +14,19 @@
 #include <umf/memory_provider_ops.h>
 #include <umf/providers/provider_level_zero.h>
 
+#include "base_alloc_global.h"
 #include "provider_level_zero_internal.h"
 #include "utils_load_library.h"
 #include "utils_log.h"
 
+typedef struct _ze_driver_handle_t *ze_driver_handle_t;
+
+static ze_driver_handle_t *zeAllDrivers = NULL;
 static void *ze_lib_handle = NULL;
 
 void fini_ze_global_state(void) {
     if (ze_lib_handle) {
+        umf_ba_global_free(zeAllDrivers);
         utils_close_library(ze_lib_handle);
         ze_lib_handle = NULL;
     }
@@ -111,7 +116,6 @@ umf_memory_provider_ops_t *umfLevelZeroMemoryProviderOps(void) {
 
 #else // !defined(UMF_NO_LEVEL_ZERO_PROVIDER)
 
-#include "base_alloc_global.h"
 #include "libumf.h"
 #include "utils_assert.h"
 #include "utils_common.h"
@@ -158,6 +162,8 @@ typedef struct ze_memory_provider_t {
 } ze_memory_provider_t;
 
 typedef struct ze_ops_t {
+    ze_result_t (*zeInitDrivers)(uint32_t *, ze_driver_handle_t *,
+                                 ze_init_driver_type_desc_t *);
     ze_result_t (*zeMemAllocHost)(ze_context_handle_t,
                                   const ze_host_mem_alloc_desc_t *, size_t,
                                   size_t, void *);
@@ -211,6 +217,28 @@ static umf_result_t ze2umf_result(ze_result_t result) {
     }
 }
 
+static umf_result_t ze_init_drivers() {
+    ze_init_driver_type_desc_t desc = {
+        .stype = ZE_STRUCTURE_TYPE_INIT_DRIVER_TYPE_DESC,
+        .pNext = NULL,
+        .flags = UINT32_MAX};
+    uint32_t driverCount = 0;
+    ze_result_t result = g_ze_ops.zeInitDrivers(&driverCount, NULL, &desc);
+    if (result != ZE_RESULT_SUCCESS) {
+        return ze2umf_result(result);
+    }
+
+    assert(zeAllDrivers == NULL);
+    zeAllDrivers =
+        umf_ba_global_alloc(sizeof(ze_driver_handle_t) * driverCount);
+    result = g_ze_ops.zeInitDrivers(&driverCount, zeAllDrivers, &desc);
+    if (result != ZE_RESULT_SUCCESS) {
+        return ze2umf_result(result);
+    }
+
+    return UMF_RESULT_SUCCESS;
+}
+
 static void init_ze_global_state(void) {
 #ifdef _WIN32
     const char *lib_name = "ze_loader.dll";
@@ -228,6 +256,8 @@ static void init_ze_global_state(void) {
         return;
     }
 
+    *(void **)&g_ze_ops.zeInitDrivers =
+        utils_get_symbol_addr(lib_handle, "zeInitDrivers", lib_name);
     *(void **)&g_ze_ops.zeMemAllocHost =
         utils_get_symbol_addr(lib_handle, "zeMemAllocHost", lib_name);
     *(void **)&g_ze_ops.zeMemAllocDevice =
@@ -253,10 +283,10 @@ static void init_ze_global_state(void) {
     *(void **)&g_ze_ops.zeMemGetAllocProperties =
         utils_get_symbol_addr(lib_handle, "zeMemGetAllocProperties", lib_name);
 
-    if (!g_ze_ops.zeMemAllocHost || !g_ze_ops.zeMemAllocDevice ||
-        !g_ze_ops.zeMemAllocShared || !g_ze_ops.zeMemFree ||
-        !g_ze_ops.zeMemGetIpcHandle || !g_ze_ops.zeMemOpenIpcHandle ||
-        !g_ze_ops.zeMemCloseIpcHandle ||
+    if (!g_ze_ops.zeInitDrivers || !g_ze_ops.zeMemAllocHost ||
+        !g_ze_ops.zeMemAllocDevice || !g_ze_ops.zeMemAllocShared ||
+        !g_ze_ops.zeMemFree || !g_ze_ops.zeMemGetIpcHandle ||
+        !g_ze_ops.zeMemOpenIpcHandle || !g_ze_ops.zeMemCloseIpcHandle ||
         !g_ze_ops.zeContextMakeMemoryResident ||
         !g_ze_ops.zeDeviceGetProperties || !g_ze_ops.zeMemGetAllocProperties) {
         // g_ze_ops.zeMemPutIpcHandle can be NULL because it was introduced
@@ -267,6 +297,15 @@ static void init_ze_global_state(void) {
         return;
     }
     ze_lib_handle = lib_handle;
+
+    umf_result_t result = ze_init_drivers();
+    if (result != UMF_RESULT_SUCCESS) {
+        LOG_FATAL("Failed to initialize Level Zero drivers");
+        Init_ze_global_state_failed = true;
+        utils_close_library(lib_handle);
+        lib_handle = NULL;
+        return;
+    }
 }
 
 umf_result_t umfLevelZeroMemoryProviderParamsCreate(

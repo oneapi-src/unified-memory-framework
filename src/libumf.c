@@ -63,12 +63,16 @@ void umfTearDown(void) {
 #endif
         umfIpcCacheGlobalTearDown();
 
+        fini_ze_global_state();
+        fini_cu_global_state();
+        LOG_DEBUG("UMF library finalized");
+
         if (utils_is_running_in_proxy_lib_with_size_threshold()) {
             // We cannot destroy the TRACKER nor the base allocator
             // when we are running in the proxy library with a size threshold,
             // because it could result in calling the system free()
             // with an invalid pointer and a segfault.
-            goto fini_umfTearDown;
+            return;
         }
 
         // make sure TRACKER is not used after being destroyed
@@ -79,11 +83,6 @@ void umfTearDown(void) {
 
         umf_ba_destroy_global();
         LOG_DEBUG("UMF base allocator destroyed");
-
-    fini_umfTearDown:
-        fini_ze_global_state();
-        fini_cu_global_state();
-        LOG_DEBUG("UMF library finalized");
     }
 }
 
