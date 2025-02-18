@@ -1,18 +1,18 @@
-# Copyright (C) 2024-2025 Intel Corporation
+# Copyright (C) 2025 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 #
 # Dockerfile - a 'recipe' for Docker to build an image of ubuntu-based
-#	  environment for building the Unified Memory Framework project.
+#              environment for building the Unified Memory Framework project.
 #
 
-# Pull base image ("20.04")
-FROM registry.hub.docker.com/library/ubuntu@sha256:f2034e7195f61334e6caff6ecf2e965f92d11e888309065da85ff50c617732b8
+# Pull base image ("24.04")
+FROM registry.hub.docker.com/library/ubuntu@sha256:72297848456d5d37d1262630108ab308d3e9ec7ed1c3286a32fe09856619a782
 
 # Set environment variables
 ENV OS ubuntu
-ENV OS_VER 20.04
+ENV OS_VER 24.04
 ENV NOTTY 1
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -35,7 +35,6 @@ ARG TEST_DEPS="\
 ARG MISC_DEPS="\
 	automake \
 	clang \
-	g++-7 \
 	python3-pip \
 	sudo \
 	whois"
@@ -61,7 +60,7 @@ RUN apt-get update \
 
 # Install valgrind
 RUN apt-get update && \
-	apt-get install -y valgrind cmake hwloc libhwloc-dev libnuma-dev libtbb-dev
+	apt-get install -y valgrind clang cmake hwloc libhwloc-dev libnuma-dev libtbb-dev
 
 # Install lcov
 RUN apt-get update && \
@@ -72,9 +71,9 @@ RUN mkdir -p --mode 777 /opt/umf/
 
 # Additional dependencies (installed via pip)
 COPY third_party/requirements.txt /opt/umf/requirements.txt
-# RUN pip3 install --no-cache-dir -r /opt/umf/requirements.txt
+RUN pip3 install --no-cache-dir --break-system-packages -r /opt/umf/requirements.txt
 
-# Add a new (non-root) 'test_user'
+# Add a new (non-root) 'test_user' 
 ENV USER test_user
 ENV USERPASS pass
 RUN useradd -m "${USER}" -g sudo -p "$(mkpasswd ${USERPASS})"

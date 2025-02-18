@@ -1,0 +1,38 @@
+name: BuildCIContainer
+
+on: 
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  packages: write
+  contents: read
+
+jobs: 
+  build-ci-container:
+    runs-on: ubuntu-latest
+    strategy: 
+      matrix:
+        ubuntu-version: [20.04, 22.04, 24.04]
+    outputs: 
+      status: ${{ job.status }}
+    env:
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          fetch-depth: 0
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with: 
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ env.GHCR_TOKEN }}
+
+      - name: Build and push ubuntu-${{ matrix.ubuntu-version }} Docker image
+        run: |
+          docker build -f .github/docker/ubuntu-${{ matrix.ubuntu-version }}.Dockerfile -t ghcr.io/${{ github.actor }}/umf2-ubuntu-${{ matrix.ubuntu-version }}:latest .
+          docker push ghcr.io/${{ github.actor }}/umf2-ubuntu-${{ matrix.ubuntu-version }}:latest

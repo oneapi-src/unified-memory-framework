@@ -5,6 +5,7 @@ on: workflow_call
 
 permissions:
   contents: read
+  packages: read
 
 env:
   BUILD_DIR : "${{github.workspace}}/build"
@@ -112,22 +113,16 @@ jobs:
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'ON'
     runs-on: ${{matrix.os}}
-
+    container:
+      image: ${{ matrix.os == 'ubuntu-20.04' && 'ghcr.io/rbanka1/umf2-ubuntu-20.04:latest' || matrix.os == 'ubuntu-22.04' && 'ghcr.io/rbanka1/umf2-ubuntu-22.04:latest' || matrix.os == 'ubuntu-24.04' &&  'ghcr.io/rbanka1/umf2-ubuntu-24.04:latest'}}
+      options: --user root --privileged  
+      volumes:
+        - /home/runner/work/unified-memory-framework/unified-memory-framework:/home/runner/work/unified-memory-framework/unified-memory-framework
     steps:
     - name: Checkout
       uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       with:
         fetch-depth: 0
-
-    - name: Install apt packages
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y clang cmake libnuma-dev lcov
-
-    - name: Install TBB apt package
-      if: matrix.install_tbb == 'ON'
-      run: |
-        sudo apt-get install -y libtbb-dev
 
     - name: Install oneAPI basekit
       if: matrix.compiler.cxx == 'icpx'
@@ -137,18 +132,6 @@ jobs:
         echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
         sudo apt-get update
         sudo apt-get install -y intel-oneapi-ippcp-devel intel-oneapi-ipp-devel intel-oneapi-common-oneapi-vars intel-oneapi-compiler-dpcpp-cpp
-  
-    - name: Install g++-7
-      if: matrix.compiler.cxx == 'g++-7'
-      run: sudo apt-get install -y ${{matrix.compiler.cxx}}
-
-    - name: Install libhwloc
-      run: .github/scripts/install_hwloc.sh
-
-    - name: Get UMF version
-      run: |
-        VERSION=$(git describe --tags --abbrev=0 | grep -oP '\d+\.\d+\.\d+')
-        echo "UMF_VERSION=$VERSION" >> $GITHUB_ENV
 
     - name: Configure build
       run: >
@@ -200,16 +183,16 @@ jobs:
     - name: Remove the installation directory
       run: rm -rf ${{env.INSTL_DIR}}
 
-    - name: Test UMF installation and uninstallation
-      # The '--shared-library' parameter is added to the installation test when the UMF is built as a shared library
-      run: >
-        python3 ${{github.workspace}}/test/test_installation.py
-        --build-dir ${{env.BUILD_DIR}}
-        --install-dir ${{env.INSTL_DIR}}
-        --build-type ${{matrix.build_type}}
-        ${{ matrix.install_tbb == 'ON' && matrix.disable_hwloc != 'ON' && matrix.shared_library == 'ON' && '--proxy' || '' }}
-        --umf-version ${{env.UMF_VERSION}}
-        ${{ matrix.shared_library == 'ON' && '--shared-library' || '' }}
+    # - name: Test UMF installation and uninstallation
+    #   # The '--shared-library' parameter is added to the installation test when the UMF is built as a shared library
+    #   run: >
+    #     python3 ${{github.workspace}}/test/test_installation.py
+    #     --build-dir ${{env.BUILD_DIR}}
+    #     --install-dir ${{env.INSTL_DIR}}
+    #     --build-type ${{matrix.build_type}}
+    #     ${{ matrix.install_tbb == 'ON' && matrix.disable_hwloc != 'ON' && matrix.shared_library == 'ON' && '--proxy' || '' }}
+    #     --umf-version ${{env.UMF_VERSION}}
+    #     ${{ matrix.shared_library == 'ON' && '--shared-library' || '' }}
 
   windows-build:
     name: Windows

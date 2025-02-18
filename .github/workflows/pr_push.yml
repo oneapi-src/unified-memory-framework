@@ -14,50 +14,84 @@ concurrency:
 
 permissions:
   contents: read
+  packages: write
 
 jobs:
   CodeChecks:
     uses: ./.github/workflows/reusable_checks.yml
   DocsBuild:
     uses: ./.github/workflows/reusable_docs_build.yml
+  PrintModifiedFiles:
+    runs-on: ubuntu-latest
+    outputs:
+      changed_files: ${{ steps.changed-files.outputs.all_changed_files }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v45.0.3
+
+      - name: List all changed files
+        env:
+          ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
+        run: |
+          echo "Changed files: ${{ steps.changed-files.outputs.all_changed_files }}"
+  BuildCIContainer:
+    if: ${{ contains(join(needs.PrintModifiedFiles.outputs.changed_files, ' '), '.github/docker/') }}
+    needs: [PrintModifiedFiles]
+    secrets: inherit
+    uses: ./.github/workflows/build_ci_container.yml
   FastBuild:
-    name: Fast builds
-    needs: [CodeChecks, DocsBuild]
+    if: always() && (needs.BuildCIContainer.result == 'skipped' || needs.BuildCIContainer.result == 'success')
+    needs: [CodeChecks, DocsBuild, BuildCIContainer]
     uses: ./.github/workflows/reusable_fast.yml
   Build:
     name: Basic builds
+    if: always() && (needs.FastBuild.result == 'success')
     needs: [FastBuild]
     uses: ./.github/workflows/reusable_basic.yml
   DevDax:
+    if: always() && (needs.FastBuild.result == 'success')
     needs: [FastBuild]
     uses: ./.github/workflows/reusable_dax.yml
   MultiNuma:
+    if: always() && (needs.FastBuild.result == 'success')
     needs: [FastBuild]
     uses: ./.github/workflows/reusable_multi_numa.yml
   L0:
+    if: always() && (needs.Build.result == 'success')
     needs: [Build]
     uses: ./.github/workflows/reusable_gpu.yml
     with:
       name: "LEVEL_ZERO"
       shared_lib: "['ON']"
   CUDA:
+    if: always() && (needs.Build.result == 'success')
     needs: [Build]
     uses: ./.github/workflows/reusable_gpu.yml
     with:
       name: "CUDA"
       shared_lib: "['ON']"
   Sanitizers:
+    if: always() && (needs.FastBuild.result == 'success')
     needs: [FastBuild]
     uses: ./.github/workflows/reusable_sanitizers.yml
   QEMU:
+    if: always() && (needs.FastBuild.result == 'success')
     needs: [FastBuild]
     uses: ./.github/workflows/reusable_qemu.yml
     with:
       short_run: true
   ProxyLib:
+    if: always() && (needs.Build.result == 'success')
     needs: [Build]
     uses: ./.github/workflows/reusable_proxy_lib.yml
   Valgrind:
+    if: always() && (needs.Build.result == 'success')
     needs: [Build]
     uses: ./.github/workflows/reusable_valgrind.yml
   Coverage:
@@ -70,16 +104,18 @@ jobs:
       trigger: "${{github.event_name}}"
   Coverage_partial:
     # partial coverage (on forks)
-    if: github.repository != 'oneapi-src/unified-memory-framework'
+    if: github.repository != 'oneapi-src/unified-memory-framework' && always() && (needs.Build.result == 'success')
     needs: [Build, QEMU, ProxyLib]
     uses: ./.github/workflows/reusable_coverage.yml
   CodeQL:
+    if: always() && (needs.Build.result == 'success')
     needs: [Build]
     permissions:
       contents: read
       security-events: write
     uses: ./.github/workflows/reusable_codeql.yml
   Trivy:
+    if: always() && (needs.Build.result == 'success')
     needs: [Build]
     permissions:
       contents: read
