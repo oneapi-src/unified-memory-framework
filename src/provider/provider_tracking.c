@@ -425,10 +425,9 @@ static umf_result_t trackingInitialize(void *params, void **ret) {
     return UMF_RESULT_SUCCESS;
 }
 
-// TODO clearing the tracker is a temporary solution and should be removed.
-// The tracker should be cleared using the provider's free() operation.
-static void clear_tracker_for_the_pool(umf_memory_tracker_handle_t hTracker,
-                                       umf_memory_pool_handle_t pool) {
+#ifndef NDEBUG
+static void check_if_tracker_is_empty(umf_memory_tracker_handle_t hTracker,
+                                      umf_memory_pool_handle_t pool) {
     uintptr_t rkey;
     void *rvalue;
     size_t n_items = 0;
@@ -437,41 +436,34 @@ static void clear_tracker_for_the_pool(umf_memory_tracker_handle_t hTracker,
     while (1 == critnib_find((critnib *)hTracker->alloc_segments_map, last_key,
                              FIND_G, &rkey, &rvalue)) {
         tracker_alloc_info_t *value = (tracker_alloc_info_t *)rvalue;
-        if (value->pool != pool && pool != NULL) {
-            last_key = rkey;
-            continue;
+        if (value->pool == pool || pool == NULL) {
+            n_items++;
         }
-
-        n_items++;
-
-        void *removed_value =
-            critnib_remove(hTracker->alloc_segments_map, rkey);
-        assert(removed_value == rvalue);
-        umf_ba_free(hTracker->alloc_info_allocator, removed_value);
 
         last_key = rkey;
     }
 
-#ifndef NDEBUG
-    // print error messages only if provider supports the free() operation
     if (n_items) {
-        if (pool) {
-            LOG_ERR(
-                "tracking provider of pool %p is not empty! (%zu items left)",
-                (void *)pool, n_items);
-        } else {
-            LOG_ERR("tracking provider is not empty! (%zu items left)",
-                    n_items);
+        // Do not log the error if we are running in the proxy library,
+        // because it may need those resources till
+        // the very end of exiting the application.
+        if (!utils_is_running_in_proxy_lib()) {
+            if (pool) {
+                LOG_ERR("tracking provider of pool %p is not empty! (%zu items "
+                        "left)",
+                        (void *)pool, n_items);
+            } else {
+                LOG_ERR("tracking provider is not empty! (%zu items left)",
+                        n_items);
+            }
+
+#ifdef UMF_DEVELOPER_MODE
+            assert(n_items == 0 && "tracking provider is not empty!");
+#endif
         }
     }
-#else  /* DEBUG */
-    (void)n_items; // unused in DEBUG build
-#endif /* DEBUG */
 }
-
-static void clear_tracker(umf_memory_tracker_handle_t hTracker) {
-    clear_tracker_for_the_pool(hTracker, NULL);
-}
+#endif /* NDEBUG */
 
 static void trackingFinalize(void *provider) {
     umf_tracking_memory_provider_t *p =
@@ -481,12 +473,9 @@ static void trackingFinalize(void *provider) {
 
     critnib_delete(p->ipcCache);
 
-    // Do not clear the tracker if we are running in the proxy library,
-    // because it may need those resources till
-    // the very end of exiting the application.
-    if (!utils_is_running_in_proxy_lib()) {
-        clear_tracker_for_the_pool(p->hTracker, p->pool);
-    }
+#ifndef NDEBUG
+    check_if_tracker_is_empty(p->hTracker, p->pool);
+#endif /* NDEBUG */
 
     umf_ba_global_free(provider);
 }
@@ -870,7 +859,9 @@ void umfMemoryTrackerDestroy(umf_memory_tracker_handle_t handle) {
         return;
     }
 
-    clear_tracker(handle);
+#ifndef NDEBUG
+    check_if_tracker_is_empty(handle, NULL);
+#endif /* NDEBUG */
 
     // We have to zero all inner pointers,
     // because the tracker handle can be copied
