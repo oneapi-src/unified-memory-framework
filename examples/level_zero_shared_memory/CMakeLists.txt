@@ -53,8 +53,8 @@ target_include_directories(${EXAMPLE_NAME} PRIVATE ${LIBUMF_INCLUDE_DIRS}
 target_link_directories(${EXAMPLE_NAME} PRIVATE ${LIBUMF_LIBRARY_DIRS}
                         ${LIBHWLOC_LIBRARY_DIRS})
 target_link_options(${EXAMPLE_NAME} PRIVATE "-Wl,--start-group")
-target_link_libraries(${EXAMPLE_NAME} PRIVATE stdc++ libdisjoint_pool.a
-                                              ze_loader ${LIBUMF_LIBRARIES})
+target_link_libraries(${EXAMPLE_NAME} PRIVATE stdc++ ze_loader
+                                              ${LIBUMF_LIBRARIES})
 
 # an optional part - adds a test of this example
 add_test(

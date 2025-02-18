@@ -38,6 +38,8 @@ typedef enum umf_purge_advise_t {
         expression;                                                            \
     } while (0)
 
+#define IS_POWER_OF_2(value) ((value) != 0 && ((value) & ((value)-1)) == 0)
+
 #define IS_ALIGNED(value, align)                                               \
     ((align == 0 || (((value) & ((align)-1)) == 0)))
 #define IS_NOT_ALIGNED(value, align)                                           \
@@ -175,6 +177,10 @@ int utils_file_open_or_create(const char *path);
 int utils_fallocate(int fd, long offset, long len);
 
 long utils_get_size_threshold(char *str_threshold);
+
+size_t utils_max(size_t a, size_t b);
+
+size_t utils_min(size_t a, size_t b);
 
 #ifdef __cplusplus
 }

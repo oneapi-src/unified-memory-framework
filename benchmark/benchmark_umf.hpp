@@ -13,15 +13,13 @@
 #include <umf/memory_provider.h>
 
 #include <benchmark/benchmark.h>
+#include <umf/pools/pool_disjoint.h>
 #include <umf/pools/pool_proxy.h>
+
 #ifdef UMF_POOL_SCALABLE_ENABLED
 #include <umf/pools/pool_scalable.h>
 #endif
 #include <umf/providers/provider_os_memory.h>
-
-#ifdef UMF_POOL_DISJOINT_ENABLED
-#include <umf/pools/pool_disjoint.h>
-#endif
 
 #ifdef UMF_POOL_JEMALLOC_ENABLED
 #include <umf/pools/pool_jemalloc.h>
@@ -167,7 +165,6 @@ struct proxy_pool : public pool_interface<Provider> {
     static std::string name() { return "proxy_pool<" + Provider::name() + ">"; }
 };
 
-#ifdef UMF_POOL_DISJOINT_ENABLED
 template <typename Provider>
 struct disjoint_pool : public pool_interface<Provider> {
     umf_memory_pool_ops_t *
@@ -221,7 +218,6 @@ struct disjoint_pool : public pool_interface<Provider> {
         return "disjoint_pool<" + Provider::name() + ">";
     }
 };
-#endif
 
 #ifdef UMF_POOL_JEMALLOC_ENABLED
 template <typename Provider>

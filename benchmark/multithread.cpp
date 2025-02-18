@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -121,7 +121,7 @@ int main() {
     std::cout << "skipping jemalloc_pool mt_alloc_free" << std::endl;
 #endif
 
-#if defined(UMF_POOL_DISJOINT_ENABLED)
+    // NOTE: disjoint pool is always enabled
     umf_disjoint_pool_params_handle_t hDisjointParams = nullptr;
     umf_result_t ret = umfDisjointPoolParamsCreate(&hDisjointParams);
     if (ret != UMF_RESULT_SUCCESS) {
@@ -132,20 +132,15 @@ int main() {
     std::cout << "disjoint_pool mt_alloc_free: ";
     mt_alloc_free(poolCreateExtParams{umfDisjointPoolOps(), hDisjointParams,
                                       umfOsMemoryProviderOps(), osParams});
-#else
-    std::cout << "skipping disjoint_pool mt_alloc_free" << std::endl;
-#endif
 
     // ctest looks for "PASSED" in the output
     std::cout << "PASSED" << std::endl;
 
-#if defined(UMF_POOL_DISJOINT_ENABLED)
     ret = umfDisjointPoolParamsDestroy(hDisjointParams);
     if (ret != UMF_RESULT_SUCCESS) {
         std::cerr << "disjoint pool params destroy failed" << std::endl;
         return -1;
     }
-#endif
 
     return 0;
 }
