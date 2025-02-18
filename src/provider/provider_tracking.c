@@ -456,6 +456,10 @@ static void check_if_tracker_is_empty(umf_memory_tracker_handle_t hTracker,
                 LOG_ERR("tracking provider is not empty! (%zu items left)",
                         n_items);
             }
+
+#ifdef UMF_DEVELOPER_MODE
+            assert(n_items == 0 && "tracking provider is not empty!");
+#endif
         }
     }
 }
