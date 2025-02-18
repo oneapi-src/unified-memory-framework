@@ -77,6 +77,7 @@ jobs:
         run: vcpkg install
 
       # note: disable all providers except the one being tested
+      # '-DCMAKE_SUPPRESS_REGENERATION=ON' is the WA for the error: "CUSTOMBUILD : CMake error : Cannot restore timestamp"
       - name: Configure build
         run: >
           cmake
@@ -99,7 +100,8 @@ jobs:
           -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
           -DUMF_BUILD_${{inputs.name}}_PROVIDER=ON
           -DUMF_TESTS_FAIL_ON_SKIP=ON
-          ${{ matrix.os == 'Ubuntu' && matrix.build_type == 'Debug' && '-DUMF_USE_COVERAGE=ON' || '' }}
+          ${{ matrix.os == 'Ubuntu' && matrix.build_type == 'Debug' && '-DUMF_USE_COVERAGE=ON' || '' }}   
+          ${{ matrix.os == 'Windows' && '-DCMAKE_SUPPRESS_REGENERATION=ON' || '' }}                           
 
       - name: Build UMF
         run: cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j ${{matrix.number_of_processors}}
