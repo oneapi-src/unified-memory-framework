@@ -287,7 +287,7 @@ static umf_result_t tbb_pool_initialize(umf_memory_provider_handle_t provider,
     int ret = init_tbb_callbacks();
     if (ret != 0) {
         LOG_FATAL("loading TBB symbols failed");
-        res = UMF_RESULT_ERROR_UNKNOWN;
+        res = UMF_RESULT_ERROR_DEPENDENCY_UNAVAILABLE;
         goto err_tbb_init;
     }
 
