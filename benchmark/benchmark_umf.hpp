@@ -199,7 +199,7 @@ struct disjoint_pool : public pool_interface<Provider> {
             return {nullptr, [](void *) {}};
         }
 
-        ret = umfDisjointPoolParamsSetMinBucketSize(raw_params, 4096);
+        ret = umfDisjointPoolParamsSetMinBucketSize(raw_params, 8);
         if (ret != UMF_RESULT_SUCCESS) {
             state.SkipWithError("Failed to set min bucket size");
             return {nullptr, [](void *) {}};
