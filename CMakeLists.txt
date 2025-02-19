@@ -321,9 +321,17 @@ else()
         elseif(CMAKE_GENERATOR STREQUAL "NMake Makefiles")
             set(LIBHWLOC_LIBRARY_DIRS ${hwloc_targ_BINARY_DIR}/)
             set(LIBHWLOC_LIBRARIES ${hwloc_targ_BINARY_DIR}/hwloc.lib)
-        else()
+        elseif(CMAKE_GENERATOR MATCHES "Visual Studio")
             set(LIBHWLOC_LIBRARY_DIRS ${hwloc_targ_BINARY_DIR}/$<CONFIG>)
             set(LIBHWLOC_LIBRARIES ${hwloc_targ_BINARY_DIR}/$<CONFIG>/hwloc.lib)
+        elseif(CMAKE_GENERATOR MATCHES "Unix Makefiles")
+            set(LIBHWLOC_LIBRARY_DIRS ${hwloc_targ_BINARY_DIR}/lib)
+            set(LIBHWLOC_LIBRARIES ${hwloc_targ_BINARY_DIR}/lib/hwloc.lib)
+        else()
+            set(LIBHWLOC_LIBRARY_DIRS
+                ${hwloc_targ_BINARY_DIR}/$<CONFIG>;${hwloc_targ_BINARY_DIR}/$<CONFIG>/lib;${hwloc_targ_BINARY_DIR}/lib;${hwloc_targ_BINARY_DIR}/Release;${hwloc_targ_BINARY_DIR}/Debug;${hwloc_targ_BINARY_DIR}/Release/lib;${hwloc_targ_BINARY_DIR}/Debug/lib;${hwloc_targ_BINARY_DIR}/lib/Release;${hwloc_targ_BINARY_DIR}/lib/Debug
+            )
+            set(LIBHWLOC_LIBRARIES hwloc.lib)
         endif()
 
         set(LIBHWLOC_INCLUDE_DIRS
