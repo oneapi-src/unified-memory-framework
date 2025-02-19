@@ -136,11 +136,14 @@ jobs:
         taskset -c ${{ env.CORES }} ${{ github.workspace }}/sycl-repo/unified-runtime/scripts/benchmarks/main.py
         ~/bench_workdir_umf
         --umf ${{env.BUILD_DIR}}
+        --compare baseline
         ${{ inputs.upload_report && '--output-html' || '' }}
+        ${{ inputs.pr_no != 0 && '--output-markdown' || '' }}
         ${{ inputs.bench_script_params }}
 
+    # In case it failed to add a comment, we can still print the results.
     - name: Print benchmark results
-      if: ${{ always() }}
+      if: ${{ always() && inputs.pr_no != 0 }}
       run: cat ${{env.BUILD_DIR}}/benchmark_results.md
 
     - name: Add comment to PR
