@@ -12,6 +12,7 @@
 #include "base_alloc_global.h"
 #include "ipc_cache.h"
 #include "memspace_internal.h"
+#include "pool/pool_scalable_internal.h"
 #include "provider_cuda_internal.h"
 #include "provider_level_zero_internal.h"
 #include "provider_tracking.h"
@@ -83,6 +84,7 @@ void umfTearDown(void) {
     fini_umfTearDown:
         fini_ze_global_state();
         fini_cu_global_state();
+        fini_tbb_global_state();
         LOG_DEBUG("UMF library finalized");
     }
 }
