@@ -11,6 +11,7 @@
 #define UMF_MEMORY_POOL_H 1
 
 #include <umf/base.h>
+#include <umf/memory_pool_ops.h>
 #include <umf/memory_provider.h>
 
 #ifdef __cplusplus
@@ -21,12 +22,6 @@ extern "C" {
 ///        structure containing pointers to implementations of provider-specific
 ///        functions
 typedef struct umf_memory_pool_t *umf_memory_pool_handle_t;
-
-/// @brief This structure comprises function pointers used by corresponding umfPool*
-///        calls. Each memory pool implementation should initialize all function
-///        pointers.
-///
-typedef struct umf_memory_pool_ops_t umf_memory_pool_ops_t;
 
 /// @brief Supported pool creation flags
 typedef enum umf_pool_create_flag_t {

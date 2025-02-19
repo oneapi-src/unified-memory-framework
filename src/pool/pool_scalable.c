@@ -406,7 +406,7 @@ static umf_result_t tbb_get_last_allocation_error(void *pool) {
 }
 
 static umf_memory_pool_ops_t UMF_SCALABLE_POOL_OPS = {
-    .version = UMF_VERSION_CURRENT,
+    .version = UMF_POOL_OPS_VERSION_CURRENT,
     .initialize = tbb_pool_initialize,
     .finalize = tbb_pool_finalize,
     .malloc = tbb_malloc,

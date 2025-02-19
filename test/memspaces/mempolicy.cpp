@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2025 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -7,11 +7,7 @@
 #include "provider_os_memory_internal.h"
 
 os_memory_provider_t *providerGetPriv(umf_memory_provider_handle_t hProvider) {
-    // hack to have access to fields in structure defined in memory_provider.c
-    struct umf_memory_provider_t {
-        umf_memory_provider_ops_t ops;
-        void *provider_priv;
-    } *provider = (struct umf_memory_provider_t *)hProvider;
+    umf_memory_provider_t *provider = (umf_memory_provider_t *)hProvider;
     return (os_memory_provider_t *)provider->provider_priv;
 }
 

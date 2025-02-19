@@ -749,7 +749,7 @@ static umf_result_t trackingCloseIpcHandle(void *provider, void *ptr,
 }
 
 umf_memory_provider_ops_t UMF_TRACKING_MEMORY_PROVIDER_OPS = {
-    .version = UMF_VERSION_CURRENT,
+    .version = UMF_PROVIDER_OPS_VERSION_CURRENT,
     .initialize = trackingInitialize,
     .finalize = trackingFinalize,
     .alloc = trackingAlloc,

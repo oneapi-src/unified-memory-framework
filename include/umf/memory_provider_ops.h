@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2024 Intel Corporation
+ * Copyright (C) 2023-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -15,6 +15,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/// @brief Version of the Memory Provider ops structure.
+/// NOTE: This is equal to the latest UMF version, in which the ops structure
+/// has been modified.
+#define UMF_PROVIDER_OPS_VERSION_CURRENT UMF_MAKE_VERSION(0, 11)
 
 ///
 /// @brief This structure comprises optional function pointers used
@@ -143,7 +148,7 @@ typedef struct umf_memory_provider_ipc_ops_t {
 ///
 typedef struct umf_memory_provider_ops_t {
     /// Version of the ops structure.
-    /// Should be initialized using UMF_VERSION_CURRENT.
+    /// Should be initialized using UMF_PROVIDER_OPS_VERSION_CURRENT.
     uint32_t version;
 
     ///
