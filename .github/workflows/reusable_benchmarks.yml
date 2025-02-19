@@ -1,6 +1,5 @@
-# Executes benchmarks implemented in this repository
-# using scripts for benchmark results visualization,
-# which are downloaded from Unified Runtime repository. 
+# Executes benchmarks implemented in this repository using scripts
+# for results visualization from intel/llvm (unified-runtime dir).
 name: Benchmarks
 
 on:
@@ -98,23 +97,23 @@ jobs:
     - name: Build UMF
       run: cmake --build ${{env.BUILD_DIR}} -j $(nproc)
 
-    # We are going to clone Unified Runtime repository in order to run
-    # the most up-to-date UR scripts for benchmark data visualization
-    - name: Checkout UR
+    # Get scripts for benchmark data visualization.
+    # Use specific tag, as the scripts or files' location may change.
+    - name: Checkout SYCL
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
-        repository: oneapi-src/unified-runtime
-        path: ur-repo
+        repository: intel/llvm
+        ref: nightly-2025-02-19
+        path: sycl-repo
         fetch-depth: 1
-        fetch-tags: false
 
-    - name: Install pip packages for benchmarking scripts from UR
+    - name: Install benchmarking scripts deps
       run: |
-        pip install --force-reinstall -r ${{github.workspace}}/ur-repo/third_party/benchmark_requirements.txt
+        pip install --force-reinstall -r ${{github.workspace}}/sycl-repo/unified-runtime/third_party/benchmark_requirements.txt
 
     - name: Set core range and GPU mask
       run: |
-        # Compute the core range for the second NUMA node; first node is for UR jobs.
+        # Compute the core range for the second NUMA node; first node is for SYCL/UR jobs.
         # Skip the first 4 cores - the kernel is likely to schedule more work on these.
         CORES=$(lscpu | awk '
           /NUMA node1 CPU|On-line CPU/ {line=$0}
@@ -130,11 +129,11 @@ jobs:
         ZE_AFFINITY_MASK=1
         echo "ZE_AFFINITY_MASK=$ZE_AFFINITY_MASK" >> $GITHUB_ENV
 
-    - name: Run UMF benchmarks (using scripts from UR)
+    - name: Run UMF benchmarks
       id: benchmarks
       working-directory: ${{env.BUILD_DIR}}
       run: >
-        taskset -c ${{ env.CORES }} ${{ github.workspace }}/ur-repo/scripts/benchmarks/main.py
+        taskset -c ${{ env.CORES }} ${{ github.workspace }}/sycl-repo/unified-runtime/scripts/benchmarks/main.py
         ~/bench_workdir_umf
         --umf ${{env.BUILD_DIR}}
         ${{ inputs.upload_report && '--output-html' || '' }}
