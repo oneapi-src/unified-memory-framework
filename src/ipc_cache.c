@@ -144,6 +144,8 @@ umfIpcOpenedCacheCreate(ipc_opened_cache_eviction_cb_t eviction_cb) {
 
 void umfIpcOpenedCacheDestroy(ipc_opened_cache_handle_t cache) {
     ipc_opened_cache_entry_t *entry, *tmp;
+
+    utils_mutex_lock(&(cache->global->cache_lock));
     HASH_ITER(hh, cache->hash_table, entry, tmp) {
         DL_DELETE(cache->global->lru_list, entry);
         HASH_DEL(cache->hash_table, entry);
@@ -153,6 +155,7 @@ void umfIpcOpenedCacheDestroy(ipc_opened_cache_handle_t cache) {
         umf_ba_free(cache->global->cache_allocator, entry);
     }
     HASH_CLEAR(hh, cache->hash_table);
+    utils_mutex_unlock(&(cache->global->cache_lock));
 
     umf_ba_global_free(cache);
 }
