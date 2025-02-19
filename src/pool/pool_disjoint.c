@@ -492,6 +492,9 @@ static void disjoint_pool_print_stats(disjoint_pool_t *pool) {
 
     for (size_t i = 0; i < pool->buckets_num; i++) {
         bucket_t *bucket = pool->buckets[i];
+        // lock bucket before accessing its stats
+        utils_mutex_lock(&bucket->bucket_lock);
+
         if (bucket->alloc_count) {
             LOG_DEBUG("%14zu %12zu %12zu %18zu %20zu %21zu", bucket->size,
                       bucket->alloc_count, bucket->free_count,
@@ -500,8 +503,11 @@ static void disjoint_pool_print_stats(disjoint_pool_t *pool) {
             high_bucket_size =
                 utils_max(bucket_slab_alloc_size(bucket), high_bucket_size);
         }
+
         high_peak_slabs_in_use =
             utils_max(bucket->max_slabs_in_use, high_peak_slabs_in_use);
+
+        utils_mutex_unlock(&bucket->bucket_lock);
     }
 
     LOG_DEBUG("current pool size: %zu",
