@@ -31,16 +31,6 @@ typedef struct umf_fixed_memory_provider_params_t
 umf_result_t umfFixedMemoryProviderParamsCreate(
     umf_fixed_memory_provider_params_handle_t *hParams, void *ptr, size_t size);
 
-/// @brief  Set the memory region in params struct. Overwrites the previous value.
-///         It provides an ability to use the same instance of params to create multiple
-///         instances of the provider for different memory regions.
-/// @param  hParams [in] handle to the parameters of the Fixed Memory Provider.
-/// @param  ptr [in] pointer to the memory region.
-/// @param  size [in] size of the memory region in bytes.
-/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
-umf_result_t umfFixedMemoryProviderParamsSetMemory(
-    umf_fixed_memory_provider_params_handle_t hParams, void *ptr, size_t size);
-
 /// @brief  Destroy parameters struct.
 /// @param  hParams [in] handle to the parameters of the Fixed Memory Provider.
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.

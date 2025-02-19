@@ -277,6 +277,29 @@ umf_memory_provider_ops_t *umfFixedMemoryProviderOps(void) {
     return &UMF_FIXED_MEMORY_PROVIDER_OPS;
 }
 
+umf_result_t umfFixedMemoryProviderParamsSetMemory(
+    umf_fixed_memory_provider_params_handle_t hParams, void *ptr, size_t size) {
+
+    if (hParams == NULL) {
+        LOG_ERR("Memory Provider params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (ptr == NULL) {
+        LOG_ERR("Memory pointer is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (size == 0) {
+        LOG_ERR("Size must be greater than 0");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    hParams->ptr = ptr;
+    hParams->size = size;
+    return UMF_RESULT_SUCCESS;
+}
+
 umf_result_t umfFixedMemoryProviderParamsCreate(
     umf_fixed_memory_provider_params_handle_t *hParams, void *ptr,
     size_t size) {
@@ -310,28 +333,5 @@ umf_result_t umfFixedMemoryProviderParamsDestroy(
         umf_ba_global_free(hParams);
     }
 
-    return UMF_RESULT_SUCCESS;
-}
-
-umf_result_t umfFixedMemoryProviderParamsSetMemory(
-    umf_fixed_memory_provider_params_handle_t hParams, void *ptr, size_t size) {
-
-    if (hParams == NULL) {
-        LOG_ERR("Memory Provider params handle is NULL");
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
-    if (ptr == NULL) {
-        LOG_ERR("Memory pointer is NULL");
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
-    if (size == 0) {
-        LOG_ERR("Size must be greater than 0");
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
-    hParams->ptr = ptr;
-    hParams->size = size;
     return UMF_RESULT_SUCCESS;
 }
