@@ -6,3 +6,20 @@
    fun:umfOpenIPCHandle
    ...
 }
+
+{
+   False-positive ConflictingAccess in jemalloc
+   drd:ConflictingAccess
+   fun:atomic_*
+   ...
+   fun:je_*
+   ...
+}
+
+{
+   False-positive ConflictingAccess in tbbmalloc
+   drd:ConflictingAccess
+   ...
+   fun:tbb_pool_finalize
+   ...
+}
