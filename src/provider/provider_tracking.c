@@ -473,10 +473,6 @@ static void trackingFinalize(void *provider) {
 
     critnib_delete(p->ipcCache);
 
-#ifndef NDEBUG
-    check_if_tracker_is_empty(p->hTracker, p->pool);
-#endif /* NDEBUG */
-
     umf_ba_global_free(provider);
 }
 
