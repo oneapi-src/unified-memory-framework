@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -1345,6 +1345,51 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_alignment_fixed_memory) {
     }
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+
+    coarse_delete(ch);
+}
+
+TEST_P(CoarseWithMemoryStrategyTest,
+       coarseTest_basic_non_aligned_fixed_memory) {
+    // preallocate some memory and initialize the vector with zeros
+    const size_t buff_size = 20 * MB + coarse_params.page_size;
+    std::vector<char> buffer(buff_size, 0);
+
+    void *buf_aligned = (void *)ALIGN_UP_SAFE((uintptr_t)buffer.data(),
+                                              coarse_params.page_size);
+    ASSERT_NE(buf_aligned, nullptr);
+
+    void *buf_non_aligned = (void *)((uintptr_t)buf_aligned + 64);
+    size_t buf_non_aligned_size =
+        buff_size - ((uintptr_t)buf_non_aligned - (uintptr_t)buffer.data());
+    buf_non_aligned_size =
+        ALIGN_DOWN(buf_non_aligned_size, coarse_params.page_size);
+
+    coarse_params.cb.alloc = NULL;
+    coarse_params.cb.free = NULL;
+
+    umf_result = coarse_new(&coarse_params, &coarse_handle);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(coarse_handle, nullptr);
+
+    coarse_t *ch = coarse_handle;
+    char *ptr = nullptr;
+
+    umf_result =
+        coarse_add_memory_fixed(ch, buf_non_aligned, buf_non_aligned_size);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
+    ASSERT_EQ(coarse_get_stats(ch).alloc_size, buf_non_aligned_size);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+
+    umf_result = coarse_alloc(ch, buf_non_aligned_size, 0, (void **)&ptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY);
+    ASSERT_EQ(ptr, nullptr);
+
+    ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
+    ASSERT_EQ(coarse_get_stats(ch).alloc_size, buf_non_aligned_size);
     ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
 
     coarse_delete(ch);
