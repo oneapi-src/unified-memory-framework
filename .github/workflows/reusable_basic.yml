@@ -16,9 +16,15 @@ env:
 jobs:
   ubuntu-build:
     name: Ubuntu
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ matrix.image }}
+      options: --user root --privileged
+      volumes:
+        - /home/runner/work/unified-memory-framework/unified-memory-framework:/home/runner/work/unified-memory-framework/unified-memory-framework
     strategy:
       matrix:
-        os: ['ubuntu-20.04', 'ubuntu-22.04']
+        image: ['ghcr.io/rbanka1/umf-ubuntu-20.04:latest', 'ghcr.io/rbanka1/umf-ubuntu-22.04:latest' ]
         build_type: [Debug, Release]
         compiler: [{c: gcc, cxx: g++}]
         shared_library: ['OFF']
@@ -28,7 +34,7 @@ jobs:
         disable_hwloc: ['OFF']
         link_hwloc_statically: ['OFF']
         include:
-          - os: 'ubuntu-20.04'
+          - image: ghcr.io/rbanka1/umf-ubuntu-20.04:latest
             build_type: Release
             compiler: {c: gcc-7, cxx: g++-7}
             shared_library: 'OFF'
@@ -37,7 +43,7 @@ jobs:
             install_tbb: 'ON'
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
-          - os: 'ubuntu-22.04'
+          - image: ghcr.io/rbanka1/umf-ubuntu-22.04:latest
             build_type: Release
             compiler: {c: clang, cxx: clang++}
             shared_library: 'OFF'
@@ -46,7 +52,7 @@ jobs:
             install_tbb: 'ON'
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
-          - os: 'ubuntu-22.04'
+          - image: ghcr.io/rbanka1/umf-ubuntu-22.04:latest
             build_type: Release
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
@@ -55,7 +61,7 @@ jobs:
             install_tbb: 'ON'
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
-          - os: 'ubuntu-24.04'
+          - image: ghcr.io/rbanka1/umf-ubuntu-24.04:latest
             build_type: Debug
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
@@ -65,7 +71,7 @@ jobs:
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
           # test level_zero_provider='OFF' and cuda_provider='OFF'
-          - os: 'ubuntu-22.04'
+          - image: ghcr.io/rbanka1/umf-ubuntu-22.04:latest
             build_type: Release
             compiler: {c: gcc, cxx: g++}
             shared_library: 'OFF'
@@ -75,7 +81,7 @@ jobs:
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
           # test icx compiler
-          - os: 'ubuntu-22.04'
+          - image: ghcr.io/rbanka1/umf-ubuntu-22.04:latest
             build_type: Release
             compiler: {c: icx, cxx: icpx}
             shared_library: 'ON'
@@ -85,7 +91,7 @@ jobs:
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
           # test without installing TBB
-          - os: 'ubuntu-22.04'
+          - image: ghcr.io/rbanka1/umf-ubuntu-22.04:latest
             build_type: Release
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
@@ -94,7 +100,7 @@ jobs:
             install_tbb: 'OFF'
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
-          - os: 'ubuntu-22.04'
+          - image: ghcr.io/rbanka1/umf-ubuntu-22.04:latest
             build_type: Debug
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
@@ -103,7 +109,7 @@ jobs:
             install_tbb: 'ON'
             disable_hwloc: 'ON'
             link_hwloc_statically: 'OFF'
-          - os: 'ubuntu-22.04'
+          - image: ghcr.io/rbanka1/umf-ubuntu-22.04:latest
             build_type: Release
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
@@ -112,12 +118,6 @@ jobs:
             install_tbb: 'ON'
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'ON'
-    runs-on: ${{matrix.os}}
-    container:
-      image: ${{ matrix.os == 'ubuntu-20.04' && 'ghcr.io/rbanka1/umf2-ubuntu-20.04:latest' || matrix.os == 'ubuntu-22.04' && 'ghcr.io/rbanka1/umf2-ubuntu-22.04:latest' || matrix.os == 'ubuntu-24.04' &&  'ghcr.io/rbanka1/umf2-ubuntu-24.04:latest'}}
-      options: --user root --privileged  
-      volumes:
-        - /home/runner/work/unified-memory-framework/unified-memory-framework:/home/runner/work/unified-memory-framework/unified-memory-framework
     steps:
     - name: Checkout
       uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -127,11 +127,24 @@ jobs:
     - name: Install oneAPI basekit
       if: matrix.compiler.cxx == 'icpx'
       run: |
+        sudo apt-get update
         sudo apt-get install -y gpg-agent wget
         wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
         echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
         sudo apt-get update
         sudo apt-get install -y intel-oneapi-ippcp-devel intel-oneapi-ipp-devel intel-oneapi-common-oneapi-vars intel-oneapi-compiler-dpcpp-cpp
+
+    - name: Install TBB apt package
+      if: matrix.install_tbb == 'OFF'
+      run: |
+        sudo apt-get install -y libtbb-dev
+
+    - name: Install g++-7
+      if: matrix.compiler.cxx == 'g++-7'
+      run: sudo apt-get install -y ${{matrix.compiler.cxx}}
+  
+    - name: Install libhwloc
+      run: .github/scripts/install_hwloc.sh
 
     - name: Configure build
       run: >
@@ -164,11 +177,14 @@ jobs:
         ${{ matrix.compiler.cxx == 'icpx' && '. /opt/intel/oneapi/setvars.sh' || true }}
         LD_LIBRARY_PATH="${{env.BUILD_DIR}}/lib/:${LD_LIBRARY_PATH}" ctest --output-on-failure
 
-    - name: Check coverage
+    - name: Set os name
+      run: echo "ARTIFACT_NAME=${{ matrix.image }}" | sed -e 's|ghcr.io/rbanka1/||' -e 's|:|-|' >> $GITHUB_ENV
+
+    - name: Check os coverage
       if:  ${{ matrix.build_type == 'Debug' && matrix.compiler.c == 'gcc' }}
       working-directory: ${{env.BUILD_DIR}}
       run: |
-        export COVERAGE_FILE_NAME=${{env.COVERAGE_NAME}}-${{matrix.os}}-shared-${{matrix.shared_library}}-no_hwloc-${{matrix.disable_hwloc}}
+        export COVERAGE_FILE_NAME=${{env.COVERAGE_NAME}}-${{env.ARTIFACT_NAME}}-shared-${{matrix.shared_library}}-no_hwloc-${{matrix.disable_hwloc}}
         echo "COVERAGE_FILE_NAME: $COVERAGE_FILE_NAME"
         ../scripts/coverage/coverage_capture.sh $COVERAGE_FILE_NAME
         mkdir -p ${{env.COVERAGE_DIR}}
@@ -177,7 +193,7 @@ jobs:
     - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
       if:  ${{ matrix.build_type == 'Debug' && matrix.compiler.c == 'gcc' }}
       with:
-        name: ${{env.COVERAGE_NAME}}-${{matrix.os}}-shared-${{matrix.shared_library}}-no_hwloc-${{matrix.disable_hwloc}}
+        name: ${{env.COVERAGE_NAME}}-${{env.ARTIFACT_NAME}}-shared-${{matrix.shared_library}}-no_hwloc-${{matrix.disable_hwloc}}
         path: ${{env.COVERAGE_DIR}}
 
     - name: Remove the installation directory

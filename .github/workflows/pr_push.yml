@@ -14,14 +14,14 @@ concurrency:
 
 permissions:
   contents: read
-  packages: write
+  packages: read
 
 jobs:
   CodeChecks:
     uses: ./.github/workflows/reusable_checks.yml
   DocsBuild:
     uses: ./.github/workflows/reusable_docs_build.yml
-  PrintModifiedFiles:
+  DetectChanges:
     runs-on: ubuntu-latest
     outputs:
       changed_files: ${{ steps.changed-files.outputs.all_changed_files }}
@@ -40,14 +40,17 @@ jobs:
           ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
         run: |
           echo "Changed files: ${{ steps.changed-files.outputs.all_changed_files }}"
-  BuildCIContainer:
-    if: ${{ contains(join(needs.PrintModifiedFiles.outputs.changed_files, ' '), '.github/docker/') }}
-    needs: [PrintModifiedFiles]
+  BuildDockers:
+    if: ${{ contains(join(needs.DetectChanges.outputs.changed_files, ' '), '.github/docker/') }}
+    needs: [DetectChanges]
+    permissions:
+      contents: read
+      packages: write
     secrets: inherit
     uses: ./.github/workflows/build_ci_container.yml
   FastBuild:
-    if: always() && (needs.BuildCIContainer.result == 'skipped' || needs.BuildCIContainer.result == 'success')
-    needs: [CodeChecks, DocsBuild, BuildCIContainer]
+    if: always() && (needs.BuildDockers.result == 'skipped' || needs.BuildDockers.result == 'success')
+    needs: [CodeChecks, DocsBuild, BuildDockers]
     uses: ./.github/workflows/reusable_fast.yml
   Build:
     name: Basic builds
