@@ -5,7 +5,23 @@
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 */
 
+#include <assert.h>
+#include <ctype.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <umf/memory_pool.h>
+#include <umf/memory_pool_ops.h>
+#include <umf/memory_provider.h>
+
+#include "base_alloc_global.h"
 #include "pool_disjoint_internal.h"
+#include "provider/provider_tracking.h"
+#include "uthash/utlist.h"
+#include "utils_common.h"
+#include "utils_log.h"
+#include "utils_math.h"
 
 // Temporary solution for disabling memory poisoning. This is needed because
 // AddressSanitizer does not support memory poisoning for GPU allocations.
