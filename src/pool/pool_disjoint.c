@@ -94,9 +94,6 @@ static slab_t *create_slab(bucket_t *bucket) {
         goto free_slab_chunks;
     }
 
-    // TODO
-    // ASSERT_IS_ALIGNED((uintptr_t)slab->mem_ptr, bucket->size);
-
     // raw allocation is not available for user so mark it as inaccessible
     utils_annotate_memory_inaccessible(slab->mem_ptr, slab->slab_size);
 
@@ -175,10 +172,10 @@ static void slab_free_chunk(slab_t *slab, void *ptr) {
     // Make sure that we're in the right slab
     assert(ptr >= slab_get(slab) && ptr < slab_get_end(slab));
 
-    // Even if the pointer p was previously aligned, it's still inside the
-    // corresponding chunk, so we get the correct index here.
-    size_t chunk_idx =
-        ((uintptr_t)ptr - (uintptr_t)slab->mem_ptr) / slab->bucket->size;
+    // Get the chunk index
+    uintptr_t ptr_diff = (uintptr_t)ptr - (uintptr_t)slab->mem_ptr;
+    assert((ptr_diff % slab->bucket->size) == 0);
+    size_t chunk_idx = ptr_diff / slab->bucket->size;
 
     // Make sure that the chunk was allocated
     assert(slab->chunks[chunk_idx] && "double free detected");
@@ -738,6 +735,10 @@ void *disjoint_pool_aligned_malloc(void *pool, size_t size, size_t alignment) {
         }
     }
 
+    void *aligned_ptr = (void *)ALIGN_UP_SAFE((size_t)ptr, alignment);
+    VALGRIND_DO_MEMPOOL_ALLOC(disjoint_pool, aligned_ptr, size);
+    utils_annotate_memory_undefined(aligned_ptr, size);
+
     utils_mutex_unlock(&bucket->bucket_lock);
 
     if (disjoint_pool->params.pool_trace > 2) {
@@ -746,9 +747,6 @@ void *disjoint_pool_aligned_malloc(void *pool, size_t size, size_t alignment) {
                   (from_pool ? "pool" : "provider"), ptr);
     }
 
-    void *aligned_ptr = (void *)ALIGN_UP_SAFE((size_t)ptr, alignment);
-    VALGRIND_DO_MEMPOOL_ALLOC(disjoint_pool, aligned_ptr, size);
-    utils_annotate_memory_undefined(aligned_ptr, size);
     return aligned_ptr;
 }
 
@@ -804,11 +802,18 @@ umf_result_t disjoint_pool_free(void *pool, void *ptr) {
 
     bucket_t *bucket = slab->bucket;
 
-    VALGRIND_DO_MEMPOOL_FREE(pool, ptr);
     utils_mutex_lock(&bucket->bucket_lock);
+    VALGRIND_DO_MEMPOOL_FREE(pool, ptr);
 
-    utils_annotate_memory_inaccessible(ptr, bucket->size);
-    bucket_free_chunk(bucket, ptr, slab, &to_pool);
+    // Get the unaligned pointer
+    // NOTE: the base pointer slab->mem_ptr needn't to be aligned to bucket size
+    size_t chunk_idx =
+        (((uintptr_t)ptr - (uintptr_t)slab->mem_ptr) / slab->bucket->size);
+    void *unaligned_ptr =
+        (void *)((uintptr_t)slab->mem_ptr + chunk_idx * slab->bucket->size);
+
+    utils_annotate_memory_inaccessible(unaligned_ptr, bucket->size);
+    bucket_free_chunk(bucket, unaligned_ptr, slab, &to_pool);
 
     if (disjoint_pool->params.pool_trace > 1) {
         bucket->free_count++;
