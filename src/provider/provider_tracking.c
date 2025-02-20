@@ -267,6 +267,58 @@ err_lock:
     return ret;
 }
 
+// shrink (or remove) an entry in the tracker and return the totalSize of the original entry
+umf_result_t trackerShrinkEntry(void *hProvider, void *ptr, size_t shrinkSize,
+                                size_t *totalSize) {
+    umf_result_t ret = UMF_RESULT_SUCCESS;
+    umf_tracking_memory_provider_t *provider =
+        (umf_tracking_memory_provider_t *)hProvider;
+
+    int r = utils_mutex_lock(&provider->hTracker->splitMergeMutex);
+    if (r) {
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
+
+    tracker_alloc_info_t *value = (tracker_alloc_info_t *)critnib_get(
+        provider->hTracker->alloc_segments_map, (uintptr_t)ptr);
+    if (!value) {
+        LOG_ERR("region for shrinking is not found in the tracker");
+        ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        goto err;
+    }
+    if (shrinkSize > value->size) {
+        LOG_ERR("requested size %zu to shrink exceeds the tracked size %zu",
+                shrinkSize, value->size);
+        ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        goto err;
+    }
+
+    if (shrinkSize < value->size) {
+        void *highPtr = (void *)(((uintptr_t)ptr) + shrinkSize);
+        size_t secondSize = value->size - shrinkSize;
+        ret = umfMemoryTrackerAdd(provider->hTracker, provider->pool, highPtr,
+                                  secondSize);
+        if (ret != UMF_RESULT_SUCCESS) {
+            LOG_ERR("failed to add the new shrunk region to the tracker, ptr = "
+                    "%p, size = %zu, ret = %d",
+                    highPtr, secondSize, ret);
+            goto err;
+        }
+    }
+
+    *totalSize = value->size;
+
+    void *erasedValue =
+        critnib_remove(provider->hTracker->alloc_segments_map, (uintptr_t)ptr);
+    assert(erasedValue == value);
+    umf_ba_free(provider->hTracker->alloc_info_allocator, erasedValue);
+
+err:
+    utils_mutex_unlock(&provider->hTracker->splitMergeMutex);
+
+    return ret;
+}
+
 static umf_result_t trackingAllocationMerge(void *hProvider, void *lowPtr,
                                             void *highPtr, size_t totalSize) {
     umf_result_t ret = UMF_RESULT_ERROR_UNKNOWN;
@@ -350,6 +402,65 @@ not_merged:
 
 err_lock:
     umf_ba_free(provider->hTracker->alloc_info_allocator, mergedValue);
+    return ret;
+}
+
+// grow (or add) an entry in the tracker to its original size
+umf_result_t trackerGrowEntry(void *hProvider, void *ptr, size_t growSize,
+                              size_t origSize) {
+    umf_result_t ret = UMF_RESULT_SUCCESS;
+    umf_tracking_memory_provider_t *provider =
+        (umf_tracking_memory_provider_t *)hProvider;
+
+    if (growSize > origSize) {
+        LOG_ERR("Invalid grow size %zu (larger than the original size %zu)",
+                growSize, origSize);
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    int r = utils_mutex_lock(&provider->hTracker->splitMergeMutex);
+    if (r) {
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
+
+    void *highPtr = (void *)(((uintptr_t)ptr) + growSize);
+    tracker_alloc_info_t *highValue = NULL;
+
+    if (growSize < origSize) {
+        highValue = (tracker_alloc_info_t *)critnib_get(
+            provider->hTracker->alloc_segments_map, (uintptr_t)highPtr);
+        if (!highValue) {
+            LOG_ERR("cannot find the tracker entry to grow %p", highPtr);
+            ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
+            goto err;
+        }
+        if (growSize + highValue->size != origSize) {
+            LOG_ERR("Grow size plus the current size does not equal the "
+                    "original size");
+            ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
+            goto err;
+        }
+    }
+
+    ret =
+        umfMemoryTrackerAdd(provider->hTracker, provider->pool, ptr, origSize);
+    if (ret != UMF_RESULT_SUCCESS) {
+        LOG_ERR("failed to add the new grown region to the tracker, ptr = %p, "
+                "size = %zu, ret = %d",
+                ptr, origSize, ret);
+        goto err;
+    }
+
+    if (growSize < origSize) {
+        void *erasedhighValue = critnib_remove(
+            provider->hTracker->alloc_segments_map, (uintptr_t)highPtr);
+        assert(erasedhighValue == highValue);
+        umf_ba_free(provider->hTracker->alloc_info_allocator, erasedhighValue);
+    }
+
+err:
+    utils_mutex_unlock(&provider->hTracker->splitMergeMutex);
+
     return ret;
 }
 

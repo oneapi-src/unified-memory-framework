@@ -21,6 +21,7 @@
 #include "coarse.h"
 #include "libumf.h"
 #include "memory_pool_internal.h"
+#include "provider_tracking.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
 #include "utils_log.h"
@@ -114,6 +115,15 @@ static umf_result_t fixed_initialize(void *params, void **provider) {
             LOG_ERR("cannot get the tracking provider of the pool %p", pool);
             return ret;
         }
+
+        ret = trackerShrinkEntry(trackingProvider, in_params->ptr,
+                                 in_params->size, &ptr_orig_size);
+        if (ret != UMF_RESULT_SUCCESS) {
+            LOG_ERR(
+                "cannot shrink the allocation %p in the tracker to size %zu",
+                in_params->ptr, in_params->size);
+            return ret;
+        }
     }
 
     fixed_memory_provider_t *fixed_provider =
@@ -173,6 +183,20 @@ err_free_fixed_provider:
 static void fixed_finalize(void *provider) {
     fixed_memory_provider_t *fixed_provider = provider;
     coarse_delete(fixed_provider->coarse);
+
+    if (fixed_provider->trackingProvider &&
+        (fixed_provider->ptr_orig_size >= fixed_provider->size)) {
+        umf_result_t ret = trackerGrowEntry(
+            fixed_provider->trackingProvider, fixed_provider->base,
+            fixed_provider->size, fixed_provider->ptr_orig_size);
+        if (ret != UMF_RESULT_SUCCESS) {
+            LOG_ERR("cannot grow the allocation %p in the tracker (from size "
+                    "%zu to size %zu)",
+                    fixed_provider->base, fixed_provider->size,
+                    fixed_provider->ptr_orig_size);
+        }
+    }
+
     umf_ba_global_free(fixed_provider);
 }
 

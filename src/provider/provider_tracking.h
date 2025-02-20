@@ -55,6 +55,12 @@ void umfTrackingMemoryProviderGetUpstreamProvider(
     umf_memory_provider_handle_t hTrackingProvider,
     umf_memory_provider_handle_t *hUpstream);
 
+umf_result_t trackerShrinkEntry(void *hProvider, void *ptr, size_t shrinkSize,
+                                size_t *totalSize);
+
+umf_result_t trackerGrowEntry(void *hProvider, void *ptr, size_t growSize,
+                              size_t origSize);
+
 #ifdef __cplusplus
 }
 #endif
