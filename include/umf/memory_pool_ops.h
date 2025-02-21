@@ -22,6 +22,25 @@ extern "C" {
 /// has been modified.
 #define UMF_POOL_OPS_VERSION_CURRENT UMF_MAKE_VERSION(0, 11)
 
+/// @brief This structure comprises function pointers used by corresponding umfMemoryPool calls.
+typedef struct umf_memory_pool_ext_ops_t {
+    ///
+    /// @brief Control operation for the memory pool.
+    ///        The function is used to perform various control operations
+    ///        on the memory pool.
+    ///
+    /// @param hPool handle to the memory pool.
+    /// @param operationType type of the operation to be performed.
+    /// @param name name associated with the operation.
+    /// @param arg argument for the operation.
+    /// @param queryType type of the query to be performed.
+    ///
+    /// @return umf_result_t result of the control operation.
+    ///
+    umf_result_t (*ctl)(void *hPool, int operationType, const char *name,
+                        void *arg, umf_ctl_query_type_t queryType);
+} umf_memory_pool_ext_ops_t;
+
 ///
 /// @brief This structure comprises function pointers used by corresponding umfPool*
 /// calls. Each memory pool implementation should initialize all function
@@ -125,6 +144,11 @@ typedef struct umf_memory_pool_ops_t {
     ///         The value is undefined if the previous allocation was successful.
     ///
     umf_result_t (*get_last_allocation_error)(void *pool);
+
+    ///
+    /// @brief Optional ops
+    ///
+    umf_memory_provider_ext_ops_t ext;
 } umf_memory_pool_ops_t;
 
 #ifdef __cplusplus

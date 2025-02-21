@@ -50,6 +50,37 @@ typedef enum umf_result_t {
     UMF_RESULT_ERROR_UNKNOWN = 0x7ffffffe ///< Unknown or internal error
 } umf_result_t;
 
+/// @brief Type of the CTL query
+typedef enum umf_ctl_query_type {
+    CTL_QUERY_READ,
+    CTL_QUERY_WRITE,
+    CTL_QUERY_RUNNABLE,
+    CTL_QUERY_SUBTREE,
+
+    MAX_CTL_QUERY_TYPE
+} umf_ctl_query_type_t;
+
+///
+/// @brief Get value of a specified attribute at the given name.
+/// @param name name of an attribute to be retrieved
+/// @return UMF_RESULT_SUCCESS on success or UMF_RESULT_ERROR_UNKNOWN on failure.
+///
+umf_result_t umfCtlGet(const char *name, ...);
+
+///
+/// @brief Set value of a specified attribute at the given name.
+/// @param name name of an attribute to be set
+/// @return UMF_RESULT_SUCCESS on success or UMF_RESULT_ERROR_UNKNOWN on failure.
+///
+umf_result_t umfCtlSet(const char *name, ...);
+
+///
+/// @brief Execute callback related with the specified attribute.
+/// @param name name of an attribute to be executed
+/// @return UMF_RESULT_SUCCESS on success or UMF_RESULT_ERROR_UNKNOWN on failure.
+///
+umf_result_t umfCtlExec(const char *name, ...);
+
 #ifdef __cplusplus
 }
 #endif

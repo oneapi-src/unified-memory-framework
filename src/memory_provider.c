@@ -20,6 +20,20 @@
 #include "memory_provider_internal.h"
 #include "utils_assert.h"
 
+static int CTL_SUBTREE_HANDLER(by_handle_provider)(
+    void *ctx, umf_ctl_query_source_t source, void *arg,
+    umf_ctl_index_utlist_t *indexes, const char *extra_name,
+    umf_ctl_query_type_t queryType) {
+    (void)indexes, (void)source;
+    umf_memory_provider_handle_t hProvider = (umf_memory_provider_handle_t)ctx;
+    hProvider->ops.ext.ctl(hProvider->provider_priv, /*unused*/ 0, extra_name,
+                           arg, queryType);
+    return 0;
+}
+
+umf_ctl_node_t CTL_NODE(provider)[] = {
+    CTL_LEAF_SUBTREE2(by_handle, by_handle_provider), CTL_NODE_END};
+
 static umf_result_t umfDefaultPurgeLazy(void *provider, void *ptr,
                                         size_t size) {
     (void)provider;
