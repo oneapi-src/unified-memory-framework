@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Intel Corporation
+# Copyright (C) 2024-2025 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -12,7 +12,7 @@ FROM registry.hub.docker.com/library/ubuntu@sha256:e6173d4dc55e76b87c4af8db8821b
 
 # Set environment variables
 ENV OS ubuntu
-ENV OS_VER 22.04
+ENV OS_VER 20.04
 ENV NOTTY 1
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -29,15 +29,28 @@ ARG UMF_DEPS="\
 
 # Dependencies for tests (optional)
 ARG TEST_DEPS="\
-	libnuma-dev"
+	libnuma-dev \
+	libhwloc-dev \
+	libtbb-dev\
+	valgrind"
 
 # Miscellaneous for our builds/CI (optional)
 ARG MISC_DEPS="\
 	automake \
 	clang \
+	g++-11 \
 	python3-pip \
 	sudo \
-	whois"
+	whois \
+	lcov"
+
+# Hwloc installation dependencies
+ARG HWLOC_DEPS="\
+	dos2unix \
+	libtool"
+
+# Copy hwloc
+COPY .github/scripts/install_hwloc.sh /opt/umf/install_hwloc.sh
 
 # Update and install required packages
 RUN apt-get update \
@@ -46,11 +59,15 @@ RUN apt-get update \
 	${UMF_DEPS} \
 	${TEST_DEPS} \
 	${MISC_DEPS} \
+	${HWLOC_DEPS} \
+ && dos2unix /opt/umf/install_hwloc.sh \
+ && bash -x /opt/umf/install_hwloc.sh \
+ && ldconfig \
  && rm -rf /var/lib/apt/lists/* \
  && apt-get clean all
 
 # Prepare a dir (accessible by anyone)
-RUN mkdir --mode 777 /opt/umf/
+RUN mkdir -p --mode 777 /opt/umf/
 
 # Additional dependencies (installed via pip)
 COPY third_party/requirements.txt /opt/umf/requirements.txt

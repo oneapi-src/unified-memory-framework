@@ -1,14 +1,14 @@
-# Copyright (C) 2024-2025 Intel Corporation
+# Copyright (C) 2025 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 #
 # Dockerfile - a 'recipe' for Docker to build an image of ubuntu-based
-#	  environment for building the Unified Memory Framework project.
+#              environment for building the Unified Memory Framework project.
 #
 
-# Pull base image ("20.04")
-FROM registry.hub.docker.com/library/ubuntu@sha256:f2034e7195f61334e6caff6ecf2e965f92d11e888309065da85ff50c617732b8
+# Pull base image ("24.04")
+FROM registry.hub.docker.com/library/ubuntu@sha256:72297848456d5d37d1262630108ab308d3e9ec7ed1c3286a32fe09856619a782
 
 # Set environment variables
 ENV OS ubuntu
@@ -38,7 +38,7 @@ ARG TEST_DEPS="\
 ARG MISC_DEPS="\
 	automake \
 	clang \
-	g++-7 \
+	g++-11 \
 	python3-pip \
 	sudo \
 	whois \
@@ -71,9 +71,9 @@ RUN mkdir -p --mode 777 /opt/umf/
 
 # Additional dependencies (installed via pip)
 COPY third_party/requirements.txt /opt/umf/requirements.txt
-# It's actively used and tested only on selected distros. Be aware
-# they may not work, because pip packages list differ from OS to OS.
+RUN pip3 install --no-cache-dir --break-system-packages -r /opt/umf/requirements.txt
 
+# Add a new (non-root) 'test_user'
 ENV USER test_user
 ENV USERPASS pass
 RUN useradd -m "${USER}" -g sudo -p "$(mkpasswd ${USERPASS})"
