@@ -106,9 +106,11 @@ jobs:
 
     - name: Run "tag" UMF tests with latest UMF libs (warnings enabled)
       working-directory: ${{github.workspace}}/tag_version/build
+      # GTEST_FILTER is used below to skip test that is not compatible
       run: >
         UMF_LOG="level:warning;flush:debug;output:stderr;pid:no" 
         LD_LIBRARY_PATH=${{github.workspace}}/latest_version/build/lib/ 
+        GTEST_FILTER="-*umfIpcTest.GetPoolByOpenedHandle*" 
         ctest --output-on-failure
  
   windows-build:
@@ -205,5 +207,6 @@ jobs:
       working-directory: ${{github.workspace}}/tag_version/build
       run: |
         $env:UMF_LOG="level:warning;flush:debug;output:stderr;pid:no" 
+        $env:GTEST_FILTER="-*umfIpcTest.GetPoolByOpenedHandle*"
         cp ${{github.workspace}}/latest_version/build/bin/Debug/umf.dll ${{github.workspace}}/tag_version/build/bin/Debug/umf.dll
         ctest -C Debug --output-on-failure --test-dir test
