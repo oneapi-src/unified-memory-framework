@@ -473,7 +473,7 @@ TEST_P(umfIpcTest, openInTwoIpcHandlers) {
     EXPECT_EQ(stat.closeCount, stat.openCount);
 }
 
-TEST_P(umfIpcTest, ConcurrentGetPutHandles) {
+TEST_P(umfIpcTest, ConcurrentGetConcurrentPutHandles) {
     std::vector<void *> ptrs;
     constexpr size_t ALLOC_SIZE = 100;
     constexpr size_t NUM_POINTERS = 100;
@@ -512,6 +512,44 @@ TEST_P(umfIpcTest, ConcurrentGetPutHandles) {
     };
 
     umf_test::parallel_exec(NTHREADS, putHandlesFn);
+
+    for (void *ptr : ptrs) {
+        umf_result_t ret = umfPoolFree(pool.get(), ptr);
+        EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+    }
+
+    pool.reset(nullptr);
+    EXPECT_EQ(stat.putCount, stat.getCount);
+}
+
+TEST_P(umfIpcTest, ConcurrentGetPutHandles) {
+    std::vector<void *> ptrs;
+    constexpr size_t ALLOC_SIZE = 100;
+    constexpr size_t NUM_POINTERS = 100;
+    umf::pool_unique_handle_t pool = makePool();
+    ASSERT_NE(pool.get(), nullptr);
+
+    for (size_t i = 0; i < NUM_POINTERS; ++i) {
+        void *ptr = umfPoolMalloc(pool.get(), ALLOC_SIZE);
+        EXPECT_NE(ptr, nullptr);
+        ptrs.push_back(ptr);
+    }
+
+    umf_test::syncthreads_barrier syncthreads(NTHREADS);
+
+    auto getPutHandlesFn = [&ptrs, &syncthreads](size_t) {
+        syncthreads();
+        for (void *ptr : ptrs) {
+            umf_ipc_handle_t ipcHandle;
+            size_t handleSize;
+            umf_result_t ret = umfGetIPCHandle(ptr, &ipcHandle, &handleSize);
+            ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+            ret = umfPutIPCHandle(ipcHandle);
+            EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+        }
+    };
+
+    umf_test::parallel_exec(NTHREADS, getPutHandlesFn);
 
     for (void *ptr : ptrs) {
         umf_result_t ret = umfPoolFree(pool.get(), ptr);
