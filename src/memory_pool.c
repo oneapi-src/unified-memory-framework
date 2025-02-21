@@ -136,6 +136,22 @@ umf_result_t umfPoolGetMemoryProvider(umf_memory_pool_handle_t hPool,
     return UMF_RESULT_SUCCESS;
 }
 
+umf_result_t
+umfPoolGetTrackingProvider(umf_memory_pool_handle_t hPool,
+                           umf_memory_provider_handle_t *hProvider) {
+    if (!hPool || !hProvider) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (hPool->flags & UMF_POOL_CREATE_FLAG_DISABLE_TRACKING) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    *hProvider = umfMemoryProviderGetPriv(hPool->provider);
+
+    return UMF_RESULT_SUCCESS;
+}
+
 umf_result_t umfPoolCreate(const umf_memory_pool_ops_t *ops,
                            umf_memory_provider_handle_t provider, void *params,
                            umf_pool_create_flags_t flags,

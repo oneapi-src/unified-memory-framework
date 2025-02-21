@@ -20,6 +20,7 @@
 #include "base_alloc_global.h"
 #include "coarse.h"
 #include "libumf.h"
+#include "memory_pool_internal.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
 #include "utils_log.h"
@@ -34,6 +35,8 @@ typedef struct fixed_memory_provider_t {
 
     // used only when the UMF_FIXED_FLAG_CREATE_FROM_POOL_PTR flag is set
     size_t ptr_orig_size; // original size of the memory region in the tracker
+    umf_memory_provider_handle_t
+        trackingProvider; // tracking provider of the original memory pool
 } fixed_memory_provider_t;
 
 // Fixed Memory provider settings struct
@@ -89,6 +92,7 @@ static umf_result_t fixed_allocation_merge_cb(void *provider, void *lowPtr,
 static umf_result_t fixed_initialize(void *params, void **provider) {
     umf_result_t ret;
     size_t ptr_orig_size = 0;
+    umf_memory_provider_handle_t trackingProvider = NULL;
 
     if (params == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
@@ -103,6 +107,12 @@ static umf_result_t fixed_initialize(void *params, void **provider) {
             LOG_ERR("The UMF_FIXED_FLAG_CREATE_FROM_POOL_PTR flag is set, but "
                     "the given pointer does not belong to any UMF pool");
             return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        }
+
+        ret = umfPoolGetTrackingProvider(pool, &trackingProvider);
+        if (ret != UMF_RESULT_SUCCESS) {
+            LOG_ERR("cannot get the tracking provider of the pool %p", pool);
+            return ret;
         }
     }
 
@@ -139,6 +149,7 @@ static umf_result_t fixed_initialize(void *params, void **provider) {
     fixed_provider->size = in_params->size;
     fixed_provider->flags = in_params->flags;
     fixed_provider->ptr_orig_size = ptr_orig_size;
+    fixed_provider->trackingProvider = trackingProvider;
 
     // add the entire memory as a single block
     ret = coarse_add_memory_fixed(coarse, fixed_provider->base,
