@@ -8,27 +8,12 @@
 #ifndef UMF_POOL_DISJOINT_INTERNAL_H
 #define UMF_POOL_DISJOINT_INTERNAL_H 1
 
-#include <assert.h>
-#include <ctype.h>
-#include <errno.h>
 #include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
 
-#include <umf/memory_pool.h>
-#include <umf/memory_pool_ops.h>
-#include <umf/memory_provider.h>
 #include <umf/pools/pool_disjoint.h>
 
 #include "critnib/critnib.h"
-#include "uthash/utlist.h"
-
-#include "base_alloc_global.h"
-#include "provider/provider_tracking.h"
-#include "utils_common.h"
 #include "utils_concurrency.h"
-#include "utils_log.h"
-#include "utils_math.h"
 
 typedef struct bucket_t bucket_t;
 typedef struct slab_t slab_t;
