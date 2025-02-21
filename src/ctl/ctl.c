@@ -20,6 +20,7 @@
 
 #include <ctype.h>
 #include <limits.h>
+#include <stdarg.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -81,8 +82,16 @@ char *Strdup(const char *s) {
     return p;
 }
 
-umf_result_t umfCtlGet(const char *name, void *ctx, void *arg) {
+umf_result_t umfCtlGet(const char *name, ...) {
     assert(name != NULL);
+
+    va_list args;
+    va_start(args, name);
+
+    void *ctx = va_arg(args, void *);
+    void *arg = va_arg(args, void *);
+    va_end(args);
+
     assert(arg != NULL);
     assert(ctx != NULL);
     return ctl_query(NULL, ctx, CTL_QUERY_PROGRAMMATIC, name, CTL_QUERY_READ,
@@ -91,8 +100,16 @@ umf_result_t umfCtlGet(const char *name, void *ctx, void *arg) {
                : UMF_RESULT_SUCCESS;
 }
 
-umf_result_t umfCtlSet(const char *name, void *ctx, void *arg) {
+umf_result_t umfCtlSet(const char *name, ...) {
     assert(name != NULL);
+
+    va_list args;
+    va_start(args, name);
+
+    void *ctx = va_arg(args, void *);
+    void *arg = va_arg(args, void *);
+    va_end(args);
+
     assert(arg != NULL);
     assert(ctx != NULL);
     return ctl_query(NULL, ctx, CTL_QUERY_PROGRAMMATIC, name, CTL_QUERY_WRITE,
@@ -101,8 +118,16 @@ umf_result_t umfCtlSet(const char *name, void *ctx, void *arg) {
                : UMF_RESULT_SUCCESS;
 }
 
-umf_result_t umfCtlExec(const char *name, void *ctx, void *arg) {
+umf_result_t umfCtlExec(const char *name, ...) {
     assert(name != NULL);
+
+    va_list args;
+    va_start(args, name);
+
+    void *ctx = va_arg(args, void *);
+    void *arg = va_arg(args, void *);
+    va_end(args);
+
     assert(arg != NULL);
     assert(ctx != NULL);
     return ctl_query(NULL, ctx, CTL_QUERY_PROGRAMMATIC, name,
