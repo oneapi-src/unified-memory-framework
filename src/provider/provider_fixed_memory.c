@@ -20,6 +20,8 @@
 #include "base_alloc_global.h"
 #include "coarse.h"
 #include "libumf.h"
+#include "memory_pool_internal.h"
+#include "provider_tracking.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
 #include "utils_log.h"
@@ -27,15 +29,22 @@
 #define TLS_MSG_BUF_LEN 1024
 
 typedef struct fixed_memory_provider_t {
-    void *base;       // base address of memory
-    size_t size;      // size of the memory region
-    coarse_t *coarse; // coarse library handle
+    void *base;         // base address of memory
+    size_t size;        // size of the memory region
+    unsigned int flags; // flags of the memory region
+    coarse_t *coarse;   // coarse library handle
+
+    // used only when the UMF_FIXED_FLAG_CREATE_FROM_POOL_PTR flag is set
+    size_t ptr_orig_size; // original size of the memory region in the tracker
+    umf_memory_provider_handle_t
+        trackingProvider; // tracking provider of the original memory pool
 } fixed_memory_provider_t;
 
 // Fixed Memory provider settings struct
 typedef struct umf_fixed_memory_provider_params_t {
     void *ptr;
     size_t size;
+    unsigned int flags;
 } umf_fixed_memory_provider_params_t;
 
 typedef struct fixed_last_native_error_t {
@@ -83,6 +92,8 @@ static umf_result_t fixed_allocation_merge_cb(void *provider, void *lowPtr,
 
 static umf_result_t fixed_initialize(void *params, void **provider) {
     umf_result_t ret;
+    size_t ptr_orig_size = 0;
+    umf_memory_provider_handle_t trackingProvider = NULL;
 
     if (params == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
@@ -90,6 +101,30 @@ static umf_result_t fixed_initialize(void *params, void **provider) {
 
     umf_fixed_memory_provider_params_t *in_params =
         (umf_fixed_memory_provider_params_t *)params;
+
+    if (in_params->flags & UMF_FIXED_FLAG_CREATE_FROM_POOL_PTR) {
+        umf_memory_pool_handle_t pool = umfPoolByPtr(in_params->ptr);
+        if (pool == NULL) {
+            LOG_ERR("The UMF_FIXED_FLAG_CREATE_FROM_POOL_PTR flag is set, but "
+                    "the given pointer does not belong to any UMF pool");
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        }
+
+        ret = umfPoolGetTrackingProvider(pool, &trackingProvider);
+        if (ret != UMF_RESULT_SUCCESS) {
+            LOG_ERR("cannot get the tracking provider of the pool %p", pool);
+            return ret;
+        }
+
+        ret = trackerShrinkEntry(trackingProvider, in_params->ptr,
+                                 in_params->size, &ptr_orig_size);
+        if (ret != UMF_RESULT_SUCCESS) {
+            LOG_ERR(
+                "cannot shrink the allocation %p in the tracker to size %zu",
+                in_params->ptr, in_params->size);
+            return ret;
+        }
+    }
 
     fixed_memory_provider_t *fixed_provider =
         umf_ba_global_alloc(sizeof(*fixed_provider));
@@ -122,6 +157,9 @@ static umf_result_t fixed_initialize(void *params, void **provider) {
 
     fixed_provider->base = in_params->ptr;
     fixed_provider->size = in_params->size;
+    fixed_provider->flags = in_params->flags;
+    fixed_provider->ptr_orig_size = ptr_orig_size;
+    fixed_provider->trackingProvider = trackingProvider;
 
     // add the entire memory as a single block
     ret = coarse_add_memory_fixed(coarse, fixed_provider->base,
@@ -145,6 +183,20 @@ err_free_fixed_provider:
 static void fixed_finalize(void *provider) {
     fixed_memory_provider_t *fixed_provider = provider;
     coarse_delete(fixed_provider->coarse);
+
+    if (fixed_provider->trackingProvider &&
+        (fixed_provider->ptr_orig_size >= fixed_provider->size)) {
+        umf_result_t ret = trackerGrowEntry(
+            fixed_provider->trackingProvider, fixed_provider->base,
+            fixed_provider->size, fixed_provider->ptr_orig_size);
+        if (ret != UMF_RESULT_SUCCESS) {
+            LOG_ERR("cannot grow the allocation %p in the tracker (from size "
+                    "%zu to size %zu)",
+                    fixed_provider->base, fixed_provider->size,
+                    fixed_provider->ptr_orig_size);
+        }
+    }
+
     umf_ba_global_free(fixed_provider);
 }
 
@@ -333,5 +385,26 @@ umf_result_t umfFixedMemoryProviderParamsSetMemory(
 
     hParams->ptr = ptr;
     hParams->size = size;
+    hParams->flags = 0;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t umfFixedMemoryProviderParamsSetFlags(
+    umf_fixed_memory_provider_params_handle_t hParams, unsigned int flags) {
+    if (hParams == NULL) {
+        LOG_ERR("Memory Provider params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if ((flags & UMF_FIXED_FLAG_CREATE_FROM_POOL_PTR) &&
+        (umfPoolByPtr(hParams->ptr) == NULL)) {
+        LOG_ERR("Cannot set the UMF_FIXED_FLAG_CREATE_FROM_POOL_PTR, because "
+                "the given pointer does not belong to any UMF pool");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    hParams->flags = flags;
+
     return UMF_RESULT_SUCCESS;
 }

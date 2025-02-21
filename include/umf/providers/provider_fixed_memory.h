@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -17,6 +17,14 @@ extern "C" {
 /// @cond
 #define UMF_FIXED_RESULTS_START_FROM 4000
 /// @endcond
+
+/// @brief Fixed Memory Provider flags
+typedef enum umf_fixed_memory_provider_flag {
+    UMF_FIXED_FLAG_DEFAULT = 0, ///< the default - no flags set
+    UMF_FIXED_FLAG_CREATE_FROM_POOL_PTR =
+        (1
+         << 0), ///< The Fixed Memory Provider is created from the UMF pool's pointer
+} umf_fixed_memory_provider_flag_t;
 
 struct umf_fixed_memory_provider_params_t;
 
@@ -40,6 +48,13 @@ umf_result_t umfFixedMemoryProviderParamsCreate(
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 umf_result_t umfFixedMemoryProviderParamsSetMemory(
     umf_fixed_memory_provider_params_handle_t hParams, void *ptr, size_t size);
+
+/// @brief  Set the memory region flags in params struct.
+/// @param  hParams [in] handle to the parameters of the Fixed Memory Provider.
+/// @param  flags [in] flags for the memory region.
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+umf_result_t umfFixedMemoryProviderParamsSetFlags(
+    umf_fixed_memory_provider_params_handle_t hParams, unsigned int flags);
 
 /// @brief  Destroy parameters struct.
 /// @param  hParams [in] handle to the parameters of the Fixed Memory Provider.

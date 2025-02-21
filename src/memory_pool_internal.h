@@ -36,6 +36,10 @@ typedef struct umf_memory_pool_t {
     void *tag;
 } umf_memory_pool_t;
 
+umf_result_t
+umfPoolGetTrackingProvider(umf_memory_pool_handle_t hPool,
+                           umf_memory_provider_handle_t *hProvider);
+
 #ifdef __cplusplus
 }
 #endif
