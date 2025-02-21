@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2025 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -11,10 +11,12 @@
 #endif
 
 #include <umf/memory_provider.h>
+#include <umf/pools/pool_proxy.h>
 #include <umf/providers/provider_fixed_memory.h>
 
 using umf_test::test;
 
+#define FIXED_BUFFER_SIZE (10 * utils_get_page_size())
 #define INVALID_PTR ((void *)0x01)
 
 typedef enum purge_t {
@@ -59,7 +61,7 @@ struct FixedProviderTest
         test::SetUp();
 
         // Allocate a memory buffer to use with the fixed memory provider
-        memory_size = utils_get_page_size() * 10; // Allocate 10 pages
+        memory_size = FIXED_BUFFER_SIZE; // Allocate 10 pages
         memory_buffer = malloc(memory_size);
         ASSERT_NE(memory_buffer, nullptr);
 
@@ -390,4 +392,223 @@ TEST_P(FixedProviderTest, split) {
     memset(ptr2, 0x22, size);
     umf_result = umfMemoryProviderFree(provider.get(), ptr2, size);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+}
+
+TEST_P(FixedProviderTest, params_set_flags_negative) {
+    umf_result_t umf_result;
+
+    // Create provider parameters
+    umf_fixed_memory_provider_params_handle_t params = nullptr;
+    umf_result =
+        umfFixedMemoryProviderParamsCreate(&params, memory_buffer, memory_size);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(params, nullptr);
+
+    // params is NULL
+    umf_result = umfFixedMemoryProviderParamsSetFlags(
+        NULL, UMF_FIXED_FLAG_CREATE_FROM_POOL_PTR);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    // the pointer does not belong to any UMF pool
+    umf_result = umfFixedMemoryProviderParamsSetFlags(
+        params, UMF_FIXED_FLAG_CREATE_FROM_POOL_PTR);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    umfFixedMemoryProviderParamsDestroy(params);
+}
+
+TEST_P(FixedProviderTest, pool_from_ptr_negative_wrong_ptr) {
+    umf_result_t umf_result;
+    size_t size_of_first_alloc;
+    size_t size_of_pool_from_ptr;
+    void *ptr_for_pool = nullptr;
+
+    umf_memory_pool_handle_t proxyFixedPool = nullptr;
+    umf_result = umfPoolCreate(umfProxyPoolOps(), provider.get(), nullptr, 0,
+                               &proxyFixedPool);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    size_of_first_alloc = FIXED_BUFFER_SIZE - (2 * page_size);
+    ptr_for_pool = umfPoolMalloc(proxyFixedPool, size_of_first_alloc);
+    ASSERT_NE(ptr_for_pool, nullptr);
+
+    // Create provider parameters
+    size_of_pool_from_ptr = size_of_first_alloc; // whole size
+    umf_fixed_memory_provider_params_handle_t params = nullptr;
+    umf_result = umfFixedMemoryProviderParamsCreate(&params, ptr_for_pool,
+                                                    size_of_pool_from_ptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(params, nullptr);
+
+    umf_result = umfFixedMemoryProviderParamsSetFlags(
+        params, UMF_FIXED_FLAG_CREATE_FROM_POOL_PTR);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umf_result = umfPoolFree(proxyFixedPool, ptr_for_pool);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    // the pointer (ptr_for_pool) does not belong to any UMF pool
+    umf_memory_provider_handle_t providerFromPtr = nullptr;
+    umf_result = umfMemoryProviderCreate(umfFixedMemoryProviderOps(), params,
+                                         &providerFromPtr);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    ASSERT_EQ(providerFromPtr, nullptr);
+
+    umfFixedMemoryProviderParamsDestroy(params);
+    umfPoolDestroy(proxyFixedPool);
+}
+
+TEST_P(FixedProviderTest, pool_from_ptr_negative_shrink_size_too_big) {
+    umf_result_t umf_result;
+    size_t size_of_first_alloc;
+    size_t size_of_pool_from_ptr;
+    void *ptr_for_pool = nullptr;
+
+    umf_memory_pool_handle_t proxyFixedPool = nullptr;
+    umf_result = umfPoolCreate(umfProxyPoolOps(), provider.get(), nullptr, 0,
+                               &proxyFixedPool);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    size_of_first_alloc = FIXED_BUFFER_SIZE - (2 * page_size);
+    ptr_for_pool = umfPoolMalloc(proxyFixedPool, size_of_first_alloc);
+    ASSERT_NE(ptr_for_pool, nullptr);
+
+    // Create provider parameters
+    size_of_pool_from_ptr = size_of_first_alloc + 1; // size too big
+    umf_fixed_memory_provider_params_handle_t params = nullptr;
+    umf_result = umfFixedMemoryProviderParamsCreate(&params, ptr_for_pool,
+                                                    size_of_pool_from_ptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(params, nullptr);
+
+    umf_result = umfFixedMemoryProviderParamsSetFlags(
+        params, UMF_FIXED_FLAG_CREATE_FROM_POOL_PTR);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umf_memory_provider_handle_t providerFromPtr = nullptr;
+    umf_result = umfMemoryProviderCreate(umfFixedMemoryProviderOps(), params,
+                                         &providerFromPtr);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    ASSERT_EQ(providerFromPtr, nullptr);
+
+    umfFixedMemoryProviderParamsDestroy(params);
+
+    umf_result = umfPoolFree(proxyFixedPool, ptr_for_pool);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umfPoolDestroy(proxyFixedPool);
+}
+
+TEST_P(FixedProviderTest, pool_from_ptr_whole_size_success) {
+    umf_result_t umf_result;
+    size_t size_of_first_alloc;
+    size_t size_of_pool_from_ptr;
+    void *ptr_for_pool = nullptr;
+    void *ptr = nullptr;
+
+    umf_memory_pool_handle_t proxyFixedPool = nullptr;
+    umf_result = umfPoolCreate(umfProxyPoolOps(), provider.get(), nullptr, 0,
+                               &proxyFixedPool);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    size_of_first_alloc = FIXED_BUFFER_SIZE - (2 * page_size);
+    ptr_for_pool = umfPoolMalloc(proxyFixedPool, size_of_first_alloc);
+    ASSERT_NE(ptr_for_pool, nullptr);
+
+    // Create provider parameters
+    size_of_pool_from_ptr = size_of_first_alloc; // whole size
+    umf_fixed_memory_provider_params_handle_t params = nullptr;
+    umf_result = umfFixedMemoryProviderParamsCreate(&params, ptr_for_pool,
+                                                    size_of_pool_from_ptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(params, nullptr);
+
+    umf_result = umfFixedMemoryProviderParamsSetFlags(
+        params, UMF_FIXED_FLAG_CREATE_FROM_POOL_PTR);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umf_memory_provider_handle_t providerFromPtr = nullptr;
+    umf_result = umfMemoryProviderCreate(umfFixedMemoryProviderOps(), params,
+                                         &providerFromPtr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(providerFromPtr, nullptr);
+
+    umf_memory_pool_handle_t poolFromPtr = nullptr;
+    umf_result = umfPoolCreate(umfProxyPoolOps(), providerFromPtr, nullptr, 0,
+                               &poolFromPtr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    ptr = umfPoolMalloc(poolFromPtr, size_of_pool_from_ptr);
+    ASSERT_NE(ptr, nullptr);
+
+    memset(ptr, 0xFF, size_of_pool_from_ptr);
+
+    umf_result = umfPoolFree(poolFromPtr, ptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umfPoolDestroy(poolFromPtr);
+    umfMemoryProviderDestroy(providerFromPtr);
+    umfFixedMemoryProviderParamsDestroy(params);
+
+    umf_result = umfPoolFree(proxyFixedPool, ptr_for_pool);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umfPoolDestroy(proxyFixedPool);
+}
+
+TEST_P(FixedProviderTest, pool_from_ptr_half_size_success) {
+    umf_result_t umf_result;
+    size_t size_of_first_alloc;
+    size_t size_of_pool_from_ptr;
+    void *ptr_for_pool = nullptr;
+    void *ptr = nullptr;
+
+    umf_memory_pool_handle_t proxyFixedPool = nullptr;
+    umf_result = umfPoolCreate(umfProxyPoolOps(), provider.get(), nullptr, 0,
+                               &proxyFixedPool);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    size_of_first_alloc = FIXED_BUFFER_SIZE - (2 * page_size);
+    ptr_for_pool = umfPoolMalloc(proxyFixedPool, size_of_first_alloc);
+    ASSERT_NE(ptr_for_pool, nullptr);
+
+    // Create provider parameters
+    size_of_pool_from_ptr = size_of_first_alloc / 2; // half size
+    umf_fixed_memory_provider_params_handle_t params = nullptr;
+    umf_result = umfFixedMemoryProviderParamsCreate(&params, ptr_for_pool,
+                                                    size_of_pool_from_ptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(params, nullptr);
+
+    umf_result = umfFixedMemoryProviderParamsSetFlags(
+        params, UMF_FIXED_FLAG_CREATE_FROM_POOL_PTR);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umf_memory_provider_handle_t providerFromPtr = nullptr;
+    umf_result = umfMemoryProviderCreate(umfFixedMemoryProviderOps(), params,
+                                         &providerFromPtr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(providerFromPtr, nullptr);
+
+    umf_memory_pool_handle_t poolFromPtr = nullptr;
+    umf_result = umfPoolCreate(umfProxyPoolOps(), providerFromPtr, nullptr, 0,
+                               &poolFromPtr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    ptr = umfPoolMalloc(poolFromPtr, size_of_pool_from_ptr);
+    ASSERT_NE(ptr, nullptr);
+
+    memset(ptr, 0xFF, size_of_pool_from_ptr);
+
+    umf_result = umfPoolFree(poolFromPtr, ptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umfPoolDestroy(poolFromPtr);
+    umfMemoryProviderDestroy(providerFromPtr);
+    umfFixedMemoryProviderParamsDestroy(params);
+
+    umf_result = umfPoolFree(proxyFixedPool, ptr_for_pool);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umfPoolDestroy(proxyFixedPool);
 }
