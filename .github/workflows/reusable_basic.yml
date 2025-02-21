@@ -496,7 +496,7 @@ jobs:
         ${{matrix.static_hwloc}}
 
     - name: Build UMF
-      run: cmake --build ${{env.BUILD_DIR}} -j $(sysctl -n hw.logicalcpu)
+      run: cmake --build ${{env.BUILD_DIR}} -j $(sysctl -n hw.logicalcpu) || ( rm -rf ${{env.BUILD_DIR}}/_deps/jemalloc_targ-build && cmake --build ${{env.BUILD_DIR}} -j 1 )
 
     - name: Test UMF installation and uninstallation
       run: >
