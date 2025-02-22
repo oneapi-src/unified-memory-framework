@@ -15,8 +15,10 @@
 #include <umf/memory_provider.h>
 #include <umf/pools/pool_proxy.h>
 
+#include <algorithm>
 #include <cstring>
 #include <numeric>
+#include <random>
 #include <tuple>
 
 class MemoryAccessor {
@@ -158,6 +160,110 @@ struct umfIpcTest : umf_test::test,
     umf_memory_provider_ops_t *providerOps = nullptr;
     pfnProviderParamsCreate providerParamsCreate = nullptr;
     pfnProviderParamsDestroy providerParamsDestroy = nullptr;
+
+    void concurrentGetConcurrentPutHandles(bool shuffle) {
+        std::vector<void *> ptrs;
+        constexpr size_t ALLOC_SIZE = 100;
+        constexpr size_t NUM_POINTERS = 100;
+        umf::pool_unique_handle_t pool = makePool();
+        ASSERT_NE(pool.get(), nullptr);
+
+        for (size_t i = 0; i < NUM_POINTERS; ++i) {
+            void *ptr = umfPoolMalloc(pool.get(), ALLOC_SIZE);
+            EXPECT_NE(ptr, nullptr);
+            ptrs.push_back(ptr);
+        }
+
+        std::array<std::vector<umf_ipc_handle_t>, NTHREADS> ipcHandles;
+
+        umf_test::syncthreads_barrier syncthreads(NTHREADS);
+
+        auto getHandlesFn = [shuffle, &ipcHandles, &ptrs,
+                             &syncthreads](size_t tid) {
+            // Each thread gets a copy of the pointers to shuffle them
+            std::vector<void *> localPtrs = ptrs;
+            if (shuffle) {
+                std::random_device rd;
+                std::mt19937 g(rd());
+                std::shuffle(localPtrs.begin(), localPtrs.end(), g);
+            }
+            syncthreads();
+            for (void *ptr : localPtrs) {
+                umf_ipc_handle_t ipcHandle;
+                size_t handleSize;
+                umf_result_t ret =
+                    umfGetIPCHandle(ptr, &ipcHandle, &handleSize);
+                ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+                ipcHandles[tid].push_back(ipcHandle);
+            }
+        };
+
+        umf_test::parallel_exec(NTHREADS, getHandlesFn);
+
+        auto putHandlesFn = [&ipcHandles, &syncthreads](size_t tid) {
+            syncthreads();
+            for (umf_ipc_handle_t ipcHandle : ipcHandles[tid]) {
+                umf_result_t ret = umfPutIPCHandle(ipcHandle);
+                EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+            }
+        };
+
+        umf_test::parallel_exec(NTHREADS, putHandlesFn);
+
+        for (void *ptr : ptrs) {
+            umf_result_t ret = umfPoolFree(pool.get(), ptr);
+            EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+        }
+
+        pool.reset(nullptr);
+        EXPECT_EQ(stat.putCount, stat.getCount);
+    }
+
+    void concurrentGetPutHandles(bool shuffle) {
+        std::vector<void *> ptrs;
+        constexpr size_t ALLOC_SIZE = 100;
+        constexpr size_t NUM_POINTERS = 100;
+        umf::pool_unique_handle_t pool = makePool();
+        ASSERT_NE(pool.get(), nullptr);
+
+        for (size_t i = 0; i < NUM_POINTERS; ++i) {
+            void *ptr = umfPoolMalloc(pool.get(), ALLOC_SIZE);
+            EXPECT_NE(ptr, nullptr);
+            ptrs.push_back(ptr);
+        }
+
+        umf_test::syncthreads_barrier syncthreads(NTHREADS);
+
+        auto getPutHandlesFn = [shuffle, &ptrs, &syncthreads](size_t) {
+            // Each thread gets a copy of the pointers to shuffle them
+            std::vector<void *> localPtrs = ptrs;
+            if (shuffle) {
+                std::random_device rd;
+                std::mt19937 g(rd());
+                std::shuffle(localPtrs.begin(), localPtrs.end(), g);
+            }
+            syncthreads();
+            for (void *ptr : localPtrs) {
+                umf_ipc_handle_t ipcHandle;
+                size_t handleSize;
+                umf_result_t ret =
+                    umfGetIPCHandle(ptr, &ipcHandle, &handleSize);
+                ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+                ret = umfPutIPCHandle(ipcHandle);
+                EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+            }
+        };
+
+        umf_test::parallel_exec(NTHREADS, getPutHandlesFn);
+
+        for (void *ptr : ptrs) {
+            umf_result_t ret = umfPoolFree(pool.get(), ptr);
+            EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+        }
+
+        pool.reset(nullptr);
+        EXPECT_EQ(stat.putCount, stat.getCount);
+    }
 };
 
 TEST_P(umfIpcTest, GetIPCHandleSize) {
@@ -473,53 +579,18 @@ TEST_P(umfIpcTest, openInTwoIpcHandlers) {
     EXPECT_EQ(stat.closeCount, stat.openCount);
 }
 
-TEST_P(umfIpcTest, ConcurrentGetPutHandles) {
-    std::vector<void *> ptrs;
-    constexpr size_t ALLOC_SIZE = 100;
-    constexpr size_t NUM_POINTERS = 100;
-    umf::pool_unique_handle_t pool = makePool();
-    ASSERT_NE(pool.get(), nullptr);
+TEST_P(umfIpcTest, ConcurrentGetConcurrentPutHandles) {
+    concurrentGetConcurrentPutHandles(false);
+}
 
-    for (size_t i = 0; i < NUM_POINTERS; ++i) {
-        void *ptr = umfPoolMalloc(pool.get(), ALLOC_SIZE);
-        EXPECT_NE(ptr, nullptr);
-        ptrs.push_back(ptr);
-    }
+TEST_P(umfIpcTest, ConcurrentGetConcurrentPutHandlesShuffled) {
+    concurrentGetConcurrentPutHandles(true);
+}
 
-    std::array<std::vector<umf_ipc_handle_t>, NTHREADS> ipcHandles;
+TEST_P(umfIpcTest, ConcurrentGetPutHandles) { concurrentGetPutHandles(false); }
 
-    umf_test::syncthreads_barrier syncthreads(NTHREADS);
-
-    auto getHandlesFn = [&ipcHandles, &ptrs, &syncthreads](size_t tid) {
-        syncthreads();
-        for (void *ptr : ptrs) {
-            umf_ipc_handle_t ipcHandle;
-            size_t handleSize;
-            umf_result_t ret = umfGetIPCHandle(ptr, &ipcHandle, &handleSize);
-            ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
-            ipcHandles[tid].push_back(ipcHandle);
-        }
-    };
-
-    umf_test::parallel_exec(NTHREADS, getHandlesFn);
-
-    auto putHandlesFn = [&ipcHandles, &syncthreads](size_t tid) {
-        syncthreads();
-        for (umf_ipc_handle_t ipcHandle : ipcHandles[tid]) {
-            umf_result_t ret = umfPutIPCHandle(ipcHandle);
-            EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
-        }
-    };
-
-    umf_test::parallel_exec(NTHREADS, putHandlesFn);
-
-    for (void *ptr : ptrs) {
-        umf_result_t ret = umfPoolFree(pool.get(), ptr);
-        EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
-    }
-
-    pool.reset(nullptr);
-    EXPECT_EQ(stat.putCount, stat.getCount);
+TEST_P(umfIpcTest, ConcurrentGetPutHandlesShuffled) {
+    concurrentGetPutHandles(true);
 }
 
 TEST_P(umfIpcTest, ConcurrentOpenCloseHandles) {
