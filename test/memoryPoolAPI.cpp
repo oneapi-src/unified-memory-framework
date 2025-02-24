@@ -12,6 +12,7 @@
 #include "test_helpers.h"
 
 #include <umf/memory_provider.h>
+#include <umf/pools/pool_disjoint.h>
 #include <umf/pools/pool_proxy.h>
 
 #ifdef UMF_PROXY_LIB_ENABLED
@@ -295,12 +296,14 @@ TEST_F(tagTest, SetAndGetInvalidPool) {
 
 INSTANTIATE_TEST_SUITE_P(
     mallocPoolTest, umfPoolTest,
-    ::testing::Values(poolCreateExtParams{&MALLOC_POOL_OPS, nullptr, nullptr,
-                                          &UMF_NULL_PROVIDER_OPS, nullptr,
-                                          nullptr},
-                      poolCreateExtParams{umfProxyPoolOps(), nullptr, nullptr,
-                                          &BA_GLOBAL_PROVIDER_OPS, nullptr,
-                                          nullptr}));
+    ::testing::Values(
+        poolCreateExtParams{&MALLOC_POOL_OPS, nullptr, nullptr,
+                            &UMF_NULL_PROVIDER_OPS, nullptr, nullptr},
+        poolCreateExtParams{umfProxyPoolOps(), nullptr, nullptr,
+                            &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr},
+        poolCreateExtParams{umfDisjointPoolOps(), defaultDisjointPoolConfig,
+                            defaultDisjointPoolConfigDestroy,
+                            &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr}));
 
 INSTANTIATE_TEST_SUITE_P(mallocMultiPoolTest, umfMultiPoolTest,
                          ::testing::Values(poolCreateExtParams{

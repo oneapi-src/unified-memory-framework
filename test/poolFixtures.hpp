@@ -452,26 +452,45 @@ TEST_P(umfPoolTest, allocMaxSize) {
 }
 
 TEST_P(umfPoolTest, mallocUsableSize) {
-#ifdef __SANITIZE_ADDRESS__
-    // Sanitizer replaces malloc_usable_size implementation with its own
-    GTEST_SKIP()
-        << "This test is invalid with AddressSanitizer instrumentation";
-#else
-
-    for (size_t allocSize : {32, 48, 1024, 8192}) {
-        char *ptr = static_cast<char *>(umfPoolMalloc(pool.get(), allocSize));
-        ASSERT_NE(ptr, nullptr);
-        size_t result = umfPoolMallocUsableSize(pool.get(), ptr);
-        ASSERT_TRUE(result == 0 || result >= allocSize);
-
-        // Make sure we can write to this memory
-        for (size_t i = 0; i < result; i++) {
-            ptr[i] = 123;
-        }
-
-        umfPoolFree(pool.get(), ptr);
+    [[maybe_unused]] auto pool_ops = std::get<0>(this->GetParam());
+#ifdef _WIN32
+    if (pool_ops == &umf_test::MALLOC_POOL_OPS) {
+        GTEST_SKIP()
+            << "Windows Malloc Pool does not support umfPoolAlignedMalloc";
     }
 #endif
+    if (!umf_test::isAlignedAllocSupported(pool.get())) {
+        GTEST_SKIP();
+    }
+#ifdef __SANITIZE_ADDRESS__
+    if (pool_ops == &umf_test::MALLOC_POOL_OPS) {
+        // Sanitizer replaces malloc_usable_size implementation with its own
+        GTEST_SKIP()
+            << "This test is invalid with AddressSanitizer instrumentation";
+    }
+#endif
+    for (size_t allocSize :
+         {32, 64, 1 << 6, 1 << 10, 1 << 13, 1 << 16, 1 << 19}) {
+        for (size_t alignment : {0, 1 << 6, 1 << 8, 1 << 12}) {
+            if (alignment >= allocSize) {
+                continue;
+            }
+            void *ptr = nullptr;
+            if (alignment == 0) {
+                ptr = umfPoolMalloc(pool.get(), allocSize);
+            } else {
+                ptr = umfPoolAlignedMalloc(pool.get(), allocSize, alignment);
+            }
+            ASSERT_NE(ptr, nullptr);
+            size_t result = umfPoolMallocUsableSize(pool.get(), ptr);
+            ASSERT_TRUE(result == 0 || result >= allocSize);
+
+            // Make sure we can write to this memory
+            memset(ptr, 123, result);
+
+            umfPoolFree(pool.get(), ptr);
+        }
+    }
 }
 
 #endif /* UMF_TEST_POOL_FIXTURES_HPP */
