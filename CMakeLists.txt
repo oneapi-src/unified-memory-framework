@@ -283,7 +283,8 @@ else()
 
         message(STATUS "hwloc CMAKE_GENERATOR: ${CMAKE_GENERATOR}")
 
-        if(CMAKE_GENERATOR STREQUAL "Ninja")
+        if(CMAKE_GENERATOR STREQUAL "Ninja" OR CMAKE_GENERATOR STREQUAL
+                                               "Unix Makefiles")
             add_custom_command(
                 COMMAND ${CMAKE_COMMAND}
                         -DCMAKE_INSTALL_PREFIX=${hwloc_targ_BINARY_DIR} -B build
