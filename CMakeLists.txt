@@ -186,11 +186,12 @@ else()
         # --disable-initial-exec-tls - Disable the initial-exec TLS model for
         # jemalloc's internal thread-local storage (on those platforms that
         # support explicit settings). This can allow jemalloc to be dynamically
-        # loaded after program startup (e.g. using dlopen).
+        # loaded after program startup (e.g. using dlopen). --disable-doc -
+        # Disable building and installing the documentation.
         COMMAND
             ./configure --prefix=${jemalloc_targ_BINARY_DIR}
             --with-jemalloc-prefix=je_ --disable-cxx --disable-initial-exec-tls
-            CFLAGS=-fPIC
+            --disable-doc CFLAGS=-fPIC
         WORKING_DIRECTORY ${jemalloc_targ_SOURCE_DIR}
         OUTPUT ${jemalloc_targ_SOURCE_DIR}/Makefile
         DEPENDS ${jemalloc_targ_SOURCE_DIR}/configure)
