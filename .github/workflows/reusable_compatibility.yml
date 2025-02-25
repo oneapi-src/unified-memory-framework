@@ -110,7 +110,7 @@ jobs:
       run: >
         UMF_LOG="level:warning;flush:debug;output:stderr;pid:no" 
         LD_LIBRARY_PATH=${{github.workspace}}/latest_version/build/lib/ 
-        ctest --output-on-failure
+        ctest --output-on-failure -E "umf-mempolicy" # disable tests that rely on internal structures
  
   windows-build:
     name: Windows
