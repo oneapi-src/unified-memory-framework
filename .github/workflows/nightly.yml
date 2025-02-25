@@ -151,6 +151,66 @@ jobs:
       working-directory: ${{env.BUILD_DIR}}
       run: ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
 
+  Windows-NMake:
+    name: Windows-NMake
+    env:
+      VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
+      BUILD_DIR : "${{github.workspace}}/build"
+    strategy:
+      matrix:
+        os: ['windows-2019', 'windows-2022']
+        build_type: [Debug, Release]
+        compiler: [{c: cl, cxx: cl}]
+        shared_library: ['ON', 'OFF']
+
+    runs-on: ${{matrix.os}}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        fetch-depth: 0
+
+    - name: Initialize vcpkg
+      uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
+      with:
+        vcpkgGitCommitId: 3dd44b931481d7a8e9ba412621fa810232b66289
+        vcpkgDirectory: ${{env.BUILD_DIR}}/vcpkg
+        vcpkgJsonGlob: '**/vcpkg.json'
+
+    - name: Install dependencies
+      run: vcpkg install
+
+    - name: Configure MSVC environment
+      uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
+
+    - name: Configure build
+      run: >
+        cmake
+        -B ${{env.BUILD_DIR}}
+        -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
+        -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
+        -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
+        -G "NMake Makefiles"
+        -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
+        -DUMF_LINK_HWLOC_STATICALLY=ON
+        -DUMF_FORMAT_CODE_STYLE=OFF
+        -DUMF_DEVELOPER_MODE=ON
+        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
+        -DUMF_BUILD_CUDA_PROVIDER=ON
+        -DUMF_TESTS_FAIL_ON_SKIP=ON
+
+    - name: Build UMF
+      shell: cmd
+      run: cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j %NUMBER_OF_PROCESSORS%
+
+    - name: Run tests
+      shell: cmd
+      working-directory: ${{env.BUILD_DIR}}
+      run: ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
+
+
   icx:
    name: ICX
    env:
