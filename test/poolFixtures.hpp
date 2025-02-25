@@ -5,11 +5,6 @@
 #ifndef UMF_TEST_POOL_FIXTURES_HPP
 #define UMF_TEST_POOL_FIXTURES_HPP 1
 
-#include "pool.hpp"
-#include "provider.hpp"
-#include "umf/providers/provider_devdax_memory.h"
-#include "utils/utils_sanitizers.h"
-
 #include <array>
 #include <cstring>
 #include <functional>
@@ -17,7 +12,14 @@
 #include <string>
 #include <thread>
 
+#include <umf/pools/pool_proxy.h>
+#include <umf/providers/provider_devdax_memory.h>
+#include <umf/providers/provider_fixed_memory.h>
+
 #include "../malloc_compliance_tests.hpp"
+#include "pool.hpp"
+#include "provider.hpp"
+#include "utils/utils_sanitizers.h"
 
 typedef void *(*pfnPoolParamsCreate)();
 typedef umf_result_t (*pfnPoolParamsDestroy)(void *);
@@ -472,6 +474,150 @@ TEST_P(umfPoolTest, mallocUsableSize) {
         umfPoolFree(pool.get(), ptr);
     }
 #endif
+}
+
+TEST_P(umfPoolTest, umfPoolAlignedMalloc) {
+#ifdef _WIN32
+    // umfPoolAlignedMalloc() is not supported on Windows
+    // TODO: implement support for windows
+    GTEST_SKIP();
+#else  /* !_WIN32 */
+    umf_result_t umf_result;
+    size_t size_of_first_alloc;
+    void *ptr_for_pool = nullptr;
+
+    umf_memory_pool_handle_t pool_get = pool.get();
+    size_of_first_alloc = 2 * 1024 * 1024; // 2MB
+
+    if (!umf_test::isAlignedAllocSupported(pool_get)) {
+        GTEST_SKIP();
+    }
+
+    ptr_for_pool = umfPoolAlignedMalloc(pool_get, size_of_first_alloc,
+                                        utils_get_page_size());
+    ASSERT_NE(ptr_for_pool, nullptr);
+
+    umf_result = umfPoolFree(pool_get, ptr_for_pool);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+#endif /* !_WIN32 */
+}
+
+TEST_P(umfPoolTest, pool_from_ptr_whole_size_success) {
+#ifdef _WIN32
+    // umfPoolAlignedMalloc() is not supported on Windows
+    // TODO: implement support for windows
+    GTEST_SKIP();
+#else  /* !_WIN32 */
+    umf_result_t umf_result;
+    size_t size_of_first_alloc;
+    size_t size_of_pool_from_ptr;
+    void *ptr_for_pool = nullptr;
+    void *ptr = nullptr;
+
+    umf_memory_pool_handle_t pool_get = pool.get();
+    size_of_first_alloc = 2 * 1024 * 1024; // 2MB
+
+    if (!umf_test::isAlignedAllocSupported(pool_get)) {
+        GTEST_SKIP();
+    }
+
+    ptr_for_pool = umfPoolAlignedMalloc(pool_get, size_of_first_alloc,
+                                        utils_get_page_size());
+    ASSERT_NE(ptr_for_pool, nullptr);
+
+    // Create provider parameters
+    size_of_pool_from_ptr = size_of_first_alloc; // whole size
+    umf_fixed_memory_provider_params_handle_t params = nullptr;
+    umf_result = umfFixedMemoryProviderParamsCreate(&params, ptr_for_pool,
+                                                    size_of_pool_from_ptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(params, nullptr);
+
+    umf_memory_provider_handle_t providerFromPtr = nullptr;
+    umf_result = umfMemoryProviderCreate(umfFixedMemoryProviderOps(), params,
+                                         &providerFromPtr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(providerFromPtr, nullptr);
+
+    umf_memory_pool_handle_t poolFromPtr = nullptr;
+    umf_result = umfPoolCreate(umfProxyPoolOps(), providerFromPtr, nullptr, 0,
+                               &poolFromPtr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    ptr = umfPoolMalloc(poolFromPtr, size_of_pool_from_ptr);
+    ASSERT_NE(ptr, nullptr);
+
+    memset(ptr, 0xFF, size_of_pool_from_ptr);
+
+    umf_result = umfPoolFree(poolFromPtr, ptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umfPoolDestroy(poolFromPtr);
+    umfMemoryProviderDestroy(providerFromPtr);
+    umfFixedMemoryProviderParamsDestroy(params);
+
+    umf_result = umfPoolFree(pool_get, ptr_for_pool);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+#endif /* !_WIN32 */
+}
+
+TEST_P(umfPoolTest, pool_from_ptr_half_size_success) {
+#ifdef _WIN32
+    // umfPoolAlignedMalloc() is not supported on Windows
+    // TODO: implement support for windows
+    GTEST_SKIP();
+#else  /* !_WIN32 */
+    umf_result_t umf_result;
+    size_t size_of_first_alloc;
+    size_t size_of_pool_from_ptr;
+    void *ptr_for_pool = nullptr;
+    void *ptr = nullptr;
+
+    umf_memory_pool_handle_t pool_get = pool.get();
+    size_of_first_alloc = 2 * 1024 * 1024; // 2MB
+
+    if (!umf_test::isAlignedAllocSupported(pool_get)) {
+        GTEST_SKIP();
+    }
+
+    ptr_for_pool = umfPoolAlignedMalloc(pool_get, size_of_first_alloc,
+                                        utils_get_page_size());
+    ASSERT_NE(ptr_for_pool, nullptr);
+
+    // Create provider parameters
+    size_of_pool_from_ptr = size_of_first_alloc / 2; // half size
+    umf_fixed_memory_provider_params_handle_t params = nullptr;
+    umf_result = umfFixedMemoryProviderParamsCreate(&params, ptr_for_pool,
+                                                    size_of_pool_from_ptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(params, nullptr);
+
+    umf_memory_provider_handle_t providerFromPtr = nullptr;
+    umf_result = umfMemoryProviderCreate(umfFixedMemoryProviderOps(), params,
+                                         &providerFromPtr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(providerFromPtr, nullptr);
+
+    umf_memory_pool_handle_t poolFromPtr = nullptr;
+    umf_result = umfPoolCreate(umfProxyPoolOps(), providerFromPtr, nullptr, 0,
+                               &poolFromPtr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    ptr = umfPoolMalloc(poolFromPtr, size_of_pool_from_ptr);
+    ASSERT_NE(ptr, nullptr);
+
+    memset(ptr, 0xFF, size_of_pool_from_ptr);
+
+    umf_result = umfPoolFree(poolFromPtr, ptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umfPoolDestroy(poolFromPtr);
+    umfMemoryProviderDestroy(providerFromPtr);
+    umfFixedMemoryProviderParamsDestroy(params);
+
+    umf_result = umfPoolFree(pool_get, ptr_for_pool);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+#endif /* !_WIN32 */
 }
 
 #endif /* UMF_TEST_POOL_FIXTURES_HPP */
