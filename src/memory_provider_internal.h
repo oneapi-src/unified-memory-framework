@@ -21,8 +21,9 @@ extern "C" {
 #endif
 
 typedef struct umf_memory_provider_t {
-    umf_memory_provider_ops_t ops;
     void *provider_priv;
+    // ops should be the last due to possible change size in the future
+    umf_memory_provider_ops_t ops;
 } umf_memory_provider_t;
 
 void *umfMemoryProviderGetPriv(umf_memory_provider_handle_t hProvider);
