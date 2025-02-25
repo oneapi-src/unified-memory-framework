@@ -121,14 +121,14 @@ static __inline unsigned char utils_mssb_index(long long value) {
 
 #define utils_atomic_load_acquire(object, dest)                                \
     do {                                                                       \
-        utils_annotate_acquire((void *)object);                                \
         __atomic_load(object, dest, memory_order_acquire);                     \
+        utils_annotate_acquire((void *)object);                                \
     } while (0)
 
 #define utils_atomic_store_release(object, desired)                            \
     do {                                                                       \
-        __atomic_store_n(object, desired, memory_order_release);               \
         utils_annotate_release((void *)object);                                \
+        __atomic_store_n(object, desired, memory_order_release);               \
     } while (0)
 
 #define utils_atomic_increment(object)                                         \
