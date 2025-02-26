@@ -35,6 +35,10 @@ static void multithreaded(benchmark::internal::Benchmark *benchmark) {
     benchmark->Threads(1);
 }
 
+static void singlethreaded(benchmark::internal::Benchmark *benchmark) {
+    benchmark->Threads(1);
+}
+
 static void
 default_multiple_alloc_fix_size(benchmark::internal::Benchmark *benchmark) {
     benchmark->Args({10000, 1, 4096});
@@ -68,7 +72,8 @@ UMF_BENCHMARK_TEMPLATE_DEFINE(multiple_malloc_free_benchmark, proxy_pool,
 UMF_BENCHMARK_REGISTER_F(multiple_malloc_free_benchmark, proxy_pool)
     ->Apply(&default_multiple_alloc_fix_size)
     // reduce iterations, as this benchmark is slower than others
-    ->Iterations(50000);
+    ->Iterations(50000)
+    ->Apply(&singlethreaded);
 
 UMF_BENCHMARK_TEMPLATE_DEFINE(multiple_malloc_free_benchmark, os_provider,
                               fixed_alloc_size,
@@ -76,7 +81,8 @@ UMF_BENCHMARK_TEMPLATE_DEFINE(multiple_malloc_free_benchmark, os_provider,
 UMF_BENCHMARK_REGISTER_F(multiple_malloc_free_benchmark, os_provider)
     ->Apply(&default_multiple_alloc_fix_size)
     // reduce iterations, as this benchmark is slower than others
-    ->Iterations(50000);
+    ->Iterations(50000)
+    ->Apply(&singlethreaded);
 
 UMF_BENCHMARK_TEMPLATE_DEFINE(multiple_malloc_free_benchmark, disjoint_pool_fix,
                               fixed_alloc_size,
@@ -89,8 +95,9 @@ UMF_BENCHMARK_TEMPLATE_DEFINE(multiple_malloc_free_benchmark,
                               disjoint_pool_uniform, uniform_alloc_size,
                               pool_allocator<disjoint_pool<os_provider>>);
 UMF_BENCHMARK_REGISTER_F(multiple_malloc_free_benchmark, disjoint_pool_uniform)
-    ->Apply(&default_multiple_alloc_uniform_size);
-// TODO: enable
+    ->Apply(&default_multiple_alloc_uniform_size)
+    ->Apply(&singlethreaded);
+// TODO: change to multithreaded
 //->Apply(&multithreaded);
 
 #ifdef UMF_POOL_JEMALLOC_ENABLED
