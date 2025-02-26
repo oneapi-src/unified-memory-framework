@@ -6,19 +6,21 @@
 */
 
 #include <assert.h>
+#include <ctl/ctl.h>
 #include <errno.h>
 #include <limits.h>
+
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include <ctl/ctl.h>
 #include <umf.h>
 #include <umf/base.h>
 #include <umf/memory_provider.h>
 #include <umf/memory_provider_ops.h>
 #include <umf/providers/provider_os_memory.h>
+
+#include "utils_assert.h"
 // OS Memory Provider requires HWLOC
 #if defined(UMF_NO_HWLOC)
 
@@ -187,12 +189,77 @@ static int CTL_READ_HANDLER(ipc_enabled)(void *ctx,
     return 0;
 }
 
+static int CTL_READ_HANDLER(peak_memory)(void *ctx,
+                                         umf_ctl_query_source_t source,
+                                         void *arg,
+                                         umf_ctl_index_utlist_t *indexes,
+                                         const char *extra_name,
+                                         umf_ctl_query_type_t query_type) {
+    /* suppress unused-parameter errors */
+    (void)source, (void)indexes, (void)ctx, (void)extra_name, (void)query_type;
+
+    size_t *arg_out = arg;
+    os_memory_provider_t *os_provider = (os_memory_provider_t *)ctx;
+    COMPILE_ERROR_ON(sizeof(os_provider->stats.peak_memory) !=
+                     sizeof(uint64_t));
+    utils_atomic_load_acquire_u64((uint64_t *)&os_provider->stats.peak_memory,
+                                  (uint64_t *)arg_out);
+    return 0;
+}
+
+static int CTL_READ_HANDLER(allocated_memory)(void *ctx,
+                                              umf_ctl_query_source_t source,
+                                              void *arg,
+                                              umf_ctl_index_utlist_t *indexes,
+                                              const char *extra_name,
+                                              umf_ctl_query_type_t query_type) {
+    /* suppress unused-parameter errors */
+    (void)source, (void)indexes, (void)ctx, (void)extra_name, (void)query_type;
+
+    size_t *arg_out = arg;
+    os_memory_provider_t *os_provider = (os_memory_provider_t *)ctx;
+    COMPILE_ERROR_ON(sizeof(os_provider->stats.allocated_memory) !=
+                     sizeof(uint64_t));
+    COMPILE_ERROR_ON(sizeof(*arg_out) != sizeof(uint64_t));
+    utils_atomic_load_acquire_u64(
+        (uint64_t *)&os_provider->stats.allocated_memory, (uint64_t *)arg_out);
+    return 0;
+}
+
+static int CTL_RUNNABLE_HANDLER(reset)(void *ctx, umf_ctl_query_source_t source,
+                                       void *arg,
+                                       umf_ctl_index_utlist_t *indexes,
+                                       const char *extra_name,
+                                       umf_ctl_query_type_t query_type) {
+    /* suppress unused-parameter errors */
+    (void)source, (void)indexes, (void)arg, (void)extra_name, (void)query_type;
+
+    os_memory_provider_t *os_provider = (os_memory_provider_t *)ctx;
+    size_t allocated;
+
+    COMPILE_ERROR_ON(sizeof(os_provider->stats.allocated_memory) !=
+                     sizeof(uint64_t));
+    COMPILE_ERROR_ON(sizeof(allocated) != sizeof(uint64_t));
+
+    utils_atomic_load_acquire_u64(
+        (uint64_t *)&os_provider->stats.allocated_memory,
+        (uint64_t *)&allocated);
+    utils_atomic_store_release_u64((uint64_t *)&os_provider->stats.peak_memory,
+                                   (uint64_t)allocated);
+
+    return 0;
+}
+static const umf_ctl_node_t CTL_NODE(stats)[] = {
+    CTL_LEAF_RO(allocated_memory), CTL_LEAF_RO(peak_memory),
+    CTL_LEAF_RUNNABLE(reset), CTL_NODE_END};
+
 static const umf_ctl_node_t CTL_NODE(params)[] = {CTL_LEAF_RO(ipc_enabled),
                                                   CTL_NODE_END};
 
 static void initialize_os_ctl(void) {
     os_memory_ctl_root = ctl_new();
     CTL_REGISTER_MODULE(os_memory_ctl_root, params);
+    CTL_REGISTER_MODULE(os_memory_ctl_root, stats);
 }
 
 static void os_store_last_native_error(int32_t native_error, int errno_value) {
@@ -1109,6 +1176,29 @@ static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
 
     *resultPtr = addr;
 
+    COMPILE_ERROR_ON(sizeof(os_provider->stats.allocated_memory) !=
+                     sizeof(uint64_t));
+    COMPILE_ERROR_ON(sizeof(os_provider->stats.peak_memory) !=
+                     sizeof(uint64_t));
+    COMPILE_ERROR_ON(sizeof(size) != sizeof(uint64_t));
+    // TODO: Change to memory_order_relaxed when we will have a proper wrapper
+    size_t allocated =
+        utils_fetch_and_add_u64(
+            (uint64_t *)&os_provider->stats.allocated_memory, (uint64_t)size) +
+        size;
+
+    uint64_t peak;
+    utils_atomic_load_acquire_u64((uint64_t *)&os_provider->stats.peak_memory,
+                                  &peak);
+
+    while (allocated > peak && !utils_compare_exchange_u64(
+                                   (uint64_t *)&os_provider->stats.peak_memory,
+                                   &peak, (uint64_t *)&allocated)) {
+        /* If the compare-exchange fails, 'peak' is updated to the current value of peak_memory.
+       We then re-check whether allocated is still greater than the updated peak value. */
+        ;
+    }
+
     return UMF_RESULT_SUCCESS;
 
 err_unmap:
@@ -1135,6 +1225,14 @@ static umf_result_t os_free(void *provider, void *ptr, size_t size) {
 
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
+
+    COMPILE_ERROR_ON(sizeof(size) != sizeof(uint64_t));
+    COMPILE_ERROR_ON(sizeof(os_provider->stats.allocated_memory) !=
+                     sizeof(uint64_t));
+
+    // TODO: Change it to memory_order_relaxed when we will have a proper wrapper
+    utils_fetch_and_sub_u64((uint64_t *)&os_provider->stats.allocated_memory,
+                            size);
 
     return UMF_RESULT_SUCCESS;
 }
