@@ -291,26 +291,26 @@ static umf_result_t trackingAllocationMerge(void *hProvider, void *lowPtr,
     tracker_alloc_info_t *lowValue = (tracker_alloc_info_t *)critnib_get(
         provider->hTracker->alloc_segments_map, (uintptr_t)lowPtr);
     if (!lowValue) {
-        LOG_ERR("no left value");
+        LOG_FATAL("no left value");
         ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
-        goto err;
+        goto err_assert;
     }
     tracker_alloc_info_t *highValue = (tracker_alloc_info_t *)critnib_get(
         provider->hTracker->alloc_segments_map, (uintptr_t)highPtr);
     if (!highValue) {
-        LOG_ERR("no right value");
+        LOG_FATAL("no right value");
         ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
-        goto err;
+        goto err_assert;
     }
     if (lowValue->pool != highValue->pool) {
-        LOG_ERR("pool mismatch");
+        LOG_FATAL("pool mismatch");
         ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
-        goto err;
+        goto err_assert;
     }
     if (lowValue->size + highValue->size != totalSize) {
-        LOG_ERR("lowValue->size + highValue->size != totalSize");
+        LOG_FATAL("lowValue->size + highValue->size != totalSize");
         ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
-        goto err;
+        goto err_assert;
     }
 
     ret = umfMemoryProviderAllocationMerge(provider->hUpstream, lowPtr, highPtr,
@@ -342,7 +342,7 @@ static umf_result_t trackingAllocationMerge(void *hProvider, void *lowPtr,
 
     return UMF_RESULT_SUCCESS;
 
-err:
+err_assert:
     assert(0);
 
 not_merged:
