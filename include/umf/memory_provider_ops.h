@@ -82,7 +82,6 @@ typedef struct umf_memory_provider_ext_ops_t {
     ///
     umf_result_t (*allocation_split)(void *hProvider, void *ptr,
                                      size_t totalSize, size_t firstSize);
-
 } umf_memory_provider_ext_ops_t;
 
 ///
@@ -250,6 +249,23 @@ typedef struct umf_memory_provider_ops_t {
     /// @brief Optional IPC ops. The API allows sharing of memory objects across different processes.
     ///
     umf_memory_provider_ipc_ops_t ipc;
+
+    ///
+    /// @brief Control operation for the memory provider.
+    ///        The function is used to perform various control operations
+    ///        on the memory provider.
+    ///
+    /// @param hProvider handle to the memory provider.
+    /// @param operationType type of the operation to be performed.
+    /// @param name name associated with the operation.
+    /// @param arg argument for the operation.
+    /// @param queryType type of the query to be performed.
+    ///
+    /// @return umf_result_t result of the control operation.
+    ///
+    umf_result_t (*ctl)(void *hProvider, int operationType, const char *name,
+                        void *arg, umf_ctl_query_type_t queryType);
+
 } umf_memory_provider_ops_t;
 
 #ifdef __cplusplus
