@@ -13,49 +13,6 @@
 #include "provider_null.h"
 #include "provider_trace.h"
 
-static constexpr size_t DEFAULT_DISJOINT_SLAB_MIN_SIZE = 4096;
-static constexpr size_t DEFAULT_DISJOINT_MAX_POOLABLE_SIZE = 4096;
-static constexpr size_t DEFAULT_DISJOINT_CAPACITY = 4;
-static constexpr size_t DEFAULT_DISJOINT_MIN_BUCKET_SIZE = 64;
-
-void *defaultPoolConfig() {
-    umf_disjoint_pool_params_handle_t config = nullptr;
-    umf_result_t res = umfDisjointPoolParamsCreate(&config);
-    if (res != UMF_RESULT_SUCCESS) {
-        throw std::runtime_error("Failed to create pool params");
-    }
-    res = umfDisjointPoolParamsSetSlabMinSize(config,
-                                              DEFAULT_DISJOINT_SLAB_MIN_SIZE);
-    if (res != UMF_RESULT_SUCCESS) {
-        umfDisjointPoolParamsDestroy(config);
-        throw std::runtime_error("Failed to set slab min size");
-    }
-    res = umfDisjointPoolParamsSetMaxPoolableSize(
-        config, DEFAULT_DISJOINT_MAX_POOLABLE_SIZE);
-    if (res != UMF_RESULT_SUCCESS) {
-        umfDisjointPoolParamsDestroy(config);
-        throw std::runtime_error("Failed to set max poolable size");
-    }
-    res = umfDisjointPoolParamsSetCapacity(config, DEFAULT_DISJOINT_CAPACITY);
-    if (res != UMF_RESULT_SUCCESS) {
-        umfDisjointPoolParamsDestroy(config);
-        throw std::runtime_error("Failed to set capacity");
-    }
-    res = umfDisjointPoolParamsSetMinBucketSize(
-        config, DEFAULT_DISJOINT_MIN_BUCKET_SIZE);
-    if (res != UMF_RESULT_SUCCESS) {
-        umfDisjointPoolParamsDestroy(config);
-        throw std::runtime_error("Failed to set min bucket size");
-    }
-
-    return config;
-}
-
-umf_result_t poolConfigDestroy(void *config) {
-    return umfDisjointPoolParamsDestroy(
-        static_cast<umf_disjoint_pool_params_handle_t>(config));
-}
-
 using umf_test::test;
 using namespace umf_test;
 
@@ -92,7 +49,7 @@ TEST_F(test, internals) {
     provider_handle = providerUnique.get();
 
     umf_disjoint_pool_params_handle_t params =
-        (umf_disjoint_pool_params_handle_t)defaultPoolConfig();
+        (umf_disjoint_pool_params_handle_t)defaultDisjointPoolConfig();
     // set to maximum tracing
     params->pool_trace = 3;
     params->max_poolable_size = 1024 * 1024;
@@ -256,7 +213,7 @@ TEST_F(test, sharedLimits) {
     static constexpr size_t MaxSize = 4 * SlabMinSize;
 
     umf_disjoint_pool_params_handle_t params =
-        (umf_disjoint_pool_params_handle_t)defaultPoolConfig();
+        (umf_disjoint_pool_params_handle_t)defaultDisjointPoolConfig();
     umf_result_t ret = umfDisjointPoolParamsSetSlabMinSize(params, SlabMinSize);
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
 
@@ -373,22 +330,23 @@ TEST_F(test, disjointPoolInvalidBucketSize) {
 
 INSTANTIATE_TEST_SUITE_P(disjointPoolTests, umfPoolTest,
                          ::testing::Values(poolCreateExtParams{
-                             umfDisjointPoolOps(), defaultPoolConfig,
-                             poolConfigDestroy, &BA_GLOBAL_PROVIDER_OPS,
-                             nullptr, nullptr}));
+                             umfDisjointPoolOps(), defaultDisjointPoolConfig,
+                             defaultDisjointPoolConfigDestroy,
+                             &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr}));
 
 void *memProviderParams() { return (void *)&DEFAULT_DISJOINT_CAPACITY; }
 
 INSTANTIATE_TEST_SUITE_P(
     disjointPoolTests, umfMemTest,
     ::testing::Values(std::make_tuple(
-        poolCreateExtParams{umfDisjointPoolOps(), defaultPoolConfig,
-                            poolConfigDestroy, &MOCK_OUT_OF_MEM_PROVIDER_OPS,
-                            memProviderParams, nullptr},
+        poolCreateExtParams{umfDisjointPoolOps(), defaultDisjointPoolConfig,
+                            defaultDisjointPoolConfigDestroy,
+                            &MOCK_OUT_OF_MEM_PROVIDER_OPS, memProviderParams,
+                            nullptr},
         static_cast<int>(DEFAULT_DISJOINT_CAPACITY) / 2)));
 
 INSTANTIATE_TEST_SUITE_P(disjointMultiPoolTests, umfMultiPoolTest,
                          ::testing::Values(poolCreateExtParams{
-                             umfDisjointPoolOps(), defaultPoolConfig,
-                             poolConfigDestroy, &BA_GLOBAL_PROVIDER_OPS,
-                             nullptr, nullptr}));
+                             umfDisjointPoolOps(), defaultDisjointPoolConfig,
+                             defaultDisjointPoolConfigDestroy,
+                             &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr}));
