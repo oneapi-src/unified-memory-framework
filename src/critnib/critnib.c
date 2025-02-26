@@ -173,8 +173,8 @@ struct critnib *critnib_new(void) {
         goto err_free_critnib;
     }
 
-    VALGRIND_HG_DRD_DISABLE_CHECKING(&c->root, sizeof(c->root));
-    VALGRIND_HG_DRD_DISABLE_CHECKING(&c->remove_count, sizeof(c->remove_count));
+    utils_annotate_memory_no_check(&c->root, sizeof(c->root));
+    utils_annotate_memory_no_check(&c->remove_count, sizeof(c->remove_count));
 
     return c;
 err_free_critnib:
@@ -259,7 +259,7 @@ static struct critnib_node *alloc_node(struct critnib *__restrict c) {
     struct critnib_node *n = c->deleted_node;
 
     c->deleted_node = n->child[0];
-    VALGRIND_ANNOTATE_NEW_MEMORY(n, sizeof(*n));
+    utils_annotate_memory_new(n, sizeof(*n));
 
     return n;
 }
@@ -290,7 +290,7 @@ static struct critnib_leaf *alloc_leaf(struct critnib *__restrict c) {
     struct critnib_leaf *k = c->deleted_leaf;
 
     c->deleted_leaf = k->value;
-    VALGRIND_ANNOTATE_NEW_MEMORY(k, sizeof(*k));
+    utils_annotate_memory_new(k, sizeof(*k));
 
     return k;
 }
@@ -315,7 +315,7 @@ int critnib_insert(struct critnib *c, word key, void *value, int update) {
         return ENOMEM;
     }
 
-    VALGRIND_HG_DRD_DISABLE_CHECKING(k, sizeof(struct critnib_leaf));
+    utils_annotate_memory_no_check(k, sizeof(struct critnib_leaf));
 
     k->key = key;
     k->value = value;
@@ -376,7 +376,7 @@ int critnib_insert(struct critnib *c, word key, void *value, int update) {
 
         return ENOMEM;
     }
-    VALGRIND_HG_DRD_DISABLE_CHECKING(m, sizeof(struct critnib_node));
+    utils_annotate_memory_no_check(m, sizeof(struct critnib_node));
 
     for (int i = 0; i < SLNODES; i++) {
         m->child[i] = NULL;

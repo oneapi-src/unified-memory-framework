@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -162,6 +162,24 @@ static inline void utils_annotate_memory_inaccessible(void *ptr, size_t size) {
     __asan_poison_memory_region(ptr, size);
 #elif UMF_VG_MEMCHECK_ENABLED
     VALGRIND_MAKE_MEM_NOACCESS(ptr, size);
+#else
+    (void)ptr;
+    (void)size;
+#endif
+}
+
+static inline void utils_annotate_memory_new(void *ptr, size_t size) {
+#ifdef UMF_VG_DRD_ENABLED
+    ANNOTATE_NEW_MEMORY(ptr, size);
+#else
+    (void)ptr;
+    (void)size;
+#endif
+}
+
+static inline void utils_annotate_memory_no_check(void *ptr, size_t size) {
+#ifdef UMF_VG_HELGRIND_ENABLED
+    VALGRIND_HG_DISABLE_CHECKING(ptr, size);
 #else
     (void)ptr;
     (void)size;
