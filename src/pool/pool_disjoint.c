@@ -20,6 +20,7 @@
 #include "provider/provider_tracking.h"
 #include "uthash/utlist.h"
 #include "utils_common.h"
+#include "utils_concurrency.h"
 #include "utils_log.h"
 #include "utils_math.h"
 
@@ -34,7 +35,6 @@
 // Forward declarations
 static void bucket_update_stats(bucket_t *bucket, int in_use, int in_pool);
 static bool bucket_can_pool(bucket_t *bucket);
-static void bucket_decrement_pool(bucket_t *bucket);
 static slab_list_item_t *bucket_get_avail_slab(bucket_t *bucket,
                                                bool *from_pool);
 
@@ -316,6 +316,7 @@ static void bucket_free_chunk(bucket_t *bucket, void *ptr, slab_t *slab,
             assert(slab_it->val != NULL);
             pool_unregister_slab(bucket->pool, slab_it->val);
             DL_DELETE(bucket->available_slabs, slab_it);
+            assert(bucket->available_slabs_num > 0);
             bucket->available_slabs_num--;
             destroy_slab(slab_it->val);
         }
@@ -381,10 +382,20 @@ static slab_list_item_t *bucket_get_avail_slab(bucket_t *bucket,
         // Allocation from existing slab is treated as from pool for statistics.
         *from_pool = true;
         if (slab->num_chunks_allocated == 0) {
+            assert(bucket->chunked_slabs_in_pool > 0);
+#ifndef NDEBUG
+            uint64_t total_size_check;
+            utils_atomic_load_acquire_u64(&bucket->shared_limits->total_size,
+                                          &total_size_check);
+            assert(total_size_check >= bucket_slab_alloc_size(bucket));
+#endif
             // If this was an empty slab, it was in the pool.
             // Now it is no longer in the pool, so update count.
             --bucket->chunked_slabs_in_pool;
-            bucket_decrement_pool(bucket);
+            uint64_t size_to_add = bucket_slab_alloc_size(bucket);
+            utils_fetch_and_sub_u64(&bucket->shared_limits->total_size,
+                                    size_to_add);
+            bucket_update_stats(bucket, 1, -1);
         }
     }
 
@@ -420,12 +431,6 @@ static void bucket_update_stats(bucket_t *bucket, int in_use, int in_pool) {
         in_pool * bucket_slab_alloc_size(bucket);
 }
 
-static void bucket_decrement_pool(bucket_t *bucket) {
-    bucket_update_stats(bucket, 1, -1);
-    utils_fetch_and_add64(&bucket->shared_limits->total_size,
-                          -(long long)bucket_slab_alloc_size(bucket));
-}
-
 static bool bucket_can_pool(bucket_t *bucket) {
     size_t new_free_slabs_in_bucket;
 
@@ -433,23 +438,19 @@ static bool bucket_can_pool(bucket_t *bucket) {
 
     // we keep at most params.capacity slabs in the pool
     if (bucket_max_pooled_slabs(bucket) >= new_free_slabs_in_bucket) {
-        size_t pool_size = 0;
-        utils_atomic_load_acquire(&bucket->shared_limits->total_size,
-                                  &pool_size);
-        while (true) {
-            size_t new_pool_size = pool_size + bucket_slab_alloc_size(bucket);
 
-            if (bucket->shared_limits->max_size < new_pool_size) {
-                break;
-            }
+        uint64_t size_to_add = bucket_slab_alloc_size(bucket);
+        size_t previous_size = utils_fetch_and_add_u64(
+            &bucket->shared_limits->total_size, size_to_add);
 
-            if (utils_compare_exchange(&bucket->shared_limits->total_size,
-                                       &pool_size, &new_pool_size)) {
-                ++bucket->chunked_slabs_in_pool;
+        if (previous_size + size_to_add <= bucket->shared_limits->max_size) {
 
-                bucket_update_stats(bucket, -1, 1);
-                return true;
-            }
+            ++bucket->chunked_slabs_in_pool;
+            bucket_update_stats(bucket, -1, 1);
+            return true;
+        } else {
+            utils_fetch_and_sub_u64(&bucket->shared_limits->total_size,
+                                    size_to_add);
         }
     }
 
@@ -523,8 +524,8 @@ static void disjoint_pool_print_stats(disjoint_pool_t *pool) {
         utils_mutex_unlock(&bucket->bucket_lock);
     }
 
-    LOG_DEBUG("current pool size: %zu",
-              disjoint_pool_get_limits(pool)->total_size);
+    LOG_DEBUG("current pool size: %llu",
+              (unsigned long long)disjoint_pool_get_limits(pool)->total_size);
     LOG_DEBUG("suggested setting=;%c%s:%zu,%zu,64K", (char)tolower(name[0]),
               (name + 1), high_bucket_size, high_peak_slabs_in_use);
 }
@@ -864,11 +865,12 @@ umf_result_t disjoint_pool_free(void *pool, void *ptr) {
 
     if (disjoint_pool->params.pool_trace > 2) {
         const char *name = disjoint_pool->params.name;
-        LOG_DEBUG("freed %s %p to %s, current total pool size: %zu, current "
+        LOG_DEBUG("freed %s %p to %s, current total pool size: %llu, current "
                   "pool size for %s: %zu",
                   name, ptr, (to_pool ? "pool" : "provider"),
-                  disjoint_pool_get_limits(disjoint_pool)->total_size, name,
-                  disjoint_pool->params.cur_pool_size);
+                  (unsigned long long)disjoint_pool_get_limits(disjoint_pool)
+                      ->total_size,
+                  name, disjoint_pool->params.cur_pool_size);
     }
 
     return UMF_RESULT_SUCCESS;
@@ -920,7 +922,8 @@ umf_memory_pool_ops_t *umfDisjointPoolOps(void) {
 
 umf_disjoint_pool_shared_limits_t *
 umfDisjointPoolSharedLimitsCreate(size_t max_size) {
-    umf_disjoint_pool_shared_limits_t *ptr = umf_ba_global_alloc(sizeof(*ptr));
+    umf_disjoint_pool_shared_limits_t *ptr =
+        umf_ba_global_aligned_alloc(sizeof(*ptr), 8);
     if (ptr == NULL) {
         LOG_ERR("cannot allocate memory for disjoint pool shared limits");
         return NULL;
