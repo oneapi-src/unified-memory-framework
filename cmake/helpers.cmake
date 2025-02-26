@@ -273,7 +273,14 @@ function(add_umf_target_compile_options name)
                     # disable warning 6326: Potential comparison of a constant
                     # with another constant
                     /wd6326
-                    # disable 4200 warning: nonstandard extension used:
+                    # disable warning 28112: a variable (ptr) which is accessed
+                    # via an Interlocked function must always be accessed via an
+                    # Interlocked function
+                    /wd28112
+                    # disable warning 4324: structure was padded due to
+                    # alignment specifier
+                    /wd4324
+                    # disable warning 4200: nonstandard extension used:
                     # zero-sized array in struct/union
                     /wd4200)
         if(UMF_DEVELOPER_MODE)

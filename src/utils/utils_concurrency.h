@@ -10,6 +10,8 @@
 #ifndef UMF_UTILS_CONCURRENCY_H
 #define UMF_UTILS_CONCURRENCY_H 1
 
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -27,10 +29,17 @@
 #else /* __cplusplus */
 #include <atomic>
 #define _Atomic(X) std::atomic<X>
+
+using std::memory_order_acq_rel;
+using std::memory_order_acquire;
+using std::memory_order_relaxed;
+using std::memory_order_release;
+
 #endif /* __cplusplus */
 
 #endif /* _WIN32 */
 
+#include "utils_common.h"
 #include "utils_sanitizers.h"
 
 #ifdef __cplusplus
@@ -92,57 +101,162 @@ static __inline unsigned char utils_mssb_index(long long value) {
 }
 
 // There is no good way to do atomic_load on windows...
-#define utils_atomic_load_acquire(object, dest)                                \
-    do {                                                                       \
-        *(LONG64 *)dest =                                                      \
-            InterlockedOr64Acquire((LONG64 volatile *)object, 0);              \
-    } while (0)
+static __inline void utils_atomic_load_acquire_u64(uint64_t *ptr,
+                                                   uint64_t *out) {
+    // NOTE: Windows cl complains about direct accessing 'ptr' which is next
+    // accessed using Interlocked* functions (warning 28112 - disabled)
+    ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
+    LONG64 ret = InterlockedCompareExchange64((LONG64 volatile *)ptr, 0, 0);
+    utils_annotate_acquire(ptr);
+    *out = *(uint64_t *)&ret;
+}
 
-#define utils_atomic_store_release(object, desired)                            \
-    InterlockedExchange64((LONG64 volatile *)object, (LONG64)desired)
+static __inline void utils_atomic_load_acquire_ptr(void **ptr, void **out) {
+    ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
+    uintptr_t ret = (uintptr_t)InterlockedCompareExchangePointer(ptr, 0, 0);
+    utils_annotate_acquire((void *)ptr);
+    *(uintptr_t *)out = ret;
+}
 
-#define utils_atomic_increment(object)                                         \
-    InterlockedIncrement64((LONG64 volatile *)object)
+static __inline void utils_atomic_store_release_u64(uint64_t *ptr,
+                                                    uint64_t *val) {
+    ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
+    ASSERT_IS_ALIGNED((uintptr_t)val, 8);
+    utils_annotate_release(ptr);
+    InterlockedExchange64((LONG64 volatile *)ptr, *(LONG64 *)val);
+}
 
-#define utils_atomic_decrement(object)                                         \
-    InterlockedDecrement64((LONG64 volatile *)object)
+static __inline void utils_atomic_store_release_ptr(void **ptr, void *val) {
+    ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
+    utils_annotate_release(ptr);
+    InterlockedExchangePointer(ptr, val);
+}
 
-#define utils_fetch_and_add64(ptr, value)                                      \
-    InterlockedExchangeAdd64((LONG64 *)(ptr), value)
+static __inline uint64_t utils_atomic_increment_u64(uint64_t *ptr) {
+    ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
+    // return incremented value
+    return InterlockedIncrement64((LONG64 volatile *)ptr);
+}
 
-// NOTE: windows version have different order of args
-#define utils_compare_exchange(object, desired, expected)                      \
-    InterlockedCompareExchange64((LONG64 volatile *)object, *expected, *desired)
+static __inline uint64_t utils_atomic_decrement_u64(uint64_t *ptr) {
+    ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
+    // return decremented value
+    return InterlockedDecrement64((LONG64 volatile *)ptr);
+}
+
+static __inline uint64_t utils_fetch_and_add_u64(uint64_t *ptr, uint64_t val) {
+    ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
+    ASSERT_IS_ALIGNED((uintptr_t)&val, 8);
+    // return the value that had previously been in *ptr
+    return InterlockedExchangeAdd64((LONG64 volatile *)(ptr), val);
+}
+
+static __inline uint64_t utils_fetch_and_sub_u64(uint64_t *ptr, uint64_t val) {
+    ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
+    ASSERT_IS_ALIGNED((uintptr_t)&val, 8);
+    // return the value that had previously been in *ptr
+    // NOTE: on Windows there is no *Sub* version of InterlockedExchange
+    return InterlockedExchangeAdd64((LONG64 volatile *)(ptr), -(LONG64)val);
+}
+
+static __inline bool utils_compare_exchange_u64(uint64_t *ptr,
+                                                uint64_t *expected,
+                                                uint64_t *desired) {
+    ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
+    ASSERT_IS_ALIGNED((uintptr_t)desired, 8);
+    ASSERT_IS_ALIGNED((uintptr_t)expected, 8);
+
+    // if (*ptr == *desired)
+    //   *ptr = *expected
+    //   return true
+    // else
+    //  *expected = *ptr
+    // return false
+
+    LONG64 out = InterlockedCompareExchange64(
+        (LONG64 volatile *)ptr, *(LONG64 *)desired, *(LONG64 *)expected);
+    if (out == *(LONG64 *)expected) {
+        return true;
+    }
+
+    // else
+    *expected = out;
+    return false;
+}
 
 #else // !defined(_WIN32)
 
 #define utils_lssb_index(x) ((unsigned char)__builtin_ctzll(x))
 #define utils_mssb_index(x) ((unsigned char)(63 - __builtin_clzll(x)))
 
-#define utils_atomic_load_acquire(object, dest)                                \
-    do {                                                                       \
-        utils_annotate_acquire((void *)object);                                \
-        __atomic_load(object, dest, memory_order_acquire);                     \
-    } while (0)
+static inline void utils_atomic_load_acquire_u64(uint64_t *ptr, uint64_t *out) {
+    ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
+    ASSERT_IS_ALIGNED((uintptr_t)out, 8);
+    __atomic_load(ptr, out, memory_order_acquire);
+    utils_annotate_acquire(ptr);
+}
 
-#define utils_atomic_store_release(object, desired)                            \
-    do {                                                                       \
-        __atomic_store_n(object, desired, memory_order_release);               \
-        utils_annotate_release((void *)object);                                \
-    } while (0)
+static inline void utils_atomic_load_acquire_ptr(void **ptr, void **out) {
+    ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
+    ASSERT_IS_ALIGNED((uintptr_t)out, 8);
+    *out = (void *)__atomic_load_n((uintptr_t *)ptr, memory_order_acquire);
+    utils_annotate_acquire((void *)ptr);
+}
 
-#define utils_atomic_increment(object)                                         \
-    __atomic_add_fetch(object, 1, memory_order_acq_rel)
+static inline void utils_atomic_store_release_u64(uint64_t *ptr,
+                                                  uint64_t *val) {
+    ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
+    ASSERT_IS_ALIGNED((uintptr_t)val, 8);
+    utils_annotate_release(ptr);
+    __atomic_store(ptr, val, memory_order_release);
+}
 
-#define utils_atomic_decrement(object)                                         \
-    __atomic_sub_fetch(object, 1, memory_order_acq_rel)
+static inline void utils_atomic_store_release_ptr(void **ptr, void *val) {
+    ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
+    utils_annotate_release(ptr);
+    __atomic_store_n((uintptr_t *)ptr, (uintptr_t)val, memory_order_release);
+}
 
-#define utils_fetch_and_add64(object, value)                                   \
-    __atomic_fetch_add(object, value, memory_order_acq_rel)
+static inline uint64_t utils_atomic_increment_u64(uint64_t *val) {
+    ASSERT_IS_ALIGNED((uintptr_t)val, 8);
+    // return incremented value
+    return __atomic_add_fetch(val, 1, memory_order_acq_rel);
+}
 
-#define utils_compare_exchange(object, expected, desired)                      \
-    __atomic_compare_exchange(object, expected, desired, 0 /* strong */,       \
-                              memory_order_acq_rel, memory_order_relaxed)
+static inline uint64_t utils_atomic_decrement_u64(uint64_t *val) {
+    ASSERT_IS_ALIGNED((uintptr_t)val, 8);
+    // return decremented value
+    return __atomic_sub_fetch(val, 1, memory_order_acq_rel);
+}
+
+static inline uint64_t utils_fetch_and_add_u64(uint64_t *ptr, uint64_t val) {
+    ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
+    // return the value that had previously been in *ptr
+    return __atomic_fetch_add(ptr, val, memory_order_acq_rel);
+}
+
+static inline uint64_t utils_fetch_and_sub_u64(uint64_t *ptr, uint64_t val) {
+    // return the value that had previously been in *ptr
+    ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
+    return __atomic_fetch_sub(ptr, val, memory_order_acq_rel);
+}
+
+static inline bool utils_compare_exchange_u64(uint64_t *ptr, uint64_t *expected,
+                                              uint64_t *desired) {
+    ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
+    ASSERT_IS_ALIGNED((uintptr_t)expected, 8);
+    ASSERT_IS_ALIGNED((uintptr_t)desired, 8);
+
+    // if (*ptr == *expected)
+    //   *ptr = *desired
+    //   return true
+    // else
+    //  *expected = *ptr
+    // return false
+    return __atomic_compare_exchange(ptr, expected, desired, 0 /* strong */,
+                                     memory_order_acq_rel,
+                                     memory_order_relaxed);
+}
 
 #endif // !defined(_WIN32)
 

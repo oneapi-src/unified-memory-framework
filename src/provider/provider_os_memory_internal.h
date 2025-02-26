@@ -58,7 +58,7 @@ typedef struct os_memory_provider_t {
     int numa_flags; // combination of hwloc flags
 
     size_t part_size;
-    size_t alloc_sum; // sum of all allocations - used for manual interleaving
+    uint64_t alloc_sum; // sum of all allocations - used for manual interleaving
 
     struct {
         unsigned weight;
