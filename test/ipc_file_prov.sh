@@ -9,7 +9,12 @@
 
 set -e
 
-FILE_NAME="/tmp/umf_file_provider_$$"
+FILE_BASE="/tmp/umf_file_provider"
+
+# remove old SHM files (left from the previous runs, because of crashes)
+rm -f ${FILE_BASE}*
+
+FILE_NAME="${FILE_BASE}_$$"
 
 # port should be a number from the range <1024, 65535>
 PORT=$(( 1024 + ( $$ % ( 65535 - 1024 ))))
