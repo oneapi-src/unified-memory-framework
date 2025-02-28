@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2024 Intel Corporation
+ * Copyright (C) 2023-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -11,6 +11,11 @@
 #define UMF_TEST_BASE_HPP 1
 
 #include <gtest/gtest.h>
+
+using std::memory_order_acq_rel;
+using std::memory_order_acquire;
+using std::memory_order_relaxed;
+using std::memory_order_release;
 
 namespace umf_test {
 

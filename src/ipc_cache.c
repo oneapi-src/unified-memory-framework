@@ -232,7 +232,7 @@ umf_result_t umfIpcOpenedCacheGet(ipc_opened_cache_handle_t cache,
 
 exit:
     if (ret == UMF_RESULT_SUCCESS) {
-        utils_atomic_increment(&entry->ref_count);
+        utils_atomic_increment_u64(&entry->ref_count);
         *retEntry = &entry->value;
     }
 

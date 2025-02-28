@@ -565,7 +565,7 @@ static umf_result_t trackingGetIpcHandle(void *provider, const void *ptr,
                 return ret;
             }
 
-            cache_value->handle_id = utils_atomic_increment(&IPC_HANDLE_ID);
+            cache_value->handle_id = utils_atomic_increment_u64(&IPC_HANDLE_ID);
             cache_value->ipcDataSize = ipcDataSize;
 
             int insRes = critnib_insert(p->ipcCache, (uintptr_t)ptr,
@@ -703,18 +703,20 @@ static umf_result_t trackingOpenIpcHandle(void *provider, void *providerIpcData,
     assert(cache_entry != NULL);
 
     void *mapped_ptr = NULL;
-    utils_atomic_load_acquire(&(cache_entry->mapped_base_ptr), &mapped_ptr);
+    utils_atomic_load_acquire_ptr(&(cache_entry->mapped_base_ptr),
+                                  (void **)&mapped_ptr);
     if (mapped_ptr == NULL) {
         utils_mutex_lock(&(cache_entry->mmap_lock));
-        utils_atomic_load_acquire(&(cache_entry->mapped_base_ptr), &mapped_ptr);
+        utils_atomic_load_acquire_ptr(&(cache_entry->mapped_base_ptr),
+                                      (void **)&mapped_ptr);
         if (mapped_ptr == NULL) {
             ret = upstreamOpenIPCHandle(p, providerIpcData,
                                         ipcUmfData->baseSize, &mapped_ptr);
             if (ret == UMF_RESULT_SUCCESS) {
                 // Put to the cache
                 cache_entry->mapped_size = ipcUmfData->baseSize;
-                utils_atomic_store_release(&(cache_entry->mapped_base_ptr),
-                                           mapped_ptr);
+                utils_atomic_store_release_ptr(&(cache_entry->mapped_base_ptr),
+                                               mapped_ptr);
             }
         }
         utils_mutex_unlock(&(cache_entry->mmap_lock));
