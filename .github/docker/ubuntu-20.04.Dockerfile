@@ -56,12 +56,10 @@ COPY .github/scripts/install_hwloc.sh /opt/umf/install_hwloc.sh
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
 	${BASE_DEPS} \
-	${UMF_DEPS} \
 	${TEST_DEPS} \
 	${MISC_DEPS} \
 	${HWLOC_DEPS} \
- && dos2unix /opt/umf/install_hwloc.sh \
- && bash -x /opt/umf/install_hwloc.sh \
+ && bash /opt/umf/install_hwloc.sh \
  && ldconfig \
  && rm -rf /var/lib/apt/lists/* \
  && apt-get clean all
@@ -70,10 +68,11 @@ RUN apt-get update \
 RUN mkdir -p --mode 777 /opt/umf/
 
 # Additional dependencies (installed via pip)
-COPY third_party/requirements.txt /opt/umf/requirements.txt
 # It's actively used and tested only on selected distros. Be aware
 # they may not work, because pip packages list differ from OS to OS.
+COPY third_party/requirements.txt /opt/umf/requirements.txt
 
+# Add a new (non-root) 'test_user'
 ENV USER test_user
 ENV USERPASS pass
 RUN useradd -m "${USER}" -g sudo -p "$(mkpasswd ${USERPASS})"

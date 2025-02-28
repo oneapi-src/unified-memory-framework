@@ -14,33 +14,30 @@ env:
 jobs:
   ubuntu-build:
     name: Linux
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.repository_owner == 'oneapi-src' && 'intel-ubuntu-22.04' || 'ubuntu-22.04' }}
     container:
       image: ${{ matrix.image }}
       options: --user root --privileged
       volumes:
-        - /home/runner/work/unified-memory-framework/unified-memory-framework:/home/runner/work/unified-memory-framework/unified-memory-framework
-
-    env:
-      VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
+        - ${{ github.workspace }}:${{ github.workspace }}
     strategy:
       matrix:
         include:
           - image: ghcr.io/rbanka1/umf-ubuntu-22.04:latest
             build_tests: 'ON'
-            extra_build_options: '-DCMAKE_BUILD_TYPE=Release -DUMF_BUILD_BENCHMARKS=ON -DUMF_BUILD_BENCHMARKS_MT=ON'
+            extra_build_options: ' -DUMF_BUILD_BENCHMARKS=ON -DUMF_BUILD_BENCHMARKS_MT=ON'
             simple_cmake: 'OFF'
+          # pure C build
           - image: ghcr.io/rbanka1/umf-ubuntu-22.04:latest
             build_tests: 'OFF'
-            extra_build_options: '-DCMAKE_BUILD_TYPE=Release -DUMF_BUILD_BENCHMARKS=ON'
+            extra_build_options: '-DUMF_BUILD_BENCHMARKS=ON'
             simple_cmake: 'OFF'
+          # simplest CMake on ubuntu-latest
           - image: ghcr.io/rbanka1/umf-ubuntu-22.04:latest
             build_tests: 'ON'
-            extra_build_options: '-DCMAKE_BUILD_TYPE=Release'
             simple_cmake: 'ON'
           - image: ghcr.io/rbanka1/umf-ubuntu-20.04:latest
             build_tests: 'ON'
-            extra_build_options: '-DCMAKE_BUILD_TYPE=Release'
             simple_cmake: 'ON'
 
     steps:
@@ -54,11 +51,9 @@ jobs:
       run: >
         cmake
         -B ${{env.BUILD_DIR}}
-        -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
-        -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
+        -DCMAKE_BUILD_TYPE=Release
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
-        -DUMF_BUILD_LIBUMF_POOL_DISJOINT=${{matrix.disjoint}}
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
         -DUMF_BUILD_TESTS=${{matrix.build_tests}}
         -DUMF_BUILD_EXAMPLES=ON
@@ -73,13 +68,12 @@ jobs:
       run: >
         cmake
         -B ${{env.BUILD_DIR}}
-        -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
         -DUMF_BUILD_SHARED_LIBRARY=ON
         -DUMF_TESTS_FAIL_ON_SKIP=ON
         ${{matrix.extra_build_options}}
 
     - name: Build
-      run: cmake --build ${{env.BUILD_DIR}} --config Release -j
+      run: cmake --build ${{env.BUILD_DIR}} --config Release -j $(nproc)
 
     - name: Run examples
       working-directory: ${{env.BUILD_DIR}}
@@ -99,14 +93,12 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: windows-latest
-            disjoint: 'OFF'
-            build_tests: 'ON'
+          - build_tests: 'ON'
             simple_cmake: 'OFF'
-          - os: windows-latest
-            disjoint: 'OFF'
-            build_tests: 'OFF'
+          - build_tests: 'OFF'
             simple_cmake: 'OFF'
+          # - build_tests: 'OFF'
+          #   simple_cmake: 'ON'
 
     steps:
     - name: Checkout repository
@@ -121,7 +113,7 @@ jobs:
         vcpkgDirectory: ${{env.BUILD_DIR}}/vcpkg
         vcpkgJsonGlob: '**/vcpkg.json'
 
-    - name: Install dependencies (windows-latest)
+    - name: Install dependencies
       run: vcpkg install
       shell: pwsh 
 
@@ -134,7 +126,6 @@ jobs:
         -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
-        -DUMF_BUILD_LIBUMF_POOL_DISJOINT=${{matrix.disjoint}}
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
         -DUMF_BUILD_TESTS=${{matrix.build_tests}}
         -DUMF_BUILD_EXAMPLES=ON
@@ -142,7 +133,6 @@ jobs:
         -DUMF_BUILD_CUDA_PROVIDER=ON
         -DUMF_TESTS_FAIL_ON_SKIP=ON
         -DUMF_BUILD_SHARED_LIBRARY=ON
-        ${{matrix.extra_build_options}}
 
     - name: Configure CMake (simple)
       if: matrix.simple_cmake == 'ON'
@@ -152,7 +142,6 @@ jobs:
         -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
         -DUMF_BUILD_SHARED_LIBRARY=ON
         -DUMF_TESTS_FAIL_ON_SKIP=ON
-        ${{matrix.extra_build_options}}
 
     - name: Build
       run: cmake --build ${{env.BUILD_DIR}} --config Release -j
@@ -170,7 +159,6 @@ jobs:
     # ref. https://superuser.com/questions/381276/what-are-some-nice-command-line-ways-to-inspect-dll-exe-details
 
     - name: Print metadata of our dll's
-      if: matrix.os == 'windows-latest'
       run: |
         get-command ${{github.workspace}}/build/bin/Release/umf.dll | format-list
         get-command ${{github.workspace}}/build/src/proxy_lib/Release/umf_proxy.dll | format-list

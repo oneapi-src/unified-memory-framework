@@ -21,7 +21,7 @@ jobs:
       image: ${{ matrix.image }}
       options: --user root --privileged
       volumes:
-        - /home/runner/work/unified-memory-framework/unified-memory-framework:/home/runner/work/unified-memory-framework/unified-memory-framework
+        - ${{ github.workspace }}:${{ github.workspace }}
     strategy:
       matrix:
         image: ['ghcr.io/rbanka1/umf-ubuntu-20.04:latest', 'ghcr.io/rbanka1/umf-ubuntu-22.04:latest' ]
@@ -133,15 +133,6 @@ jobs:
         echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
         sudo apt-get update
         sudo apt-get install -y intel-oneapi-ippcp-devel intel-oneapi-ipp-devel intel-oneapi-common-oneapi-vars intel-oneapi-compiler-dpcpp-cpp
-
-    - name: Install TBB apt package
-      if: matrix.install_tbb == 'OFF'
-      run: |
-        sudo apt-get install -y libtbb-dev
-
-    - name: Install g++-7
-      if: matrix.compiler.cxx == 'g++-7'
-      run: sudo apt-get install -y ${{matrix.compiler.cxx}}
   
     - name: Install libhwloc
       run: .github/scripts/install_hwloc.sh

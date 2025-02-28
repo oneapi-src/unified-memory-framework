@@ -12,7 +12,7 @@ FROM registry.hub.docker.com/library/ubuntu@sha256:e6173d4dc55e76b87c4af8db8821b
 
 # Set environment variables
 ENV OS ubuntu
-ENV OS_VER 20.04
+ENV OS_VER 22.04
 ENV NOTTY 1
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -38,7 +38,7 @@ ARG TEST_DEPS="\
 ARG MISC_DEPS="\
 	automake \
 	clang \
-	g++-11 \
+	g++ \
 	python3-pip \
 	sudo \
 	whois \
@@ -56,12 +56,10 @@ COPY .github/scripts/install_hwloc.sh /opt/umf/install_hwloc.sh
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
 	${BASE_DEPS} \
-	${UMF_DEPS} \
 	${TEST_DEPS} \
 	${MISC_DEPS} \
 	${HWLOC_DEPS} \
- && dos2unix /opt/umf/install_hwloc.sh \
- && bash -x /opt/umf/install_hwloc.sh \
+ && bash /opt/umf/install_hwloc.sh \
  && ldconfig \
  && rm -rf /var/lib/apt/lists/* \
  && apt-get clean all
