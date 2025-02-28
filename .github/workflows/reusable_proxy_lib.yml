@@ -59,9 +59,9 @@ jobs:
         working-directory: ${{env.BUILD_DIR}}
         run: LD_PRELOAD=./lib/libumf_proxy.so ctest --output-on-failure
 
-      - name: Run "./test/umf_test-memoryPool" with proxy library
+      - name: Run "./test/test_memoryPool" with proxy library
         working-directory: ${{env.BUILD_DIR}}
-        run: LD_PRELOAD=./lib/libumf_proxy.so ./test/umf_test-memoryPool
+        run: LD_PRELOAD=./lib/libumf_proxy.so ./test/test_memoryPool
 
       - name: Run "/usr/bin/ls" with proxy library
         working-directory: ${{env.BUILD_DIR}}

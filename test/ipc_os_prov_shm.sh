@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2024 Intel Corporation
+# Copyright (C) 2024-2025 Intel Corporation
 #
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -20,13 +20,13 @@ UMF_LOG_VAL="level:debug;flush:debug;output:stderr;pid:yes"
 rm -f /dev/shm/${SHM_NAME}
 
 echo "Starting ipc_os_prov_shm CONSUMER on port $PORT ..."
-UMF_LOG=$UMF_LOG_VAL ./umf_test-ipc_os_prov_consumer $PORT &
+UMF_LOG=$UMF_LOG_VAL ./test_ipc_os_prov_consumer $PORT &
 
 echo "Waiting 1 sec ..."
 sleep 1
 
 echo "Starting ipc_os_prov_shm PRODUCER on port $PORT ..."
-UMF_LOG=$UMF_LOG_VAL ./umf_test-ipc_os_prov_producer $PORT $SHM_NAME
+UMF_LOG=$UMF_LOG_VAL ./test_ipc_os_prov_producer $PORT $SHM_NAME
 
 # remove the SHM file
 rm -f /dev/shm/${SHM_NAME}

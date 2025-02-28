@@ -15,10 +15,10 @@ PORT=$(( 1024 + ( $$ % ( 65535 - 1024 ))))
 UMF_LOG_VAL="level:debug;flush:debug;output:stderr;pid:yes"
 
 echo "Starting ipc_os_prov_anon_fd CONSUMER on port $PORT ..."
-UMF_LOG=$UMF_LOG_VAL ./umf_test-ipc_os_prov_consumer $PORT &
+UMF_LOG=$UMF_LOG_VAL ./test_ipc_os_prov_consumer $PORT &
 
 echo "Waiting 1 sec ..."
 sleep 1
 
 echo "Starting ipc_os_prov_anon_fd PRODUCER on port $PORT ..."
-UMF_LOG=$UMF_LOG_VAL ./umf_test-ipc_os_prov_producer $PORT
+UMF_LOG=$UMF_LOG_VAL ./test_ipc_os_prov_producer $PORT
