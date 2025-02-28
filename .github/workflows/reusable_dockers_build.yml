@@ -1,0 +1,39 @@
+# Build and push Docker images to GHCR
+name: BuildDockers
+
+on: 
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  packages: write
+  contents: read
+
+jobs: 
+  build-dockers:
+    runs-on: ubuntu-latest
+    strategy: 
+      matrix:
+        ubuntu-version: [20.04, 22.04, 24.04]
+    outputs: 
+      status: ${{ job.status }}
+    env:
+      IMG: ghcr.io/bb-ur/umf-ubuntu-${{ matrix.ubuntu-version }}:latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          fetch-depth: 0
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@30f019fb76bb54d03ec1e716054622be511a13b2 # v3.2.0
+        with: 
+          registry: ghcr.io
+          username: bb-ur
+          password: ${{ secrets.BB_GHCR_TOKEN }}
+
+      - name: Build and push ubuntu-${{ matrix.ubuntu-version }} Docker image
+        run: |
+          docker build -f .github/docker/ubuntu-${{ matrix.ubuntu-version }}.Dockerfile -t ${{ env.IMG }} .
+          docker push ${{ env.IMG }}

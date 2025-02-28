@@ -1,10 +1,10 @@
-# Copyright (C) 2024 Intel Corporation
+# Copyright (C) 2024-2025 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 #
 # Dockerfile - a 'recipe' for Docker to build an image of ubuntu-based
-#              environment for building the Unified Memory Framework project.
+#	  environment for building the Unified Memory Framework project.
 #
 
 # Pull base image ("20.04")
@@ -22,14 +22,12 @@ ARG BASE_DEPS="\
 	cmake \
 	git"
 
-# UMF's dependencies
-ARG UMF_DEPS="\
-	libhwloc-dev \
-	libtbb-dev"
-
 # Dependencies for tests (optional)
 ARG TEST_DEPS="\
-	libnuma-dev"
+	libnuma-dev \
+	libhwloc-dev \
+	libtbb-dev\
+	valgrind"
 
 # Miscellaneous for our builds/CI (optional)
 ARG MISC_DEPS="\
@@ -38,24 +36,36 @@ ARG MISC_DEPS="\
 	g++-7 \
 	python3-pip \
 	sudo \
-	whois"
+	whois \
+	lcov"
+
+# Hwloc installation dependencies
+ARG HWLOC_DEPS="\
+	dos2unix \
+	libtool"
+
+# Copy hwloc
+COPY .github/scripts/install_hwloc.sh /opt/umf/install_hwloc.sh
 
 # Update and install required packages
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
 	${BASE_DEPS} \
-	${UMF_DEPS} \
 	${TEST_DEPS} \
 	${MISC_DEPS} \
+	${HWLOC_DEPS} \
+ && bash /opt/umf/install_hwloc.sh \
+ && ldconfig \
  && rm -rf /var/lib/apt/lists/* \
  && apt-get clean all
 
 # Prepare a dir (accessible by anyone)
-RUN mkdir --mode 777 /opt/umf/
+RUN mkdir -p --mode 777 /opt/umf/
 
 # Additional dependencies (installed via pip)
+# It's actively used and tested only on selected distros. Be aware
+# they may not work, because pip packages list differ from OS to OS.
 COPY third_party/requirements.txt /opt/umf/requirements.txt
-RUN pip3 install --no-cache-dir -r /opt/umf/requirements.txt
 
 # Add a new (non-root) 'test_user'
 ENV USER test_user

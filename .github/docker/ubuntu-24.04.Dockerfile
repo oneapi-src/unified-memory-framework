@@ -1,4 +1,4 @@
-# Copyright (C) 2024-2025 Intel Corporation
+# Copyright (C) 2025 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -7,12 +7,12 @@
 #              environment for building the Unified Memory Framework project.
 #
 
-# Pull base image ("22.04")
-FROM registry.hub.docker.com/library/ubuntu@sha256:e6173d4dc55e76b87c4af8db8821b1feae4146dd47341e4d431118c7dd060a74
+# Pull base image ("24.04")
+FROM registry.hub.docker.com/library/ubuntu@sha256:72297848456d5d37d1262630108ab308d3e9ec7ed1c3286a32fe09856619a782
 
 # Set environment variables
 ENV OS ubuntu
-ENV OS_VER 22.04
+ENV OS_VER 24.04
 ENV NOTTY 1
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -64,7 +64,7 @@ RUN mkdir -p --mode 777 /opt/umf/
 
 # Additional dependencies (installed via pip)
 COPY third_party/requirements.txt /opt/umf/requirements.txt
-RUN pip3 install --no-cache-dir -r /opt/umf/requirements.txt
+RUN pip3 install --no-cache-dir --break-system-packages -r /opt/umf/requirements.txt
 
 # Add a new (non-root) 'test_user'
 ENV USER test_user
