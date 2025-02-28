@@ -23,34 +23,23 @@ jobs:
     uses: ./.github/workflows/reusable_docs_build.yml
   DetectChanges:
     runs-on: ubuntu-latest
-    outputs: 
-      changed_files: ${{ steps.get-changes.outputs.all_changed_files }}
+    outputs:
+      changed_files: ${{ steps.changed-files.outputs.all_changed_files }}
     steps:
       - name: Checkout code
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
-          fetch-depth: 2
+          fetch-depth: 0
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v45.0.3
 
       - name: List all changed files
-        id: get-changes
+        env:
+          ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
         run: |
-          git diff --name-only HEAD^ HEAD > all_changed_files.txt
-          changed_files=$(cat all_changed_files.txt | tr '\n' ' ')
-          echo "changed_files=$changed_files" >> $GITHUB_ENV
-          echo "::set-output name=all_changed_files::$changed_files"
-
-      - name: all changed files
-        run: |
-          echo "changed files: ${{ needs.DetectChanges.outputs.changed_files }}"
-  Check:
-    runs-on: ubuntu-latest
-    needs: [DetectChanges]
-    steps: 
-      - name: check changed files
-        run: |
-          echo "all_changed_files: ${{ needs.DetectChanges.outputs.changed_files }}"
-          echo "all_changed_files: ${{ contains(join(needs.DetectChanges.outputs.changed_files, ' '), '.github/docker/') }}"
-
+          echo "Changed files: ${{ steps.changed-files.outputs.all_changed_files }}"
   BuildDockers:
     if: ${{ contains(join(needs.DetectChanges.outputs.changed_files, ' '), '.github/docker/') }}
     needs: [DetectChanges]
@@ -58,7 +47,7 @@ jobs:
       contents: read
       packages: write
     secrets: inherit
-    uses: ./.github/workflows/build_dockers.yml
+    uses: ./.github/workflows/reusable_dockers_build.yml
   FastBuild:
     if: always() && (needs.BuildDockers.result == 'skipped' || needs.BuildDockers.result == 'success')
     needs: [ CodeChecks, DocsBuild, BuildDockers]

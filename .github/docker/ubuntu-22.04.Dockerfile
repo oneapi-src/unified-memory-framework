@@ -22,11 +22,6 @@ ARG BASE_DEPS="\
 	cmake \
 	git"
 
-# UMF's dependencies
-ARG UMF_DEPS="\
-	libhwloc-dev \
-	libtbb-dev"
-
 # Dependencies for tests (optional)
 ARG TEST_DEPS="\
 	libnuma-dev \

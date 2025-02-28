@@ -18,8 +18,7 @@ jobs:
     outputs: 
       status: ${{ job.status }}
     env:
-      GHCR_TOKEN: ${{ secrets.BB_GHCR_TOKEN }} # ${{ secrets.GHCR_TOKEN }}
-      IMG: ghcr.io/${{ github.bb-ur }}/umf-ubuntu-${{ matrix.ubuntu-version }}:latest
+      IMG: ghcr.io/bb-ur/umf-ubuntu-${{ matrix.ubuntu-version }}:latest
 
     steps:
       - name: Checkout repository
@@ -31,8 +30,8 @@ jobs:
         uses: docker/login-action@30f019fb76bb54d03ec1e716054622be511a13b2 # v3.2.0
         with: 
           registry: ghcr.io
-          username: ${{ github.bb-ur }} # ${{ github.actor }}
-          password: ${{ env.BB_GHCR_TOKEN }} # ${{ env.GHCR_TOKEN }}
+          username: bb-ur
+          password: ${{ secrets.BB_GHCR_TOKEN }}
 
       - name: Build and push ubuntu-${{ matrix.ubuntu-version }} Docker image
         run: |
