@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -244,6 +244,8 @@ void *umf_ba_alloc(umf_ba_pool_t *pool) {
 
     utils_mutex_unlock(&pool->metadata.free_lock);
 
+    utils_annotate_acquire(chunk);
+
     return chunk;
 }
 
@@ -276,6 +278,8 @@ void umf_ba_free(umf_ba_pool_t *pool, void *ptr) {
     }
 
     umf_ba_chunk_t *chunk = (umf_ba_chunk_t *)ptr;
+
+    utils_annotate_release(chunk);
 
     utils_mutex_lock(&pool->metadata.free_lock);
     assert(pool_contains_pointer(pool, ptr));
