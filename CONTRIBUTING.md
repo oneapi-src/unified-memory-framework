@@ -61,7 +61,7 @@ When project is built, enter the build directory and execute:
 $ ctest --output-on-failure
 ```
 
-Any test's failure will produce error log.
+Any test's failure will produce error log!
 
 To enable additional checks (including `-Werror` / `/WX` compilation flag), switch on CMake flag
 `UMF_DEVELOPER_MODE`. To read more about all available CMake options please see
