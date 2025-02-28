@@ -353,6 +353,7 @@ function(add_umf_library)
     # * LIBS - libraries to be linked with
     # * LINUX_MAP_FILE - path to linux linker map (.map) file
     # * WINDOWS_DEF_FILE - path to windows module-definition (DEF) file
+    #
 
     set(oneValueArgs NAME TYPE LINUX_MAP_FILE WINDOWS_DEF_FILE)
     set(multiValueArgs SRCS LIBS)
