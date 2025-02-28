@@ -19,7 +19,7 @@ jobs:
       status: ${{ job.status }}
     env:
       GHCR_TOKEN: ${{ secrets.BB_GHCR_TOKEN }} # ${{ secrets.GHCR_TOKEN }}
-      IMG: ghcr.io/${{ github.actor }}/umf-ubuntu-${{ matrix.ubuntu-version }}:latest
+      IMG: ghcr.io/${{ github.bb-ur }}/umf-ubuntu-${{ matrix.ubuntu-version }}:latest
 
     steps:
       - name: Checkout repository
