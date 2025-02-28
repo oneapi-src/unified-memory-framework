@@ -89,13 +89,22 @@ static slab_t *create_slab(bucket_t *bucket) {
 
     slab->num_chunks_total =
         utils_max(bucket_slab_min_size(bucket) / bucket->size, 1);
-    slab->chunks =
-        umf_ba_global_alloc(sizeof(*slab->chunks) * slab->num_chunks_total);
-    if (slab->chunks == NULL) {
-        LOG_ERR("allocation of slab chunks failed!");
-        goto free_slab;
+    size_t chunks_size_in_64_increments =
+        slab->num_chunks_total / 8 + (slab->num_chunks_total % 8 != 0);
+
+    if (slab->num_chunks_total > 64) {
+        slab->chunks.chunks = umf_ba_global_alloc(chunks_size_in_64_increments *
+                                                  sizeof(*slab->chunks.chunks));
+        if (slab->chunks.chunks == NULL) {
+            LOG_ERR("allocation of slab chunks failed!");
+            goto free_slab;
+        }
+
+        memset(slab->chunks.chunks, 0,
+               chunks_size_in_64_increments * sizeof(*slab->chunks.chunks));
+    } else {
+        slab->chunks.chunk = 0;
     }
-    memset(slab->chunks, 0, sizeof(*slab->chunks) * slab->num_chunks_total);
 
     // if slab_min_size is not a multiple of bucket size, we would have some
     // padding at the end of the slab
@@ -117,7 +126,9 @@ static slab_t *create_slab(bucket_t *bucket) {
     return slab;
 
 free_slab_chunks:
-    umf_ba_global_free(slab->chunks);
+    if (slab->num_chunks_total > 64) {
+        umf_ba_global_free(slab->chunks.chunks);
+    }
 
 free_slab:
     umf_ba_global_free(slab);
@@ -135,26 +146,55 @@ static void destroy_slab(slab_t *slab) {
         LOG_ERR("deallocation of slab data failed!");
     }
 
-    umf_ba_global_free(slab->chunks);
+    if (slab->num_chunks_total > 64) {
+        umf_ba_global_free(slab->chunks.chunks);
+    }
+
     umf_ba_global_free(slab);
 }
 
-// return the index of the first available chunk, SIZE_MAX otherwise
 static size_t slab_find_first_available_chunk_idx(const slab_t *slab) {
-    // use the first free chunk index as a hint for the search
-    for (bool *chunk = slab->chunks + slab->first_free_chunk_idx;
-         chunk != slab->chunks + slab->num_chunks_total; chunk++) {
+    if (slab->num_chunks_total <= 64) {
+        // Invert the bits so that free (0) bits become 1.
+        uint64_t word = ~(slab->chunks.chunk);
 
-        // false means not used
-        if (*chunk == false) {
-            size_t idx = chunk - slab->chunks;
-            LOG_DEBUG("idx: %zu", idx);
-            return idx;
+        // Mask out any bits beyond num_chunks_total if necessary.
+        if (slab->num_chunks_total < 64) {
+            word &= (((uint64_t)1 << slab->num_chunks_total) - 1);
         }
-    }
 
-    LOG_DEBUG("idx: SIZE_MAX");
-    return SIZE_MAX;
+        if (word == 0) {
+            return SIZE_MAX; // No free chunk found.
+        }
+
+        size_t bit_index = utils_get_rightmost_set_bit_pos(word);
+
+        return bit_index;
+    } else {
+        // Calculate the number of 64-bit words needed.
+        size_t num_words = (slab->num_chunks_total + 63) / 64;
+        for (size_t i = 0; i < num_words; i++) {
+            // Invert the word: free bits (0 in the allocated mask) become 1.
+            uint64_t word = ~(slab->chunks.chunks[i]);
+
+            // For the final word, clear out bits that exceed num_chunks_total.
+            if (i == num_words - 1) {
+                size_t bits_in_last_word = slab->num_chunks_total - (i * 64);
+                if (bits_in_last_word < 64) {
+                    word &= (((uint64_t)1 << bits_in_last_word) - 1);
+                }
+            }
+            if (word != 0) {
+                size_t bit_index = utils_get_rightmost_set_bit_pos(word);
+                size_t free_chunk = i * 64 + bit_index;
+                if (free_chunk < slab->num_chunks_total) {
+                    return free_chunk;
+                }
+            }
+        }
+        // No free chunk was found.
+        return SIZE_MAX;
+    }
 }
 
 static void *slab_get_chunk(slab_t *slab) {
@@ -166,7 +206,7 @@ static void *slab_get_chunk(slab_t *slab) {
         (void *)((uintptr_t)slab->mem_ptr + chunk_idx * slab->bucket->size);
 
     // mark chunk as used
-    slab->chunks[chunk_idx] = true;
+    slab_set_chunk_bit(slab, chunk_idx, true);
     slab->num_chunks_allocated += 1;
 
     // use the found index as the next hint
@@ -194,8 +234,8 @@ static void slab_free_chunk(slab_t *slab, void *ptr) {
     size_t chunk_idx = ptr_diff / slab->bucket->size;
 
     // Make sure that the chunk was allocated
-    assert(slab->chunks[chunk_idx] && "double free detected");
-    slab->chunks[chunk_idx] = false;
+    assert(slab_read_chunk_bit(slab, chunk_idx) && "double free detected");
+    slab_set_chunk_bit(slab, chunk_idx, false);
     slab->num_chunks_allocated -= 1;
 
     if (chunk_idx < slab->first_free_chunk_idx) {
@@ -467,7 +507,7 @@ static size_t size_to_idx(disjoint_pool_t *pool, size_t size) {
     }
 
     // get the position of the leftmost set bit
-    size_t position = getLeftmostSetBitPos(size);
+    size_t position = utils_get_leftmost_set_bit_pos(size);
 
     bool is_power_of_2 = 0 == (size & (size - 1));
     bool larger_than_halfway_between_powers_of_2 =
@@ -623,7 +663,8 @@ umf_result_t disjoint_pool_initialize(umf_memory_provider_handle_t provider,
     Size1 = utils_max(Size1, UMF_DISJOINT_POOL_MIN_BUCKET_DEFAULT_SIZE);
 
     // Calculate the exponent for min_bucket_size used for finding buckets.
-    disjoint_pool->min_bucket_size_exp = (size_t)log2Utils(Size1);
+    disjoint_pool->min_bucket_size_exp =
+        (size_t)utils_get_leftmost_set_bit_pos(Size1);
     disjoint_pool->default_shared_limits =
         umfDisjointPoolSharedLimitsCreate(SIZE_MAX);
 

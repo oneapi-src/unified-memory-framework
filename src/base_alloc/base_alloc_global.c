@@ -71,7 +71,8 @@ static void umf_ba_create_global(void) {
     }
 
     size_t smallestSize = BASE_ALLOC.ac_sizes[0];
-    BASE_ALLOC.smallest_ac_size_log2 = log2Utils(smallestSize);
+    BASE_ALLOC.smallest_ac_size_log2 =
+        utils_get_leftmost_set_bit_pos(smallestSize);
 
     LOG_DEBUG("UMF base allocator created");
 }
@@ -83,8 +84,8 @@ static int size_to_idx(size_t size) {
     }
 
     int isPowerOf2 = (0 == (size & (size - 1)));
-    int index =
-        (int)(log2Utils(size) + !isPowerOf2 - BASE_ALLOC.smallest_ac_size_log2);
+    int index = (int)(utils_get_leftmost_set_bit_pos(size) + !isPowerOf2 -
+                      BASE_ALLOC.smallest_ac_size_log2);
 
     assert(index >= 0);
     return index;

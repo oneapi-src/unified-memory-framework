@@ -83,7 +83,11 @@ typedef struct slab_t {
 
     // Represents the current state of each chunk: if the bit is set, the
     // chunk is allocated; otherwise, the chunk is free for allocation
-    bool *chunks;
+    union {
+        uint64_t *chunks; // Used if the number of chunks is greater than 64
+        uint64_t chunk; // Used if the number of chunks is less or equal than 64
+    } chunks;
+
     size_t num_chunks_total;
 
     // Total number of allocated chunks at the moment.
@@ -157,5 +161,37 @@ typedef struct disjoint_pool_t {
     // Coarse-grain allocation min alignment
     size_t provider_min_page_size;
 } disjoint_pool_t;
+
+static inline void slab_set_chunk_bit(slab_t *slab, size_t index, bool value) {
+    assert(index < slab->num_chunks_total && "Index out of range");
+
+    if (slab->num_chunks_total <= 64) {
+        if (value) {
+            slab->chunks.chunk |= (1ULL << index);
+        } else {
+            slab->chunks.chunk &= ~(1ULL << index);
+        }
+    } else {
+        size_t word_index = index / 64;
+        unsigned bit_index = index % 64;
+        if (value) {
+            slab->chunks.chunks[word_index] |= (1ULL << bit_index);
+        } else {
+            slab->chunks.chunks[word_index] &= ~(1ULL << bit_index);
+        }
+    }
+}
+
+static inline int slab_read_chunk_bit(const slab_t *slab, size_t index) {
+    assert(index < slab->num_chunks_total && "Index out of range");
+
+    if (slab->num_chunks_total <= 64) {
+        return (slab->chunks.chunk >> index) & 1;
+    } else {
+        size_t word_index = index / 64;
+        unsigned bit_index = index % 64;
+        return (slab->chunks.chunks[word_index] >> bit_index) & 1;
+    }
+}
 
 #endif // UMF_POOL_DISJOINT_INTERNAL_H

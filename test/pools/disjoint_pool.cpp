@@ -113,8 +113,8 @@ TEST_F(test, internals) {
     EXPECT_GE(slab->num_chunks_total, slab->slab_size / bucket->size);
 
     // check allocation in slab
-    EXPECT_EQ(slab->chunks[0], true);
-    EXPECT_EQ(slab->chunks[1], false);
+    EXPECT_EQ(slab_read_chunk_bit(slab, 0), true);
+    EXPECT_EQ(slab_read_chunk_bit(slab, 1), false);
     EXPECT_EQ(slab->first_free_chunk_idx, 1);
 
     // TODO:

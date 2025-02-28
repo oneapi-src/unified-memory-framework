@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2024 Intel Corporation
+ * Copyright (C) 2023-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -64,6 +64,7 @@
 #include "utils_assert.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
+#include "utils_math.h"
 
 /*
  * A node that has been deleted is left untouched for this many delete
@@ -386,7 +387,7 @@ int critnib_insert(struct critnib *c, word key, void *value, int update) {
     }
 
     /* and convert that to an index. */
-    sh_t sh = utils_mssb_index(at) & (sh_t) ~(SLICE - 1);
+    sh_t sh = utils_get_leftmost_set_bit_pos(at) & (sh_t) ~(SLICE - 1);
 
     struct critnib_node *m = alloc_node(c);
     if (!m) {

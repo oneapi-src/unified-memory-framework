@@ -15,10 +15,6 @@
 
 #ifdef _WIN32
 #include <windows.h>
-
-#include "utils_windows_intrin.h"
-
-#pragma intrinsic(_BitScanForward64)
 #else
 #include <pthread.h>
 
@@ -79,18 +75,6 @@ void utils_init_once(UTIL_ONCE_FLAG *flag, void (*onceCb)(void));
 
 #if defined(_WIN32)
 
-static __inline unsigned char utils_lssb_index(long long value) {
-    unsigned long ret;
-    _BitScanForward64(&ret, value);
-    return (unsigned char)ret;
-}
-
-static __inline unsigned char utils_mssb_index(long long value) {
-    unsigned long ret;
-    _BitScanReverse64(&ret, value);
-    return (unsigned char)ret;
-}
-
 // There is no good way to do atomic_load on windows...
 #define utils_atomic_load_acquire(object, dest)                                \
     do {                                                                       \
@@ -115,9 +99,6 @@ static __inline unsigned char utils_mssb_index(long long value) {
     InterlockedCompareExchange64((LONG64 volatile *)object, *expected, *desired)
 
 #else // !defined(_WIN32)
-
-#define utils_lssb_index(x) ((unsigned char)__builtin_ctzll(x))
-#define utils_mssb_index(x) ((unsigned char)(63 - __builtin_clzll(x)))
 
 #define utils_atomic_load_acquire(object, dest)                                \
     do {                                                                       \
