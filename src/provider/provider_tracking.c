@@ -37,7 +37,7 @@ struct umf_memory_tracker_t {
     // when one memory pool acts as a memory provider
     // for another memory pool (nested memory pooling).
     critnib *alloc_segments_map[MAX_LEVELS_OF_ALLOC_SEGMENT_MAP];
-    utils_mutex_t splitMergeMutex;
+    utils_mutex_t mutex;
 };
 
 typedef struct tracker_alloc_info_t {
@@ -48,94 +48,6 @@ typedef struct tracker_alloc_info_t {
     // falling within the current range
     size_t n_children;
 } tracker_alloc_info_t;
-
-static umf_result_t umfMemoryTrackerAdd(umf_memory_tracker_handle_t hTracker,
-                                        umf_memory_pool_handle_t pool,
-                                        const void *ptr, size_t size) {
-    assert(ptr);
-
-    tracker_alloc_info_t *parent_value = NULL;
-    tracker_alloc_info_t *rvalue = NULL;
-    uintptr_t parent_key = 0;
-    uintptr_t rkey = 0;
-    int parent_level = 0;
-    int level = 0;
-    int found = 0;
-
-    // Find the most nested (in the highest level) entry
-    // in the critnib maps that contains the given 'ptr' pointer.
-    do {
-        assert(level < MAX_LEVELS_OF_ALLOC_SEGMENT_MAP);
-        found =
-            critnib_find(hTracker->alloc_segments_map[level], (uintptr_t)ptr,
-                         FIND_LE, (void *)&rkey, (void **)&rvalue);
-        if (found && (uintptr_t)ptr < rkey + rvalue->size) {
-            if (level == MAX_LEVELS_OF_ALLOC_SEGMENT_MAP - 1) {
-                // TODO: we need to support an arbitrary amount of layers in the future
-                LOG_ERR("tracker level is too high, ptr=%p, size=%zu", ptr,
-                        size);
-                return UMF_RESULT_ERROR_INTERNAL;
-            }
-            if (((uintptr_t)ptr + size) > (rkey + rvalue->size)) {
-                LOG_ERR(
-                    "cannot insert to the tracker value (pool=%p, ptr=%p, "
-                    "size=%zu) "
-                    "that exceeds the parent value (pool=%p, ptr=%p, size=%zu)",
-                    (void *)pool, ptr, size, (void *)rvalue->pool, (void *)rkey,
-                    rvalue->size);
-                return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-            }
-            parent_key = rkey;
-            parent_value = rvalue;
-            parent_level = level;
-            level++;
-        }
-    } while (found && ((uintptr_t)ptr < rkey + rvalue->size) &&
-             rvalue->n_children);
-
-    tracker_alloc_info_t *value = umf_ba_alloc(hTracker->alloc_info_allocator);
-    if (value == NULL) {
-        LOG_ERR("failed to allocate tracker value, ptr=%p, size=%zu", ptr,
-                size);
-        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-    }
-
-    value->pool = pool;
-    value->size = size;
-    value->n_children = 0;
-
-    assert(level < MAX_LEVELS_OF_ALLOC_SEGMENT_MAP);
-    int ret = critnib_insert(hTracker->alloc_segments_map[level],
-                             (uintptr_t)ptr, value, 0);
-    if (ret == 0) {
-        LOG_DEBUG("memory region is added, tracker=%p, level=%i, pool=%p, "
-                  "ptr=%p, size=%zu",
-                  (void *)hTracker, level, (void *)pool, ptr, size);
-
-        if (parent_value) {
-            parent_value->n_children++;
-            LOG_DEBUG(
-                "child #%zu added to memory region: tracker=%p, level=%i, "
-                "pool=%p, ptr=%p, size=%zu",
-                parent_value->n_children, (void *)hTracker, parent_level,
-                (void *)parent_value->pool, (void *)parent_key,
-                parent_value->size);
-        }
-
-        return UMF_RESULT_SUCCESS;
-    }
-
-    LOG_ERR("failed to insert tracker value, ret=%d, pool=%p, ptr=%p size=%zu",
-            ret, (void *)pool, ptr, size);
-
-    umf_ba_free(hTracker->alloc_info_allocator, value);
-
-    if (ret == ENOMEM) {
-        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-    }
-
-    return UMF_RESULT_ERROR_UNKNOWN;
-}
 
 // Get the most nested (on the highest level) allocation segment in the map with the `ptr` key.
 // If `no_children` is set to 1, the function will return the entry
@@ -195,6 +107,121 @@ static tracker_alloc_info_t *get_most_nested_alloc_segment(
     return rvalue;
 }
 
+static umf_result_t
+umfMemoryTrackerAddAtLevel(umf_memory_tracker_handle_t hTracker, int level,
+                           umf_memory_pool_handle_t pool, const void *ptr,
+                           size_t size) {
+    assert(ptr);
+
+    umf_result_t umf_result = UMF_RESULT_ERROR_UNKNOWN;
+
+    tracker_alloc_info_t *value = umf_ba_alloc(hTracker->alloc_info_allocator);
+    if (value == NULL) {
+        LOG_ERR("failed to allocate a tracker value, ptr=%p, size=%zu", ptr,
+                size);
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    value->pool = pool;
+    value->size = size;
+    value->n_children = 0;
+
+    assert(level < MAX_LEVELS_OF_ALLOC_SEGMENT_MAP);
+    int ret = critnib_insert(hTracker->alloc_segments_map[level],
+                             (uintptr_t)ptr, value, 0);
+    if (ret == 0) {
+        LOG_DEBUG("memory region is added, tracker=%p, level=%i, pool=%p, "
+                  "ptr=%p, size=%zu",
+                  (void *)hTracker, level, (void *)pool, ptr, size);
+        return UMF_RESULT_SUCCESS;
+    }
+    if (ret == ENOMEM) {
+        umf_result = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    LOG_ERR(
+        "failed to insert the tracker value: pool=%p, ptr=%p, size=%zu, ret=%d",
+        (void *)pool, ptr, size, ret);
+
+    umf_ba_free(hTracker->alloc_info_allocator, value);
+
+    return umf_result;
+}
+
+static umf_result_t umfMemoryTrackerAdd(umf_memory_tracker_handle_t hTracker,
+                                        umf_memory_pool_handle_t pool,
+                                        const void *ptr, size_t size) {
+    assert(ptr);
+
+    umf_result_t umf_result = UMF_RESULT_ERROR_UNKNOWN;
+    tracker_alloc_info_t *parent_value = NULL;
+    tracker_alloc_info_t *rvalue = NULL;
+    uintptr_t parent_key = 0;
+    uintptr_t rkey = 0;
+    int parent_level = 0;
+    int level = 0;
+    int found = 0;
+
+    int ret = utils_mutex_lock(&hTracker->mutex);
+    if (ret) {
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
+
+    // Find the most nested (in the highest level) entry
+    // in the critnib maps that contains the given 'ptr' pointer.
+    do {
+        assert(level < MAX_LEVELS_OF_ALLOC_SEGMENT_MAP);
+        found =
+            critnib_find(hTracker->alloc_segments_map[level], (uintptr_t)ptr,
+                         FIND_LE, (void *)&rkey, (void **)&rvalue);
+        if (found && (uintptr_t)ptr < rkey + rvalue->size) {
+            if (level == MAX_LEVELS_OF_ALLOC_SEGMENT_MAP - 1) {
+                // TODO: we need to support an arbitrary amount of layers in the future
+                LOG_ERR("tracker level is too high, ptr=%p, size=%zu", ptr,
+                        size);
+                umf_result = UMF_RESULT_ERROR_INTERNAL;
+                goto err_unlock;
+            }
+            if (((uintptr_t)ptr + size) > (rkey + rvalue->size)) {
+                LOG_ERR(
+                    "cannot insert to the tracker value (pool=%p, ptr=%p, "
+                    "size=%zu) "
+                    "that exceeds the parent value (pool=%p, ptr=%p, size=%zu)",
+                    (void *)pool, ptr, size, (void *)rvalue->pool, (void *)rkey,
+                    rvalue->size);
+                umf_result = UMF_RESULT_ERROR_INVALID_ARGUMENT;
+                goto err_unlock;
+            }
+            parent_key = rkey;
+            parent_value = rvalue;
+            parent_level = level;
+            level++;
+        }
+    } while (found && ((uintptr_t)ptr < rkey + rvalue->size) &&
+             rvalue->n_children);
+
+    umf_result = umfMemoryTrackerAddAtLevel(hTracker, level, pool, ptr, size);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        goto err_unlock;
+    }
+
+    if (parent_value) {
+        parent_value->n_children++;
+        LOG_DEBUG("child #%zu added to memory region: tracker=%p, level=%i, "
+                  "pool=%p, ptr=%p, size=%zu",
+                  parent_value->n_children, (void *)hTracker, parent_level,
+                  (void *)parent_value->pool, (void *)parent_key,
+                  parent_value->size);
+    }
+
+    umf_result = UMF_RESULT_SUCCESS;
+
+err_unlock:
+    utils_mutex_unlock(&hTracker->mutex);
+
+    return umf_result;
+}
+
 static umf_result_t umfMemoryTrackerRemove(umf_memory_tracker_handle_t hTracker,
                                            const void *ptr) {
     assert(ptr);
@@ -204,9 +231,15 @@ static umf_result_t umfMemoryTrackerRemove(umf_memory_tracker_handle_t hTracker,
     // Every umfMemoryTrackerAdd(..., ptr, ...) should have a corresponding
     // umfMemoryTrackerRemove call with the same ptr value.
 
+    umf_result_t umf_result = UMF_RESULT_ERROR_UNKNOWN;
     tracker_alloc_info_t *parent_value = NULL;
     uintptr_t parent_key = 0;
     int level = 0;
+
+    int ret = utils_mutex_lock(&hTracker->mutex);
+    if (ret) {
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
 
     // Find the most nested (on the highest level) entry in the map
     // with the `ptr` key and with no children - only such entry can be removed.
@@ -214,7 +247,7 @@ static umf_result_t umfMemoryTrackerRemove(umf_memory_tracker_handle_t hTracker,
         hTracker, ptr, &level, &parent_key, &parent_value, 1 /* no_children */);
     if (!value) {
         LOG_ERR("pointer %p not found in the alloc_segments_map", ptr);
-        return UMF_RESULT_ERROR_UNKNOWN;
+        goto err_unlock;
     }
 
     assert(level < MAX_LEVELS_OF_ALLOC_SEGMENT_MAP);
@@ -236,7 +269,12 @@ static umf_result_t umfMemoryTrackerRemove(umf_memory_tracker_handle_t hTracker,
 
     umf_ba_free(hTracker->alloc_info_allocator, value);
 
-    return UMF_RESULT_SUCCESS;
+    umf_result = UMF_RESULT_SUCCESS;
+
+err_unlock:
+    utils_mutex_unlock(&hTracker->mutex);
+
+    return umf_result;
 }
 
 umf_memory_pool_handle_t umfMemoryTrackerGetPool(const void *ptr) {
@@ -376,7 +414,7 @@ static umf_result_t trackingAllocationSplit(void *hProvider, void *ptr,
     splitValue->size = firstSize;
     splitValue->n_children = 0;
 
-    int r = utils_mutex_lock(&provider->hTracker->splitMergeMutex);
+    int r = utils_mutex_lock(&provider->hTracker->mutex);
     if (r) {
         goto err_lock;
     }
@@ -419,11 +457,11 @@ static umf_result_t trackingAllocationSplit(void *hProvider, void *ptr,
 
     // We'll have a duplicate entry for the range [highPtr, highValue->size] but this is fine,
     // the value is the same anyway and we forbid removing that range concurrently
-    ret = umfMemoryTrackerAdd(provider->hTracker, provider->pool, highPtr,
-                              secondSize);
+    ret = umfMemoryTrackerAddAtLevel(provider->hTracker, level, provider->pool,
+                                     highPtr, secondSize);
     if (ret != UMF_RESULT_SUCCESS) {
-        LOG_ERR("failed to add split region to the tracker, ptr=%p, size=%zu, "
-                "ret=%d",
+        LOG_ERR("failed to add the split region to the tracker, ptr=%p, "
+                "size=%zu, ret=%d",
                 highPtr, secondSize, ret);
         // revert the split
         assert(level < MAX_LEVELS_OF_ALLOC_SEGMENT_MAP);
@@ -440,7 +478,7 @@ static umf_result_t trackingAllocationSplit(void *hProvider, void *ptr,
 
     // free the original value
     umf_ba_free(provider->hTracker->alloc_info_allocator, value);
-    utils_mutex_unlock(&provider->hTracker->splitMergeMutex);
+    utils_mutex_unlock(&provider->hTracker->mutex);
 
     LOG_DEBUG(
         "split memory region (level=%i): ptr=%p, totalSize=%zu, firstSize=%zu",
@@ -449,7 +487,7 @@ static umf_result_t trackingAllocationSplit(void *hProvider, void *ptr,
     return UMF_RESULT_SUCCESS;
 
 err:
-    utils_mutex_unlock(&provider->hTracker->splitMergeMutex);
+    utils_mutex_unlock(&provider->hTracker->mutex);
 err_lock:
     umf_ba_free(provider->hTracker->alloc_info_allocator, splitValue);
 
@@ -481,7 +519,7 @@ static umf_result_t trackingAllocationMerge(void *hProvider, void *lowPtr,
     int lowLevel = -2;
     int highLevel = -1;
 
-    int r = utils_mutex_lock(&provider->hTracker->splitMergeMutex);
+    int r = utils_mutex_lock(&provider->hTracker->mutex);
     if (r) {
         goto err_lock;
     }
@@ -548,7 +586,7 @@ static umf_result_t trackingAllocationMerge(void *hProvider, void *lowPtr,
 
     umf_ba_free(provider->hTracker->alloc_info_allocator, erasedhighValue);
 
-    utils_mutex_unlock(&provider->hTracker->splitMergeMutex);
+    utils_mutex_unlock(&provider->hTracker->mutex);
 
     LOG_DEBUG("merged memory regions (level=%i): lowPtr=%p (child=%zu), "
               "highPtr=%p (child=%zu), totalSize=%zu",
@@ -563,7 +601,7 @@ err_assert:
     assert(0);
 
 not_merged:
-    utils_mutex_unlock(&provider->hTracker->splitMergeMutex);
+    utils_mutex_unlock(&provider->hTracker->mutex);
 
 err_lock:
     umf_ba_free(provider->hTracker->alloc_info_allocator, mergedValue);
@@ -1045,7 +1083,7 @@ umf_memory_tracker_handle_t umfMemoryTrackerCreate(void) {
 
     handle->alloc_info_allocator = alloc_info_allocator;
 
-    void *mutex_ptr = utils_mutex_init(&handle->splitMergeMutex);
+    void *mutex_ptr = utils_mutex_init(&handle->mutex);
     if (!mutex_ptr) {
         goto err_destroy_alloc_info_allocator;
     }
@@ -1069,7 +1107,7 @@ err_destroy_mutex:
             critnib_delete(handle->alloc_segments_map[j]);
         }
     }
-    utils_mutex_destroy_not_free(&handle->splitMergeMutex);
+    utils_mutex_destroy_not_free(&handle->mutex);
 err_destroy_alloc_info_allocator:
     umf_ba_destroy(alloc_info_allocator);
 err_free_handle:
@@ -1102,7 +1140,7 @@ void umfMemoryTrackerDestroy(umf_memory_tracker_handle_t handle) {
             handle->alloc_segments_map[i] = NULL;
         }
     }
-    utils_mutex_destroy_not_free(&handle->splitMergeMutex);
+    utils_mutex_destroy_not_free(&handle->mutex);
     umf_ba_destroy(handle->alloc_info_allocator);
     handle->alloc_info_allocator = NULL;
     umf_ba_global_free(handle);
