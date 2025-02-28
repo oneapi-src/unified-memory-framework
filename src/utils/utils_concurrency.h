@@ -21,7 +21,7 @@
 #include "utils_windows_intrin.h"
 
 #pragma intrinsic(_BitScanForward64)
-#else
+#else /* !_WIN32 */
 #include <pthread.h>
 
 #ifndef __cplusplus
@@ -30,14 +30,9 @@
 #include <atomic>
 #define _Atomic(X) std::atomic<X>
 
-using std::memory_order_acq_rel;
-using std::memory_order_acquire;
-using std::memory_order_relaxed;
-using std::memory_order_release;
-
 #endif /* __cplusplus */
 
-#endif /* _WIN32 */
+#endif /* !_WIN32 */
 
 #include "utils_common.h"
 #include "utils_sanitizers.h"
@@ -118,14 +113,6 @@ static __inline void utils_atomic_load_acquire_ptr(void **ptr, void **out) {
     *(uintptr_t *)out = ret;
 }
 
-static __inline void utils_atomic_store_release_u64(uint64_t *ptr,
-                                                    uint64_t *val) {
-    ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
-    ASSERT_IS_ALIGNED((uintptr_t)val, 8);
-    utils_annotate_release(ptr);
-    InterlockedExchange64((LONG64 volatile *)ptr, *(LONG64 *)val);
-}
-
 static __inline void utils_atomic_store_release_ptr(void **ptr, void *val) {
     ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
     utils_annotate_release(ptr);
@@ -146,14 +133,12 @@ static __inline uint64_t utils_atomic_decrement_u64(uint64_t *ptr) {
 
 static __inline uint64_t utils_fetch_and_add_u64(uint64_t *ptr, uint64_t val) {
     ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
-    ASSERT_IS_ALIGNED((uintptr_t)&val, 8);
     // return the value that had previously been in *ptr
     return InterlockedExchangeAdd64((LONG64 volatile *)(ptr), val);
 }
 
 static __inline uint64_t utils_fetch_and_sub_u64(uint64_t *ptr, uint64_t val) {
     ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
-    ASSERT_IS_ALIGNED((uintptr_t)&val, 8);
     // return the value that had previously been in *ptr
     // NOTE: on Windows there is no *Sub* version of InterlockedExchange
     return InterlockedExchangeAdd64((LONG64 volatile *)(ptr), -(LONG64)val);
@@ -201,14 +186,6 @@ static inline void utils_atomic_load_acquire_ptr(void **ptr, void **out) {
     ASSERT_IS_ALIGNED((uintptr_t)out, 8);
     *out = (void *)__atomic_load_n((uintptr_t *)ptr, memory_order_acquire);
     utils_annotate_acquire((void *)ptr);
-}
-
-static inline void utils_atomic_store_release_u64(uint64_t *ptr,
-                                                  uint64_t *val) {
-    ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
-    ASSERT_IS_ALIGNED((uintptr_t)val, 8);
-    utils_annotate_release(ptr);
-    __atomic_store(ptr, val, memory_order_release);
 }
 
 static inline void utils_atomic_store_release_ptr(void **ptr, void *val) {

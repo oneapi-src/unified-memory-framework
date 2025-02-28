@@ -119,7 +119,6 @@ struct critnib_leaf {
 
 struct critnib {
     struct critnib_node *root;
-    uint64_t remove_count;
 
     /* pool of freed nodes: singly linked list, next at child[0] */
     struct critnib_node *deleted_node;
@@ -128,6 +127,8 @@ struct critnib {
     /* nodes removed but not yet eligible for reuse */
     struct critnib_node *pending_del_nodes[DELETED_LIFE];
     struct critnib_leaf *pending_del_leaves[DELETED_LIFE];
+
+    uint64_t remove_count;
 
     struct utils_mutex_t mutex; /* writes/removes */
 };

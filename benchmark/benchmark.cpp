@@ -96,7 +96,6 @@ UMF_BENCHMARK_TEMPLATE_DEFINE(multiple_malloc_free_benchmark,
                               pool_allocator<disjoint_pool<os_provider>>);
 UMF_BENCHMARK_REGISTER_F(multiple_malloc_free_benchmark, disjoint_pool_uniform)
     ->Apply(&default_multiple_alloc_uniform_size)
-    ->Apply(&singlethreaded)
     ->Apply(&multithreaded);
 
 #ifdef UMF_POOL_JEMALLOC_ENABLED

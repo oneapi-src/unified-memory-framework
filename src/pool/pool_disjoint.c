@@ -444,7 +444,6 @@ static bool bucket_can_pool(bucket_t *bucket) {
             &bucket->shared_limits->total_size, size_to_add);
 
         if (previous_size + size_to_add <= bucket->shared_limits->max_size) {
-
             ++bucket->chunked_slabs_in_pool;
             bucket_update_stats(bucket, -1, 1);
             return true;

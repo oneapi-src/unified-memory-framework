@@ -12,6 +12,11 @@
 
 #include <gtest/gtest.h>
 
+using std::memory_order_acq_rel;
+using std::memory_order_acquire;
+using std::memory_order_relaxed;
+using std::memory_order_release;
+
 namespace umf_test {
 
 #define IS_SKIPPED_OR_FAILED() (HasFatalFailure() || IsSkipped())
