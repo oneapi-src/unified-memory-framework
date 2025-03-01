@@ -160,6 +160,13 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_basic_provider) {
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
     ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
 
+    // test double free
+    umf_result = coarse_free(ch, ptr, 2 * MB);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    ASSERT_EQ(coarse_get_stats(ch).used_size, 0);
+    ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+
     coarse_delete(ch);
     umfMemoryProviderDestroy(malloc_memory_provider);
 }
@@ -198,6 +205,13 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_basic_fixed_memory) {
 
     umf_result = coarse_free(ch, ptr, 2 * MB);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(coarse_get_stats(ch).used_size, 0);
+    ASSERT_EQ(coarse_get_stats(ch).alloc_size, buff_size);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+
+    // test double free
+    umf_result = coarse_free(ch, ptr, 2 * MB);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, buff_size);
     ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
