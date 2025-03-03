@@ -22,10 +22,12 @@ ARG BASE_DEPS="\
 	cmake \
 	git"
 
+# UMF's dependencies
+# libhwloc-dev is required
+
 # Dependencies for tests (optional)
 ARG TEST_DEPS="\
 	libnuma-dev \
-	libhwloc-dev \
 	libtbb-dev\
 	valgrind"
 
@@ -54,8 +56,7 @@ RUN apt-get update \
 	${TEST_DEPS} \
 	${MISC_DEPS} \
 	${HWLOC_DEPS} \
- && bash /opt/umf/install_hwloc.sh \
- && ldconfig \
+ && /opt/umf/install_hwloc.sh \
  && rm -rf /var/lib/apt/lists/* \
  && apt-get clean all
 

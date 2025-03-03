@@ -22,10 +22,13 @@ ARG BASE_DEPS="\
 	cmake \
 	git"
 
+# UMF's dependencies
+ARG UMF_DEPS="\
+	libhwloc-dev"
+
 # Dependencies for tests (optional)
 ARG TEST_DEPS="\
 	libnuma-dev \
-	libhwloc-dev \
 	libtbb-dev\
 	valgrind"
 
@@ -33,19 +36,10 @@ ARG TEST_DEPS="\
 ARG MISC_DEPS="\
 	automake \
 	clang \
-	g++ \
 	python3-pip \
 	sudo \
 	whois \
 	lcov"
-
-# Hwloc installation dependencies
-ARG HWLOC_DEPS="\
-	dos2unix \
-	libtool"
-
-# Copy hwloc
-COPY .github/scripts/install_hwloc.sh /opt/umf/install_hwloc.sh
 
 # Update and install required packages
 RUN apt-get update \
@@ -53,9 +47,7 @@ RUN apt-get update \
 	${BASE_DEPS} \
 	${TEST_DEPS} \
 	${MISC_DEPS} \
-	${HWLOC_DEPS} \
- && bash /opt/umf/install_hwloc.sh \
- && ldconfig \
+	${UMF_DEPS} \
  && rm -rf /var/lib/apt/lists/* \
  && apt-get clean all
 

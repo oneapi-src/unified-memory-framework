@@ -50,7 +50,7 @@ jobs:
     uses: ./.github/workflows/reusable_dockers_build.yml
   FastBuild:
     if: always() && (needs.BuildDockers.result == 'skipped' || needs.BuildDockers.result == 'success')
-    needs: [ CodeChecks, DocsBuild, BuildDockers]
+    needs: [CodeChecks, DocsBuild, BuildDockers]
     uses: ./.github/workflows/reusable_fast.yml
   Build:
     name: Basic builds
