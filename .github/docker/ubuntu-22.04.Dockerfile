@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Intel Corporation
+# Copyright (C) 2024-2025 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -24,12 +24,13 @@ ARG BASE_DEPS="\
 
 # UMF's dependencies
 ARG UMF_DEPS="\
-	libhwloc-dev \
-	libtbb-dev"
+	libhwloc-dev"
 
 # Dependencies for tests (optional)
 ARG TEST_DEPS="\
-	libnuma-dev"
+	libnuma-dev \
+	libtbb-dev\
+	valgrind"
 
 # Miscellaneous for our builds/CI (optional)
 ARG MISC_DEPS="\
@@ -37,20 +38,21 @@ ARG MISC_DEPS="\
 	clang \
 	python3-pip \
 	sudo \
-	whois"
+	whois \
+	lcov"
 
 # Update and install required packages
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
 	${BASE_DEPS} \
-	${UMF_DEPS} \
 	${TEST_DEPS} \
 	${MISC_DEPS} \
+	${UMF_DEPS} \
  && rm -rf /var/lib/apt/lists/* \
  && apt-get clean all
 
 # Prepare a dir (accessible by anyone)
-RUN mkdir --mode 777 /opt/umf/
+RUN mkdir -p --mode 777 /opt/umf/
 
 # Additional dependencies (installed via pip)
 COPY third_party/requirements.txt /opt/umf/requirements.txt
