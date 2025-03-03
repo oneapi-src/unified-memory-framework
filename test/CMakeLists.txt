@@ -347,6 +347,11 @@ if(LINUX AND (NOT UMF_DISABLE_HWLOC)) # OS-specific functions are implemented
         NAME provider_tracking
         SRCS provider_tracking.cpp
         LIBS ${UMF_UTILS_FOR_TEST})
+    add_umf_test(
+        NAME provider_tracking_fixture_tests
+        SRCS provider_tracking_fixture_tests.cpp malloc_compliance_tests.cpp
+             ${BA_SOURCES_FOR_TEST}
+        LIBS ${UMF_UTILS_FOR_TEST})
 
     # This test requires Linux-only file memory provider
     if(UMF_POOL_JEMALLOC_ENABLED)
