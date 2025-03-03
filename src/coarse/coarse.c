@@ -1170,10 +1170,13 @@ umf_result_t coarse_free(coarse_t *coarse, void *ptr, size_t bytes) {
     }
 
     block_t *block = get_node_block(node);
-    assert(block->used);
+    if (!block->used) {
+        LOG_ERR("double free");
+        utils_mutex_unlock(&coarse->lock);
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
 
     if (bytes > 0 && bytes != block->size) {
-        // wrong size of allocation
         LOG_ERR("wrong size of allocation");
         utils_mutex_unlock(&coarse->lock);
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
