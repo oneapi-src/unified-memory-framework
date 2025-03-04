@@ -53,9 +53,6 @@ typedef enum umf_purge_advise_t {
 #define ASSERT_IS_ALIGNED(value, align)                                        \
     DO_WHILE_EXPRS(assert(IS_ALIGNED(value, align)))
 
-#define VALGRIND_ANNOTATE_NEW_MEMORY(p, s) DO_WHILE_EMPTY
-#define VALGRIND_HG_DRD_DISABLE_CHECKING(p, s) DO_WHILE_EMPTY
-
 #ifdef _WIN32 /* Windows */
 
 #define __TLS __declspec(thread)
