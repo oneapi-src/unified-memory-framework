@@ -283,7 +283,8 @@ else()
 
         message(STATUS "hwloc CMAKE_GENERATOR: ${CMAKE_GENERATOR}")
 
-        if(CMAKE_GENERATOR STREQUAL "Ninja")
+        if(CMAKE_GENERATOR STREQUAL "Ninja" OR CMAKE_GENERATOR STREQUAL
+                                               "Unix Makefiles")
             add_custom_command(
                 COMMAND ${CMAKE_COMMAND}
                         -DCMAKE_INSTALL_PREFIX=${hwloc_targ_BINARY_DIR} -B build
@@ -408,7 +409,7 @@ if(UMF_BUILD_LEVEL_ZERO_PROVIDER AND (NOT UMF_LEVEL_ZERO_INCLUDE_DIR))
     include(FetchContent)
 
     set(LEVEL_ZERO_LOADER_REPO "https://github.com/oneapi-src/level-zero.git")
-    set(LEVEL_ZERO_LOADER_TAG v1.19.2)
+    set(LEVEL_ZERO_LOADER_TAG v1.20.2)
 
     message(
         STATUS

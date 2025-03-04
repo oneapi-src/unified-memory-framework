@@ -752,8 +752,10 @@ void *disjoint_pool_aligned_malloc(void *pool, size_t size, size_t alignment) {
     }
 
     void *aligned_ptr = (void *)ALIGN_UP_SAFE((size_t)ptr, alignment);
-    VALGRIND_DO_MEMPOOL_ALLOC(disjoint_pool, aligned_ptr, size);
-    utils_annotate_memory_undefined(aligned_ptr, size);
+    size_t diff = (ptrdiff_t)aligned_ptr - (ptrdiff_t)ptr;
+    size_t real_size = bucket->size - diff;
+    VALGRIND_DO_MEMPOOL_ALLOC(disjoint_pool, aligned_ptr, real_size);
+    utils_annotate_memory_undefined(aligned_ptr, real_size);
 
     utils_mutex_unlock(&bucket->bucket_lock);
 
@@ -767,11 +769,34 @@ void *disjoint_pool_aligned_malloc(void *pool, size_t size, size_t alignment) {
 }
 
 size_t disjoint_pool_malloc_usable_size(void *pool, void *ptr) {
-    (void)pool;
-    (void)ptr;
+    disjoint_pool_t *disjoint_pool = (disjoint_pool_t *)pool;
+    if (ptr == NULL) {
+        return 0;
+    }
 
-    // Not supported
-    return 0;
+    // check if given pointer is allocated inside any Disjoint Pool slab
+    slab_t *slab =
+        (slab_t *)critnib_find_le(disjoint_pool->known_slabs, (uintptr_t)ptr);
+    if (slab == NULL || ptr >= slab_get_end(slab)) {
+        // memory comes directly from the provider
+        umf_alloc_info_t allocInfo = {NULL, 0, NULL};
+        umf_result_t ret = umfMemoryTrackerGetAllocInfo(ptr, &allocInfo);
+        if (ret != UMF_RESULT_SUCCESS) {
+            return 0;
+        }
+
+        return allocInfo.baseSize;
+    }
+    // Get the unaligned pointer
+    // NOTE: the base pointer slab->mem_ptr needn't to be aligned to bucket size
+    size_t chunk_idx =
+        (((uintptr_t)ptr - (uintptr_t)slab->mem_ptr) / slab->bucket->size);
+    void *unaligned_ptr =
+        (void *)((uintptr_t)slab->mem_ptr + chunk_idx * slab->bucket->size);
+
+    ptrdiff_t diff = (ptrdiff_t)ptr - (ptrdiff_t)unaligned_ptr;
+
+    return slab->bucket->size - diff;
 }
 
 umf_result_t disjoint_pool_free(void *pool, void *ptr) {
