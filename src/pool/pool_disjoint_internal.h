@@ -102,7 +102,7 @@ typedef struct slab_t {
 
 typedef struct umf_disjoint_pool_shared_limits_t {
     size_t max_size;
-    size_t total_size; // requires atomic access
+    uint64_t total_size; // requires atomic access
 } umf_disjoint_pool_shared_limits_t;
 
 typedef struct umf_disjoint_pool_params_t {

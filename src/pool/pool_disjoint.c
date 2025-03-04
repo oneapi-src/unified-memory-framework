@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -20,6 +21,7 @@
 #include "provider/provider_tracking.h"
 #include "uthash/utlist.h"
 #include "utils_common.h"
+#include "utils_concurrency.h"
 #include "utils_log.h"
 #include "utils_math.h"
 
@@ -523,7 +525,7 @@ static void disjoint_pool_print_stats(disjoint_pool_t *pool) {
         utils_mutex_unlock(&bucket->bucket_lock);
     }
 
-    LOG_DEBUG("current pool size: %zu",
+    LOG_DEBUG("current pool size: %" PRIu64,
               disjoint_pool_get_limits(pool)->total_size);
     LOG_DEBUG("suggested setting=;%c%s:%zu,%zu,64K", (char)tolower(name[0]),
               (name + 1), high_bucket_size, high_peak_slabs_in_use);
@@ -864,7 +866,8 @@ umf_result_t disjoint_pool_free(void *pool, void *ptr) {
 
     if (disjoint_pool->params.pool_trace > 2) {
         const char *name = disjoint_pool->params.name;
-        LOG_DEBUG("freed %s %p to %s, current total pool size: %zu, current "
+        LOG_DEBUG("freed %s %p to %s, current total pool size: %" PRIu64
+                  ", current "
                   "pool size for %s: %zu",
                   name, ptr, (to_pool ? "pool" : "provider"),
                   disjoint_pool_get_limits(disjoint_pool)->total_size, name,
