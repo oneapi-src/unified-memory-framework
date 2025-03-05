@@ -404,8 +404,12 @@ static umf_result_t file_mmap_aligned(file_memory_provider_t *file_provider,
         "inserted a value to the map of memory mapping (addr=%p, size=%zu)",
         ptr, extended_size);
 
-    file_provider->base_mmap = ptr;
-    file_provider->size_mmap = extended_size;
+    // align the new pointer
+    uintptr_t aligned_ptr = ALIGN_UP_SAFE((uintptr_t)ptr, alignment);
+    size_t aligned_size = extended_size - (aligned_ptr - (uintptr_t)ptr);
+
+    file_provider->base_mmap = (void *)aligned_ptr;
+    file_provider->size_mmap = aligned_size;
     file_provider->offset_mmap = 0;
 
     return UMF_RESULT_SUCCESS;
