@@ -208,3 +208,10 @@ umf_result_t umfPoolGetTag(umf_memory_pool_handle_t hPool, void **tag) {
     utils_mutex_unlock(&hPool->lock);
     return UMF_RESULT_SUCCESS;
 }
+
+void *umfPoolGetPoolPriv(umf_memory_pool_handle_t hPool) {
+    if (hPool == NULL) {
+        return NULL;
+    }
+    return hPool->pool_priv;
+}

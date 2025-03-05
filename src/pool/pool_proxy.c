@@ -13,8 +13,10 @@
 #include <assert.h>
 
 #include "base_alloc_global.h"
+#include "memory_pool_internal.h"
 #include "provider/provider_tracking.h"
 #include "utils_common.h"
+#include "utils_log.h"
 
 static __TLS umf_result_t TLS_last_allocation_error;
 
@@ -100,6 +102,11 @@ static umf_result_t proxy_free(void *pool, void *ptr) {
         umf_alloc_info_t allocInfo = {NULL, 0, NULL};
         umf_result_t umf_result = umfMemoryTrackerGetAllocInfo(ptr, &allocInfo);
         if (umf_result == UMF_RESULT_SUCCESS) {
+            if (pool != umfPoolGetPoolPriv(allocInfo.pool)) {
+                LOG_ERR("pool mismatch");
+                return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+            }
+
             size = allocInfo.baseSize;
         }
     }

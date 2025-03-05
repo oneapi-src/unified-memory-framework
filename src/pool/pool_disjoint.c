@@ -17,6 +17,7 @@
 #include <umf/memory_provider.h>
 
 #include "base_alloc_global.h"
+#include "memory_pool_internal.h"
 #include "pool_disjoint_internal.h"
 #include "provider/provider_tracking.h"
 #include "uthash/utlist.h"
@@ -817,6 +818,11 @@ umf_result_t disjoint_pool_free(void *pool, void *ptr) {
             TLS_last_allocation_error = ret;
             LOG_ERR("failed to get allocation info from the memory tracker");
             return ret;
+        }
+
+        if (pool != umfPoolGetPoolPriv(allocInfo.pool)) {
+            LOG_ERR("pool mismatch");
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
         }
 
         size_t size = allocInfo.baseSize;

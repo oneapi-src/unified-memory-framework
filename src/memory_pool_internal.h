@@ -36,6 +36,8 @@ typedef struct umf_memory_pool_t {
     void *tag;
 } umf_memory_pool_t;
 
+void *umfPoolGetPoolPriv(umf_memory_pool_handle_t hPool);
+
 #ifdef __cplusplus
 }
 #endif
