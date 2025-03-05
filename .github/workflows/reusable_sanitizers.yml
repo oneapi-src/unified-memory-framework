@@ -14,6 +14,7 @@ jobs:
   ubuntu-build:
     name: Ubuntu
     strategy:
+      fail-fast: false
       matrix:
         compiler: [{c: gcc, cxx: g++}, {c: clang, cxx: clang++}, {c: icx, cxx: icpx}]
         # TSAN is mutually exclusive with other sanitizers
@@ -79,6 +80,7 @@ jobs:
     env:
       VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
     strategy:
+      fail-fast: false
       matrix:
         compiler: [{c: cl, cxx: cl}, {c: clang-cl, cxx: clang-cl}]
         # Only ASAN is supported
