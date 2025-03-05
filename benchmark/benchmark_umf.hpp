@@ -19,6 +19,7 @@
 #ifdef UMF_POOL_SCALABLE_ENABLED
 #include <umf/pools/pool_scalable.h>
 #endif
+#include <umf/providers/provider_fixed_memory.h>
 #include <umf/providers/provider_os_memory.h>
 
 #ifdef UMF_POOL_JEMALLOC_ENABLED
@@ -145,7 +146,9 @@ struct os_provider : public provider_interface {
             umfOsMemoryProviderParamsDestroy(handle);
         };
 
-        return {static_cast<void *>(raw_params), deleter};
+        return {static_cast<provider_interface::params_ptr::element_type *>(
+                    raw_params),
+                deleter};
     }
 
     umf_memory_provider_ops_t *
@@ -153,6 +156,62 @@ struct os_provider : public provider_interface {
         return umfOsMemoryProviderOps();
     }
     static std::string name() { return "os_provider"; }
+};
+
+struct fixed_provider : public provider_interface {
+  private:
+    char *mem = NULL;
+    const size_t size = 1024 * 1024 * 1024; // 1GB
+  public:
+    virtual void SetUp(::benchmark::State &state) override {
+        if (state.thread_index() != 0) {
+            return;
+        }
+
+        if (!mem) {
+            mem = new char[size];
+        }
+
+        provider_interface::SetUp(state);
+    }
+
+    virtual void TearDown(::benchmark::State &state) override {
+        if (state.thread_index() != 0) {
+            return;
+        }
+
+        delete[] mem;
+        mem = nullptr;
+
+        provider_interface::TearDown(state);
+    }
+
+    provider_interface::params_ptr
+    getParams(::benchmark::State &state) override {
+        umf_fixed_memory_provider_params_handle_t raw_params = nullptr;
+        umfFixedMemoryProviderParamsCreate(&raw_params, mem, size);
+        if (!raw_params) {
+            state.SkipWithError("Failed to create fixed provider params");
+            return {nullptr, [](void *) {}};
+        }
+
+        // Use a lambda as the custom deleter
+        auto deleter = [](void *p) {
+            auto handle =
+                static_cast<umf_fixed_memory_provider_params_handle_t>(p);
+            umfFixedMemoryProviderParamsDestroy(handle);
+        };
+
+        return {static_cast<provider_interface::params_ptr::element_type *>(
+                    raw_params),
+                deleter};
+    }
+
+    umf_memory_provider_ops_t *
+    getOps([[maybe_unused]] ::benchmark::State &state) override {
+        return umfFixedMemoryProviderOps();
+    }
+    static std::string name() { return "fixed_provider"; }
 };
 
 template <typename Provider>
