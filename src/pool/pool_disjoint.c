@@ -466,7 +466,7 @@ static size_t size_to_idx(disjoint_pool_t *pool, size_t size) {
     }
 
     // get the position of the leftmost set bit
-    size_t position = getLeftmostSetBitPos(size);
+    size_t position = utils_msb64(size);
 
     bool is_power_of_2 = 0 == (size & (size - 1));
     bool larger_than_halfway_between_powers_of_2 =
@@ -622,7 +622,7 @@ umf_result_t disjoint_pool_initialize(umf_memory_provider_handle_t provider,
     Size1 = utils_max(Size1, UMF_DISJOINT_POOL_MIN_BUCKET_DEFAULT_SIZE);
 
     // Calculate the exponent for min_bucket_size used for finding buckets.
-    disjoint_pool->min_bucket_size_exp = (size_t)log2Utils(Size1);
+    disjoint_pool->min_bucket_size_exp = (size_t)utils_msb64(Size1);
     disjoint_pool->default_shared_limits =
         umfDisjointPoolSharedLimitsCreate(SIZE_MAX);
 
