@@ -5,3 +5,30 @@
    fun:pthread_cond_destroy@*
    ...
 }
+
+{
+   [false-positive] Double check locking pattern in trackingOpenIpcHandle
+   drd:ConflictingAccess
+   fun:utils_atomic_load_acquire_ptr
+   fun:trackingOpenIpcHandle
+   fun:umfMemoryProviderOpenIPCHandle
+   fun:umfOpenIPCHandle
+   ...
+}
+
+{
+   [false-positive] trackingGetIpcHandle
+   drd:ConflictingAccess
+   fun:trackingGetIpcHandle
+   fun:umfMemoryProviderGetIPCHandle
+   fun:umfGetIPCHandle
+}
+
+{
+   [false-positive] trackingGetIpcHandle
+   drd:ConflictingAccess
+   fun:memmove
+   fun:trackingGetIpcHandle
+   fun:umfMemoryProviderGetIPCHandle
+   fun:umfGetIPCHandle
+}
