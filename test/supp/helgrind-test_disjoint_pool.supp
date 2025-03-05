@@ -27,11 +27,3 @@
    fun:*gthread_mutex_unlock*pthread_mutex_t
    ...
 }
-
-{
-   False-positive Race in critnib_insert
-   Helgrind:Race
-   fun:utils_atomic_store_release_ptr
-   fun:critnib_insert
-   ...
-}
