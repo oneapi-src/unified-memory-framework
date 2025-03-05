@@ -74,6 +74,17 @@ jobs:
             install_tbb: 'ON'
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
+          # test lld linker
+          - os: 'ubuntu-24.04'
+            build_type: Release
+            compiler: {c: icx, cxx: icpx}
+            shared_library: 'ON'
+            level_zero_provider: 'ON'
+            cuda_provider: 'ON'
+            install_tbb: 'ON'
+            disable_hwloc: 'OFF'
+            link_hwloc_statically: 'OFF'
+            llvm_linker: '-DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" -DCMAKE_MODULE_LINKER_FLAGS="-fuse-ld=lld" -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld"'
           # test without installing TBB
           - os: 'ubuntu-22.04'
             build_type: Release
@@ -160,6 +171,7 @@ jobs:
         -DUMF_DISABLE_HWLOC=${{matrix.disable_hwloc}}
         -DUMF_LINK_HWLOC_STATICALLY=${{matrix.link_hwloc_statically}}
         ${{ matrix.build_type == 'Debug' && matrix.compiler.c == 'gcc' && '-DUMF_USE_COVERAGE=ON' || '' }}
+        ${{ matrix.llvm_linker || '' }}
 
     - name: Build UMF
       run: |
