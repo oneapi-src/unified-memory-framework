@@ -15,6 +15,8 @@
 #include "critnib/critnib.h"
 #include "utils_concurrency.h"
 
+#define CHUNK_BITMAP_SIZE 64
+
 typedef struct bucket_t bucket_t;
 typedef struct slab_t slab_t;
 typedef struct slab_list_item_t slab_list_item_t;
@@ -81,10 +83,10 @@ typedef struct slab_t {
     void *mem_ptr;
     size_t slab_size;
 
-    // Represents the current state of each chunk: if the bit is set, the
-    // chunk is allocated; otherwise, the chunk is free for allocation
-    bool *chunks;
     size_t num_chunks_total;
+
+    // Num of 64-bit words needed to store chunk state
+    size_t num_words;
 
     // Total number of allocated chunks at the moment.
     size_t num_chunks_allocated;
@@ -92,12 +94,13 @@ typedef struct slab_t {
     // The bucket which the slab belongs to
     bucket_t *bucket;
 
-    // Hints where to start search for free chunk in a slab
-    size_t first_free_chunk_idx;
-
     // Store iterator to the corresponding node in avail/unavail list
     // to achieve O(1) removal
     slab_list_item_t iter;
+
+    // Represents the current state of each chunk: if the bit is clear, the
+    // chunk is allocated; otherwise, the chunk is free for allocation
+    uint64_t chunks[];
 } slab_t;
 
 typedef struct umf_disjoint_pool_shared_limits_t {
@@ -157,5 +160,25 @@ typedef struct disjoint_pool_t {
     // Coarse-grain allocation min alignment
     size_t provider_min_page_size;
 } disjoint_pool_t;
+
+static inline void slab_set_chunk_bit(slab_t *slab, size_t index, bool value) {
+    assert(index < slab->num_chunks_total && "Index out of range");
+
+    size_t word_index = index / CHUNK_BITMAP_SIZE;
+    unsigned bit_index = index % CHUNK_BITMAP_SIZE;
+    if (value) {
+        slab->chunks[word_index] |= (1ULL << bit_index);
+    } else {
+        slab->chunks[word_index] &= ~(1ULL << bit_index);
+    }
+}
+
+static inline int slab_read_chunk_bit(const slab_t *slab, size_t index) {
+    assert(index < slab->num_chunks_total && "Index out of range");
+
+    size_t word_index = index / CHUNK_BITMAP_SIZE;
+    unsigned bit_index = index % CHUNK_BITMAP_SIZE;
+    return (slab->chunks[word_index] >> bit_index) & 1;
+}
 
 #endif // UMF_POOL_DISJOINT_INTERNAL_H

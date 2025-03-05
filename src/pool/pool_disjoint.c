@@ -75,28 +75,36 @@ static slab_t *create_slab(bucket_t *bucket) {
     umf_result_t res = UMF_RESULT_SUCCESS;
     umf_memory_provider_handle_t provider = bucket->pool->provider;
 
-    slab_t *slab = umf_ba_global_alloc(sizeof(*slab));
+    size_t num_chunks_total =
+        utils_max(bucket_slab_min_size(bucket) / bucket->size, 1);
+
+    // Calculate the number of 64-bit words needed.
+    size_t num_words =
+        (num_chunks_total + CHUNK_BITMAP_SIZE - 1) / CHUNK_BITMAP_SIZE;
+
+    slab_t *slab = umf_ba_global_alloc(sizeof(*slab) +
+                                       num_words * sizeof(slab->chunks[0]));
     if (slab == NULL) {
         LOG_ERR("allocation of new slab failed!");
         return NULL;
     }
 
     slab->num_chunks_allocated = 0;
-    slab->first_free_chunk_idx = 0;
     slab->bucket = bucket;
 
     slab->iter.val = slab;
     slab->iter.prev = slab->iter.next = NULL;
 
-    slab->num_chunks_total =
-        utils_max(bucket_slab_min_size(bucket) / bucket->size, 1);
-    slab->chunks =
-        umf_ba_global_alloc(sizeof(*slab->chunks) * slab->num_chunks_total);
-    if (slab->chunks == NULL) {
-        LOG_ERR("allocation of slab chunks failed!");
-        goto free_slab;
+    slab->num_chunks_total = num_chunks_total;
+    slab->num_words = num_words;
+
+    // set all chunks as free
+    memset(slab->chunks, ~0, num_words * sizeof(slab->chunks[0]));
+    if (num_chunks_total % CHUNK_BITMAP_SIZE) {
+        // clear remaining bits
+        slab->chunks[num_words - 1] =
+            ((1ULL << (num_chunks_total % CHUNK_BITMAP_SIZE)) - 1);
     }
-    memset(slab->chunks, 0, sizeof(*slab->chunks) * slab->num_chunks_total);
 
     // if slab_min_size is not a multiple of bucket size, we would have some
     // padding at the end of the slab
@@ -108,7 +116,7 @@ static slab_t *create_slab(bucket_t *bucket) {
     res = umfMemoryProviderAlloc(provider, slab->slab_size, 0, &slab->mem_ptr);
     if (res != UMF_RESULT_SUCCESS) {
         LOG_ERR("allocation of slab data failed!");
-        goto free_slab_chunks;
+        goto free_slab;
     }
 
     // raw allocation is not available for user so mark it as inaccessible
@@ -116,9 +124,6 @@ static slab_t *create_slab(bucket_t *bucket) {
 
     LOG_DEBUG("bucket: %p, slab_size: %zu", (void *)bucket, slab->slab_size);
     return slab;
-
-free_slab_chunks:
-    umf_ba_global_free(slab->chunks);
 
 free_slab:
     umf_ba_global_free(slab);
@@ -136,25 +141,21 @@ static void destroy_slab(slab_t *slab) {
         LOG_ERR("deallocation of slab data failed!");
     }
 
-    umf_ba_global_free(slab->chunks);
     umf_ba_global_free(slab);
 }
 
-// return the index of the first available chunk, SIZE_MAX otherwise
 static size_t slab_find_first_available_chunk_idx(const slab_t *slab) {
-    // use the first free chunk index as a hint for the search
-    for (bool *chunk = slab->chunks + slab->first_free_chunk_idx;
-         chunk != slab->chunks + slab->num_chunks_total; chunk++) {
-
-        // false means not used
-        if (*chunk == false) {
-            size_t idx = chunk - slab->chunks;
-            LOG_DEBUG("idx: %zu", idx);
-            return idx;
+    for (size_t i = 0; i < slab->num_words; i++) {
+        // NOTE: free chunks are represented as set bits
+        uint64_t word = slab->chunks[i];
+        if (word != 0) {
+            size_t bit_index = utils_lsb64(word);
+            size_t free_chunk = i * CHUNK_BITMAP_SIZE + bit_index;
+            return free_chunk;
         }
     }
 
-    LOG_DEBUG("idx: SIZE_MAX");
+    // No free chunk was found.
     return SIZE_MAX;
 }
 
@@ -167,11 +168,8 @@ static void *slab_get_chunk(slab_t *slab) {
         (void *)((uintptr_t)slab->mem_ptr + chunk_idx * slab->bucket->size);
 
     // mark chunk as used
-    slab->chunks[chunk_idx] = true;
+    slab_set_chunk_bit(slab, chunk_idx, false);
     slab->num_chunks_allocated += 1;
-
-    // use the found index as the next hint
-    slab->first_free_chunk_idx = chunk_idx + 1;
 
     return free_chunk;
 }
@@ -195,18 +193,9 @@ static void slab_free_chunk(slab_t *slab, void *ptr) {
     size_t chunk_idx = ptr_diff / slab->bucket->size;
 
     // Make sure that the chunk was allocated
-    assert(slab->chunks[chunk_idx] && "double free detected");
-    slab->chunks[chunk_idx] = false;
+    assert(slab_read_chunk_bit(slab, chunk_idx) == 0 && "double free detected");
+    slab_set_chunk_bit(slab, chunk_idx, true);
     slab->num_chunks_allocated -= 1;
-
-    if (chunk_idx < slab->first_free_chunk_idx) {
-        slab->first_free_chunk_idx = chunk_idx;
-    }
-
-    LOG_DEBUG("chunk_idx: %zu, num_chunks_allocated: %zu, "
-              "first_free_chunk_idx: %zu",
-              chunk_idx, slab->num_chunks_allocated,
-              slab->first_free_chunk_idx);
 }
 
 static bool slab_has_avail(const slab_t *slab) {
