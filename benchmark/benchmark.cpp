@@ -31,6 +31,8 @@
 // Refer to the 'argsName()' function in each component to find detailed descriptions of these arguments.
 
 static void multithreaded(benchmark::internal::Benchmark *benchmark) {
+    benchmark->Threads(12);
+    benchmark->Threads(8);
     benchmark->Threads(4);
     benchmark->Threads(1);
 }
