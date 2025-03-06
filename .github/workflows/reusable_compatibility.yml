@@ -35,12 +35,6 @@ jobs:
     - name: Install libhwloc
       working-directory: ${{github.workspace}}/tag_version
       run: .github/scripts/install_hwloc.sh
-        
-    - name: Get "tag" UMF version
-      working-directory: ${{github.workspace}}/tag_version
-      run: |
-        VERSION=$(git describe --tags)
-        echo "tag version: $VERSION"
 
     - name: Configure "tag" UMF build
       working-directory: ${{github.workspace}}/tag_version
@@ -75,12 +69,6 @@ jobs:
       with:
         fetch-depth: 0
         path: ${{github.workspace}}/latest_version
-
-    - name: Get latest UMF version
-      working-directory: ${{github.workspace}}/latest_version
-      run: |
-        VERSION=$(git describe --tags)
-        echo "checked version: $VERSION"
 
     - name: Configure latest UMF build
       working-directory: ${{github.workspace}}/latest_version
@@ -132,16 +120,11 @@ jobs:
         vcpkgDirectory: ${{github.workspace}}/vcpkg
         vcpkgJsonGlob: '**/vcpkg.json'
 
+    # NOTE we use vcpkg setup from "tag" version
     - name: Install dependencies
       working-directory: ${{github.workspace}}/tag_version
       run: vcpkg install
       shell: pwsh # Specifies PowerShell as the shell for running the script.
-    
-    - name: Get "tag" UMF version
-      working-directory: ${{github.workspace}}/tag_version
-      run: |
-        $version = (git describe --tags)
-        echo "tag version: $VERSION"
 
     - name: Configure "tag" UMF build
       working-directory: ${{github.workspace}}/tag_version
@@ -173,13 +156,6 @@ jobs:
       with:
         fetch-depth: 0
         path: ${{github.workspace}}/latest_version
-
-    # NOTE we use vcpkg setup from "tag" version
-    - name: Get latest UMF version
-      working-directory: ${{github.workspace}}/latest_version
-      run: |
-        $version = (git describe --tags)
-        echo "latest version: $VERSION"
 
     - name: Configure latest UMF build
       working-directory: ${{github.workspace}}/latest_version
@@ -223,12 +199,6 @@ jobs:
         ref: refs/tags/${{inputs.tag}}
         path: ${{github.workspace}}/tag_version
 
-    - name: Get "tag" UMF version
-      working-directory: ${{github.workspace}}/tag_version
-      run: |
-        VERSION=$(git describe --tags)
-        echo "tag version: $VERSION"
-
     - name: Configure "tag" UMF build
       working-directory: ${{github.workspace}}/tag_version
       run: >
@@ -266,12 +236,6 @@ jobs:
       with:
         fetch-depth: 0
         path: ${{github.workspace}}/latest_version
-
-    - name: Get latest UMF version
-      working-directory: ${{github.workspace}}/latest_version
-      run: |
-        VERSION=$(git describe --tags)
-        echo "checked version: $VERSION"
 
     - name: Configure latest UMF build
       working-directory: ${{github.workspace}}/latest_version
