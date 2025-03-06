@@ -46,6 +46,7 @@ jobs:
         -DCMAKE_C_COMPILER=gcc
         -DCMAKE_CXX_COMPILER=g++
         -DUMF_BUILD_TESTS=ON
+        -DUMF_BUILD_EXAMPLES=ON
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
         -DUMF_BUILD_CUDA_PROVIDER=ON
         -DUMF_FORMAT_CODE_STYLE=OFF
@@ -85,7 +86,6 @@ jobs:
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
-        -DUMF_TESTS_FAIL_ON_SKIP=ON
 
     - name: Build latest UMF
       working-directory: ${{github.workspace}}/latest_version
@@ -136,6 +136,7 @@ jobs:
         -DCMAKE_CXX_COMPILER=cl
         -DUMF_BUILD_SHARED_LIBRARY=ON
         -DUMF_BUILD_TESTS=ON
+        -DUMF_BUILD_EXAMPLES=ON
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
         -DUMF_BUILD_CUDA_PROVIDER=ON
         -DUMF_FORMAT_CODE_STYLE=OFF
@@ -172,7 +173,6 @@ jobs:
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
-        -DUMF_TESTS_FAIL_ON_SKIP=ON
 
     - name: Build latest UMF
       run: cmake --build "${{github.workspace}}/latest_version/build" --config Debug -j $Env:NUMBER_OF_PROCESSORS
@@ -182,7 +182,7 @@ jobs:
       run: |
         $env:UMF_LOG="level:warning;flush:debug;output:stderr;pid:no" 
         cp ${{github.workspace}}/latest_version/build/bin/Debug/umf.dll ${{github.workspace}}/tag_version/build/bin/Debug/umf.dll
-        ctest -C Debug --verbose --test-dir test
+        ctest -C Debug --verbose
 
   gpu:
     name: GPU Ubuntu
