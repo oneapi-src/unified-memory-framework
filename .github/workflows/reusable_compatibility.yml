@@ -97,7 +97,7 @@ jobs:
       run: >
         UMF_LOG="level:warning;flush:debug;output:stderr;pid:no"
         LD_LIBRARY_PATH=${{github.workspace}}/latest_version/build/lib/
-        ctest --output-on-failure
+        ctest --verbose
 
   windows:
     name: Windows
@@ -182,7 +182,7 @@ jobs:
       run: |
         $env:UMF_LOG="level:warning;flush:debug;output:stderr;pid:no" 
         cp ${{github.workspace}}/latest_version/build/bin/Debug/umf.dll ${{github.workspace}}/tag_version/build/bin/Debug/umf.dll
-        ctest -C Debug --output-on-failure --test-dir test
+        ctest -C Debug --verbose --test-dir test
 
   gpu:
     name: GPU Ubuntu
@@ -264,4 +264,4 @@ jobs:
       run: >
         UMF_LOG="level:warning;flush:debug;output:stderr;pid:no"
         LD_LIBRARY_PATH=${{github.workspace}}/latest_version/build/lib/
-        ctest --output-on-failure -E "not_impl"
+        ctest --verbose -E "not_impl"
