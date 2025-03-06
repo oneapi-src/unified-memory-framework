@@ -588,12 +588,6 @@ umf_result_t disjoint_pool_initialize(umf_memory_provider_handle_t provider,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    disjoint_pool_t *disjoint_pool =
-        umf_ba_global_alloc(sizeof(*disjoint_pool));
-    if (!disjoint_pool) {
-        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-    }
-
     umf_disjoint_pool_params_t *dp_params =
         (umf_disjoint_pool_params_t *)params;
 
@@ -604,12 +598,21 @@ umf_result_t disjoint_pool_initialize(umf_memory_provider_handle_t provider,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
+    disjoint_pool_t *disjoint_pool =
+        umf_ba_global_alloc(sizeof(*disjoint_pool));
+    if (disjoint_pool == NULL) {
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
     VALGRIND_DO_CREATE_MEMPOOL(disjoint_pool, 0, 0);
 
     disjoint_pool->provider = provider;
     disjoint_pool->params = *dp_params;
 
     disjoint_pool->known_slabs = critnib_new();
+    if (disjoint_pool->known_slabs == NULL) {
+        goto err_free_disjoint_pool;
+    }
 
     // Generate buckets sized such as: 64, 96, 128, 192, ..., CutOff.
     // Powers of 2 and the value halfway between the powers of 2.
@@ -625,6 +628,9 @@ umf_result_t disjoint_pool_initialize(umf_memory_provider_handle_t provider,
     disjoint_pool->min_bucket_size_exp = (size_t)log2Utils(Size1);
     disjoint_pool->default_shared_limits =
         umfDisjointPoolSharedLimitsCreate(SIZE_MAX);
+    if (disjoint_pool->default_shared_limits == NULL) {
+        goto err_free_known_slabs;
+    }
 
     // count number of buckets, start from 1
     disjoint_pool->buckets_num = 1;
@@ -633,10 +639,14 @@ umf_result_t disjoint_pool_initialize(umf_memory_provider_handle_t provider,
     for (; Size2 < CutOff; Size1 *= 2, Size2 *= 2) {
         disjoint_pool->buckets_num += 2;
     }
+
     disjoint_pool->buckets = umf_ba_global_alloc(
         sizeof(*disjoint_pool->buckets) * disjoint_pool->buckets_num);
+    if (disjoint_pool->buckets == NULL) {
+        goto err_free_shared_limits;
+    }
 
-    int i = 0;
+    size_t i = 0;
     Size1 = ts1;
     Size2 = ts2;
     for (; Size2 < CutOff; Size1 *= 2, Size2 *= 2, i += 2) {
@@ -648,6 +658,13 @@ umf_result_t disjoint_pool_initialize(umf_memory_provider_handle_t provider,
     disjoint_pool->buckets[i] = create_bucket(
         CutOff, disjoint_pool, disjoint_pool_get_limits(disjoint_pool));
 
+    // check if all buckets were created successfully
+    for (i = 0; i < disjoint_pool->buckets_num; i++) {
+        if (disjoint_pool->buckets[i] == NULL) {
+            goto err_free_buckets;
+        }
+    }
+
     umf_result_t ret = umfMemoryProviderGetMinPageSize(
         provider, NULL, &disjoint_pool->provider_min_page_size);
     if (ret != UMF_RESULT_SUCCESS) {
@@ -657,6 +674,25 @@ umf_result_t disjoint_pool_initialize(umf_memory_provider_handle_t provider,
     *ppPool = (void *)disjoint_pool;
 
     return UMF_RESULT_SUCCESS;
+
+err_free_buckets:
+    for (i = 0; i < disjoint_pool->buckets_num; i++) {
+        if (disjoint_pool->buckets[i] != NULL) {
+            destroy_bucket(disjoint_pool->buckets[i]);
+        }
+    }
+    umf_ba_global_free(disjoint_pool->buckets);
+
+err_free_shared_limits:
+    umfDisjointPoolSharedLimitsDestroy(disjoint_pool->default_shared_limits);
+
+err_free_known_slabs:
+    critnib_delete(disjoint_pool->known_slabs);
+
+err_free_disjoint_pool:
+    umf_ba_global_free(disjoint_pool);
+
+    return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
 }
 
 void *disjoint_pool_malloc(void *pool, size_t size) {
