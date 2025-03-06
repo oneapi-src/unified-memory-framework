@@ -47,7 +47,8 @@ typedef enum umf_result_t {
         6, ///< Failure in user provider code (i.e in user provided callback)
     UMF_RESULT_ERROR_DEPENDENCY_UNAVAILABLE =
         7, ///< External required dependency is unavailable or missing
-    UMF_RESULT_ERROR_UNKNOWN = 0x7ffffffe ///< Unknown or internal error
+    UMF_RESULT_ERROR_OUT_OF_RESOURCES = 8, ///< Out of internal resources
+    UMF_RESULT_ERROR_UNKNOWN = 0x7ffffffe  ///< Unknown error
 } umf_result_t;
 
 #ifdef __cplusplus
