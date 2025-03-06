@@ -6,13 +6,9 @@
 */
 
 #include <assert.h>
-#include <stdio.h>
 #include <sys/mman.h>
-#include <sys/syscall.h>
 #include <unistd.h>
 
-#include "base_alloc.h"
-#include "base_alloc_global.h"
 #include "utils_concurrency.h"
 
 static UTIL_ONCE_FLAG Page_size_is_initialized = UTIL_ONCE_FLAG_INIT;
