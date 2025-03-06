@@ -45,8 +45,8 @@ function(build_umf_test)
         "${multiValueArgs}"
         ${ARGN})
 
-    set(TEST_NAME umf-${ARG_NAME})
-    set(TEST_TARGET_NAME umf_test-${ARG_NAME})
+    set(TEST_NAME test_${ARG_NAME})
+    set(TEST_TARGET_NAME test_${ARG_NAME})
 
     set(LIB_DIRS ${LIB_DIRS} ${LIBHWLOC_LIBRARY_DIRS})
 
@@ -130,8 +130,8 @@ function(add_umf_test)
         SRCS ${ARG_SRCS}
         LIBS ${ARG_LIBS})
 
-    set(TEST_NAME umf-${ARG_NAME})
-    set(TEST_TARGET_NAME umf_test-${ARG_NAME})
+    set(TEST_NAME test_${ARG_NAME})
+    set(TEST_TARGET_NAME test_${ARG_NAME})
 
     add_test(
         NAME ${TEST_NAME}
@@ -414,7 +414,7 @@ if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
         SRCS providers/provider_level_zero.cpp
              ${UMF_UTILS_DIR}/utils_level_zero.cpp ${BA_SOURCES_FOR_TEST}
         LIBS ${UMF_UTILS_FOR_TEST})
-    target_compile_definitions(umf_test-provider_level_zero_dlopen_global
+    target_compile_definitions(test_provider_level_zero_dlopen_global
                                PUBLIC USE_DLOPEN=1 OPEN_ZE_LIBRARY_GLOBAL=1)
 
     add_umf_test(
@@ -422,7 +422,7 @@ if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
         SRCS providers/provider_level_zero.cpp
              ${UMF_UTILS_DIR}/utils_level_zero.cpp ${BA_SOURCES_FOR_TEST}
         LIBS ${UMF_UTILS_FOR_TEST})
-    target_compile_definitions(umf_test-provider_level_zero_dlopen_local
+    target_compile_definitions(test_provider_level_zero_dlopen_local
                                PUBLIC USE_DLOPEN=1 OPEN_ZE_LIBRARY_GLOBAL=0)
 endif()
 
@@ -449,7 +449,7 @@ if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_CUDA_PROVIDER)
             SRCS providers/provider_cuda.cpp providers/cuda_helpers.cpp
                  ${BA_SOURCES_FOR_TEST}
             LIBS ${UMF_UTILS_FOR_TEST})
-        target_compile_definitions(umf_test-provider_cuda_dlopen_global
+        target_compile_definitions(test_provider_cuda_dlopen_global
                                    PUBLIC USE_DLOPEN=1 OPEN_CU_LIBRARY_GLOBAL=1)
 
         add_umf_test(
@@ -457,7 +457,7 @@ if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_CUDA_PROVIDER)
             SRCS providers/provider_cuda.cpp providers/cuda_helpers.cpp
                  ${BA_SOURCES_FOR_TEST}
             LIBS ${UMF_UTILS_FOR_TEST})
-        target_compile_definitions(umf_test-provider_cuda_dlopen_local
+        target_compile_definitions(test_provider_cuda_dlopen_local
                                    PUBLIC USE_DLOPEN=1 OPEN_CU_LIBRARY_GLOBAL=0)
     else()
         message(
@@ -502,7 +502,7 @@ if(UMF_PROXY_LIB_ENABLED AND UMF_BUILD_SHARED_LIBRARY)
             NAME proxy_lib_size_threshold
             SRCS ${BA_SOURCES_FOR_TEST} test_proxy_lib_size_threshold.cpp
             LIBS ${UMF_UTILS_FOR_TEST} umf_proxy)
-        set_property(TEST umf-proxy_lib_size_threshold
+        set_property(TEST test_proxy_lib_size_threshold
                      PROPERTY ENVIRONMENT UMF_PROXY="size.threshold=64")
     endif()
 
@@ -512,7 +512,7 @@ if(UMF_PROXY_LIB_ENABLED AND UMF_BUILD_SHARED_LIBRARY)
         SRCS ${BA_SOURCES_FOR_TEST} memoryPoolAPI.cpp
              malloc_compliance_tests.cpp
         LIBS ${UMF_UTILS_FOR_TEST} umf_proxy)
-    target_compile_definitions(umf_test-proxy_lib_memoryPool
+    target_compile_definitions(test_proxy_lib_memoryPool
                                PUBLIC UMF_PROXY_LIB_ENABLED=1)
 endif()
 
@@ -536,7 +536,7 @@ function(add_umf_ipc_test)
         ""
         ${ARGN})
 
-    set(TEST_NAME umf-${ARG_TEST})
+    set(TEST_NAME test_${ARG_TEST})
 
     if(DEFINED ARG_SRC_DIR)
         set(SRC_DIR ${ARG_SRC_DIR})
@@ -656,7 +656,7 @@ if(LINUX
         LIBS dl)
     # append LD_LIBRARY_PATH to the libumf
     set_property(
-        TEST umf-init_teardown
+        TEST test_init_teardown
         PROPERTY ENVIRONMENT_MODIFICATION
                  "LD_LIBRARY_PATH=path_list_append:${CMAKE_BINARY_DIR}/lib")
 endif()

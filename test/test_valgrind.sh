@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (C) 2024 Intel Corporation
+# Copyright (C) 2024-2025 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -16,7 +16,7 @@ function print_usage() {
 	echo "Where:"
 	echo
 	echo "tests_examples - (optional) list of tests or examples to be run (paths relative to the <build_dir> build directory)."
-	echo "                 If it is empty, all tests (./test/umf_test-*) and examples (./examples/umf_example_*)"
+	echo "                 If it is empty, all tests (./test/test_*) and examples (./examples/umf_example_*)"
 	echo "                 found in <build_dir> will be run."
 }
 
@@ -37,8 +37,8 @@ if [ ! -f $WORKSPACE/README.md ]; then
 	exit 1
 fi
 
-if [ $(ls -1 ${BUILD_DIR}/test/umf_test-* 2>/dev/null | wc -l) -eq 0 ]; then
-	echo -e "error: UMF tests ./test/umf_test-* not found in the build directory: ${BUILD_DIR}\n"
+if [ $(ls -1 ${BUILD_DIR}/test/test_* 2>/dev/null | wc -l) -eq 0 ]; then
+	echo -e "error: UMF tests ./test/test_* not found in the build directory: ${BUILD_DIR}\n"
 	print_usage
 	exit 1
 fi
@@ -74,7 +74,7 @@ echo "Working directory: $(pwd)"
 echo "Running: \"valgrind $OPTION\" for the following tests:"
 
 ANY_TEST_FAILED=0
-PATH_TESTS="./test/umf_test-*"
+PATH_TESTS="./test/test_*"
 PATH_EXAMPLES="./examples/umf_example_*"
 
 rm -f ${PATH_TESTS}.log ${PATH_TESTS}.err ${PATH_EXAMPLES}.log ${PATH_EXAMPLES}.err
@@ -100,7 +100,7 @@ for test in $TESTS; do
 	# skip tests incompatible with valgrind
 	FILTER=""
 	case $test in
-	./test/umf_test-disjointPool)
+	./test/test_disjointPool)
 		if [ "$TOOL" = "helgrind" ]; then
 			# skip because of the assert in helgrind:
 			# Helgrind: hg_main.c:308 (lockN_acquire_reader): Assertion 'lk->kind == LK_rdwr' failed.
@@ -108,40 +108,40 @@ for test in $TESTS; do
 			continue;
 		fi
 		;;
-	./test/umf_test-ipc_os_prov_*)
+	./test/test_ipc_os_prov_*)
 		echo "- SKIPPED"
 		continue; # skip testing helper binaries used by the ipc_os_prov_* tests
 		;;
-	./test/umf_test-ipc_devdax_prov_*)
+	./test/test_ipc_devdax_prov_*)
 		echo "- SKIPPED"
 		continue; # skip testing helper binaries used by the ipc_devdax_prov_* tests
 		;;
-	./test/umf_test-ipc_file_prov_*)
+	./test/test_ipc_file_prov_*)
 		echo "- SKIPPED"
 		continue; # skip testing helper binaries used by the ipc_file_prov_* tests
 		;;
-	./test/umf_test-memspace_host_all)
+	./test/test_memspace_host_all)
 		FILTER='--gtest_filter="-*allocsSpreadAcrossAllNumaNodes"'
 		;;
-	./test/umf_test-provider_os_memory)
+	./test/test_provider_os_memory)
 		FILTER='--gtest_filter="-osProviderTest/umfIpcTest*"'
 		;;
-	./test/umf_test-provider_os_memory_config)
+	./test/test_provider_os_memory_config)
 		FILTER='--gtest_filter="-*protection_flag_none:*protection_flag_read:*providerConfigTestNumaMode*"'
 		;;
-	./test/umf_test-memspace_highest_capacity)
+	./test/test_memspace_highest_capacity)
 		FILTER='--gtest_filter="-*highestCapacityVerify*"'
 		;;
-	./test/umf_test-provider_os_memory_multiple_numa_nodes)
+	./test/test_provider_os_memory_multiple_numa_nodes)
 		FILTER='--gtest_filter="-testNuma.checkModeInterleave*:testNumaNodesAllocations/testNumaOnEachNode.checkNumaNodesAllocations*:testNumaNodesAllocations/testNumaOnEachNode.checkModePreferred*:testNumaNodesAllocations/testNumaOnEachNode.checkModeInterleaveSingleNode*:testNumaNodesAllocationsAllCpus/testNumaOnEachCpu.checkModePreferredEmptyNodeset*:testNumaNodesAllocationsAllCpus/testNumaOnEachCpu.checkModeLocal*"'
 		;;
-	./test/umf_test-memspace_highest_bandwidth)
+	./test/test_memspace_highest_bandwidth)
 		FILTER='--gtest_filter="-*allocLocalMt*"'
 		;;
-	./test/umf_test-memspace_lowest_latency)
+	./test/test_memspace_lowest_latency)
 		FILTER='--gtest_filter="-*allocLocalMt*"'
 		;;
-	./test/umf_test-memoryPool)
+	./test/test_memoryPool)
 		FILTER='--gtest_filter="-*allocMaxSize*"'
 		;;
 	./examples/umf_example_ipc_ipcapi_*)

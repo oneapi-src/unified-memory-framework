@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2024 Intel Corporation
+# Copyright (C) 2024-2025 Intel Corporation
 #
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -17,10 +17,10 @@ LD_PRELOAD_VAL="../lib/libumf_proxy.so"
 PORT=$(( 1024 + ( $$ % ( 65535 - 1024 ))))
 
 echo "Starting CONSUMER on port $PORT ..."
-UMF_LOG=$UMF_LOG_VAL ./umf_test-ipc_os_prov_consumer $PORT &
+UMF_LOG=$UMF_LOG_VAL ./test_ipc_os_prov_consumer $PORT &
 
 echo "Waiting 1 sec ..."
 sleep 1
 
 echo "Starting ipc_os_prov_proxy PRODUCER on port $PORT ..."
-LD_PRELOAD=$LD_PRELOAD_VAL UMF_LOG=$UMF_LOG_VAL UMF_PROXY=$UMF_PROXY_VAL ./umf_test-ipc_os_prov_proxy $PORT
+LD_PRELOAD=$LD_PRELOAD_VAL UMF_LOG=$UMF_LOG_VAL UMF_PROXY=$UMF_PROXY_VAL ./test_ipc_os_prov_proxy $PORT

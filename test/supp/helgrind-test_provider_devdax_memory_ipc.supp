@@ -1,6 +1,7 @@
 {
    [false-positive] Double check locking pattern in trackingOpenIpcHandle
-   drd:ConflictingAccess
+   Helgrind:Race
+   fun:utils_atomic_store_release_ptr
    fun:trackingOpenIpcHandle
    fun:umfMemoryProviderOpenIPCHandle
    fun:umfOpenIPCHandle
@@ -9,7 +10,7 @@
 
 {
    False-positive ConflictingAccess in jemalloc
-   drd:ConflictingAccess
+   Helgrind:Race
    fun:atomic_*
    ...
    fun:je_*
@@ -18,7 +19,7 @@
 
 {
    False-positive ConflictingAccess in tbbmalloc
-   drd:ConflictingAccess
+   Helgrind:Race
    ...
    fun:tbb_pool_finalize
    ...

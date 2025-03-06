@@ -96,9 +96,7 @@ UMF_BENCHMARK_TEMPLATE_DEFINE(multiple_malloc_free_benchmark,
                               pool_allocator<disjoint_pool<os_provider>>);
 UMF_BENCHMARK_REGISTER_F(multiple_malloc_free_benchmark, disjoint_pool_uniform)
     ->Apply(&default_multiple_alloc_uniform_size)
-    ->Apply(&singlethreaded);
-// TODO: change to multithreaded
-//->Apply(&multithreaded);
+    ->Apply(&multithreaded);
 
 #ifdef UMF_POOL_JEMALLOC_ENABLED
 UMF_BENCHMARK_TEMPLATE_DEFINE(multiple_malloc_free_benchmark, jemalloc_pool_fix,
@@ -131,6 +129,81 @@ UMF_BENCHMARK_TEMPLATE_DEFINE(multiple_malloc_free_benchmark,
                               pool_allocator<scalable_pool<os_provider>>);
 
 UMF_BENCHMARK_REGISTER_F(multiple_malloc_free_benchmark, scalable_pool_uniform)
+    ->Apply(&default_multiple_alloc_uniform_size)
+    ->Apply(&multithreaded);
+
+#endif
+
+UMF_BENCHMARK_TEMPLATE_DEFINE(multiple_malloc_free_benchmark,
+                              proxy_pool_fixedprovider, fixed_alloc_size,
+                              pool_allocator<proxy_pool<fixed_provider>>);
+
+UMF_BENCHMARK_REGISTER_F(multiple_malloc_free_benchmark,
+                         proxy_pool_fixedprovider)
+    ->Apply(&default_multiple_alloc_fix_size)
+    ->Apply(&singlethreaded);
+
+UMF_BENCHMARK_TEMPLATE_DEFINE(multiple_malloc_free_benchmark, fixed_provider,
+                              fixed_alloc_size,
+                              provider_allocator<fixed_provider>);
+UMF_BENCHMARK_REGISTER_F(multiple_malloc_free_benchmark, fixed_provider)
+    ->Apply(&default_multiple_alloc_fix_size)
+    ->Apply(&singlethreaded);
+
+UMF_BENCHMARK_TEMPLATE_DEFINE(multiple_malloc_free_benchmark,
+                              disjoint_pool_fix_fixedprovider, fixed_alloc_size,
+                              pool_allocator<disjoint_pool<fixed_provider>>);
+UMF_BENCHMARK_REGISTER_F(multiple_malloc_free_benchmark,
+                         disjoint_pool_fix_fixedprovider)
+    ->Apply(&default_multiple_alloc_fix_size)
+    ->Apply(&multithreaded);
+
+UMF_BENCHMARK_TEMPLATE_DEFINE(multiple_malloc_free_benchmark,
+                              disjoint_pool_uniform_fixedprovider,
+                              uniform_alloc_size,
+                              pool_allocator<disjoint_pool<fixed_provider>>);
+UMF_BENCHMARK_REGISTER_F(multiple_malloc_free_benchmark,
+                         disjoint_pool_uniform_fixedprovider)
+    ->Apply(&default_multiple_alloc_uniform_size)
+    ->Apply(&singlethreaded);
+// TODO: change to multithreaded
+//->Apply(&multithreaded);
+
+#ifdef UMF_POOL_JEMALLOC_ENABLED
+UMF_BENCHMARK_TEMPLATE_DEFINE(multiple_malloc_free_benchmark,
+                              jemalloc_pool_fixedprovider, fixed_alloc_size,
+                              pool_allocator<jemalloc_pool<fixed_provider>>);
+UMF_BENCHMARK_REGISTER_F(multiple_malloc_free_benchmark, jemalloc_pool_fix)
+    ->Apply(&default_multiple_alloc_fix_size)
+    ->Apply(&multithreaded);
+
+UMF_BENCHMARK_TEMPLATE_DEFINE(multiple_malloc_free_benchmark,
+                              jemalloc_pool_uniform_fixedprovider,
+                              uniform_alloc_size,
+                              pool_allocator<jemalloc_pool<fixed_provider>>);
+UMF_BENCHMARK_REGISTER_F(multiple_malloc_free_benchmark, jemalloc_pool_uniform)
+    ->Apply(&default_multiple_alloc_uniform_size)
+    ->Apply(&multithreaded);
+
+#endif
+
+#ifdef UMF_POOL_SCALABLE_ENABLED
+UMF_BENCHMARK_TEMPLATE_DEFINE(multiple_malloc_free_benchmark,
+                              scalable_pool_fix_fixedprovider, fixed_alloc_size,
+                              pool_allocator<scalable_pool<fixed_provider>>);
+
+UMF_BENCHMARK_REGISTER_F(multiple_malloc_free_benchmark,
+                         scalable_pool_fix_fixedprovider)
+    ->Apply(&default_multiple_alloc_fix_size)
+    ->Apply(&multithreaded);
+
+UMF_BENCHMARK_TEMPLATE_DEFINE(multiple_malloc_free_benchmark,
+                              scalable_pool_uniform_fixedprovider,
+                              uniform_alloc_size,
+                              pool_allocator<scalable_pool<fixed_provider>>);
+
+UMF_BENCHMARK_REGISTER_F(multiple_malloc_free_benchmark,
+                         scalable_pool_uniform_fixedprovider)
     ->Apply(&default_multiple_alloc_uniform_size)
     ->Apply(&multithreaded);
 

@@ -25,7 +25,7 @@
 
 umf_memory_tracker_handle_t TRACKER = NULL;
 
-static unsigned long long umfRefCount = 0;
+static uint64_t umfRefCount = 0;
 
 static umf_ctl_node_t CTL_NODE(umf)[] = {CTL_CHILD(provider), CTL_CHILD(pool),
                                          CTL_NODE_END};
@@ -33,7 +33,7 @@ static umf_ctl_node_t CTL_NODE(umf)[] = {CTL_CHILD(provider), CTL_CHILD(pool),
 void initialize_global_ctl(void) { CTL_REGISTER_MODULE(NULL, umf); }
 
 int umfInit(void) {
-    if (utils_fetch_and_add64(&umfRefCount, 1) == 0) {
+    if (utils_fetch_and_add_u64(&umfRefCount, 1) == 0) {
         utils_log_init();
         TRACKER = umfMemoryTrackerCreate();
         if (!TRACKER) {
@@ -61,7 +61,7 @@ int umfInit(void) {
 }
 
 void umfTearDown(void) {
-    if (utils_fetch_and_add64(&umfRefCount, -1) == 1) {
+    if (utils_fetch_and_sub_u64(&umfRefCount, 1) == 1) {
 #if !defined(_WIN32) && !defined(UMF_NO_HWLOC)
         umfMemspaceHostAllDestroy();
         umfMemspaceHighestCapacityDestroy();

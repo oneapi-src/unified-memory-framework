@@ -10,7 +10,7 @@ env:
   BUILD_DIR : "${{github.workspace}}/build"
   COVERAGE_DIR : "${{github.workspace}}/coverage"
   COVERAGE_NAME : "exports-coverage-multinuma"
-  NUMA_TESTS: "./test/umf_test-memspace_numa ./test/umf_test-provider_os_memory_multiple_numa_nodes"
+  NUMA_TESTS: "./test/test_memspace_numa ./test/test_provider_os_memory_multiple_numa_nodes"
 
 jobs:
   multi_numa:
@@ -60,13 +60,13 @@ jobs:
         # On RHEL, hwloc version is just a little too low.
         # Skip some tests until we upgrade hwloc and update CMake to properly handle local hwloc installation.
         # TODO: fix issue #560
-        # TODO: add issue for -E umf-init_teardown - it is not clear why it fails
+        # TODO: add issue for -E test_init_teardown - it is not clear why it fails
       - name: Run tests (on RHEL)
         if: matrix.os == 'rhel-9.1'
         working-directory: ${{github.workspace}}/build
         run: |
-          ctest --output-on-failure --test-dir test -E "umf-provider_os_memory_multiple_numa_nodes|umf-init_teardown"
-          ./test/umf_test-provider_os_memory_multiple_numa_nodes \
+          ctest --output-on-failure --test-dir test -E "test_provider_os_memory_multiple_numa_nodes|test_init_teardown"
+          ./test/test_provider_os_memory_multiple_numa_nodes \
             --gtest_filter="-*checkModeLocal/*:*checkModePreferredEmptyNodeset/*:testNuma.checkModeInterleave"
 
       - name: Run NUMA tests under valgrind

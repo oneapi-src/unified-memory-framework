@@ -1,6 +1,17 @@
 {
    [false-positive] Double check locking pattern in trackingOpenIpcHandle
    Helgrind:Race
+   fun:utils_atomic_store_release_ptr
+   fun:trackingOpenIpcHandle
+   fun:umfMemoryProviderOpenIPCHandle
+   fun:umfOpenIPCHandle
+   ...
+}
+
+{
+   [false-positive] Double check locking pattern in trackingOpenIpcHandle
+   Helgrind:Race
+   fun:utils_atomic_load_acquire_ptr
    fun:trackingOpenIpcHandle
    fun:umfMemoryProviderOpenIPCHandle
    fun:umfOpenIPCHandle
@@ -10,7 +21,7 @@
 {
    False-positive race in critnib_insert (lack of instrumentation)
    Helgrind:Race
-   fun:store
+   fun:utils_atomic_store_release_ptr
    fun:critnib_insert
    ...
 }
@@ -39,4 +50,21 @@
    ...
    fun:tbb_pool_finalize
    ...
+}
+
+{
+   [false-positive] trackingGetIpcHandle
+   Helgrind:Race
+   fun:trackingGetIpcHandle
+   fun:umfMemoryProviderGetIPCHandle
+   fun:umfGetIPCHandle
+}
+
+{
+   [false-positive] trackingGetIpcHandle
+   Helgrind:Race
+   fun:memmove
+   fun:trackingGetIpcHandle
+   fun:umfMemoryProviderGetIPCHandle
+   fun:umfGetIPCHandle
 }

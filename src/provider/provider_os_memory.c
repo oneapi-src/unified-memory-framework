@@ -963,7 +963,7 @@ static membind_t membindFirst(os_memory_provider_t *provider, void *addr,
 
     if (provider->mode == UMF_NUMA_MODE_INTERLEAVE) {
         assert(provider->part_size != 0);
-        size_t s = utils_fetch_and_add64(&provider->alloc_sum, size);
+        size_t s = utils_fetch_and_add_u64(&provider->alloc_sum, size);
         membind.node = (s / provider->part_size) % provider->nodeset_len;
         membind.bitmap = provider->nodeset[membind.node];
         membind.bind_size = ALIGN_UP(provider->part_size, membind.page_size);
