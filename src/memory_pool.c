@@ -180,6 +180,14 @@ size_t umfPoolMallocUsableSize(umf_memory_pool_handle_t hPool, void *ptr) {
 
 umf_result_t umfPoolFree(umf_memory_pool_handle_t hPool, void *ptr) {
     UMF_CHECK((hPool != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    umf_memory_pool_handle_t poolTracker = umfMemoryTrackerGetPool(ptr);
+    if (poolTracker != NULL && poolTracker != hPool) {
+        LOG_ERR("invalid free operation: trying to free a pointer %p used by "
+                "another pool or belonging to another pool %p than the given "
+                "pool %p",
+                ptr, poolTracker, hPool);
+        return UMF_RESULT_ERROR_INVALID_FREE_OP;
+    }
     return hPool->ops.free(hPool->pool_priv, ptr);
 }
 

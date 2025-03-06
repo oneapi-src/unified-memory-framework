@@ -47,6 +47,9 @@ typedef enum umf_result_t {
         6, ///< Failure in user provider code (i.e in user provided callback)
     UMF_RESULT_ERROR_DEPENDENCY_UNAVAILABLE =
         7, ///< External required dependency is unavailable or missing
+    UMF_RESULT_ERROR_INVALID_FREE_OP =
+        8, /*!< Invalid free operation - trying to free a pointer used by another
+                pool or a pointer belonging to another pool */
     UMF_RESULT_ERROR_UNKNOWN = 0x7ffffffe ///< Unknown or internal error
 } umf_result_t;
 
