@@ -10,7 +10,6 @@
 
 #include <limits.h>
 #include <stdbool.h>
-
 #if defined(_WIN32) && !defined(NAME_MAX)
 #include <stdlib.h>
 #define NAME_MAX _MAX_FNAME
@@ -68,6 +67,10 @@ typedef struct os_memory_provider_t {
     size_t partitions_weight_sum;
 
     hwloc_topology_t topo;
+    struct {
+        size_t allocated_memory;
+        size_t peak_memory;
+    } stats;
 } os_memory_provider_t;
 
 #ifdef __cplusplus

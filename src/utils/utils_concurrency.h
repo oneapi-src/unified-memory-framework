@@ -120,11 +120,15 @@ static inline void utils_atomic_load_acquire_ptr(void **ptr, void **out) {
     *(uintptr_t *)out = ret;
 }
 
+static inline void utils_atomic_store_release_u64(uint64_t *ptr, uint64_t val) {
+    ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
+    InterlockedExchange64((LONG64 volatile *)ptr, val);
+}
+
 static inline void utils_atomic_store_release_ptr(void **ptr, void *val) {
     ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
     InterlockedExchangePointer(ptr, val);
 }
-
 static inline uint64_t utils_atomic_increment_u64(uint64_t *ptr) {
     ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
     // return incremented value
@@ -181,6 +185,12 @@ static inline void utils_atomic_load_acquire_ptr(void **ptr, void **out) {
     ASSERT_IS_ALIGNED((uintptr_t)out, 8);
     __atomic_load((uintptr_t *)ptr, (uintptr_t *)out, memory_order_acquire);
     utils_annotate_acquire(ptr);
+}
+
+static inline void utils_atomic_store_release_u64(uint64_t *ptr, uint64_t val) {
+    ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
+    utils_annotate_release(ptr);
+    __atomic_store_n(ptr, val, memory_order_release);
 }
 
 static inline void utils_atomic_store_release_ptr(void **ptr, void *val) {
