@@ -1,4 +1,4 @@
-# Copyright (C) 2023-2024 Intel Corporation
+# Copyright (C) 2023-2025 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -7,15 +7,14 @@ include(FindThreads)
 
 set(UMF_UTILS_SOURCES_COMMON utils_common.c utils_log.c utils_load_library.c)
 
-set(UMF_UTILS_SOURCES_POSIX utils_posix_common.c utils_posix_concurrency.c
-                            utils_posix_math.c)
+set(UMF_UTILS_SOURCES_POSIX utils_posix_common.c utils_posix_concurrency.c)
 
 set(UMF_UTILS_SOURCES_LINUX utils_linux_common.c)
 
 set(UMF_UTILS_SOURCES_MACOSX utils_macosx_common.c)
 
 set(UMF_UTILS_SOURCES_WINDOWS utils_windows_common.c
-                              utils_windows_concurrency.c utils_windows_math.c)
+                              utils_windows_concurrency.c)
 
 if(UMF_USE_VALGRIND)
     if(UMF_USE_ASAN

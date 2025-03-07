@@ -64,6 +64,7 @@
 #include "utils_assert.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
+#include "utils_math.h"
 
 /*
  * A node that has been deleted is left untouched for this many delete
@@ -367,7 +368,7 @@ int critnib_insert(struct critnib *c, word key, void *value, int update) {
     }
 
     /* and convert that to an index. */
-    sh_t sh = utils_mssb_index(at) & (sh_t) ~(SLICE - 1);
+    sh_t sh = utils_msb64(at) & (sh_t) ~(SLICE - 1);
 
     struct critnib_node *m = alloc_node(c);
     if (!m) {

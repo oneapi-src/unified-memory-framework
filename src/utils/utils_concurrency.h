@@ -89,18 +89,6 @@ void utils_init_once(UTIL_ONCE_FLAG *flag, void (*onceCb)(void));
 
 #if defined(_WIN32)
 
-static inline unsigned char utils_lssb_index(long long value) {
-    unsigned long ret;
-    _BitScanForward64(&ret, value);
-    return (unsigned char)ret;
-}
-
-static inline unsigned char utils_mssb_index(long long value) {
-    unsigned long ret;
-    _BitScanReverse64(&ret, value);
-    return (unsigned char)ret;
-}
-
 // There is no good way to do atomic_load on windows...
 static inline void utils_atomic_load_acquire_u64(uint64_t *ptr, uint64_t *out) {
     // NOTE: Windows cl complains about direct accessing 'ptr' which is next
@@ -165,9 +153,6 @@ static inline bool utils_compare_exchange_u64(uint64_t *ptr, uint64_t *expected,
 }
 
 #else // !defined(_WIN32)
-
-#define utils_lssb_index(x) ((unsigned char)__builtin_ctzll(x))
-#define utils_mssb_index(x) ((unsigned char)(63 - __builtin_clzll(x)))
 
 static inline void utils_atomic_load_acquire_u64(uint64_t *ptr, uint64_t *out) {
     ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
