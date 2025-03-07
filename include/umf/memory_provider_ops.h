@@ -19,7 +19,7 @@ extern "C" {
 /// @brief Version of the Memory Provider ops structure.
 /// NOTE: This is equal to the latest UMF version, in which the ops structure
 /// has been modified.
-#define UMF_PROVIDER_OPS_VERSION_CURRENT UMF_MAKE_VERSION(0, 11)
+#define UMF_PROVIDER_OPS_VERSION_CURRENT UMF_MAKE_VERSION(0, 12)
 
 ///
 /// @brief This structure comprises optional function pointers used
