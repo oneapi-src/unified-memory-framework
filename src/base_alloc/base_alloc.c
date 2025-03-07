@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -230,6 +230,7 @@ void *umf_ba_alloc(umf_ba_pool_t *pool) {
     // check if the free list is not empty
     if (pool->metadata.free_list == NULL) {
         LOG_ERR("base_alloc: Free list should not be empty before new alloc");
+        utils_mutex_unlock(&pool->metadata.free_lock);
         return NULL;
     }
 
