@@ -211,6 +211,9 @@ static umf_result_t ze2umf_result(ze_result_t result) {
     }
 }
 
+#define ZE_CALL(ZeName, ZeArgs)                                                \
+    (LOG_INFO("ZE ---> %s%s", #ZeName, #ZeArgs), g_ze_ops.ZeName ZeArgs)
+
 static void init_ze_global_state(void) {
 #ifdef _WIN32
     const char *lib_name = "ze_loader.dll";
@@ -431,8 +434,9 @@ static umf_result_t ze_memory_provider_alloc(void *provider, size_t size,
             .stype = ZE_STRUCTURE_TYPE_HOST_MEM_ALLOC_DESC,
             .pNext = NULL,
             .flags = 0};
-        ze_result = g_ze_ops.zeMemAllocHost(ze_provider->context, &host_desc,
-                                            size, alignment, resultPtr);
+
+        ze_result = ZE_CALL(zeMemAllocHost, (ze_provider->context, &host_desc,
+                                             size, alignment, resultPtr));
         break;
     }
     case UMF_MEMORY_TYPE_DEVICE: {
@@ -443,9 +447,9 @@ static umf_result_t ze_memory_provider_alloc(void *provider, size_t size,
                          : NULL,
             .flags = 0,
             .ordinal = ze_provider->device_ordinal};
-        ze_result = g_ze_ops.zeMemAllocDevice(ze_provider->context, &dev_desc,
-                                              size, alignment,
-                                              ze_provider->device, resultPtr);
+        ze_result = ZE_CALL(zeMemAllocDevice,
+                            (ze_provider->context, &dev_desc, size, alignment,
+                             ze_provider->device, resultPtr));
         break;
     }
     case UMF_MEMORY_TYPE_SHARED: {
@@ -460,9 +464,9 @@ static umf_result_t ze_memory_provider_alloc(void *provider, size_t size,
                          : NULL,
             .flags = 0,
             .ordinal = ze_provider->device_ordinal};
-        ze_result = g_ze_ops.zeMemAllocShared(ze_provider->context, &dev_desc,
-                                              &host_desc, size, alignment,
-                                              ze_provider->device, resultPtr);
+        ze_result = ZE_CALL(zeMemAllocShared,
+                            (ze_provider->context, &dev_desc, &host_desc, size,
+                             alignment, ze_provider->device, resultPtr));
         break;
     }
     default:
@@ -477,9 +481,10 @@ static umf_result_t ze_memory_provider_alloc(void *provider, size_t size,
     }
 
     for (uint32_t i = 0; i < ze_provider->resident_device_count; i++) {
-        ze_result = g_ze_ops.zeContextMakeMemoryResident(
-            ze_provider->context, ze_provider->resident_device_handles[i],
-            *resultPtr, size);
+        ze_result = ZE_CALL(zeContextMakeMemoryResident,
+                            (ze_provider->context,
+                             ze_provider->resident_device_handles[i],
+                             *resultPtr, size));
         if (ze_result != ZE_RESULT_SUCCESS) {
             return ze2umf_result(ze_result);
         }
@@ -499,7 +504,7 @@ static umf_result_t ze_memory_provider_free(void *provider, void *ptr,
     ze_memory_provider_t *ze_provider = (ze_memory_provider_t *)provider;
 
     if (ze_provider->freePolicyFlags == 0) {
-        return ze2umf_result(g_ze_ops.zeMemFree(ze_provider->context, ptr));
+        return ze2umf_result(ZE_CALL(zeMemFree, (ze_provider->context, ptr)));
     }
 
     ze_memory_free_ext_desc_t desc = {
@@ -508,7 +513,7 @@ static umf_result_t ze_memory_provider_free(void *provider, void *ptr,
         .freePolicy = ze_provider->freePolicyFlags};
 
     return ze2umf_result(
-        g_ze_ops.zeMemFreeExt(ze_provider->context, &desc, ptr));
+        ZE_CALL(zeMemFreeExt, (ze_provider->context, &desc, ptr)));
 }
 
 static umf_result_t query_min_page_size(ze_memory_provider_t *ze_provider,
@@ -525,8 +530,9 @@ static umf_result_t query_min_page_size(ze_memory_provider_t *ze_provider,
 
     ze_memory_allocation_properties_t properties = {
         .stype = ZE_STRUCTURE_TYPE_MEMORY_ALLOCATION_PROPERTIES};
-    ze_result_t ze_result = g_ze_ops.zeMemGetAllocProperties(
-        ze_provider->context, ptr, &properties, NULL);
+    ze_result_t ze_result =
+        ZE_CALL(zeMemGetAllocProperties,
+                (ze_provider->context, ptr, &properties, NULL));
 
     *min_page_size = properties.pageSize;
 
@@ -596,8 +602,9 @@ static umf_result_t ze_memory_provider_initialize(void *params,
     ze_provider->device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
 
     if (ze_provider->device) {
-        umf_result_t ret = ze2umf_result(g_ze_ops.zeDeviceGetProperties(
-            ze_provider->device, &ze_provider->device_properties));
+        umf_result_t ret = ze2umf_result(
+            ZE_CALL(zeDeviceGetProperties,
+                    (ze_provider->device, &ze_provider->device_properties)));
 
         if (ret != UMF_RESULT_SUCCESS) {
             LOG_ERR("Cannot get device properties");
@@ -663,8 +670,9 @@ static umf_result_t ze_memory_provider_get_min_page_size(void *provider,
 
     ze_memory_allocation_properties_t properties = {
         .stype = ZE_STRUCTURE_TYPE_MEMORY_ALLOCATION_PROPERTIES};
-    ze_result_t ze_result = g_ze_ops.zeMemGetAllocProperties(
-        ze_provider->context, ptr, &properties, NULL);
+    ze_result_t ze_result =
+        ZE_CALL(zeMemGetAllocProperties,
+                (ze_provider->context, ptr, &properties, NULL));
     if (ze_result != ZE_RESULT_SUCCESS) {
         return ze2umf_result(ze_result);
     }
@@ -756,8 +764,8 @@ static umf_result_t ze_memory_provider_get_ipc_handle(void *provider,
     struct ze_memory_provider_t *ze_provider =
         (struct ze_memory_provider_t *)provider;
 
-    ze_result = g_ze_ops.zeMemGetIpcHandle(ze_provider->context, ptr,
-                                           &ze_ipc_data->ze_handle);
+    ze_result = ZE_CALL(zeMemGetIpcHandle,
+                        (ze_provider->context, ptr, &ze_ipc_data->ze_handle));
     if (ze_result != ZE_RESULT_SUCCESS) {
         LOG_ERR("zeMemGetIpcHandle() failed.");
         return ze2umf_result(ze_result);
@@ -782,8 +790,8 @@ static umf_result_t ze_memory_provider_put_ipc_handle(void *provider,
         return UMF_RESULT_SUCCESS;
     }
 
-    ze_result = g_ze_ops.zeMemPutIpcHandle(ze_provider->context,
-                                           ze_ipc_data->ze_handle);
+    ze_result = ZE_CALL(zeMemPutIpcHandle,
+                        (ze_provider->context, ze_ipc_data->ze_handle));
     if (ze_result != ZE_RESULT_SUCCESS) {
         LOG_ERR("zeMemPutIpcHandle() failed.");
         return ze2umf_result(ze_result);
@@ -813,8 +821,9 @@ static umf_result_t ze_memory_provider_open_ipc_handle(void *provider,
         memcpy(&ze_ipc_handle, &fd_local, sizeof(fd_local));
     }
 
-    ze_result = g_ze_ops.zeMemOpenIpcHandle(
-        ze_provider->context, ze_provider->device, ze_ipc_handle, 0, ptr);
+    ze_result =
+        ZE_CALL(zeMemOpenIpcHandle, (ze_provider->context, ze_provider->device,
+                                     ze_ipc_handle, 0, ptr));
     if (fd_local != -1) {
         (void)utils_close_fd(fd_local);
     }
@@ -834,7 +843,7 @@ ze_memory_provider_close_ipc_handle(void *provider, void *ptr, size_t size) {
     struct ze_memory_provider_t *ze_provider =
         (struct ze_memory_provider_t *)provider;
 
-    ze_result = g_ze_ops.zeMemCloseIpcHandle(ze_provider->context, ptr);
+    ze_result = ZE_CALL(zeMemCloseIpcHandle, (ze_provider->context, ptr));
     if (ze_result != ZE_RESULT_SUCCESS) {
         LOG_ERR("zeMemCloseIpcHandle() failed.");
         return ze2umf_result(ze_result);
