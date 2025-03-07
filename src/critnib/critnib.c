@@ -523,8 +523,10 @@ static struct critnib_leaf *
 find_predecessor(struct critnib_node *__restrict n) {
     while (1) {
         int nib;
+        struct critnib_node *m = NULL;
         for (nib = NIB; nib >= 0; nib--) {
-            if (n->child[nib]) {
+            utils_atomic_load_acquire_ptr((void **)&n->child[nib], (void **)&m);
+            if (m) {
                 break;
             }
         }
@@ -533,9 +535,8 @@ find_predecessor(struct critnib_node *__restrict n) {
             return NULL;
         }
 
-        n = n->child[nib];
-        if (is_leaf(n)) {
-            return to_leaf(n);
+        if (is_leaf(m)) {
+            return to_leaf(m);
         }
     }
 }
@@ -636,7 +637,9 @@ void *critnib_find_le(struct critnib *c, word key) {
 static struct critnib_leaf *find_successor(struct critnib_node *__restrict n) {
     while (1) {
         unsigned nib;
+        struct critnib_node *m = NULL;
         for (nib = 0; nib <= NIB; nib++) {
+            utils_atomic_load_acquire_ptr((void **)&n->child[nib], (void **)&m);
             if (n->child[nib]) {
                 break;
             }
@@ -646,9 +649,8 @@ static struct critnib_leaf *find_successor(struct critnib_node *__restrict n) {
             return NULL;
         }
 
-        n = n->child[nib];
-        if (is_leaf(n)) {
-            return to_leaf(n);
+        if (is_leaf(m)) {
+            return to_leaf(m);
         }
     }
 }
