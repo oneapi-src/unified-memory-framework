@@ -32,9 +32,13 @@ umf_result_t destroyOsMemoryProviderParams(void *params) {
 
 INSTANTIATE_TEST_SUITE_P(
     jemallocPoolTest, umfPoolTest,
-    ::testing::Values(poolCreateExtParams{
-        umfJemallocPoolOps(), nullptr, nullptr, umfOsMemoryProviderOps(),
-        createOsMemoryProviderParams, destroyOsMemoryProviderParams}));
+    ::testing::Values(poolCreateExtParams{umfJemallocPoolOps(), nullptr,
+                                          nullptr, umfOsMemoryProviderOps(),
+                                          createOsMemoryProviderParams,
+                                          destroyOsMemoryProviderParams},
+                      poolCreateExtParams{umfJemallocPoolOps(), nullptr,
+                                          nullptr, &BA_GLOBAL_PROVIDER_OPS,
+                                          nullptr, nullptr}));
 
 // this test makes sure that jemalloc does not use
 // memory provider to allocate metadata (and hence
