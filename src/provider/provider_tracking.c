@@ -93,8 +93,8 @@ static umf_result_t umfMemoryTrackerRemove(umf_memory_tracker_handle_t hTracker,
 
     tracker_alloc_info_t *v = value;
 
-    LOG_DEBUG("memory region removed: tracker=%p, ptr=%p, size=%zu",
-              (void *)hTracker, ptr, v->size);
+    LOG_DEBUG("memory region removed: tracker=%p, pool=%p, ptr=%p, size=%zu",
+              (void *)hTracker, (void *)v->pool, ptr, v->size);
 
     umf_ba_free(hTracker->alloc_info_allocator, value);
 
