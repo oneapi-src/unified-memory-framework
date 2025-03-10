@@ -2,15 +2,10 @@
 name: Coverity
 
 on:
-  workflow_dispatch:
-    inputs:
-      cov_push_tarball:
-          description: 'Send Coverity tarball'
-          required: true
-          default: 'true'
-          type: boolean
-  schedule:
-    - cron: '0 0 * * *'
+  push:
+    branches-ignore:
+      - 'dependabot/**'
+  pull_request:
 
 permissions:
   contents: read

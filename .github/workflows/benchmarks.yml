@@ -1,21 +1,10 @@
 name: Compute Benchmarks
 
 on:
-  workflow_dispatch:
-    inputs:
-      pr_no:
-        description: PR number (if 0, it'll run on the main)
-        type: number
-      bench_script_params:
-        description: Parameters passed to script executing benchmark
-        type: string
-        required: false
-        default: ''
-      upload_report:
-        description: 'Upload HTML report'
-        type: boolean
-        required: false
-        default: false
+  push:
+    branches-ignore:
+      - 'dependabot/**'
+  pull_request:
 
 permissions:
   contents: read
