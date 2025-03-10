@@ -1,0 +1,122 @@
+# UMF compatibility with intel/llvm workflow.
+# The latest llvm daily release and the last working release are tested.
+# Triggered in the Nightly workflow.
+name: SYCL
+
+on: workflow_call
+
+permissions:
+  contents: read
+
+jobs:
+  sycl-compatibility:
+    # run only on upstream; forks will not have the HW
+    if: github.repository == 'oneapi-src/unified-memory-framework'
+    name: ${{matrix.llvm_tag}} llvm build
+    runs-on: ["DSS-LEVEL_ZERO", "DSS-UBUNTU"]
+
+    strategy:
+      matrix:
+        llvm_tag: ["latest", "nightly-2025-02-08"] # "latest" or llvm with UMF v0.11.0-dev2
+
+    steps:
+    # Install sycl
+    - name: Clean up
+      if: always()
+      run: rm -rf llvm sycl_linux.tar.gz
+
+    - name: Download llvm daily release
+      run: |
+        if [ "${{ matrix.llvm_tag }}" == "latest" ]; then
+          llvm_tag=$(curl -s https://api.github.com/repos/intel/llvm/releases | awk -F'"' '/"tag_name":/ {print $4; exit}')
+        else
+          llvm_tag="${{ matrix.llvm_tag }}"
+        fi
+        download_url="https://github.com/intel/llvm/releases/download/${llvm_tag}/sycl_linux.tar.gz"
+        wget --no-verbose $download_url -O sycl_linux.tar.gz
+
+    - name: Extract llvm
+      run: |
+        mkdir llvm
+        tar -xzf sycl_linux.tar.gz -C llvm --strip-components=1
+
+    - name: Remove UMF installed with llvm
+      run: rm -f llvm/lib/libumf*
+
+    - name: Add sycl to PATH
+      run: |
+        echo "${{ github.workspace }}/llvm/bin" >> $GITHUB_PATH
+        echo "LD_LIBRARY_PATH=${{ github.workspace }}/llvm/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+
+    # Install UMF
+    - name: Checkout UMF
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        path: umf_repo
+        fetch-depth: 0
+
+    - name: Configure UMF
+      working-directory: umf_repo
+      run: >
+        cmake
+        -B build
+        -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/llvm
+        -DCMAKE_BUILD_TYPE=Release
+        -DCMAKE_C_COMPILER=gcc
+        -DCMAKE_CXX_COMPILER=g++
+        -DUMF_BUILD_SHARED_LIBRARY=ON
+        -DUMF_BUILD_TESTS=OFF
+        -DUMF_BUILD_EXAMPLES=OFF
+
+    - name: Build and install UMF
+      working-directory: umf_repo
+      run: cmake --build build --target install -j$(nproc)
+
+    - name: Print installed lib files
+      run: ls -l llvm/lib
+
+    # Test sycl-ls
+    - name: Run sycl-ls
+      run: |
+        ./llvm/bin/sycl-ls | tee sycl-ls-output.log
+        grep -q "level_zero:gpu" sycl-ls-output.log
+
+    # Test several sycl e2e test
+    # These are arbitrarily picked tests to check the compatibility
+    # Note that some intel/llvm tests may be flaky, although I haven't noticed such a behavior in the following tests
+    - name: Checkout sycl
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        repository: intel/llvm
+        path: sycl_repo
+        fetch-depth: 1
+        ref: sycl
+
+    - name: Create sycl tests build directory
+      run: |
+        TESTS_BUILD_DIR=${{ github.workspace }}/sycl_repo/sycl/test-e2e/build
+        mkdir $TESTS_BUILD_DIR
+        echo "TESTS_BUILD_DIR=$TESTS_BUILD_DIR" >> $GITHUB_ENV
+
+    - name: Build sycl e2e tests
+      working-directory: sycl_repo
+      run: |
+        ${{github.workspace}}/llvm/bin/clang++ -fsycl sycl/test-e2e/AbiNeutral/submit-kernel.cpp -o ${{env.TESTS_BUILD_DIR}}/submit-kernel -Iinclude
+        ${{github.workspace}}/llvm/bin/clang++ -fsycl sycl/test-e2e/Adapters/interop-l0-direct.cpp -o ${{env.TESTS_BUILD_DIR}}/interop-l0-direct -lze_loader -Iinclude
+        ${{github.workspace}}/llvm/bin/clang++ -fsycl sycl/test-e2e/Adapters/level_zero_interop_memcpy.cpp -o ${{env.TESTS_BUILD_DIR}}/level_zero_interop_memcpy -Iinclude
+        ${{github.workspace}}/llvm/bin/clang++ -fsycl sycl/test-e2e/Basic/build_log.cpp -o ${{env.TESTS_BUILD_DIR}}/build_log -Iinclude
+        ${{github.workspace}}/llvm/bin/clang++ -fsycl sycl/test-e2e/PerformanceTests/ParallelFor/parallel_for_range_roundup.cpp -fsycl-range-rounding=force -o ${{env.TESTS_BUILD_DIR}}/parallel_for_range_roundup -Iinclude
+        ${{github.workspace}}/llvm/bin/clang++ -fsycl sycl/test-e2e/USM/fill_any_size.cpp -o ${{env.TESTS_BUILD_DIR}}/fill_any_size -Iinclude
+
+    - name: Run sycl e2e tests
+      env:
+        ONEAPI_DEVICE_SELECTOR: level_zero:gpu
+        UMF_LOG: "level:debug;flush:debug;output:stdout;pid:yes"
+      working-directory: ${{env.TESTS_BUILD_DIR}}
+      run: |
+        echo "---Run submit-kernel test" && ./submit-kernel
+        echo "---Run interop-l0-direct test" && ./interop-l0-direct
+        echo "---Run level_zero_interop_memcpy test" && ./level_zero_interop_memcpy
+        echo "---Run build_log test" && ./build_log
+        echo "---Run parallel_for_range_roundup test" && ./parallel_for_range_roundup
+        echo "---Run fill_any_size test" && ./fill_any_size
