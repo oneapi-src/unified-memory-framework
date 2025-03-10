@@ -537,6 +537,11 @@ find_predecessor(struct critnib_node *__restrict n) {
         }
 
         utils_atomic_load_acquire_ptr((void **)&n->child[nib], (void **)&n);
+
+        if (!n) {
+            return NULL;
+        }
+
         if (is_leaf(n)) {
             return to_leaf(n);
         }
@@ -650,6 +655,11 @@ static struct critnib_leaf *find_successor(struct critnib_node *__restrict n) {
         }
 
         n = n->child[nib];
+
+        if (!n) {
+            return NULL;
+        }
+
         if (is_leaf(n)) {
             return to_leaf(n);
         }
