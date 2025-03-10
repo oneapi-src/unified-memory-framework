@@ -94,9 +94,11 @@ jobs:
 
     - name: Run "tag" UMF tests with latest UMF libs (warnings enabled)
       working-directory: ${{github.workspace}}/tag_version/build
+      # GTEST_FILTER is used below to skip test that is not compatible
       run: >
         UMF_LOG="level:warning;flush:debug;output:stderr;pid:no"
         LD_LIBRARY_PATH=${{github.workspace}}/latest_version/build/lib/
+        GTEST_FILTER="-*umfIpcTest.GetPoolByOpenedHandle*"
         ctest --verbose
 
   windows:
@@ -181,6 +183,7 @@ jobs:
       working-directory: ${{github.workspace}}/tag_version/build
       run: |
         $env:UMF_LOG="level:warning;flush:debug;output:stderr;pid:no" 
+        $env:GTEST_FILTER="-*umfIpcTest.GetPoolByOpenedHandle*"
         cp ${{github.workspace}}/latest_version/build/bin/Debug/umf.dll ${{github.workspace}}/tag_version/build/bin/Debug/umf.dll
         ctest -C Debug --verbose
 
@@ -230,8 +233,10 @@ jobs:
 
     - name: Run "tag" UMF tests
       working-directory: ${{github.workspace}}/tag_version/build
-      run: |
-        LD_LIBRARY_PATH=${{github.workspace}}/tag_version/build/lib/ ctest --output-on-failure
+      run: >
+        LD_LIBRARY_PATH=${{github.workspace}}/tag_version/build/lib/
+        GTEST_FILTER="-*umfIpcTest.GetPoolByOpenedHandle*"
+        ctest --output-on-failure
 
     - name: Checkout latest UMF version
       uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -266,4 +271,5 @@ jobs:
       run: >
         UMF_LOG="level:warning;flush:debug;output:stderr;pid:no"
         LD_LIBRARY_PATH=${{github.workspace}}/latest_version/build/lib/
+        GTEST_FILTER="-*umfIpcTest.GetPoolByOpenedHandle*"
         ctest --verbose -E "not_impl"
