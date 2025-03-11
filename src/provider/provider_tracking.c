@@ -21,6 +21,7 @@
 #include "critnib.h"
 #include "ipc_cache.h"
 #include "ipc_internal.h"
+#include "memory_pool_internal.h"
 #include "provider_tracking.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
@@ -38,6 +39,8 @@ struct umf_memory_tracker_t {
     // for another memory pool (nested memory pooling).
     critnib *alloc_segments_map[MAX_LEVELS_OF_ALLOC_SEGMENT_MAP];
     utils_mutex_t splitMergeMutex;
+    umf_ba_pool_t *ipc_info_allocator;
+    critnib *ipc_segments_map;
 };
 
 typedef struct tracker_alloc_info_t {
@@ -48,6 +51,12 @@ typedef struct tracker_alloc_info_t {
     // falling within the current range
     size_t n_children;
 } tracker_alloc_info_t;
+
+typedef struct tracker_ipc_info_t {
+    size_t size;
+    umf_memory_provider_handle_t provider;
+    ipc_opened_cache_value_t *ipc_cache_value;
+} tracker_ipc_info_t;
 
 // Get the most nested (on the highest level) allocation segment in the map with the `ptr` key.
 // If `no_children` is set to 1, the function will return the entry
@@ -267,6 +276,72 @@ static umf_result_t umfMemoryTrackerRemove(umf_memory_tracker_handle_t hTracker,
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t
+umfMemoryTrackerAddIpcSegment(umf_memory_tracker_handle_t hTracker,
+                              const void *ptr, size_t size,
+                              umf_memory_provider_handle_t provider,
+                              ipc_opened_cache_value_t *cache_entry) {
+    assert(hTracker);
+    assert(provider);
+    assert(cache_entry);
+
+    tracker_ipc_info_t *value = umf_ba_alloc(hTracker->ipc_info_allocator);
+
+    if (value == NULL) {
+        LOG_ERR("failed to allocate tracker_ipc_info_t, ptr=%p, size=%zu", ptr,
+                size);
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    value->size = size;
+    value->provider = provider;
+    value->ipc_cache_value = cache_entry;
+
+    int ret =
+        critnib_insert(hTracker->ipc_segments_map, (uintptr_t)ptr, value, 0);
+    if (ret == 0) {
+        LOG_DEBUG("IPC memory region is added, tracker=%p, ptr=%p, size=%zu, "
+                  "provider=%p, cache_entry=%p",
+                  (void *)hTracker, ptr, size, provider, cache_entry);
+        return UMF_RESULT_SUCCESS;
+    }
+
+    LOG_ERR("failed to insert tracker_ipc_info_t, ret=%d, ptr=%p, size=%zu, "
+            "provider=%p, cache_entry=%p",
+            ret, ptr, size, provider, cache_entry);
+
+    umf_ba_free(hTracker->ipc_info_allocator, value);
+
+    if (ret == ENOMEM) {
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    return UMF_RESULT_ERROR_UNKNOWN;
+}
+
+static umf_result_t
+umfMemoryTrackerRemoveIpcSegment(umf_memory_tracker_handle_t hTracker,
+                                 const void *ptr) {
+    assert(ptr);
+
+    void *value = critnib_remove(hTracker->ipc_segments_map, (uintptr_t)ptr);
+
+    if (!value) {
+        LOG_ERR("pointer %p not found in the ipc_segments_map", ptr);
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
+
+    tracker_ipc_info_t *v = value;
+
+    LOG_DEBUG("IPC memory region removed: tracker=%p, ptr=%p, size=%zu, "
+              "provider=%p, cache_entry=%p",
+              (void *)hTracker, ptr, v->size, v->provider, v->ipc_cache_value);
+
+    umf_ba_free(hTracker->ipc_info_allocator, value);
+
+    return UMF_RESULT_SUCCESS;
+}
+
 umf_memory_pool_handle_t umfMemoryTrackerGetPool(const void *ptr) {
     umf_alloc_info_t allocInfo = {NULL, 0, NULL};
     umf_result_t ret = umfMemoryTrackerGetAllocInfo(ptr, &allocInfo);
@@ -327,6 +402,41 @@ umf_result_t umfMemoryTrackerGetAllocInfo(const void *ptr,
     pAllocInfo->base = (void *)top_most_key;
     pAllocInfo->baseSize = top_most_value->size;
     pAllocInfo->pool = top_most_value->pool;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t umfMemoryTrackerGetIpcInfo(const void *ptr,
+                                        umf_ipc_info_t *pIpcInfo) {
+    assert(pIpcInfo);
+
+    if (ptr == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (TRACKER == NULL) {
+        LOG_ERR("tracker does not exist");
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
+
+    if (TRACKER->ipc_segments_map == NULL) {
+        LOG_ERR("tracker's ipc_segments_map does not exist");
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
+
+    uintptr_t rkey;
+    tracker_ipc_info_t *rvalue = NULL;
+    int found = critnib_find(TRACKER->ipc_segments_map, (uintptr_t)ptr, FIND_LE,
+                             (void *)&rkey, (void **)&rvalue);
+    if (!found || (uintptr_t)ptr >= rkey + rvalue->size) {
+        LOG_DEBUG("pointer %p not found in the tracker, TRACKER=%p", ptr,
+                  (void *)TRACKER);
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    pIpcInfo->base = (void *)rkey;
+    pIpcInfo->baseSize = rvalue->size;
+    pIpcInfo->provider = rvalue->provider;
 
     return UMF_RESULT_SUCCESS;
 }
@@ -872,17 +982,17 @@ ipcOpenedCacheEvictionCallback(const ipc_opened_cache_key_t *key,
                                const ipc_opened_cache_value_t *value) {
     umf_tracking_memory_provider_t *p =
         (umf_tracking_memory_provider_t *)key->local_provider;
-    // umfMemoryTrackerRemove should be called before umfMemoryProviderCloseIPCHandle
+    // umfMemoryTrackerRemoveIpcSegment should be called before umfMemoryProviderCloseIPCHandle
     // to avoid a race condition. If the order would be different, other thread
-    // could allocate the memory at address `ptr` before a call to umfMemoryTrackerRemove
+    // could allocate the memory at address `ptr` before a call to umfMemoryTrackerRemoveIpcSegment
     // resulting in inconsistent state.
     if (value->mapped_base_ptr) {
-        umf_result_t ret =
-            umfMemoryTrackerRemove(p->hTracker, value->mapped_base_ptr);
+        umf_result_t ret = umfMemoryTrackerRemoveIpcSegment(
+            p->hTracker, value->mapped_base_ptr);
         if (ret != UMF_RESULT_SUCCESS) {
             // DO NOT return an error here, because the tracking provider
             // cannot change behaviour of the upstream provider.
-            LOG_ERR("failed to remove the region from the tracker, ptr=%p, "
+            LOG_ERR("failed to remove the region from the IPC tracker, ptr=%p, "
                     "size=%zu, ret = %d",
                     value->mapped_base_ptr, value->mapped_size, ret);
         }
@@ -895,12 +1005,13 @@ ipcOpenedCacheEvictionCallback(const ipc_opened_cache_key_t *key,
     }
 }
 
-static umf_result_t upstreamOpenIPCHandle(umf_tracking_memory_provider_t *p,
-                                          void *providerIpcData,
-                                          size_t bufferSize, void **ptr) {
+static umf_result_t
+upstreamOpenIPCHandle(umf_tracking_memory_provider_t *p, void *providerIpcData,
+                      size_t bufferSize,
+                      ipc_opened_cache_value_t *cache_entry) {
     void *mapped_ptr = NULL;
     assert(p != NULL);
-    assert(ptr != NULL);
+    assert(cache_entry != NULL);
     umf_result_t ret = umfMemoryProviderOpenIPCHandle(
         p->hUpstream, providerIpcData, &mapped_ptr);
     if (ret != UMF_RESULT_SUCCESS) {
@@ -909,7 +1020,21 @@ static umf_result_t upstreamOpenIPCHandle(umf_tracking_memory_provider_t *p,
     }
     assert(mapped_ptr != NULL);
 
-    ret = umfMemoryTrackerAdd(p->hTracker, p->pool, mapped_ptr, bufferSize);
+    // Today umfMemoryTrackerAddIpcSegment requires the memory provider handle
+    // to know which tracking provider instance opened the IPC handle.
+    // The `p` points to the tracking provider private data.
+    // Because of that we get handle to the tracking provider instance
+    // using `p->pool->provider`.
+    //
+    // TODO:
+    // Today we always create a pool and get an IPC handler from the pool.
+    // And tracking provider is always created together with a pool.
+    // And the IPC handler is a tracking memory provider in fact.
+    // However, we are considering adding an API that allows IPC handler creation
+    // from scratch (without creating a memory pool). In that case, we will
+    // create a tracker provider without a pool. So p->pool might be NULL in the future.
+    ret = umfMemoryTrackerAddIpcSegment(p->hTracker, mapped_ptr, bufferSize,
+                                        p->pool->provider, cache_entry);
     if (ret != UMF_RESULT_SUCCESS) {
         LOG_ERR("failed to add IPC region to the tracker, ptr=%p, "
                 "size=%zu, "
@@ -924,7 +1049,8 @@ static umf_result_t upstreamOpenIPCHandle(umf_tracking_memory_provider_t *p,
         return ret;
     }
 
-    *ptr = mapped_ptr;
+    cache_entry->mapped_size = bufferSize;
+    utils_atomic_store_release_ptr(&(cache_entry->mapped_base_ptr), mapped_ptr);
     return UMF_RESULT_SUCCESS;
 }
 
@@ -959,45 +1085,46 @@ static umf_result_t trackingOpenIpcHandle(void *provider, void *providerIpcData,
     void *mapped_ptr = NULL;
     utils_atomic_load_acquire_ptr(&(cache_entry->mapped_base_ptr),
                                   (void **)&mapped_ptr);
-    if (mapped_ptr == NULL) {
+    if (mapped_ptr == NULL) { // new cache entry
         utils_mutex_lock(&(cache_entry->mmap_lock));
         utils_atomic_load_acquire_ptr(&(cache_entry->mapped_base_ptr),
                                       (void **)&mapped_ptr);
         if (mapped_ptr == NULL) {
             ret = upstreamOpenIPCHandle(p, providerIpcData,
-                                        ipcUmfData->baseSize, &mapped_ptr);
-            if (ret == UMF_RESULT_SUCCESS) {
-                // Put to the cache
-                cache_entry->mapped_size = ipcUmfData->baseSize;
-                utils_atomic_store_release_ptr(&(cache_entry->mapped_base_ptr),
-                                               mapped_ptr);
-            }
+                                        ipcUmfData->baseSize, cache_entry);
         }
+        mapped_ptr = cache_entry->mapped_base_ptr;
         utils_mutex_unlock(&(cache_entry->mmap_lock));
     }
 
     if (ret == UMF_RESULT_SUCCESS) {
+        assert(mapped_ptr != NULL);
         *ptr = mapped_ptr;
     }
 
     return ret;
 }
 
+static tracker_ipc_info_t *getTrackerIpcInfo(const void *ptr) {
+    assert(ptr);
+
+    uintptr_t key = (uintptr_t)ptr;
+    tracker_ipc_info_t *value = critnib_get(TRACKER->ipc_segments_map, key);
+
+    return value;
+}
+
 static umf_result_t trackingCloseIpcHandle(void *provider, void *ptr,
                                            size_t size) {
     (void)provider;
-    (void)ptr;
-    (void)size;
-    // We keep opened IPC handles in the p->hIpcMappedCache.
-    // IPC handle is closed when it is evicted from the cache
-    // or when cache is destroyed.
-    //
-    // TODO: today the size of the IPC cache is infinite.
-    // When the threshold for the cache size is implemented
-    // we need to introduce a reference counting mechanism.
-    // The trackingOpenIpcHandle will increment the refcount for the corresponding entry.
-    // The trackingCloseIpcHandle will decrement the refcount for the corresponding cache entry.
-    return UMF_RESULT_SUCCESS;
+    tracker_ipc_info_t *trackerIpcInfo = getTrackerIpcInfo(ptr);
+
+    if (!trackerIpcInfo) {
+        LOG_ERR("failed to get tracker ipc info, ptr=%p, size=%zu", ptr, size);
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    return umfIpcHandleMappedCacheRelease(trackerIpcInfo->ipc_cache_value);
 }
 
 umf_memory_provider_ops_t UMF_TRACKING_MEMORY_PROVIDER_OPS = {
@@ -1086,8 +1213,19 @@ umf_memory_tracker_handle_t umfMemoryTrackerCreate(void) {
     for (i = 0; i < MAX_LEVELS_OF_ALLOC_SEGMENT_MAP; i++) {
         handle->alloc_segments_map[i] = critnib_new();
         if (!handle->alloc_segments_map[i]) {
-            goto err_destroy_mutex;
+            goto err_destroy_alloc_segments_map;
         }
+    }
+
+    handle->ipc_info_allocator =
+        umf_ba_create(sizeof(struct tracker_ipc_info_t));
+    if (!handle->ipc_info_allocator) {
+        goto err_destroy_alloc_segments_map;
+    }
+
+    handle->ipc_segments_map = critnib_new();
+    if (!handle->ipc_segments_map) {
+        goto err_destroy_ipc_info_allocator;
     }
 
     LOG_DEBUG("tracker created, handle=%p, alloc_segments_map=%p",
@@ -1095,7 +1233,9 @@ umf_memory_tracker_handle_t umfMemoryTrackerCreate(void) {
 
     return handle;
 
-err_destroy_mutex:
+err_destroy_ipc_info_allocator:
+    umf_ba_destroy(handle->ipc_info_allocator);
+err_destroy_alloc_segments_map:
     for (int j = i; j >= 0; j--) {
         if (handle->alloc_segments_map[j]) {
             critnib_delete(handle->alloc_segments_map[j]);
@@ -1137,5 +1277,9 @@ void umfMemoryTrackerDestroy(umf_memory_tracker_handle_t handle) {
     utils_mutex_destroy_not_free(&handle->splitMergeMutex);
     umf_ba_destroy(handle->alloc_info_allocator);
     handle->alloc_info_allocator = NULL;
+    critnib_delete(handle->ipc_segments_map);
+    handle->ipc_segments_map = NULL;
+    umf_ba_destroy(handle->ipc_info_allocator);
+    handle->ipc_info_allocator = NULL;
     umf_ba_global_free(handle);
 }

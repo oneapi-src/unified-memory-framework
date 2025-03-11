@@ -168,6 +168,26 @@ IPC API allows retrieving IPC handles for the memory buffers allocated from
 UMF memory pools. The memory provider used by the pool should support IPC 
 operations for this API to work. Otherwise IPC APIs return an error.
 
+IPC caching
+------------------------------------------
+
+UMF employs IPC caching to avoid multiple IPC handles being created for the same 
+coarse-grain memory region allocated by the memory provider. UMF guarantees that 
+for each coarse-grain memory region allocated by the memory provider, only one 
+IPC handle is created when the :any:`umfGetIPCHandle` function is called. All 
+subsequent calls to the :any:`umfGetIPCHandle` function for the pointer to the 
+same memory region will return the entry from the cache.
+
+The same is true for the :any:`umfOpenIPCHandle` function. The actual mapping
+of the IPC handle to the virtual address space is created only once, and all
+subsequent calls to open the same IPC handle will return the entry from the cache.
+The size of the cache for opened IPC handles is controlled by the ``UMF_MAX_OPENED_IPC_HANDLES``
+environment variable. By default, the cache size is unlimited. However, if the environment 
+variable is set and the cache size exceeds the limit, old items will be evicted. UMF tracks 
+the ref count for each entry in the cache and can evict only items with the ref count equal to 0. 
+The ref count is increased when the :any:`umfOpenIPCHandle` function is called and decreased 
+when the :any:`umfCloseIPCHandle` function is called for the corresponding IPC handle.
+
 .. _ipc-api:
 
 IPC API
