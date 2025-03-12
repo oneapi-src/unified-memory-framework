@@ -31,9 +31,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Get information about platform
-        run: .github/scripts/get_system_info.sh
-
       - name: Configure build
         run: >
           cmake
@@ -91,3 +88,7 @@ jobs:
         with:
           name: ${{env.COVERAGE_NAME}}-${{matrix.os}}-shared-${{matrix.shared_library}}
           path: ${{env.COVERAGE_DIR}}
+
+      - name: Get information about platform
+        if: always()
+        run: .github/scripts/get_system_info.sh
