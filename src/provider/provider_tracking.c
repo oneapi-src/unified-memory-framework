@@ -1236,9 +1236,9 @@ umf_memory_tracker_handle_t umfMemoryTrackerCreate(void) {
 err_destroy_ipc_info_allocator:
     umf_ba_destroy(handle->ipc_info_allocator);
 err_destroy_alloc_segments_map:
-    for (int j = i; j >= 0; j--) {
-        if (handle->alloc_segments_map[j]) {
-            critnib_delete(handle->alloc_segments_map[j]);
+    for (i = 0; i < MAX_LEVELS_OF_ALLOC_SEGMENT_MAP; i++) {
+        if (handle->alloc_segments_map[i]) {
+            critnib_delete(handle->alloc_segments_map[i]);
         }
     }
     utils_mutex_destroy_not_free(&handle->splitMergeMutex);
