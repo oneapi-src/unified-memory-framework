@@ -173,6 +173,14 @@ class provider_allocator : public allocator_interface {
         return argPos;
     }
 
+    void preBench(::benchmark::State &state) override {
+        provider.preBench(state);
+    }
+
+    void postBench(::benchmark::State &state) override {
+        provider.postBench(state);
+    }
+
     void TearDown(::benchmark::State &state) override {
         provider.TearDown(state);
     }
@@ -204,13 +212,18 @@ template <typename Pool> class pool_allocator : public allocator_interface {
         return argPos;
     }
 
+    void preBench(::benchmark::State &state) override { pool.preBench(state); }
+    void postBench(::benchmark::State &state) override {
+        pool.postBench(state);
+    }
+
     void TearDown(::benchmark::State &state) override { pool.TearDown(state); }
 
-    virtual void *benchAlloc(size_t size) override {
+    void *benchAlloc(size_t size) override {
         return umfPoolMalloc(pool.pool, size);
     }
 
-    virtual void benchFree(void *ptr, [[maybe_unused]] size_t size) override {
+    void benchFree(void *ptr, [[maybe_unused]] size_t size) override {
         umfPoolFree(pool.pool, ptr);
     }
 
@@ -241,7 +254,7 @@ struct benchmark_interface : public benchmark::Fixture {
         allocator.TearDown(state);
     }
 
-    virtual void bench(::benchmark::State &state) = 0;
+    void bench([[maybe_unused]] ::benchmark::State &state){};
 
     virtual std::vector<std::string> argsName() {
         auto s = Size::argsName();
@@ -260,6 +273,9 @@ struct benchmark_interface : public benchmark::Fixture {
         benchmark->ArgNames(bench->argsName())->Name(bench->name());
     }
 
+    void custom_counters(::benchmark::State &state) {
+        allocator.custom_counters(state);
+    }
     std::vector<Size> alloc_sizes;
     Allocator allocator;
 };
@@ -282,7 +298,7 @@ class multiple_malloc_free_benchmark : public benchmark_interface<Size, Alloc> {
 
     vector2d<alloc_data> allocations;
     std::vector<unsigned> iters;
-
+    std::vector<size_t> memused;
     vector2d<next_alloc_data> next;
     std::vector<std::vector<next_alloc_data>::const_iterator> next_iter;
     int64_t iterations;
@@ -302,6 +318,7 @@ class multiple_malloc_free_benchmark : public benchmark_interface<Size, Alloc> {
             allocations.resize(state.threads());
             next.resize(state.threads());
             next_iter.resize(state.threads());
+            memused.assign(state.threads(), 0);
 
 #ifndef WIN32
             // Ensure that system malloc does not have memory pooled on the heap
@@ -323,13 +340,36 @@ class multiple_malloc_free_benchmark : public benchmark_interface<Size, Alloc> {
         waitForAllThreads(state);
         // prepare workload for actual benchmark.
         freeAllocs(state);
+
         prealloc(state);
         prepareWorkload(state);
+        waitForAllThreads(state);
+        base::allocator.preBench(state);
     }
 
     void TearDown(::benchmark::State &state) override {
+        base::allocator.postBench(state);
         auto tid = state.thread_index();
+        if (tid == 0) {
+            size_t current_memory_allocated = 0;
+            for (const auto &used : memused) {
+                current_memory_allocated += used;
+            }
 
+            auto memory_used = state.counters["provider_memory_allocated"];
+
+            if (memory_used != 0) {
+                state.counters["benchmark_memory_allocated"] =
+                    static_cast<double>(current_memory_allocated);
+                state.counters["memory_overhead"] =
+                    100.0 * (memory_used - current_memory_allocated) /
+                    memory_used;
+            } else {
+                state.counters.erase("provider_memory_allocated");
+            }
+        }
+
+        waitForAllThreads(state);
         freeAllocs(state);
         waitForAllThreads(state);
         if (tid == 0) {
@@ -342,20 +382,22 @@ class multiple_malloc_free_benchmark : public benchmark_interface<Size, Alloc> {
         base::TearDown(state);
     }
 
-    void bench(benchmark::State &state) override {
+    void bench(benchmark::State &state) {
         auto tid = state.thread_index();
         auto &allocation = allocations[tid];
+        auto &memuse = memused[tid];
         for (int i = 0; i < allocsPerIterations; i++) {
             auto &n = *next_iter[tid]++;
             auto &alloc = allocation[n.offset];
             base::allocator.benchFree(alloc.ptr, alloc.size);
-
+            memuse -= alloc.size;
             alloc.size = n.size;
             alloc.ptr = base::allocator.benchAlloc(alloc.size);
 
             if (alloc.ptr == NULL) {
                 state.SkipWithError("allocation failed");
             }
+            memuse += alloc.size;
         }
     }
 
@@ -376,7 +418,9 @@ class multiple_malloc_free_benchmark : public benchmark_interface<Size, Alloc> {
         auto tid = state.thread_index();
         auto &i = allocations[tid];
         i.resize(max_allocs);
+        auto &memuse = memused[tid];
         auto sizeGenerator = base::alloc_sizes[tid];
+
         for (size_t j = 0; j < max_allocs; j++) {
             auto size = sizeGenerator.nextSize();
             i[j].ptr = base::allocator.benchAlloc(size);
@@ -385,6 +429,7 @@ class multiple_malloc_free_benchmark : public benchmark_interface<Size, Alloc> {
                 return;
             }
             i[j].size = size;
+            memuse += size;
         }
     }
 
@@ -394,6 +439,7 @@ class multiple_malloc_free_benchmark : public benchmark_interface<Size, Alloc> {
         for (auto &j : i) {
             if (j.ptr != NULL) {
                 base::allocator.benchFree(j.ptr, j.size);
+                memused[tid] -= j.size;
                 j.ptr = NULL;
                 j.size = 0;
             }
