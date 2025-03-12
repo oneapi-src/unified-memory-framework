@@ -48,6 +48,8 @@ unsigned int get_mem_host_alloc_flags(void *ptr);
 
 CUcontext get_mem_context(void *ptr);
 
+int get_mem_device(void *ptr);
+
 CUcontext get_current_context();
 
 #ifdef __cplusplus

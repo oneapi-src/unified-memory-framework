@@ -20,7 +20,8 @@ typedef struct umf_cuda_memory_provider_params_t
     *umf_cuda_memory_provider_params_handle_t;
 
 /// @brief  Create a struct to store parameters of the CUDA Memory Provider.
-/// @param  hParams [out] handle to the newly created parameters struct.
+/// @param  hParams [out] handle to the newly created parameters structure,
+///         initialized with the default (current) context and device ID.
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 umf_result_t umfCUDAMemoryProviderParamsCreate(
     umf_cuda_memory_provider_params_handle_t *hParams);
