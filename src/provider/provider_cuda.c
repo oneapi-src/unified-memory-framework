@@ -178,6 +178,9 @@ static umf_result_t cu2umf_result(CUresult result) {
     case CUDA_ERROR_INVALID_VALUE:
     case CUDA_ERROR_INVALID_HANDLE:
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    case CUDA_ERROR_DEINITIALIZED:
+        LOG_ERR("CUDA driver has been deinitialized");
+        return UMF_RESULT_ERROR_OUT_OF_RESOURCES;
     default:
         cu_store_last_native_error(result);
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
