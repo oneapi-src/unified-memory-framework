@@ -32,7 +32,7 @@ using poolCreateExtParams =
                pfnPoolParamsDestroy, umf_memory_provider_ops_t *,
                pfnProviderParamsCreate, pfnProviderParamsDestroy>;
 
-umf::pool_unique_handle_t poolCreateExtUnique(poolCreateExtParams params) {
+umf_test::pool_unique_handle_t poolCreateExtUnique(poolCreateExtParams params) {
     auto [pool_ops, poolParamsCreate, poolParamsDestroy, provider_ops,
           providerParamsCreate, providerParamsDestroy] = params;
 
@@ -73,7 +73,7 @@ umf::pool_unique_handle_t poolCreateExtUnique(poolCreateExtParams params) {
         providerParamsDestroy(provider_params);
     }
 
-    return umf::pool_unique_handle_t(hPool, &umfPoolDestroy);
+    return umf_test::pool_unique_handle_t(hPool, &umfPoolDestroy);
 }
 
 struct umfPoolTest : umf_test::test,
@@ -86,7 +86,7 @@ struct umfPoolTest : umf_test::test,
 
     void TearDown() override { test::TearDown(); }
 
-    umf::pool_unique_handle_t pool;
+    umf_test::pool_unique_handle_t pool;
 
     static constexpr int NTHREADS = 5;
     static constexpr std::array<int, 7> nonAlignedAllocSizes = {5,  7,   23, 55,
@@ -106,7 +106,7 @@ struct umfMultiPoolTest : umf_test::test,
 
     void TearDown() override { test::TearDown(); }
 
-    std::vector<umf::pool_unique_handle_t> pools;
+    std::vector<umf_test::pool_unique_handle_t> pools;
 };
 
 struct umfMemTest
@@ -123,7 +123,7 @@ struct umfMemTest
 
     void TearDown() override { test::TearDown(); }
 
-    umf::pool_unique_handle_t pool;
+    umf_test::pool_unique_handle_t pool;
     int expectedRecycledPoolAllocs;
 };
 

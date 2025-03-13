@@ -109,7 +109,7 @@ provider_mock_ipc::allocations_mutex_type provider_mock_ipc::alloc_mutex;
 provider_mock_ipc::allocations_map_type provider_mock_ipc::allocations;
 
 static umf_memory_provider_ops_t IPC_MOCK_PROVIDER_OPS =
-    umf::providerMakeCOps<provider_mock_ipc, void>();
+    umf_test::providerMakeCOps<provider_mock_ipc, void>();
 
 HostMemoryAccessor hostMemoryAccessor;
 

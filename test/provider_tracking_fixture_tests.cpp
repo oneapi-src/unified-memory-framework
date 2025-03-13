@@ -47,7 +47,7 @@ struct provider_from_pool : public umf_test::provider_base_t {
 };
 
 umf_memory_provider_ops_t PROVIDER_FROM_POOL_OPS =
-    umf::providerMakeCOps<provider_from_pool, umf_memory_pool_t>();
+    umf_test::providerMakeCOps<provider_from_pool, umf_memory_pool_t>();
 
 static void *providerFromPoolParamsCreate(void) {
     umf_file_memory_provider_params_handle_t paramsFile = NULL;

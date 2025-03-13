@@ -22,7 +22,7 @@ using umf_test::test;
 using providerCreateExtParams = std::tuple<umf_memory_provider_ops_t *, void *>;
 
 static void providerCreateExt(providerCreateExtParams params,
-                              umf::provider_unique_handle_t *handle) {
+                              umf_test::provider_unique_handle_t *handle) {
     umf_memory_provider_handle_t hProvider = nullptr;
     auto [provider_ops, provider_params] = params;
 
@@ -31,8 +31,8 @@ static void providerCreateExt(providerCreateExtParams params,
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
     ASSERT_NE(hProvider, nullptr);
 
-    *handle =
-        umf::provider_unique_handle_t(hProvider, &umfMemoryProviderDestroy);
+    *handle = umf_test::provider_unique_handle_t(hProvider,
+                                                 &umfMemoryProviderDestroy);
 }
 
 struct TrackingProviderTest
@@ -68,7 +68,7 @@ struct TrackingProviderTest
                                    0, &hPool);
         ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
-        pool = umf::pool_unique_handle_t(hPool, &umfPoolDestroy);
+        pool = umf_test::pool_unique_handle_t(hPool, &umfPoolDestroy);
     }
 
     void TearDown() override {
@@ -79,8 +79,8 @@ struct TrackingProviderTest
         test::TearDown();
     }
 
-    umf::provider_unique_handle_t provider;
-    umf::pool_unique_handle_t pool;
+    umf_test::provider_unique_handle_t provider;
+    umf_test::pool_unique_handle_t pool;
     size_t page_size;
     size_t page_plus_64;
     void *memory_buffer = nullptr;

@@ -38,7 +38,7 @@ createPoolChecked(umf_memory_pool_ops_t *ops,
 }
 
 auto wrapPoolUnique(umf_memory_pool_handle_t hPool) {
-    return umf::pool_unique_handle_t(hPool, &umfPoolDestroy);
+    return umf_test::pool_unique_handle_t(hPool, &umfPoolDestroy);
 }
 
 bool isReallocSupported(umf_memory_pool_handle_t hPool) {
@@ -149,7 +149,7 @@ struct malloc_pool : public pool_base_t {
 };
 
 umf_memory_pool_ops_t MALLOC_POOL_OPS =
-    umf::poolMakeCOps<umf_test::malloc_pool, void>();
+    umf_test::poolMakeCOps<umf_test::malloc_pool, void>();
 
 static constexpr size_t DEFAULT_DISJOINT_SLAB_MIN_SIZE = 4096;
 static constexpr size_t DEFAULT_DISJOINT_MAX_POOLABLE_SIZE = 4096;

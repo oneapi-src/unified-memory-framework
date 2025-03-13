@@ -29,7 +29,8 @@ createProviderChecked(umf_memory_provider_ops_t *ops, void *params) {
 }
 
 auto wrapProviderUnique(umf_memory_provider_handle_t hProvider) {
-    return umf::provider_unique_handle_t(hProvider, &umfMemoryProviderDestroy);
+    return umf_test::provider_unique_handle_t(hProvider,
+                                              &umfMemoryProviderDestroy);
 }
 
 typedef struct provider_base_t {
@@ -97,7 +98,7 @@ typedef struct provider_base_t {
 } provider_base_t;
 
 umf_memory_provider_ops_t BASE_PROVIDER_OPS =
-    umf::providerMakeCOps<provider_base_t, void>();
+    umf_test::providerMakeCOps<provider_base_t, void>();
 
 struct provider_ba_global : public provider_base_t {
     umf_result_t alloc(size_t size, size_t align, void **ptr) noexcept {
@@ -127,7 +128,7 @@ struct provider_ba_global : public provider_base_t {
 };
 
 umf_memory_provider_ops_t BA_GLOBAL_PROVIDER_OPS =
-    umf::providerMakeCOps<provider_ba_global, void>();
+    umf_test::providerMakeCOps<provider_ba_global, void>();
 
 struct provider_mock_out_of_mem : public provider_base_t {
     provider_ba_global helper_prov;
@@ -152,7 +153,7 @@ struct provider_mock_out_of_mem : public provider_base_t {
 };
 
 umf_memory_provider_ops_t MOCK_OUT_OF_MEM_PROVIDER_OPS =
-    umf::providerMakeCOps<provider_mock_out_of_mem, int>();
+    umf_test::providerMakeCOps<provider_mock_out_of_mem, int>();
 
 } // namespace umf_test
 

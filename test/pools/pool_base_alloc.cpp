@@ -17,17 +17,17 @@ struct base_alloc_pool : public umf_test::pool_base_t {
 
     void *malloc(size_t size) noexcept { return umf_ba_global_alloc(size); }
     void *calloc(size_t, size_t) noexcept {
-        umf::getPoolLastStatusRef<base_alloc_pool>() =
+        umf_test::getPoolLastStatusRef<base_alloc_pool>() =
             UMF_RESULT_ERROR_NOT_SUPPORTED;
         return NULL;
     }
     void *realloc(void *, size_t) noexcept {
-        umf::getPoolLastStatusRef<base_alloc_pool>() =
+        umf_test::getPoolLastStatusRef<base_alloc_pool>() =
             UMF_RESULT_ERROR_NOT_SUPPORTED;
         return NULL;
     }
     void *aligned_malloc(size_t, size_t) noexcept {
-        umf::getPoolLastStatusRef<base_alloc_pool>() =
+        umf_test::getPoolLastStatusRef<base_alloc_pool>() =
             UMF_RESULT_ERROR_NOT_SUPPORTED;
         return NULL;
     }
@@ -39,11 +39,12 @@ struct base_alloc_pool : public umf_test::pool_base_t {
         return UMF_RESULT_SUCCESS;
     }
     umf_result_t get_last_allocation_error() {
-        return umf::getPoolLastStatusRef<base_alloc_pool>();
+        return umf_test::getPoolLastStatusRef<base_alloc_pool>();
     }
 };
 
-umf_memory_pool_ops_t BA_POOL_OPS = umf::poolMakeCOps<base_alloc_pool, void>();
+umf_memory_pool_ops_t BA_POOL_OPS =
+    umf_test::poolMakeCOps<base_alloc_pool, void>();
 
 INSTANTIATE_TEST_SUITE_P(baPool, umfPoolTest,
                          ::testing::Values(poolCreateExtParams{
