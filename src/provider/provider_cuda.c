@@ -542,22 +542,41 @@ static void cu_memory_provider_get_last_native_error(void *provider,
         return;
     }
 
-    const char *error_name = 0;
-    const char *error_string = 0;
-    g_cu_ops.cuGetErrorName(TLS_last_native_error.native_error, &error_name);
-    g_cu_ops.cuGetErrorString(TLS_last_native_error.native_error,
-                              &error_string);
-
+    CUresult result;
     size_t buf_size = 0;
-    strncpy(TLS_last_native_error.msg_buff, error_name, TLS_MSG_BUF_LEN - 1);
-    buf_size = strlen(TLS_last_native_error.msg_buff);
+    const char *error_name = NULL;
+    const char *error_string = NULL;
 
+    // If the error code is not recognized,
+    // CUDA_ERROR_INVALID_VALUE will be returned
+    // and error_name will be set to the NULL address.
+    result = g_cu_ops.cuGetErrorName(TLS_last_native_error.native_error,
+                                     &error_name);
+    if (result == CUDA_SUCCESS && error_name != NULL) {
+        strncpy(TLS_last_native_error.msg_buff, error_name,
+                TLS_MSG_BUF_LEN - 1);
+    } else {
+        strncpy(TLS_last_native_error.msg_buff, "cuGetErrorName() failed",
+                TLS_MSG_BUF_LEN - 1);
+    }
+
+    buf_size = strlen(TLS_last_native_error.msg_buff);
     strncat(TLS_last_native_error.msg_buff, " - ",
             TLS_MSG_BUF_LEN - buf_size - 1);
     buf_size = strlen(TLS_last_native_error.msg_buff);
 
-    strncat(TLS_last_native_error.msg_buff, error_string,
-            TLS_MSG_BUF_LEN - buf_size - 1);
+    // If the error code is not recognized,
+    // CUDA_ERROR_INVALID_VALUE will be returned
+    // and error_string will be set to the NULL address.
+    result = g_cu_ops.cuGetErrorString(TLS_last_native_error.native_error,
+                                       &error_string);
+    if (result == CUDA_SUCCESS && error_string != NULL) {
+        strncat(TLS_last_native_error.msg_buff, error_string,
+                TLS_MSG_BUF_LEN - buf_size - 1);
+    } else {
+        strncat(TLS_last_native_error.msg_buff, "cuGetErrorString() failed",
+                TLS_MSG_BUF_LEN - buf_size - 1);
+    }
 
     *pError = TLS_last_native_error.native_error;
     *ppMessage = TLS_last_native_error.msg_buff;
