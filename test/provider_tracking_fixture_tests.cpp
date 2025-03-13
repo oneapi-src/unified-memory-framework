@@ -9,8 +9,8 @@
 #include "base.hpp"
 #include "provider.hpp"
 
-#include "cpp_helpers.hpp"
 #include "test_helpers.h"
+#include "utils/cpp_helpers.hpp"
 #ifndef _WIN32
 #include "test_helpers_linux.h"
 #endif

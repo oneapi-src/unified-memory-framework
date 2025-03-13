@@ -22,8 +22,8 @@
 #include <umf/pools/pool_disjoint.h>
 
 #include "base.hpp"
-#include "cpp_helpers.hpp"
 #include "provider.hpp"
+#include "utils/cpp_helpers.hpp"
 
 namespace umf_test {
 

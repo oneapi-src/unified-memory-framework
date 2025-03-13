@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2025 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -11,8 +11,8 @@
 
 #include "base.hpp"
 
-#include "cpp_helpers.hpp"
 #include "test_helpers.h"
+#include "utils/cpp_helpers.hpp"
 
 #include <umf/memory_provider.h>
 #include <umf/providers/provider_devdax_memory.h>

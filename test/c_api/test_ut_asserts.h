@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2024 Intel Corporation
+ * Copyright (C) 2023-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -9,7 +9,7 @@
 
 /*
  The project uses GTEST framework for testing, which is not supported in C
- These asserts should NOT be used in other purposes than for testing C API 
+ These asserts should NOT be used in other purposes than for testing C API
  */
 
 #ifndef UMF_TEST_UT_ASSERTS_H
