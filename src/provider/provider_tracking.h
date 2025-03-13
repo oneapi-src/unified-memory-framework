@@ -45,15 +45,6 @@ typedef struct umf_alloc_info_t {
 umf_result_t umfMemoryTrackerGetAllocInfo(const void *ptr,
                                           umf_alloc_info_t *pAllocInfo);
 
-typedef struct umf_ipc_info_t {
-    void *base;
-    size_t baseSize;
-    umf_memory_provider_handle_t provider;
-} umf_ipc_info_t;
-
-umf_result_t umfMemoryTrackerGetIpcInfo(const void *ptr,
-                                        umf_ipc_info_t *pIpcInfo);
-
 // Creates a memory provider that tracks each allocation/deallocation through umf_memory_tracker_handle_t and
 // forwards all requests to hUpstream memory Provider. hUpstream lifetime should be managed by the user of this function.
 umf_result_t umfTrackingMemoryProviderCreate(

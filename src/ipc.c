@@ -146,15 +146,19 @@ umf_result_t umfOpenIPCHandle(umf_ipc_handler_handle_t hIPCHandler,
 }
 
 umf_result_t umfCloseIPCHandle(void *ptr) {
-    umf_ipc_info_t ipcInfo;
-    umf_result_t ret = umfMemoryTrackerGetIpcInfo(ptr, &ipcInfo);
+    umf_alloc_info_t allocInfo;
+    umf_result_t ret = umfMemoryTrackerGetAllocInfo(ptr, &allocInfo);
     if (ret != UMF_RESULT_SUCCESS) {
-        LOG_ERR("cannot get IPC info for ptr = %p.", ptr);
+        LOG_ERR("cannot get alloc info for ptr = %p.", ptr);
         return ret;
     }
 
-    return umfMemoryProviderCloseIPCHandle(ipcInfo.provider, ipcInfo.base,
-                                           ipcInfo.baseSize);
+    // We cannot use umfPoolGetMemoryProvider function because it returns
+    // upstream provider but we need tracking one
+    umf_memory_provider_handle_t hProvider = allocInfo.pool->provider;
+
+    return umfMemoryProviderCloseIPCHandle(hProvider, allocInfo.base,
+                                           allocInfo.baseSize);
 }
 
 umf_result_t umfPoolGetIPCHandler(umf_memory_pool_handle_t hPool,

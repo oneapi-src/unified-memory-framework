@@ -47,6 +47,4 @@ umf_result_t umfIpcOpenedCacheGet(ipc_opened_cache_handle_t cache,
                                   uint64_t handle_id,
                                   ipc_opened_cache_value_t **retEntry);
 
-umf_result_t
-umfIpcHandleMappedCacheRelease(ipc_opened_cache_value_t *cacheValue);
 #endif /* UMF_IPC_CACHE_H */

@@ -59,7 +59,7 @@ static __TLS umf_result_t TLS_last_allocation_error;
 // The largest size which is allocated via the allocator.
 // Allocations with size > CutOff bypass the pool and
 // go directly to the provider.
-static const size_t CutOff = (size_t)1 << 31; // 2GB
+static size_t CutOff = (size_t)1 << 31; // 2GB
 
 static size_t bucket_slab_min_size(bucket_t *bucket) {
     return bucket->pool->params.slab_min_size;
@@ -457,7 +457,7 @@ static size_t size_to_idx(disjoint_pool_t *pool, size_t size) {
     // get the position of the leftmost set bit
     size_t position = utils_msb64(size);
 
-    bool is_power_of_2 = IS_POWER_OF_2(size);
+    bool is_power_of_2 = 0 == (size & (size - 1));
     bool larger_than_halfway_between_powers_of_2 =
         !is_power_of_2 &&
         (bool)((size - 1) & ((uint64_t)(1) << (position - 1)));
@@ -625,9 +625,8 @@ umf_result_t disjoint_pool_initialize(umf_memory_provider_handle_t provider,
     disjoint_pool->buckets_num = 1;
     size_t Size2 = Size1 + Size1 / 2;
     size_t ts2 = Size2, ts1 = Size1;
-    while (Size2 < CutOff) {
+    for (; Size2 < CutOff; Size1 *= 2, Size2 *= 2) {
         disjoint_pool->buckets_num += 2;
-        Size2 *= 2;
     }
 
     disjoint_pool->buckets = umf_ba_global_alloc(
@@ -793,14 +792,6 @@ void *disjoint_pool_aligned_malloc(void *pool, size_t size, size_t alignment) {
     return aligned_ptr;
 }
 
-static size_t get_chunk_idx(void *ptr, slab_t *slab) {
-    return (((uintptr_t)ptr - (uintptr_t)slab->mem_ptr) / slab->bucket->size);
-}
-
-static void *get_unaligned_ptr(size_t chunk_idx, slab_t *slab) {
-    return (void *)((uintptr_t)slab->mem_ptr + chunk_idx * slab->bucket->size);
-}
-
 size_t disjoint_pool_malloc_usable_size(void *pool, void *ptr) {
     disjoint_pool_t *disjoint_pool = (disjoint_pool_t *)pool;
     if (ptr == NULL) {
@@ -822,8 +813,10 @@ size_t disjoint_pool_malloc_usable_size(void *pool, void *ptr) {
     }
     // Get the unaligned pointer
     // NOTE: the base pointer slab->mem_ptr needn't to be aligned to bucket size
-    size_t chunk_idx = get_chunk_idx(ptr, slab);
-    void *unaligned_ptr = get_unaligned_ptr(chunk_idx, slab);
+    size_t chunk_idx =
+        (((uintptr_t)ptr - (uintptr_t)slab->mem_ptr) / slab->bucket->size);
+    void *unaligned_ptr =
+        (void *)((uintptr_t)slab->mem_ptr + chunk_idx * slab->bucket->size);
 
     ptrdiff_t diff = (ptrdiff_t)ptr - (ptrdiff_t)unaligned_ptr;
 
@@ -879,8 +872,10 @@ umf_result_t disjoint_pool_free(void *pool, void *ptr) {
 
     // Get the unaligned pointer
     // NOTE: the base pointer slab->mem_ptr needn't to be aligned to bucket size
-    size_t chunk_idx = get_chunk_idx(ptr, slab);
-    void *unaligned_ptr = get_unaligned_ptr(chunk_idx, slab);
+    size_t chunk_idx =
+        (((uintptr_t)ptr - (uintptr_t)slab->mem_ptr) / slab->bucket->size);
+    void *unaligned_ptr =
+        (void *)((uintptr_t)slab->mem_ptr + chunk_idx * slab->bucket->size);
 
     utils_annotate_memory_inaccessible(unaligned_ptr, bucket->size);
     bucket_free_chunk(bucket, unaligned_ptr, slab, &to_pool);
@@ -906,11 +901,13 @@ umf_result_t disjoint_pool_free(void *pool, void *ptr) {
 
 umf_result_t disjoint_pool_get_last_allocation_error(void *pool) {
     (void)pool;
+
     return TLS_last_allocation_error;
 }
 
 // Define destructor for use with unique_ptr
 void disjoint_pool_finalize(void *pool) {
+
     disjoint_pool_t *hPool = (disjoint_pool_t *)pool;
 
     if (hPool->params.pool_trace > 1) {
@@ -965,7 +962,7 @@ void umfDisjointPoolSharedLimitsDestroy(
 
 umf_result_t
 umfDisjointPoolParamsCreate(umf_disjoint_pool_params_handle_t *hParams) {
-    static char *DEFAULT_NAME = "disjoint_pool";
+    static const char *DEFAULT_NAME = "disjoint_pool";
 
     if (!hParams) {
         LOG_ERR("disjoint pool params handle is NULL");
@@ -979,16 +976,20 @@ umfDisjointPoolParamsCreate(umf_disjoint_pool_params_handle_t *hParams) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    *params = (umf_disjoint_pool_params_t){
-        .slab_min_size = 0,
-        .max_poolable_size = 0,
-        .capacity = 0,
-        .min_bucket_size = UMF_DISJOINT_POOL_MIN_BUCKET_DEFAULT_SIZE,
-        .cur_pool_size = 0,
-        .pool_trace = 0,
-        .shared_limits = NULL,
-        .name = {*DEFAULT_NAME},
-    };
+    params->slab_min_size = 0;
+    params->max_poolable_size = 0;
+    params->capacity = 0;
+    params->min_bucket_size = UMF_DISJOINT_POOL_MIN_BUCKET_DEFAULT_SIZE;
+    params->cur_pool_size = 0;
+    params->pool_trace = 0;
+    params->shared_limits = NULL;
+    params->name = NULL;
+
+    umf_result_t ret = umfDisjointPoolParamsSetName(params, DEFAULT_NAME);
+    if (ret != UMF_RESULT_SUCCESS) {
+        umf_ba_global_free(params);
+        return ret;
+    }
 
     *hParams = params;
 
@@ -999,6 +1000,7 @@ umf_result_t
 umfDisjointPoolParamsDestroy(umf_disjoint_pool_params_handle_t hParams) {
     // NOTE: dereferencing hParams when BA is already destroyed leads to crash
     if (hParams && !umf_ba_global_is_destroyed()) {
+        umf_ba_global_free(hParams->name);
         umf_ba_global_free(hParams);
     }
 
@@ -1090,6 +1092,15 @@ umfDisjointPoolParamsSetName(umf_disjoint_pool_params_handle_t hParams,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    strncpy(hParams->name, name, sizeof(hParams->name) - 1);
+    char *newName = umf_ba_global_alloc(sizeof(*newName) * (strlen(name) + 1));
+    if (newName == NULL) {
+        LOG_ERR("cannot allocate memory for disjoint pool name");
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    umf_ba_global_free(hParams->name);
+    hParams->name = newName;
+    strcpy(hParams->name, name);
+
     return UMF_RESULT_SUCCESS;
 }

@@ -111,8 +111,6 @@ void umfPoolDestroy(umf_memory_pool_handle_t hPool) {
 umf_result_t umfFree(void *ptr) {
     umf_memory_pool_handle_t hPool = umfPoolByPtr(ptr);
     if (hPool) {
-        LOG_DEBUG("calling umfPoolFree(pool=%p, ptr=%p) ...", (void *)hPool,
-                  ptr);
         return umfPoolFree(hPool, ptr);
     }
     return UMF_RESULT_SUCCESS;

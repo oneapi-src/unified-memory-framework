@@ -134,7 +134,7 @@ typedef struct umf_disjoint_pool_params_t {
     umf_disjoint_pool_shared_limits_handle_t shared_limits;
 
     // Name used in traces
-    char name[64];
+    char *name;
 } umf_disjoint_pool_params_t;
 
 typedef struct disjoint_pool_t {

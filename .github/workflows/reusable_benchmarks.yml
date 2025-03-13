@@ -111,9 +111,7 @@ jobs:
 
     - name: Install benchmarking scripts deps
       run: |
-        python -m venv .venv
-        source .venv/bin/activate
-        pip install -r ${{github.workspace}}/sycl-repo/unified-runtime/third_party/benchmark_requirements.txt
+        pip install --force-reinstall -r ${{github.workspace}}/sycl-repo/unified-runtime/third_party/benchmark_requirements.txt
 
     - name: Set core range and GPU mask
       run: |
@@ -137,7 +135,6 @@ jobs:
       id: benchmarks
       working-directory: ${{env.BUILD_DIR}}
       run: >
-        source ${{github.workspace}}/.venv/bin/activate &&
         taskset -c ${{ env.CORES }} ${{ github.workspace }}/sycl-repo/unified-runtime/scripts/benchmarks/main.py
         ~/bench_workdir_umf
         --umf ${{env.BUILD_DIR}}

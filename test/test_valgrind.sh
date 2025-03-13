@@ -188,33 +188,11 @@ echo
 echo "======================================================================"
 echo
 
-LOG_FILES=""
-NT=$(ls -1 ${PATH_TESTS}.log 2>/dev/null | wc -l)
-if [ $NT -gt 0 ]; then
-	LOG_FILES="$LOG_FILES $(ls -1 ${PATH_TESTS}.log | xargs)"
-fi
-NE=$(ls -1 ${PATH_EXAMPLES}.log 2>/dev/null | wc -l)
-if [ $NE -gt 0 ]; then
-	LOG_FILES="$LOG_FILES $(ls -1 ${PATH_EXAMPLES}.log | xargs)"
-fi
-if [ $(($NT + $NE)) -eq 0 ]; then
-	echo
-	echo "FATAL ERROR: no log files found, but number of failed tests equals $ANY_TEST_FAILED!"
-	echo
-	exit 1
-fi
-
-for log in $LOG_FILES; do
+for log in $(ls -1 ${PATH_TESTS}.log ${PATH_EXAMPLES}.log); do
 	echo ">>>>>>> LOG $log"
 	cat $log
 	echo
 	echo
 done
-
-if [ $(($NT + $NE)) -ne $ANY_TEST_FAILED ]; then
-	echo
-	echo "ERROR: incorrect number of log files: ANY_TEST_FAILED=$ANY_TEST_FAILED != ($NT + $NE)"
-	echo
-fi
 
 exit 1

@@ -152,17 +152,6 @@ static inline bool utils_compare_exchange_u64(uint64_t *ptr, uint64_t *expected,
     return false;
 }
 
-static inline void utils_atomic_store_release_u64(void *ptr, uint64_t val) {
-    ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
-    LONG64 out;
-    LONG64 desired = (LONG64)val;
-    LONG64 expected = 0;
-    while (expected != (out = InterlockedCompareExchange64(
-                            (LONG64 volatile *)ptr, desired, expected))) {
-        expected = out;
-    }
-}
-
 #else // !defined(_WIN32)
 
 static inline void utils_atomic_load_acquire_u64(uint64_t *ptr, uint64_t *out) {
@@ -177,11 +166,6 @@ static inline void utils_atomic_load_acquire_ptr(void **ptr, void **out) {
     ASSERT_IS_ALIGNED((uintptr_t)out, 8);
     __atomic_load((uintptr_t *)ptr, (uintptr_t *)out, memory_order_acquire);
     utils_annotate_acquire(ptr);
-}
-
-static inline void utils_atomic_store_release_u64(void *ptr, uint64_t val) {
-    ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
-    __atomic_store_n((uintptr_t *)ptr, (uintptr_t)val, memory_order_release);
 }
 
 static inline void utils_atomic_store_release_ptr(void **ptr, void *val) {

@@ -15,7 +15,7 @@ function check_L0_version {
     fi
 
     if command -v zypper &> /dev/null; then
-        zypper -n se level-zero || true
+        zypper se level-zero && return
     fi
 
     echo "level-zero not installed"
