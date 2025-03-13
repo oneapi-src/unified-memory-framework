@@ -25,13 +25,13 @@
 #include "utils_log.h"
 #include "utils_math.h"
 
-// Temporary solution for disabling memory poisoning. This is needed because
-// AddressSanitizer does not support memory poisoning for GPU allocations.
-// More info: https://github.com/oneapi-src/unified-memory-framework/issues/634
-#ifndef POISON_MEMORY
-#undef __SANITIZE_ADDRESS__
-#endif
-#include "utils_sanitizers.h"
+// // Temporary solution for disabling memory poisoning. This is needed because
+// // AddressSanitizer does not support memory poisoning for GPU allocations.
+// // More info: https://github.com/oneapi-src/unified-memory-framework/issues/634
+// #ifndef POISON_MEMORY
+// #undef __SANITIZE_ADDRESS__
+// #endif
+// #include "utils_sanitizers.h"
 
 // Forward declarations
 static void bucket_update_stats(bucket_t *bucket, int in_use, int in_pool);
