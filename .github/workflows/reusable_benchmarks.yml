@@ -103,9 +103,9 @@ jobs:
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         repository: intel/llvm
-        # add preloaded UMF benchmarks
-        # https://github.com/intel/llvm/pull/17278
-        ref: b2f9dab5266d227cc9eb19af1b54c5bdc50221d1
+        # [BENCHMARK] fix default timeout parameter
+        # https://github.com/intel/llvm/pull/17412
+        ref: 357e9e0b253b7eba105d044e38452b3c09169f8a
         path: sycl-repo
         fetch-depth: 1
 
