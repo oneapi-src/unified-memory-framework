@@ -40,7 +40,7 @@ TEST_F(test, internals) {
         }
     };
     umf_memory_provider_ops_t provider_ops =
-        umf::providerMakeCOps<memory_provider, void>();
+        umf_test::providerMakeCOps<memory_provider, void>();
 
     auto providerUnique =
         wrapProviderUnique(createProviderChecked(&provider_ops, nullptr));
@@ -151,7 +151,7 @@ TEST_F(test, freeErrorPropagation) {
         }
     };
     umf_memory_provider_ops_t provider_ops =
-        umf::providerMakeCOps<memory_provider, void>();
+        umf_test::providerMakeCOps<memory_provider, void>();
 
     auto providerUnique =
         wrapProviderUnique(createProviderChecked(&provider_ops, nullptr));
@@ -206,7 +206,7 @@ TEST_F(test, sharedLimits) {
         }
     };
     umf_memory_provider_ops_t provider_ops =
-        umf::providerMakeCOps<memory_provider, void>();
+        umf_test::providerMakeCOps<memory_provider, void>();
 
     static constexpr size_t SlabMinSize = 1024;
     static constexpr size_t MaxSize = 4 * SlabMinSize;

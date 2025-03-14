@@ -4,9 +4,9 @@
 
 #include "base.hpp"
 
-#include "cpp_helpers.hpp"
 #include "ipcFixtures.hpp"
 #include "test_helpers.h"
+#include "utils/cpp_helpers.hpp"
 
 #include <umf/memory_provider.h>
 #include <umf/pools/pool_disjoint.h>
@@ -47,7 +47,7 @@ static int compare_native_error_str(const char *message, int error) {
 using providerCreateExtParams = std::tuple<umf_memory_provider_ops_t *, void *>;
 
 static void providerCreateExt(providerCreateExtParams params,
-                              umf::provider_unique_handle_t *handle) {
+                              umf_test::provider_unique_handle_t *handle) {
     umf_memory_provider_handle_t hProvider = nullptr;
     auto [provider_ops, provider_params] = params;
 
@@ -56,8 +56,8 @@ static void providerCreateExt(providerCreateExtParams params,
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
     ASSERT_NE(hProvider, nullptr);
 
-    *handle =
-        umf::provider_unique_handle_t(hProvider, &umfMemoryProviderDestroy);
+    *handle = umf_test::provider_unique_handle_t(hProvider,
+                                                 &umfMemoryProviderDestroy);
 }
 
 struct umfProviderTest
@@ -75,7 +75,7 @@ struct umfProviderTest
 
     void TearDown() override { test::TearDown(); }
 
-    umf::provider_unique_handle_t provider;
+    umf_test::provider_unique_handle_t provider;
     size_t page_size;
     size_t page_plus_64;
 };

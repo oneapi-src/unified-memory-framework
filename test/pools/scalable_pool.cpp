@@ -61,7 +61,7 @@ struct umfScalablePoolParamsTest
     };
 
     static constexpr umf_memory_provider_ops_t VALIDATOR_PROVIDER_OPS =
-        umf::providerMakeCOps<provider_validator, validation_params_t>();
+        umf_test::providerMakeCOps<provider_validator, validation_params_t>();
 
     umfScalablePoolParamsTest() : expected_params{0, false}, params(nullptr) {}
     void SetUp() override {
@@ -82,7 +82,7 @@ struct umfScalablePoolParamsTest
         test::TearDown();
     }
 
-    umf::pool_unique_handle_t makePool() {
+    umf_test::pool_unique_handle_t makePool() {
         umf_memory_provider_handle_t hProvider = nullptr;
         umf_memory_pool_handle_t hPool = nullptr;
 
@@ -94,7 +94,7 @@ struct umfScalablePoolParamsTest
                             UMF_POOL_CREATE_FLAG_OWN_PROVIDER, &hPool);
         EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
 
-        return umf::pool_unique_handle_t(hPool, &umfPoolDestroy);
+        return umf_test::pool_unique_handle_t(hPool, &umfPoolDestroy);
     }
 
     void allocFreeFlow() {

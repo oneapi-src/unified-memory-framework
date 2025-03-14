@@ -97,7 +97,7 @@ struct umfIpcTest : umf_test::test,
 
     void TearDown() override { test::TearDown(); }
 
-    umf::pool_unique_handle_t makePool() {
+    umf_test::pool_unique_handle_t makePool() {
         // TODO: The function is similar to poolCreateExt function
         //       from memoryPool.hpp
         umf_memory_provider_handle_t hProvider = NULL;
@@ -147,7 +147,7 @@ struct umfIpcTest : umf_test::test,
             poolParamsDestroy(poolParams);
         }
 
-        return umf::pool_unique_handle_t(hPool, &umfPoolDestroy);
+        return umf_test::pool_unique_handle_t(hPool, &umfPoolDestroy);
     }
 
     struct stats_type {
@@ -179,7 +179,7 @@ struct umfIpcTest : umf_test::test,
         std::vector<void *> ptrs;
         constexpr size_t ALLOC_SIZE = 100;
         constexpr size_t NUM_POINTERS = 100;
-        umf::pool_unique_handle_t pool = makePool();
+        umf_test::pool_unique_handle_t pool = makePool();
         ASSERT_NE(pool.get(), nullptr);
 
         for (size_t i = 0; i < NUM_POINTERS; ++i) {
@@ -237,7 +237,7 @@ struct umfIpcTest : umf_test::test,
         std::vector<void *> ptrs;
         constexpr size_t ALLOC_SIZE = 100;
         constexpr size_t NUM_POINTERS = 100;
-        umf::pool_unique_handle_t pool = makePool();
+        umf_test::pool_unique_handle_t pool = makePool();
         ASSERT_NE(pool.get(), nullptr);
 
         for (size_t i = 0; i < NUM_POINTERS; ++i) {
@@ -284,7 +284,7 @@ struct umfIpcTest : umf_test::test,
         std::vector<void *> ptrs;
         constexpr size_t ALLOC_SIZE = 100;
         constexpr size_t NUM_POINTERS = 100;
-        umf::pool_unique_handle_t pool = makePool();
+        umf_test::pool_unique_handle_t pool = makePool();
         ASSERT_NE(pool.get(), nullptr);
 
         for (size_t i = 0; i < NUM_POINTERS; ++i) {
@@ -363,7 +363,7 @@ struct umfIpcTest : umf_test::test,
         std::vector<void *> ptrs;
         constexpr size_t ALLOC_SIZE = 100;
         constexpr size_t NUM_POINTERS = 100;
-        umf::pool_unique_handle_t pool = makePool();
+        umf_test::pool_unique_handle_t pool = makePool();
         ASSERT_NE(pool.get(), nullptr);
 
         for (size_t i = 0; i < NUM_POINTERS; ++i) {
@@ -432,7 +432,7 @@ struct umfIpcTest : umf_test::test,
 
 TEST_P(umfIpcTest, GetIPCHandleSize) {
     size_t size = 0;
-    umf::pool_unique_handle_t pool = makePool();
+    umf_test::pool_unique_handle_t pool = makePool();
     ASSERT_NE(pool.get(), nullptr);
 
     umf_result_t ret = umfPoolGetIPCHandleSize(pool.get(), &size);
@@ -445,7 +445,7 @@ TEST_P(umfIpcTest, GetIPCHandleSizeInvalidArgs) {
     umf_result_t ret = umfPoolGetIPCHandleSize(nullptr, &size);
     EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 
-    umf::pool_unique_handle_t pool = makePool();
+    umf_test::pool_unique_handle_t pool = makePool();
     ASSERT_NE(pool.get(), nullptr);
 
     ret = umfPoolGetIPCHandleSize(pool.get(), nullptr);
@@ -463,7 +463,7 @@ TEST_P(umfIpcTest, GetIPCHandleInvalidArgs) {
     ret = umfGetIPCHandle(ptr, &ipcHandle, &handleSize);
     EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 
-    umf::pool_unique_handle_t pool = makePool();
+    umf_test::pool_unique_handle_t pool = makePool();
     ASSERT_NE(pool.get(), nullptr);
 
     ptr = umfPoolMalloc(pool.get(), SIZE);
@@ -488,7 +488,7 @@ TEST_P(umfIpcTest, CloseIPCHandleInvalidPtr) {
 TEST_P(umfIpcTest, BasicFlow) {
     constexpr size_t SIZE = 100;
     std::vector<int> expected_data(SIZE);
-    umf::pool_unique_handle_t pool = makePool();
+    umf_test::pool_unique_handle_t pool = makePool();
     ASSERT_NE(pool.get(), nullptr);
 
     int *ptr = (int *)umfPoolMalloc(pool.get(), SIZE * sizeof(int));
@@ -555,7 +555,7 @@ TEST_P(umfIpcTest, BasicFlow) {
 
 TEST_P(umfIpcTest, AllocFreeAllocTest) {
     constexpr size_t SIZE = 64 * 1024;
-    umf::pool_unique_handle_t pool = makePool();
+    umf_test::pool_unique_handle_t pool = makePool();
     ASSERT_NE(pool.get(), nullptr);
 
     umf_ipc_handler_handle_t ipcHandler = nullptr;
@@ -616,9 +616,9 @@ TEST_P(umfIpcTest, AllocFreeAllocTest) {
 TEST_P(umfIpcTest, openInTwoIpcHandlers) {
     constexpr size_t SIZE = 100;
     std::vector<int> expected_data(SIZE);
-    umf::pool_unique_handle_t pool1 = makePool();
+    umf_test::pool_unique_handle_t pool1 = makePool();
     ASSERT_NE(pool1.get(), nullptr);
-    umf::pool_unique_handle_t pool2 = makePool();
+    umf_test::pool_unique_handle_t pool2 = makePool();
     ASSERT_NE(pool2.get(), nullptr);
     umf_ipc_handler_handle_t ipcHandler1 = nullptr;
     umf_ipc_handler_handle_t ipcHandler2 = nullptr;
@@ -715,8 +715,8 @@ TEST_P(umfIpcTest, ConcurrentDestroyIpcHandlers) {
     constexpr size_t NUM_POOLS = 10;
     void *ptrs[NUM_ALLOCS];
     void *openedPtrs[NUM_POOLS][NUM_ALLOCS];
-    std::vector<umf::pool_unique_handle_t> consumerPools;
-    umf::pool_unique_handle_t producerPool = makePool();
+    std::vector<umf_test::pool_unique_handle_t> consumerPools;
+    umf_test::pool_unique_handle_t producerPool = makePool();
     ASSERT_NE(producerPool.get(), nullptr);
 
     for (size_t i = 0; i < NUM_POOLS; ++i) {

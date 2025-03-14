@@ -7,8 +7,8 @@
  *
  */
 
-#ifndef UMF_HELPERS_HPP
-#define UMF_HELPERS_HPP 1
+#ifndef UMF_TEST_HELPERS_HPP
+#define UMF_TEST_HELPERS_HPP 1
 
 #include <umf/memory_pool.h>
 #include <umf/memory_pool_ops.h>
@@ -22,7 +22,7 @@
 #include <tuple>
 #include <utility>
 
-namespace umf {
+namespace umf_test {
 
 using pool_unique_handle_t =
     std::unique_ptr<umf_memory_pool_t,
@@ -162,6 +162,6 @@ template <typename Type> umf_result_t &getPoolLastStatusRef() {
     return last_status;
 }
 
-} // namespace umf
+} // namespace umf_test
 
-#endif /* UMF_HELPERS_HPP */
+#endif /* UMF_TEST_HELPERS_HPP */

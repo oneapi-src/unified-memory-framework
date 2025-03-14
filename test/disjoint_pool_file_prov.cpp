@@ -20,7 +20,7 @@ using umf_test::test;
 #define FILE_PATH ((char *)"tmp_file")
 
 umf_memory_provider_ops_t UMF_MALLOC_MEMORY_PROVIDER_OPS =
-    umf::providerMakeCOps<umf_test::provider_ba_global, void>();
+    umf_test::providerMakeCOps<umf_test::provider_ba_global, void>();
 
 struct FileWithMemoryStrategyTest
     : umf_test::test,
