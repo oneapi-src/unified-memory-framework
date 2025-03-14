@@ -294,27 +294,27 @@ if(LINUX AND (NOT UMF_DISABLE_HWLOC)) # OS-specific functions are implemented
     add_umf_test(
         NAME memspace_numa
         SRCS memspaces/memspace_numa.cpp
-        LIBS ${LIBNUMA_LIBRARIES} ${LIBHWLOC_LIBRARIES})
+        LIBS ${LIBNUMA_LIBRARIES} ${UMF_HWLOC_NAME})
     add_umf_test(
         NAME provider_os_memory_config
         SRCS provider_os_memory_config.cpp
-        LIBS ${UMF_UTILS_FOR_TEST} ${LIBNUMA_LIBRARIES} ${LIBHWLOC_LIBRARIES})
+        LIBS ${UMF_UTILS_FOR_TEST} ${LIBNUMA_LIBRARIES} ${UMF_HWLOC_NAME})
     add_umf_test(
         NAME memspace_host_all
         SRCS memspaces/memspace_host_all.cpp
-        LIBS ${UMF_UTILS_FOR_TEST} ${LIBNUMA_LIBRARIES} ${LIBHWLOC_LIBRARIES})
+        LIBS ${UMF_UTILS_FOR_TEST} ${LIBNUMA_LIBRARIES} ${UMF_HWLOC_NAME})
     add_umf_test(
         NAME memspace_highest_capacity
         SRCS memspaces/memspace_highest_capacity.cpp
-        LIBS ${UMF_UTILS_FOR_TEST} ${LIBNUMA_LIBRARIES} ${LIBHWLOC_LIBRARIES})
+        LIBS ${UMF_UTILS_FOR_TEST} ${LIBNUMA_LIBRARIES} ${UMF_HWLOC_NAME})
     add_umf_test(
         NAME memspace_highest_bandwidth
         SRCS memspaces/memspace_highest_bandwidth.cpp
-        LIBS ${UMF_UTILS_FOR_TEST} ${LIBNUMA_LIBRARIES} ${LIBHWLOC_LIBRARIES})
+        LIBS ${UMF_UTILS_FOR_TEST} ${LIBNUMA_LIBRARIES} ${UMF_HWLOC_NAME})
     add_umf_test(
         NAME memspace_lowest_latency
         SRCS memspaces/memspace_lowest_latency.cpp
-        LIBS ${UMF_UTILS_FOR_TEST} ${LIBNUMA_LIBRARIES} ${LIBHWLOC_LIBRARIES})
+        LIBS ${UMF_UTILS_FOR_TEST} ${LIBNUMA_LIBRARIES} ${UMF_HWLOC_NAME})
     add_umf_test(
         NAME mempolicy
         SRCS memspaces/mempolicy.cpp
@@ -326,7 +326,7 @@ if(LINUX AND (NOT UMF_DISABLE_HWLOC)) # OS-specific functions are implemented
     add_umf_test(
         NAME memtarget
         SRCS memspaces/memtarget.cpp
-        LIBS ${LIBNUMA_LIBRARIES} ${LIBHWLOC_LIBRARIES})
+        LIBS ${LIBNUMA_LIBRARIES} ${UMF_HWLOC_NAME})
     add_umf_test(
         NAME provider_devdax_memory
         SRCS provider_devdax_memory.cpp
@@ -678,6 +678,7 @@ endif()
 # replace test_examples.sh with CMake script?)
 if(LINUX
    AND UMF_BUILD_SHARED_LIBRARY
+   AND UMF_BUILD_EXAMPLES
    AND NOT
        (UMF_USE_ASAN
         OR UMF_USE_UBSAN

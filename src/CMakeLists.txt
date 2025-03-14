@@ -103,7 +103,7 @@ endif()
 if(NOT UMF_DISABLE_HWLOC)
     set(UMF_SOURCES ${UMF_SOURCES} ${HWLOC_DEPENDENT_SOURCES}
                     memtargets/memtarget_numa.c)
-    set(UMF_LIBS ${UMF_LIBS} ${LIBHWLOC_LIBRARIES})
+    set(UMF_LIBS ${UMF_LIBS} $<BUILD_INTERFACE:${UMF_HWLOC_NAME}>)
     set(UMF_PRIVATE_LIBRARY_DIRS ${UMF_PRIVATE_LIBRARY_DIRS}
                                  ${LIBHWLOC_LIBRARY_DIRS})
 else()
@@ -150,14 +150,11 @@ if(UMF_BUILD_SHARED_LIBRARY)
         set(CMAKE_INSTALL_RPATH "${UMF_INSTALL_RPATH}")
     endif()
 
-    if(NOT UMF_DISABLE_HWLOC)
-        set(HWLOC_LIB ${UMF_HWLOC_NAME})
-    endif()
     add_umf_library(
         NAME umf
         TYPE SHARED
         SRCS ${UMF_SOURCES}
-        LIBS ${UMF_LIBS} ${HWLOC_LIB}
+        LIBS ${UMF_LIBS}
         LINUX_MAP_FILE ${CMAKE_CURRENT_SOURCE_DIR}/libumf.map
         WINDOWS_DEF_FILE ${CMAKE_CURRENT_SOURCE_DIR}/libumf.def)
     set(UMF_COMMON_COMPILE_DEFINITIONS ${UMF_COMMON_COMPILE_DEFINITIONS}

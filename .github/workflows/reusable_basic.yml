@@ -318,6 +318,56 @@ jobs:
       run: ${{github.workspace}}/.github/scripts/check_dll_flags.ps1 ${{env.BUILD_DIR}}/src/proxy_lib/${{matrix.build_type}}/umf_proxy.dll
       shell: pwsh
 
+  hwloc-fallback:
+  # Scenarios where UMF_LINK_HWLOC_STATICALLY is set to OFF and hwloc is not installed in the system
+  # The hwloc library is fetched implicitly
+    name: "Fallback to static hwloc build"
+    strategy:
+      matrix:
+        os: ['ubuntu-latest', 'windows-latest']
+        build_type: [Release]
+        include:
+          - os: 'ubuntu-latest'
+            build_type: Release
+            number_of_processors: '$(nproc)'
+          - os: 'windows-latest'
+            build_type: Release
+            number_of_processors: '$Env:NUMBER_OF_PROCESSORS'
+    
+    runs-on: ${{matrix.os}}
+
+    steps:
+    - name: Install dependencies
+      if: matrix.os == 'ubuntu-latest'
+      run: sudo apt-get install -y libnuma-dev
+
+    - name: Checkout
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        fetch-depth: 0
+
+    - name: Configure build
+      run: >
+        cmake
+        -B ${{env.BUILD_DIR}}
+        -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+        -DUMF_BUILD_SHARED_LIBRARY=ON
+        -DUMF_BUILD_EXAMPLES=OFF
+        -DUMF_DEVELOPER_MODE=ON
+        -DUMF_LINK_HWLOC_STATICALLY=OFF
+        -DUMF_TESTS_FAIL_ON_SKIP=ON
+
+    - name: Build UMF
+      run: >
+        cmake
+        --build ${{env.BUILD_DIR}}
+        --config ${{matrix.build_type}}
+        -j ${{matrix.number_of_processors}}
+
+    - name: Run tests
+      working-directory: ${{env.BUILD_DIR}}
+      run: ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
+
   windows-dynamic_build_hwloc:
     name: "Windows dynamic UMF + static hwloc"
     strategy:
