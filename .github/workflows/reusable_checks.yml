@@ -21,7 +21,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y black cmake clang-format-15 cmake-format libhwloc-dev doxygen
+        sudo apt-get install -y black cmake clang-format-15 cmake-format  doxygen
 
     # Latest distros do not allow global pip installation
     - name: Install Python requirements in venv

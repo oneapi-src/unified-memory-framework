@@ -31,7 +31,7 @@ jobs:
     - name: Install apt packages
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake hwloc libhwloc-dev libnuma-dev libtbb-dev
+        sudo apt-get install -y cmake hwloc  libnuma-dev libtbb-dev
 
     - name: Download Coverity
       run: |
