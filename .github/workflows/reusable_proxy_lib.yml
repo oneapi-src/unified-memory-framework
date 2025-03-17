@@ -32,7 +32,7 @@ jobs:
       - name: Install apt packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake libhwloc-dev libtbb-dev lcov
+          sudo apt-get install -y cmake libhwloc-dev libnuma-dev libtbb-dev lcov
 
       - name: Configure build
         run: >
