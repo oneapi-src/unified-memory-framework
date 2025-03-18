@@ -142,6 +142,7 @@ jobs:
         ~/bench_workdir_umf
         --umf ${{env.BUILD_DIR}}
         --compare baseline
+        --timeout 3000
         ${{ inputs.upload_report && '--output-html' || '' }}
         ${{ inputs.pr_no != 0 && '--output-markdown' || '' }}
         ${{ inputs.bench_script_params }}
