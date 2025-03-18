@@ -55,7 +55,7 @@ if(WINDOWS)
 endif()
 
 if(LIBHWLOC_LIBRARY)
-    message(STATUS "  Found libhwloc using find_library()")
+    message(STATUS "  Found libhwloc: ${LIBHWLOC_LIBRARY}")
 
     if(LIBHWLOC_FIND_VERSION)
         if(NOT LIBHWLOC_API_VERSION)
@@ -72,8 +72,7 @@ if(LIBHWLOC_LIBRARY)
     endif()
 else()
     set(MSG_NOT_FOUND
-        "libhwloc NOT found (set CMAKE_PREFIX_PATH to point the location or disable with -DUMF_DISABLE_HWLOC=ON)"
-    )
+        "libhwloc NOT found in the system (will fetch it from GitHub)")
     if(LIBHWLOC_FIND_REQUIRED)
         message(FATAL_ERROR ${MSG_NOT_FOUND})
     else()
