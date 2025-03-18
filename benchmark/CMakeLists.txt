@@ -40,8 +40,9 @@ function(add_umf_benchmark)
     # * SRCS - source files
     # * LIBS - libraries to be linked with
     # * LIBDIRS - directories of libraries to be linked with
+    # * TESTARGS - additional arguments to be passed to the add_test
     set(oneValueArgs NAME)
-    set(multiValueArgs SRCS LIBS LIBDIRS)
+    set(multiValueArgs SRCS LIBS LIBDIRS TESTARGS)
     cmake_parse_arguments(
         ARG
         ""
@@ -66,7 +67,7 @@ function(add_umf_benchmark)
 
     add_test(
         NAME ${BENCH_NAME}
-        COMMAND ${BENCH_NAME}
+        COMMAND ${BENCH_NAME} ${ARG_TESTARGS}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
     if("${BENCH_NAME}" STREQUAL "umf-ubench")
@@ -148,7 +149,9 @@ add_umf_benchmark(
     NAME benchmark
     SRCS benchmark.cpp
     LIBS ${LIBS_OPTIONAL} benchmark::benchmark
-    LIBDIRS ${LIB_DIRS})
+    # limit running benchmarks in CI tests to single-threaded
+    LIBDIRS ${LIB_DIRS}
+    TESTARGS --benchmark_filter=threads:1$)
 
 if(UMF_BUILD_BENCHMARKS_MT)
     add_umf_benchmark(
