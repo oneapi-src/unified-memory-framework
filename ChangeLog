@@ -1,3 +1,22 @@
+Tue Mar 18 2025 Łukasz Stolarczuk <lukasz.stolarczuk@intel.com>
+
+	* Version 0.11.0-rc1
+
+	This is the first rc of v0.11.0 release. It contains:
+	- make disjoint pool a C structure #898
+	- add fixed provider #976
+	- remove the Coarse provider #934 and replace with internal coarse library #931, #932
+	- implement umfPool[Set/Get]Tag #962
+	- L0 provider: implement support for defer and blocking free #963
+	- add set/restore context in CUDA provider free() #1049
+	- L0 provider: implement min/recommended page size query #1059
+	- add support for CUDA allocation flags #1079
+	- increase refcount to ze_loader/CUDA libraries #1086
+	- implement size limit for the cache of opened IPC handles #998
+	- allow creating fixed provider based on allocations from another pool #1143
+	- multiple benchmark improvements
+	- new tests and CI workflows, incl. backward compatibility checks (#1087, #1163)
+
 Fri Jan 10 2025 Łukasz Stolarczuk <lukasz.stolarczuk@intel.com>
 
 	* Version 0.10.1
