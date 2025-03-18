@@ -139,7 +139,7 @@ umfMemoryTrackerAddAtLevel(umf_memory_tracker_handle_t hTracker, int level,
     }
 
     value->pool = pool;
-    utils_atomic_store_release_u64(&value->size, size);
+    utils_atomic_store_release_u64((uint64_t *)&value->size, size);
     value->n_children = 0;
 
     assert(level < MAX_LEVELS_OF_ALLOC_SEGMENT_MAP);

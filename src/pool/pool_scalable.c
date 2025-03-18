@@ -13,6 +13,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <ctl/ctl.h>
+#include <memory_pool_internal.h>
 #include <umf/memory_pool.h>
 #include <umf/memory_pool_ops.h>
 #include <umf/memory_provider.h>
@@ -113,6 +115,10 @@ static const char *tbb_symbol[TBB_POOL_SYMBOLS_MAX] = {
     "_ZN3rml10pool_msizeEPNS_10MemoryPoolEPv"
 #endif
 };
+
+struct ctl *pool_scallable_ctl_root;
+
+static UTIL_ONCE_FLAG ctl_initialized = UTIL_ONCE_FLAG_INIT;
 
 static void init_tbb_callbacks_once(void) {
     const char *lib_name = tbb_symbol[TBB_LIB_NAME];
@@ -405,6 +411,38 @@ static umf_result_t tbb_get_last_allocation_error(void *pool) {
     return TLS_last_allocation_error;
 }
 
+static int CTL_READ_HANDLER(tracking_enabled)(void *ctx,
+                                              umf_ctl_query_source_t source,
+                                              void *arg,
+                                              umf_ctl_index_utlist_t *indexes,
+                                              const char *extra_name,
+                                              umf_ctl_query_type_t query_type) {
+    /* suppress unused-parameter errors */
+    (void)source, (void)indexes, (void)ctx, (void)extra_name, (void)query_type;
+
+    int *arg_out = arg;
+    umf_memory_pool_handle_t pool = (umf_memory_pool_handle_t)ctx;
+    *arg_out = pool->flags & UMF_POOL_CREATE_FLAG_DISABLE_TRACKING ? 0 : 1;
+    return 0;
+}
+
+static const umf_ctl_node_t CTL_NODE(params)[] = {CTL_LEAF_RO(tracking_enabled),
+                                                  CTL_NODE_END};
+
+static void initialize_pool_ctl(void) {
+    pool_scallable_ctl_root = ctl_new();
+    CTL_REGISTER_MODULE(pool_scallable_ctl_root, params);
+}
+
+static umf_result_t pool_ctl(void *hPool, int operationType, const char *name,
+                             void *arg, umf_ctl_query_type_t query_type) {
+    (void)operationType; // unused
+    umf_memory_pool_handle_t pool_provider = (umf_memory_pool_handle_t)hPool;
+    utils_init_once(&ctl_initialized, initialize_pool_ctl);
+    return ctl_query(pool_scallable_ctl_root, pool_provider,
+                     CTL_QUERY_PROGRAMMATIC, name, query_type, arg);
+}
+
 static umf_memory_pool_ops_t UMF_SCALABLE_POOL_OPS = {
     .version = UMF_POOL_OPS_VERSION_CURRENT,
     .initialize = tbb_pool_initialize,
@@ -415,7 +453,8 @@ static umf_memory_pool_ops_t UMF_SCALABLE_POOL_OPS = {
     .aligned_malloc = tbb_aligned_malloc,
     .malloc_usable_size = tbb_malloc_usable_size,
     .free = tbb_free,
-    .get_last_allocation_error = tbb_get_last_allocation_error};
+    .get_last_allocation_error = tbb_get_last_allocation_error,
+    .ctl = pool_ctl};
 
 umf_memory_pool_ops_t *umfScalablePoolOps(void) {
     return &UMF_SCALABLE_POOL_OPS;

@@ -212,8 +212,14 @@ add_umf_test(
     LIBS ${UMF_LOGGER_LIBS})
 
 add_umf_test(
-    NAME ctl
-    SRCS ctl/test.cpp ctl/ctl_debug.c ../src/ctl/ctl.c ${BA_SOURCES_FOR_TEST}
+    NAME ctl_unittest
+    SRCS ctl/ctl_unittest.cpp ctl/ctl_debug.c ../src/ctl/ctl.c
+         ${BA_SOURCES_FOR_TEST}
+    LIBS ${UMF_UTILS_FOR_TEST})
+
+add_umf_test(
+    NAME ctl_api
+    SRCS ctl/ctl_api.cpp ${BA_SOURCES_FOR_TEST}
     LIBS ${UMF_UTILS_FOR_TEST})
 
 add_umf_test(

@@ -26,7 +26,6 @@ extern "C" {
 
 typedef struct umf_memory_pool_t {
     void *pool_priv;
-    umf_memory_pool_ops_t ops;
     umf_pool_create_flags_t flags;
 
     // Memory provider used by the pool.
@@ -34,6 +33,9 @@ typedef struct umf_memory_pool_t {
 
     utils_mutex_t lock;
     void *tag;
+
+    // ops should be the last due to possible change size in the future
+    umf_memory_pool_ops_t ops;
 } umf_memory_pool_t;
 
 #ifdef __cplusplus
