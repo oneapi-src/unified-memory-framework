@@ -11,9 +11,7 @@
 using umf_test::test;
 using namespace umf_test;
 
-using os_params_unique_handle_t =
-    std::unique_ptr<umf_os_memory_provider_params_t,
-                    decltype(&umfOsMemoryProviderParamsDestroy)>;
+using void_unique_ptr = std::unique_ptr<void, decltype(&free)>;
 
 void *createOsMemoryProviderParams() {
     umf_os_memory_provider_params_handle_t params = nullptr;
@@ -30,11 +28,43 @@ umf_result_t destroyOsMemoryProviderParams(void *params) {
         (umf_os_memory_provider_params_handle_t)params);
 }
 
+void *createFixedMemoryProviderParams() {
+    // Allocate a memory buffer to use with the fixed memory provider.
+    // The umfPoolTest.malloc_compliance test requires a lot of memory.
+    size_t memory_size = (1UL << 31);
+    static void_unique_ptr memory_buffer =
+        void_unique_ptr(malloc(memory_size), free);
+    if (memory_buffer.get() == NULL) {
+        throw std::runtime_error(
+            "Failed to allocate memory for Fixed memory provider");
+    }
+
+    umf_fixed_memory_provider_params_handle_t params = nullptr;
+    umf_result_t res = umfFixedMemoryProviderParamsCreate(
+        &params, memory_buffer.get(), memory_size);
+    if (res != UMF_RESULT_SUCCESS) {
+        throw std::runtime_error(
+            "Failed to create Fixed memory provider params");
+    }
+
+    return params;
+}
+
+umf_result_t destroyFixedMemoryProviderParams(void *params) {
+    return umfFixedMemoryProviderParamsDestroy(
+        (umf_fixed_memory_provider_params_handle_t)params);
+}
+
 INSTANTIATE_TEST_SUITE_P(
     jemallocPoolTest, umfPoolTest,
-    ::testing::Values(poolCreateExtParams{
-        umfJemallocPoolOps(), nullptr, nullptr, umfOsMemoryProviderOps(),
-        createOsMemoryProviderParams, destroyOsMemoryProviderParams}));
+    ::testing::Values(poolCreateExtParams{umfJemallocPoolOps(), nullptr,
+                                          nullptr, umfOsMemoryProviderOps(),
+                                          createOsMemoryProviderParams,
+                                          destroyOsMemoryProviderParams},
+                      poolCreateExtParams{umfJemallocPoolOps(), nullptr,
+                                          nullptr, umfFixedMemoryProviderOps(),
+                                          createFixedMemoryProviderParams,
+                                          destroyFixedMemoryProviderParams}));
 
 // this test makes sure that jemalloc does not use
 // memory provider to allocate metadata (and hence

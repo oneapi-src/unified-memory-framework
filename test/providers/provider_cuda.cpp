@@ -142,14 +142,15 @@ struct umfCUDAProviderTest
 
         memAccessor = nullptr;
         expected_context = cudaTestHelper.get_test_context();
+        expected_device = cudaTestHelper.get_test_device();
         params = create_cuda_prov_params(cudaTestHelper.get_test_context(),
                                          cudaTestHelper.get_test_device(),
                                          memory_type, 0 /* alloc flags */);
         ASSERT_NE(expected_context, nullptr);
+        ASSERT_GE(expected_device, 0);
 
         switch (memory_type) {
         case UMF_MEMORY_TYPE_DEVICE:
-
             memAccessor = std::make_unique<CUDAMemoryAccessor>(
                 cudaTestHelper.get_test_context(),
                 cudaTestHelper.get_test_device());
@@ -178,6 +179,7 @@ struct umfCUDAProviderTest
 
     std::unique_ptr<MemoryAccessor> memAccessor = nullptr;
     CUcontext expected_context = nullptr;
+    int expected_device = -1;
     umf_usm_memory_type_t expected_memory_type;
 };
 
@@ -326,6 +328,44 @@ TEST_P(umfCUDAProviderTest, getPageSizeInvalidArgs) {
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 
     umfMemoryProviderDestroy(provider);
+}
+
+TEST_P(umfCUDAProviderTest, cudaProviderDefaultParams) {
+    umf_cuda_memory_provider_params_handle_t defaultParams = nullptr;
+    umf_result_t umf_result = umfCUDAMemoryProviderParamsCreate(&defaultParams);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umf_result = umfCUDAMemoryProviderParamsSetMemoryType(defaultParams,
+                                                          expected_memory_type);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    // NOTE: we intentionally do not set any context and device params
+
+    umf_memory_provider_handle_t provider = nullptr;
+    umf_result = umfMemoryProviderCreate(umfCUDAMemoryProviderOps(),
+                                         defaultParams, &provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(provider, nullptr);
+
+    // do single alloc and check if the context and device id of allocated
+    // memory are correct
+
+    void *ptr = nullptr;
+    umf_result = umfMemoryProviderAlloc(provider, 128, 0, &ptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(ptr, nullptr);
+
+    CUcontext actual_mem_context = get_mem_context(ptr);
+    ASSERT_EQ(actual_mem_context, expected_context);
+
+    int actual_device = get_mem_device(ptr);
+    ASSERT_EQ(actual_device, expected_device);
+
+    umf_result = umfMemoryProviderFree(provider, ptr, 128);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umfMemoryProviderDestroy(provider);
+    umfCUDAMemoryProviderParamsDestroy(defaultParams);
 }
 
 TEST_P(umfCUDAProviderTest, cudaProviderNullParams) {

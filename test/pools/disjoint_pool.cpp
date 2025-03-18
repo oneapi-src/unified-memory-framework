@@ -40,7 +40,7 @@ TEST_F(test, internals) {
         }
     };
     umf_memory_provider_ops_t provider_ops =
-        umf::providerMakeCOps<memory_provider, void>();
+        umf_test::providerMakeCOps<memory_provider, void>();
 
     auto providerUnique =
         wrapProviderUnique(createProviderChecked(&provider_ops, nullptr));
@@ -113,9 +113,8 @@ TEST_F(test, internals) {
     EXPECT_GE(slab->num_chunks_total, slab->slab_size / bucket->size);
 
     // check allocation in slab
-    EXPECT_EQ(slab->chunks[0], true);
-    EXPECT_EQ(slab->chunks[1], false);
-    EXPECT_EQ(slab->first_free_chunk_idx, 1);
+    EXPECT_EQ(slab_read_chunk_bit(slab, 0), false);
+    EXPECT_EQ(slab_read_chunk_bit(slab, 1), true);
 
     // TODO:
     // * multiple alloc + free from single bucket
@@ -152,7 +151,7 @@ TEST_F(test, freeErrorPropagation) {
         }
     };
     umf_memory_provider_ops_t provider_ops =
-        umf::providerMakeCOps<memory_provider, void>();
+        umf_test::providerMakeCOps<memory_provider, void>();
 
     auto providerUnique =
         wrapProviderUnique(createProviderChecked(&provider_ops, nullptr));
@@ -207,7 +206,7 @@ TEST_F(test, sharedLimits) {
         }
     };
     umf_memory_provider_ops_t provider_ops =
-        umf::providerMakeCOps<memory_provider, void>();
+        umf_test::providerMakeCOps<memory_provider, void>();
 
     static constexpr size_t SlabMinSize = 1024;
     static constexpr size_t MaxSize = 4 * SlabMinSize;

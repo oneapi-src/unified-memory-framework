@@ -139,6 +139,7 @@ typedef struct cu_ops_t {
     CUresult (*cuGetErrorName)(CUresult error, const char **pStr);
     CUresult (*cuGetErrorString)(CUresult error, const char **pStr);
     CUresult (*cuCtxGetCurrent)(CUcontext *pctx);
+    CUresult (*cuCtxGetDevice)(CUdevice *device);
     CUresult (*cuCtxSetCurrent)(CUcontext ctx);
     CUresult (*cuIpcGetMemHandle)(CUipcMemHandle *pHandle, CUdeviceptr dptr);
     CUresult (*cuIpcOpenMemHandle)(CUdeviceptr *pdptr, CUipcMemHandle handle,
@@ -178,6 +179,9 @@ static umf_result_t cu2umf_result(CUresult result) {
     case CUDA_ERROR_INVALID_VALUE:
     case CUDA_ERROR_INVALID_HANDLE:
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    case CUDA_ERROR_DEINITIALIZED:
+        LOG_ERR("CUDA driver has been deinitialized");
+        return UMF_RESULT_ERROR_OUT_OF_RESOURCES;
     default:
         cu_store_last_native_error(result);
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
@@ -221,6 +225,8 @@ static void init_cu_global_state(void) {
         utils_get_symbol_addr(lib_handle, "cuGetErrorString", lib_name);
     *(void **)&g_cu_ops.cuCtxGetCurrent =
         utils_get_symbol_addr(lib_handle, "cuCtxGetCurrent", lib_name);
+    *(void **)&g_cu_ops.cuCtxGetDevice =
+        utils_get_symbol_addr(lib_handle, "cuCtxGetDevice", lib_name);
     *(void **)&g_cu_ops.cuCtxSetCurrent =
         utils_get_symbol_addr(lib_handle, "cuCtxSetCurrent", lib_name);
     *(void **)&g_cu_ops.cuIpcGetMemHandle =
@@ -234,9 +240,9 @@ static void init_cu_global_state(void) {
         !g_cu_ops.cuMemHostAlloc || !g_cu_ops.cuMemAllocManaged ||
         !g_cu_ops.cuMemFree || !g_cu_ops.cuMemFreeHost ||
         !g_cu_ops.cuGetErrorName || !g_cu_ops.cuGetErrorString ||
-        !g_cu_ops.cuCtxGetCurrent || !g_cu_ops.cuCtxSetCurrent ||
-        !g_cu_ops.cuIpcGetMemHandle || !g_cu_ops.cuIpcOpenMemHandle ||
-        !g_cu_ops.cuIpcCloseMemHandle) {
+        !g_cu_ops.cuCtxGetCurrent || !g_cu_ops.cuCtxGetDevice ||
+        !g_cu_ops.cuCtxSetCurrent || !g_cu_ops.cuIpcGetMemHandle ||
+        !g_cu_ops.cuIpcOpenMemHandle || !g_cu_ops.cuIpcCloseMemHandle) {
         LOG_FATAL("Required CUDA symbols not found.");
         Init_cu_global_state_failed = true;
         utils_close_library(lib_handle);
@@ -260,8 +266,29 @@ umf_result_t umfCUDAMemoryProviderParamsCreate(
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    params_data->cuda_context_handle = NULL;
-    params_data->cuda_device_handle = -1;
+    utils_init_once(&cu_is_initialized, init_cu_global_state);
+    if (Init_cu_global_state_failed) {
+        LOG_FATAL("Loading CUDA symbols failed");
+        return UMF_RESULT_ERROR_DEPENDENCY_UNAVAILABLE;
+    }
+
+    // initialize context and device to the current ones
+    CUcontext current_ctx = NULL;
+    CUresult cu_result = g_cu_ops.cuCtxGetCurrent(&current_ctx);
+    if (cu_result == CUDA_SUCCESS) {
+        params_data->cuda_context_handle = current_ctx;
+    } else {
+        params_data->cuda_context_handle = NULL;
+    }
+
+    CUdevice current_device = -1;
+    cu_result = g_cu_ops.cuCtxGetDevice(&current_device);
+    if (cu_result == CUDA_SUCCESS) {
+        params_data->cuda_device_handle = current_device;
+    } else {
+        params_data->cuda_device_handle = -1;
+    }
+
     params_data->memory_type = UMF_MEMORY_TYPE_UNKNOWN;
     params_data->alloc_flags = 0;
 
@@ -342,6 +369,12 @@ static umf_result_t cu_memory_provider_initialize(void *params,
     }
 
     if (cu_params->cuda_context_handle == NULL) {
+        LOG_ERR("Invalid context handle");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (cu_params->cuda_device_handle < 0) {
+        LOG_ERR("Invalid device handle");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -539,22 +572,41 @@ static void cu_memory_provider_get_last_native_error(void *provider,
         return;
     }
 
-    const char *error_name = 0;
-    const char *error_string = 0;
-    g_cu_ops.cuGetErrorName(TLS_last_native_error.native_error, &error_name);
-    g_cu_ops.cuGetErrorString(TLS_last_native_error.native_error,
-                              &error_string);
-
+    CUresult result;
     size_t buf_size = 0;
-    strncpy(TLS_last_native_error.msg_buff, error_name, TLS_MSG_BUF_LEN - 1);
-    buf_size = strlen(TLS_last_native_error.msg_buff);
+    const char *error_name = NULL;
+    const char *error_string = NULL;
 
+    // If the error code is not recognized,
+    // CUDA_ERROR_INVALID_VALUE will be returned
+    // and error_name will be set to the NULL address.
+    result = g_cu_ops.cuGetErrorName(TLS_last_native_error.native_error,
+                                     &error_name);
+    if (result == CUDA_SUCCESS && error_name != NULL) {
+        strncpy(TLS_last_native_error.msg_buff, error_name,
+                TLS_MSG_BUF_LEN - 1);
+    } else {
+        strncpy(TLS_last_native_error.msg_buff, "cuGetErrorName() failed",
+                TLS_MSG_BUF_LEN - 1);
+    }
+
+    buf_size = strlen(TLS_last_native_error.msg_buff);
     strncat(TLS_last_native_error.msg_buff, " - ",
             TLS_MSG_BUF_LEN - buf_size - 1);
     buf_size = strlen(TLS_last_native_error.msg_buff);
 
-    strncat(TLS_last_native_error.msg_buff, error_string,
-            TLS_MSG_BUF_LEN - buf_size - 1);
+    // If the error code is not recognized,
+    // CUDA_ERROR_INVALID_VALUE will be returned
+    // and error_string will be set to the NULL address.
+    result = g_cu_ops.cuGetErrorString(TLS_last_native_error.native_error,
+                                       &error_string);
+    if (result == CUDA_SUCCESS && error_string != NULL) {
+        strncat(TLS_last_native_error.msg_buff, error_string,
+                TLS_MSG_BUF_LEN - buf_size - 1);
+    } else {
+        strncat(TLS_last_native_error.msg_buff, "cuGetErrorString() failed",
+                TLS_MSG_BUF_LEN - buf_size - 1);
+    }
 
     *pError = TLS_last_native_error.native_error;
     *ppMessage = TLS_last_native_error.msg_buff;

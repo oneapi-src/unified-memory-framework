@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 Intel Corporation
+// Copyright (C) 2023-2025 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // This file contains tests for UMF provider API
@@ -335,7 +335,7 @@ TEST_P(providerInitializeTest, errorPropagation) {
         }
     };
     umf_memory_provider_ops_t provider_ops =
-        umf::providerMakeCOps<provider, umf_result_t>();
+        umf_test::providerMakeCOps<provider, umf_result_t>();
 
     umf_memory_provider_handle_t hProvider;
     auto ret = umfMemoryProviderCreate(&provider_ops, (void *)&this->GetParam(),

@@ -64,6 +64,7 @@
 #include "utils_assert.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
+#include "utils_math.h"
 
 /*
  * A node that has been deleted is left untouched for this many delete
@@ -367,7 +368,7 @@ int critnib_insert(struct critnib *c, word key, void *value, int update) {
     }
 
     /* and convert that to an index. */
-    sh_t sh = utils_mssb_index(at) & (sh_t) ~(SLICE - 1);
+    sh_t sh = utils_msb64(at) & (sh_t) ~(SLICE - 1);
 
     struct critnib_node *m = alloc_node(c);
     if (!m) {
@@ -524,7 +525,9 @@ find_predecessor(struct critnib_node *__restrict n) {
     while (1) {
         int nib;
         for (nib = NIB; nib >= 0; nib--) {
-            if (n->child[nib]) {
+            struct critnib_node *m;
+            utils_atomic_load_acquire_ptr((void **)&n->child[nib], (void **)&m);
+            if (m) {
                 break;
             }
         }
@@ -533,7 +536,12 @@ find_predecessor(struct critnib_node *__restrict n) {
             return NULL;
         }
 
-        n = n->child[nib];
+        utils_atomic_load_acquire_ptr((void **)&n->child[nib], (void **)&n);
+
+        if (!n) {
+            return NULL;
+        }
+
         if (is_leaf(n)) {
             return to_leaf(n);
         }
@@ -637,7 +645,9 @@ static struct critnib_leaf *find_successor(struct critnib_node *__restrict n) {
     while (1) {
         unsigned nib;
         for (nib = 0; nib <= NIB; nib++) {
-            if (n->child[nib]) {
+            struct critnib_node *m;
+            utils_atomic_load_acquire_ptr((void **)&n->child[nib], (void **)&m);
+            if (m) {
                 break;
             }
         }
@@ -646,7 +656,12 @@ static struct critnib_leaf *find_successor(struct critnib_node *__restrict n) {
             return NULL;
         }
 
-        n = n->child[nib];
+        utils_atomic_load_acquire_ptr((void **)&n->child[nib], (void **)&n);
+
+        if (!n) {
+            return NULL;
+        }
+
         if (is_leaf(n)) {
             return to_leaf(n);
         }

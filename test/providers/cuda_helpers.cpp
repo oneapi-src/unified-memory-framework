@@ -412,6 +412,18 @@ CUcontext get_mem_context(void *ptr) {
     return context;
 }
 
+int get_mem_device(void *ptr) {
+    int device;
+    CUresult res = libcu_ops.cuPointerGetAttribute(
+        &device, CU_POINTER_ATTRIBUTE_DEVICE_ORDINAL, (CUdeviceptr)ptr);
+    if (res != CUDA_SUCCESS) {
+        fprintf(stderr, "cuPointerGetAttribute() failed!\n");
+        return -1;
+    }
+
+    return device;
+}
+
 CUcontext get_current_context() {
     CUcontext context;
     CUresult res = libcu_ops.cuCtxGetCurrent(&context);

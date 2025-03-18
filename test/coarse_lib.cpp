@@ -99,7 +99,7 @@ static void coarse_params_set_default(coarse_params_t *coarse_params,
 }
 
 umf_memory_provider_ops_t UMF_MALLOC_MEMORY_PROVIDER_OPS =
-    umf::providerMakeCOps<umf_test::provider_ba_global, void>();
+    umf_test::providerMakeCOps<umf_test::provider_ba_global, void>();
 
 struct CoarseWithMemoryStrategyTest
     : umf_test::test,

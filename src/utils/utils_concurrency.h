@@ -89,18 +89,6 @@ void utils_init_once(UTIL_ONCE_FLAG *flag, void (*onceCb)(void));
 
 #if defined(_WIN32)
 
-static inline unsigned char utils_lssb_index(long long value) {
-    unsigned long ret;
-    _BitScanForward64(&ret, value);
-    return (unsigned char)ret;
-}
-
-static inline unsigned char utils_mssb_index(long long value) {
-    unsigned long ret;
-    _BitScanReverse64(&ret, value);
-    return (unsigned char)ret;
-}
-
 // There is no good way to do atomic_load on windows...
 static inline void utils_atomic_load_acquire_u64(uint64_t *ptr, uint64_t *out) {
     // NOTE: Windows cl complains about direct accessing 'ptr' which is next
@@ -168,10 +156,18 @@ static inline bool utils_compare_exchange_u64(uint64_t *ptr, uint64_t *expected,
     return false;
 }
 
-#else // !defined(_WIN32)
+static inline void utils_atomic_store_release_u64(void *ptr, uint64_t val) {
+    ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
+    LONG64 out;
+    LONG64 desired = (LONG64)val;
+    LONG64 expected = 0;
+    while (expected != (out = InterlockedCompareExchange64(
+                            (LONG64 volatile *)ptr, desired, expected))) {
+        expected = out;
+    }
+}
 
-#define utils_lssb_index(x) ((unsigned char)__builtin_ctzll(x))
-#define utils_mssb_index(x) ((unsigned char)(63 - __builtin_clzll(x)))
+#else // !defined(_WIN32)
 
 static inline void utils_atomic_load_acquire_u64(uint64_t *ptr, uint64_t *out) {
     ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
@@ -187,10 +183,9 @@ static inline void utils_atomic_load_acquire_ptr(void **ptr, void **out) {
     utils_annotate_acquire(ptr);
 }
 
-static inline void utils_atomic_store_release_u64(uint64_t *ptr, uint64_t val) {
+static inline void utils_atomic_store_release_u64(void *ptr, uint64_t val) {
     ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
-    utils_annotate_release(ptr);
-    __atomic_store_n(ptr, val, memory_order_release);
+    __atomic_store_n((uintptr_t *)ptr, (uintptr_t)val, memory_order_release);
 }
 
 static inline void utils_atomic_store_release_ptr(void **ptr, void *val) {

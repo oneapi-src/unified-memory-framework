@@ -1,11 +1,11 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2025 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 #include "base.hpp"
 
-#include "cpp_helpers.hpp"
 #include "test_helpers.h"
+#include "utils/cpp_helpers.hpp"
 #ifndef _WIN32
 #include "test_helpers_linux.h"
 #endif
@@ -42,7 +42,7 @@ static int compare_native_error_str(const char *message, int error) {
 using providerCreateExtParams = std::tuple<umf_memory_provider_ops_t *, void *>;
 
 static void providerCreateExt(providerCreateExtParams params,
-                              umf::provider_unique_handle_t *handle) {
+                              umf_test::provider_unique_handle_t *handle) {
     umf_memory_provider_handle_t hProvider = nullptr;
     auto [provider_ops, provider_params] = params;
 
@@ -51,8 +51,8 @@ static void providerCreateExt(providerCreateExtParams params,
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
     ASSERT_NE(hProvider, nullptr);
 
-    *handle =
-        umf::provider_unique_handle_t(hProvider, &umfMemoryProviderDestroy);
+    *handle = umf_test::provider_unique_handle_t(hProvider,
+                                                 &umfMemoryProviderDestroy);
 }
 
 struct FileProviderParamsDefault
@@ -70,7 +70,7 @@ struct FileProviderParamsDefault
 
     void TearDown() override { test::TearDown(); }
 
-    umf::provider_unique_handle_t provider;
+    umf_test::provider_unique_handle_t provider;
     size_t page_size;
     size_t page_plus_64;
 };

@@ -59,7 +59,7 @@ static __TLS umf_result_t TLS_last_allocation_error;
 // The largest size which is allocated via the allocator.
 // Allocations with size > CutOff bypass the pool and
 // go directly to the provider.
-static size_t CutOff = (size_t)1 << 31; // 2GB
+static const size_t CutOff = (size_t)1 << 31; // 2GB
 
 static size_t bucket_slab_min_size(bucket_t *bucket) {
     return bucket->pool->params.slab_min_size;
@@ -75,28 +75,36 @@ static slab_t *create_slab(bucket_t *bucket) {
     umf_result_t res = UMF_RESULT_SUCCESS;
     umf_memory_provider_handle_t provider = bucket->pool->provider;
 
-    slab_t *slab = umf_ba_global_alloc(sizeof(*slab));
+    size_t num_chunks_total =
+        utils_max(bucket_slab_min_size(bucket) / bucket->size, 1);
+
+    // Calculate the number of 64-bit words needed.
+    size_t num_words =
+        (num_chunks_total + CHUNK_BITMAP_SIZE - 1) / CHUNK_BITMAP_SIZE;
+
+    slab_t *slab = umf_ba_global_alloc(sizeof(*slab) +
+                                       num_words * sizeof(slab->chunks[0]));
     if (slab == NULL) {
         LOG_ERR("allocation of new slab failed!");
         return NULL;
     }
 
     slab->num_chunks_allocated = 0;
-    slab->first_free_chunk_idx = 0;
     slab->bucket = bucket;
 
     slab->iter.val = slab;
     slab->iter.prev = slab->iter.next = NULL;
 
-    slab->num_chunks_total =
-        utils_max(bucket_slab_min_size(bucket) / bucket->size, 1);
-    slab->chunks =
-        umf_ba_global_alloc(sizeof(*slab->chunks) * slab->num_chunks_total);
-    if (slab->chunks == NULL) {
-        LOG_ERR("allocation of slab chunks failed!");
-        goto free_slab;
+    slab->num_chunks_total = num_chunks_total;
+    slab->num_words = num_words;
+
+    // set all chunks as free
+    memset(slab->chunks, ~0, num_words * sizeof(slab->chunks[0]));
+    if (num_chunks_total % CHUNK_BITMAP_SIZE) {
+        // clear remaining bits
+        slab->chunks[num_words - 1] =
+            ((1ULL << (num_chunks_total % CHUNK_BITMAP_SIZE)) - 1);
     }
-    memset(slab->chunks, 0, sizeof(*slab->chunks) * slab->num_chunks_total);
 
     // if slab_min_size is not a multiple of bucket size, we would have some
     // padding at the end of the slab
@@ -108,7 +116,7 @@ static slab_t *create_slab(bucket_t *bucket) {
     res = umfMemoryProviderAlloc(provider, slab->slab_size, 0, &slab->mem_ptr);
     if (res != UMF_RESULT_SUCCESS) {
         LOG_ERR("allocation of slab data failed!");
-        goto free_slab_chunks;
+        goto free_slab;
     }
 
     // raw allocation is not available for user so mark it as inaccessible
@@ -116,9 +124,6 @@ static slab_t *create_slab(bucket_t *bucket) {
 
     LOG_DEBUG("bucket: %p, slab_size: %zu", (void *)bucket, slab->slab_size);
     return slab;
-
-free_slab_chunks:
-    umf_ba_global_free(slab->chunks);
 
 free_slab:
     umf_ba_global_free(slab);
@@ -136,25 +141,21 @@ static void destroy_slab(slab_t *slab) {
         LOG_ERR("deallocation of slab data failed!");
     }
 
-    umf_ba_global_free(slab->chunks);
     umf_ba_global_free(slab);
 }
 
-// return the index of the first available chunk, SIZE_MAX otherwise
 static size_t slab_find_first_available_chunk_idx(const slab_t *slab) {
-    // use the first free chunk index as a hint for the search
-    for (bool *chunk = slab->chunks + slab->first_free_chunk_idx;
-         chunk != slab->chunks + slab->num_chunks_total; chunk++) {
-
-        // false means not used
-        if (*chunk == false) {
-            size_t idx = chunk - slab->chunks;
-            LOG_DEBUG("idx: %zu", idx);
-            return idx;
+    for (size_t i = 0; i < slab->num_words; i++) {
+        // NOTE: free chunks are represented as set bits
+        uint64_t word = slab->chunks[i];
+        if (word != 0) {
+            size_t bit_index = utils_lsb64(word);
+            size_t free_chunk = i * CHUNK_BITMAP_SIZE + bit_index;
+            return free_chunk;
         }
     }
 
-    LOG_DEBUG("idx: SIZE_MAX");
+    // No free chunk was found.
     return SIZE_MAX;
 }
 
@@ -167,11 +168,8 @@ static void *slab_get_chunk(slab_t *slab) {
         (void *)((uintptr_t)slab->mem_ptr + chunk_idx * slab->bucket->size);
 
     // mark chunk as used
-    slab->chunks[chunk_idx] = true;
+    slab_set_chunk_bit(slab, chunk_idx, false);
     slab->num_chunks_allocated += 1;
-
-    // use the found index as the next hint
-    slab->first_free_chunk_idx = chunk_idx + 1;
 
     return free_chunk;
 }
@@ -195,18 +193,9 @@ static void slab_free_chunk(slab_t *slab, void *ptr) {
     size_t chunk_idx = ptr_diff / slab->bucket->size;
 
     // Make sure that the chunk was allocated
-    assert(slab->chunks[chunk_idx] && "double free detected");
-    slab->chunks[chunk_idx] = false;
+    assert(slab_read_chunk_bit(slab, chunk_idx) == 0 && "double free detected");
+    slab_set_chunk_bit(slab, chunk_idx, true);
     slab->num_chunks_allocated -= 1;
-
-    if (chunk_idx < slab->first_free_chunk_idx) {
-        slab->first_free_chunk_idx = chunk_idx;
-    }
-
-    LOG_DEBUG("chunk_idx: %zu, num_chunks_allocated: %zu, "
-              "first_free_chunk_idx: %zu",
-              chunk_idx, slab->num_chunks_allocated,
-              slab->first_free_chunk_idx);
 }
 
 static bool slab_has_avail(const slab_t *slab) {
@@ -466,9 +455,9 @@ static size_t size_to_idx(disjoint_pool_t *pool, size_t size) {
     }
 
     // get the position of the leftmost set bit
-    size_t position = getLeftmostSetBitPos(size);
+    size_t position = utils_msb64(size);
 
-    bool is_power_of_2 = 0 == (size & (size - 1));
+    bool is_power_of_2 = IS_POWER_OF_2(size);
     bool larger_than_halfway_between_powers_of_2 =
         !is_power_of_2 &&
         (bool)((size - 1) & ((uint64_t)(1) << (position - 1)));
@@ -588,12 +577,6 @@ umf_result_t disjoint_pool_initialize(umf_memory_provider_handle_t provider,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    disjoint_pool_t *disjoint_pool =
-        umf_ba_global_alloc(sizeof(*disjoint_pool));
-    if (!disjoint_pool) {
-        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-    }
-
     umf_disjoint_pool_params_t *dp_params =
         (umf_disjoint_pool_params_t *)params;
 
@@ -604,12 +587,21 @@ umf_result_t disjoint_pool_initialize(umf_memory_provider_handle_t provider,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
+    disjoint_pool_t *disjoint_pool =
+        umf_ba_global_alloc(sizeof(*disjoint_pool));
+    if (disjoint_pool == NULL) {
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
     VALGRIND_DO_CREATE_MEMPOOL(disjoint_pool, 0, 0);
 
     disjoint_pool->provider = provider;
     disjoint_pool->params = *dp_params;
 
     disjoint_pool->known_slabs = critnib_new();
+    if (disjoint_pool->known_slabs == NULL) {
+        goto err_free_disjoint_pool;
+    }
 
     // Generate buckets sized such as: 64, 96, 128, 192, ..., CutOff.
     // Powers of 2 and the value halfway between the powers of 2.
@@ -622,21 +614,29 @@ umf_result_t disjoint_pool_initialize(umf_memory_provider_handle_t provider,
     Size1 = utils_max(Size1, UMF_DISJOINT_POOL_MIN_BUCKET_DEFAULT_SIZE);
 
     // Calculate the exponent for min_bucket_size used for finding buckets.
-    disjoint_pool->min_bucket_size_exp = (size_t)log2Utils(Size1);
+    disjoint_pool->min_bucket_size_exp = (size_t)utils_msb64(Size1);
     disjoint_pool->default_shared_limits =
         umfDisjointPoolSharedLimitsCreate(SIZE_MAX);
+    if (disjoint_pool->default_shared_limits == NULL) {
+        goto err_free_known_slabs;
+    }
 
     // count number of buckets, start from 1
     disjoint_pool->buckets_num = 1;
     size_t Size2 = Size1 + Size1 / 2;
     size_t ts2 = Size2, ts1 = Size1;
-    for (; Size2 < CutOff; Size1 *= 2, Size2 *= 2) {
+    while (Size2 < CutOff) {
         disjoint_pool->buckets_num += 2;
+        Size2 *= 2;
     }
+
     disjoint_pool->buckets = umf_ba_global_alloc(
         sizeof(*disjoint_pool->buckets) * disjoint_pool->buckets_num);
+    if (disjoint_pool->buckets == NULL) {
+        goto err_free_shared_limits;
+    }
 
-    int i = 0;
+    size_t i = 0;
     Size1 = ts1;
     Size2 = ts2;
     for (; Size2 < CutOff; Size1 *= 2, Size2 *= 2, i += 2) {
@@ -648,6 +648,13 @@ umf_result_t disjoint_pool_initialize(umf_memory_provider_handle_t provider,
     disjoint_pool->buckets[i] = create_bucket(
         CutOff, disjoint_pool, disjoint_pool_get_limits(disjoint_pool));
 
+    // check if all buckets were created successfully
+    for (i = 0; i < disjoint_pool->buckets_num; i++) {
+        if (disjoint_pool->buckets[i] == NULL) {
+            goto err_free_buckets;
+        }
+    }
+
     umf_result_t ret = umfMemoryProviderGetMinPageSize(
         provider, NULL, &disjoint_pool->provider_min_page_size);
     if (ret != UMF_RESULT_SUCCESS) {
@@ -657,6 +664,25 @@ umf_result_t disjoint_pool_initialize(umf_memory_provider_handle_t provider,
     *ppPool = (void *)disjoint_pool;
 
     return UMF_RESULT_SUCCESS;
+
+err_free_buckets:
+    for (i = 0; i < disjoint_pool->buckets_num; i++) {
+        if (disjoint_pool->buckets[i] != NULL) {
+            destroy_bucket(disjoint_pool->buckets[i]);
+        }
+    }
+    umf_ba_global_free(disjoint_pool->buckets);
+
+err_free_shared_limits:
+    umfDisjointPoolSharedLimitsDestroy(disjoint_pool->default_shared_limits);
+
+err_free_known_slabs:
+    critnib_delete(disjoint_pool->known_slabs);
+
+err_free_disjoint_pool:
+    umf_ba_global_free(disjoint_pool);
+
+    return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
 }
 
 void *disjoint_pool_malloc(void *pool, size_t size) {
@@ -767,6 +793,14 @@ void *disjoint_pool_aligned_malloc(void *pool, size_t size, size_t alignment) {
     return aligned_ptr;
 }
 
+static size_t get_chunk_idx(void *ptr, slab_t *slab) {
+    return (((uintptr_t)ptr - (uintptr_t)slab->mem_ptr) / slab->bucket->size);
+}
+
+static void *get_unaligned_ptr(size_t chunk_idx, slab_t *slab) {
+    return (void *)((uintptr_t)slab->mem_ptr + chunk_idx * slab->bucket->size);
+}
+
 size_t disjoint_pool_malloc_usable_size(void *pool, void *ptr) {
     disjoint_pool_t *disjoint_pool = (disjoint_pool_t *)pool;
     if (ptr == NULL) {
@@ -788,10 +822,8 @@ size_t disjoint_pool_malloc_usable_size(void *pool, void *ptr) {
     }
     // Get the unaligned pointer
     // NOTE: the base pointer slab->mem_ptr needn't to be aligned to bucket size
-    size_t chunk_idx =
-        (((uintptr_t)ptr - (uintptr_t)slab->mem_ptr) / slab->bucket->size);
-    void *unaligned_ptr =
-        (void *)((uintptr_t)slab->mem_ptr + chunk_idx * slab->bucket->size);
+    size_t chunk_idx = get_chunk_idx(ptr, slab);
+    void *unaligned_ptr = get_unaligned_ptr(chunk_idx, slab);
 
     ptrdiff_t diff = (ptrdiff_t)ptr - (ptrdiff_t)unaligned_ptr;
 
@@ -847,10 +879,8 @@ umf_result_t disjoint_pool_free(void *pool, void *ptr) {
 
     // Get the unaligned pointer
     // NOTE: the base pointer slab->mem_ptr needn't to be aligned to bucket size
-    size_t chunk_idx =
-        (((uintptr_t)ptr - (uintptr_t)slab->mem_ptr) / slab->bucket->size);
-    void *unaligned_ptr =
-        (void *)((uintptr_t)slab->mem_ptr + chunk_idx * slab->bucket->size);
+    size_t chunk_idx = get_chunk_idx(ptr, slab);
+    void *unaligned_ptr = get_unaligned_ptr(chunk_idx, slab);
 
     utils_annotate_memory_inaccessible(unaligned_ptr, bucket->size);
     bucket_free_chunk(bucket, unaligned_ptr, slab, &to_pool);
@@ -876,13 +906,11 @@ umf_result_t disjoint_pool_free(void *pool, void *ptr) {
 
 umf_result_t disjoint_pool_get_last_allocation_error(void *pool) {
     (void)pool;
-
     return TLS_last_allocation_error;
 }
 
 // Define destructor for use with unique_ptr
 void disjoint_pool_finalize(void *pool) {
-
     disjoint_pool_t *hPool = (disjoint_pool_t *)pool;
 
     if (hPool->params.pool_trace > 1) {
@@ -937,7 +965,7 @@ void umfDisjointPoolSharedLimitsDestroy(
 
 umf_result_t
 umfDisjointPoolParamsCreate(umf_disjoint_pool_params_handle_t *hParams) {
-    static const char *DEFAULT_NAME = "disjoint_pool";
+    static char *DEFAULT_NAME = "disjoint_pool";
 
     if (!hParams) {
         LOG_ERR("disjoint pool params handle is NULL");
@@ -951,20 +979,16 @@ umfDisjointPoolParamsCreate(umf_disjoint_pool_params_handle_t *hParams) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    params->slab_min_size = 0;
-    params->max_poolable_size = 0;
-    params->capacity = 0;
-    params->min_bucket_size = UMF_DISJOINT_POOL_MIN_BUCKET_DEFAULT_SIZE;
-    params->cur_pool_size = 0;
-    params->pool_trace = 0;
-    params->shared_limits = NULL;
-    params->name = NULL;
-
-    umf_result_t ret = umfDisjointPoolParamsSetName(params, DEFAULT_NAME);
-    if (ret != UMF_RESULT_SUCCESS) {
-        umf_ba_global_free(params);
-        return ret;
-    }
+    *params = (umf_disjoint_pool_params_t){
+        .slab_min_size = 0,
+        .max_poolable_size = 0,
+        .capacity = 0,
+        .min_bucket_size = UMF_DISJOINT_POOL_MIN_BUCKET_DEFAULT_SIZE,
+        .cur_pool_size = 0,
+        .pool_trace = 0,
+        .shared_limits = NULL,
+        .name = {*DEFAULT_NAME},
+    };
 
     *hParams = params;
 
@@ -975,7 +999,6 @@ umf_result_t
 umfDisjointPoolParamsDestroy(umf_disjoint_pool_params_handle_t hParams) {
     // NOTE: dereferencing hParams when BA is already destroyed leads to crash
     if (hParams && !umf_ba_global_is_destroyed()) {
-        umf_ba_global_free(hParams->name);
         umf_ba_global_free(hParams);
     }
 
@@ -1067,15 +1090,6 @@ umfDisjointPoolParamsSetName(umf_disjoint_pool_params_handle_t hParams,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    char *newName = umf_ba_global_alloc(sizeof(*newName) * (strlen(name) + 1));
-    if (newName == NULL) {
-        LOG_ERR("cannot allocate memory for disjoint pool name");
-        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-    }
-
-    umf_ba_global_free(hParams->name);
-    hParams->name = newName;
-    strcpy(hParams->name, name);
-
+    strncpy(hParams->name, name, sizeof(hParams->name) - 1);
     return UMF_RESULT_SUCCESS;
 }

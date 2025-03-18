@@ -116,8 +116,9 @@ function(add_umf_test)
     # * NAME - a name of the test
     # * SRCS - source files
     # * LIBS - libraries to be linked with
+    # * ENVS - environment variables
     set(oneValueArgs NAME)
-    set(multiValueArgs SRCS LIBS)
+    set(multiValueArgs SRCS LIBS ENVS)
     cmake_parse_arguments(
         ARG
         ""
@@ -139,6 +140,9 @@ function(add_umf_test)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
     set_tests_properties(${TEST_NAME} PROPERTIES LABELS "umf")
+    if(ARG_ENVS)
+        set_tests_properties(${TEST_NAME} PROPERTIES ENVIRONMENT ${ARG_ENVS})
+    endif()
 
     if(WINDOWS)
         # add PATH to DLL on Windows
@@ -349,6 +353,15 @@ if(LINUX AND (NOT UMF_DISABLE_HWLOC)) # OS-specific functions are implemented
         NAME provider_fixed_memory
         SRCS provider_fixed_memory.cpp
         LIBS ${UMF_UTILS_FOR_TEST})
+    add_umf_test(
+        NAME provider_tracking
+        SRCS provider_tracking.cpp
+        LIBS ${UMF_UTILS_FOR_TEST})
+    add_umf_test(
+        NAME provider_tracking_fixture_tests
+        SRCS provider_tracking_fixture_tests.cpp malloc_compliance_tests.cpp
+             ${BA_SOURCES_FOR_TEST}
+        LIBS ${UMF_UTILS_FOR_TEST})
 
     # This test requires Linux-only file memory provider
     if(UMF_POOL_JEMALLOC_ENABLED)
@@ -520,6 +533,12 @@ add_umf_test(
     NAME ipc
     SRCS ipcAPI.cpp ${BA_SOURCES_FOR_TEST}
     LIBS ${UMF_UTILS_FOR_TEST})
+
+add_umf_test(
+    NAME ipc_max_opened_limit
+    SRCS ipcAPI.cpp ${BA_SOURCES_FOR_TEST}
+    LIBS ${UMF_UTILS_FOR_TEST}
+    ENVS "UMF_MAX_OPENED_IPC_HANDLES=10")
 
 add_umf_test(NAME ipc_negative SRCS ipc_negative.cpp)
 
