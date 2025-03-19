@@ -66,18 +66,20 @@ typedef enum umf_ctl_query_type {
 /// @param name name of an attribute to be retrieved
 /// @param ctx pointer to the pool or the provider
 /// @param arg [out] pointer to the variable where the value will be stored
+/// @param size [in/out] size of the value
 /// @return UMF_RESULT_SUCCESS on success or UMF_RESULT_ERROR_UNKNOWN on failure.
 ///
-umf_result_t umfCtlGet(const char *name, void *ctx, void *arg);
+umf_result_t umfCtlGet(const char *name, void *ctx, void *arg, size_t size);
 
 ///
 /// @brief Set value of a specified attribute at the given name.
 /// @param name name of an attribute to be set
 /// @param ctx pointer to the pool or the provider
 /// @param arg [in] pointer to the value that will be set
+/// @param size [in] size of the value
 /// @return UMF_RESULT_SUCCESS on success or UMF_RESULT_ERROR_UNKNOWN on failure.
 ///
-umf_result_t umfCtlSet(const char *name, void *ctx, void *arg);
+umf_result_t umfCtlSet(const char *name, void *ctx, void *arg, size_t size);
 
 ///
 /// @brief Execute callback related with the specified attribute.

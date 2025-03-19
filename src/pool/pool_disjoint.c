@@ -17,6 +17,7 @@
 #include <umf/memory_provider.h>
 
 #include "base_alloc_global.h"
+#include "pool_disjoint_ctl.h"
 #include "pool_disjoint_internal.h"
 #include "provider/provider_tracking.h"
 #include "uthash/utlist.h"
@@ -929,6 +930,11 @@ void disjoint_pool_finalize(void *pool) {
     umf_ba_global_free(hPool);
 }
 
+const char *disjoint_pool_get_name(void *pool) {
+    disjoint_pool_t *hPool = (disjoint_pool_t *)pool;
+    return hPool->params.name;
+}
+
 static umf_memory_pool_ops_t UMF_DISJOINT_POOL_OPS = {
     .version = UMF_VERSION_CURRENT,
     .initialize = disjoint_pool_initialize,
@@ -940,6 +946,8 @@ static umf_memory_pool_ops_t UMF_DISJOINT_POOL_OPS = {
     .malloc_usable_size = disjoint_pool_malloc_usable_size,
     .free = disjoint_pool_free,
     .get_last_allocation_error = disjoint_pool_get_last_allocation_error,
+    .ctl = disjoint_pool_ctl,
+    .get_name = disjoint_pool_get_name,
 };
 
 umf_memory_pool_ops_t *umfDisjointPoolOps(void) {
@@ -965,7 +973,7 @@ void umfDisjointPoolSharedLimitsDestroy(
 
 umf_result_t
 umfDisjointPoolParamsCreate(umf_disjoint_pool_params_handle_t *hParams) {
-    static char *DEFAULT_NAME = "disjoint_pool";
+    static char *DEFAULT_NAME = "disjoint";
 
     if (!hParams) {
         LOG_ERR("disjoint pool params handle is NULL");
@@ -987,11 +995,14 @@ umfDisjointPoolParamsCreate(umf_disjoint_pool_params_handle_t *hParams) {
         .cur_pool_size = 0,
         .pool_trace = 0,
         .shared_limits = NULL,
-        .name = {*DEFAULT_NAME},
     };
 
-    *hParams = params;
+    // Find default name and update params name
+    if (params->name[0] == '\0') {
+        strncpy(params->name, DEFAULT_NAME, sizeof(params->name) - 1);
+    }
 
+    *hParams = params;
     return UMF_RESULT_SUCCESS;
 }
 

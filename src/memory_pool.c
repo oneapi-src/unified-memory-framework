@@ -7,8 +7,10 @@
  *
  */
 
+#include "ctl/ctl.h"
 #include "libumf.h"
 #include "memory_pool_internal.h"
+#include "umf/base.h"
 #include "utils_assert.h"
 
 #include <umf/memory_pool.h>
@@ -16,34 +18,64 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "base_alloc_global.h"
 #include "memory_pool_internal.h"
 #include "memory_provider_internal.h"
 #include "provider_tracking.h"
 
+enum {
+    UMF_DEFAULT_SIZE = 100,
+    UMF_DEFAULT_LEN = 100,
+};
+char CTL_DEFAULT_ENTRIES[UMF_DEFAULT_SIZE][UMF_DEFAULT_LEN] = {0};
+char CTL_DEFAULT_VALUES[UMF_DEFAULT_SIZE][UMF_DEFAULT_LEN] = {0};
+
 static int CTL_SUBTREE_HANDLER(by_handle_pool)(void *ctx,
                                                umf_ctl_query_source_t source,
-                                               void *arg,
+                                               void *arg, size_t size,
                                                umf_ctl_index_utlist_t *indexes,
                                                const char *extra_name,
                                                umf_ctl_query_type_t queryType) {
-    (void)indexes, (void)source;
+    (void)indexes, (void)source, (void)size;
     umf_memory_pool_handle_t hPool = (umf_memory_pool_handle_t)ctx;
-    hPool->ops.ctl(hPool, /*unused*/ 0, extra_name, arg, queryType);
+    hPool->ops.ctl(hPool, /*unused*/ 0, extra_name, arg, size, queryType);
+    return 0;
+}
+
+static int CTL_SUBTREE_HANDLER(default)(void *ctx,
+                                        umf_ctl_query_source_t source,
+                                        void *arg, size_t size,
+                                        umf_ctl_index_utlist_t *indexes,
+                                        const char *extra_name,
+                                        umf_ctl_query_type_t queryType) {
+    (void)indexes, (void)source, (void)size, (void)ctx;
+    assert(queryType == CTL_QUERY_WRITE && "DO NOT SUPPORTED QUERY TYPE");
+    if (queryType == CTL_QUERY_WRITE) {
+        for (int i = 0; i < UMF_DEFAULT_SIZE; i++) {
+            if (CTL_DEFAULT_ENTRIES[i][0] == '\0') {
+                strncpy(CTL_DEFAULT_ENTRIES[i], extra_name, UMF_DEFAULT_LEN);
+                strncpy(CTL_DEFAULT_VALUES[i], arg, UMF_DEFAULT_LEN);
+                break;
+            }
+        }
+    }
     return 0;
 }
 
 umf_ctl_node_t CTL_NODE(pool)[] = {CTL_LEAF_SUBTREE2(by_handle, by_handle_pool),
-                                   CTL_NODE_END};
+                                   CTL_LEAF_SUBTREE(default), CTL_NODE_END};
 
 static umf_result_t umfDefaultCtlPoolHandle(void *hPool, int operationType,
                                             const char *name, void *arg,
+                                            size_t size,
                                             umf_ctl_query_type_t queryType) {
     (void)hPool;
     (void)operationType;
     (void)name;
     (void)arg;
+    (void)size;
     (void)queryType;
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
@@ -97,6 +129,15 @@ static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
     ret = ops->initialize(pool->provider, params, &pool->pool_priv);
     if (ret != UMF_RESULT_SUCCESS) {
         goto err_pool_init;
+    }
+
+    // Set default property "name" to pool if exists
+    for (int i = 0; i < UMF_DEFAULT_SIZE; i++) {
+        if (CTL_DEFAULT_ENTRIES[i][0] != '\0') {
+            ops->ctl(pool->pool_priv, CTL_QUERY_PROGRAMMATIC,
+                     CTL_DEFAULT_ENTRIES[i], CTL_DEFAULT_VALUES[i],
+                     UMF_DEFAULT_LEN, CTL_QUERY_READ);
+        }
     }
 
     *hPool = pool;
@@ -166,6 +207,10 @@ umf_result_t umfPoolGetMemoryProvider(umf_memory_pool_handle_t hPool,
     }
 
     return UMF_RESULT_SUCCESS;
+}
+
+const char *umfPoolGetName(umf_memory_pool_handle_t hPool) {
+    return hPool->ops.get_name(hPool->pool_priv);
 }
 
 umf_result_t umfPoolCreate(const umf_memory_pool_ops_t *ops,

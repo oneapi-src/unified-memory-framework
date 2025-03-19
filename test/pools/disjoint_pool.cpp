@@ -12,6 +12,7 @@
 #include "provider.hpp"
 #include "provider_null.h"
 #include "provider_trace.h"
+#include "umf/memory_pool.h"
 
 using umf_test::test;
 using namespace umf_test;

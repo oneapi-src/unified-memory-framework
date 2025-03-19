@@ -26,12 +26,13 @@ struct ctl *get_debug_ctl(void) { return ctl_debug; }
  */
 static int CTL_WRITE_HANDLER(alloc_pattern)(void *ctx,
                                             umf_ctl_query_source_t source,
-                                            void *arg,
+                                            void *arg, size_t size,
                                             umf_ctl_index_utlist_t *indexes,
                                             const char *extra_name,
                                             umf_ctl_query_type_t query_type) {
     /* suppress unused-parameter errors */
-    (void)source, (void)indexes, (void)ctx, (void)extra_name, (void)query_type;
+    (void)source, (void)indexes, (void)ctx, (void)extra_name, (void)query_type,
+        (void)size;
 
     int arg_in = *(int *)arg;
     alloc_pattern = arg_in;
@@ -43,12 +44,13 @@ static int CTL_WRITE_HANDLER(alloc_pattern)(void *ctx,
  */
 static int CTL_READ_HANDLER(alloc_pattern)(void *ctx,
                                            umf_ctl_query_source_t source,
-                                           void *arg,
+                                           void *arg, size_t size,
                                            umf_ctl_index_utlist_t *indexes,
                                            const char *extra_name,
                                            umf_ctl_query_type_t query_type) {
     /* suppress unused-parameter errors */
-    (void)source, (void)indexes, (void)ctx, (void)extra_name, (void)query_type;
+    (void)source, (void)indexes, (void)ctx, (void)extra_name, (void)query_type,
+        (void)size;
 
     int *arg_out = arg;
     *arg_out = alloc_pattern;
@@ -57,12 +59,13 @@ static int CTL_READ_HANDLER(alloc_pattern)(void *ctx,
 
 static int CTL_WRITE_HANDLER(enable_logging)(void *ctx,
                                              umf_ctl_query_source_t source,
-                                             void *arg,
+                                             void *arg, size_t size,
                                              umf_ctl_index_utlist_t *indexes,
                                              const char *extra_name,
                                              umf_ctl_query_type_t query_type) {
     /* suppress unused-parameter errors */
-    (void)source, (void)indexes, (void)ctx, (void)extra_name, (void)query_type;
+    (void)source, (void)indexes, (void)ctx, (void)extra_name, (void)query_type,
+        (void)size;
 
     int arg_in = *(int *)arg;
     enable_logging = arg_in;
@@ -71,12 +74,13 @@ static int CTL_WRITE_HANDLER(enable_logging)(void *ctx,
 
 static int CTL_READ_HANDLER(enable_logging)(void *ctx,
                                             umf_ctl_query_source_t source,
-                                            void *arg,
+                                            void *arg, size_t size,
                                             umf_ctl_index_utlist_t *indexes,
                                             const char *extra_name,
                                             umf_ctl_query_type_t query_type) {
     /* suppress unused-parameter errors */
-    (void)source, (void)indexes, (void)ctx, (void)extra_name, (void)query_type;
+    (void)source, (void)indexes, (void)ctx, (void)extra_name, (void)query_type,
+        (void)size;
 
     int *arg_out = arg;
     *arg_out = enable_logging;
@@ -85,12 +89,13 @@ static int CTL_READ_HANDLER(enable_logging)(void *ctx,
 
 static int CTL_WRITE_HANDLER(log_level)(void *ctx,
                                         umf_ctl_query_source_t source,
-                                        void *arg,
+                                        void *arg, size_t size,
                                         umf_ctl_index_utlist_t *indexes,
                                         const char *extra_name,
                                         umf_ctl_query_type_t query_type) {
     /* suppress unused-parameter errors */
-    (void)source, (void)indexes, (void)ctx, (void)extra_name, (void)query_type;
+    (void)source, (void)indexes, (void)ctx, (void)extra_name, (void)query_type,
+        (void)size;
 
     int arg_in = *(int *)arg;
     log_level = arg_in;
@@ -98,12 +103,13 @@ static int CTL_WRITE_HANDLER(log_level)(void *ctx,
 }
 
 static int CTL_READ_HANDLER(log_level)(void *ctx, umf_ctl_query_source_t source,
-                                       void *arg,
+                                       void *arg, size_t size,
                                        umf_ctl_index_utlist_t *indexes,
                                        const char *extra_name,
                                        umf_ctl_query_type_t query_type) {
     /* suppress unused-parameter errors */
-    (void)source, (void)indexes, (void)ctx, (void)extra_name, (void)query_type;
+    (void)source, (void)indexes, (void)ctx, (void)extra_name, (void)query_type,
+        (void)size;
 
     int *arg_out = arg;
     *arg_out = log_level;
