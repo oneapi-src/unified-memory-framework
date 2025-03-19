@@ -11,8 +11,6 @@
 #include <benchmark/benchmark.h>
 #include <umf/memory_pool.h>
 #include <umf/memory_provider.h>
-
-#include <benchmark/benchmark.h>
 #include <umf/pools/pool_disjoint.h>
 #include <umf/pools/pool_proxy.h>
 
@@ -30,7 +28,7 @@ struct provider_interface {
     using params_ptr = std::unique_ptr<void, void (*)(void *)>;
 
     umf_memory_provider_handle_t provider = NULL;
-    virtual void SetUp(::benchmark::State &state) {
+    void SetUp(::benchmark::State &state) {
         if (state.thread_index() != 0) {
             return;
         }
@@ -42,7 +40,27 @@ struct provider_interface {
         }
     }
 
-    virtual void TearDown([[maybe_unused]] ::benchmark::State &state) {
+    void preBench([[maybe_unused]] ::benchmark::State &state) {
+        if (state.thread_index() != 0) {
+            return;
+        }
+        umfCtlExec("umf.provider.by_handle.stats.reset", provider, NULL);
+    }
+
+    void postBench([[maybe_unused]] ::benchmark::State &state) {
+        if (state.thread_index() != 0) {
+            return;
+        }
+        size_t arg;
+        umf_result_t ret = umfCtlGet(
+            "umf.provider.by_handle.stats.allocated_memory", provider, &arg);
+        if (ret == UMF_RESULT_SUCCESS) {
+            state.counters["provider_memory_allocated"] =
+                static_cast<double>(arg);
+        }
+    }
+
+    void TearDown([[maybe_unused]] ::benchmark::State &state) {
         if (state.thread_index() != 0) {
             return;
         }
@@ -53,9 +71,7 @@ struct provider_interface {
     }
 
     virtual umf_memory_provider_ops_t *
-    getOps([[maybe_unused]] ::benchmark::State &state) {
-        return nullptr;
-    }
+    getOps([[maybe_unused]] ::benchmark::State &state) = 0;
 
     virtual params_ptr getParams([[maybe_unused]] ::benchmark::State &state) {
         return {nullptr, [](void *) {}};
@@ -68,7 +84,7 @@ template <typename T,
 struct pool_interface {
     using params_ptr = std::unique_ptr<void, void (*)(void *)>;
 
-    virtual void SetUp(::benchmark::State &state) {
+    void SetUp(::benchmark::State &state) {
         provider.SetUp(state);
         if (state.thread_index() != 0) {
             return;
@@ -80,7 +96,22 @@ struct pool_interface {
             state.SkipWithError("umfPoolCreate() failed");
         }
     }
-    virtual void TearDown([[maybe_unused]] ::benchmark::State &state) {
+
+    void preBench([[maybe_unused]] ::benchmark::State &state) {
+        provider.preBench(state);
+        if (state.thread_index() != 0) {
+            return;
+        }
+    }
+
+    void postBench([[maybe_unused]] ::benchmark::State &state) {
+        provider.postBench(state);
+        if (state.thread_index() != 0) {
+            return;
+        }
+    }
+
+    void TearDown([[maybe_unused]] ::benchmark::State &state) {
         if (state.thread_index() != 0) {
             return;
         }
@@ -93,15 +124,17 @@ struct pool_interface {
         if (pool) {
             umfPoolDestroy(pool);
         }
+
+        provider.TearDown(state);
     };
 
     virtual umf_memory_pool_ops_t *
-    getOps([[maybe_unused]] ::benchmark::State &state) {
-        return nullptr;
-    }
+    getOps([[maybe_unused]] ::benchmark::State &state) = 0;
+
     virtual params_ptr getParams([[maybe_unused]] ::benchmark::State &state) {
         return {nullptr, [](void *) {}};
     }
+
     T provider;
     umf_memory_pool_handle_t pool;
 };
@@ -110,6 +143,8 @@ class allocator_interface {
   public:
     virtual unsigned SetUp([[maybe_unused]] ::benchmark::State &state,
                            [[maybe_unused]] unsigned argPos) = 0;
+    virtual void preBench([[maybe_unused]] ::benchmark::State &state) = 0;
+    virtual void postBench([[maybe_unused]] ::benchmark::State &state) = 0;
     virtual void TearDown([[maybe_unused]] ::benchmark::State &state) = 0;
     virtual void *benchAlloc(size_t size) = 0;
     virtual void benchFree(void *ptr, [[maybe_unused]] size_t size) = 0;
@@ -121,7 +156,9 @@ struct glibc_malloc : public allocator_interface {
                    unsigned argPos) override {
         return argPos;
     }
-    void TearDown([[maybe_unused]] ::benchmark::State &state) override{};
+    void preBench([[maybe_unused]] ::benchmark::State &state) override {}
+    void postBench([[maybe_unused]] ::benchmark::State &state) override {}
+    void TearDown([[maybe_unused]] ::benchmark::State &state) override {}
     void *benchAlloc(size_t size) override { return malloc(size); }
     void benchFree(void *ptr, [[maybe_unused]] size_t size) override {
         free(ptr);
@@ -163,7 +200,7 @@ struct fixed_provider : public provider_interface {
     char *mem = NULL;
     const size_t size = 1024 * 1024 * 1024; // 1GB
   public:
-    virtual void SetUp(::benchmark::State &state) override {
+    void SetUp(::benchmark::State &state) {
         if (state.thread_index() != 0) {
             return;
         }
@@ -175,7 +212,7 @@ struct fixed_provider : public provider_interface {
         provider_interface::SetUp(state);
     }
 
-    virtual void TearDown(::benchmark::State &state) override {
+    void TearDown(::benchmark::State &state) {
         if (state.thread_index() != 0) {
             return;
         }
@@ -295,7 +332,7 @@ struct jemalloc_pool : public pool_interface<Provider> {
 #ifdef UMF_POOL_SCALABLE_ENABLED
 template <typename Provider>
 struct scalable_pool : public pool_interface<Provider> {
-    virtual umf_memory_pool_ops_t *
+    umf_memory_pool_ops_t *
     getOps([[maybe_unused]] ::benchmark::State &state) override {
         return umfScalablePoolOps();
     }

@@ -94,12 +94,14 @@ jobs:
 
     - name: Run "tag" UMF tests with latest UMF libs (warnings enabled)
       working-directory: ${{github.workspace}}/tag_version/build
-      # GTEST_FILTER is used below to skip test that is not compatible
+      # Disable incompatible tests:
+      # - GTEST_FILTER used to skip only single test cases
+      # - ctest's exclude - disable test binary that rely on internal structures
       run: >
         UMF_LOG="level:warning;flush:debug;output:stderr;pid:no"
         LD_LIBRARY_PATH=${{github.workspace}}/latest_version/build/lib/
         GTEST_FILTER="-*umfIpcTest.GetPoolByOpenedHandle*"
-        ctest --verbose
+        ctest --verbose -E "umf-mempolicy"
 
   windows:
     name: Windows
@@ -181,6 +183,8 @@ jobs:
 
     - name: Run "tag" UMF tests with latest UMF libs (warnings enabled)
       working-directory: ${{github.workspace}}/tag_version/build
+      # Disable incompatible tests:
+      # - GTEST_FILTER used to skip only single test cases
       run: |
         $env:UMF_LOG="level:warning;flush:debug;output:stderr;pid:no" 
         $env:GTEST_FILTER="-*umfIpcTest.GetPoolByOpenedHandle*"
@@ -265,11 +269,14 @@ jobs:
       run: |
         cmake --build ${{github.workspace}}/latest_version/build -j $(nproc)
 
-    # NOTE: Once not implemented features may now be implemented - exclude these tests
     - name: Run "tag" UMF tests with latest UMF libs (warnings enabled)
       working-directory: ${{github.workspace}}/tag_version/build
+      # Disable incompatible tests:
+      # - GTEST_FILTER used to skip only single test cases
+      # - ctest's exclude - disable test binary that rely on internal structures
+      #     and once not implemented features may now be implemented.
       run: >
         UMF_LOG="level:warning;flush:debug;output:stderr;pid:no"
         LD_LIBRARY_PATH=${{github.workspace}}/latest_version/build/lib/
         GTEST_FILTER="-*umfIpcTest.GetPoolByOpenedHandle*"
-        ctest --verbose -E "not_impl"
+        ctest --verbose -E "not_impl|umf-mempolicy"
