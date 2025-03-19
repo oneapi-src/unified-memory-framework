@@ -117,9 +117,6 @@ UMF_0.10 {
 
 UMF_0.11 {
         umfCUDAMemoryProviderParamsSetAllocFlags;
-        umfCtlExec;
-        umfCtlGet;
-        umfCtlSet;
         umfDisjointPoolOps;
         umfDisjointPoolParamsCreate;
         umfDisjointPoolParamsDestroy;
@@ -138,3 +135,9 @@ UMF_0.11 {
         umfLevelZeroMemoryProviderParamsSetFreePolicy;
         umfLevelZeroMemoryProviderParamsSetDeviceOrdinal;
 } UMF_0.10;
+
+UMF_0.12 {
+        umfCtlExec;
+        umfCtlGet;
+        umfCtlSet;
+} UMF_0.11;
