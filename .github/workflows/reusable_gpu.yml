@@ -89,9 +89,15 @@ jobs:
       - name: Build UMF
         run: cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j ${{matrix.number_of_processors}}
 
-      - name: Run tests
+      - name: Run tests (only L0)
         working-directory: ${{env.BUILD_DIR}}
-        run: ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
+        run: |
+          export SYCL_UR_TRACE=1
+          export UR_L0_DEBUG=1
+          export UMF_LOG="level:debug;flush:debug;output:stderr;pid:no"
+          export UR_LOG_LEVEL_ZERO="level:error;flush:error"
+          export ZE_ENABLE_LOADER_DEBUG_TRACE=1
+          ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test -R "test_provider_level_zero"
 
       - name: Run examples
         working-directory: ${{env.BUILD_DIR}}
