@@ -143,73 +143,18 @@ UMF_BENCHMARK_TEMPLATE_DEFINE(multiple_malloc_free_benchmark,
 UMF_BENCHMARK_REGISTER_F(multiple_malloc_free_benchmark,
                          proxy_pool_fixedprovider)
     ->Apply(&default_multiple_alloc_fix_size)
-    ->Apply(&singlethreaded);
+    ->Apply(&singlethreaded)
+    // reduce iterations, to match os_provider benchmark
+    ->Iterations(50000);
 
 UMF_BENCHMARK_TEMPLATE_DEFINE(multiple_malloc_free_benchmark, fixed_provider,
                               fixed_alloc_size,
                               provider_allocator<fixed_provider>);
 UMF_BENCHMARK_REGISTER_F(multiple_malloc_free_benchmark, fixed_provider)
     ->Apply(&default_multiple_alloc_fix_size)
-    ->Apply(&singlethreaded);
-
-UMF_BENCHMARK_TEMPLATE_DEFINE(multiple_malloc_free_benchmark,
-                              disjoint_pool_fix_fixedprovider, fixed_alloc_size,
-                              pool_allocator<disjoint_pool<fixed_provider>>);
-UMF_BENCHMARK_REGISTER_F(multiple_malloc_free_benchmark,
-                         disjoint_pool_fix_fixedprovider)
-    ->Apply(&default_multiple_alloc_fix_size)
-    ->Apply(&multithreaded);
-
-UMF_BENCHMARK_TEMPLATE_DEFINE(multiple_malloc_free_benchmark,
-                              disjoint_pool_uniform_fixedprovider,
-                              uniform_alloc_size,
-                              pool_allocator<disjoint_pool<fixed_provider>>);
-UMF_BENCHMARK_REGISTER_F(multiple_malloc_free_benchmark,
-                         disjoint_pool_uniform_fixedprovider)
-    ->Apply(&default_multiple_alloc_uniform_size)
-    ->Apply(&multithreaded);
-
-#ifdef UMF_POOL_JEMALLOC_ENABLED
-UMF_BENCHMARK_TEMPLATE_DEFINE(multiple_malloc_free_benchmark,
-                              jemalloc_pool_fixedprovider, fixed_alloc_size,
-                              pool_allocator<jemalloc_pool<fixed_provider>>);
-UMF_BENCHMARK_REGISTER_F(multiple_malloc_free_benchmark,
-                         jemalloc_pool_fixedprovider)
-    ->Apply(&default_multiple_alloc_fix_size)
-    ->Apply(&multithreaded);
-
-UMF_BENCHMARK_TEMPLATE_DEFINE(multiple_malloc_free_benchmark,
-                              jemalloc_pool_uniform_fixedprovider,
-                              uniform_alloc_size,
-                              pool_allocator<jemalloc_pool<fixed_provider>>);
-UMF_BENCHMARK_REGISTER_F(multiple_malloc_free_benchmark,
-                         jemalloc_pool_uniform_fixedprovider)
-    ->Apply(&default_multiple_alloc_uniform_size)
-    ->Apply(&multithreaded);
-
-#endif
-
-#ifdef UMF_POOL_SCALABLE_ENABLED
-UMF_BENCHMARK_TEMPLATE_DEFINE(multiple_malloc_free_benchmark,
-                              scalable_pool_fix_fixedprovider, fixed_alloc_size,
-                              pool_allocator<scalable_pool<fixed_provider>>);
-
-UMF_BENCHMARK_REGISTER_F(multiple_malloc_free_benchmark,
-                         scalable_pool_fix_fixedprovider)
-    ->Apply(&default_multiple_alloc_fix_size)
-    ->Apply(&multithreaded);
-
-UMF_BENCHMARK_TEMPLATE_DEFINE(multiple_malloc_free_benchmark,
-                              scalable_pool_uniform_fixedprovider,
-                              uniform_alloc_size,
-                              pool_allocator<scalable_pool<fixed_provider>>);
-
-UMF_BENCHMARK_REGISTER_F(multiple_malloc_free_benchmark,
-                         scalable_pool_uniform_fixedprovider)
-    ->Apply(&default_multiple_alloc_uniform_size)
-    ->Apply(&multithreaded);
-
-#endif
+    ->Apply(&singlethreaded)
+    // reduce iterations, to match os_provider benchmark
+    ->Iterations(50000);
 
 //BENCHMARK_MAIN();
 int main(int argc, char **argv) {
