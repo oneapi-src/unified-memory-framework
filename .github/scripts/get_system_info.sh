@@ -7,7 +7,7 @@
 
 function check_L0_version {
     if command -v dpkg &> /dev/null; then
-        dpkg -l | grep level-zero && return
+        dpkg -l | grep -iE "level-zero|libze" && return
     fi
 
     if command -v rpm &> /dev/null; then
