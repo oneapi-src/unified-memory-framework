@@ -22,6 +22,8 @@
 #include "utils_common.h"
 #include "utils_concurrency.h"
 
+#include "provider_ctl_stats_type.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -67,10 +69,8 @@ typedef struct os_memory_provider_t {
     size_t partitions_weight_sum;
 
     hwloc_topology_t topo;
-    struct {
-        size_t allocated_memory;
-        size_t peak_memory;
-    } stats;
+
+    ctl_stats_t stats;
 } os_memory_provider_t;
 
 #ifdef __cplusplus
