@@ -260,7 +260,7 @@ static umf_result_t umfMemoryTrackerRemove(umf_memory_tracker_handle_t hTracker,
 
     LOG_DEBUG("memory region removed: tracker=%p, level=%i, pool=%p, ptr=%p, "
               "size=%zu",
-              (void *)hTracker, level, value->pool, ptr, value->size);
+              (void *)hTracker, level, (void *)value->pool, ptr, value->size);
 
     if (parent_value) {
         LOG_DEBUG(
@@ -302,13 +302,14 @@ umfMemoryTrackerAddIpcSegment(umf_memory_tracker_handle_t hTracker,
     if (ret == 0) {
         LOG_DEBUG("IPC memory region is added, tracker=%p, ptr=%p, size=%zu, "
                   "provider=%p, cache_entry=%p",
-                  (void *)hTracker, ptr, size, provider, cache_entry);
+                  (void *)hTracker, ptr, size, (void *)provider,
+                  (void *)cache_entry);
         return UMF_RESULT_SUCCESS;
     }
 
     LOG_ERR("failed to insert tracker_ipc_info_t, ret=%d, ptr=%p, size=%zu, "
             "provider=%p, cache_entry=%p",
-            ret, ptr, size, provider, cache_entry);
+            ret, ptr, size, (void *)provider, (void *)cache_entry);
 
     umf_ba_free(hTracker->ipc_info_allocator, value);
 
@@ -335,7 +336,8 @@ umfMemoryTrackerRemoveIpcSegment(umf_memory_tracker_handle_t hTracker,
 
     LOG_DEBUG("IPC memory region removed: tracker=%p, ptr=%p, size=%zu, "
               "provider=%p, cache_entry=%p",
-              (void *)hTracker, ptr, v->size, v->provider, v->ipc_cache_value);
+              (void *)hTracker, ptr, v->size, (void *)v->provider,
+              (void *)v->ipc_cache_value);
 
     umf_ba_free(hTracker->ipc_info_allocator, value);
 
