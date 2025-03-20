@@ -115,6 +115,9 @@ int utils_getpid(void);
 // get the current thread ID
 int utils_gettid(void);
 
+// get the number of CPU cores
+unsigned utils_get_num_cores(void);
+
 // close file descriptor
 int utils_close_fd(int fd);
 
