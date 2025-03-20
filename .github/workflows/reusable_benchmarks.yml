@@ -145,7 +145,7 @@ jobs:
         taskset -c ${{ env.CORES }} ./sc/devops/scripts/benchmarks/main.py
         ~/bench_workdir_umf
         --umf ${{env.BUILD_DIR}}
-        --timeout 3000
+        --timeout 120
         --output-html remote
         --results-dir ${{ github.workspace }}/results-repo
         --output-markdown
