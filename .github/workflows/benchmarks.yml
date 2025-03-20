@@ -7,18 +7,22 @@ on:
         description: PR number (if 0, it'll run on the main)
         type: number
       bench_script_params:
+        # If you want to save the results of the manual run in 'benchmark-results' branch,
+        # you have to pass '--save XXX', where XXX is the label of your results.
         description: Parameters passed to script executing benchmark
         type: string
         required: false
         default: ''
-      upload_report:
-        description: 'Upload HTML report'
-        type: boolean
-        required: false
-        default: false
+      runner:
+        description: Runner
+        type: choice
+        required: true
+        default: 'L0_PERF'
+        options:
+          - L0_PERF
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 jobs:
@@ -28,4 +32,4 @@ jobs:
     with:
       pr_no: ${{ inputs.pr_no }}
       bench_script_params: ${{ inputs.bench_script_params }}
-      upload_report: ${{ inputs.upload_report }}
+      runner: ${{ inputs.runner }}
