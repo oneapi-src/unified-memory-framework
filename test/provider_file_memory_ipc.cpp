@@ -67,6 +67,32 @@ umf_result_t destroyFileParamsFSDAX(void *params) {
         (umf_file_memory_provider_params_handle_t)params);
 }
 
+#ifdef UMF_POOL_JEMALLOC_ENABLED
+void *createJemallocParams() {
+    umf_jemalloc_pool_params_handle_t jemalloc_params = NULL;
+    umf_result_t res = umfJemallocPoolParamsCreate(&jemalloc_params);
+    if (res != UMF_RESULT_SUCCESS) {
+        throw std::runtime_error("Failed to create Jemalloc Pool params");
+    }
+
+    // This test creates multiple pools, so we need to reduce the number of arenas
+    // to avoid hitting the maximum arena limit on systems with many cores.
+    res = umfJemallocPoolParamsSetNumArenas(jemalloc_params, 1);
+    if (res != UMF_RESULT_SUCCESS) {
+        umfJemallocPoolParamsDestroy(jemalloc_params);
+        throw std::runtime_error("Failed to set number of arenas for Jemalloc "
+                                 "Pool params");
+    }
+    return jemalloc_params;
+}
+
+umf_result_t destroyJemallocParams(void *params) {
+    return umfJemallocPoolParamsDestroy(
+        (umf_jemalloc_pool_params_handle_t)params);
+}
+
+#endif
+
 HostMemoryAccessor hostAccessor;
 
 static std::vector<ipcTestParams> ipcManyPoolsTestParamsList = {
@@ -74,8 +100,9 @@ static std::vector<ipcTestParams> ipcManyPoolsTestParamsList = {
 //    {umfProxyPoolOps(), nullptr, umfFileMemoryProviderOps(),
 //     file_params_shared.get(), &hostAccessor},
 #ifdef UMF_POOL_JEMALLOC_ENABLED
-    {umfJemallocPoolOps(), nullptr, nullptr, umfFileMemoryProviderOps(),
-     createFileParamsShared, destroyFileParamsShared, &hostAccessor},
+    {umfJemallocPoolOps(), createJemallocParams, destroyJemallocParams,
+     umfFileMemoryProviderOps(), createFileParamsShared,
+     destroyFileParamsShared, &hostAccessor},
 #endif
 #ifdef UMF_POOL_SCALABLE_ENABLED
     {umfScalablePoolOps(), nullptr, nullptr, umfFileMemoryProviderOps(),
@@ -97,8 +124,9 @@ static std::vector<ipcTestParams> getIpcFsDaxTestParamsList(void) {
 //        {umfProxyPoolOps(), nullptr, umfFileMemoryProviderOps(),
 //         file_params_fsdax.get(), &hostAccessor},
 #ifdef UMF_POOL_JEMALLOC_ENABLED
-        {umfJemallocPoolOps(), nullptr, nullptr, umfFileMemoryProviderOps(),
-         createFileParamsFSDAX, destroyFileParamsFSDAX, &hostAccessor},
+        {umfJemallocPoolOps(), createJemallocParams, destroyJemallocParams,
+         umfFileMemoryProviderOps(), createFileParamsFSDAX,
+         destroyFileParamsFSDAX, &hostAccessor},
 #endif
 #ifdef UMF_POOL_SCALABLE_ENABLED
         {umfScalablePoolOps(), nullptr, nullptr, umfFileMemoryProviderOps(),
