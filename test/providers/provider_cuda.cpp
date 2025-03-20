@@ -381,6 +381,41 @@ TEST_P(umfCUDAProviderTest, cudaProviderNullParams) {
     res =
         umfCUDAMemoryProviderParamsSetMemoryType(nullptr, expected_memory_type);
     EXPECT_EQ(res, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    res =
+        umfCUDAMemoryProviderParamsSetAllocFlags(nullptr, 1);
+    EXPECT_EQ(res, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_P(umfCUDAProviderTest, cudaProviderInvalidCreate) {
+    CUdevice device;
+    int ret = get_cuda_device(&device);
+    ASSERT_EQ(ret, 0);
+
+    CUcontext ctx;
+    ret = create_context(device, &ctx);
+    ASSERT_EQ(ret, 0);
+
+    // wrong memory type
+    umf_cuda_memory_provider_params_handle_t params1 =
+        create_cuda_prov_params(ctx, device, (umf_usm_memory_type_t)0xFFFF, 0);
+    ASSERT_NE(params1, nullptr);
+    umf_memory_provider_handle_t provider;
+    umf_result_t umf_result = umfMemoryProviderCreate(
+        umfCUDAMemoryProviderOps(), params1, &provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    // wrong context
+    params1 = create_cuda_prov_params((CUcontext)-1, device, UMF_MEMORY_TYPE_HOST, 0);
+    ASSERT_NE(params1, nullptr);
+    umf_result = umfMemoryProviderCreate(umfCUDAMemoryProviderOps(), params1, &provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    // wrong device
+    params1 = create_cuda_prov_params(ctx, (CUdevice)-1, UMF_MEMORY_TYPE_HOST, 0);
+    ASSERT_NE(params1, nullptr);
+    umf_result = umfMemoryProviderCreate(umfCUDAMemoryProviderOps(), params1, &provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 }
 
 TEST_P(umfCUDAProviderTest, multiContext) {
