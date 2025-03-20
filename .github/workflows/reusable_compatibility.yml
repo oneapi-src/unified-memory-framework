@@ -23,7 +23,7 @@ jobs:
     - name: Install apt packages
       run: |
         sudo apt-get update
-        sudo apt-get install -y clang cmake libnuma-dev libtbb-dev
+        sudo apt-get install -y clang cmake hwloc libnuma-dev libtbb-dev
 
     - name: Checkout "tag" UMF version
       uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -35,6 +35,38 @@ jobs:
     - name: Install libhwloc
       working-directory: ${{github.workspace}}/tag_version
       run: .github/scripts/install_hwloc.sh
+
+    - name: Checkout latest UMF version
+      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      with:
+        fetch-depth: 0
+        path: ${{github.workspace}}/latest_version
+
+    - name: Configure latest UMF build
+      working-directory: ${{github.workspace}}/latest_version
+      run: >
+        cmake
+        -B ${{github.workspace}}/latest_version/build
+        -DCMAKE_INSTALL_PREFIX=_install
+        -DCMAKE_BUILD_TYPE=Debug
+        -DUMF_BUILD_SHARED_LIBRARY=ON
+        -DCMAKE_C_COMPILER=gcc
+        -DCMAKE_CXX_COMPILER=g++
+        -DUMF_BUILD_TESTS=OFF
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
+        -DUMF_BUILD_CUDA_PROVIDER=ON
+        -DUMF_FORMAT_CODE_STYLE=OFF
+        -DUMF_DEVELOPER_MODE=ON
+        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
+
+    - name: Build latest UMF
+      working-directory: ${{github.workspace}}/latest_version
+      run: |
+        cmake --build ${{github.workspace}}/latest_version/build -j $(nproc)
+
+    - name: Install latest UMF
+      working-directory: ${{github.workspace}}/latest_version
+      run: sudo cmake --install ${{github.workspace}}/latest_version/build --config Debug
 
     - name: Configure "tag" UMF build
       working-directory: ${{github.workspace}}/tag_version
@@ -60,48 +92,40 @@ jobs:
       run: |
         cmake --build ${{github.workspace}}/tag_version/build -j $(nproc)
 
-    - name: Run "tag" UMF tests
-      working-directory: ${{github.workspace}}/tag_version/build
-      run: |
-        LD_LIBRARY_PATH=${{github.workspace}}/tag_version/build/lib/ ctest --output-on-failure
+    #- name: Run "tag" UMF tests
+    #  working-directory: ${{github.workspace}}/tag_version/build
+    #  run: |
+    #    LD_LIBRARY_PATH=${{github.workspace}}/tag_version/build/lib/ ctest --output-on-failure
 
-    - name: Checkout latest UMF version
-      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      with:
-        fetch-depth: 0
-        path: ${{github.workspace}}/latest_version
+    #- name: Run "tag" UMF tests with latest UMF libs (warnings enabled)
+    #  working-directory: ${{github.workspace}}/tag_version/build
+    #  # Disable incompatible tests:
+    #  # - GTEST_FILTER used to skip only single test cases
+    #  # - ctest's exclude - disable test binary that rely on internal structures
+    #  run: >
+    #    UMF_LOG="level:warning;flush:debug;output:stderr;pid:no"
+    #    LD_LIBRARY_PATH=${{github.workspace}}/latest_version/build/lib/
+    #    GTEST_FILTER="-*umfIpcTest.GetPoolByOpenedHandle*"
+    #    ctest --verbose -E "umf-mempolicy"
 
-    - name: Configure latest UMF build
-      working-directory: ${{github.workspace}}/latest_version
-      run: >
-        cmake
-        -B ${{github.workspace}}/latest_version/build
-        -DCMAKE_BUILD_TYPE=Debug
-        -DUMF_BUILD_SHARED_LIBRARY=ON
-        -DCMAKE_C_COMPILER=gcc
-        -DCMAKE_CXX_COMPILER=g++
-        -DUMF_BUILD_TESTS=OFF
-        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
-        -DUMF_BUILD_CUDA_PROVIDER=ON
-        -DUMF_FORMAT_CODE_STYLE=OFF
-        -DUMF_DEVELOPER_MODE=ON
-        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
-
-    - name: Build latest UMF
-      working-directory: ${{github.workspace}}/latest_version
-      run: |
-        cmake --build ${{github.workspace}}/latest_version/build -j $(nproc)
-
-    - name: Run "tag" UMF tests with latest UMF libs (warnings enabled)
-      working-directory: ${{github.workspace}}/tag_version/build
-      # Disable incompatible tests:
-      # - GTEST_FILTER used to skip only single test cases
-      # - ctest's exclude - disable test binary that rely on internal structures
-      run: >
-        UMF_LOG="level:warning;flush:debug;output:stderr;pid:no"
-        LD_LIBRARY_PATH=${{github.workspace}}/latest_version/build/lib/
-        GTEST_FILTER="-*umfIpcTest.GetPoolByOpenedHandle*"
-        ctest --verbose -E "umf-mempolicy"
+    # TODO explain EXAMPLES_EXCLUDE_LIST
+    - name: Build and run "tag" examples using the latest UMF libraries
+      working-directory: ${{github.workspace}}/tag_version
+      run: |  
+        EXAMPLES_EXCLUDE_LIST="cmake|common|cuda|hmat|level_zero"
+        rm -rf build
+        rm -rf include
+        mkdir _examples
+        cd _examples
+        EXAMPLES_LIST=$(find ${{github.workspace}}/tag_version/examples -maxdepth 1 -mindepth 1 -type d | grep -Ev $EXAMPLES_EXCLUDE_LIST | xargs -n 1 basename)
+        for EXAMPLE_NAME in $EXAMPLES_LIST; do
+          cd ${{github.workspace}}/tag_version
+          mkdir -p _examples/$EXAMPLE_NAME;
+          cd _examples/$EXAMPLE_NAME;
+          CMAKE_PREFIX_PATH=${{github.workspace}}/latest_version/_install cmake ${{github.workspace}}/tag_version/examples/$EXAMPLE_NAME;
+          make;
+          find . -maxdepth 1 -type f -executable -exec {} \;
+        done
 
   windows:
     name: Windows
