@@ -45,19 +45,37 @@ jobs:
           -DUMF_DISABLE_HWLOC=ON
         cmake --build build --target docs
 
-    # If we upload HTML docs, we want to include benchmark results as well
-    - name: Download benchmark HTML before uploading docs
+    #
+    # Documentation is built. Now we want to add benchmark dashboard.
+    # We only do it if inputs.upload is set, as this job is also used for testing docs build.
+    #
+    - name: Checkout benchmark scripts
       if: ${{ inputs.upload == true }}
-      id: download-bench-html
-      uses: actions/cache/restore@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
-        path: umf-repo/build/benchmark_results.html
-        key: benchmark-results-
+        repository: intel/llvm
+        # 20.03.2025
+        # branch: unify-benchmark-ci
+        ref: cae7049c78c697b3ac94f931716d9efb53addcd8
+        path: sc
+        sparse-checkout: |
+          devops/scripts/benchmarks
 
-    - name: Move benchmark HTML
-      if: ${{ inputs.upload == true && steps.download-bench-html.outputs.cache-hit != '' }}
+    - name: Move benchmark HTML files
+      if: ${{ inputs.upload == true }}
+      working-directory: ${{ github.workspace }}/build/docs_build/generated/html
       run: |
-        mv umf-repo/build/benchmark_results.html ${{github.workspace}}/build/docs_build/generated/html
+        mkdir performance
+        mv ${{ github.workspace }}/sc/devops/scripts/benchmarks/html/* performance/
+
+    - name: Replace config.js
+      if: ${{ inputs.upload == true }}
+      working-directory: ${{ github.workspace }}/build/docs_build/generated/html
+      run: |
+        cat << 'EOF' > ./performance/config.js
+        remoteDataUrl = 'https://raw.githubusercontent.com/oneapi-src/unified-memory-framework/refs/heads/benchmark-results/data.json';
+        defaultCompareNames = ["Baseline_PVC"];
+        EOF
 
     - name: Upload artifact
       if: ${{ inputs.upload == true }}
