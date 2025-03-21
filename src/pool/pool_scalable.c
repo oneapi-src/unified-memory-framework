@@ -413,12 +413,13 @@ static umf_result_t tbb_get_last_allocation_error(void *pool) {
 
 static int CTL_READ_HANDLER(tracking_enabled)(void *ctx,
                                               umf_ctl_query_source_t source,
-                                              void *arg,
+                                              void *arg, size_t size,
                                               umf_ctl_index_utlist_t *indexes,
                                               const char *extra_name,
                                               umf_ctl_query_type_t query_type) {
     /* suppress unused-parameter errors */
-    (void)source, (void)indexes, (void)ctx, (void)extra_name, (void)query_type;
+    (void)source, (void)indexes, (void)ctx, (void)extra_name, (void)query_type,
+        (void)size;
 
     int *arg_out = arg;
     umf_memory_pool_handle_t pool = (umf_memory_pool_handle_t)ctx;
@@ -435,12 +436,13 @@ static void initialize_pool_ctl(void) {
 }
 
 static umf_result_t pool_ctl(void *hPool, int operationType, const char *name,
-                             void *arg, umf_ctl_query_type_t query_type) {
+                             void *arg, size_t size,
+                             umf_ctl_query_type_t query_type) {
     (void)operationType; // unused
     umf_memory_pool_handle_t pool_provider = (umf_memory_pool_handle_t)hPool;
     utils_init_once(&ctl_initialized, initialize_pool_ctl);
     return ctl_query(pool_scallable_ctl_root, pool_provider,
-                     CTL_QUERY_PROGRAMMATIC, name, query_type, arg);
+                     CTL_QUERY_PROGRAMMATIC, name, query_type, arg, size);
 }
 
 static umf_memory_pool_ops_t UMF_SCALABLE_POOL_OPS = {

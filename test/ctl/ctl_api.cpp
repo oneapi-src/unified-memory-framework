@@ -35,7 +35,7 @@ TEST_F(test, ctl_by_handle_os_provider) {
 
     int ipc_enabled = 0xBAD;
     ret = umfCtlGet("umf.provider.by_handle.params.ipc_enabled", hProvider,
-                    &ipc_enabled);
+                    &ipc_enabled, 0); // Some handlers omit size
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
     ASSERT_EQ(ipc_enabled, 0);
 
@@ -93,12 +93,13 @@ class CtlTest : public ::testing::Test {
     }
 
     template <typename T>
-    void validateQuery(
-        std::function<umf_result_t(const char *name, void *ctx, void *arg)>
-            ctlApiFunction,
-        const char *name, T expectedValue, umf_result_t expected) {
+    void validateQuery(std::function<umf_result_t(const char *name, void *ctx,
+                                                  void *arg, size_t)>
+                           ctlApiFunction,
+                       const char *name, T expectedValue,
+                       umf_result_t expected) {
         T value = 0xBAD;
-        umf_result_t ret = ctlApiFunction(name, pool, &value);
+        umf_result_t ret = ctlApiFunction(name, pool, &value, 0); // Omit size
         ASSERT_EQ(ret, expected);
         if (ret == UMF_RESULT_SUCCESS) {
             ASSERT_EQ(value, expectedValue);
