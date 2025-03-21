@@ -37,13 +37,17 @@
          ? LLONG_MAX                                                           \
          : (sizeof(off_t) == sizeof(long) ? LONG_MAX : INT_MAX))
 
-static UTIL_ONCE_FLAG Page_size_is_initialized = UTIL_ONCE_FLAG_INIT;
+static UTIL_ONCE_FLAG System_info_is_initialized = UTIL_ONCE_FLAG_INIT;
 static size_t Page_size;
+static unsigned Core_count;
 
-static void _utils_get_page_size(void) { Page_size = sysconf(_SC_PAGE_SIZE); }
+static void _utils_get_system_info(void) {
+    Page_size = sysconf(_SC_PAGE_SIZE);
+    Core_count = sysconf(_SC_NPROCESSORS_ONLN);
+}
 
 size_t utils_get_page_size(void) {
-    utils_init_once(&Page_size_is_initialized, _utils_get_page_size);
+    utils_init_once(&System_info_is_initialized, _utils_get_system_info);
     return Page_size;
 }
 
@@ -60,6 +64,11 @@ int utils_gettid(void) {
     // so let's use the syscall instead:
     return syscall(SYS_gettid);
 #endif
+}
+
+unsigned utils_get_num_cores(void) {
+    utils_init_once(&System_info_is_initialized, _utils_get_system_info);
+    return Core_count;
 }
 
 int utils_close_fd(int fd) { return close(fd); }
