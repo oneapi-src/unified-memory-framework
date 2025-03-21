@@ -241,6 +241,7 @@ jobs:
             shared_library: 'ON'
             level_zero_provider: 'ON'
             cuda_provider: 'ON'
+            umfd_lib: 'ON'
           - os: 'windows-2022'
             build_type: Release
             compiler: {c: cl, cxx: cl}
@@ -289,6 +290,7 @@ jobs:
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=${{matrix.level_zero_provider}}
         -DUMF_BUILD_CUDA_PROVIDER=${{matrix.cuda_provider}}
         -DUMF_TESTS_FAIL_ON_SKIP=ON
+        -DUMF_USE_DEBUG_POSTFIX=${{matrix.umfd_lib}}
 
     - name: Build UMF
       run: cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j $Env:NUMBER_OF_PROCESSORS
@@ -307,6 +309,7 @@ jobs:
         ${{matrix.shared_library == 'ON' && '--proxy' || '' }}
         --umf-version ${{env.UMF_VERSION}}
         ${{ matrix.shared_library == 'ON' && '--shared-library' || ''}}
+        ${{ matrix.umfd_lib == 'ON' && '--umfd-lib' || ''}}
         
     - name: check /DEPENDENTLOADFLAG in umf.dll
       if: ${{matrix.shared_library == 'ON' && matrix.compiler.cxx == 'cl'}}
