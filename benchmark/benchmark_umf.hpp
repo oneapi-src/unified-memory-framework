@@ -44,7 +44,8 @@ struct provider_interface {
         if (state.thread_index() != 0) {
             return;
         }
-        umfCtlExec("umf.provider.by_handle.stats.reset", provider, NULL);
+        umfCtlExec("umf.provider.by_handle.stats.peak_memory.reset", provider,
+                   NULL);
     }
 
     void postBench([[maybe_unused]] ::benchmark::State &state) {

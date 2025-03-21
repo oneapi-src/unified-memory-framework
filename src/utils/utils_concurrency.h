@@ -40,6 +40,7 @@ using std::memory_order_release;
 
 #endif /* !_WIN32 */
 
+#include "utils_assert.h"
 #include "utils_common.h"
 #include "utils_sanitizers.h"
 
@@ -218,6 +219,33 @@ static inline bool utils_compare_exchange_u64(uint64_t *ptr, uint64_t *expected,
 }
 
 #endif // !defined(_WIN32)
+
+static inline void utils_atomic_load_acquire_size_t(size_t *ptr, size_t *out) {
+    COMPILE_ERROR_ON(sizeof(size_t) != sizeof(uint64_t));
+    utils_atomic_load_acquire_u64((uint64_t *)ptr, (uint64_t *)out);
+}
+
+static inline void utils_atomic_store_release_size_t(size_t *ptr, size_t val) {
+    COMPILE_ERROR_ON(sizeof(size_t) != sizeof(uint64_t));
+    utils_atomic_store_release_u64((uint64_t *)ptr, (uint64_t)val);
+}
+
+static inline size_t utils_fetch_and_add_size_t(size_t *ptr, size_t val) {
+    COMPILE_ERROR_ON(sizeof(size_t) != sizeof(uint64_t));
+    return utils_fetch_and_add_u64((uint64_t *)ptr, (uint64_t)val);
+}
+
+static inline size_t utils_fetch_and_sub_size_t(size_t *ptr, size_t val) {
+    COMPILE_ERROR_ON(sizeof(size_t) != sizeof(uint64_t));
+    return utils_fetch_and_sub_u64((uint64_t *)ptr, (uint64_t)val);
+}
+
+static inline bool utils_compare_exchange_size_t(size_t *ptr, size_t *expected,
+                                                 size_t *desired) {
+    COMPILE_ERROR_ON(sizeof(size_t) != sizeof(uint64_t));
+    return utils_compare_exchange_u64((uint64_t *)ptr, (uint64_t *)expected,
+                                      (uint64_t *)desired);
+}
 
 #ifdef __cplusplus
 }
