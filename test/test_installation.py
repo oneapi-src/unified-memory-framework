@@ -41,6 +41,7 @@ class UmfInstaller:
         proxy: bool,
         pools: List[str],
         umf_version: Version,
+        umfd_lib: bool,
     ):
         self.workspace_dir = workspace_dir
         self.build_dir = build_dir
@@ -50,6 +51,7 @@ class UmfInstaller:
         self.proxy = proxy
         self.pools = pools
         self.umf_version = umf_version
+        self.umfd_lib = umfd_lib
         self.match_list = self._create_match_list()
 
     def _create_match_list(self) -> List[str]:
@@ -74,10 +76,14 @@ class UmfInstaller:
             lib_prefix = "lib"
 
         bin = []
-        if platform.system() == "Windows" and (self.shared_library or self.proxy):
+        if platform.system() == "Windows" and (
+            self.shared_library or self.proxy or self.umfd_lib
+        ):
             bin.append("bin")
             if self.shared_library:
                 bin.append("bin/umf.dll")
+                if self.umfd_lib:
+                    bin.append("bin/umfd.dll")
             if self.proxy:
                 bin.append("bin/umf_proxy.dll")
 
@@ -101,6 +107,8 @@ class UmfInstaller:
             lib.append(f"lib/{lib_prefix}{pool}.{lib_ext_static}")
         if self.shared_library:
             lib.append(f"lib/{lib_prefix}umf.{lib_ext_shared}")
+            if platform.system() == "Windows" and self.umfd_lib:
+                lib.append(f"lib/{lib_prefix}umfd.{lib_ext_shared}")
 
             if platform.system() == "Linux":
                 lib.append(
@@ -283,6 +291,11 @@ class UmfInstallationTester:
             action="store",
             help="Current version of the UMF, e.g. 1.0.0",
         )
+        self.parser.add_argument(
+            "--umfd-lib",
+            action="store_true",
+            help="Add this argument if the UMF was built with the umfd library",
+        )
         return self.parser.parse_args()
 
     def run(self) -> None:
@@ -306,6 +319,7 @@ class UmfInstallationTester:
             self.args.proxy,
             pools,
             umf_version,
+            self.args.umfd_lib,
         )
 
         print("Installation test - BEGIN", flush=True)
