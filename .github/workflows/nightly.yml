@@ -248,9 +248,9 @@ jobs:
        call "C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat"
        ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
 
-  hwloc-fallback:
   # Scenarios where UMF_LINK_HWLOC_STATICALLY is set to OFF and hwloc is not installed in the system
   # The hwloc library is fetched implicitly
+  hwloc-fallback:
     name: "Fallback to static hwloc build"
     strategy:
       matrix:
@@ -317,9 +317,8 @@ jobs:
   Benchmarks:
     uses: ./.github/workflows/reusable_benchmarks.yml
     permissions:
-      contents: read
+      contents: write
       pull-requests: write
     with:
       pr_no: '0'
-      bench_script_params: '--save baseline'
-      upload_report: true
+      bench_script_params: '--save Baseline_PVC'

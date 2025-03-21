@@ -1,5 +1,5 @@
 # Executes benchmarks implemented in this repository using scripts
-# for results visualization from intel/llvm (unified-runtime dir).
+# for results visualization from intel/llvm.
 name: Benchmarks
 
 on:
@@ -14,13 +14,13 @@ on:
         required: false
         type: string
         default: ''
-      upload_report:
+      runner:
         required: false
-        type: boolean
-        default: false
+        type: string
+        default: 'L0_PERF'
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 env:
@@ -32,17 +32,9 @@ jobs:
     name: Benchmarks
     # run only on upstream; forks will not have the HW
     if: github.repository == 'oneapi-src/unified-memory-framework'
-    runs-on: L0_PERF
+    runs-on: ${{ inputs.runner }}
 
     steps:
-    # Workspace on self-hosted runners is not cleaned automatically.
-    # We have to delete the files created outside of using actions.
-    - name: Cleanup self-hosted workspace
-      if: always()
-      run: |
-        ls -la ./
-        rm -rf ./* || true
-
     - name: Add comment to PR
       uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
       if: ${{ always() && inputs.pr_no != 0 }}
@@ -97,23 +89,32 @@ jobs:
     - name: Build UMF
       run: cmake --build ${{env.BUILD_DIR}} -j $(nproc)
 
-    # Get scripts for benchmark data visualization.
-    # Use specific tag, as the scripts or files' location may change.
-    - name: Checkout SYCL
+    - name: Checkout UMF results branch
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        ref: benchmark-results
+        path: results-repo
+
+    # Get scripts for benchmark data visualization (from SYCL repo).
+    # Use specific ref, as the scripts or files' location may change.
+    - name: Checkout benchmark scripts
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         repository: intel/llvm
-        # [BENCHMARK] fix default timeout parameter
-        # https://github.com/intel/llvm/pull/17412
-        ref: 357e9e0b253b7eba105d044e38452b3c09169f8a
-        path: sycl-repo
-        fetch-depth: 1
+        # Note: The same ref is used in docs build (for dashboard generation)!
+        #
+        # 20.03.2025
+        # branch: unify-benchmark-ci
+        ref: cae7049c78c697b3ac94f931716d9efb53addcd8
+        path: sc
+        sparse-checkout: |
+          devops/scripts/benchmarks
 
     - name: Install benchmarking scripts deps
       run: |
         python -m venv .venv
         source .venv/bin/activate
-        pip install -r ${{github.workspace}}/sycl-repo/unified-runtime/third_party/benchmark_requirements.txt
+        pip install -r ${{github.workspace}}/sc/devops/scripts/benchmarks/requirements.txt
 
     - name: Set core range and GPU mask
       run: |
@@ -135,22 +136,21 @@ jobs:
 
     - name: Run UMF benchmarks
       id: benchmarks
-      working-directory: ${{env.BUILD_DIR}}
       run: >
-        source ${{github.workspace}}/.venv/bin/activate &&
-        taskset -c ${{ env.CORES }} ${{ github.workspace }}/sycl-repo/unified-runtime/scripts/benchmarks/main.py
+        source .venv/bin/activate &&
+        taskset -c ${{ env.CORES }} ./sc/devops/scripts/benchmarks/main.py
         ~/bench_workdir_umf
         --umf ${{env.BUILD_DIR}}
-        --compare baseline
         --timeout 3000
-        ${{ inputs.upload_report && '--output-html' || '' }}
-        ${{ inputs.pr_no != 0 && '--output-markdown' || '' }}
+        --output-html remote
+        --results-dir ${{ github.workspace }}/results-repo
+        --output-markdown
         ${{ inputs.bench_script_params }}
 
     # In case it failed to add a comment, we can still print the results.
     - name: Print benchmark results
-      if: ${{ always() && inputs.pr_no != 0 }}
-      run: cat ${{env.BUILD_DIR}}/benchmark_results.md
+      if: ${{ always() }}
+      run: cat ${{ github.workspace }}/benchmark_results.md || true
 
     - name: Add comment to PR
       uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
@@ -160,7 +160,7 @@ jobs:
           let markdown = ""
           try {
             const fs = require('fs');
-            markdown = fs.readFileSync('${{env.BUILD_DIR}}/benchmark_results.md', 'utf8');
+            markdown = fs.readFileSync('${{ github.workspace }}/benchmark_results.md', 'utf8');
           } catch(err) {
           }
 
@@ -177,15 +177,42 @@ jobs:
             repo: context.repo.repo,
             body: body
           })
-  
-    - name: Upload HTML report
-      if: ${{ always() && inputs.upload_report }}
-      uses: actions/cache/save@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
-      with:
-        path: umf-repo/build/benchmark_results.html
-        key: benchmark-results-${{ github.run_id }}
 
-    - name: Get information about platform
-      if: ${{ always() }}
-      working-directory: ${{env.UMF_DIR}}
-      run: .github/scripts/get_system_info.sh
+    - name: Commit data.json and results directory
+      working-directory: results-repo
+      run: |
+        git config --global user.name "GitHub Actions Bot"
+        git config --global user.email "actions@github.com"
+
+        for attempt in {1..5}; do
+          echo "Attempt #$attempt to push changes"
+
+          rm -f data.json
+          cp ${{ github.workspace }}/sc/devops/scripts/benchmarks/html/data.json .
+
+          git add data.json results/
+          git commit -m "Add benchmark results and data.json"
+
+          results_file=$(git diff HEAD~1 --name-only -- results/ | head -n 1)
+
+          if git push origin benchmark-results; then
+            echo "Push succeeded"
+            break
+          fi
+
+          echo "Push failed, retrying..."
+
+          if [ -n "$results_file" ]; then
+            mv $results_file ${{ github.workspace }}/temp_$(basename $results_file)
+
+            git reset --hard origin/benchmark-results
+            git pull origin benchmark-results
+
+            new_file="results/$(basename "$results_file")"
+            mv ${{ github.workspace }}/temp_$(basename $results_file) $new_file
+          fi
+
+          echo "Regenerating data.json"
+          (cd ${{ github.workspace }} && ${{ github.workspace }}/sc/devops/scripts/benchmarks/main.py ~/bench_workdir_umf --dry-run --results-dir ${{ github.workspace }}/results-repo --output-html remote)
+
+        done
