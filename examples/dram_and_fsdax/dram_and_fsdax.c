@@ -9,12 +9,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <umf/memory_pool.h>
 #include <umf/memory_provider.h>
+#include <umf/pools/pool_jemalloc.h>
 #include <umf/providers/provider_file_memory.h>
 #include <umf/providers/provider_os_memory.h>
-
-#include <umf/memory_pool.h>
-#include <umf/pools/pool_jemalloc.h>
 
 static umf_memory_pool_handle_t create_dram_pool(void) {
     umf_memory_provider_handle_t provider_dram = NULL;

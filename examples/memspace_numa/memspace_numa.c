@@ -7,13 +7,13 @@
  *
  */
 
-#include <umf/mempolicy.h>
-#include <umf/memspace.h>
-
 #include <numa.h>
 #include <numaif.h>
 #include <stdio.h>
 #include <string.h>
+
+#include <umf/mempolicy.h>
+#include <umf/memspace.h>
 
 #include "examples_utils.h"
 
