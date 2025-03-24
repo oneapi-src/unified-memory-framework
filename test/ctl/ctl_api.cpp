@@ -74,6 +74,8 @@ class CtlTest : public ::testing::Test {
         const char *msg;
     };
 
+    CtlTest() : provider(NULL), pool(NULL) {}
+
     void SetUp() override {
         provider = NULL;
         pool = NULL;
