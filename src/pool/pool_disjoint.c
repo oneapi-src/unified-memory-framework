@@ -928,6 +928,11 @@ void disjoint_pool_finalize(void *pool) {
     umf_ba_global_free(hPool);
 }
 
+const char *disjoint_pool_get_name(void *pool) {
+    disjoint_pool_t *hPool = (disjoint_pool_t *)pool;
+    return hPool->params.name;
+}
+
 static umf_memory_pool_ops_t UMF_DISJOINT_POOL_OPS = {
     .version = UMF_VERSION_CURRENT,
     .initialize = disjoint_pool_initialize,
@@ -939,6 +944,7 @@ static umf_memory_pool_ops_t UMF_DISJOINT_POOL_OPS = {
     .malloc_usable_size = disjoint_pool_malloc_usable_size,
     .free = disjoint_pool_free,
     .get_last_allocation_error = disjoint_pool_get_last_allocation_error,
+    .get_name = disjoint_pool_get_name,
 };
 
 const umf_memory_pool_ops_t *umfDisjointPoolOps(void) {

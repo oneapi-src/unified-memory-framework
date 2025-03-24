@@ -168,6 +168,11 @@ umf_result_t umfPoolGetMemoryProvider(umf_memory_pool_handle_t hPool,
     return UMF_RESULT_SUCCESS;
 }
 
+const char *umfPoolGetName(umf_memory_pool_handle_t pool) {
+    UMF_CHECK((pool != NULL), NULL);
+    return pool->ops.get_name(pool->pool_priv);
+}
+
 umf_result_t umfPoolCreate(const umf_memory_pool_ops_t *ops,
                            umf_memory_provider_handle_t provider,
                            const void *params, umf_pool_create_flags_t flags,
