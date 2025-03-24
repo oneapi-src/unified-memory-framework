@@ -141,6 +141,13 @@ typedef struct umf_memory_pool_ops_t {
     ///
     umf_result_t (*ctl)(void *hPool, int operationType, const char *name,
                         void *arg, umf_ctl_query_type_t queryType);
+
+    ///
+    /// @brief Get the name of the memory pool.
+    /// @param pool pointer to the memory pool
+    /// @return name of the memory pool
+    ///
+    const char *(*get_name)(void *pool);
 } umf_memory_pool_ops_t;
 
 #ifdef __cplusplus
