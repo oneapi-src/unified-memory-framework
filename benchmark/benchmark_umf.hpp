@@ -45,7 +45,7 @@ struct provider_interface {
             return;
         }
         umfCtlExec("umf.provider.by_handle.stats.peak_memory.reset", provider,
-                   NULL);
+                   NULL, 0);
     }
 
     void postBench([[maybe_unused]] ::benchmark::State &state) {
@@ -53,8 +53,9 @@ struct provider_interface {
             return;
         }
         size_t arg;
-        umf_result_t ret = umfCtlGet(
-            "umf.provider.by_handle.stats.allocated_memory", provider, &arg);
+        umf_result_t ret =
+            umfCtlGet("umf.provider.by_handle.stats.allocated_memory", provider,
+                      &arg, sizeof(arg));
         if (ret == UMF_RESULT_SUCCESS) {
             state.counters["provider_memory_allocated"] =
                 static_cast<double>(arg);

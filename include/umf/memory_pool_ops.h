@@ -131,21 +131,27 @@ typedef struct umf_memory_pool_ops_t {
     ///        The function is used to perform various control operations
     ///        on the memory pool.
     ///
-    /// @param hPool handle to the memory pool.
+    /// @param pool handle to the memory pool.
     /// @param operationType type of the operation to be performed.
     /// @param name name associated with the operation.
     /// @param arg argument for the operation.
+    /// @param size size of the argument [optional - check path requirements]
     /// @param queryType type of the query to be performed.
     ///
     /// @return umf_result_t result of the control operation.
     ///
-    umf_result_t (*ctl)(void *hPool, int operationType, const char *name,
-                        void *arg, umf_ctl_query_type_t queryType);
+    umf_result_t (*ctl)(void *pool, int operationType, const char *name,
+                        void *arg, size_t size, umf_ctl_query_type_t queryType);
 
     ///
-    /// @brief Get the name of the memory pool.
-    /// @param pool pointer to the memory pool
-    /// @return name of the memory pool
+    /// @brief Retrieves the name of the memory pool [optional]
+    /// @param pool valid pointer to the memory pool or NULL value
+    /// \details
+    /// * Implementations *must* return a literal null-terminated string.
+    ///
+    /// * Implementations *must* return default pool name when NULL is provided,
+    ///   otherwise the pool's name is returned.
+    /// @return A constant character string representing the pool's name.
     ///
     const char *(*get_name)(void *pool);
 } umf_memory_pool_ops_t;

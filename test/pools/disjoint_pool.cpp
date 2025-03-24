@@ -4,6 +4,8 @@
 
 #include <memory>
 
+#include <umf/base.h>
+#include <umf/memory_pool.h>
 #include <umf/pools/pool_disjoint.h>
 
 #include "pool.hpp"
@@ -12,8 +14,6 @@
 #include "provider.hpp"
 #include "provider_null.h"
 #include "provider_trace.h"
-#include "umf/base.h"
-#include "umf/memory_pool.h"
 
 using umf_test::test;
 using namespace umf_test;
@@ -336,28 +336,8 @@ TEST_F(test, disjointPoolName) {
     umf_memory_provider_handle_t provider_handle = nullptr;
     umf_memory_pool_handle_t pool = NULL;
 
-    struct memory_provider : public umf_test::provider_base_t {
-        umf_result_t expectedResult;
-        umf_result_t alloc(size_t size, size_t alignment, void **ptr) noexcept {
-            *ptr = umf_ba_global_aligned_alloc(size, alignment);
-            return UMF_RESULT_SUCCESS;
-        }
+    struct memory_provider : public umf_test::provider_base_t {};
 
-        umf_result_t free(void *ptr, [[maybe_unused]] size_t size) noexcept {
-            // do the actual free only when we expect the success
-            if (expectedResult == UMF_RESULT_SUCCESS) {
-                umf_ba_global_free(ptr);
-            }
-            return expectedResult;
-        }
-
-        umf_result_t
-        get_min_page_size([[maybe_unused]] void *ptr,
-                          [[maybe_unused]] size_t *pageSize) noexcept {
-            *pageSize = 1024;
-            return UMF_RESULT_SUCCESS;
-        }
-    };
     umf_memory_provider_ops_t provider_ops =
         umf_test::providerMakeCOps<memory_provider, void>();
 
@@ -372,7 +352,6 @@ TEST_F(test, disjointPoolName) {
     const char *name = umfPoolGetName(pool);
     EXPECT_STREQ(name, "disjoint");
 
-    EXPECT_EQ(umfPoolGetName(nullptr), nullptr);
     umfPoolDestroy(pool);
     umfDisjointPoolParamsDestroy(params);
 }

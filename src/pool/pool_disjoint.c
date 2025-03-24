@@ -12,11 +12,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <umf/base.h>
 #include <umf/memory_pool.h>
 #include <umf/memory_pool_ops.h>
 #include <umf/memory_provider.h>
 
 #include "base_alloc_global.h"
+#include "ctl/ctl.h"
 #include "pool_disjoint_internal.h"
 #include "provider/provider_tracking.h"
 #include "uthash/utlist.h"
@@ -24,6 +26,62 @@
 #include "utils_concurrency.h"
 #include "utils_log.h"
 #include "utils_math.h"
+
+static char *DEFAULT_NAME = "disjoint";
+
+/* Disjoint pool CTL implementation */
+struct ctl disjoint_ctl_root;
+static UTIL_ONCE_FLAG ctl_initialized = UTIL_ONCE_FLAG_INIT;
+
+static int CTL_READ_HANDLER(name)(void *ctx, umf_ctl_query_source_t source,
+                                  void *arg, size_t size,
+                                  umf_ctl_index_utlist_t *indexes,
+                                  const char *extra_name,
+                                  umf_ctl_query_type_t queryType) {
+    (void)source, (void)indexes, (void)queryType, (void)extra_name;
+    disjoint_pool_t *pool = (disjoint_pool_t *)ctx;
+
+    if (arg == NULL) {
+        return -1;
+    }
+
+    strncpy((char *)arg, pool->params.name, size);
+    return 0;
+}
+
+static const struct ctl_argument CTL_ARG(name) = CTL_ARG_STRING(255);
+
+static int CTL_WRITE_HANDLER(name)(void *ctx, umf_ctl_query_source_t source,
+                                   void *arg, size_t size,
+                                   umf_ctl_index_utlist_t *indexes,
+                                   const char *extra_name,
+                                   umf_ctl_query_type_t queryType) {
+    (void)source, (void)indexes, (void)queryType, (void)size, (void)extra_name;
+    disjoint_pool_t *pool = (disjoint_pool_t *)ctx;
+    if (arg == NULL) {
+        return -1;
+    }
+
+    strncpy(pool->params.name, (char *)arg, sizeof(pool->params.name) - 1);
+    return 0;
+}
+
+static const umf_ctl_node_t CTL_NODE(disjoint)[] = {CTL_LEAF_RW(name),
+                                                    CTL_NODE_END};
+
+static void initialize_disjoint_ctl(void) {
+    CTL_REGISTER_MODULE(&disjoint_ctl_root, disjoint);
+}
+
+umf_result_t disjoint_pool_ctl(void *hPool, int operationType, const char *name,
+                               void *arg, size_t size,
+                               umf_ctl_query_type_t queryType) {
+    (void)operationType;
+    utils_init_once(&ctl_initialized, initialize_disjoint_ctl);
+
+    return ctl_query(&disjoint_ctl_root, hPool, CTL_QUERY_PROGRAMMATIC, name,
+                     queryType, arg, size);
+}
 
 // Temporary solution for disabling memory poisoning. This is needed because
 // AddressSanitizer does not support memory poisoning for GPU allocations.
@@ -930,6 +988,9 @@ void disjoint_pool_finalize(void *pool) {
 
 const char *disjoint_pool_get_name(void *pool) {
     disjoint_pool_t *hPool = (disjoint_pool_t *)pool;
+    if (pool == NULL) {
+        return DEFAULT_NAME;
+    }
     return hPool->params.name;
 }
 
@@ -945,6 +1006,7 @@ static umf_memory_pool_ops_t UMF_DISJOINT_POOL_OPS = {
     .free = disjoint_pool_free,
     .get_last_allocation_error = disjoint_pool_get_last_allocation_error,
     .get_name = disjoint_pool_get_name,
+    .ctl = disjoint_pool_ctl,
 };
 
 const umf_memory_pool_ops_t *umfDisjointPoolOps(void) {
@@ -970,8 +1032,6 @@ void umfDisjointPoolSharedLimitsDestroy(
 
 umf_result_t
 umfDisjointPoolParamsCreate(umf_disjoint_pool_params_handle_t *hParams) {
-    static const char *DEFAULT_NAME = "disjoint_pool";
-
     if (!hParams) {
         LOG_ERR("disjoint pool params handle is NULL");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
@@ -992,11 +1052,11 @@ umfDisjointPoolParamsCreate(umf_disjoint_pool_params_handle_t *hParams) {
         .cur_pool_size = 0,
         .pool_trace = 0,
         .shared_limits = NULL,
-        .name = {*DEFAULT_NAME},
     };
 
-    *hParams = params;
+    strncpy(params->name, DEFAULT_NAME, sizeof(params->name) - 1);
 
+    *hParams = params;
     return UMF_RESULT_SUCCESS;
 }
 

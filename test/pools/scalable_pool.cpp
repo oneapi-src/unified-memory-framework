@@ -166,3 +166,24 @@ INSTANTIATE_TEST_SUITE_P(
     testing::Combine(testing::Values(2 * 1024 * 1024, 3 * 1024 * 1024,
                                      4 * 1024 * 1024, 5 * 1024 * 1024),
                      testing::Values(false, true)));
+
+TEST(scalablePoolTest, scalablePoolName) {
+    umf_memory_pool_handle_t pool = nullptr;
+    umf_os_memory_provider_params_handle_t provider_params = nullptr;
+    umf_memory_provider_handle_t provider = nullptr;
+
+    umf_result_t ret = umfOsMemoryProviderParamsCreate(&provider_params);
+    ret = umfMemoryProviderCreate(umfOsMemoryProviderOps(), provider_params,
+                                  &provider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfPoolCreate(umfScalablePoolOps(), provider, nullptr, 0, &pool);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    const char *name = umfPoolGetName(pool);
+    EXPECT_STREQ(name, "scalable");
+
+    umfPoolDestroy(pool);
+    umfMemoryProviderDestroy(provider);
+    umfOsMemoryProviderParamsDestroy(provider_params);
+}

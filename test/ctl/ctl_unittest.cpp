@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -21,35 +21,39 @@ TEST_F(test, ctl_debug_read_from_string) {
 
     int value = 0;
     ctl_query(ctl_handler, NULL, CTL_QUERY_PROGRAMMATIC,
-              "debug.heap.alloc_pattern", CTL_QUERY_READ, &value);
+              "debug.heap.alloc_pattern", CTL_QUERY_READ, &value,
+              sizeof(value));
     ASSERT_EQ(value, 1);
 
     // Test setting alloc_pattern to 2
     ctl_load_config_from_string(ctl_handler, NULL,
                                 "debug.heap.alloc_pattern=2");
     ctl_query(ctl_handler, NULL, CTL_QUERY_PROGRAMMATIC,
-              "debug.heap.alloc_pattern", CTL_QUERY_READ, &value);
+              "debug.heap.alloc_pattern", CTL_QUERY_READ, &value,
+              sizeof(value));
     ASSERT_EQ(value, 2);
 
     // Test setting alloc_pattern to 0
     ctl_load_config_from_string(ctl_handler, NULL,
                                 "debug.heap.alloc_pattern=0");
     ctl_query(ctl_handler, NULL, CTL_QUERY_PROGRAMMATIC,
-              "debug.heap.alloc_pattern", CTL_QUERY_READ, &value);
+              "debug.heap.alloc_pattern", CTL_QUERY_READ, &value,
+              sizeof(value));
     ASSERT_EQ(value, 0);
 
     // Negative test: non-existent configuration
     ASSERT_NE(ctl_query(ctl_handler, NULL, CTL_QUERY_PROGRAMMATIC,
-                        "debug.heap.non_existent", CTL_QUERY_READ, &value),
+                        "debug.heap.non_existent", CTL_QUERY_READ, &value,
+                        sizeof(value)),
               0);
 
     // Negative test: invalid path
     ASSERT_NE(ctl_query(ctl_handler, NULL, CTL_QUERY_PROGRAMMATIC,
-                        "invalid.path.alloc_pattern", CTL_QUERY_READ, &value),
+                        "invalid.path.alloc_pattern", CTL_QUERY_READ, &value,
+                        sizeof(value)),
               0);
 
     debug_ctl_register(ctl_handler);
-    deinitialize_debug_ctl();
 }
 
 int ctl_config_write_to_file(const char *filename, const char *data) {
@@ -74,20 +78,19 @@ TEST_F(test, ctl_debug_read_from_file) {
 
     int value = 0;
     ctl_query(ctl_handler, NULL, CTL_QUERY_PROGRAMMATIC,
-              "debug.heap.alloc_pattern", CTL_QUERY_READ, &value);
+              "debug.heap.alloc_pattern", CTL_QUERY_READ, &value, 0);
     ASSERT_EQ(value, 321);
 
     value = 0;
     ctl_query(ctl_handler, NULL, CTL_QUERY_PROGRAMMATIC, "debug.heap.log_level",
-              CTL_QUERY_READ, &value);
+              CTL_QUERY_READ, &value, 0);
     ASSERT_EQ(value, 5);
 
     value = 0;
     ctl_query(ctl_handler, NULL, CTL_QUERY_PROGRAMMATIC,
-              "debug.heap.enable_logging", CTL_QUERY_READ, &value);
+              "debug.heap.enable_logging", CTL_QUERY_READ, &value, 0);
     ASSERT_EQ(value, 1);
 
     debug_ctl_register(ctl_handler);
-    deinitialize_debug_ctl();
 #endif
 }
