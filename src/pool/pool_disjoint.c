@@ -24,6 +24,51 @@
 #include "utils_concurrency.h"
 #include "utils_log.h"
 #include "utils_math.h"
+#include <ctl/ctl.h>
+
+/* Disjoint pool CTL implementation */
+struct ctl disjoint_ctl_root;
+static UTIL_ONCE_FLAG ctl_initialized = UTIL_ONCE_FLAG_INIT;
+
+static int CTL_READ_HANDLER(name)(void *ctx, umf_ctl_query_source_t source,
+                                  void *arg, size_t size,
+                                  umf_ctl_index_utlist_t *indexes,
+                                  const char *extra_name,
+                                  umf_ctl_query_type_t queryType) {
+    (void)source, (void)indexes, (void)queryType, (void)size, (void)extra_name;
+    disjoint_pool_t *pool = (disjoint_pool_t *)ctx;
+
+    if (arg == NULL) {
+        return -1;
+    }
+
+    strncpy(pool->params.name, (char *)arg, sizeof(pool->params.name) - 1);
+    return 0;
+}
+
+static const umf_ctl_node_t CTL_NODE(disjoint)[] = {CTL_LEAF_RO(name),
+                                                    CTL_NODE_END};
+
+static void initialize_disjoint_ctl(void) {
+    CTL_REGISTER_MODULE(&disjoint_ctl_root, disjoint);
+}
+
+umf_result_t disjoint_pool_ctl(void *hPool, int operationType, const char *name,
+                               void *arg, size_t size,
+                               umf_ctl_query_type_t queryType) {
+    (void)operationType, (void)queryType;
+    utils_init_once(&ctl_initialized, initialize_disjoint_ctl);
+
+    const char *prefix = "disjoint.";
+    const char *name_wo_prefix = strstr(name, "disjoint.");
+
+    // Check if the name has the prefix
+    if ((name_wo_prefix = strstr(name, prefix)) == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    return ctl_query(&disjoint_ctl_root, hPool, CTL_QUERY_PROGRAMMATIC,
+                     name_wo_prefix, CTL_QUERY_READ, arg, size);
+}
 
 // Temporary solution for disabling memory poisoning. This is needed because
 // AddressSanitizer does not support memory poisoning for GPU allocations.
@@ -946,6 +991,7 @@ static umf_memory_pool_ops_t UMF_DISJOINT_POOL_OPS = {
     .free = disjoint_pool_free,
     .get_last_allocation_error = disjoint_pool_get_last_allocation_error,
     .get_name = disjoint_pool_get_name,
+    .ctl = disjoint_pool_ctl,
 };
 
 umf_memory_pool_ops_t *umfDisjointPoolOps(void) {
@@ -971,7 +1017,7 @@ void umfDisjointPoolSharedLimitsDestroy(
 
 umf_result_t
 umfDisjointPoolParamsCreate(umf_disjoint_pool_params_handle_t *hParams) {
-    static const char *DEFAULT_NAME = "disjoint_pool";
+    static char *DEFAULT_NAME = "disjoint";
 
     if (!hParams) {
         LOG_ERR("disjoint pool params handle is NULL");
@@ -993,11 +1039,14 @@ umfDisjointPoolParamsCreate(umf_disjoint_pool_params_handle_t *hParams) {
         .cur_pool_size = 0,
         .pool_trace = 0,
         .shared_limits = NULL,
-        .name = {*DEFAULT_NAME},
     };
 
-    *hParams = params;
+    // Find default name and update params name
+    if (params->name[0] == '\0') {
+        strncpy(params->name, DEFAULT_NAME, sizeof(params->name) - 1);
+    }
 
+    *hParams = params;
     return UMF_RESULT_SUCCESS;
 }
 
