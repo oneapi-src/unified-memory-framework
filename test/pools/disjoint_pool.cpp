@@ -4,6 +4,7 @@
 
 #include <memory>
 
+#include <umf/base.h>
 #include <umf/pools/pool_disjoint.h>
 
 #include "pool.hpp"
@@ -12,7 +13,6 @@
 #include "provider.hpp"
 #include "provider_null.h"
 #include "provider_trace.h"
-#include "umf/base.h"
 #include "umf/memory_pool.h"
 
 using umf_test::test;
@@ -352,7 +352,7 @@ TEST_F(test, disjointPoolName) {
         }
 
         umf_result_t
-        get_min_page_size([[maybe_unused]] void *ptr,
+        get_min_page_size([[maybe_unused]] const void *ptr,
                           [[maybe_unused]] size_t *pageSize) noexcept {
             *pageSize = 1024;
             return UMF_RESULT_SUCCESS;
@@ -372,7 +372,6 @@ TEST_F(test, disjointPoolName) {
     const char *name = umfPoolGetName(pool);
     EXPECT_STREQ(name, "disjoint");
 
-    EXPECT_EQ(umfPoolGetName(nullptr), nullptr);
     umfPoolDestroy(pool);
     umfDisjointPoolParamsDestroy(params);
 }

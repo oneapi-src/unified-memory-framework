@@ -280,11 +280,11 @@ static umf_result_t fixed_free(void *provider, void *ptr, size_t size) {
 }
 
 static umf_result_t fixed_ctl(void *provider, int operationType,
-                              const char *name, void *arg,
+                              const char *name, void *arg, size_t size,
                               umf_ctl_query_type_t query_type) {
     utils_init_once(&ctl_initialized, initialize_fixed_ctl);
     return ctl_query(fixed_memory_ctl_root, provider, operationType, name,
-                     query_type, arg);
+                     query_type, arg, size);
 }
 
 static umf_memory_provider_ops_t UMF_FIXED_MEMORY_PROVIDER_OPS = {
