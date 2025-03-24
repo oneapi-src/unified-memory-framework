@@ -352,7 +352,7 @@ TEST_F(test, disjointPoolName) {
         }
 
         umf_result_t
-        get_min_page_size([[maybe_unused]] void *ptr,
+        get_min_page_size([[maybe_unused]] const void *ptr,
                           [[maybe_unused]] size_t *pageSize) noexcept {
             *pageSize = 1024;
             return UMF_RESULT_SUCCESS;

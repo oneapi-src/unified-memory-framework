@@ -27,7 +27,7 @@
 extern "C" {
 #endif
 
-struct ctl;
+#define CTL_MAX_ENTRIES 100
 
 typedef struct ctl_index_utlist {
     const char *name;
@@ -46,7 +46,7 @@ typedef enum ctl_query_source {
 } umf_ctl_query_source_t;
 
 typedef int (*node_callback)(void *ctx, umf_ctl_query_source_t type, void *arg,
-                             umf_ctl_index_utlist_t *indexes,
+                             size_t size, umf_ctl_index_utlist_t *indexes,
                              const char *extra_name,
                              umf_ctl_query_type_t query_type);
 
@@ -98,8 +98,23 @@ typedef struct ctl_node {
     const struct ctl_node *children;
 } umf_ctl_node_t;
 
+/*
+ * This is the top level node of the ctl tree structure. Each node can contain
+ * children and leaf nodes.
+ *
+ * Internal nodes simply create a new path in the tree whereas child nodes are
+ * the ones providing the read/write functionality by the means of callbacks.
+ *
+ * Each tree node must be NULL-terminated, CTL_NODE_END macro is provided for
+ * convenience.
+ */
+struct ctl {
+    umf_ctl_node_t root[CTL_MAX_ENTRIES];
+    int first_free;
+};
+
 struct ctl *ctl_new(void);
-void ctl_delete(struct ctl *stats);
+void ctl_delete(struct ctl *c);
 
 void initialize_global_ctl(void);
 
@@ -138,7 +153,8 @@ int ctl_arg_string(const void *arg, void *dest, size_t dest_size);
 #define CTL_NODE(name, ...) ctl_node_##__VA_ARGS__##_##name
 
 int ctl_query(struct ctl *ctl, void *ctx, umf_ctl_query_source_t source,
-              const char *name, umf_ctl_query_type_t type, void *arg);
+              const char *name, umf_ctl_query_type_t type, void *arg,
+              size_t size);
 
 /* Declaration of a new child node */
 #define CTL_CHILD(name, ...)                                                   \
@@ -173,6 +189,18 @@ int ctl_query(struct ctl *ctl, void *ctx, umf_ctl_query_source_t source,
         CTL_STR(name), CTL_NODE_LEAF,                                          \
             {CTL_READ_HANDLER(name, __VA_ARGS__), NULL, NULL, NULL}, NULL,     \
             NULL                                                               \
+    }
+
+/*
+ * Declaration of a new RW leaf. This type of RW leaf doesn't require parsing
+ * of the argument. The argument is passed directly to the read/write callback.
+ */
+#define CTL_LEAF_RW_no_arg(name, ...)                                          \
+    {                                                                          \
+        CTL_STR(name), CTL_NODE_LEAF,                                          \
+            {CTL_READ_HANDLER(name, __VA_ARGS__),                              \
+             CTL_WRITE_HANDLER(name, __VA_ARGS__), NULL, NULL},                \
+            NULL, NULL                                                         \
     }
 
 /*
