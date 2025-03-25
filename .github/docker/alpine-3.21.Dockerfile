@@ -7,40 +7,40 @@
 #              environment for building the Unified Memory Framework project.
 #
 
-# Pull base Alpine image version 3.20
-FROM alpine:3.20
+# Pull base Alpine image version 3.21
+FROM registry.hub.docker.com/library/alpine@sha256:a8560b36e8b8210634f77d9f7f9efd7ffa463e380b75e2e74aff4511df3ef88c
 
 # Set environment variables
-ENV OS alpine
-ENV OS_VER 3.20
+ENV OS=alpine
+ENV OS_VER=3.21
 
 # Base development packages
 ARG BASE_DEPS="\
+	bash \
 	cmake \
 	git \
-    g++ \
-    make"
+	g++ \
+	make \
+	sudo"
 
 # UMF's dependencies
 ARG UMF_DEPS="\
 	hwloc-dev"
 
-# Add a new (non-root) 'test_user'
-ENV USER test_user
-ENV USERPASS pass
-RUN useradd -m "${USER}" -g sudo -p "$(mkpasswd ${USERPASS})"
-USER test_user
+# Dependencies for tests
+ARG TEST_DEPS="\
+	numactl-dev"
 
 # Update and install required packages
 RUN apk update \
- && apk add \
+ && apk add --no-cache \
 	${BASE_DEPS} \
+	${TEST_DEPS} \
 	${UMF_DEPS}
 
-# clone the repository
-RUN git clone https://github.com/oneapi-src/unified-memory-framework.git
+# Add a new (non-root) 'test_user'
+ENV USER=test_user
+RUN adduser -D -G wheel ${USER}
+RUN echo '%wheel ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
 
-# build the project
-RUN cd unified-memory-framework \
-cmake -B build -DCMAKE_BUILD_TYPE=Release -DUMF_BUILD_TESTS=ON -DUMF_BUILD_EXAMPLES=OFF \
-cmake --build build
+USER test_user
