@@ -18,29 +18,20 @@ ENV OS_VER 3.20
 ARG BASE_DEPS="\
 	cmake \
 	git \
-    g++ \
-    make"
+	g++ \
+	make"
 
 # UMF's dependencies
 ARG UMF_DEPS="\
 	hwloc-dev"
 
-# Add a new (non-root) 'test_user'
-ENV USER test_user
-ENV USERPASS pass
-RUN useradd -m "${USER}" -g sudo -p "$(mkpasswd ${USERPASS})"
-USER test_user
+# Dependencies for tests
+ARG TEST_DEPS="\
+	numactl-dev"
 
 # Update and install required packages
 RUN apk update \
  && apk add \
 	${BASE_DEPS} \
+	${TEST_DEPS} \
 	${UMF_DEPS}
-
-# clone the repository
-RUN git clone https://github.com/oneapi-src/unified-memory-framework.git
-
-# build the project
-RUN cd unified-memory-framework \
-cmake -B build -DCMAKE_BUILD_TYPE=Release -DUMF_BUILD_TESTS=ON -DUMF_BUILD_EXAMPLES=OFF \
-cmake --build build
