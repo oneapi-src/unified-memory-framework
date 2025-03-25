@@ -13,6 +13,13 @@ on:
         type: string
         required: false
         default: ''
+      bench_script_compare:
+        description: Compare label, passed to script executing benchmark as '--compare <label>'
+        type: choice
+        required: false
+        default: 'Baseline_PVC'
+        options:
+          - 'Baseline_PVC'
       runner:
         description: Runner
         type: choice
@@ -32,4 +39,5 @@ jobs:
     with:
       pr_no: ${{ inputs.pr_no }}
       bench_script_params: ${{ inputs.bench_script_params }}
+      bench_script_compare: ${{ inputs.bench_script_compare }}
       runner: ${{ inputs.runner }}
