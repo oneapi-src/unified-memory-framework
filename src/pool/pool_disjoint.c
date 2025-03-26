@@ -965,7 +965,7 @@ void umfDisjointPoolSharedLimitsDestroy(
 
 umf_result_t
 umfDisjointPoolParamsCreate(umf_disjoint_pool_params_handle_t *hParams) {
-    static char *DEFAULT_NAME = "disjoint_pool";
+    static const char *DEFAULT_NAME = "disjoint_pool";
 
     if (!hParams) {
         LOG_ERR("disjoint pool params handle is NULL");
