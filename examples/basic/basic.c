@@ -7,11 +7,11 @@
  *
  */
 
-#include "umf/pools/pool_scalable.h"
-#include "umf/providers/provider_os_memory.h"
-
 #include <stdio.h>
 #include <string.h>
+
+#include <umf/pools/pool_scalable.h>
+#include <umf/providers/provider_os_memory.h>
 
 int main(void) {
     // A result object for storing UMF API result status
