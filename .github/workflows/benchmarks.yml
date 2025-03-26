@@ -29,11 +29,13 @@ on:
           - L0_PERF
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   manual:
+    permissions:
+      contents: write
+      pull-requests: write
     name: Compute Benchmarks
     uses: ./.github/workflows/reusable_benchmarks.yml
     with:

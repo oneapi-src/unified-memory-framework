@@ -24,8 +24,7 @@ on:
         default: 'L0_PERF'
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 env:
   UMF_DIR: "${{github.workspace}}/umf-repo"
@@ -37,6 +36,9 @@ jobs:
     # run only on upstream; forks will not have the HW
     if: github.repository == 'oneapi-src/unified-memory-framework'
     runs-on: ${{ inputs.runner }}
+    permissions:
+      contents: write
+      pull-requests: write
 
     steps:
     - name: Establish bench params
