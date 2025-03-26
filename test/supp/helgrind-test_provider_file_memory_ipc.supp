@@ -52,20 +52,3 @@
    fun:tbb_pool_finalize
    ...
 }
-
-{
-   [false-positive] trackingGetIpcHandle
-   Helgrind:Race
-   fun:trackingGetIpcHandle
-   fun:umfMemoryProviderGetIPCHandle
-   fun:umfGetIPCHandle
-}
-
-{
-   [false-positive] trackingGetIpcHandle
-   Helgrind:Race
-   fun:memmove
-   fun:trackingGetIpcHandle
-   fun:umfMemoryProviderGetIPCHandle
-   fun:umfGetIPCHandle
-}
