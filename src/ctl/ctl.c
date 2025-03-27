@@ -102,7 +102,7 @@ umf_result_t umfCtlSet(const char *name, void *ctx, void *arg) {
 }
 
 umf_result_t umfCtlExec(const char *name, void *ctx, void *arg) {
-    if (name == NULL || arg == NULL || ctx == NULL) {
+    if (name == NULL || ctx == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
     return ctl_query(NULL, ctx, CTL_QUERY_PROGRAMMATIC, name,
@@ -140,6 +140,7 @@ static const umf_ctl_node_t *ctl_find_node(const umf_ctl_node_t *nodes,
      * in the main ctl tree.
      */
     while (node_name != NULL) {
+        char *next_node = strtok_r(NULL, CTL_QUERY_NODE_SEPARATOR, &sptr);
         *name_offset = node_name - parse_str;
         if (n != NULL && n->type == CTL_NODE_SUBTREE) {
             // if a subtree occurs, the subtree handler should be called
@@ -168,6 +169,14 @@ static const umf_ctl_node_t *ctl_find_node(const umf_ctl_node_t *nodes,
             if (index_entry && n->type == CTL_NODE_INDEXED) {
                 break;
             } else if (strcmp(n->name, node_name) == 0) {
+                if (n->type == CTL_NODE_LEAF && next_node != NULL) {
+                    // this is not the last node in the query, so it couldn't be leaf
+                    continue;
+                }
+                if (n->type != CTL_NODE_LEAF && next_node == NULL) {
+                    // this is the last node in the query, so it must be a leaf
+                    continue;
+                }
                 break;
             }
         }
@@ -181,7 +190,7 @@ static const umf_ctl_node_t *ctl_find_node(const umf_ctl_node_t *nodes,
         }
 
         nodes = n->children;
-        node_name = strtok_r(NULL, CTL_QUERY_NODE_SEPARATOR, &sptr);
+        node_name = next_node;
     }
 
     umf_ba_global_free(parse_str);

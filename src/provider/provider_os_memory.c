@@ -102,6 +102,9 @@ umf_result_t umfOsMemoryProviderParamsSetPartitions(
 #include "utils_concurrency.h"
 #include "utils_log.h"
 
+#define CTL_PROVIDER_TYPE os_memory_provider_t
+#include "provider_ctl_stats_impl.h"
+
 #define NODESET_STR_BUF_LEN 1024
 
 #define TLS_MSG_BUF_LEN 1024
@@ -188,70 +191,6 @@ static int CTL_READ_HANDLER(ipc_enabled)(void *ctx,
     *arg_out = os_provider->IPC_enabled;
     return 0;
 }
-
-static int CTL_READ_HANDLER(peak_memory)(void *ctx,
-                                         umf_ctl_query_source_t source,
-                                         void *arg,
-                                         umf_ctl_index_utlist_t *indexes,
-                                         const char *extra_name,
-                                         umf_ctl_query_type_t query_type) {
-    /* suppress unused-parameter errors */
-    (void)source, (void)indexes, (void)ctx, (void)extra_name, (void)query_type;
-
-    size_t *arg_out = arg;
-    os_memory_provider_t *os_provider = (os_memory_provider_t *)ctx;
-    COMPILE_ERROR_ON(sizeof(os_provider->stats.peak_memory) !=
-                     sizeof(uint64_t));
-    utils_atomic_load_acquire_u64((uint64_t *)&os_provider->stats.peak_memory,
-                                  (uint64_t *)arg_out);
-    return 0;
-}
-
-static int CTL_READ_HANDLER(allocated_memory)(void *ctx,
-                                              umf_ctl_query_source_t source,
-                                              void *arg,
-                                              umf_ctl_index_utlist_t *indexes,
-                                              const char *extra_name,
-                                              umf_ctl_query_type_t query_type) {
-    /* suppress unused-parameter errors */
-    (void)source, (void)indexes, (void)ctx, (void)extra_name, (void)query_type;
-
-    size_t *arg_out = arg;
-    os_memory_provider_t *os_provider = (os_memory_provider_t *)ctx;
-    COMPILE_ERROR_ON(sizeof(os_provider->stats.allocated_memory) !=
-                     sizeof(uint64_t));
-    COMPILE_ERROR_ON(sizeof(*arg_out) != sizeof(uint64_t));
-    utils_atomic_load_acquire_u64(
-        (uint64_t *)&os_provider->stats.allocated_memory, (uint64_t *)arg_out);
-    return 0;
-}
-
-static int CTL_RUNNABLE_HANDLER(reset)(void *ctx, umf_ctl_query_source_t source,
-                                       void *arg,
-                                       umf_ctl_index_utlist_t *indexes,
-                                       const char *extra_name,
-                                       umf_ctl_query_type_t query_type) {
-    /* suppress unused-parameter errors */
-    (void)source, (void)indexes, (void)arg, (void)extra_name, (void)query_type;
-
-    os_memory_provider_t *os_provider = (os_memory_provider_t *)ctx;
-    size_t allocated;
-
-    COMPILE_ERROR_ON(sizeof(os_provider->stats.allocated_memory) !=
-                     sizeof(uint64_t));
-    COMPILE_ERROR_ON(sizeof(allocated) != sizeof(uint64_t));
-
-    utils_atomic_load_acquire_u64(
-        (uint64_t *)&os_provider->stats.allocated_memory,
-        (uint64_t *)&allocated);
-    utils_atomic_store_release_u64((uint64_t *)&os_provider->stats.peak_memory,
-                                   (uint64_t)allocated);
-
-    return 0;
-}
-static const umf_ctl_node_t CTL_NODE(stats)[] = {
-    CTL_LEAF_RO(allocated_memory), CTL_LEAF_RO(peak_memory),
-    CTL_LEAF_RUNNABLE(reset), CTL_NODE_END};
 
 static const umf_ctl_node_t CTL_NODE(params)[] = {CTL_LEAF_RO(ipc_enabled),
                                                   CTL_NODE_END};
@@ -1176,29 +1115,7 @@ static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
 
     *resultPtr = addr;
 
-    COMPILE_ERROR_ON(sizeof(os_provider->stats.allocated_memory) !=
-                     sizeof(uint64_t));
-    COMPILE_ERROR_ON(sizeof(os_provider->stats.peak_memory) !=
-                     sizeof(uint64_t));
-    COMPILE_ERROR_ON(sizeof(size) != sizeof(uint64_t));
-    // TODO: Change to memory_order_relaxed when we will have a proper wrapper
-    size_t allocated =
-        utils_fetch_and_add_u64(
-            (uint64_t *)&os_provider->stats.allocated_memory, (uint64_t)size) +
-        size;
-
-    uint64_t peak;
-    utils_atomic_load_acquire_u64((uint64_t *)&os_provider->stats.peak_memory,
-                                  &peak);
-
-    while (allocated > peak && !utils_compare_exchange_u64(
-                                   (uint64_t *)&os_provider->stats.peak_memory,
-                                   &peak, (uint64_t *)&allocated)) {
-        /* If the compare-exchange fails, 'peak' is updated to the current value of peak_memory.
-       We then re-check whether allocated is still greater than the updated peak value. */
-        ;
-    }
-
+    provider_ctl_stats_alloc(os_provider, size);
     return UMF_RESULT_SUCCESS;
 
 err_unmap:
@@ -1226,13 +1143,7 @@ static umf_result_t os_free(void *provider, void *ptr, size_t size) {
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
 
-    COMPILE_ERROR_ON(sizeof(size) != sizeof(uint64_t));
-    COMPILE_ERROR_ON(sizeof(os_provider->stats.allocated_memory) !=
-                     sizeof(uint64_t));
-
-    // TODO: Change it to memory_order_relaxed when we will have a proper wrapper
-    utils_fetch_and_sub_u64((uint64_t *)&os_provider->stats.allocated_memory,
-                            size);
+    provider_ctl_stats_free(os_provider, size);
 
     return UMF_RESULT_SUCCESS;
 }
@@ -1530,11 +1441,9 @@ static umf_result_t os_close_ipc_handle(void *provider, void *ptr,
 
 static umf_result_t os_ctl(void *hProvider, int operationType, const char *name,
                            void *arg, umf_ctl_query_type_t query_type) {
-    (void)operationType; // unused
-    os_memory_provider_t *os_provider = (os_memory_provider_t *)hProvider;
     utils_init_once(&ctl_initialized, initialize_os_ctl);
-    return ctl_query(os_memory_ctl_root, os_provider, CTL_QUERY_PROGRAMMATIC,
-                     name, query_type, arg);
+    return ctl_query(os_memory_ctl_root, hProvider, operationType, name,
+                     query_type, arg);
 }
 
 static umf_memory_provider_ops_t UMF_OS_MEMORY_PROVIDER_OPS = {

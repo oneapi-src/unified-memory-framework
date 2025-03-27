@@ -20,6 +20,7 @@
 #include "base_alloc_global.h"
 #include "coarse.h"
 #include "libumf.h"
+#include "provider_ctl_stats_type.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
 #include "utils_log.h"
@@ -30,6 +31,7 @@ typedef struct fixed_memory_provider_t {
     void *base;       // base address of memory
     size_t size;      // size of the memory region
     coarse_t *coarse; // coarse library handle
+    ctl_stats_t stats;
 } fixed_memory_provider_t;
 
 // Fixed Memory provider settings struct
@@ -51,6 +53,17 @@ static __TLS fixed_last_native_error_t TLS_last_native_error;
     (UMF_FIXED_RESULT_SUCCESS - UMF_FIXED_RESULT_SUCCESS)
 #define _UMF_FIXED_RESULT_ERROR_PURGE_FORCE_FAILED                             \
     (UMF_FIXED_RESULT_ERROR_PURGE_FORCE_FAILED - UMF_FIXED_RESULT_SUCCESS)
+
+#define CTL_PROVIDER_TYPE fixed_memory_provider_t
+#include "provider_ctl_stats_impl.h"
+
+struct ctl *fixed_memory_ctl_root;
+static UTIL_ONCE_FLAG ctl_initialized = UTIL_ONCE_FLAG_INIT;
+
+static void initialize_fixed_ctl(void) {
+    fixed_memory_ctl_root = ctl_new();
+    CTL_REGISTER_MODULE(fixed_memory_ctl_root, stats);
+}
 
 static const char *Native_error_str[] = {
     [_UMF_FIXED_RESULT_SUCCESS] = "success",
@@ -153,7 +166,14 @@ static umf_result_t fixed_alloc(void *provider, size_t size, size_t alignment,
     fixed_memory_provider_t *fixed_provider =
         (fixed_memory_provider_t *)provider;
 
-    return coarse_alloc(fixed_provider->coarse, size, alignment, resultPtr);
+    umf_result_t ret =
+        coarse_alloc(fixed_provider->coarse, size, alignment, resultPtr);
+
+    if (ret == UMF_RESULT_SUCCESS) {
+        provider_ctl_stats_alloc(fixed_provider, size);
+    }
+
+    return ret;
 }
 
 static void fixed_get_last_native_error(void *provider, const char **ppMessage,
@@ -250,7 +270,22 @@ static umf_result_t fixed_allocation_merge(void *provider, void *lowPtr,
 static umf_result_t fixed_free(void *provider, void *ptr, size_t size) {
     fixed_memory_provider_t *fixed_provider =
         (fixed_memory_provider_t *)provider;
-    return coarse_free(fixed_provider->coarse, ptr, size);
+
+    umf_result_t ret = coarse_free(fixed_provider->coarse, ptr, size);
+
+    if (ret == UMF_RESULT_SUCCESS) {
+        provider_ctl_stats_free(fixed_provider, size);
+    }
+
+    return ret;
+}
+
+static umf_result_t fixed_ctl(void *provider, int operationType,
+                              const char *name, void *arg,
+                              umf_ctl_query_type_t query_type) {
+    utils_init_once(&ctl_initialized, initialize_fixed_ctl);
+    return ctl_query(fixed_memory_ctl_root, provider, operationType, name,
+                     query_type, arg);
 }
 
 static umf_memory_provider_ops_t UMF_FIXED_MEMORY_PROVIDER_OPS = {
@@ -271,7 +306,8 @@ static umf_memory_provider_ops_t UMF_FIXED_MEMORY_PROVIDER_OPS = {
     .ipc.get_ipc_handle = NULL,
     .ipc.put_ipc_handle = NULL,
     .ipc.open_ipc_handle = NULL,
-    .ipc.close_ipc_handle = NULL};
+    .ipc.close_ipc_handle = NULL,
+    .ctl = fixed_ctl};
 
 umf_memory_provider_ops_t *umfFixedMemoryProviderOps(void) {
     return &UMF_FIXED_MEMORY_PROVIDER_OPS;
