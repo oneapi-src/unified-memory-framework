@@ -16,6 +16,7 @@
 #include <umf/providers/provider_os_memory.h>
 
 #include "../common/base.hpp"
+#include "umf/base.h"
 #include "gtest/gtest.h"
 
 using namespace umf_test;
@@ -35,7 +36,7 @@ TEST_F(test, ctl_by_handle_os_provider) {
 
     int ipc_enabled = 0xBAD;
     ret = umfCtlGet("umf.provider.by_handle.params.ipc_enabled", hProvider,
-                    &ipc_enabled);
+                    &ipc_enabled, 0); // Some handlers omit size
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
     ASSERT_EQ(ipc_enabled, 0);
 
@@ -95,12 +96,13 @@ class CtlTest : public ::testing::Test {
     }
 
     template <typename T>
-    void validateQuery(
-        std::function<umf_result_t(const char *name, void *ctx, void *arg)>
-            ctlApiFunction,
-        const char *name, T expectedValue, umf_result_t expected) {
+    void validateQuery(std::function<umf_result_t(const char *name, void *ctx,
+                                                  void *arg, size_t)>
+                           ctlApiFunction,
+                       const char *name, T expectedValue,
+                       umf_result_t expected) {
         T value = 0xBAD;
-        umf_result_t ret = ctlApiFunction(name, pool, &value);
+        umf_result_t ret = ctlApiFunction(name, pool, &value, 0); // Omit size
         ASSERT_EQ(ret, expected);
         if (ret == UMF_RESULT_SUCCESS) {
             ASSERT_EQ(value, expectedValue);
@@ -141,4 +143,30 @@ TEST_F(CtlTest, ctl_by_handle_scalablePool) {
     } catch (...) {
         GTEST_FAIL() << "Unknown exception!";
     }
+}
+
+TEST_F(CtlTest, ctlDefaultNegative) {
+    void *ctx = (void *)0xBABE;
+    void *arg = (void *)0xBABE;
+
+    auto res = umfCtlGet("umf.pool.default.disjoint.some_path", ctx, arg, 0);
+    ASSERT_EQ(res, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    res = umfCtlSet("umf.pool.default.disjoint.some_path", ctx, arg, 0);
+    ASSERT_EQ(res, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(CtlTest, ctlDefault) {
+    void *ctx = NULL;
+    const char *arg = "default_name";
+
+    auto res = umfCtlSet("umf.pool.default.some_pool.some_path", ctx,
+                         (void *)arg, strlen(arg));
+    ASSERT_EQ(res, UMF_RESULT_SUCCESS);
+
+    char output[64] = {0};
+    res = umfCtlGet("umf.pool.default.some_pool.some_path", ctx, (void *)output,
+                    sizeof(output));
+    ASSERT_EQ(res, UMF_RESULT_SUCCESS);
+    ASSERT_STREQ(output, arg);
 }
