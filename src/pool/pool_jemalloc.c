@@ -23,6 +23,25 @@
 #ifndef UMF_POOL_JEMALLOC_ENABLED
 
 umf_memory_pool_ops_t *umfJemallocPoolOps(void) { return NULL; }
+umf_result_t
+umfJemallocPoolParamsCreate(umf_jemalloc_pool_params_handle_t *hParams) {
+    (void)hParams; // unused
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+umf_result_t
+umfJemallocPoolParamsDestroy(umf_jemalloc_pool_params_handle_t hParams) {
+    (void)hParams; // unused
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+umf_result_t
+umfJemallocPoolParamsSetNumArenas(umf_jemalloc_pool_params_handle_t hParams,
+                                  size_t numArenas) {
+    (void)hParams;   // unused
+    (void)numArenas; // unused
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
 
 #else
 
@@ -30,9 +49,14 @@ umf_memory_pool_ops_t *umfJemallocPoolOps(void) { return NULL; }
 
 #define MALLOCX_ARENA_MAX (MALLCTL_ARENAS_ALL - 1)
 
+typedef struct umf_jemalloc_pool_params_t {
+    size_t n_arenas;
+} umf_jemalloc_pool_params_t;
+
 typedef struct jemalloc_memory_pool_t {
     umf_memory_provider_handle_t provider;
-    unsigned int arena_index; // index of jemalloc arena
+    size_t n_arenas;
+    unsigned int arena_index[];
 } jemalloc_memory_pool_t;
 
 static __TLS umf_result_t TLS_last_allocation_error;
@@ -45,6 +69,14 @@ static jemalloc_memory_pool_t *get_pool_by_arena_index(unsigned arena_ind) {
     assert(arena_ind < MALLOCX_ARENA_MAX);
 
     return pool_by_arena_index[arena_ind];
+}
+
+// SplitMix64 hash
+static uint64_t hash64(uint64_t x) {
+    x += 0x9e3779b97f4a7c15;
+    x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9;
+    x = (x ^ (x >> 27)) * 0x94d049bb133111eb;
+    return x ^ (x >> 31);
 }
 
 // arena_extent_alloc - an extent allocation function conforms to the extent_alloc_t type and upon
@@ -285,12 +317,22 @@ static extent_hooks_t arena_extent_hooks = {
     .merge = arena_extent_merge,
 };
 
+static unsigned get_arena_index(jemalloc_memory_pool_t *pool) {
+    static __TLS unsigned tid = 0;
+
+    if (tid == 0) {
+        tid = utils_gettid();
+    }
+
+    return pool->arena_index[hash64(tid) % pool->n_arenas];
+}
+
 static void *op_malloc(void *pool, size_t size) {
     assert(pool);
     jemalloc_memory_pool_t *je_pool = (jemalloc_memory_pool_t *)pool;
     // MALLOCX_TCACHE_NONE is set, because jemalloc can mix objects from different arenas inside
     // the tcache, so we wouldn't be able to guarantee isolation of different providers.
-    int flags = MALLOCX_ARENA(je_pool->arena_index) | MALLOCX_TCACHE_NONE;
+    int flags = MALLOCX_ARENA(get_arena_index(je_pool)) | MALLOCX_TCACHE_NONE;
     void *ptr = je_mallocx(size, flags);
     if (ptr == NULL) {
         TLS_last_allocation_error = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
@@ -343,7 +385,7 @@ static void *op_realloc(void *pool, void *ptr, size_t size) {
     jemalloc_memory_pool_t *je_pool = (jemalloc_memory_pool_t *)pool;
     // MALLOCX_TCACHE_NONE is set, because jemalloc can mix objects from different arenas inside
     // the tcache, so we wouldn't be able to guarantee isolation of different providers.
-    int flags = MALLOCX_ARENA(je_pool->arena_index) | MALLOCX_TCACHE_NONE;
+    int flags = MALLOCX_ARENA(get_arena_index(je_pool)) | MALLOCX_TCACHE_NONE;
     void *new_ptr = je_rallocx(ptr, size, flags);
     if (new_ptr == NULL) {
         TLS_last_allocation_error = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
@@ -364,7 +406,8 @@ static void *op_realloc(void *pool, void *ptr, size_t size) {
 static void *op_aligned_alloc(void *pool, size_t size, size_t alignment) {
     assert(pool);
     jemalloc_memory_pool_t *je_pool = (jemalloc_memory_pool_t *)pool;
-    unsigned arena = je_pool->arena_index;
+
+    unsigned arena = get_arena_index(je_pool);
     // MALLOCX_TCACHE_NONE is set, because jemalloc can mix objects from different arenas inside
     // the tcache, so we wouldn't be able to guarantee isolation of different providers.
     int flags =
@@ -382,51 +425,78 @@ static void *op_aligned_alloc(void *pool, size_t size, size_t alignment) {
 
 static umf_result_t op_initialize(umf_memory_provider_handle_t provider,
                                   void *params, void **out_pool) {
-    (void)params; // unused
     assert(provider);
     assert(out_pool);
 
     extent_hooks_t *pHooks = &arena_extent_hooks;
     size_t unsigned_size = sizeof(unsigned);
     int err;
+    umf_jemalloc_pool_params_t *jemalloc_params =
+        (umf_jemalloc_pool_params_t *)params;
 
-    jemalloc_memory_pool_t *pool =
-        umf_ba_global_alloc(sizeof(jemalloc_memory_pool_t));
+    size_t n_arenas = 0;
+    if (jemalloc_params) {
+        n_arenas = jemalloc_params->n_arenas;
+    }
+
+    if (n_arenas == 0) {
+        n_arenas = utils_get_num_cores() * 4;
+    }
+    if (n_arenas > MALLOCX_ARENA_MAX) {
+        LOG_ERR("Number of arenas exceeds the limit.");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    jemalloc_memory_pool_t *pool = umf_ba_global_alloc(
+        sizeof(*pool) + n_arenas * sizeof(*pool->arena_index));
     if (!pool) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
     pool->provider = provider;
+    pool->n_arenas = n_arenas;
 
-    unsigned arena_index;
-    err = je_mallctl("arenas.create", (void *)&arena_index, &unsigned_size,
-                     NULL, 0);
-    if (err) {
-        LOG_ERR("Could not create arena.");
-        goto err_free_pool;
+    size_t num_created = 0;
+    for (size_t i = 0; i < n_arenas; i++) {
+        unsigned arena_index;
+        err = je_mallctl("arenas.create", (void *)&arena_index, &unsigned_size,
+                         NULL, 0);
+        if (err) {
+            LOG_ERR("Could not create arena.");
+            goto err_cleanup;
+        }
+
+        pool->arena_index[num_created++] = arena_index;
+        if (arena_index >= MALLOCX_ARENA_MAX) {
+            LOG_ERR("Number of arenas exceeds the limit.");
+            goto err_cleanup;
+        }
+
+        pool_by_arena_index[arena_index] = pool;
+
+        // Setup extent_hooks for the newly created arena.
+        char cmd[64];
+        snprintf(cmd, sizeof(cmd), "arena.%u.extent_hooks", arena_index);
+        err = je_mallctl(cmd, NULL, NULL, (void *)&pHooks, sizeof(void *));
+        if (err) {
+            LOG_ERR("Could not setup extent_hooks for newly created arena.");
+            goto err_cleanup;
+        }
     }
-
-    // setup extent_hooks for newly created arena
-    char cmd[64];
-    snprintf(cmd, sizeof(cmd), "arena.%u.extent_hooks", arena_index);
-    err = je_mallctl(cmd, NULL, NULL, (void *)&pHooks, sizeof(void *));
-    if (err) {
-        snprintf(cmd, sizeof(cmd), "arena.%u.destroy", arena_index);
-        (void)je_mallctl(cmd, NULL, 0, NULL, 0);
-        LOG_ERR("Could not setup extent_hooks for newly created arena.");
-        goto err_free_pool;
-    }
-
-    pool->arena_index = arena_index;
-    pool_by_arena_index[arena_index] = pool;
-
     *out_pool = (umf_memory_pool_handle_t)pool;
 
     VALGRIND_DO_CREATE_MEMPOOL(pool, 0, 0);
 
     return UMF_RESULT_SUCCESS;
 
-err_free_pool:
+err_cleanup:
+    // Destroy any arenas that were successfully created.
+    for (size_t i = 0; i < num_created; i++) {
+        char cmd[64];
+        unsigned arena = pool->arena_index[i];
+        snprintf(cmd, sizeof(cmd), "arena.%u.destroy", arena);
+        (void)je_mallctl(cmd, NULL, 0, NULL, 0);
+    }
     umf_ba_global_free(pool);
     return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
 }
@@ -434,10 +504,12 @@ err_free_pool:
 static void op_finalize(void *pool) {
     assert(pool);
     jemalloc_memory_pool_t *je_pool = (jemalloc_memory_pool_t *)pool;
-    char cmd[64];
-    snprintf(cmd, sizeof(cmd), "arena.%u.destroy", je_pool->arena_index);
-    (void)je_mallctl(cmd, NULL, 0, NULL, 0);
-    pool_by_arena_index[je_pool->arena_index] = NULL;
+    for (size_t i = 0; i < je_pool->n_arenas; i++) {
+        char cmd[64];
+        unsigned arena = je_pool->arena_index[i];
+        snprintf(cmd, sizeof(cmd), "arena.%u.destroy", arena);
+        (void)je_mallctl(cmd, NULL, 0, NULL, 0);
+    }
     umf_ba_global_free(je_pool);
 
     VALGRIND_DO_DESTROY_MEMPOOL(pool);
@@ -469,4 +541,33 @@ static umf_memory_pool_ops_t UMF_JEMALLOC_POOL_OPS = {
 umf_memory_pool_ops_t *umfJemallocPoolOps(void) {
     return &UMF_JEMALLOC_POOL_OPS;
 }
+
+umf_result_t
+umfJemallocPoolParamsCreate(umf_jemalloc_pool_params_handle_t *hParams) {
+    umf_jemalloc_pool_params_t *params = umf_ba_global_alloc(sizeof(*params));
+    if (!params) {
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+    memset(params, 0, sizeof(*params));
+    *hParams = params;
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t
+umfJemallocPoolParamsDestroy(umf_jemalloc_pool_params_handle_t hParams) {
+    umf_ba_global_free(hParams);
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t
+umfJemallocPoolParamsSetNumArenas(umf_jemalloc_pool_params_handle_t hParams,
+                                  size_t numArenas) {
+    if (!hParams) {
+        LOG_ERR("jemalloc pool params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    hParams->n_arenas = numArenas;
+    return UMF_RESULT_SUCCESS;
+}
+
 #endif /* UMF_POOL_JEMALLOC_ENABLED */

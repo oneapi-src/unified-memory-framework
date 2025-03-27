@@ -55,16 +55,39 @@ umf_result_t destroyFixedMemoryProviderParams(void *params) {
         (umf_fixed_memory_provider_params_handle_t)params);
 }
 
+template <unsigned arenas = 0> void *createJemallocParams() {
+    umf_jemalloc_pool_params_handle_t params = nullptr;
+    auto ret = umfJemallocPoolParamsCreate(&params);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+    if constexpr (arenas != 0) {
+        ret = umfJemallocPoolParamsSetNumArenas(params, arenas);
+        EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+    }
+    return params;
+}
+
+umf_result_t destroyJemallocParams(void *params) {
+    return umfJemallocPoolParamsDestroy(
+        (umf_jemalloc_pool_params_handle_t)params);
+}
+
 INSTANTIATE_TEST_SUITE_P(
     jemallocPoolTest, umfPoolTest,
-    ::testing::Values(poolCreateExtParams{umfJemallocPoolOps(), nullptr,
-                                          nullptr, umfOsMemoryProviderOps(),
-                                          createOsMemoryProviderParams,
-                                          destroyOsMemoryProviderParams},
-                      poolCreateExtParams{umfJemallocPoolOps(), nullptr,
-                                          nullptr, umfFixedMemoryProviderOps(),
-                                          createFixedMemoryProviderParams,
-                                          destroyFixedMemoryProviderParams}));
+    ::testing::Values(
+        poolCreateExtParams{
+            umfJemallocPoolOps(), nullptr, nullptr, umfOsMemoryProviderOps(),
+            createOsMemoryProviderParams, destroyOsMemoryProviderParams},
+        poolCreateExtParams{
+            umfJemallocPoolOps(), nullptr, nullptr, umfFixedMemoryProviderOps(),
+            createFixedMemoryProviderParams, destroyFixedMemoryProviderParams},
+        poolCreateExtParams{umfJemallocPoolOps(), createJemallocParams,
+                            destroyJemallocParams, umfOsMemoryProviderOps(),
+                            createOsMemoryProviderParams,
+                            destroyOsMemoryProviderParams},
+        poolCreateExtParams{umfJemallocPoolOps(), createJemallocParams<1>,
+                            destroyJemallocParams, umfOsMemoryProviderOps(),
+                            createOsMemoryProviderParams,
+                            destroyOsMemoryProviderParams}));
 
 // this test makes sure that jemalloc does not use
 // memory provider to allocate metadata (and hence
@@ -118,4 +141,49 @@ TEST_F(test, metadataNotAllocatedUsingProvider) {
             umfPoolMalloc(pool.get(), allocSize),
             [pool = pool.get()](void *ptr) { umfPoolFree(pool, ptr); });
     }
+}
+
+TEST_F(test, jemallocPoolNullParams) {
+    auto ret = umfJemallocPoolParamsSetNumArenas(NULL, 1);
+    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, jemallocPoolParams) {
+    umf_jemalloc_pool_params_handle_t params = nullptr;
+    auto ret = umfJemallocPoolParamsCreate(&params);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfJemallocPoolParamsSetNumArenas(params, 1);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfJemallocPoolParamsDestroy(params);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+}
+
+TEST_F(test, jemallocPoolParamsInvalid) {
+    umf_jemalloc_pool_params_handle_t params = nullptr;
+    auto ret = umfJemallocPoolParamsCreate(&params);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfJemallocPoolParamsSetNumArenas(params, SIZE_MAX);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    umf_os_memory_provider_params_handle_t provider_params = nullptr;
+    ret = umfOsMemoryProviderParamsCreate(&provider_params);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    umf_memory_provider_handle_t provider;
+    ret = umfMemoryProviderCreate(umfOsMemoryProviderOps(), provider_params,
+                                  &provider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    umf_memory_pool_handle_t pool;
+    ret = umfPoolCreate(umfJemallocPoolOps(), provider, params, 0, &pool);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    umfMemoryProviderDestroy(provider);
+
+    ret = umfJemallocPoolParamsDestroy(params);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+    ret = umfOsMemoryProviderParamsDestroy(provider_params);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
 }
