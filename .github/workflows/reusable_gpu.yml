@@ -5,8 +5,12 @@ name: GPU
 on:
   workflow_call:
     inputs:
-      name:
+      provider:
         description: Provider name
+        type: string
+        required: true
+      runner:
+        description: Runner name (without 'DSS-' prefix)
         type: string
         required: true
       os:
@@ -36,7 +40,7 @@ jobs:
     env:
       VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows;"
       CUDA_PATH: "C:/cuda"
-      COVERAGE_NAME : "exports-coverage-${{inputs.name}}"
+      COVERAGE_NAME : "exports-coverage-${{inputs.provider}}-${{inputs.runner}}"
     # run only on upstream; forks will not have the HW
     if: github.repository == 'oneapi-src/unified-memory-framework'
     strategy:
@@ -53,7 +57,7 @@ jobs:
             compiler: {c: cl, cxx: cl}
             number_of_processors: '$Env:NUMBER_OF_PROCESSORS'
 
-    runs-on: ["DSS-${{inputs.name}}", "DSS-${{matrix.os}}"]
+    runs-on: ["DSS-${{inputs.runner}}", "DSS-${{matrix.os}}"]
     steps:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -97,7 +101,7 @@ jobs:
           -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
           -DUMF_BUILD_CUDA_PROVIDER=OFF
           -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
-          -DUMF_BUILD_${{inputs.name}}_PROVIDER=ON
+          -DUMF_BUILD_${{inputs.provider}}_PROVIDER=ON
           -DUMF_TESTS_FAIL_ON_SKIP=ON
           ${{ matrix.os == 'Ubuntu' && matrix.build_type == 'Debug' && '-DUMF_USE_COVERAGE=ON' || '' }}
           ${{ matrix.os == 'Windows' && '-DCMAKE_SUPPRESS_REGENERATION=ON' || '' }}
