@@ -49,16 +49,24 @@ jobs:
         shared_library: ${{ fromJSON(inputs.shared_lib)}}
         os: ${{ fromJSON(inputs.os)}}
         build_type: ${{ fromJSON(inputs.build_type)}}
-        include:
-          - os: 'Ubuntu'
-            compiler: {c: gcc, cxx: g++}
-            number_of_processors: '$(nproc)'
-          - os: 'Windows'
-            compiler: {c: cl, cxx: cl}
-            number_of_processors: '$Env:NUMBER_OF_PROCESSORS'
 
     runs-on: ["DSS-${{inputs.runner}}", "DSS-${{matrix.os}}"]
     steps:
+      # Set number of processes and compiler based on OS
+      - name: "[Win] Establish build params"
+        if : ${{ matrix.os == 'Windows' }}
+        run: |
+          echo "C_COMPILER=cl" >> $GITHUB_ENV
+          echo "CXX_COMPILER=cl" >> $GITHUB_ENV
+          echo "PROCS=$Env:NUMBER_OF_PROCESSORS" >> $GITHUB_ENV
+
+      - name: "[Lin] Establish build params"
+        if : ${{ matrix.os == 'Ubuntu' }}
+        run: |
+          echo "C_COMPILER=gcc" >> $GITHUB_ENV
+          echo "CXX_COMPILER=g++" >> $GITHUB_ENV
+          echo "PROCS=$(nproc)" >> $GITHUB_ENV
+
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
@@ -89,8 +97,8 @@ jobs:
           -B ${{env.BUILD_DIR}}
           -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
           -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
-          -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
-          -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
+          -DCMAKE_C_COMPILER=${{env.C_COMPILER}}
+          -DCMAKE_CXX_COMPILER=${{env.CXX_COMPILER}}
           -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
           -DUMF_BUILD_BENCHMARKS=ON
           -DUMF_BUILD_BENCHMARKS_MT=ON
@@ -107,7 +115,7 @@ jobs:
           ${{ matrix.os == 'Windows' && '-DCMAKE_SUPPRESS_REGENERATION=ON' || '' }}
 
       - name: Build UMF
-        run: cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j ${{matrix.number_of_processors}}
+        run: cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j ${{env.PROCS}}
 
       - name: Run tests
         working-directory: ${{env.BUILD_DIR}}
