@@ -35,20 +35,3 @@
    fun:umfOpenIPCHandle
    ...
 }
-
-{
-   [false-positive] umfMemoryProviderGetIPCHandle
-   Helgrind:Race
-   fun:trackingGetIpcHandle
-   fun:umfMemoryProviderGetIPCHandle
-   fun:umfGetIPCHandle
-}
-
-{
-   [false-positive] umfMemoryProviderGetIPCHandle
-   Helgrind:Race
-   fun:memmove
-   fun:trackingGetIpcHandle
-   fun:umfMemoryProviderGetIPCHandle
-   fun:umfGetIPCHandle
-}

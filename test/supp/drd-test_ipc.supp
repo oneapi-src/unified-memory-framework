@@ -15,20 +15,3 @@
    fun:umfOpenIPCHandle
    ...
 }
-
-{
-   [false-positive] trackingGetIpcHandle
-   drd:ConflictingAccess
-   fun:trackingGetIpcHandle
-   fun:umfMemoryProviderGetIPCHandle
-   fun:umfGetIPCHandle
-}
-
-{
-   [false-positive] trackingGetIpcHandle
-   drd:ConflictingAccess
-   fun:memmove
-   fun:trackingGetIpcHandle
-   fun:umfMemoryProviderGetIPCHandle
-   fun:umfGetIPCHandle
-}
