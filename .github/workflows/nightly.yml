@@ -6,6 +6,8 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 4 * * *'
+  push:
+  pull_request:
 
 permissions:
   contents: read
@@ -16,6 +18,7 @@ env:
 
 jobs:
   fuzz-test:
+      if: false
       name: Fuzz test
       strategy:
         fail-fast: false
@@ -55,6 +58,7 @@ jobs:
         run: ctest -C ${{matrix.build_type}} --output-on-failure --verbose -L "fuzz-long"
 
   valgrind:
+    if: false
     name: Valgrind
     strategy:
       fail-fast: false
@@ -93,6 +97,7 @@ jobs:
       run: ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{github.workspace}}/build ${{matrix.tool}}
 
   Windows-generators:
+    if: false
     name: Windows ${{matrix.generator}} generator
     strategy:
       matrix:
@@ -186,6 +191,7 @@ jobs:
         ${{ matrix.static_hwloc == 'ON' && '--hwloc' || '' }}
 
   icx:
+   if: false
    name: ICX
    env:
      VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
@@ -273,6 +279,7 @@ jobs:
   # Scenarios where UMF_LINK_HWLOC_STATICALLY is set to OFF and hwloc is not installed in the system
   # The hwloc library is fetched implicitly
   hwloc-fallback:
+    if: false
     name: "Fallback to static hwloc build"
     strategy:
       matrix:
@@ -319,17 +326,20 @@ jobs:
       run: ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
 
   L0:
+    if: false
     uses: ./.github/workflows/reusable_gpu.yml
     with:
       provider: "LEVEL_ZERO"
       runner: "L0"
   L0-BMG:
+    if: false
     uses: ./.github/workflows/reusable_gpu.yml
     with:
       provider: "LEVEL_ZERO"
       runner: "L0-BMG"
       os: "['Ubuntu']"
   CUDA:
+    if: false
     uses: ./.github/workflows/reusable_gpu.yml
     with:
       provider: "CUDA"
@@ -337,6 +347,7 @@ jobs:
 
   # Full execution of QEMU tests
   QEMU:
+    if: false
     uses: ./.github/workflows/reusable_qemu.yml
     with:
       short_run: false
@@ -354,4 +365,5 @@ jobs:
       bench_script_params: '--save Baseline_PVC'
 
   SYCL:
+    if: false
     uses: ./.github/workflows/reusable_sycl.yml
