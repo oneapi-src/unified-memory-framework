@@ -21,7 +21,13 @@ on:
       runner:
         required: false
         type: string
-        default: 'L0_PERF'
+        default: 'L0_PERF_PVC'
+      compatibility:
+        required: false
+        type: string
+        default: 0
+        description: |
+          Set it to 1 to run compatibility sycl benchmarks
 
 permissions:
   contents: read
@@ -128,14 +134,15 @@ jobs:
 
     - name: Install benchmarking scripts deps
       run: |
-        python -m venv .venv
+        python3 -m venv .venv
         source .venv/bin/activate
         echo "$PATH" >> $GITHUB_PATH
         pip install -r ${{github.workspace}}/sc/devops/scripts/benchmarks/requirements.txt
 
     - name: Set core range and GPU mask
       run: |
-        # Compute the core range for the second NUMA node; first node is for SYCL/UR jobs.
+        # On the L0_PERF_PVC runner, compute the core range for the second NUMA node;
+        # first node is for SYCL/UR jobs.
         # Skip the first 4 cores - the kernel is likely to schedule more work on these.
         CORES=$(lscpu | awk '
           /NUMA node1 CPU|On-line CPU/ {line=$0}
@@ -148,19 +155,56 @@ jobs:
         echo "Selected core: $CORES"
         echo "CORES=$CORES" >> $GITHUB_ENV
 
-        ZE_AFFINITY_MASK=1
+        ZE_AFFINITY_MASK=${{ inputs.runner == 'L0_PERF_ARC' && '0' || '1' }}
         echo "ZE_AFFINITY_MASK=$ZE_AFFINITY_MASK" >> $GITHUB_ENV
 
-    - name: Run UMF benchmarks
+    - name: Download latest sycl
+      if: inputs.compatibility == 1
+      run: |
+        llvm_tag=$(curl -s https://api.github.com/repos/intel/llvm/releases | awk -F'"' '/"tag_name": "nightly/ {print $4; exit}')
+        download_url="https://github.com/intel/llvm/releases/download/${llvm_tag}/sycl_linux.tar.gz"
+        echo "llvm tag: $llvm_tag"
+        wget --no-verbose $download_url -O sycl_linux.tar.gz
+
+    - name: Unpack sycl
+      if: inputs.compatibility == 1
+      run: |
+        mkdir -p sycl
+        tar -xzf sycl_linux.tar.gz -C sycl --strip-components=1
+        rm sycl_linux.tar.gz
+        echo "SYCL_DIR=${{ github.workspace }}/sycl" >> $GITHUB_ENV
+        echo "${{ github.workspace }}/sycl/bin" >> $GITHUB_PATH
+        echo "LD_LIBRARY_PATH=${{ github.workspace }}/sycl/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+
+    - name: Remove UMF libraries from sycl
+      if: inputs.compatibility == 1
+      run: rm -f ${{ env.SYCL_DIR }}/lib/libumf*
+
+    - name: Copy UMF libraries to sycl
+      if: inputs.compatibility == 1
+      run: |
+        cp ${{ env.BUILD_DIR }}/lib/libumf* ${{ env.SYCL_DIR }}/lib/
+
+    - name: Run sycl-ls
+      if: inputs.compatibility == 1
+      env:
+        LD_LIBRARY_PATH: ${{ env.SYCL_DIR }}/lib
+        SYCL_UR_TRACE: 1
+        SYCL_UR_USE_LEVEL_ZERO_V2: 1
+      run: ${{ env.SYCL_DIR }}/bin/sycl-ls
+
+    - name: Run benchmarks
       id: benchmarks
+      env:
+        LD_LIBRARY_PATH: ${{ env.SYCL_DIR }}/lib
+        CPATH: ${{ env.SYCL_DIR }}/include
       run: >
         taskset -c ${{ env.CORES }} ./sc/devops/scripts/benchmarks/main.py
         ~/bench_workdir_umf
-        --umf ${{env.BUILD_DIR}}
-        --timeout 3000
-        --output-html remote
         --results-dir ${{ github.workspace }}/results-repo
         --output-markdown
+        ${{ (inputs.compatibility == 0) && format('--umf {0} --timeout 3000 --output-html remote', env.BUILD_DIR) || '' }}
+        ${{ (inputs.compatibility == 1) && format('--sycl {0} --timeout 7200', env.SYCL_DIR) || '' }}
         ${{ env.bench_params }}
 
     # In case it failed to add a comment, we can still print the results.
@@ -196,6 +240,7 @@ jobs:
 
     - name: Commit data.json and results directory
       working-directory: results-repo
+      if: inputs.compatibility == 0
       run: |
         git config --global user.name "GitHub Actions Bot"
         git config --global user.email "actions@github.com"
