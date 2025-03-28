@@ -120,3 +120,25 @@ jobs:
         echo "---Run build_log test" && ./build_log
         echo "---Run parallel_for_range_roundup test" && ./parallel_for_range_roundup
         echo "---Run fill_any_size test" && ./fill_any_size
+
+    # Run sycl benchmarks
+    - name: Install pip dependencies
+      run: |
+        echo "BENCH_SCRIPT_DIR=${{ github.workspace }}/sycl_repo/devops/scripts/benchmarks" >> $GITHUB_ENV
+        python -m venv .venv
+        source .venv/bin/activate
+        pip install -r ${BENCH_SCRIPTS_DIR}/requirements.txt
+
+    - name: Run sycl benchmarks
+      run: >
+        source .venv/bin/activate &&
+        taskset -c "4-27"
+        python ${BENCH_SCRIPTS_DIR}/main.py
+        ${{github.workspace}}/llvm_bench_workdir
+        --sycl ${{github.workspace}}/llvm
+        --ur ${{github.workspace}}/llvm
+        --umf ${{github.workspace}}/llvm
+        --adapter level_zero
+        --exit-on-failure
+        --compute-runtime
+        --build-igc
