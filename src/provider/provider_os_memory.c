@@ -1304,7 +1304,7 @@ typedef struct os_ipc_data_t {
 static umf_result_t os_get_ipc_handle_size(void *provider, size_t *size) {
     os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
     if (!os_provider->IPC_enabled) {
-        LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED")
+        LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -1318,7 +1318,7 @@ static umf_result_t os_get_ipc_handle(void *provider, const void *ptr,
                                       size_t size, void *providerIpcData) {
     os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
     if (!os_provider->IPC_enabled) {
-        LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED")
+        LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -1349,7 +1349,7 @@ static umf_result_t os_get_ipc_handle(void *provider, const void *ptr,
 static umf_result_t os_put_ipc_handle(void *provider, void *providerIpcData) {
     os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
     if (!os_provider->IPC_enabled) {
-        LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED")
+        LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -1380,7 +1380,7 @@ static umf_result_t os_open_ipc_handle(void *provider, void *providerIpcData,
                                        void **ptr) {
     os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
     if (!os_provider->IPC_enabled) {
-        LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED")
+        LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -1422,7 +1422,7 @@ static umf_result_t os_close_ipc_handle(void *provider, void *ptr,
                                         size_t size) {
     os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
     if (!os_provider->IPC_enabled) {
-        LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED")
+        LOG_ERR("memory visibility mode is not UMF_MEM_MAP_SHARED");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
