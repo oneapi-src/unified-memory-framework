@@ -150,17 +150,47 @@ jobs:
         ZE_AFFINITY_MASK=1
         echo "ZE_AFFINITY_MASK=$ZE_AFFINITY_MASK" >> $GITHUB_ENV
 
-    - name: Run UMF benchmarks
+    - name: Download latest sycl
+      run: |
+        llvm_tag=$(curl -s https://api.github.com/repos/intel/llvm/releases | awk -F'"' '/"tag_name": "nightly/ {print $4; exit}')
+        download_url="https://github.com/intel/llvm/releases/download/${llvm_tag}/sycl_linux.tar.gz"
+        echo "llvm tag: $llvm_tag"
+        wget --no-verbose $download_url -O sycl_linux.tar.gz
+
+    - name: Unpack sycl
+      run: |
+        mkdir -p sycl
+        tar -xzf sycl_linux.tar.gz -C sycl --strip-components=1
+        rm sycl_linux.tar.gz
+        echo "SYCL_DIR=${{ github.workspace }}/sycl" >> $GITHUB_ENV
+
+    - name: Remove UMF libraries from sycl
+      run: rm -f ${{ env.SYCL_DIR }}/lib/libumf*
+
+    - name: Run sycl-ls
+      env:
+        LD_LIBRARY_PATH: ${{ env.SYCL_DIR }}/lib
+        SYCL_UR_TRACE: 1
+        SYCL_UR_USE_LEVEL_ZERO_V2: 1
+      run: ${{ env.SYCL_DIR }}/bin/sycl-ls
+
+    - name: Run benchmarks
       id: benchmarks
+      env:
+        LD_LIBRARY_PATH: ${{ env.SYCL_DIR }}/lib
       run: >
         source .venv/bin/activate &&
         taskset -c ${{ env.CORES }} ./sc/devops/scripts/benchmarks/main.py
         ~/bench_workdir_umf
-        --umf ${{env.BUILD_DIR}}
+        --umf ${{ env.BUILD_DIR }}
         --timeout 3000
         --output-html remote
         --results-dir ${{ github.workspace }}/results-repo
         --output-markdown
+        --sycl ${{ env.SYCL_DIR }}
+        --adapter level_zero_v2
+        --exit-on-failure
+        --filter SYCL-Bench
         ${{ env.bench_params }}
 
     # In case it failed to add a comment, we can still print the results.
