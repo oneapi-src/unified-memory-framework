@@ -299,11 +299,19 @@ jobs:
   L0:
     uses: ./.github/workflows/reusable_gpu.yml
     with:
-      name: "LEVEL_ZERO"
+      provider: "LEVEL_ZERO"
+      runner: "L0"
+  L0-BMG:
+    uses: ./.github/workflows/reusable_gpu.yml
+    with:
+      provider: "LEVEL_ZERO"
+      runner: "L0-BMG"
+      os: "['Ubuntu']"
   CUDA:
     uses: ./.github/workflows/reusable_gpu.yml
     with:
-      name: "CUDA"
+      provider: "CUDA"
+      runner: "CUDA"
 
   # Full execution of QEMU tests
   QEMU:

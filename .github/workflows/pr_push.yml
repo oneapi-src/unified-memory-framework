@@ -38,13 +38,23 @@ jobs:
     needs: [Build]
     uses: ./.github/workflows/reusable_gpu.yml
     with:
-      name: "LEVEL_ZERO"
+      provider: "LEVEL_ZERO"
+      runner: "L0"
       shared_lib: "['ON']"
+  L0-BMG:
+    needs: [Build]
+    uses: ./.github/workflows/reusable_gpu.yml
+    with:
+      provider: "LEVEL_ZERO"
+      runner: "L0-BMG"
+      shared_lib: "['ON']"
+      os: "['Ubuntu']"
   CUDA:
     needs: [Build]
     uses: ./.github/workflows/reusable_gpu.yml
     with:
-      name: "CUDA"
+      provider: "CUDA"
+      runner: "CUDA"
       shared_lib: "['ON']"
   Sanitizers:
     needs: [FastBuild]
