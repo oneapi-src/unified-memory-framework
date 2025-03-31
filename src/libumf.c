@@ -17,11 +17,9 @@
 #include "provider_cuda_internal.h"
 #include "provider_level_zero_internal.h"
 #include "provider_tracking.h"
+#include "topology.h"
 #include "utils_common.h"
 #include "utils_log.h"
-#if !defined(UMF_NO_HWLOC)
-#include "topology.h"
-#endif
 
 umf_memory_tracker_handle_t TRACKER = NULL;
 
@@ -62,7 +60,7 @@ int umfInit(void) {
 
 void umfTearDown(void) {
     if (utils_fetch_and_sub_u64(&umfRefCount, 1) == 1) {
-#if !defined(_WIN32) && !defined(UMF_NO_HWLOC)
+#if !defined(_WIN32)
         umfMemspaceHostAllDestroy();
         umfMemspaceHighestCapacityDestroy();
         umfMemspaceHighestBandwidthDestroy();
