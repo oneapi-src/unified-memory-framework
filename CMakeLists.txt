@@ -89,6 +89,8 @@ set(UMF_INSTALL_RPATH
         "Set the runtime search path to the directory with dependencies (e.g. hwloc)"
 )
 
+umf_option(UMF_USE_DEBUG_POSTFIX "Add a 'd' postfix to Windows debug libraries"
+           OFF)
 umf_option(UMF_DEVELOPER_MODE "Enable additional developer checks" OFF)
 umf_option(
     UMF_FORMAT_CODE_STYLE
@@ -424,6 +426,27 @@ elseif(UMF_BUILD_CUDA_PROVIDER)
     # Only header is needed to build UMF
     set(CUDA_INCLUDE_DIRS ${UMF_CUDA_INCLUDE_DIR})
     message(STATUS "CUDA_INCLUDE_DIRS = ${CUDA_INCLUDE_DIRS}")
+endif()
+
+if(WINDOWS AND UMF_USE_DEBUG_POSTFIX)
+    # Build debug umf library with the d suffix that is compiled with /MDd so
+    # users can link against it in debug builds.
+    set(CMAKE_DEBUG_POSTFIX d)
+
+    add_custom_target(
+        umfd ALL
+        COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target umf
+                --config Debug
+        COMMENT "Building debug umf library with the d suffix")
+
+    # Copy built UMF libraries to the Release build subdirectory
+    add_custom_command(
+        TARGET umfd
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/bin/Debug/umfd.dll
+                ${CMAKE_BINARY_DIR}/bin/Release/umfd.dll
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/lib/Debug/umfd.lib
+                ${CMAKE_BINARY_DIR}/lib/Release/umfd.lib
+        COMMENT "Copying debug libraries to the Release build directory")
 endif()
 
 # This build type check is not possible on Windows when CMAKE_BUILD_TYPE is not
@@ -818,6 +841,14 @@ endif()
 # --------------------------------------------------------------------------- #
 # Configure make install/uninstall and packages
 # --------------------------------------------------------------------------- #
+# Install umfd target
+if(WINDOWS AND UMF_USE_DEBUG_POSTFIX)
+    install(FILES ${CMAKE_BINARY_DIR}/bin/Debug/umfd.dll
+            DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(FILES ${CMAKE_BINARY_DIR}/lib/Debug/umfd.lib
+            DESTINATION ${CMAKE_INSTALL_LIBDIR})
+endif()
+
 install(FILES ${PROJECT_SOURCE_DIR}/LICENSE.TXT
         DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/doc/${PROJECT_NAME}/")
 install(
