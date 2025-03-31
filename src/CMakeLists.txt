@@ -34,9 +34,7 @@ add_subdirectory(utils)
 add_subdirectory(base_alloc)
 add_subdirectory(coarse)
 
-set(UMF_LIBS umf_utils umf_ba umf_coarse)
-
-set(HWLOC_DEPENDENT_SOURCES topology.c)
+set(UMF_LIBS umf_utils umf_ba umf_coarse $<BUILD_INTERFACE:${UMF_HWLOC_NAME}>)
 
 set(UMF_SOURCES
     ctl/ctl.c
@@ -47,6 +45,7 @@ set(UMF_SOURCES
     memory_provider.c
     memory_provider_get_last_failed.c
     memtarget.c
+    memtargets/memtarget_numa.c
     mempolicy.c
     memspace.c
     memspaces/memspace_host_all.c
@@ -66,7 +65,8 @@ set(UMF_SOURCES
     pool/pool_disjoint.c
     pool/pool_jemalloc.c
     pool/pool_proxy.c
-    pool/pool_scalable.c)
+    pool/pool_scalable.c
+    topology.c)
 
 if(UMF_POOL_JEMALLOC_ENABLED)
     set(UMF_LIBS ${UMF_LIBS} ${JEMALLOC_LIBRARIES})
@@ -78,16 +78,8 @@ if(UMF_POOL_JEMALLOC_ENABLED)
                                        "UMF_POOL_JEMALLOC_ENABLED=1")
 endif()
 
-if(NOT UMF_DISABLE_HWLOC)
-    set(UMF_SOURCES ${UMF_SOURCES} ${HWLOC_DEPENDENT_SOURCES}
-                    memtargets/memtarget_numa.c)
-    set(UMF_LIBS ${UMF_LIBS} $<BUILD_INTERFACE:${UMF_HWLOC_NAME}>)
-    set(UMF_PRIVATE_LIBRARY_DIRS ${UMF_PRIVATE_LIBRARY_DIRS}
-                                 ${LIBHWLOC_LIBRARY_DIRS})
-else()
-    set(UMF_COMMON_COMPILE_DEFINITIONS ${UMF_COMMON_COMPILE_DEFINITIONS}
-                                       "UMF_NO_HWLOC=1")
-endif()
+set(UMF_PRIVATE_LIBRARY_DIRS ${UMF_PRIVATE_LIBRARY_DIRS}
+                             ${LIBHWLOC_LIBRARY_DIRS})
 
 set(UMF_SOURCES_LINUX libumf_linux.c)
 set(UMF_SOURCES_MACOSX libumf_linux.c)
