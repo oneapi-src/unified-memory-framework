@@ -12,6 +12,19 @@
 
 The Unified Memory Framework (UMF) is a library for constructing allocators and memory pools. It also contains broadly useful abstractions and utilities for memory management. UMF allows users to manage multiple memory pools characterized by different attributes, allowing certain allocation types to be isolated from others and allocated using different hardware resources as required.
 
+### Preamble
+
+From pools diverse, and providers wide,
+Our C library, with strength and pride,
+Allocates with grace, and frees with might,
+Ensuring memory, shines ever bright!
+
+No leaks shall linger, no waste remain,
+Across the system, we ease the strain.
+For every byte, a place we find,
+The Memory Manager, for humankind!
+
+
 ## Usage
 
 For a quick introduction to UMF usage, please see
