@@ -48,14 +48,14 @@ jobs:
       if: matrix.os == 'windows-latest'
       uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
       with:
-        vcpkgGitCommitId: 3dd44b931481d7a8e9ba412621fa810232b66289
+        vcpkgGitCommitId: ea2a964f9303270322cf3f2d51c265ba146c422d # 1.04.2025
         vcpkgDirectory: ${{env.BUILD_DIR}}/vcpkg
         vcpkgJsonGlob: '**/vcpkg.json'
 
     - name: "[Win] Install dependencies"
       if: matrix.os == 'windows-latest'
       run: |
-        vcpkg install
+        vcpkg install --triplet x64-windows
         python3 -m pip install -r third_party/requirements.txt
 
     - name: "[Lin] Install apt packages"
