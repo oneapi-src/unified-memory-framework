@@ -128,7 +128,7 @@ jobs:
 
     - name: Install benchmarking scripts deps
       run: |
-        python -m venv .venv
+        python3 -m venv .venv
         source .venv/bin/activate
         pip install -r ${{github.workspace}}/sc/devops/scripts/benchmarks/requirements.txt
 
@@ -147,7 +147,7 @@ jobs:
         echo "Selected core: $CORES"
         echo "CORES=$CORES" >> $GITHUB_ENV
 
-        ZE_AFFINITY_MASK=1
+        ZE_AFFINITY_MASK=0
         echo "ZE_AFFINITY_MASK=$ZE_AFFINITY_MASK" >> $GITHUB_ENV
 
     - name: Download latest sycl
@@ -179,19 +179,14 @@ jobs:
       id: benchmarks
       env:
         LD_LIBRARY_PATH: ${{ env.SYCL_DIR }}/lib
+        CPATH: ${{ env.SYCL_DIR }}/include
       run: >
         source .venv/bin/activate &&
         taskset -c ${{ env.CORES }} ./sc/devops/scripts/benchmarks/main.py
         ~/bench_workdir_umf
         --umf ${{ env.BUILD_DIR }}
         --timeout 3000
-        --output-html remote
         --results-dir ${{ github.workspace }}/results-repo
-        --output-markdown
-        --sycl ${{ env.SYCL_DIR }}
-        --adapter level_zero_v2
-        --exit-on-failure
-        --filter SYCL-Bench
         ${{ env.bench_params }}
 
     # In case it failed to add a comment, we can still print the results.

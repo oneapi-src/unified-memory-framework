@@ -356,6 +356,7 @@ jobs:
       os: "['ubuntu-22.04', 'ubuntu-24.04', 'ubuntu-24.10']"
 
   Benchmarks:
+    if: false
     uses: ./.github/workflows/reusable_benchmarks.yml
     permissions:
       contents: write
@@ -363,6 +364,22 @@ jobs:
     with:
       pr_no: '0'
       bench_script_params: '--save Baseline_PVC'
+
+  Benchmarks-sycl:
+    uses: ./.github/workflows/reusable_benchmarks.yml
+    permissions:
+      contents: write
+      pull-requests: write
+    with:
+      pr_no: '0'
+      bench_script_params: '--sycl ${{ github.workspace }}/sycl
+        --ur ${{ github.workspace }}/sycl
+        --adapter level_zero_v2
+        --compute-runtime
+        --build-igc
+        --preset Minimal
+        --exit-on-failure'
+      runner: 'L0_PERF_GPU'
 
   SYCL:
     if: false
