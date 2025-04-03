@@ -23,10 +23,10 @@ jobs:
     - name: Install apt packages
       run: |
         sudo apt-get update
-        sudo apt-get install -y clang cmake libnuma-dev libtbb-dev
+        sudo apt-get install -y clang cmake hwloc libnuma-dev libtbb-dev
 
     - name: Checkout "tag" UMF version
-      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         fetch-depth: 0
         ref: refs/tags/${{inputs.tag}}
@@ -35,6 +35,38 @@ jobs:
     - name: Install libhwloc
       working-directory: ${{github.workspace}}/tag_version
       run: .github/scripts/install_hwloc.sh
+
+    - name: Checkout latest UMF version
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        fetch-depth: 0
+        path: ${{github.workspace}}/latest_version
+
+    - name: Configure latest UMF build
+      working-directory: ${{github.workspace}}/latest_version
+      run: >
+        cmake
+        -B ${{github.workspace}}/latest_version/build
+        -DCMAKE_INSTALL_PREFIX=_install
+        -DCMAKE_BUILD_TYPE=Debug
+        -DUMF_BUILD_SHARED_LIBRARY=ON
+        -DCMAKE_C_COMPILER=gcc
+        -DCMAKE_CXX_COMPILER=g++
+        -DUMF_BUILD_TESTS=OFF
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
+        -DUMF_BUILD_CUDA_PROVIDER=ON
+        -DUMF_FORMAT_CODE_STYLE=OFF
+        -DUMF_DEVELOPER_MODE=ON
+        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
+
+    - name: Build latest UMF
+      working-directory: ${{github.workspace}}/latest_version
+      run: |
+        cmake --build ${{github.workspace}}/latest_version/build -j $(nproc)
+
+    - name: Install latest UMF
+      working-directory: ${{github.workspace}}/latest_version
+      run: sudo cmake --install ${{github.workspace}}/latest_version/build --config Debug
 
     - name: Configure "tag" UMF build
       working-directory: ${{github.workspace}}/tag_version
@@ -65,33 +97,6 @@ jobs:
       run: |
         LD_LIBRARY_PATH=${{github.workspace}}/tag_version/build/lib/ ctest --output-on-failure
 
-    - name: Checkout latest UMF version
-      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      with:
-        fetch-depth: 0
-        path: ${{github.workspace}}/latest_version
-
-    - name: Configure latest UMF build
-      working-directory: ${{github.workspace}}/latest_version
-      run: >
-        cmake
-        -B ${{github.workspace}}/latest_version/build
-        -DCMAKE_BUILD_TYPE=Debug
-        -DUMF_BUILD_SHARED_LIBRARY=ON
-        -DCMAKE_C_COMPILER=gcc
-        -DCMAKE_CXX_COMPILER=g++
-        -DUMF_BUILD_TESTS=OFF
-        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
-        -DUMF_BUILD_CUDA_PROVIDER=ON
-        -DUMF_FORMAT_CODE_STYLE=OFF
-        -DUMF_DEVELOPER_MODE=ON
-        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
-
-    - name: Build latest UMF
-      working-directory: ${{github.workspace}}/latest_version
-      run: |
-        cmake --build ${{github.workspace}}/latest_version/build -j $(nproc)
-
     - name: Run "tag" UMF tests with latest UMF libs (warnings enabled)
       working-directory: ${{github.workspace}}/tag_version/build
       # Disable incompatible tests:
@@ -103,15 +108,37 @@ jobs:
         GTEST_FILTER="-*umfIpcTest.GetPoolByOpenedHandle*"
         ctest --verbose -E "umf-mempolicy"
 
+    # Browse all folders in the examples directory, build them using the 
+    # latest UMF version, and run them, excluding those in the exclude list.
+    - name: Build and run "tag" examples using the latest UMF libraries
+      working-directory: ${{github.workspace}}/tag_version
+      run: |  
+        EXAMPLES_EXCLUDE_LIST="cmake|common|hmat|level_zero|cuda"
+        rm -rf build
+        rm -rf include
+        mkdir _examples
+        cd _examples
+        EXAMPLES_LIST=$(find ${{github.workspace}}/tag_version/examples -maxdepth 1 -mindepth 1 -type d | grep -Ev $EXAMPLES_EXCLUDE_LIST | xargs -n 1 basename)
+        for EXAMPLE_NAME in $EXAMPLES_LIST; do
+          cd ${{github.workspace}}/tag_version
+          mkdir -p _examples/$EXAMPLE_NAME;
+          cd _examples/$EXAMPLE_NAME;
+          echo "Building example: $EXAMPLE_NAME"
+          CMAKE_PREFIX_PATH=${{github.workspace}}/latest_version/_install cmake ${{github.workspace}}/tag_version/examples/$EXAMPLE_NAME;
+          make;
+          find . -maxdepth 1 -type f -executable -exec echo "Running example: {}" \; -exec {} \;
+        done
+
   windows:
     name: Windows
     env:
       VCPKG_PATH: "${{github.workspace}}/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/vcpkg/packages/jemalloc_x64-windows"
+      VCPKG_BIN_PATH: "${{github.workspace}}/vcpkg/packages/hwloc_x64-windows/bin;${{github.workspace}}/vcpkg/packages/tbb_x64-windows/bin;${{github.workspace}}/vcpkg/packages/jemalloc_x64-windows/bin"
     runs-on: "windows-2022"
 
     steps:
     - name: Checkout "tag" UMF version
-      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         fetch-depth: 0
         ref: refs/tags/${{inputs.tag}}
@@ -130,6 +157,36 @@ jobs:
       run: vcpkg install --triplet x64-windows
       shell: pwsh # Specifies PowerShell as the shell for running the script.
 
+    - name: Checkout latest UMF version
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        fetch-depth: 0
+        path: ${{github.workspace}}/latest_version
+        
+    - name: Configure latest UMF build
+      working-directory: ${{github.workspace}}/latest_version
+      run: >
+        cmake
+        -B "${{github.workspace}}/latest_version/build"
+        -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
+        -DCMAKE_INSTALL_PREFIX=_install
+        -DCMAKE_C_COMPILER=cl
+        -DCMAKE_CXX_COMPILER=cl
+        -DUMF_BUILD_SHARED_LIBRARY=ON
+        -DUMF_BUILD_TESTS=OFF
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
+        -DUMF_BUILD_CUDA_PROVIDER=ON
+        -DUMF_FORMAT_CODE_STYLE=OFF
+        -DUMF_DEVELOPER_MODE=ON
+        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
+
+    - name: Build latest UMF
+      run: cmake --build "${{github.workspace}}/latest_version/build" --config Debug -j $Env:NUMBER_OF_PROCESSORS
+
+    - name: Install latest UMF
+      working-directory: ${{github.workspace}}/latest_version
+      run: cmake --install ${{github.workspace}}/latest_version/build --config Debug
+      
     - name: Configure "tag" UMF build
       working-directory: ${{github.workspace}}/tag_version
       run: >
@@ -156,31 +213,6 @@ jobs:
       working-directory: "${{github.workspace}}/tag_version/build"
       run: ctest -C Debug --output-on-failure --test-dir test
 
-    - name: Checkout latest UMF version
-      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      with:
-        fetch-depth: 0
-        path: ${{github.workspace}}/latest_version
-
-    - name: Configure latest UMF build
-      working-directory: ${{github.workspace}}/latest_version
-      run: >
-        cmake
-        -B "${{github.workspace}}/latest_version/build"
-        -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
-        -DCMAKE_C_COMPILER=cl
-        -DCMAKE_CXX_COMPILER=cl
-        -DUMF_BUILD_SHARED_LIBRARY=ON
-        -DUMF_BUILD_TESTS=OFF
-        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
-        -DUMF_BUILD_CUDA_PROVIDER=ON
-        -DUMF_FORMAT_CODE_STYLE=OFF
-        -DUMF_DEVELOPER_MODE=ON
-        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
-
-    - name: Build latest UMF
-      run: cmake --build "${{github.workspace}}/latest_version/build" --config Debug -j $Env:NUMBER_OF_PROCESSORS
-
     - name: Run "tag" UMF tests with latest UMF libs (warnings enabled)
       working-directory: ${{github.workspace}}/tag_version/build
       # Disable incompatible tests:
@@ -190,6 +222,48 @@ jobs:
         $env:GTEST_FILTER="-*umfIpcTest.GetPoolByOpenedHandle*"
         cp ${{github.workspace}}/latest_version/build/bin/Debug/umf.dll ${{github.workspace}}/tag_version/build/bin/Debug/umf.dll
         ctest -C Debug --verbose
+
+    # Browse all folders in the examples directory, build them using the 
+    # latest UMF version, and run them, excluding those in the exclude list.
+    - name: Build and run "tag" examples using the latest UMF libraries
+      working-directory: ${{github.workspace}}/tag_version
+      run: |
+        $ErrorActionPreference = "Stop"
+        $EXAMPLES_EXCLUDE_LIST = "cmake|common|hmat|level_zero|cuda|custom|ipc|numa"
+        Set-Location "${{github.workspace}}/tag_version"
+        Remove-Item -Recurse -ErrorAction Ignore -Force build, include
+        New-Item -ItemType Directory -Path _examples
+        Set-Location -Path _examples
+        $EXAMPLES_LIST = Get-ChildItem -Path "${{github.workspace}}/tag_version/examples" -Directory | Where-Object { $_.Name -notmatch $EXAMPLES_EXCLUDE_LIST } | ForEach-Object { $_.Name }
+        # NOTE: we add our paths at the beginning of the PATH variable because 
+        # there is a limit on the size of the PATH variable in Windows
+        $env:Path = "${{github.workspace}}/latest_version/_install/bin;${{env.VCPKG_BIN_PATH}};$env:Path"
+        foreach ($EXAMPLE_NAME in $EXAMPLES_LIST) {
+          Set-Location -Path "${{github.workspace}}/tag_version"
+          New-Item -ItemType Directory -Path "_examples/$EXAMPLE_NAME"
+          Set-Location -Path "_examples/$EXAMPLE_NAME"
+          Write-Output "`nBuilding example: $EXAMPLE_NAME"
+          cmake -DCMAKE_PREFIX_PATH="${{github.workspace}}/latest_version/_install;${{env.VCPKG_PATH}}" "${{github.workspace}}/tag_version/examples/$EXAMPLE_NAME"
+          cmake --build .
+          Set-Location -Path Debug
+          Write-Output "`nRunning example: $EXAMPLE_NAME"
+          $exeFiles = Get-ChildItem -Filter *.exe
+          if ($exeFiles.Count -eq 0) {
+              Write-Error "No executable files found in the current directory."
+              exit 1
+          }
+          foreach ($exeFile in $exeFiles) {
+            Write-Output "Running: $($exeFile.FullName)"
+            & $exeFile.FullName 
+            if ($LASTEXITCODE -ne 0) {
+              $unsignedExitCode = [Convert]::ToInt32($LASTEXITCODE)
+              # Format the error code as a hexadecimal string
+              $hexErrorCode = [Convert]::ToString($unsignedExitCode, 16).ToUpper()
+              Write-Output "error 0x$hexErrorCode"
+              exit $LASTEXITCODE
+            }
+          }
+        }
 
   gpu:
     name: GPU Ubuntu
@@ -201,8 +275,40 @@ jobs:
     runs-on: ["DSS-${{matrix.provider}}", "DSS-UBUNTU"]
 
     steps:
+    - name: Checkout latest UMF version
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        fetch-depth: 0
+        path: ${{github.workspace}}/latest_version
+
+    - name: Configure latest UMF build
+      working-directory: ${{github.workspace}}/latest_version
+      run: >
+        cmake
+        -B ${{github.workspace}}/latest_version/build
+        -DCMAKE_INSTALL_PREFIX=_install
+        -DCMAKE_BUILD_TYPE=Debug
+        -DUMF_BUILD_SHARED_LIBRARY=ON
+        -DCMAKE_C_COMPILER=gcc
+        -DCMAKE_CXX_COMPILER=g++
+        -DUMF_BUILD_TESTS=OFF
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
+        -DUMF_BUILD_CUDA_PROVIDER=ON
+        -DUMF_FORMAT_CODE_STYLE=OFF
+        -DUMF_DEVELOPER_MODE=ON
+        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
+
+    - name: Build latest UMF
+      working-directory: ${{github.workspace}}/latest_version
+      run: |
+        cmake --build ${{github.workspace}}/latest_version/build -j $(nproc)
+
+    - name: Install latest UMF
+      working-directory: ${{github.workspace}}/latest_version
+      run: cmake --install ${{github.workspace}}/latest_version/build --config Debug
+      
     - name: Checkout "tag" UMF version
-      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         fetch-depth: 0
         ref: refs/tags/${{inputs.tag}}
@@ -242,33 +348,6 @@ jobs:
         GTEST_FILTER="-*umfIpcTest.GetPoolByOpenedHandle*"
         ctest --output-on-failure
 
-    - name: Checkout latest UMF version
-      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      with:
-        fetch-depth: 0
-        path: ${{github.workspace}}/latest_version
-
-    - name: Configure latest UMF build
-      working-directory: ${{github.workspace}}/latest_version
-      run: >
-        cmake
-        -B ${{github.workspace}}/latest_version/build
-        -DCMAKE_BUILD_TYPE=Debug
-        -DUMF_BUILD_SHARED_LIBRARY=ON
-        -DCMAKE_C_COMPILER=gcc
-        -DCMAKE_CXX_COMPILER=g++
-        -DUMF_BUILD_TESTS=OFF
-        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
-        -DUMF_BUILD_CUDA_PROVIDER=ON
-        -DUMF_FORMAT_CODE_STYLE=OFF
-        -DUMF_DEVELOPER_MODE=ON
-        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
-
-    - name: Build latest UMF
-      working-directory: ${{github.workspace}}/latest_version
-      run: |
-        cmake --build ${{github.workspace}}/latest_version/build -j $(nproc)
-
     - name: Run "tag" UMF tests with latest UMF libs (warnings enabled)
       working-directory: ${{github.workspace}}/tag_version/build
       # Disable incompatible tests:
@@ -280,3 +359,27 @@ jobs:
         LD_LIBRARY_PATH=${{github.workspace}}/latest_version/build/lib/
         GTEST_FILTER="-*umfIpcTest.GetPoolByOpenedHandle*"
         ctest --verbose -E "not_impl|umf-mempolicy"
+
+    # Browse all folders in the examples directory, build them using the 
+    # latest UMF version, and run them, excluding those in the exclude list.
+    # NOTE: exclude cuda examples as they require linking with static disjoint
+    # pool library
+    - name: Build and run "tag" examples using the latest UMF libraries
+      working-directory: ${{github.workspace}}/tag_version
+      run: |  
+        EXAMPLES_EXCLUDE_LIST="cmake|common|hmat|cuda${{matrix.provider == 'LEVEL_ZERO' && '' || '|level_zero' }}"
+        rm -rf build
+        rm -rf include
+        mkdir _examples
+        cd _examples
+        EXAMPLES_LIST=$(find ${{github.workspace}}/tag_version/examples -maxdepth 1 -mindepth 1 -type d | grep -Ev $EXAMPLES_EXCLUDE_LIST | xargs -n 1 basename)
+        for EXAMPLE_NAME in $EXAMPLES_LIST; do
+          cd ${{github.workspace}}/tag_version
+          mkdir -p _examples/$EXAMPLE_NAME;
+          cd _examples/$EXAMPLE_NAME;          
+          echo "Building example: $EXAMPLE_NAME"
+          CMAKE_PREFIX_PATH=${{github.workspace}}/latest_version/_install cmake ${{github.workspace}}/tag_version/examples/$EXAMPLE_NAME;
+          find . -maxdepth 1 -type f -executable -exec echo "Running example: {}" \; -exec {} \;
+        done
+
+# TODO add GPU windows

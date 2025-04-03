@@ -1,17 +1,17 @@
 /*
  *
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 
-#include "umf/pools/pool_scalable.h"
-#include "umf/providers/provider_os_memory.h"
-
 #include <stdio.h>
 #include <string.h>
+
+#include <umf/pools/pool_scalable.h>
+#include <umf/providers/provider_os_memory.h>
 
 int main(void) {
     // A result object for storing UMF API result status
