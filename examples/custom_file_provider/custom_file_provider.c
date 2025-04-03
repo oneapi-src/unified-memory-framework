@@ -8,9 +8,6 @@
  */
 #define _GNU_SOURCE 1
 
-#include <umf/base.h>
-#include <umf/pools/pool_scalable.h>
-
 #include <fcntl.h>
 #include <linux/falloc.h>
 #include <stdio.h>
@@ -18,6 +15,9 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <unistd.h>
+
+#include <umf/base.h>
+#include <umf/pools/pool_scalable.h>
 
 // Define the size for address reservation
 #define ADDRESS_RESERVATION ((size_t)16 * 1024 * 1024 * 1024)

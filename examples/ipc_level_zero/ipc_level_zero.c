@@ -10,10 +10,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "umf/ipc.h"
-#include "umf/memory_pool.h"
-#include "umf/pools/pool_disjoint.h"
-#include "umf/providers/provider_level_zero.h"
+#include <umf/ipc.h>
+#include <umf/memory_pool.h>
+#include <umf/pools/pool_disjoint.h>
+#include <umf/providers/provider_level_zero.h>
 
 #include "examples_level_zero_helpers.h"
 
