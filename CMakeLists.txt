@@ -245,37 +245,45 @@ else()
     )
 endif()
 
+if(NOT UMF_DISABLE_HWLOC AND (NOT UMF_LINK_HWLOC_STATICALLY))
+    pkg_check_modules(LIBHWLOC hwloc>=2.3.0)
+    if(NOT LIBHWLOC_FOUND)
+        find_package(LIBHWLOC 2.3.0 COMPONENTS hwloc)
+        if(LIBHWLOC_LIBRARIES)
+            set(LIBHWLOC_AVAILABLE TRUE)
+        endif()
+    endif()
+
+    if(LIBHWLOC_AVAILABLE OR LIBHWLOC_FOUND)
+        # add PATH to DLL on Windows
+        set(DLL_PATH_LIST
+            "${DLL_PATH_LIST};PATH=path_list_append:${LIBHWLOC_DLL_DIRS}")
+    else()
+        set(UMF_LINK_HWLOC_STATICALLY ON)
+    endif()
+endif()
+
+if(UMF_LINK_HWLOC_STATICALLY AND LINUX)
+    find_program(AUTORECONF_EXECUTABLE autoreconf)
+    if(NOT AUTORECONF_EXECUTABLE)
+        message(WARNING "autoreconf is not installed. Disabling hwloc.")
+        set(UMF_DISABLE_HWLOC ON)
+        set(UMF_LINK_HWLOC_STATICALLY OFF)
+    endif()
+endif()
+
 if(UMF_DISABLE_HWLOC)
     message(STATUS "hwloc is disabled, hence OS provider, memtargets, "
                    "topology discovery, examples won't be available!")
 else()
-    if(NOT DEFINED UMF_HWLOC_REPO)
-        set(UMF_HWLOC_REPO "https://github.com/open-mpi/hwloc.git")
-    endif()
-
-    if(NOT DEFINED UMF_HWLOC_TAG)
-        set(UMF_HWLOC_TAG hwloc-2.10.0)
-    endif()
-
-    if(NOT UMF_LINK_HWLOC_STATICALLY)
-        pkg_check_modules(LIBHWLOC hwloc>=2.3.0)
-        if(NOT LIBHWLOC_FOUND)
-            find_package(LIBHWLOC 2.3.0 COMPONENTS hwloc)
-            if(LIBHWLOC_LIBRARIES)
-                set(LIBHWLOC_AVAILABLE TRUE)
-            endif()
-        endif()
-
-        if(LIBHWLOC_AVAILABLE OR LIBHWLOC_FOUND)
-            # add PATH to DLL on Windows
-            set(DLL_PATH_LIST
-                "${DLL_PATH_LIST};PATH=path_list_append:${LIBHWLOC_DLL_DIRS}")
-        else()
-            set(UMF_LINK_HWLOC_STATICALLY ON)
-        endif()
-    endif()
-
     if(UMF_LINK_HWLOC_STATICALLY)
+        if(NOT DEFINED UMF_HWLOC_REPO)
+            set(UMF_HWLOC_REPO "https://github.com/open-mpi/hwloc.git")
+        endif()
+
+        if(NOT DEFINED UMF_HWLOC_TAG)
+            set(UMF_HWLOC_TAG hwloc-2.10.0)
+        endif()
         message(
             STATUS
                 "Will fetch hwloc from ${UMF_HWLOC_REPO} (tag: ${UMF_HWLOC_TAG})"
