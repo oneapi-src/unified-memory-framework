@@ -68,7 +68,7 @@ jobs:
     needs: [Build]
     uses: ./.github/workflows/reusable_proxy_lib.yml
   Valgrind:
-    needs: [Build]
+    needs: [FastBuild]
     uses: ./.github/workflows/reusable_valgrind.yml
   Coverage:
     # total coverage (on upstream only)
