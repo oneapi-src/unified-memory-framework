@@ -6,9 +6,11 @@
  *
  */
 
-#include <benchmark/benchmark.h>
-
 #include "benchmark.hpp"
+
+#include <iostream>
+
+#include <benchmark/benchmark.h>
 
 #define UMF_BENCHMARK_TEMPLATE_DEFINE(BaseClass, Method, ...)                  \
     BENCHMARK_TEMPLATE_DEFINE_F(BaseClass, Method, __VA_ARGS__)                \
@@ -160,8 +162,10 @@ UMF_BENCHMARK_REGISTER_F(multiple_malloc_free_benchmark, fixed_provider)
 //BENCHMARK_MAIN();
 int main(int argc, char **argv) {
     if (initAffinityMask()) {
+        std::cerr << "initAffinityMask failed" << std::endl;
         return -1;
     }
+
     benchmark::Initialize(&argc, argv);
     benchmark::RunSpecifiedBenchmarks();
     benchmark::Shutdown();
