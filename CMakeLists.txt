@@ -58,6 +58,8 @@ macro(umf_option)
     option(${ARGV})
 endmacro()
 
+# All CMake options have to be explicitly set in the build_umfd target's
+# configuration command
 umf_option(UMF_BUILD_SHARED_LIBRARY "Build UMF as shared library" OFF)
 umf_option(UMF_BUILD_LEVEL_ZERO_PROVIDER "Build Level Zero memory provider" ON)
 umf_option(UMF_BUILD_CUDA_PROVIDER "Build CUDA memory provider" ON)
@@ -147,6 +149,8 @@ if(UMF_DEVELOPER_MODE)
     set(UMF_COMMON_COMPILE_DEFINITIONS ${UMF_COMMON_COMPILE_DEFINITIONS}
                                        UMF_DEVELOPER_MODE=1)
 endif()
+
+message(STATUS "CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}")
 
 if(NOT UMF_BUILD_LIBUMF_POOL_JEMALLOC)
     set(UMF_POOL_JEMALLOC_ENABLED FALSE)
@@ -285,6 +289,7 @@ else()
             set(HWLOC_ENABLE_TESTING OFF)
             set(HWLOC_SKIP_LSTOPO ON)
             set(HWLOC_SKIP_TOOLS ON)
+            set(HWLOC_SKIP_INCLUDES ON)
 
             FetchContent_Declare(
                 hwloc_targ
@@ -428,25 +433,72 @@ elseif(UMF_BUILD_CUDA_PROVIDER)
     message(STATUS "CUDA_INCLUDE_DIRS = ${CUDA_INCLUDE_DIRS}")
 endif()
 
+# Build the umfd target in a separate directory with Debug configuration
 if(WINDOWS AND UMF_USE_DEBUG_POSTFIX)
-    # Build debug umf library with the d suffix that is compiled with /MDd so
-    # users can link against it in debug builds.
-    set(CMAKE_DEBUG_POSTFIX d)
-
+    # The build_umfd target's configuration command requires to have
+    # CMAKE_PREFIX_PATH with semicolons escaped
+    string(JOIN "\;" UMFD_CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH})
     add_custom_target(
-        umfd ALL
-        COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target umf
-                --config Debug
-        COMMENT "Building debug umf library with the d suffix")
+        build_umfd ALL
+        COMMAND
+            ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" -S ${UMF_CMAKE_SOURCE_DIR}
+            -B ${CMAKE_BINARY_DIR}/umfd_build -DCMAKE_BUILD_TYPE=Debug
+            -DCMAKE_DEBUG_POSTFIX=d
+            -DCMAKE_PREFIX_PATH="${UMFD_CMAKE_PREFIX_PATH}"
+            -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+            -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+            -DUMF_USE_DEBUG_POSTFIX=OFF
+            -DUMF_BUILD_SHARED_LIBRARY=${UMF_BUILD_SHARED_LIBRARY}
+            -DUMF_BUILD_LEVEL_ZERO_PROVIDER=${UMF_BUILD_LEVEL_ZERO_PROVIDER}
+            -DUMF_BUILD_CUDA_PROVIDER=${UMF_BUILD_CUDA_PROVIDER}
+            -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=${UMF_BUILD_LIBUMF_POOL_JEMALLOC}
+            -DUMF_BUILD_TESTS=OFF -DUMF_BUILD_GPU_TESTS=OFF
+            -DUMF_BUILD_BENCHMARKS=OFF -DUMF_BUILD_BENCHMARKS_MT=OFF
+            -DUMF_BUILD_EXAMPLES=OFF -DUMF_BUILD_GPU_EXAMPLES=OFF
+            -DUMF_BUILD_FUZZTESTS=OFF -DUMF_DISABLE_HWLOC=${UMF_DISABLE_HWLOC}
+            -DUMF_LINK_HWLOC_STATICALLY=${UMF_LINK_HWLOC_STATICALLY}
+            -DUMF_HWLOC_NAME=${UMF_HWLOC_NAME}
+            -DUMF_INSTALL_RPATH=${UMF_INSTALL_RPATH} -DUMF_DEVELOPER_MODE=OFF
+            -DUMF_FORMAT_CODE_STYLE=OFF -DUMF_TESTS_FAIL_ON_SKIP=OFF
+            -DUMF_USE_ASAN=OFF -DUMF_USE_UBSAN=OFF -DUMF_USE_TSAN=OFF
+            -DUMF_USE_MSAN=OFF -DUMF_USE_VALGRIND=OFF -DUMF_USE_COVERAGE=OFF
+            -DUMF_PROXY_LIB_BASED_ON_POOL=${UMF_PROXY_LIB_BASED_ON_POOL}
+        COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR}/umfd_build --target
+                umf --config Debug
+        COMMENT
+            "Configuring and building umfd.dll in a separate directory with Debug configuration"
+    )
 
-    # Copy built UMF libraries to the Release build subdirectory
+    # Copy built UMF libraries to the main binary directory and remove
+    # umfd_build
+    if(CMAKE_CONFIGURATION_TYPES)
+        # Multi-config generator (e.g., Visual Studio)
+        set(UMFD_DLL_SRC "${CMAKE_BINARY_DIR}/umfd_build/bin/Debug/umfd.dll")
+        set(UMFD_LIB_SRC "${CMAKE_BINARY_DIR}/umfd_build/lib/Debug/umfd.lib")
+        set(UMFD_DLL "${CMAKE_BINARY_DIR}/bin/$<CONFIG>/umfd.dll")
+        set(UMFD_LIB "${CMAKE_BINARY_DIR}/lib/$<CONFIG>/umfd.lib")
+    else()
+        # Single-config generator (e.g., Ninja)
+        set(UMFD_DLL_SRC "${CMAKE_BINARY_DIR}/umfd_build/bin/umfd.dll")
+        set(UMFD_LIB_SRC "${CMAKE_BINARY_DIR}/umfd_build/lib/umfd.lib")
+        set(UMFD_DLL "${CMAKE_BINARY_DIR}/bin/umfd.dll")
+        set(UMFD_LIB "${CMAKE_BINARY_DIR}/lib/umfd.lib")
+    endif()
+
+    if(UMF_BUILD_SHARED_LIBRARY)
+        add_custom_command(
+            TARGET build_umfd
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${UMFD_DLL_SRC}
+                    ${UMFD_DLL}
+            COMMENT "Copying umfd.dll to the main binary directory")
+    endif()
     add_custom_command(
-        TARGET umfd
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/bin/Debug/umfd.dll
-                ${CMAKE_BINARY_DIR}/bin/Release/umfd.dll
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/lib/Debug/umfd.lib
-                ${CMAKE_BINARY_DIR}/lib/Release/umfd.lib
-        COMMENT "Copying debug libraries to the Release build directory")
+        TARGET build_umfd
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${UMFD_LIB_SRC}
+                ${UMFD_LIB}
+        COMMAND ${CMAKE_COMMAND} -E remove_directory
+                ${CMAKE_BINARY_DIR}/umfd_build DEPENDS ${UMFD_DLL}
+        COMMENT "Copying umfd.lib to the main library directory")
 endif()
 
 # This build type check is not possible on Windows when CMAKE_BUILD_TYPE is not
@@ -841,12 +893,18 @@ endif()
 # --------------------------------------------------------------------------- #
 # Configure make install/uninstall and packages
 # --------------------------------------------------------------------------- #
-# Install umfd target
+# Install the umfd library files as part of the umfd component
 if(WINDOWS AND UMF_USE_DEBUG_POSTFIX)
-    install(FILES ${CMAKE_BINARY_DIR}/bin/Debug/umfd.dll
-            DESTINATION ${CMAKE_INSTALL_BINDIR})
-    install(FILES ${CMAKE_BINARY_DIR}/lib/Debug/umfd.lib
-            DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    if(UMF_BUILD_SHARED_LIBRARY)
+        install(
+            FILES ${UMFD_DLL}
+            DESTINATION ${CMAKE_INSTALL_BINDIR}
+            COMPONENT umfd)
+    endif()
+    install(
+        FILES ${UMFD_LIB}
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        COMPONENT umfd)
 endif()
 
 install(FILES ${PROJECT_SOURCE_DIR}/LICENSE.TXT
