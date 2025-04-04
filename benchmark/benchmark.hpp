@@ -70,6 +70,7 @@
  * - Additional benchmarking scenarios can be created by extending `benchmark_interface`.
  */
 
+#include <list>
 #include <malloc.h>
 #include <random>
 
@@ -86,6 +87,7 @@ struct alloc_data {
 };
 
 struct next_alloc_data {
+    bool alloc; // true if allocation, false if deallocation
     size_t offset;
     size_t size;
 };
@@ -288,10 +290,9 @@ template <
     typename =
         std::enable_if_t<std::is_base_of<allocator_interface, Alloc>::value>>
 class multiple_malloc_free_benchmark : public benchmark_interface<Size, Alloc> {
-    using distribution = std::uniform_int_distribution<size_t>;
+  protected:
     template <class T> using vector2d = std::vector<std::vector<T>>;
     using base = benchmark_interface<Size, Alloc>;
-
     int allocsPerIterations = 10;
     bool thread_local_allocations = true;
     size_t max_allocs = 0;
@@ -299,7 +300,7 @@ class multiple_malloc_free_benchmark : public benchmark_interface<Size, Alloc> {
     vector2d<alloc_data> allocations;
     vector2d<next_alloc_data> next;
     using next_alloc_data_iterator =
-        std::vector<next_alloc_data>::const_iterator;
+        typename std::vector<next_alloc_data>::const_iterator;
     std::vector<std::unique_ptr<next_alloc_data_iterator>> next_iter;
     int64_t iterations;
 
@@ -386,15 +387,20 @@ class multiple_malloc_free_benchmark : public benchmark_interface<Size, Alloc> {
         auto tid = state.thread_index();
         auto &allocation = allocations[tid];
         auto &iter = next_iter[tid];
+
         for (int i = 0; i < allocsPerIterations; i++) {
             auto &n = *(*iter)++;
             auto &alloc = allocation[n.offset];
-            base::allocator.benchFree(alloc.ptr, alloc.size);
-            alloc.size = n.size;
-            alloc.ptr = base::allocator.benchAlloc(alloc.size);
-
-            if (alloc.ptr == NULL) {
-                state.SkipWithError("allocation failed");
+            if (n.alloc) {
+                alloc.ptr = base::allocator.benchAlloc(n.size);
+                if (alloc.ptr == NULL) {
+                    state.SkipWithError("allocation failed");
+                }
+                alloc.size = n.size;
+            } else {
+                base::allocator.benchFree(alloc.ptr, alloc.size);
+                alloc.ptr = NULL;
+                alloc.size = 0;
             }
         }
     }
@@ -412,13 +418,14 @@ class multiple_malloc_free_benchmark : public benchmark_interface<Size, Alloc> {
     }
 
   private:
-    void prealloc(benchmark::State &state) {
+    virtual void prealloc(benchmark::State &state) {
         auto tid = state.thread_index();
         auto &i = allocations[tid];
         i.resize(max_allocs);
         auto sizeGenerator = base::alloc_sizes[tid];
 
-        for (size_t j = 0; j < max_allocs; j++) {
+        // Preallocate half of the available slots, for allocations
+        for (size_t j = 0; j < max_allocs / 2; j++) {
             auto size = sizeGenerator.nextSize();
             i[j].ptr = base::allocator.benchAlloc(size);
             if (i[j].ptr == NULL) {
@@ -441,20 +448,168 @@ class multiple_malloc_free_benchmark : public benchmark_interface<Size, Alloc> {
         }
     }
 
-    void prepareWorkload(benchmark::State &state) {
+    virtual void prepareWorkload(benchmark::State &state) {
         auto tid = state.thread_index();
         auto &n = next[tid];
+
+        // Create generators for random index selection and binary decision.
+        using distribution = std::uniform_int_distribution<size_t>;
         std::default_random_engine generator;
-        distribution dist;
+        distribution dist_offset(0, max_allocs - 1);
+        distribution dist_opt_type(0, 1);
         generator.seed(0);
-        dist.param(distribution::param_type(0, max_allocs - 1));
+
         auto sizeGenerator = base::alloc_sizes[tid];
+        std::vector<size_t> free;
+        std::vector<size_t> allocated;
+        free.reserve(max_allocs / 2);
+        allocated.reserve(max_allocs / 2);
+        // Preallocate memory: initially, half the indices are allocated.
+        // See prealloc() function;
+        size_t i = 0;
+        while (i < max_allocs / 2) {
+            allocated.push_back(i++);
+        }
+        // The remaining indices are marked as free.
+        while (i < max_allocs) {
+            free.push_back(i++);
+        }
 
         n.clear();
         for (int64_t j = 0; j < state.max_iterations * allocsPerIterations;
              j++) {
-            n.push_back({dist(generator), sizeGenerator.nextSize()});
+            // Decide whether to allocate or free:
+            // - If no allocations exist, allocation is forced.
+            // - If there is maximum number of allocation, free is forced
+            // - Otherwise, use a binary random choice (0 or 1)
+            if (allocated.empty() ||
+                (dist_opt_type(generator) == 0 && !free.empty())) {
+                // Allocation:
+                std::swap(free[dist_offset(generator) % free.size()],
+                          free.back());
+                auto offset = free.back();
+                free.pop_back();
+
+                n.push_back({true, offset, sizeGenerator.nextSize()});
+                allocated.push_back(offset);
+            } else {
+                // Free
+                std::swap(allocated[dist_offset(generator) % allocated.size()],
+                          allocated.back());
+                auto offset = allocated.back();
+                allocated.pop_back();
+
+                n.push_back({false, offset, 0});
+                free.push_back(offset);
+            }
         }
+
         next_iter[tid] = std::make_unique<next_alloc_data_iterator>(n.cbegin());
+    }
+};
+// This class benchmarks performance by randomly allocating and freeing memory.
+// Initially, it slowly increases the memory footprint, and later decreases it.
+template <
+    typename Size, typename Alloc,
+    typename =
+        std::enable_if_t<std::is_base_of<alloc_size_interface, Size>::value>,
+    typename =
+        std::enable_if_t<std::is_base_of<allocator_interface, Alloc>::value>>
+class peak_alloc_benchmark
+    : public multiple_malloc_free_benchmark<Size, Alloc> {
+    using base = multiple_malloc_free_benchmark<Size, Alloc>;
+    virtual void prepareWorkload(benchmark::State &state) override {
+        // Retrieve the thread index and corresponding operation buffer.
+        auto tid = state.thread_index();
+        auto &n = this->next[tid];
+
+        // Set up the random generators for index selection and decision making.
+        std::default_random_engine generator;
+        std::uniform_int_distribution<size_t> dist_offset(0,
+                                                          this->max_allocs - 1);
+        std::uniform_real_distribution<double> dist_opt_type(0, 1);
+        generator.seed(0);
+        auto sizeGenerator = this->alloc_sizes[tid];
+
+        n.clear();
+        std::vector<size_t> free;
+        std::vector<size_t> allocated;
+        free.reserve(this->max_allocs);
+        // Initially, all indices are available.
+        for (size_t i = 0; i < this->max_allocs; i++) {
+            free.push_back(i);
+        }
+
+        // Total number of allocation/free operations to simulate.
+        int64_t operations_number =
+            state.max_iterations * this->allocsPerIterations;
+        for (int64_t j = 0; j < operations_number; j++) {
+            int64_t target_allocation;
+
+            // Determine the target number of allocations based on the progress of the iterations.
+            // In the first half of the iterations, the target allocation increases linearly.
+            // In the second half, it decreases linearly.
+            if (j < operations_number / 2) {
+                target_allocation = 2 * static_cast<int64_t>(this->max_allocs) *
+                                    j / operations_number;
+            } else {
+                target_allocation = -2 *
+                                        static_cast<int64_t>(this->max_allocs) *
+                                        j / operations_number +
+                                    2 * static_cast<int64_t>(this->max_allocs);
+            }
+
+            // x represents the gap between the target and current allocations.
+            auto x = static_cast<double>(target_allocation -
+                                         static_cast<double>(allocated.size()));
+
+            // Use a normal CDF with high sigma so that when x is positive,
+            // we are slightly more likely to allocate,
+            // and when x is negative, slightly more likely to free memory,
+            // keeping the overall change gradual.
+
+            const double sigma = 1000;
+            auto cdf = normalCDF(x, sigma);
+
+            // Decide whether to allocate or free:
+            // - If no allocations exist, allocation is forced.
+            // - If there is maximum number of allocation, free is forced
+            // - Otherwise, Based on the computed probability, choose whether to allocate or free
+            if (allocated.empty() ||
+                (!free.empty() && cdf > dist_opt_type(generator))) {
+                // Allocation
+                std::swap(free[dist_offset(generator) % free.size()],
+                          free.back());
+                auto offset = free.back();
+                free.pop_back();
+                n.push_back({true, offset, sizeGenerator.nextSize()});
+                allocated.push_back(offset);
+            } else {
+                // Free
+                std::swap(allocated[dist_offset(generator) % allocated.size()],
+                          allocated.back());
+                auto offset = allocated.back();
+                allocated.pop_back();
+                n.push_back({false, offset, 0});
+                free.push_back(offset);
+            }
+        }
+
+        this->next_iter[tid] =
+            std::make_unique<std::vector<next_alloc_data>::const_iterator>(
+                n.cbegin());
+    }
+
+    virtual void prealloc(benchmark::State &state) {
+        auto tid = state.thread_index();
+        auto &i = base::allocations[tid];
+        i.resize(base::max_allocs);
+    }
+    virtual std::string name() { return base::base::name() + "/peak_alloc"; }
+
+  private:
+    // Function to calculate the CDF of a normal distribution
+    double normalCDF(double x, double sigma = 1.0, double mu = 0.0) {
+        return 0.5 * (1 + std::erf((x - mu) / (sigma * std::sqrt(2.0))));
     }
 };
