@@ -9,7 +9,7 @@ on:
       tag:
         description: Check backward compatibility with this tag
         type: string
-        default: "v0.11.0-dev1"
+        default: "v0.11.0-rc1"
 
 permissions:
   contents: read
@@ -99,14 +99,10 @@ jobs:
 
     - name: Run "tag" UMF tests with latest UMF libs (warnings enabled)
       working-directory: ${{github.workspace}}/tag_version/build
-      # Disable incompatible tests:
-      # - GTEST_FILTER used to skip only single test cases
-      # - ctest's exclude - disable test binary that rely on internal structures
       run: >
         UMF_LOG="level:warning;flush:debug;output:stderr;pid:no"
         LD_LIBRARY_PATH=${{github.workspace}}/latest_version/build/lib/
-        GTEST_FILTER="-*umfIpcTest.GetPoolByOpenedHandle*"
-        ctest --verbose -E "umf-mempolicy"
+        ctest --verbose
 
     # Browse all folders in the examples directory, build them using the 
     # latest UMF version, and run them, excluding those in the exclude list.
@@ -215,11 +211,8 @@ jobs:
 
     - name: Run "tag" UMF tests with latest UMF libs (warnings enabled)
       working-directory: ${{github.workspace}}/tag_version/build
-      # Disable incompatible tests:
-      # - GTEST_FILTER used to skip only single test cases
       run: |
         $env:UMF_LOG="level:warning;flush:debug;output:stderr;pid:no" 
-        $env:GTEST_FILTER="-*umfIpcTest.GetPoolByOpenedHandle*"
         cp ${{github.workspace}}/latest_version/build/bin/Debug/umf.dll ${{github.workspace}}/tag_version/build/bin/Debug/umf.dll
         ctest -C Debug --verbose
 
@@ -345,29 +338,22 @@ jobs:
       working-directory: ${{github.workspace}}/tag_version/build
       run: >
         LD_LIBRARY_PATH=${{github.workspace}}/tag_version/build/lib/
-        GTEST_FILTER="-*umfIpcTest.GetPoolByOpenedHandle*"
         ctest --output-on-failure
 
     - name: Run "tag" UMF tests with latest UMF libs (warnings enabled)
       working-directory: ${{github.workspace}}/tag_version/build
-      # Disable incompatible tests:
-      # - GTEST_FILTER used to skip only single test cases
-      # - ctest's exclude - disable test binary that rely on internal structures
-      #     and once not implemented features may now be implemented.
       run: >
         UMF_LOG="level:warning;flush:debug;output:stderr;pid:no"
         LD_LIBRARY_PATH=${{github.workspace}}/latest_version/build/lib/
-        GTEST_FILTER="-*umfIpcTest.GetPoolByOpenedHandle*"
-        ctest --verbose -E "not_impl|umf-mempolicy"
+        ctest --verbose
 
     # Browse all folders in the examples directory, build them using the 
     # latest UMF version, and run them, excluding those in the exclude list.
-    # NOTE: exclude cuda examples as they require linking with static disjoint
-    # pool library
+    # NOTE: exclude either CUDA or Level Zero examples depending on the GPU
     - name: Build and run "tag" examples using the latest UMF libraries
       working-directory: ${{github.workspace}}/tag_version
       run: |  
-        EXAMPLES_EXCLUDE_LIST="cmake|common|hmat|cuda${{matrix.provider == 'LEVEL_ZERO' && '' || '|level_zero' }}"
+        EXAMPLES_EXCLUDE_LIST="cmake|common|hmat|${{matrix.provider == 'LEVEL_ZERO' && 'cuda' || 'level_zero' }}"
         rm -rf build
         rm -rf include
         mkdir _examples
