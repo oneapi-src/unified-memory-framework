@@ -498,7 +498,7 @@ set(OPTIONS_REQUIRING_CXX "UMF_BUILD_TESTS" "UMF_BUILD_BENCHMARKS_MT"
 foreach(option_name ${OPTIONS_REQUIRING_CXX})
     if(${option_name})
         enable_language(CXX)
-        set(CMAKE_CXX_STANDARD 17)
+        set(CMAKE_CXX_STANDARD 14)
         set(CMAKE_CXX_STANDARD_REQUIRED YES)
         break()
     endif()
