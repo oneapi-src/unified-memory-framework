@@ -96,7 +96,6 @@ jobs:
     name: Windows ${{matrix.generator}} generator
     strategy:
       matrix:
-        os: ['windows-2019', 'windows-2022']
         build_type: [Debug, Release]
         compiler: [{c: cl, cxx: cl}]
         shared_library: ['ON', 'OFF']
@@ -104,7 +103,7 @@ jobs:
         generator: ['Ninja', 'NMake Makefiles']
         umfd_lib: ['ON', 'OFF']
 
-    runs-on: ${{matrix.os}}
+    runs-on: windows-latest
 
     steps:
     - name: Checkout
