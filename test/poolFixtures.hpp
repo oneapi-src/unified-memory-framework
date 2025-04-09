@@ -136,7 +136,8 @@ TEST_P(umfPoolTest, allocFree) {
     auto *ptr = umfPoolMalloc(pool.get(), allocSize);
     ASSERT_NE(ptr, nullptr);
     std::memset(ptr, 0, allocSize);
-    umfPoolFree(pool.get(), ptr);
+    umf_result_t umf_result = umfPoolFree(pool.get(), ptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 }
 
 TEST_P(umfPoolTest, allocFreeNonAlignedSizes) {
@@ -144,7 +145,8 @@ TEST_P(umfPoolTest, allocFreeNonAlignedSizes) {
         auto *ptr = umfPoolMalloc(pool.get(), allocSize);
         ASSERT_NE(ptr, nullptr);
         std::memset(ptr, 0, allocSize);
-        umfPoolFree(pool.get(), ptr);
+        umf_result_t umf_result = umfPoolFree(pool.get(), ptr);
+        ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     }
 }
 
@@ -160,7 +162,8 @@ TEST_P(umfPoolTest, reallocFree) {
     auto *new_ptr = umfPoolRealloc(pool.get(), ptr, allocSize * multiplier);
     ASSERT_NE(new_ptr, nullptr);
     std::memset(new_ptr, 0, allocSize * multiplier);
-    umfPoolFree(pool.get(), new_ptr);
+    umf_result_t umf_result = umfPoolFree(pool.get(), new_ptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 }
 
 TEST_P(umfPoolTest, callocFree) {
@@ -174,7 +177,8 @@ TEST_P(umfPoolTest, callocFree) {
     for (size_t i = 0; i < num; ++i) {
         ASSERT_EQ(((int *)ptr)[i], 0);
     }
-    umfPoolFree(pool.get(), ptr);
+    umf_result_t umf_result = umfPoolFree(pool.get(), ptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 }
 
 void pow2AlignedAllocHelper(umf_memory_pool_handle_t pool) {
@@ -195,7 +199,8 @@ void pow2AlignedAllocHelper(umf_memory_pool_handle_t pool) {
         }
 
         for (auto &ptr : allocs) {
-            umfPoolFree(pool, ptr);
+            umf_result_t umf_result = umfPoolFree(pool, ptr);
+            ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
         }
     }
 }
@@ -227,7 +232,8 @@ TEST_P(umfPoolTest, multiThreadedMallocFree) {
         }
 
         for (auto allocation : allocations) {
-            umfPoolFree(inPool, allocation);
+            umf_result_t umf_result = umfPoolFree(inPool, allocation);
+            ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
         }
     };
 
@@ -280,7 +286,8 @@ TEST_P(umfPoolTest, multiThreadedReallocFree) {
         for (auto allocation : allocations) {
             auto *ptr =
                 umfPoolRealloc(inPool, allocation, allocSize * multiplier);
-            umfPoolFree(inPool, ptr);
+            umf_result_t umf_result = umfPoolFree(inPool, ptr);
+            ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
         }
     };
 
@@ -310,7 +317,8 @@ TEST_P(umfPoolTest, multiThreadedCallocFree) {
         }
 
         for (auto allocation : allocations) {
-            umfPoolFree(inPool, allocation);
+            umf_result_t umf_result = umfPoolFree(inPool, allocation);
+            ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
         }
     };
 
@@ -335,7 +343,8 @@ TEST_P(umfPoolTest, multiThreadedMallocFreeRandomSizes) {
         }
 
         for (auto allocation : allocations) {
-            umfPoolFree(inPool, allocation);
+            umf_result_t umf_result = umfPoolFree(inPool, allocation);
+            ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
         }
     };
 
@@ -375,7 +384,8 @@ TEST_P(umfMemTest, outOfMem) {
     ASSERT_NE(allocations.back(), nullptr);
 
     for (int i = 0; i < expectedRecycledPoolAllocs; i++) {
-        umfPoolFree(hPool, allocations.back());
+        umf_result_t umf_result = umfPoolFree(hPool, allocations.back());
+        ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
         allocations.pop_back();
     }
 
@@ -385,7 +395,8 @@ TEST_P(umfMemTest, outOfMem) {
     }
 
     for (auto allocation : allocations) {
-        umfPoolFree(hPool, allocation);
+        umf_result_t umf_result = umfPoolFree(hPool, allocation);
+        ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     }
 }
 
@@ -490,7 +501,8 @@ TEST_P(umfPoolTest, mallocUsableSize) {
             // Make sure we can write to this memory
             memset(ptr, 123, result);
 
-            umfPoolFree(pool.get(), ptr);
+            umf_result_t umf_result = umfPoolFree(pool.get(), ptr);
+            ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
         }
     }
 }
