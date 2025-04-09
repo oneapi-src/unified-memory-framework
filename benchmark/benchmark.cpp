@@ -32,10 +32,9 @@
 // The exact meaning of each argument depends on the benchmark, allocator, and size components used.
 // Refer to the 'argsName()' function in each component to find detailed descriptions of these arguments.
 
-template <size_t max_threads = 12>
 static void multithreaded(benchmark::internal::Benchmark *benchmark) {
     benchmark->Threads(1);
-    benchmark->DenseThreadRange(4, max_threads, 4);
+    benchmark->Threads(4);
 }
 
 static void singlethreaded(benchmark::internal::Benchmark *benchmark) {
@@ -92,16 +91,14 @@ UMF_BENCHMARK_TEMPLATE_DEFINE(multiple_malloc_free_benchmark, disjoint_pool_fix,
                               pool_allocator<disjoint_pool<os_provider>>);
 UMF_BENCHMARK_REGISTER_F(multiple_malloc_free_benchmark, disjoint_pool_fix)
     ->Apply(&default_multiple_alloc_fix_size)
-    // Limit benchmarks to 4 threads, as the disjoint pool scales poorly with higher thread counts.
-    ->Apply(&multithreaded<4>);
+    ->Apply(&multithreaded);
 
 UMF_BENCHMARK_TEMPLATE_DEFINE(multiple_malloc_free_benchmark,
                               disjoint_pool_uniform, uniform_alloc_size,
                               pool_allocator<disjoint_pool<os_provider>>);
 UMF_BENCHMARK_REGISTER_F(multiple_malloc_free_benchmark, disjoint_pool_uniform)
     ->Apply(&default_multiple_alloc_uniform_size)
-    // Limit benchmarks to 4 threads, as the disjoint pool scales poorly with higher thread counts.
-    ->Apply(&multithreaded<4>);
+    ->Apply(&multithreaded);
 
 #ifdef UMF_POOL_JEMALLOC_ENABLED
 UMF_BENCHMARK_TEMPLATE_DEFINE(multiple_malloc_free_benchmark, jemalloc_pool_fix,
@@ -158,6 +155,70 @@ UMF_BENCHMARK_REGISTER_F(multiple_malloc_free_benchmark, fixed_provider)
     ->Apply(&singlethreaded)
     // reduce iterations, to match os_provider benchmark
     ->Iterations(50000);
+
+// peak
+UMF_BENCHMARK_TEMPLATE_DEFINE(peak_alloc_benchmark, glibc_fix, fixed_alloc_size,
+                              glibc_malloc);
+
+UMF_BENCHMARK_REGISTER_F(peak_alloc_benchmark, glibc_fix)
+    ->Apply(&default_multiple_alloc_fix_size)
+    ->Apply(&multithreaded);
+
+UMF_BENCHMARK_TEMPLATE_DEFINE(peak_alloc_benchmark, glibc_uniform,
+                              uniform_alloc_size, glibc_malloc);
+UMF_BENCHMARK_REGISTER_F(peak_alloc_benchmark, glibc_uniform)
+    ->Apply(&default_multiple_alloc_uniform_size)
+    ->Apply(&multithreaded);
+
+UMF_BENCHMARK_TEMPLATE_DEFINE(peak_alloc_benchmark, disjoint_pool_fix,
+                              fixed_alloc_size,
+                              pool_allocator<disjoint_pool<os_provider>>);
+UMF_BENCHMARK_REGISTER_F(peak_alloc_benchmark, disjoint_pool_fix)
+    ->Apply(&default_multiple_alloc_fix_size)
+    ->Apply(&multithreaded);
+
+UMF_BENCHMARK_TEMPLATE_DEFINE(peak_alloc_benchmark, disjoint_pool_uniform,
+                              uniform_alloc_size,
+                              pool_allocator<disjoint_pool<os_provider>>);
+UMF_BENCHMARK_REGISTER_F(peak_alloc_benchmark, disjoint_pool_uniform)
+    ->Apply(&default_multiple_alloc_uniform_size)
+    ->Apply(&multithreaded);
+
+#ifdef UMF_POOL_JEMALLOC_ENABLED
+UMF_BENCHMARK_TEMPLATE_DEFINE(peak_alloc_benchmark, jemalloc_pool_fix,
+                              fixed_alloc_size,
+                              pool_allocator<jemalloc_pool<os_provider>>);
+UMF_BENCHMARK_REGISTER_F(peak_alloc_benchmark, jemalloc_pool_fix)
+    ->Apply(&default_multiple_alloc_fix_size)
+    ->Apply(&multithreaded);
+
+UMF_BENCHMARK_TEMPLATE_DEFINE(peak_alloc_benchmark, jemalloc_pool_uniform,
+                              uniform_alloc_size,
+                              pool_allocator<jemalloc_pool<os_provider>>);
+UMF_BENCHMARK_REGISTER_F(peak_alloc_benchmark, jemalloc_pool_uniform)
+    ->Apply(&default_multiple_alloc_uniform_size)
+    ->Apply(&multithreaded);
+
+#endif
+
+#ifdef UMF_POOL_SCALABLE_ENABLED
+UMF_BENCHMARK_TEMPLATE_DEFINE(peak_alloc_benchmark, scalable_pool_fix,
+                              fixed_alloc_size,
+                              pool_allocator<scalable_pool<os_provider>>);
+
+UMF_BENCHMARK_REGISTER_F(peak_alloc_benchmark, scalable_pool_fix)
+    ->Apply(&default_multiple_alloc_fix_size)
+    ->Apply(&multithreaded);
+
+UMF_BENCHMARK_TEMPLATE_DEFINE(peak_alloc_benchmark, scalable_pool_uniform,
+                              uniform_alloc_size,
+                              pool_allocator<scalable_pool<os_provider>>);
+
+UMF_BENCHMARK_REGISTER_F(peak_alloc_benchmark, scalable_pool_uniform)
+    ->Apply(&default_multiple_alloc_uniform_size)
+    ->Apply(&multithreaded);
+
+#endif
 
 //BENCHMARK_MAIN();
 int main(int argc, char **argv) {
