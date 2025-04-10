@@ -184,7 +184,7 @@ static bool validateOps(const umf_memory_provider_ops_t *ops) {
 }
 
 umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
-                                     void *params,
+                                     const void *params,
                                      umf_memory_provider_handle_t *hProvider) {
     libumfInit();
     if (!ops || !hProvider || !validateOps(ops)) {
@@ -281,7 +281,7 @@ umfMemoryProviderGetRecommendedPageSize(umf_memory_provider_handle_t hProvider,
 
 umf_result_t
 umfMemoryProviderGetMinPageSize(umf_memory_provider_handle_t hProvider,
-                                void *ptr, size_t *pageSize) {
+                                const void *ptr, size_t *pageSize) {
     UMF_CHECK((hProvider != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
     UMF_CHECK((pageSize != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
     umf_result_t res = hProvider->ops.get_min_page_size(

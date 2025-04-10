@@ -109,7 +109,7 @@ template <typename T, typename ParamType> umf_memory_pool_ops_t poolMakeCOps() {
     umf_memory_pool_ops_t ops = detail::poolOpsBase<T>();
 
     ops.initialize = [](umf_memory_provider_handle_t provider,
-                        [[maybe_unused]] void *params, void **obj) {
+                        [[maybe_unused]] const void *params, void **obj) {
         try {
             *obj = new T;
         } catch (...) {
@@ -123,7 +123,7 @@ template <typename T, typename ParamType> umf_memory_pool_ops_t poolMakeCOps() {
             return detail::initialize<T>(
                 reinterpret_cast<T *>(*obj),
                 std::make_tuple(provider,
-                                reinterpret_cast<ParamType *>(params)));
+                                reinterpret_cast<const ParamType *>(params)));
         }
     };
 
@@ -137,7 +137,7 @@ template <typename T, typename ParamType>
 constexpr umf_memory_provider_ops_t providerMakeCOps() {
     umf_memory_provider_ops_t ops = detail::providerOpsBase<T>();
 
-    ops.initialize = []([[maybe_unused]] void *params, void **obj) {
+    ops.initialize = []([[maybe_unused]] const void *params, void **obj) {
         try {
             *obj = new T;
         } catch (...) {
@@ -150,7 +150,7 @@ constexpr umf_memory_provider_ops_t providerMakeCOps() {
         } else {
             return detail::initialize<T>(
                 reinterpret_cast<T *>(*obj),
-                std::make_tuple(reinterpret_cast<ParamType *>(params)));
+                std::make_tuple(reinterpret_cast<const ParamType *>(params)));
         }
     };
 

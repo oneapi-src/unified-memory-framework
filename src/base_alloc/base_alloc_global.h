@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -20,7 +20,7 @@ void *umf_ba_global_alloc(size_t size);
 void umf_ba_global_free(void *ptr);
 void umf_ba_destroy_global(void);
 bool umf_ba_global_is_destroyed(void);
-size_t umf_ba_global_malloc_usable_size(void *ptr);
+size_t umf_ba_global_malloc_usable_size(const void *ptr);
 void *umf_ba_global_aligned_alloc(size_t size, size_t alignment);
 
 #ifdef __cplusplus

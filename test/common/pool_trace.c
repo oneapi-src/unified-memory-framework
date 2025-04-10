@@ -13,13 +13,13 @@ typedef struct trace_pool {
 } trace_pool_t;
 
 static umf_result_t traceInitialize(umf_memory_provider_handle_t provider,
-                                    void *params, void **pool) {
+                                    const void *params, void **pool) {
     trace_pool_t *trace_pool = (trace_pool_t *)malloc(sizeof(trace_pool_t));
     if (NULL == trace_pool) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    umf_pool_trace_params_t *pub_params = params;
+    const umf_pool_trace_params_t *pub_params = params;
     trace_pool->params.hUpstreamPool = pub_params->hUpstreamPool;
     trace_pool->params.trace_context = pub_params->trace_context;
     trace_pool->params.trace_handler = pub_params->trace_handler;
@@ -66,7 +66,7 @@ static void *traceAlignedMalloc(void *pool, size_t size, size_t alignment) {
                                 alignment);
 }
 
-static size_t traceMallocUsableSize(void *pool, void *ptr) {
+static size_t traceMallocUsableSize(void *pool, const void *ptr) {
     trace_pool_t *trace_pool = (trace_pool_t *)pool;
 
     trace_pool->params.trace_handler(trace_pool->params.trace_context,

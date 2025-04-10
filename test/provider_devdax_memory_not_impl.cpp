@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2025 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -25,6 +25,6 @@ TEST_F(test, devdax_provider_not_implemented) {
     umf_result = umfDevDaxMemoryProviderParamsSetProtection(nullptr, 0);
     EXPECT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
 
-    umf_memory_provider_ops_t *ops = umfDevDaxMemoryProviderOps();
+    const umf_memory_provider_ops_t *ops = umfDevDaxMemoryProviderOps();
     EXPECT_EQ(ops, nullptr);
 }

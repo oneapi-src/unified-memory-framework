@@ -91,7 +91,7 @@ umf_result_t umfLevelZeroMemoryProviderParamsSetDeviceOrdinal(
     umf_level_zero_memory_provider_params_handle_t hParams,
     uint32_t deviceOrdinal);
 
-umf_memory_provider_ops_t *umfLevelZeroMemoryProviderOps(void);
+const umf_memory_provider_ops_t *umfLevelZeroMemoryProviderOps(void);
 
 #ifdef __cplusplus
 }

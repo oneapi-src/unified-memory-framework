@@ -571,14 +571,13 @@ static void *disjoint_pool_allocate(disjoint_pool_t *pool, size_t size) {
 }
 
 umf_result_t disjoint_pool_initialize(umf_memory_provider_handle_t provider,
-                                      void *params, void **ppPool) {
+                                      const void *params, void **ppPool) {
     // TODO set defaults when user pass the NULL as params
     if (!provider || !params || !ppPool) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    umf_disjoint_pool_params_t *dp_params =
-        (umf_disjoint_pool_params_t *)params;
+    const umf_disjoint_pool_params_t *dp_params = params;
 
     // min_bucket_size parameter must be a power of 2 for bucket sizes
     // to generate correctly.
@@ -793,7 +792,7 @@ void *disjoint_pool_aligned_malloc(void *pool, size_t size, size_t alignment) {
     return aligned_ptr;
 }
 
-static size_t get_chunk_idx(void *ptr, slab_t *slab) {
+static size_t get_chunk_idx(const void *ptr, slab_t *slab) {
     return (((uintptr_t)ptr - (uintptr_t)slab->mem_ptr) / slab->bucket->size);
 }
 
@@ -801,7 +800,7 @@ static void *get_unaligned_ptr(size_t chunk_idx, slab_t *slab) {
     return (void *)((uintptr_t)slab->mem_ptr + chunk_idx * slab->bucket->size);
 }
 
-size_t disjoint_pool_malloc_usable_size(void *pool, void *ptr) {
+size_t disjoint_pool_malloc_usable_size(void *pool, const void *ptr) {
     disjoint_pool_t *disjoint_pool = (disjoint_pool_t *)pool;
     if (ptr == NULL) {
         return 0;
@@ -942,7 +941,7 @@ static umf_memory_pool_ops_t UMF_DISJOINT_POOL_OPS = {
     .get_last_allocation_error = disjoint_pool_get_last_allocation_error,
 };
 
-umf_memory_pool_ops_t *umfDisjointPoolOps(void) {
+const umf_memory_pool_ops_t *umfDisjointPoolOps(void) {
     return &UMF_DISJOINT_POOL_OPS;
 }
 

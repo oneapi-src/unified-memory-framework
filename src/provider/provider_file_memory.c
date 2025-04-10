@@ -22,7 +22,7 @@
 
 #if defined(_WIN32) || defined(UMF_NO_HWLOC)
 
-umf_memory_provider_ops_t *umfFileMemoryProviderOps(void) {
+const umf_memory_provider_ops_t *umfFileMemoryProviderOps(void) {
     // not supported
     LOG_ERR("File memory provider is disabled!");
     return NULL;
@@ -153,7 +153,7 @@ static void file_store_last_native_error(int32_t native_error,
 }
 
 static umf_result_t
-file_translate_params(umf_file_memory_provider_params_t *in_params,
+file_translate_params(const umf_file_memory_provider_params_t *in_params,
                       file_memory_provider_t *provider) {
     umf_result_t result;
 
@@ -185,15 +185,14 @@ static umf_result_t file_allocation_split_cb(void *provider, void *ptr,
 static umf_result_t file_allocation_merge_cb(void *provider, void *lowPtr,
                                              void *highPtr, size_t totalSize);
 
-static umf_result_t file_initialize(void *params, void **provider) {
+static umf_result_t file_initialize(const void *params, void **provider) {
     umf_result_t ret;
 
     if (params == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    umf_file_memory_provider_params_t *in_params =
-        (umf_file_memory_provider_params_t *)params;
+    const umf_file_memory_provider_params_t *in_params = params;
 
     if (in_params->path == NULL) {
         LOG_ERR("file path is missing");
@@ -591,7 +590,7 @@ static umf_result_t file_get_recommended_page_size(void *provider, size_t size,
     return UMF_RESULT_SUCCESS;
 }
 
-static umf_result_t file_get_min_page_size(void *provider, void *ptr,
+static umf_result_t file_get_min_page_size(void *provider, const void *ptr,
                                            size_t *page_size) {
     (void)ptr; // unused
 
@@ -871,7 +870,7 @@ static umf_memory_provider_ops_t UMF_FILE_MEMORY_PROVIDER_OPS = {
     .ipc.open_ipc_handle = file_open_ipc_handle,
     .ipc.close_ipc_handle = file_close_ipc_handle};
 
-umf_memory_provider_ops_t *umfFileMemoryProviderOps(void) {
+const umf_memory_provider_ops_t *umfFileMemoryProviderOps(void) {
     return &UMF_FILE_MEMORY_PROVIDER_OPS;
 }
 

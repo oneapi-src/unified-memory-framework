@@ -772,14 +772,14 @@ static umf_result_t trackingFree(void *hProvider, void *ptr, size_t size) {
     return ret;
 }
 
-static umf_result_t trackingInitialize(void *params, void **ret) {
+static umf_result_t trackingInitialize(const void *params, void **ret) {
     umf_tracking_memory_provider_t *provider =
         umf_ba_global_alloc(sizeof(umf_tracking_memory_provider_t));
     if (!provider) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    *provider = *((umf_tracking_memory_provider_t *)params);
+    *provider = *((const umf_tracking_memory_provider_t *)params);
     if (provider->hUpstream == NULL || provider->hTracker == NULL ||
         provider->pool == NULL || provider->ipcCache == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
@@ -857,7 +857,7 @@ static umf_result_t trackingGetRecommendedPageSize(void *provider, size_t size,
                                                    pageSize);
 }
 
-static umf_result_t trackingGetMinPageSize(void *provider, void *ptr,
+static umf_result_t trackingGetMinPageSize(void *provider, const void *ptr,
                                            size_t *pageSize) {
     umf_tracking_memory_provider_t *p =
         (umf_tracking_memory_provider_t *)provider;

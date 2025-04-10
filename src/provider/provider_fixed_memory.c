@@ -94,15 +94,14 @@ static umf_result_t fixed_allocation_merge_cb(void *provider, void *lowPtr,
     return UMF_RESULT_SUCCESS;
 }
 
-static umf_result_t fixed_initialize(void *params, void **provider) {
+static umf_result_t fixed_initialize(const void *params, void **provider) {
     umf_result_t ret;
 
     if (params == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    umf_fixed_memory_provider_params_t *in_params =
-        (umf_fixed_memory_provider_params_t *)params;
+    const umf_fixed_memory_provider_params_t *in_params = params;
 
     fixed_memory_provider_t *fixed_provider =
         umf_ba_global_alloc(sizeof(*fixed_provider));
@@ -221,7 +220,7 @@ static umf_result_t fixed_get_recommended_page_size(void *provider, size_t size,
     return UMF_RESULT_SUCCESS;
 }
 
-static umf_result_t fixed_get_min_page_size(void *provider, void *ptr,
+static umf_result_t fixed_get_min_page_size(void *provider, const void *ptr,
                                             size_t *page_size) {
     (void)ptr; // unused
 
@@ -309,7 +308,7 @@ static umf_memory_provider_ops_t UMF_FIXED_MEMORY_PROVIDER_OPS = {
     .ipc.close_ipc_handle = NULL,
     .ctl = fixed_ctl};
 
-umf_memory_provider_ops_t *umfFixedMemoryProviderOps(void) {
+const umf_memory_provider_ops_t *umfFixedMemoryProviderOps(void) {
     return &UMF_FIXED_MEMORY_PROVIDER_OPS;
 }
 

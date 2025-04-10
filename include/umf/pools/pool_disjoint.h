@@ -106,7 +106,7 @@ umf_result_t
 umfDisjointPoolParamsSetName(umf_disjoint_pool_params_handle_t hParams,
                              const char *name);
 
-umf_memory_pool_ops_t *umfDisjointPoolOps(void);
+const umf_memory_pool_ops_t *umfDisjointPoolOps(void);
 
 #ifdef __cplusplus
 }

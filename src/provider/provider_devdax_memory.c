@@ -21,7 +21,7 @@
 
 #if defined(_WIN32) || defined(UMF_NO_HWLOC)
 
-umf_memory_provider_ops_t *umfDevDaxMemoryProviderOps(void) {
+const umf_memory_provider_ops_t *umfDevDaxMemoryProviderOps(void) {
     // not supported
     LOG_ERR("DevDax memory provider is disabled!");
     return NULL;
@@ -128,7 +128,7 @@ static void devdax_store_last_native_error(int32_t native_error,
 }
 
 static umf_result_t
-devdax_translate_params(umf_devdax_memory_provider_params_t *in_params,
+devdax_translate_params(const umf_devdax_memory_provider_params_t *in_params,
                         devdax_memory_provider_t *provider) {
     umf_result_t result;
 
@@ -148,15 +148,14 @@ static umf_result_t devdax_allocation_split_cb(void *provider, void *ptr,
 static umf_result_t devdax_allocation_merge_cb(void *provider, void *lowPtr,
                                                void *highPtr, size_t totalSize);
 
-static umf_result_t devdax_initialize(void *params, void **provider) {
+static umf_result_t devdax_initialize(const void *params, void **provider) {
     umf_result_t ret;
 
     if (params == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    umf_devdax_memory_provider_params_t *in_params =
-        (umf_devdax_memory_provider_params_t *)params;
+    const umf_devdax_memory_provider_params_t *in_params = params;
 
     if (in_params->path == NULL) {
         LOG_ERR("devdax path is missing");
@@ -327,7 +326,7 @@ static umf_result_t devdax_get_recommended_page_size(void *provider,
     return UMF_RESULT_SUCCESS;
 }
 
-static umf_result_t devdax_get_min_page_size(void *provider, void *ptr,
+static umf_result_t devdax_get_min_page_size(void *provider, const void *ptr,
                                              size_t *page_size) {
     (void)ptr; // unused
 
@@ -549,7 +548,7 @@ static umf_memory_provider_ops_t UMF_DEVDAX_MEMORY_PROVIDER_OPS = {
     .ipc.open_ipc_handle = devdax_open_ipc_handle,
     .ipc.close_ipc_handle = devdax_close_ipc_handle};
 
-umf_memory_provider_ops_t *umfDevDaxMemoryProviderOps(void) {
+const umf_memory_provider_ops_t *umfDevDaxMemoryProviderOps(void) {
     return &UMF_DEVDAX_MEMORY_PROVIDER_OPS;
 }
 

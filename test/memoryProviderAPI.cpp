@@ -330,7 +330,7 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST_P(providerInitializeTest, errorPropagation) {
     struct provider : public umf_test::provider_base_t {
-        umf_result_t initialize(umf_result_t *errorToReturn) noexcept {
+        umf_result_t initialize(const umf_result_t *errorToReturn) noexcept {
             return *errorToReturn;
         }
     };

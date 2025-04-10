@@ -23,7 +23,7 @@ using namespace umf_test;
 TEST_F(test, ctl_by_handle_os_provider) {
     umf_memory_provider_handle_t hProvider = NULL;
     umf_os_memory_provider_params_handle_t os_memory_provider_params = NULL;
-    umf_memory_provider_ops_t *os_provider_ops = umfOsMemoryProviderOps();
+    const umf_memory_provider_ops_t *os_provider_ops = umfOsMemoryProviderOps();
     if (os_provider_ops == NULL) {
         GTEST_SKIP() << "OS memory provider is not supported!";
     }
@@ -45,7 +45,7 @@ TEST_F(test, ctl_by_handle_os_provider) {
 
 // Create a memory provider and a memory pool
 umf_memory_provider_handle_t create_memory_provider() {
-    umf_memory_provider_ops_t *provider_ops = umfOsMemoryProviderOps();
+    const umf_memory_provider_ops_t *provider_ops = umfOsMemoryProviderOps();
     umf_os_memory_provider_params_handle_t params = NULL;
     umf_memory_provider_handle_t provider;
 
@@ -81,7 +81,8 @@ class CtlTest : public ::testing::Test {
         pool = NULL;
     }
 
-    void instantiatePool(umf_memory_pool_ops_t *pool_ops, void *pool_params,
+    void instantiatePool(const umf_memory_pool_ops_t *pool_ops,
+                         const void *pool_params,
                          umf_pool_create_flags_t flags = 0) {
         freeResources();
         provider = create_memory_provider();
