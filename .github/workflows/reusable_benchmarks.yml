@@ -58,7 +58,7 @@ jobs:
         script: |
           const pr_no = '${{ inputs.pr_no }}';
           const url = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
-          const params = '${{ env.bench_params }}';
+          const params = `${{ env.bench_params }}`;
           const body = `Compute Benchmarks run (with params: ${params}):\n${url}`;
 
           github.rest.issues.createComment({
