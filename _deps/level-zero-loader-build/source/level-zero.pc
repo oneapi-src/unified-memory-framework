@@ -1,0 +1,11 @@
+includedir=/usr/local/include
+libdir=/usr/local/lib
+
+
+Name: Level Zero
+Description: Level Zero
+URL: https://github.com/oneapi-src/level-zero
+Version: 1.19.2
+Requires: libze_loader
+Libs: -L${libdir}
+CFlags: -I${includedir}/level_zero

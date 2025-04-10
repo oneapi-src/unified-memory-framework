@@ -1,0 +1,1 @@
+/usr/bin/cc -O3 -DNDEBUG  -Wl,-z,relro,-z,now CMakeFiles/umf_example_memspace_numa.dir/memspace_numa/memspace_numa.c.o  -o umf_example_memspace_numa   -L/usr/local/lib  -Wl,-rpath,/usr/local/lib ../lib/libumf.a -lhwloc -lnuma -pthread -lrt ../lib/libcoarse.a -ldl 
