@@ -540,6 +540,9 @@ static umf_result_t trackingAllocationSplit(void *hProvider, void *ptr,
         goto err;
     }
 
+    assert(value->pool == splitValue->pool);
+    assert(value->n_children == 0);
+
     ret = umfMemoryProviderAllocationSplit(provider->hUpstream, ptr, totalSize,
                                            firstSize);
     if (ret != UMF_RESULT_SUCCESS) {
@@ -548,6 +551,7 @@ static umf_result_t trackingAllocationSplit(void *hProvider, void *ptr,
     }
 
     assert(level < MAX_LEVELS_OF_ALLOC_SEGMENT_MAP);
+
     int cret =
         critnib_insert(provider->hTracker->alloc_segments_map[level],
                        (uintptr_t)ptr, (void *)splitValue, 1 /* update */);
