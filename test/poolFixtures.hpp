@@ -150,6 +150,28 @@ TEST_P(umfPoolTest, allocFreeNonAlignedSizes) {
     }
 }
 
+TEST_P(umfPoolTest, allocFreeAligned) {
+// ::aligned_alloc(alignment=4096, size=1) does not work under sanitizers for unknown reason
+#if defined(_WIN32) || defined(__SANITIZE_ADDRESS__) ||                        \
+    defined(__SANITIZE_THREAD__)
+    // TODO: implement support for windows
+    GTEST_SKIP();
+#else
+    if (!umf_test::isAlignedAllocSupported(pool.get())) {
+        GTEST_SKIP();
+    }
+
+    size_t alignment = 4 * 1024; // 4kB
+    void *ptr = umfPoolAlignedMalloc(pool.get(), 1, alignment);
+    ASSERT_NE(ptr, nullptr);
+    ASSERT_TRUE(reinterpret_cast<uintptr_t>(ptr) % alignment == 0);
+    *(reinterpret_cast<unsigned char *>(ptr)) = (unsigned char)0xFF;
+
+    umf_result_t umf_result = umfPoolFree(pool.get(), ptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+#endif
+}
+
 TEST_P(umfPoolTest, reallocFree) {
     if (!umf_test::isReallocSupported(pool.get())) {
         GTEST_SKIP();
@@ -203,6 +225,27 @@ void pow2AlignedAllocHelper(umf_memory_pool_handle_t pool) {
             ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
         }
     }
+
+// ::aligned_alloc(alignment=4096, size=1) does not work under sanitizers for unknown reason
+#if !defined(__SANITIZE_ADDRESS__) && !defined(__SANITIZE_THREAD__)
+    // the same for size = 1
+    for (size_t alignment = 1; alignment <= maxAlignment; alignment <<= 1) {
+        std::vector<void *> allocs;
+
+        for (size_t alloc = 0; alloc < numAllocs; alloc++) {
+            auto *ptr = umfPoolAlignedMalloc(pool, 1, alignment);
+            ASSERT_NE(ptr, nullptr);
+            ASSERT_TRUE(reinterpret_cast<uintptr_t>(ptr) % alignment == 0);
+            *(reinterpret_cast<unsigned char *>(ptr)) = (unsigned char)0xFF;
+            allocs.push_back(ptr);
+        }
+
+        for (auto &ptr : allocs) {
+            umf_result_t umf_result = umfPoolFree(pool, ptr);
+            ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+        }
+    }
+#endif
 }
 
 TEST_P(umfPoolTest, pow2AlignedAlloc) {
