@@ -506,16 +506,6 @@ static umf_result_t trackingAllocationSplit(void *hProvider, void *ptr,
     tracker_alloc_info_t *parent_value = NULL;
     uintptr_t parent_key = 0;
 
-    tracker_alloc_info_t *splitValue =
-        umf_ba_alloc(provider->hTracker->alloc_info_allocator);
-    if (!splitValue) {
-        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-    }
-
-    splitValue->pool = provider->pool;
-    splitValue->size = firstSize;
-    splitValue->n_children = 0;
-
     int r = utils_mutex_lock(&provider->hTracker->splitMergeMutex);
     if (r) {
         goto err_lock;
@@ -547,16 +537,10 @@ static umf_result_t trackingAllocationSplit(void *hProvider, void *ptr,
         goto err;
     }
 
-    assert(level < MAX_LEVELS_OF_ALLOC_SEGMENT_MAP);
-    int cret =
-        critnib_insert(provider->hTracker->alloc_segments_map[level],
-                       (uintptr_t)ptr, (void *)splitValue, 1 /* update */);
-    // this cannot fail since we know the element exists (nothing to allocate)
-    assert(cret == 0);
-    (void)cret;
-
     void *highPtr = (void *)(((uintptr_t)ptr) + firstSize);
     size_t secondSize = totalSize - firstSize;
+
+    assert(level < MAX_LEVELS_OF_ALLOC_SEGMENT_MAP);
 
     // We'll have a duplicate entry for the range [highPtr, highValue->size] but this is fine,
     // the value is the same anyway and we forbid removing that range concurrently
@@ -567,21 +551,20 @@ static umf_result_t trackingAllocationSplit(void *hProvider, void *ptr,
         LOG_ERR("failed to add the split region to the tracker, ptr=%p, "
                 "size=%zu, ret=%d",
                 highPtr, secondSize, ret);
+
         // revert the split
-        assert(level < MAX_LEVELS_OF_ALLOC_SEGMENT_MAP);
-        cret = critnib_insert(provider->hTracker->alloc_segments_map[level],
-                              (uintptr_t)ptr, (void *)value, 1 /* update */);
-        // this cannot fail since we know the element exists (nothing to allocate)
-        assert(cret == 0);
-        (void)cret;
+        (void)umfMemoryProviderAllocationMerge(provider->hUpstream, ptr,
+                                               highPtr, totalSize);
+
         // TODO: what now? should we rollback the split? This can only happen due to ENOMEM
         // so it's unlikely but probably the best solution would be to try to preallocate everything
         // (value and critnib nodes) before calling umfMemoryProviderAllocationSplit.
         goto err;
     }
 
-    // free the original value
-    umf_ba_free(provider->hTracker->alloc_info_allocator, value);
+    // update the size of the first part
+    utils_atomic_store_release_u64((uint64_t *)&value->size, firstSize);
+
     utils_mutex_unlock(&provider->hTracker->splitMergeMutex);
 
     LOG_DEBUG(
@@ -592,9 +575,8 @@ static umf_result_t trackingAllocationSplit(void *hProvider, void *ptr,
 
 err:
     utils_mutex_unlock(&provider->hTracker->splitMergeMutex);
-err_lock:
-    umf_ba_free(provider->hTracker->alloc_info_allocator, splitValue);
 
+err_lock:
     LOG_ERR(
         "failed to split memory region: ptr=%p, totalSize=%zu, firstSize=%zu",
         ptr, totalSize, firstSize);
