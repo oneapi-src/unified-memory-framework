@@ -28,7 +28,8 @@ class UmfInstaller:
     proxy (bool): Determines whether the proxy library should be built together with the UMF library
     pools (List[str]): A list of enabled pools during the UMF compilation
     umf_version (Version): UMF version currently being built and installed
-    match_list (List[str]): A list of relative paths of files that should be installed
+    umfd_lib (bool): Determines if the UMF was built with the umfd library
+    hwloc (bool): Determines if hwloc is installed and should be checked
     """
 
     def __init__(
@@ -42,6 +43,7 @@ class UmfInstaller:
         pools: List[str],
         umf_version: Version,
         umfd_lib: bool,
+        hwloc: bool,
     ):
         self.workspace_dir = workspace_dir
         self.build_dir = build_dir
@@ -52,6 +54,7 @@ class UmfInstaller:
         self.pools = pools
         self.umf_version = umf_version
         self.umfd_lib = umfd_lib
+        self.hwloc = hwloc
         self.match_list = self._create_match_list()
 
     def _create_match_list(self) -> List[str]:
@@ -76,9 +79,7 @@ class UmfInstaller:
             lib_prefix = "lib"
 
         bin = []
-        if platform.system() == "Windows" and (
-            self.shared_library or self.proxy or self.umfd_lib
-        ):
+        if platform.system() == "Windows" and (self.shared_library or self.proxy):
             bin.append("bin")
             if self.shared_library:
                 bin.append("bin/umf.dll")
@@ -103,8 +104,11 @@ class UmfInstaller:
             f"lib/cmake/umf/umf-targets-{self.build_type}.cmake",
             "lib/cmake/umf/umf-targets.cmake",
         ]
+
         for pool in self.pools:
             lib.append(f"lib/{lib_prefix}{pool}.{lib_ext_static}")
+        if platform.system() == "Windows" and self.hwloc:
+            lib.append(f"lib/{lib_prefix}hwloc.{lib_ext_static}")
         if self.shared_library:
             lib.append(f"lib/{lib_prefix}umf.{lib_ext_shared}")
             if platform.system() == "Windows" and self.umfd_lib:
@@ -122,6 +126,8 @@ class UmfInstaller:
                 lib.append(f"lib/{lib_prefix}umf.{self.umf_version}.{lib_ext_shared}")
         else:
             lib.append(f"lib/{lib_prefix}umf.{lib_ext_static}")
+            if self.umfd_lib and platform.system() == "Windows":
+                lib.append(f"lib/{lib_prefix}umfd.{lib_ext_static}")
 
         if self.proxy:
             lib.append(f"lib/{lib_prefix}umf_proxy.{lib_ext_shared}")
@@ -135,7 +141,6 @@ class UmfInstaller:
                     f"lib/{lib_prefix}umf_proxy.{self.umf_version.major}.{lib_ext_shared}"
                 )
 
-        share = []
         share = [
             "share",
             "share/doc",
@@ -296,6 +301,11 @@ class UmfInstallationTester:
             action="store_true",
             help="Add this argument if the UMF was built with the umfd library",
         )
+        self.parser.add_argument(
+            "--hwloc",
+            action="store_true",
+            help="Add this argument if hwloc is installed and should be checked",
+        )
         return self.parser.parse_args()
 
     def run(self) -> None:
@@ -320,6 +330,7 @@ class UmfInstallationTester:
             pools,
             umf_version,
             self.args.umfd_lib,
+            self.args.hwloc,
         )
 
         print("Installation test - BEGIN", flush=True)
