@@ -184,7 +184,7 @@ jobs:
           const url = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
           const test_status = '${{ steps.benchmarks.outcome }}';
           const job_status = '${{ job.status }}';
-          const params = '${{ env.bench_params }}';
+          const params = `${{ env.bench_params }}`;
           const body = `Compute Benchmarks run (${params}):\n${url}\nJob status: ${job_status}. Test status: ${test_status}.\n ${markdown}`;
 
           github.rest.issues.createComment({
