@@ -43,7 +43,7 @@ umf_result_t
 umfJemallocPoolParamsSetNumArenas(umf_jemalloc_pool_params_handle_t hParams,
                                   size_t numArenas);
 
-umf_memory_pool_ops_t *umfJemallocPoolOps(void);
+const umf_memory_pool_ops_t *umfJemallocPoolOps(void);
 
 #ifdef __cplusplus
 }

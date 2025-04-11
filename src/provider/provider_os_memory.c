@@ -24,7 +24,7 @@
 // OS Memory Provider requires HWLOC
 #if defined(UMF_NO_HWLOC)
 
-umf_memory_provider_ops_t *umfOsMemoryProviderOps(void) { return NULL; }
+const umf_memory_provider_ops_t *umfOsMemoryProviderOps(void) { return NULL; }
 
 umf_result_t umfOsMemoryProviderParamsCreate(
     umf_os_memory_provider_params_handle_t *hParams) {
@@ -321,7 +321,8 @@ static hwloc_membind_policy_t translate_numa_mode(umf_numa_mode_t mode,
 
 //return 1 if umf will bind memory directly to single NUMA node, based on internal algorithm
 //return 0 if umf will just set numa memory policy, and kernel will decide where to allocate memory
-static int dedicated_node_bind(umf_os_memory_provider_params_t *in_params) {
+static int
+dedicated_node_bind(const umf_os_memory_provider_params_t *in_params) {
     if (in_params->numa_mode == UMF_NUMA_MODE_INTERLEAVE) {
         return in_params->part_size > 0;
     }
@@ -371,7 +372,7 @@ static int validate_and_copy_shm_name(const char *in_shm_name,
 }
 
 static umf_result_t
-create_fd_for_mmap(umf_os_memory_provider_params_t *in_params,
+create_fd_for_mmap(const umf_os_memory_provider_params_t *in_params,
                    os_memory_provider_t *provider) {
     umf_result_t result;
 
@@ -442,7 +443,7 @@ err_close_file:
 }
 
 static umf_result_t
-validatePartitions(umf_os_memory_provider_params_t *params) {
+validatePartitions(const umf_os_memory_provider_params_t *params) {
 
     if (params->partitions_len == 0) {
         return UMF_RESULT_SUCCESS;
@@ -469,11 +470,12 @@ validatePartitions(umf_os_memory_provider_params_t *params) {
     return UMF_RESULT_SUCCESS;
 }
 
-static umf_result_t os_get_min_page_size(void *provider, void *ptr,
+static umf_result_t os_get_min_page_size(void *provider, const void *ptr,
                                          size_t *page_size);
 
-static umf_result_t validatePartSize(os_memory_provider_t *provider,
-                                     umf_os_memory_provider_params_t *params) {
+static umf_result_t
+validatePartSize(os_memory_provider_t *provider,
+                 const umf_os_memory_provider_params_t *params) {
     size_t page_size;
     os_get_min_page_size(provider, NULL, &page_size);
     if (ALIGN_UP(params->part_size, page_size) < params->part_size) {
@@ -494,7 +496,7 @@ static void free_bitmaps(os_memory_provider_t *provider) {
 
 static umf_result_t
 initializePartitions(os_memory_provider_t *provider,
-                     umf_os_memory_provider_params_t *in_params) {
+                     const umf_os_memory_provider_params_t *in_params) {
     if (provider->mode != UMF_NUMA_MODE_SPLIT) {
         return UMF_RESULT_SUCCESS;
     }
@@ -535,8 +537,9 @@ initializePartitions(os_memory_provider_t *provider,
     return UMF_RESULT_SUCCESS;
 }
 
-static umf_result_t translate_params(umf_os_memory_provider_params_t *in_params,
-                                     os_memory_provider_t *provider) {
+static umf_result_t
+translate_params(const umf_os_memory_provider_params_t *in_params,
+                 os_memory_provider_t *provider) {
     umf_result_t result;
 
     result = utils_translate_mem_protection_flags(in_params->protection,
@@ -603,15 +606,14 @@ static umf_result_t translate_params(umf_os_memory_provider_params_t *in_params,
     return UMF_RESULT_SUCCESS;
 }
 
-static umf_result_t os_initialize(void *params, void **provider) {
+static umf_result_t os_initialize(const void *params, void **provider) {
     umf_result_t ret;
 
     if (params == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    umf_os_memory_provider_params_t *in_params =
-        (umf_os_memory_provider_params_t *)params;
+    const umf_os_memory_provider_params_t *in_params = params;
 
     if (in_params->visibility == UMF_MEM_MAP_SHARED &&
         in_params->numa_mode != UMF_NUMA_MODE_DEFAULT) {
@@ -1193,7 +1195,7 @@ static umf_result_t os_get_recommended_page_size(void *provider, size_t size,
     return UMF_RESULT_SUCCESS;
 }
 
-static umf_result_t os_get_min_page_size(void *provider, void *ptr,
+static umf_result_t os_get_min_page_size(void *provider, const void *ptr,
                                          size_t *page_size) {
     (void)ptr; // unused
 
@@ -1468,7 +1470,7 @@ static umf_memory_provider_ops_t UMF_OS_MEMORY_PROVIDER_OPS = {
     .ctl = os_ctl,
 };
 
-umf_memory_provider_ops_t *umfOsMemoryProviderOps(void) {
+const umf_memory_provider_ops_t *umfOsMemoryProviderOps(void) {
     return &UMF_OS_MEMORY_PROVIDER_OPS;
 }
 

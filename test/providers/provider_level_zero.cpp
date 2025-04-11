@@ -116,7 +116,7 @@ INSTANTIATE_TEST_SUITE_P(, LevelZeroProviderInit,
                                            UMF_MEMORY_TYPE_SHARED));
 
 TEST_P(LevelZeroProviderInit, FailNullContext) {
-    umf_memory_provider_ops_t *ops = umfLevelZeroMemoryProviderOps();
+    const umf_memory_provider_ops_t *ops = umfLevelZeroMemoryProviderOps();
     ASSERT_NE(ops, nullptr);
 
     auto memory_type = GetParam();
@@ -146,7 +146,7 @@ TEST_P(LevelZeroProviderInit, FailNullDevice) {
         GTEST_SKIP() << "Host memory does not require device handle";
     }
 
-    umf_memory_provider_ops_t *ops = umfLevelZeroMemoryProviderOps();
+    const umf_memory_provider_ops_t *ops = umfLevelZeroMemoryProviderOps();
     ASSERT_NE(ops, nullptr);
 
     auto memory_type = GetParam();
@@ -171,7 +171,7 @@ TEST_F(LevelZeroProviderInit, FailNonNullDevice) {
     if (GetParam() != UMF_MEMORY_TYPE_HOST) {
         GTEST_SKIP() << "Host memory does not require device handle";
     }
-    umf_memory_provider_ops_t *ops = umfLevelZeroMemoryProviderOps();
+    const umf_memory_provider_ops_t *ops = umfLevelZeroMemoryProviderOps();
     ASSERT_NE(ops, nullptr);
 
     auto memory_type = GetParam();
@@ -196,7 +196,7 @@ TEST_F(LevelZeroProviderInit, FailNonNullDevice) {
 }
 
 TEST_F(test, FailMismatchedResidentHandlesCount) {
-    umf_memory_provider_ops_t *ops = umfLevelZeroMemoryProviderOps();
+    const umf_memory_provider_ops_t *ops = umfLevelZeroMemoryProviderOps();
     ASSERT_NE(ops, nullptr);
 
     umf_level_zero_memory_provider_params_handle_t hParams = nullptr;

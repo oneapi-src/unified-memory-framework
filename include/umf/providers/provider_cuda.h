@@ -61,7 +61,7 @@ umf_result_t umfCUDAMemoryProviderParamsSetMemoryType(
 umf_result_t umfCUDAMemoryProviderParamsSetAllocFlags(
     umf_cuda_memory_provider_params_handle_t hParams, unsigned int flags);
 
-umf_memory_provider_ops_t *umfCUDAMemoryProviderOps(void);
+const umf_memory_provider_ops_t *umfCUDAMemoryProviderOps(void);
 
 #ifdef __cplusplus
 }

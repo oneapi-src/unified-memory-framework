@@ -50,7 +50,7 @@ static umf_result_t umfDefaultCtlPoolHandle(void *hPool, int operationType,
 
 static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
                                           umf_memory_provider_handle_t provider,
-                                          void *params,
+                                          const void *params,
                                           umf_pool_create_flags_t flags,
                                           umf_memory_pool_handle_t *hPool) {
     if (!ops || !provider || !hPool) {
@@ -169,8 +169,8 @@ umf_result_t umfPoolGetMemoryProvider(umf_memory_pool_handle_t hPool,
 }
 
 umf_result_t umfPoolCreate(const umf_memory_pool_ops_t *ops,
-                           umf_memory_provider_handle_t provider, void *params,
-                           umf_pool_create_flags_t flags,
+                           umf_memory_provider_handle_t provider,
+                           const void *params, umf_pool_create_flags_t flags,
                            umf_memory_pool_handle_t *hPool) {
     libumfInit();
 
@@ -205,7 +205,8 @@ void *umfPoolRealloc(umf_memory_pool_handle_t hPool, void *ptr, size_t size) {
     return hPool->ops.realloc(hPool->pool_priv, ptr, size);
 }
 
-size_t umfPoolMallocUsableSize(umf_memory_pool_handle_t hPool, void *ptr) {
+size_t umfPoolMallocUsableSize(umf_memory_pool_handle_t hPool,
+                               const void *ptr) {
     UMF_CHECK((hPool != NULL), 0);
     return hPool->ops.malloc_usable_size(hPool->pool_priv, ptr);
 }

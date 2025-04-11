@@ -9,7 +9,7 @@
 #include <umf/memory_pool_ops.h>
 
 static umf_result_t nullInitialize(umf_memory_provider_handle_t provider,
-                                   void *params, void **pool) {
+                                   const void *params, void **pool) {
     (void)provider;
     (void)params;
     assert(provider);
@@ -46,7 +46,7 @@ static void *nullAlignedMalloc(void *pool, size_t size, size_t alignment) {
     return NULL;
 }
 
-static size_t nullMallocUsableSize(void *pool, void *ptr) {
+static size_t nullMallocUsableSize(void *pool, const void *ptr) {
     (void)ptr;
     (void)pool;
     return 0;

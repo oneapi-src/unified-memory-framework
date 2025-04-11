@@ -43,7 +43,7 @@ struct umfScalablePoolParamsTest
     struct provider_validator : public umf_test::provider_ba_global {
         using base_provider = umf_test::provider_ba_global;
 
-        umf_result_t initialize(validation_params_t *params) {
+        umf_result_t initialize(const validation_params_t *params) {
             EXPECT_NE(params, nullptr);
             expected_params = params;
             return UMF_RESULT_SUCCESS;
@@ -57,7 +57,7 @@ struct umfScalablePoolParamsTest
             return base_provider::free(ptr, size);
         }
 
-        validation_params_t *expected_params;
+        const validation_params_t *expected_params;
     };
 
     static constexpr umf_memory_provider_ops_t VALIDATOR_PROVIDER_OPS =

@@ -51,8 +51,8 @@ typedef uint32_t umf_pool_create_flags_t;
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 ///
 umf_result_t umfPoolCreate(const umf_memory_pool_ops_t *ops,
-                           umf_memory_provider_handle_t provider, void *params,
-                           umf_pool_create_flags_t flags,
+                           umf_memory_provider_handle_t provider,
+                           const void *params, umf_pool_create_flags_t flags,
                            umf_memory_pool_handle_t *hPool);
 
 ///
@@ -106,7 +106,7 @@ void *umfPoolRealloc(umf_memory_pool_handle_t hPool, void *ptr, size_t size);
 /// @param ptr pointer to the allocated memory
 /// @return size of the memory block allocated from the \p hPool
 ///
-size_t umfPoolMallocUsableSize(umf_memory_pool_handle_t hPool, void *ptr);
+size_t umfPoolMallocUsableSize(umf_memory_pool_handle_t hPool, const void *ptr);
 
 ///
 /// @brief Frees the memory space of the specified \p hPool pointed by \p ptr

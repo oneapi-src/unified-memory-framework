@@ -9,7 +9,7 @@
 #include <umf/memory_provider.h>
 #include <umf/memory_provider_ops.h>
 
-static umf_result_t traceInitialize(void *params, void **pool) {
+static umf_result_t traceInitialize(const void *params, void **pool) {
     umf_provider_trace_params_t *trace_pool =
         (umf_provider_trace_params_t *)malloc(
             sizeof(umf_provider_trace_params_t));
@@ -17,7 +17,7 @@ static umf_result_t traceInitialize(void *params, void **pool) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    umf_provider_trace_params_t *pub_params = params;
+    const umf_provider_trace_params_t *pub_params = params;
     trace_pool->hUpstreamProvider = pub_params->hUpstreamProvider;
     trace_pool->own_upstream = pub_params->own_upstream;
     trace_pool->trace_context = pub_params->trace_context;
@@ -77,8 +77,7 @@ static umf_result_t traceGetRecommendedPageSize(void *provider, size_t size,
         traceProvider->hUpstreamProvider, size, pageSize);
 }
 
-static umf_result_t traceGetPageSize(void *provider, void *ptr,
-
+static umf_result_t traceGetPageSize(void *provider, const void *ptr,
                                      size_t *pageSize) {
     umf_provider_trace_params_t *traceProvider =
         (umf_provider_trace_params_t *)provider;

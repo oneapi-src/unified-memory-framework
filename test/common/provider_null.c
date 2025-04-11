@@ -8,7 +8,7 @@
 #include "provider_null.h"
 #include <umf/memory_provider_ops.h>
 
-static umf_result_t nullInitialize(void *params, void **pool) {
+static umf_result_t nullInitialize(const void *params, void **pool) {
     (void)params;
     *pool = NULL;
     return UMF_RESULT_SUCCESS;
@@ -47,8 +47,7 @@ static umf_result_t nullGetRecommendedPageSize(void *provider, size_t size,
     return UMF_RESULT_SUCCESS;
 }
 
-static umf_result_t nullGetPageSize(void *provider, void *ptr,
-
+static umf_result_t nullGetPageSize(void *provider, const void *ptr,
                                     size_t *pageSize) {
     (void)provider;
     (void)ptr;

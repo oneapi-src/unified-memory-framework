@@ -22,7 +22,7 @@
 
 #ifndef UMF_POOL_JEMALLOC_ENABLED
 
-umf_memory_pool_ops_t *umfJemallocPoolOps(void) { return NULL; }
+const umf_memory_pool_ops_t *umfJemallocPoolOps(void) { return NULL; }
 umf_result_t
 umfJemallocPoolParamsCreate(umf_jemalloc_pool_params_handle_t *hParams) {
     (void)hParams; // unused
@@ -424,15 +424,14 @@ static void *op_aligned_alloc(void *pool, size_t size, size_t alignment) {
 }
 
 static umf_result_t op_initialize(umf_memory_provider_handle_t provider,
-                                  void *params, void **out_pool) {
+                                  const void *params, void **out_pool) {
     assert(provider);
     assert(out_pool);
 
     extent_hooks_t *pHooks = &arena_extent_hooks;
     size_t unsigned_size = sizeof(unsigned);
     int err;
-    umf_jemalloc_pool_params_t *jemalloc_params =
-        (umf_jemalloc_pool_params_t *)params;
+    const umf_jemalloc_pool_params_t *jemalloc_params = params;
 
     size_t n_arenas = 0;
     if (jemalloc_params) {
@@ -515,9 +514,11 @@ static void op_finalize(void *pool) {
     VALGRIND_DO_DESTROY_MEMPOOL(pool);
 }
 
-static size_t op_malloc_usable_size(void *pool, void *ptr) {
+static size_t op_malloc_usable_size(void *pool, const void *ptr) {
     (void)pool; // not used
-    return je_malloc_usable_size(ptr);
+    // Remove the 'const' qualifier because the je_malloc_usable_size
+    // function requires a non-const pointer.
+    return je_malloc_usable_size((void *)ptr);
 }
 
 static umf_result_t op_get_last_allocation_error(void *pool) {
@@ -538,7 +539,7 @@ static umf_memory_pool_ops_t UMF_JEMALLOC_POOL_OPS = {
     .get_last_allocation_error = op_get_last_allocation_error,
 };
 
-umf_memory_pool_ops_t *umfJemallocPoolOps(void) {
+const umf_memory_pool_ops_t *umfJemallocPoolOps(void) {
     return &UMF_JEMALLOC_POOL_OPS;
 }
 

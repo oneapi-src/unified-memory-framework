@@ -28,8 +28,8 @@
 namespace umf_test {
 
 umf_memory_pool_handle_t
-createPoolChecked(umf_memory_pool_ops_t *ops,
-                  umf_memory_provider_handle_t hProvider, void *params,
+createPoolChecked(const umf_memory_pool_ops_t *ops,
+                  umf_memory_provider_handle_t hProvider, const void *params,
                   umf_pool_create_flags_t flags = 0) {
     umf_memory_pool_handle_t hPool;
     auto ret = umfPoolCreate(ops, hProvider, params, flags, &hPool);
@@ -107,7 +107,7 @@ typedef struct pool_base_t {
     void *calloc(size_t, size_t) noexcept { return nullptr; }
     void *realloc(void *, size_t) noexcept { return nullptr; }
     void *aligned_malloc(size_t, size_t) noexcept { return nullptr; }
-    size_t malloc_usable_size(void *) noexcept { return 0; }
+    size_t malloc_usable_size(const void *) noexcept { return 0; }
     umf_result_t free(void *) noexcept { return UMF_RESULT_SUCCESS; }
     umf_result_t get_last_allocation_error() noexcept {
         return UMF_RESULT_SUCCESS;
@@ -133,13 +133,13 @@ struct malloc_pool : public pool_base_t {
         return ::aligned_alloc(alignment, size);
 #endif
     }
-    size_t malloc_usable_size(void *ptr) noexcept {
+    size_t malloc_usable_size(const void *ptr) noexcept {
 #ifdef _WIN32
-        return _msize(ptr);
+        return _msize((void *)ptr);
 #elif __APPLE__
-        return ::malloc_size(ptr);
+        return ::malloc_size((void *)ptr);
 #else
-        return ::malloc_usable_size(ptr);
+        return ::malloc_usable_size((void *)ptr);
 #endif
     }
     umf_result_t free(void *ptr) noexcept {

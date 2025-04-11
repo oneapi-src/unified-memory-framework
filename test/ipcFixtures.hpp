@@ -60,8 +60,8 @@ typedef umf_result_t (*pfnProviderParamsDestroy)(void *);
 // provider_ops, pfnProviderParamsCreate, pfnProviderParamsDestroy,
 // memoryAccessor
 using ipcTestParams =
-    std::tuple<umf_memory_pool_ops_t *, pfnPoolParamsCreate,
-               pfnPoolParamsDestroy, umf_memory_provider_ops_t *,
+    std::tuple<const umf_memory_pool_ops_t *, pfnPoolParamsCreate,
+               pfnPoolParamsDestroy, const umf_memory_provider_ops_t *,
                pfnProviderParamsCreate, pfnProviderParamsDestroy,
                MemoryAccessor *>;
 
@@ -166,11 +166,11 @@ struct umfIpcTest : umf_test::test,
     stats_type stat;
     MemoryAccessor *memAccessor = nullptr;
 
-    umf_memory_pool_ops_t *poolOps = nullptr;
+    const umf_memory_pool_ops_t *poolOps = nullptr;
     pfnPoolParamsCreate poolParamsCreate = nullptr;
     pfnPoolParamsDestroy poolParamsDestroy = nullptr;
 
-    umf_memory_provider_ops_t *providerOps = nullptr;
+    const umf_memory_provider_ops_t *providerOps = nullptr;
     pfnProviderParamsCreate providerParamsCreate = nullptr;
     pfnProviderParamsDestroy providerParamsDestroy = nullptr;
     size_t openedIpcCacheSize = 0;

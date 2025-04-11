@@ -71,7 +71,7 @@ struct provider_interface {
         }
     }
 
-    virtual umf_memory_provider_ops_t *
+    virtual const umf_memory_provider_ops_t *
     getOps([[maybe_unused]] ::benchmark::State &state) = 0;
 
     virtual params_ptr getParams([[maybe_unused]] ::benchmark::State &state) {
@@ -129,7 +129,7 @@ struct pool_interface {
         provider.TearDown(state);
     };
 
-    virtual umf_memory_pool_ops_t *
+    virtual const umf_memory_pool_ops_t *
     getOps([[maybe_unused]] ::benchmark::State &state) = 0;
 
     virtual params_ptr getParams([[maybe_unused]] ::benchmark::State &state) {
@@ -189,7 +189,7 @@ struct os_provider : public provider_interface {
                 deleter};
     }
 
-    umf_memory_provider_ops_t *
+    const umf_memory_provider_ops_t *
     getOps([[maybe_unused]] ::benchmark::State &state) override {
         return umfOsMemoryProviderOps();
     }
@@ -245,7 +245,7 @@ struct fixed_provider : public provider_interface {
                 deleter};
     }
 
-    umf_memory_provider_ops_t *
+    const umf_memory_provider_ops_t *
     getOps([[maybe_unused]] ::benchmark::State &state) override {
         return umfFixedMemoryProviderOps();
     }
@@ -254,7 +254,7 @@ struct fixed_provider : public provider_interface {
 
 template <typename Provider>
 struct proxy_pool : public pool_interface<Provider> {
-    umf_memory_pool_ops_t *
+    const umf_memory_pool_ops_t *
     getOps([[maybe_unused]] ::benchmark::State &state) override {
         return umfProxyPoolOps();
     }
@@ -264,7 +264,7 @@ struct proxy_pool : public pool_interface<Provider> {
 
 template <typename Provider>
 struct disjoint_pool : public pool_interface<Provider> {
-    umf_memory_pool_ops_t *
+    const umf_memory_pool_ops_t *
     getOps([[maybe_unused]] ::benchmark::State &state) override {
         return umfDisjointPoolOps();
     }
@@ -319,7 +319,7 @@ struct disjoint_pool : public pool_interface<Provider> {
 #ifdef UMF_POOL_JEMALLOC_ENABLED
 template <typename Provider>
 struct jemalloc_pool : public pool_interface<Provider> {
-    umf_memory_pool_ops_t *
+    const umf_memory_pool_ops_t *
     getOps([[maybe_unused]] ::benchmark::State &state) override {
         return umfJemallocPoolOps();
     }
@@ -333,7 +333,7 @@ struct jemalloc_pool : public pool_interface<Provider> {
 #ifdef UMF_POOL_SCALABLE_ENABLED
 template <typename Provider>
 struct scalable_pool : public pool_interface<Provider> {
-    umf_memory_pool_ops_t *
+    const umf_memory_pool_ops_t *
     getOps([[maybe_unused]] ::benchmark::State &state) override {
         return umfScalablePoolOps();
     }

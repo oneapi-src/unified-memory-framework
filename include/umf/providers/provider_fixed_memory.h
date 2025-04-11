@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -49,7 +49,7 @@ umf_result_t umfFixedMemoryProviderParamsDestroy(
 
 /// @brief Retrieve the operations structure for the Fixed Memory Provider.
 /// @return Pointer to the umf_memory_provider_ops_t structure.
-umf_memory_provider_ops_t *umfFixedMemoryProviderOps(void);
+const umf_memory_provider_ops_t *umfFixedMemoryProviderOps(void);
 
 /// @brief Fixed Memory Provider operation results
 typedef enum umf_fixed_memory_provider_native_error {

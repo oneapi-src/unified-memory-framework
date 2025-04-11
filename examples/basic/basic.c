@@ -22,7 +22,7 @@ int main(void) {
     // Allocations are made with mmap. The default values of params result
     // in an mmap call like this:
     // mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0)
-    umf_memory_provider_ops_t *provider_ops = umfOsMemoryProviderOps();
+    const umf_memory_provider_ops_t *provider_ops = umfOsMemoryProviderOps();
     umf_os_memory_provider_params_handle_t params = NULL;
     umf_memory_provider_handle_t provider;
 
@@ -69,7 +69,7 @@ int main(void) {
     printf("Freed memory at %p\n", ptr_provider);
 
     // Create a memory pool
-    umf_memory_pool_ops_t *pool_ops = umfScalablePoolOps();
+    const umf_memory_pool_ops_t *pool_ops = umfScalablePoolOps();
     void *pool_params = NULL;
     umf_pool_create_flags_t flags = 0;
     umf_memory_pool_handle_t pool;

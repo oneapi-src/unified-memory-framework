@@ -102,7 +102,7 @@ umf_result_t umfLevelZeroMemoryProviderParamsSetDeviceOrdinal(
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
-umf_memory_provider_ops_t *umfLevelZeroMemoryProviderOps(void) {
+const umf_memory_provider_ops_t *umfLevelZeroMemoryProviderOps(void) {
     // not supported
     LOG_ERR("L0 memory provider is disabled! (UMF_BUILD_LEVEL_ZERO_PROVIDER is "
             "OFF)");
@@ -542,14 +542,13 @@ static void ze_memory_provider_finalize(void *provider) {
     umf_ba_global_free(provider);
 }
 
-static umf_result_t ze_memory_provider_initialize(void *params,
+static umf_result_t ze_memory_provider_initialize(const void *params,
                                                   void **provider) {
     if (params == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    umf_level_zero_memory_provider_params_handle_t ze_params =
-        (umf_level_zero_memory_provider_params_handle_t)params;
+    const umf_level_zero_memory_provider_params_t *ze_params = params;
 
     if (!ze_params->level_zero_context_handle) {
         LOG_ERR("Level Zero context handle is NULL");
@@ -652,7 +651,7 @@ static void ze_memory_provider_get_last_native_error(void *provider,
 }
 
 static umf_result_t ze_memory_provider_get_min_page_size(void *provider,
-                                                         void *ptr,
+                                                         const void *ptr,
                                                          size_t *pageSize) {
     ze_memory_provider_t *ze_provider = (ze_memory_provider_t *)provider;
 
@@ -864,7 +863,7 @@ static umf_memory_provider_ops_t UMF_LEVEL_ZERO_MEMORY_PROVIDER_OPS = {
     .ipc.close_ipc_handle = ze_memory_provider_close_ipc_handle,
 };
 
-umf_memory_provider_ops_t *umfLevelZeroMemoryProviderOps(void) {
+const umf_memory_provider_ops_t *umfLevelZeroMemoryProviderOps(void) {
     return &UMF_LEVEL_ZERO_MEMORY_PROVIDER_OPS;
 }
 

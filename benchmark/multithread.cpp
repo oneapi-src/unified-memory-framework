@@ -27,8 +27,9 @@ struct bench_params {
     size_t alloc_size = 64;
 };
 
-using poolCreateExtParams = std::tuple<umf_memory_pool_ops_t *, void *,
-                                       umf_memory_provider_ops_t *, void *>;
+using poolCreateExtParams =
+    std::tuple<const umf_memory_pool_ops_t *, const void *,
+               const umf_memory_provider_ops_t *, const void *>;
 
 static auto poolCreateExtUnique(poolCreateExtParams params) {
     umf_memory_pool_handle_t hPool;

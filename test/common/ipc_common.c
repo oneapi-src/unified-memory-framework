@@ -111,9 +111,11 @@ err_close_consumer_socket:
     return ret;
 }
 
-int run_consumer(int port, umf_memory_pool_ops_t *pool_ops, void *pool_params,
-                 umf_memory_provider_ops_t *provider_ops, void *provider_params,
-                 memcopy_callback_t memcopy_callback, void *memcopy_ctx) {
+int run_consumer(int port, const umf_memory_pool_ops_t *pool_ops,
+                 void *pool_params,
+                 const umf_memory_provider_ops_t *provider_ops,
+                 void *provider_params, memcopy_callback_t memcopy_callback,
+                 void *memcopy_ctx) {
     char consumer_message[MSG_SIZE];
     int producer_socket = -1;
     int ret = -1;
@@ -327,9 +329,11 @@ err_close_producer_socket_connect:
     return -1;
 }
 
-int run_producer(int port, umf_memory_pool_ops_t *pool_ops, void *pool_params,
-                 umf_memory_provider_ops_t *provider_ops, void *provider_params,
-                 memcopy_callback_t memcopy_callback, void *memcopy_ctx) {
+int run_producer(int port, const umf_memory_pool_ops_t *pool_ops,
+                 void *pool_params,
+                 const umf_memory_provider_ops_t *provider_ops,
+                 void *provider_params, memcopy_callback_t memcopy_callback,
+                 void *memcopy_ctx) {
     int ret = -1;
     umf_memory_provider_handle_t provider = NULL;
     umf_result_t umf_result = UMF_RESULT_ERROR_UNKNOWN;

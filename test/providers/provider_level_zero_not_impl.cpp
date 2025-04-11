@@ -38,6 +38,6 @@ TEST_F(test, level_zero_provider_not_implemented) {
     result = umfLevelZeroMemoryProviderParamsSetDeviceOrdinal(hParams, 0);
     ASSERT_EQ(result, UMF_RESULT_ERROR_NOT_SUPPORTED);
 
-    umf_memory_provider_ops_t *ops = umfLevelZeroMemoryProviderOps();
+    const umf_memory_provider_ops_t *ops = umfLevelZeroMemoryProviderOps();
     ASSERT_EQ(ops, nullptr);
 }

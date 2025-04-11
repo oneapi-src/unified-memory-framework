@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -20,12 +20,16 @@ typedef void (*memcopy_callback_t)(void *dst, const void *src, size_t size,
 int producer_connect(int port);
 int consumer_connect(int port);
 
-int run_producer(int port, umf_memory_pool_ops_t *pool_ops, void *pool_params,
-                 umf_memory_provider_ops_t *provider_ops, void *provider_params,
-                 memcopy_callback_t memcopy_callback, void *memcopy_ctx);
+int run_producer(int port, const umf_memory_pool_ops_t *pool_ops,
+                 void *pool_params,
+                 const umf_memory_provider_ops_t *provider_ops,
+                 void *provider_params, memcopy_callback_t memcopy_callback,
+                 void *memcopy_ctx);
 
-int run_consumer(int port, umf_memory_pool_ops_t *pool_ops, void *pool_params,
-                 umf_memory_provider_ops_t *provider_ops, void *provider_params,
-                 memcopy_callback_t memcopy_callback, void *memcopy_ctx);
+int run_consumer(int port, const umf_memory_pool_ops_t *pool_ops,
+                 void *pool_params,
+                 const umf_memory_provider_ops_t *provider_ops,
+                 void *provider_params, memcopy_callback_t memcopy_callback,
+                 void *memcopy_ctx);
 
 #endif // UMF_TEST_IPC_COMMON_H

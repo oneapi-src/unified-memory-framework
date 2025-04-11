@@ -48,7 +48,7 @@ typedef struct provider_base_t {
                               [[maybe_unused]] size_t *pageSize) noexcept {
         return UMF_RESULT_ERROR_UNKNOWN;
     }
-    umf_result_t get_min_page_size([[maybe_unused]] void *ptr,
+    umf_result_t get_min_page_size([[maybe_unused]] const void *ptr,
                                    [[maybe_unused]] size_t *pageSize) noexcept {
         return UMF_RESULT_ERROR_UNKNOWN;
     }
@@ -133,7 +133,7 @@ umf_memory_provider_ops_t BA_GLOBAL_PROVIDER_OPS =
 struct provider_mock_out_of_mem : public provider_base_t {
     provider_ba_global helper_prov;
     int allocNum = 0;
-    umf_result_t initialize(int *inAllocNum) noexcept {
+    umf_result_t initialize(const int *inAllocNum) noexcept {
         allocNum = *inAllocNum;
         return UMF_RESULT_SUCCESS;
     }
@@ -152,7 +152,7 @@ struct provider_mock_out_of_mem : public provider_base_t {
     const char *get_name() noexcept { return "mock_out_of_mem"; }
 };
 
-umf_memory_provider_ops_t MOCK_OUT_OF_MEM_PROVIDER_OPS =
+const umf_memory_provider_ops_t MOCK_OUT_OF_MEM_PROVIDER_OPS =
     umf_test::providerMakeCOps<provider_mock_out_of_mem, int>();
 
 } // namespace umf_test
