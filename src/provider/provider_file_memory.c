@@ -429,6 +429,8 @@ static umf_result_t file_alloc_aligned(file_memory_provider_t *file_provider,
         return UMF_RESULT_ERROR_UNKNOWN;
     }
 
+    assert(file_provider->offset_mmap <= file_provider->size_mmap);
+
     if (file_provider->size_mmap - file_provider->offset_mmap < size) {
         umf_result = file_mmap_aligned(file_provider, size, alignment);
         if (umf_result != UMF_RESULT_SUCCESS) {
@@ -454,7 +456,8 @@ static umf_result_t file_alloc_aligned(file_memory_provider_t *file_provider,
     size_t new_offset_fd =
         file_provider->offset_fd + new_offset_mmap - file_provider->offset_mmap;
 
-    if (file_provider->size_mmap - new_offset_mmap < size) {
+    // new_offset_mmap can be greater than file_provider->size_mmap
+    if (file_provider->size_mmap < size + new_offset_mmap) {
         umf_result = file_mmap_aligned(file_provider, size, alignment);
         if (umf_result != UMF_RESULT_SUCCESS) {
             utils_mutex_unlock(&file_provider->lock);
