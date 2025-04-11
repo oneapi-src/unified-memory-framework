@@ -27,7 +27,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
 
@@ -83,7 +83,7 @@ jobs:
           mkdir -p ${{env.COVERAGE_DIR}}
           mv ./$COVERAGE_FILE_NAME ${{env.COVERAGE_DIR}}
 
-      - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: ${{ matrix.build_type == 'Debug' && matrix.os == 'ubuntu-22.04' }}
         with:
           name: ${{env.COVERAGE_NAME}}-${{matrix.os}}-shared-${{matrix.shared_library}}
