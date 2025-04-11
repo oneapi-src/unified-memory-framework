@@ -590,17 +590,6 @@ static umf_result_t trackingAllocationMerge(void *hProvider, void *lowPtr,
     umf_tracking_memory_provider_t *provider =
         (umf_tracking_memory_provider_t *)hProvider;
 
-    tracker_alloc_info_t *mergedValue =
-        umf_ba_alloc(provider->hTracker->alloc_info_allocator);
-
-    if (!mergedValue) {
-        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-    }
-
-    mergedValue->pool = provider->pool;
-    mergedValue->size = totalSize;
-    mergedValue->n_children = 0;
-
     // any different negative values
     int lowLevel = -2;
     int highLevel = -1;
@@ -611,87 +600,83 @@ static umf_result_t trackingAllocationMerge(void *hProvider, void *lowPtr,
     }
 
     tracker_alloc_info_t *lowValue = get_most_nested_alloc_segment(
-        provider->hTracker, lowPtr, &lowLevel, NULL, NULL,
-        0 /* no_children */); // can have children
+        provider->hTracker, lowPtr, &lowLevel, NULL, NULL, 0 /* no_children */);
     if (!lowValue) {
         LOG_FATAL("no left value");
         ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
-        goto err_assert;
+        goto err_fatal;
     }
-    tracker_alloc_info_t *highValue = get_most_nested_alloc_segment(
-        provider->hTracker, highPtr, &highLevel, NULL, NULL,
-        0 /* no_children */); // can have children
+    if (lowValue->n_children) {
+        LOG_FATAL("left value is used (has children)");
+        ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        goto err_fatal;
+    }
+
+    tracker_alloc_info_t *highValue =
+        get_most_nested_alloc_segment(provider->hTracker, highPtr, &highLevel,
+                                      NULL, NULL, 0 /* no_children */);
     if (!highValue) {
         LOG_FATAL("no right value");
         ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
-        goto err_assert;
+        goto err_fatal;
     }
+    if (highValue->n_children) {
+        LOG_FATAL("right value is used (has children)");
+        ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        goto err_fatal;
+    }
+
     if (lowLevel != highLevel) {
         LOG_FATAL("tracker level mismatch");
         ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
-        goto err_assert;
+        goto err_fatal;
     }
     if (lowValue->pool != highValue->pool) {
         LOG_FATAL("pool mismatch");
         ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
-        goto err_assert;
+        goto err_fatal;
     }
     if (lowValue->size + highValue->size != totalSize) {
         LOG_FATAL("lowValue->size + highValue->size != totalSize");
         ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
-        goto err_assert;
+        goto err_fatal;
     }
-
-    mergedValue->n_children = lowValue->n_children + highValue->n_children;
 
     ret = umfMemoryProviderAllocationMerge(provider->hUpstream, lowPtr, highPtr,
                                            totalSize);
     if (ret != UMF_RESULT_SUCCESS) {
         LOG_WARN("upstream provider failed to merge regions");
-        goto not_merged;
+        goto cannot_merge;
     }
 
-    size_t lno = lowValue->n_children;
-    size_t hno = highValue->n_children;
-
-    // We'll have a duplicate entry for the range [highPtr, highValue->size] but this is fine,
-    // the value is the same anyway and we forbid removing that range concurrently
-    int cret =
-        critnib_insert(provider->hTracker->alloc_segments_map[lowLevel],
-                       (uintptr_t)lowPtr, (void *)mergedValue, 1 /* update */);
-    // this cannot fail since we know the element exists (nothing to allocate)
-    assert(cret == 0);
-    (void)cret;
-
-    // free old value that we just replaced with mergedValue
-    umf_ba_free(provider->hTracker->alloc_info_allocator, lowValue);
+    // we only need to update the size of the first part
+    utils_atomic_store_release_u64((uint64_t *)&lowValue->size, totalSize);
 
     void *erasedhighValue = critnib_remove(
         provider->hTracker->alloc_segments_map[highLevel], (uintptr_t)highPtr);
     assert(erasedhighValue == highValue);
-
-    umf_ba_free(provider->hTracker->alloc_info_allocator, erasedhighValue);
+    (void)erasedhighValue; // unused in the Release build
 
     utils_mutex_unlock(&provider->hTracker->splitMergeMutex);
 
     LOG_DEBUG("merged memory regions (level=%i): lowPtr=%p (child=%zu), "
               "highPtr=%p (child=%zu), totalSize=%zu",
-              lowLevel, lowPtr, lno, highPtr, hno, totalSize);
+              lowLevel, lowPtr, lowValue->n_children, highPtr,
+              highValue->n_children, totalSize);
+
+    umf_ba_free(provider->hTracker->alloc_info_allocator, highValue);
 
     return UMF_RESULT_SUCCESS;
 
-err_assert:
+err_fatal:
     LOG_FATAL("failed to merge memory regions: lowPtr=%p (level=%i), "
               "highPtr=%p (level=%i), totalSize=%zu",
               lowPtr, lowLevel, highPtr, highLevel, totalSize);
-    assert(0);
 
-not_merged:
+cannot_merge:
     utils_mutex_unlock(&provider->hTracker->splitMergeMutex);
 
 err_lock:
-    umf_ba_free(provider->hTracker->alloc_info_allocator, mergedValue);
-
     LOG_ERR("failed to merge memory regions: lowPtr=%p (level=%i), highPtr=%p "
             "(level=%i), totalSize=%zu",
             lowPtr, lowLevel, highPtr, highLevel, totalSize);
