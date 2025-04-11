@@ -14,3 +14,12 @@ updates:
         applies-to: version-updates
         patterns:
           - "*"
+  - package-ecosystem: "github-actions"
+    directory: "/.github/workflows/"
+    schedule:
+      interval: "daily"
+    groups:
+      actions-dependencies:
+        applies-to: version-updates
+        patterns:
+          - "*"
