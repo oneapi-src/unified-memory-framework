@@ -303,6 +303,9 @@ class multiple_malloc_free_benchmark : public benchmark_interface<Size, Alloc> {
         typename std::vector<next_alloc_data>::const_iterator;
     std::vector<std::unique_ptr<next_alloc_data_iterator>> next_iter;
     int64_t iterations;
+    bool log_fragmentation;
+    multiple_malloc_free_benchmark(bool log_fragmentation = true)
+        : log_fragmentation(log_fragmentation) {}
 
   public:
     void SetUp(::benchmark::State &state) override {
@@ -350,7 +353,7 @@ class multiple_malloc_free_benchmark : public benchmark_interface<Size, Alloc> {
     void TearDown(::benchmark::State &state) override {
         base::allocator.postBench(state);
         auto tid = state.thread_index();
-        if (tid == 0) {
+        if (tid == 0 && log_fragmentation) {
             size_t current_memory_allocated = 0;
             for (const auto &allocationsPerThread : allocations) {
                 for (const auto &allocation : allocationsPerThread) {
@@ -517,7 +520,12 @@ template <
         std::enable_if_t<std::is_base_of<allocator_interface, Alloc>::value>>
 class peak_alloc_benchmark
     : public multiple_malloc_free_benchmark<Size, Alloc> {
+
     using base = multiple_malloc_free_benchmark<Size, Alloc>;
+
+  public:
+    peak_alloc_benchmark() : base(false) {}
+
     virtual void prepareWorkload(benchmark::State &state) override {
         // Retrieve the thread index and corresponding operation buffer.
         auto tid = state.thread_index();
