@@ -471,7 +471,7 @@ static umf_result_t trackingAlloc(void *hProvider, size_t size,
 
     assert(p->hUpstream);
 
-    *_ptr = NULL;
+    utils_atomic_store_release_ptr(_ptr, NULL);
 
     ret = umfMemoryProviderAlloc(p->hUpstream, size, alignment, &ptr);
     if (ret != UMF_RESULT_SUCCESS || !ptr) {
@@ -492,7 +492,7 @@ static umf_result_t trackingAlloc(void *hProvider, size_t size,
         return ret;
     }
 
-    *_ptr = ptr;
+    utils_atomic_store_release_ptr(_ptr, ptr);
 
     return UMF_RESULT_SUCCESS;
 }
