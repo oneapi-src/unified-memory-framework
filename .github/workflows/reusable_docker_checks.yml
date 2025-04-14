@@ -1,5 +1,4 @@
 # Basic checks on the code, incl. coding style, spelling, bandit analysis.
-# TODO: add license check
 name: Basic checks
 
 on: workflow_call
@@ -10,32 +9,23 @@ permissions:
 jobs:
   CodeChecks:
     name: Basic code checks
-    runs-on: ${{ github.repository_owner == 'oneapi-src' && 'intel-ubuntu-22.04' || 'ubuntu-latest' }}
+    runs-on: 'DSS-L0-FLEX'
+    container: 
+      image: localhost:5000/umf_docker:latest
+      # root is needed at least for the checkout step, see
+      # https://github.com/actions/checkout/issues/1575
+      options: --user root
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         fetch-depth: 0
 
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y black cmake clang-format-15 cmake-format libhwloc-dev doxygen
-
-    # Latest distros do not allow global pip installation
-    - name: Install Python requirements in venv
-      run: |
-        python3 -m venv .venv
-        . .venv/bin/activate
-        echo "$PATH" >> $GITHUB_PATH
-        python3 -m pip install -r third_party/requirements.txt
-        python3 -m pip install bandit codespell
-
-    - name: Configure CMake
+    - name: Configure CMake      
       run: >
         cmake
-        -B ${{github.workspace}}/build
+        -B build
         -DUMF_FORMAT_CODE_STYLE=ON
         -DUMF_BUILD_TESTS=OFF
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
@@ -43,7 +33,9 @@ jobs:
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=OFF
 
     - name: Check C/C++ formatting
-      run: cmake --build build --target clang-format-check
+      run: |
+        cmake --build build --target clang-format-check
+        git diff --exit-code
 
     - name: Check CMake formatting
       run: |
@@ -51,7 +43,9 @@ jobs:
         git diff --exit-code
 
     - name: Check Python formatting
-      run: cmake --build build --target black-format-check
+      run: |
+        cmake --build build --target black-format-check
+        git diff --exit-code
 
     - name: Run check-license
       run: |
@@ -67,10 +61,9 @@ jobs:
 
     - name: Check spelling in docs
       run: |
-        cmake -B build
         cmake --build build --target docs
         sphinx-build -b spelling ./build/docs_build/config ./build/docs_build/spelling_log -W
 
-    # Run Bandit recursively, but omit _deps directory (with 3rd party code) and python's venv
+    # Run Bandit recursively, but omit _deps directory (with 3rd party code)
     - name: Run Bandit
-      run: python3 -m bandit -r . -x '/_deps/,/.venv/'
+      run: python3 -m bandit -r . -x '/_deps/'
