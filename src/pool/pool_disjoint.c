@@ -110,17 +110,20 @@ static slab_t *create_slab(bucket_t *bucket) {
     // padding at the end of the slab
     slab->slab_size = bucket_slab_alloc_size(bucket);
 
+    void *slab_mem_ptr = NULL;
     // TODO not true
     // NOTE: originally slabs memory were allocated without alignment
     // with this registering a slab is simpler and doesn't require multimap
-    res = umfMemoryProviderAlloc(provider, slab->slab_size, 0, &slab->mem_ptr);
+    res = umfMemoryProviderAlloc(provider, slab->slab_size, 0, &slab_mem_ptr);
     if (res != UMF_RESULT_SUCCESS) {
         LOG_ERR("allocation of slab data failed!");
         goto free_slab;
     }
 
     // raw allocation is not available for user so mark it as inaccessible
-    utils_annotate_memory_inaccessible(slab->mem_ptr, slab->slab_size);
+    utils_annotate_memory_inaccessible(slab_mem_ptr, slab->slab_size);
+
+    utils_atomic_store_release_ptr(&slab->mem_ptr, slab_mem_ptr);
 
     LOG_DEBUG("bucket: %p, slab_size: %zu", (void *)bucket, slab->slab_size);
     return slab;
