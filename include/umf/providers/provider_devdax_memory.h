@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -65,7 +65,7 @@ typedef enum umf_devdax_memory_provider_native_error {
     UMF_DEVDAX_RESULT_ERROR_PURGE_FORCE_FAILED, ///< Force purging failed
 } umf_devdax_memory_provider_native_error_t;
 
-umf_memory_provider_ops_t *umfDevDaxMemoryProviderOps(void);
+const umf_memory_provider_ops_t *umfDevDaxMemoryProviderOps(void);
 
 #ifdef __cplusplus
 }

@@ -366,7 +366,7 @@ TEST_P(poolInitializeTest, errorPropagation) {
     struct pool : public umf_test::pool_base_t {
         umf_result_t
         initialize([[maybe_unused]] umf_memory_provider_handle_t provider,
-                   umf_result_t *errorToReturn) noexcept {
+                   const umf_result_t *errorToReturn) noexcept {
             return *errorToReturn;
         }
     };

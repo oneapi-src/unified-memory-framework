@@ -40,7 +40,7 @@ typedef struct file_params_t {
 } file_params_t;
 
 // Function to initialize the file provider
-static umf_result_t file_init(void *params, void **provider) {
+static umf_result_t file_init(const void *params, void **provider) {
     file_provider_t *file_provider = NULL;
 
     if (params == NULL || provider == NULL) {
@@ -48,7 +48,7 @@ static umf_result_t file_init(void *params, void **provider) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    file_params_t *file_params = (file_params_t *)params;
+    const file_params_t *file_params = params;
     int page_size = 0;
     umf_result_t ret = UMF_RESULT_SUCCESS;
 
@@ -224,7 +224,7 @@ static umf_result_t file_get_recommended_page_size(void *provider, size_t size,
 }
 
 // Function to get the minimum page size of the file provider
-static umf_result_t file_get_min_page_size(void *provider, void *ptr,
+static umf_result_t file_get_min_page_size(void *provider, const void *ptr,
                                            size_t *pageSize) {
     (void)ptr; // Unused parameter
     file_provider_t *file_provider = (file_provider_t *)provider;
@@ -291,7 +291,7 @@ int main(void) {
     printf("Freed memory at %p\n", ptr_provider);
 
     // Create a memory pool
-    umf_memory_pool_ops_t *pool_ops = umfScalablePoolOps();
+    const umf_memory_pool_ops_t *pool_ops = umfScalablePoolOps();
     void *pool_params = NULL;
     umf_pool_create_flags_t flags = 0;
     umf_memory_pool_handle_t pool;

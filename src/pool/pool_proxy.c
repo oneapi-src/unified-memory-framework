@@ -23,8 +23,8 @@ struct proxy_memory_pool {
 };
 
 static umf_result_t
-proxy_pool_initialize(umf_memory_provider_handle_t hProvider, void *params,
-                      void **ppPool) {
+proxy_pool_initialize(umf_memory_provider_handle_t hProvider,
+                      const void *params, void **ppPool) {
     (void)params; // unused
 
     struct proxy_memory_pool *pool =
@@ -107,7 +107,7 @@ static umf_result_t proxy_free(void *pool, void *ptr) {
     return umfMemoryProviderFree(hPool->hProvider, ptr, size);
 }
 
-static size_t proxy_malloc_usable_size(void *pool, void *ptr) {
+static size_t proxy_malloc_usable_size(void *pool, const void *ptr) {
     assert(pool);
 
     (void)pool;
@@ -134,4 +134,6 @@ static umf_memory_pool_ops_t UMF_PROXY_POOL_OPS = {
     .free = proxy_free,
     .get_last_allocation_error = proxy_get_last_allocation_error};
 
-umf_memory_pool_ops_t *umfProxyPoolOps(void) { return &UMF_PROXY_POOL_OPS; }
+const umf_memory_pool_ops_t *umfProxyPoolOps(void) {
+    return &UMF_PROXY_POOL_OPS;
+}

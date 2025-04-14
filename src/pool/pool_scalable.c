@@ -266,7 +266,7 @@ umfScalablePoolParamsSetKeepAllMemory(umf_scalable_pool_params_handle_t hParams,
 }
 
 static umf_result_t tbb_pool_initialize(umf_memory_provider_handle_t provider,
-                                        void *params, void **pool) {
+                                        const void *params, void **pool) {
     tbb_mem_pool_policy_t policy = {.pAlloc = tbb_raw_alloc_wrapper,
                                     .pFree = tbb_raw_free_wrapper,
                                     .granularity = DEFAULT_GRANULARITY,
@@ -276,8 +276,7 @@ static umf_result_t tbb_pool_initialize(umf_memory_provider_handle_t provider,
                                     .reserved = 0};
 
     if (params) {
-        umf_scalable_pool_params_handle_t scalable_params =
-            (umf_scalable_pool_params_handle_t)params;
+        const umf_scalable_pool_params_t *scalable_params = params;
         policy.granularity = scalable_params->granularity;
         policy.keep_all_memory = scalable_params->keep_all_memory;
     }
@@ -401,9 +400,10 @@ static umf_result_t tbb_free(void *pool, void *ptr) {
     return UMF_RESULT_ERROR_UNKNOWN;
 }
 
-static size_t tbb_malloc_usable_size(void *pool, void *ptr) {
+static size_t tbb_malloc_usable_size(void *pool, const void *ptr) {
     tbb_memory_pool_t *pool_data = (tbb_memory_pool_t *)pool;
-    return tbb_callbacks.pool_msize(pool_data->tbb_pool, ptr);
+    // Remove the 'const' qualifier because the TBB pool_msize function requires a non-const pointer.
+    return tbb_callbacks.pool_msize(pool_data->tbb_pool, (void *)ptr);
 }
 
 static umf_result_t tbb_get_last_allocation_error(void *pool) {
@@ -456,6 +456,6 @@ static umf_memory_pool_ops_t UMF_SCALABLE_POOL_OPS = {
     .get_last_allocation_error = tbb_get_last_allocation_error,
     .ctl = pool_ctl};
 
-umf_memory_pool_ops_t *umfScalablePoolOps(void) {
+const umf_memory_pool_ops_t *umfScalablePoolOps(void) {
     return &UMF_SCALABLE_POOL_OPS;
 }

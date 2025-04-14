@@ -19,7 +19,7 @@ extern "C" {
 /// @brief Version of the Memory Provider ops structure.
 /// NOTE: This is equal to the latest UMF version, in which the ops structure
 /// has been modified.
-#define UMF_PROVIDER_OPS_VERSION_CURRENT UMF_MAKE_VERSION(0, 11)
+#define UMF_PROVIDER_OPS_VERSION_CURRENT UMF_MAKE_VERSION(0, 12)
 
 ///
 /// @brief This structure comprises optional function pointers used
@@ -156,7 +156,7 @@ typedef struct umf_memory_provider_ops_t {
     /// @param provider returns pointer to the provider
     /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
     ///
-    umf_result_t (*initialize)(void *params, void **provider);
+    umf_result_t (*initialize)(const void *params, void **provider);
 
     ///
     /// @brief Finalizes memory provider.
@@ -230,7 +230,7 @@ typedef struct umf_memory_provider_ops_t {
     /// @param pageSize [out] pointer to the minimum possible page size
     /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
     ///
-    umf_result_t (*get_min_page_size)(void *provider, void *ptr,
+    umf_result_t (*get_min_page_size)(void *provider, const void *ptr,
                                       size_t *pageSize);
 
     ///

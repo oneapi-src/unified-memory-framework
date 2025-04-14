@@ -74,7 +74,7 @@ umf_result_t umfCUDAMemoryProviderParamsSetAllocFlags(
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
-umf_memory_provider_ops_t *umfCUDAMemoryProviderOps(void) {
+const umf_memory_provider_ops_t *umfCUDAMemoryProviderOps(void) {
     // not supported
     LOG_ERR("CUDA provider is disabled (UMF_BUILD_CUDA_PROVIDER is OFF)!");
     return NULL;
@@ -353,14 +353,13 @@ umf_result_t umfCUDAMemoryProviderParamsSetAllocFlags(
     return UMF_RESULT_SUCCESS;
 }
 
-static umf_result_t cu_memory_provider_initialize(void *params,
+static umf_result_t cu_memory_provider_initialize(const void *params,
                                                   void **provider) {
     if (params == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    umf_cuda_memory_provider_params_handle_t cu_params =
-        (umf_cuda_memory_provider_params_handle_t)params;
+    const umf_cuda_memory_provider_params_t *cu_params = params;
 
     if (cu_params->memory_type == UMF_MEMORY_TYPE_UNKNOWN ||
         cu_params->memory_type > UMF_MEMORY_TYPE_SHARED) {
@@ -613,7 +612,7 @@ static void cu_memory_provider_get_last_native_error(void *provider,
 }
 
 static umf_result_t cu_memory_provider_get_min_page_size(void *provider,
-                                                         void *ptr,
+                                                         const void *ptr,
                                                          size_t *pageSize) {
     (void)ptr;
 
@@ -756,7 +755,7 @@ static umf_memory_provider_ops_t UMF_CUDA_MEMORY_PROVIDER_OPS = {
     .ipc.close_ipc_handle = cu_memory_provider_close_ipc_handle,
 };
 
-umf_memory_provider_ops_t *umfCUDAMemoryProviderOps(void) {
+const umf_memory_provider_ops_t *umfCUDAMemoryProviderOps(void) {
     return &UMF_CUDA_MEMORY_PROVIDER_OPS;
 }
 

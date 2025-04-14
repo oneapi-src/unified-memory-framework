@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2024 Intel Corporation
+ * Copyright (C) 2023-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -45,7 +45,7 @@ typedef struct umf_memory_provider_t *umf_memory_provider_handle_t;
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 ///
 umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
-                                     void *params,
+                                     const void *params,
                                      umf_memory_provider_handle_t *hProvider);
 
 ///
@@ -125,7 +125,7 @@ umfMemoryProviderGetRecommendedPageSize(umf_memory_provider_handle_t hProvider,
 ///
 umf_result_t
 umfMemoryProviderGetMinPageSize(umf_memory_provider_handle_t hProvider,
-                                void *ptr, size_t *pageSize);
+                                const void *ptr, size_t *pageSize);
 
 ///
 /// @brief Discard physical pages within the virtual memory mapping associated at the given addr

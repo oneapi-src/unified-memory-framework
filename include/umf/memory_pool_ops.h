@@ -20,7 +20,7 @@ extern "C" {
 /// @brief Version of the Memory Pool ops structure.
 /// NOTE: This is equal to the latest UMF version, in which the ops structure
 /// has been modified.
-#define UMF_POOL_OPS_VERSION_CURRENT UMF_MAKE_VERSION(0, 11)
+#define UMF_POOL_OPS_VERSION_CURRENT UMF_MAKE_VERSION(0, 12)
 
 ///
 /// @brief This structure comprises function pointers used by corresponding umfPool*
@@ -42,7 +42,7 @@ typedef struct umf_memory_pool_ops_t {
     /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
     ///
     umf_result_t (*initialize)(umf_memory_provider_handle_t provider,
-                               void *params, void **pool);
+                               const void *params, void **pool);
 
     ///
     /// @brief Finalizes memory pool
@@ -94,7 +94,7 @@ typedef struct umf_memory_pool_ops_t {
     /// @param ptr pointer to the allocated memory
     /// @return size of the memory block allocated from the \p pool
     ///
-    size_t (*malloc_usable_size)(void *pool, void *ptr);
+    size_t (*malloc_usable_size)(void *pool, const void *ptr);
 
     ///
     /// @brief Frees the memory space of the specified \p pool pointed by \p ptr

@@ -130,7 +130,7 @@ static void *add_metadata_and_align(void *ptr, size_t size, size_t alignment) {
 // return original ptr (the one that has been passed to add_metadata_and_align)
 // along with total allocation size (needed to find proper alloc class
 // in free) and usable size
-static void *get_original_alloc(void *user_ptr, size_t *total_size,
+static void *get_original_alloc(const void *user_ptr, size_t *total_size,
                                 size_t *usable_size) {
     assert(user_ptr);
 
@@ -233,7 +233,7 @@ void umf_ba_global_free(void *ptr) {
     umf_ba_free(BASE_ALLOC.ac[ac_index], ptr);
 }
 
-size_t umf_ba_global_malloc_usable_size(void *ptr) {
+size_t umf_ba_global_malloc_usable_size(const void *ptr) {
     if (!ptr) {
         return 0;
     }

@@ -33,7 +33,7 @@ TEST_F(test, internals) {
         }
 
         umf_result_t
-        get_min_page_size([[maybe_unused]] void *ptr,
+        get_min_page_size([[maybe_unused]] const void *ptr,
                           [[maybe_unused]] size_t *pageSize) noexcept {
             *pageSize = 1024;
             return UMF_RESULT_SUCCESS;
@@ -56,7 +56,7 @@ TEST_F(test, internals) {
 
     // in "internals" test we use ops interface to directly manipulate the pool
     // structure
-    umf_memory_pool_ops_t *ops = umfDisjointPoolOps();
+    const umf_memory_pool_ops_t *ops = umfDisjointPoolOps();
     EXPECT_NE(ops, nullptr);
 
     disjoint_pool_t *pool;

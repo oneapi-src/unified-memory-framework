@@ -44,7 +44,8 @@ static int compare_native_error_str(const char *message, int error) {
     return strncmp(message, error_str, len);
 }
 
-using providerCreateExtParams = std::tuple<umf_memory_provider_ops_t *, void *>;
+using providerCreateExtParams =
+    std::tuple<const umf_memory_provider_ops_t *, void *>;
 
 static void providerCreateExt(providerCreateExtParams params,
                               umf_test::provider_unique_handle_t *handle) {

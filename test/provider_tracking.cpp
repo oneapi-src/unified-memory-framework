@@ -19,7 +19,8 @@ using umf_test::test;
 #define FIXED_BUFFER_SIZE (512 * utils_get_page_size())
 #define INVALID_PTR ((void *)0x01)
 
-using providerCreateExtParams = std::tuple<umf_memory_provider_ops_t *, void *>;
+using providerCreateExtParams =
+    std::tuple<const umf_memory_provider_ops_t *, void *>;
 
 static void providerCreateExt(providerCreateExtParams params,
                               umf_test::provider_unique_handle_t *handle) {

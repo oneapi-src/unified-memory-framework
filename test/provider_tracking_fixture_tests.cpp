@@ -21,11 +21,12 @@
 
 struct provider_from_pool : public umf_test::provider_base_t {
     umf_memory_pool_handle_t pool;
-    umf_result_t initialize(umf_memory_pool_handle_t _pool) noexcept {
+    umf_result_t initialize(const umf_memory_pool_t *_pool) noexcept {
         if (!_pool) {
             return UMF_RESULT_ERROR_INVALID_ARGUMENT;
         }
-        pool = _pool;
+        // drop const qualifier
+        pool = (umf_memory_pool_handle_t)_pool;
         return UMF_RESULT_SUCCESS;
     }
     umf_result_t alloc(size_t size, size_t align, void **ptr) noexcept {

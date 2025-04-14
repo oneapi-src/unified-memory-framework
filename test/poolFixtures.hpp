@@ -28,8 +28,8 @@ typedef void *(*pfnProviderParamsCreate)();
 typedef umf_result_t (*pfnProviderParamsDestroy)(void *);
 
 using poolCreateExtParams =
-    std::tuple<umf_memory_pool_ops_t *, pfnPoolParamsCreate,
-               pfnPoolParamsDestroy, umf_memory_provider_ops_t *,
+    std::tuple<const umf_memory_pool_ops_t *, pfnPoolParamsCreate,
+               pfnPoolParamsDestroy, const umf_memory_provider_ops_t *,
                pfnProviderParamsCreate, pfnProviderParamsDestroy>;
 
 umf_test::pool_unique_handle_t poolCreateExtUnique(poolCreateExtParams params) {

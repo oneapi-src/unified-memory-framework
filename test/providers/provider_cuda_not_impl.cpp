@@ -29,6 +29,6 @@ TEST_F(test, cuda_provider_not_implemented) {
     result = umfCUDAMemoryProviderParamsSetAllocFlags(hParams, 0);
     ASSERT_EQ(result, UMF_RESULT_ERROR_NOT_SUPPORTED);
 
-    umf_memory_provider_ops_t *ops = umfCUDAMemoryProviderOps();
+    const umf_memory_provider_ops_t *ops = umfCUDAMemoryProviderOps();
     ASSERT_EQ(ops, nullptr);
 }
