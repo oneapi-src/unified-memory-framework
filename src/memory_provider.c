@@ -27,8 +27,8 @@ static int CTL_SUBTREE_HANDLER(by_handle_provider)(
     umf_ctl_query_type_t queryType) {
     (void)indexes, (void)source;
     umf_memory_provider_handle_t hProvider = (umf_memory_provider_handle_t)ctx;
-    hProvider->ops.ctl(hProvider->provider_priv, /*unused*/ 0, extra_name, arg,
-                       queryType);
+    hProvider->ops.ext_ctl(hProvider->provider_priv, /*unused*/ 0, extra_name,
+                           arg, queryType);
     return 0;
 }
 
@@ -120,67 +120,78 @@ static umf_result_t umfDefaultCtlHandle(void *provider, int operationType,
 }
 
 void assignOpsExtDefaults(umf_memory_provider_ops_t *ops) {
-    if (!ops->ext.purge_lazy) {
-        ops->ext.purge_lazy = umfDefaultPurgeLazy;
+    if (!ops->ext_purge_lazy) {
+        ops->ext_purge_lazy = umfDefaultPurgeLazy;
     }
-    if (!ops->ext.purge_force) {
-        ops->ext.purge_force = umfDefaultPurgeForce;
+    if (!ops->ext_purge_force) {
+        ops->ext_purge_force = umfDefaultPurgeForce;
     }
-    if (!ops->ext.allocation_split) {
-        ops->ext.allocation_split = umfDefaultAllocationSplit;
+    if (!ops->ext_allocation_split) {
+        ops->ext_allocation_split = umfDefaultAllocationSplit;
     }
-    if (!ops->ext.allocation_merge) {
-        ops->ext.allocation_merge = umfDefaultAllocationMerge;
+    if (!ops->ext_allocation_merge) {
+        ops->ext_allocation_merge = umfDefaultAllocationMerge;
     }
 }
 
 void assignOpsIpcDefaults(umf_memory_provider_ops_t *ops) {
-    if (!ops->ipc.get_ipc_handle_size) {
-        ops->ipc.get_ipc_handle_size = umfDefaultGetIPCHandleSize;
+    if (!ops->ext_get_ipc_handle_size) {
+        ops->ext_get_ipc_handle_size = umfDefaultGetIPCHandleSize;
     }
-    if (!ops->ipc.get_ipc_handle) {
-        ops->ipc.get_ipc_handle = umfDefaultGetIPCHandle;
+    if (!ops->ext_get_ipc_handle) {
+        ops->ext_get_ipc_handle = umfDefaultGetIPCHandle;
     }
-    if (!ops->ipc.put_ipc_handle) {
-        ops->ipc.put_ipc_handle = umfDefaultPutIPCHandle;
+    if (!ops->ext_put_ipc_handle) {
+        ops->ext_put_ipc_handle = umfDefaultPutIPCHandle;
     }
-    if (!ops->ipc.open_ipc_handle) {
-        ops->ipc.open_ipc_handle = umfDefaultOpenIPCHandle;
+    if (!ops->ext_open_ipc_handle) {
+        ops->ext_open_ipc_handle = umfDefaultOpenIPCHandle;
     }
-    if (!ops->ipc.close_ipc_handle) {
-        ops->ipc.close_ipc_handle = umfDefaultCloseIPCHandle;
+    if (!ops->ext_close_ipc_handle) {
+        ops->ext_close_ipc_handle = umfDefaultCloseIPCHandle;
     }
-    if (!ops->ctl) {
-        ops->ctl = umfDefaultCtlHandle;
+    if (!ops->ext_ctl) {
+        ops->ext_ctl = umfDefaultCtlHandle;
     }
 }
 
-static bool validateOpsMandatory(const umf_memory_provider_ops_t *ops) {
-    // Mandatory ops should be non-NULL
-    return ops->alloc && ops->free && ops->get_recommended_page_size &&
-           ops->get_min_page_size && ops->initialize && ops->finalize &&
-           ops->get_last_native_error && ops->get_name;
-}
-
-static bool validateOpsExt(const umf_memory_provider_ext_ops_t *ext) {
-    // split and merge functions should be both NULL or both non-NULL
-    return (ext->allocation_split && ext->allocation_merge) ||
-           (!ext->allocation_split && !ext->allocation_merge);
-}
-
-static bool validateOpsIpc(const umf_memory_provider_ipc_ops_t *ipc) {
-    // valid if all ops->ipc.* are non-NULL or all are NULL
-    return (ipc->get_ipc_handle_size && ipc->get_ipc_handle &&
-            ipc->put_ipc_handle && ipc->open_ipc_handle &&
-            ipc->close_ipc_handle) ||
-           (!ipc->get_ipc_handle_size && !ipc->get_ipc_handle &&
-            !ipc->put_ipc_handle && !ipc->open_ipc_handle &&
-            !ipc->close_ipc_handle);
-}
+#define CHECK_OP(ops, fn)                                                      \
+    if (!(ops)->fn) {                                                          \
+        LOG_ERR("Error: missing function pointer: %s\n", #fn);                 \
+        return false;                                                          \
+    }
 
 static bool validateOps(const umf_memory_provider_ops_t *ops) {
-    return validateOpsMandatory(ops) && validateOpsExt(&(ops->ext)) &&
-           validateOpsIpc(&(ops->ipc));
+    // Validate mandatory operations one by one
+    CHECK_OP(ops, alloc);
+    CHECK_OP(ops, free);
+    CHECK_OP(ops, get_recommended_page_size);
+    CHECK_OP(ops, get_min_page_size);
+    CHECK_OP(ops, initialize);
+    CHECK_OP(ops, finalize);
+    CHECK_OP(ops, get_last_native_error);
+    CHECK_OP(ops, get_name);
+
+    if ((ops->ext_allocation_split == NULL) !=
+        (ops->ext_allocation_merge == NULL)) {
+        LOG_ERR("Error: ext_allocation_split and ext_allocation_merge must be "
+                "both set or both NULL\n");
+        return false;
+    }
+
+    bool ipcAllSet = ops->ext_get_ipc_handle_size && ops->ext_get_ipc_handle &&
+                     ops->ext_put_ipc_handle && ops->ext_open_ipc_handle &&
+                     ops->ext_close_ipc_handle;
+    bool ipcAllNull = !ops->ext_get_ipc_handle_size &&
+                      !ops->ext_get_ipc_handle && !ops->ext_put_ipc_handle &&
+                      !ops->ext_open_ipc_handle && !ops->ext_close_ipc_handle;
+    if (!ipcAllSet && !ipcAllNull) {
+        LOG_ERR("Error: IPC function pointers must be either all set or all "
+                "NULL\n");
+        return false;
+    }
+
+    return true;
 }
 
 umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
@@ -195,6 +206,18 @@ umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
         LOG_WARN("Memory Provider ops version \"%d\" is different than the "
                  "current version \"%d\"",
                  ops->version, UMF_PROVIDER_OPS_VERSION_CURRENT);
+    }
+
+    if (ops->size == 0) {
+        LOG_ERR("Memory Provider ops size is zero");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (ops->size > sizeof(umf_memory_provider_ops_t)) {
+        LOG_ERR("Memory Provider ops size \"%zu\" is greater than the "
+                "current size \"%zu\"",
+                ops->size, sizeof(umf_memory_provider_ops_t));
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
     umf_memory_provider_handle_t provider =
@@ -300,7 +323,7 @@ umf_result_t umfMemoryProviderPurgeLazy(umf_memory_provider_handle_t hProvider,
     UMF_CHECK((hProvider != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
     UMF_CHECK((ptr != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
     umf_result_t res =
-        hProvider->ops.ext.purge_lazy(hProvider->provider_priv, ptr, size);
+        hProvider->ops.ext_purge_lazy(hProvider->provider_priv, ptr, size);
     checkErrorAndSetLastProvider(res, hProvider);
     return res;
 }
@@ -310,7 +333,7 @@ umf_result_t umfMemoryProviderPurgeForce(umf_memory_provider_handle_t hProvider,
     UMF_CHECK((hProvider != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
     UMF_CHECK((ptr != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
     umf_result_t res =
-        hProvider->ops.ext.purge_force(hProvider->provider_priv, ptr, size);
+        hProvider->ops.ext_purge_force(hProvider->provider_priv, ptr, size);
     checkErrorAndSetLastProvider(res, hProvider);
     return res;
 }
@@ -329,7 +352,7 @@ umfMemoryProviderAllocationSplit(umf_memory_provider_handle_t hProvider,
               UMF_RESULT_ERROR_INVALID_ARGUMENT);
     UMF_CHECK((firstSize < totalSize), UMF_RESULT_ERROR_INVALID_ARGUMENT);
 
-    umf_result_t res = hProvider->ops.ext.allocation_split(
+    umf_result_t res = hProvider->ops.ext_allocation_split(
         hProvider->provider_priv, ptr, totalSize, firstSize);
     checkErrorAndSetLastProvider(res, hProvider);
     return res;
@@ -347,7 +370,7 @@ umfMemoryProviderAllocationMerge(umf_memory_provider_handle_t hProvider,
     UMF_CHECK(((uintptr_t)highPtr - (uintptr_t)lowPtr < totalSize),
               UMF_RESULT_ERROR_INVALID_ARGUMENT);
 
-    umf_result_t res = hProvider->ops.ext.allocation_merge(
+    umf_result_t res = hProvider->ops.ext_allocation_merge(
         hProvider->provider_priv, lowPtr, highPtr, totalSize);
     checkErrorAndSetLastProvider(res, hProvider);
     return res;
@@ -358,7 +381,7 @@ umfMemoryProviderGetIPCHandleSize(umf_memory_provider_handle_t hProvider,
                                   size_t *size) {
     UMF_CHECK((hProvider != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
     UMF_CHECK((size != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
-    return hProvider->ops.ipc.get_ipc_handle_size(hProvider->provider_priv,
+    return hProvider->ops.ext_get_ipc_handle_size(hProvider->provider_priv,
                                                   size);
 }
 
@@ -369,7 +392,7 @@ umfMemoryProviderGetIPCHandle(umf_memory_provider_handle_t hProvider,
     UMF_CHECK((hProvider != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
     UMF_CHECK((ptr != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
     UMF_CHECK((providerIpcData != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
-    return hProvider->ops.ipc.get_ipc_handle(hProvider->provider_priv, ptr,
+    return hProvider->ops.ext_get_ipc_handle(hProvider->provider_priv, ptr,
                                              size, providerIpcData);
 }
 
@@ -378,7 +401,7 @@ umfMemoryProviderPutIPCHandle(umf_memory_provider_handle_t hProvider,
                               void *providerIpcData) {
     UMF_CHECK((hProvider != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
     UMF_CHECK((providerIpcData != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
-    return hProvider->ops.ipc.put_ipc_handle(hProvider->provider_priv,
+    return hProvider->ops.ext_put_ipc_handle(hProvider->provider_priv,
                                              providerIpcData);
 }
 
@@ -388,7 +411,7 @@ umfMemoryProviderOpenIPCHandle(umf_memory_provider_handle_t hProvider,
     UMF_CHECK((hProvider != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
     UMF_CHECK((providerIpcData != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
     UMF_CHECK((ptr != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
-    return hProvider->ops.ipc.open_ipc_handle(hProvider->provider_priv,
+    return hProvider->ops.ext_open_ipc_handle(hProvider->provider_priv,
                                               providerIpcData, ptr);
 }
 
@@ -397,6 +420,6 @@ umfMemoryProviderCloseIPCHandle(umf_memory_provider_handle_t hProvider,
                                 void *ptr, size_t size) {
     UMF_CHECK((hProvider != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
     UMF_CHECK((ptr != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
-    return hProvider->ops.ipc.close_ipc_handle(hProvider->provider_priv, ptr,
+    return hProvider->ops.ext_close_ipc_handle(hProvider->provider_priv, ptr,
                                                size);
 }

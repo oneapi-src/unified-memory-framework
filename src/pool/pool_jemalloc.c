@@ -527,6 +527,7 @@ static umf_result_t op_get_last_allocation_error(void *pool) {
 }
 
 static umf_memory_pool_ops_t UMF_JEMALLOC_POOL_OPS = {
+    .size = sizeof(umf_memory_provider_ops_t),
     .version = UMF_POOL_OPS_VERSION_CURRENT,
     .initialize = op_initialize,
     .finalize = op_finalize,

@@ -123,6 +123,7 @@ static umf_result_t proxy_get_last_allocation_error(void *pool) {
 }
 
 static umf_memory_pool_ops_t UMF_PROXY_POOL_OPS = {
+    .size = sizeof(umf_memory_pool_ops_t),
     .version = UMF_POOL_OPS_VERSION_CURRENT,
     .initialize = proxy_pool_initialize,
     .finalize = proxy_pool_finalize,
