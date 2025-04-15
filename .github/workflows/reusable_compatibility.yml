@@ -23,7 +23,7 @@ jobs:
     - name: Install apt packages
       run: |
         sudo apt-get update
-        sudo apt-get install -y clang cmake hwloc libnuma-dev libtbb-dev
+        sudo apt-get install -y clang cmake hwloc libhwloc-dev libnuma-dev libtbb-dev
 
     - name: Checkout "tag" UMF version
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -31,10 +31,6 @@ jobs:
         fetch-depth: 0
         ref: refs/tags/${{inputs.tag}}
         path: ${{github.workspace}}/tag_version
-
-    - name: Install libhwloc
-      working-directory: ${{github.workspace}}/tag_version
-      run: .github/scripts/install_hwloc.sh
 
     - name: Checkout latest UMF version
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
