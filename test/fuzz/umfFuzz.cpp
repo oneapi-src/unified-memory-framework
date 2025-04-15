@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2025 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -12,7 +12,7 @@ constexpr int MAX_POOLS_ALLOC_SIZE = 1 * 1024;      // 1 kB
 constexpr int MAX_PROVIDER_ALLOC_SIZE = 100 * 1024; // 100 kB
 
 int umf_memory_provider_create(TestState &test_state) {
-    umf_memory_provider_ops_t *provider_ops = umfOsMemoryProviderOps();
+    const umf_memory_provider_ops_t *provider_ops = umfOsMemoryProviderOps();
     umf_os_memory_provider_params_handle_t params = NULL;
 
     umf_result_t res = umfOsMemoryProviderParamsCreate(&params);
@@ -79,7 +79,7 @@ int umf_pool_create(TestState &test_state) {
         return -1;
     }
 
-    umf_memory_pool_ops_t *pool_ops = umfScalablePoolOps();
+    const umf_memory_pool_ops_t *pool_ops = umfScalablePoolOps();
     void *pool_params = NULL;
     umf_pool_create_flags_t flags = 0;
     umf_memory_pool_handle_t pool;
