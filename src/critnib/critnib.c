@@ -120,6 +120,8 @@ struct critnib_leaf {
 
 struct critnib {
     struct critnib_node *root;
+    free_leaf_t cb_free_leaf; // callback for freeing a leaf
+    void *leaf_allocator;     // handle of allocator for leaves
 
     /* pool of freed nodes: singly linked list, next at child[0] */
     struct critnib_node *deleted_node;
@@ -161,8 +163,12 @@ static inline unsigned slice_index(word key, sh_t shift) {
 
 /*
  * critnib_new -- allocates a new critnib structure
+ *
+ * Arguments:
+ * - cb_free_leaf - callback for freeing a leaf (can be NULL)
+ * - leaf_allocator - handle of allocator for leaves (can be NULL)
  */
-struct critnib *critnib_new(void) {
+struct critnib *critnib_new(free_leaf_t cb_free_leaf, void *leaf_allocator) {
     struct critnib *c = umf_ba_global_alloc(sizeof(struct critnib));
     if (!c) {
         return NULL;
@@ -175,6 +181,8 @@ struct critnib *critnib_new(void) {
         goto err_free_critnib;
     }
 
+    c->leaf_allocator = leaf_allocator;
+    c->cb_free_leaf = cb_free_leaf;
     utils_annotate_memory_no_check(&c->root, sizeof(c->root));
     utils_annotate_memory_no_check(&c->remove_count, sizeof(c->remove_count));
 
@@ -189,6 +197,10 @@ err_free_critnib:
  */
 static void delete_node(struct critnib *c, struct critnib_node *__restrict n) {
     if (is_leaf(n)) {
+        // call the callback freeing the leaf
+        if (c->cb_free_leaf && to_leaf(n)) {
+            c->cb_free_leaf(c->leaf_allocator, (void *)to_leaf(n)->value);
+        }
         umf_ba_global_free(to_leaf(n));
     } else {
         for (int i = 0; i < SLNODES; i++) {
@@ -225,6 +237,10 @@ void critnib_delete(struct critnib *c) {
 
     for (int i = 0; i < DELETED_LIFE; i++) {
         umf_ba_global_free(c->pending_del_nodes[i]);
+        if (c->cb_free_leaf && c->pending_del_leaves[i]) {
+            c->cb_free_leaf(c->leaf_allocator,
+                            (void *)c->pending_del_leaves[i]->value);
+        }
         umf_ba_global_free(c->pending_del_leaves[i]);
     }
 
@@ -275,6 +291,10 @@ static void free_leaf(struct critnib *__restrict c,
                       struct critnib_leaf *__restrict k) {
     if (!k) {
         return;
+    }
+
+    if (c->cb_free_leaf && k) {
+        c->cb_free_leaf(c->leaf_allocator, (void *)k->value);
     }
 
     utils_atomic_store_release_ptr((void **)&k->value, c->deleted_leaf);

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2024 Intel Corporation
+ * Copyright (C) 2023-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -18,6 +18,7 @@ extern "C" {
 
 struct critnib;
 typedef struct critnib critnib;
+typedef void (*free_leaf_t)(void *leaf_allocator, void *ptr);
 
 enum find_dir_t {
     FIND_L = -2,
@@ -27,7 +28,7 @@ enum find_dir_t {
     FIND_G = +2,
 };
 
-critnib *critnib_new(void);
+critnib *critnib_new(free_leaf_t cb_free_leaf, void *leaf_allocator);
 void critnib_delete(critnib *c);
 
 int critnib_insert(critnib *c, uintptr_t key, void *value, int update);
