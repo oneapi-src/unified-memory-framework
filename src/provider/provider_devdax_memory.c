@@ -538,15 +538,15 @@ static umf_memory_provider_ops_t UMF_DEVDAX_MEMORY_PROVIDER_OPS = {
     .get_recommended_page_size = devdax_get_recommended_page_size,
     .get_min_page_size = devdax_get_min_page_size,
     .get_name = devdax_get_name,
-    .ext.purge_lazy = devdax_purge_lazy,
-    .ext.purge_force = devdax_purge_force,
-    .ext.allocation_merge = devdax_allocation_merge,
-    .ext.allocation_split = devdax_allocation_split,
-    .ipc.get_ipc_handle_size = devdax_get_ipc_handle_size,
-    .ipc.get_ipc_handle = devdax_get_ipc_handle,
-    .ipc.put_ipc_handle = devdax_put_ipc_handle,
-    .ipc.open_ipc_handle = devdax_open_ipc_handle,
-    .ipc.close_ipc_handle = devdax_close_ipc_handle};
+    .ext_purge_lazy = devdax_purge_lazy,
+    .ext_purge_force = devdax_purge_force,
+    .ext_allocation_merge = devdax_allocation_merge,
+    .ext_allocation_split = devdax_allocation_split,
+    .ext_get_ipc_handle_size = devdax_get_ipc_handle_size,
+    .ext_get_ipc_handle = devdax_get_ipc_handle,
+    .ext_put_ipc_handle = devdax_put_ipc_handle,
+    .ext_open_ipc_handle = devdax_open_ipc_handle,
+    .ext_close_ipc_handle = devdax_close_ipc_handle};
 
 const umf_memory_provider_ops_t *umfDevDaxMemoryProviderOps(void) {
     return &UMF_DEVDAX_MEMORY_PROVIDER_OPS;

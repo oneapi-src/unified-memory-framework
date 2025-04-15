@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2025 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -16,11 +16,11 @@ struct IpcNotSupported : umf_test::test {
   protected:
     void SetUp() override {
         umf_memory_provider_ops_t provider_ops = UMF_NULL_PROVIDER_OPS;
-        provider_ops.ipc.get_ipc_handle_size = nullptr;
-        provider_ops.ipc.get_ipc_handle = nullptr;
-        provider_ops.ipc.open_ipc_handle = nullptr;
-        provider_ops.ipc.put_ipc_handle = nullptr;
-        provider_ops.ipc.close_ipc_handle = nullptr;
+        provider_ops.ext_get_ipc_handle_size = nullptr;
+        provider_ops.ext_get_ipc_handle = nullptr;
+        provider_ops.ext_open_ipc_handle = nullptr;
+        provider_ops.ext_put_ipc_handle = nullptr;
+        provider_ops.ext_close_ipc_handle = nullptr;
 
         umf_result_t ret;
         ret = umfMemoryProviderCreate(&provider_ops, nullptr, &provider);
