@@ -647,7 +647,7 @@ static umf_result_t os_initialize(const void *params, void **provider) {
         goto err_destroy_hwloc_topology;
     }
 
-    os_provider->fd_offset_map = critnib_new();
+    os_provider->fd_offset_map = critnib_new(NULL, NULL);
     if (!os_provider->fd_offset_map) {
         LOG_ERR("creating file descriptor offset map failed");
         ret = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;

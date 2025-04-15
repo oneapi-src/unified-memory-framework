@@ -201,6 +201,19 @@ static umf_result_t umfMemoryTrackerAdd(umf_memory_tracker_handle_t hTracker,
 
         utils_atomic_load_acquire_u64((uint64_t *)&rvalue->size, &rsize);
 
+        // size == 0 means that the entry was removed
+        if (rsize == 0) {
+            // restart the search
+            parent_value = NULL;
+            rvalue = NULL;
+            parent_key = 0;
+            rkey = 0;
+            rsize = 0;
+            level = 0;
+            found = 0;
+            continue;
+        }
+
         if ((uintptr_t)ptr < rkey + rsize) {
             if (level == MAX_LEVELS_OF_ALLOC_SEGMENT_MAP - 1) {
                 // TODO: we need to support an arbitrary amount of layers in the future
@@ -254,13 +267,16 @@ static umf_result_t umfMemoryTrackerRemove(umf_memory_tracker_handle_t hTracker,
         return UMF_RESULT_ERROR_UNKNOWN;
     }
 
-    assert(level < MAX_LEVELS_OF_ALLOC_SEGMENT_MAP);
-    value = critnib_remove(hTracker->alloc_segments_map[level], (uintptr_t)ptr);
-    assert(value);
-
     LOG_DEBUG("memory region removed: tracker=%p, level=%i, pool=%p, ptr=%p, "
               "size=%zu",
               (void *)hTracker, level, (void *)value->pool, ptr, value->size);
+
+    // size == 0 means that the entry was removed
+    utils_atomic_store_release_u64((uint64_t *)&value->size, 0);
+
+    assert(level < MAX_LEVELS_OF_ALLOC_SEGMENT_MAP);
+    value = critnib_remove(hTracker->alloc_segments_map[level], (uintptr_t)ptr);
+    assert(value);
 
     if (parent_value) {
         LOG_DEBUG(
@@ -270,8 +286,6 @@ static umf_result_t umfMemoryTrackerRemove(umf_memory_tracker_handle_t hTracker,
             (void *)parent_value->pool, (void *)parent_key, parent_value->size);
         parent_value->n_children--;
     }
-
-    umf_ba_free(hTracker->alloc_info_allocator, value);
 
     return UMF_RESULT_SUCCESS;
 }
@@ -652,6 +666,9 @@ static umf_result_t trackingAllocationMerge(void *hProvider, void *lowPtr,
     // we only need to update the size of the first part
     utils_atomic_store_release_u64((uint64_t *)&lowValue->size, totalSize);
 
+    // size == 0 means that the entry was removed
+    utils_atomic_store_release_u64((uint64_t *)&highValue->size, 0);
+
     void *erasedhighValue = critnib_remove(
         provider->hTracker->alloc_segments_map[highLevel], (uintptr_t)highPtr);
     assert(erasedhighValue == highValue);
@@ -663,8 +680,6 @@ static umf_result_t trackingAllocationMerge(void *hProvider, void *lowPtr,
               "highPtr=%p (child=%zu), totalSize=%zu",
               lowLevel, lowPtr, lowValue->n_children, highPtr,
               highValue->n_children, totalSize);
-
-    umf_ba_free(provider->hTracker->alloc_info_allocator, highValue);
 
     return UMF_RESULT_SUCCESS;
 
@@ -1128,7 +1143,7 @@ umf_result_t umfTrackingMemoryProviderCreate(
         return UMF_RESULT_ERROR_UNKNOWN;
     }
     params.pool = hPool;
-    params.ipcCache = critnib_new();
+    params.ipcCache = critnib_new(NULL, NULL);
     if (!params.ipcCache) {
         LOG_ERR("failed to create IPC cache");
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
@@ -1156,6 +1171,12 @@ void umfTrackingMemoryProviderGetUpstreamProvider(
     *hUpstream = p->hUpstream;
 }
 
+static void free_leaf(void *leaf_allocator, void *ptr) {
+    if (ptr) {
+        umf_ba_free(leaf_allocator, ptr);
+    }
+}
+
 umf_memory_tracker_handle_t umfMemoryTrackerCreate(void) {
     umf_memory_tracker_handle_t handle =
         umf_ba_global_alloc(sizeof(struct umf_memory_tracker_t));
@@ -1180,7 +1201,8 @@ umf_memory_tracker_handle_t umfMemoryTrackerCreate(void) {
 
     int i;
     for (i = 0; i < MAX_LEVELS_OF_ALLOC_SEGMENT_MAP; i++) {
-        handle->alloc_segments_map[i] = critnib_new();
+        handle->alloc_segments_map[i] =
+            critnib_new(alloc_info_allocator, free_leaf);
         if (!handle->alloc_segments_map[i]) {
             goto err_destroy_alloc_segments_map;
         }
@@ -1192,7 +1214,7 @@ umf_memory_tracker_handle_t umfMemoryTrackerCreate(void) {
         goto err_destroy_alloc_segments_map;
     }
 
-    handle->ipc_segments_map = critnib_new();
+    handle->ipc_segments_map = critnib_new(NULL, NULL);
     if (!handle->ipc_segments_map) {
         goto err_destroy_ipc_info_allocator;
     }
