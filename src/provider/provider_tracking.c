@@ -1128,7 +1128,7 @@ umf_result_t umfTrackingMemoryProviderCreate(
         return UMF_RESULT_ERROR_UNKNOWN;
     }
     params.pool = hPool;
-    params.ipcCache = critnib_new();
+    params.ipcCache = critnib_new(NULL, NULL);
     if (!params.ipcCache) {
         LOG_ERR("failed to create IPC cache");
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
@@ -1180,7 +1180,7 @@ umf_memory_tracker_handle_t umfMemoryTrackerCreate(void) {
 
     int i;
     for (i = 0; i < MAX_LEVELS_OF_ALLOC_SEGMENT_MAP; i++) {
-        handle->alloc_segments_map[i] = critnib_new();
+        handle->alloc_segments_map[i] = critnib_new(NULL, NULL);
         if (!handle->alloc_segments_map[i]) {
             goto err_destroy_alloc_segments_map;
         }
@@ -1192,7 +1192,7 @@ umf_memory_tracker_handle_t umfMemoryTrackerCreate(void) {
         goto err_destroy_alloc_segments_map;
     }
 
-    handle->ipc_segments_map = critnib_new();
+    handle->ipc_segments_map = critnib_new(NULL, NULL);
     if (!handle->ipc_segments_map) {
         goto err_destroy_ipc_info_allocator;
     }

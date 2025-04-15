@@ -597,7 +597,7 @@ umf_result_t disjoint_pool_initialize(umf_memory_provider_handle_t provider,
     disjoint_pool->provider = provider;
     disjoint_pool->params = *dp_params;
 
-    disjoint_pool->known_slabs = critnib_new();
+    disjoint_pool->known_slabs = critnib_new(NULL, NULL);
     if (disjoint_pool->known_slabs == NULL) {
         goto err_free_disjoint_pool;
     }
