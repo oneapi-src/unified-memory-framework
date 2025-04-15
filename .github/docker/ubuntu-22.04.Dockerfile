@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Intel Corporation
+# Copyright (C) 2024-2025 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -37,7 +37,11 @@ ARG MISC_DEPS="\
 	clang \
 	python3-pip \
 	sudo \
-	whois"
+	whois \
+	wget \
+	libenchant-2-dev \
+	jq \
+	doxygen"
 
 # Update and install required packages
 RUN apt-get update \
@@ -55,6 +59,7 @@ RUN mkdir --mode 777 /opt/umf/
 # Additional dependencies (installed via pip)
 COPY third_party/requirements.txt /opt/umf/requirements.txt
 RUN pip3 install --no-cache-dir -r /opt/umf/requirements.txt
+RUN pip3 install bandit codespell
 
 # Add a new (non-root) 'test_user'
 ENV USER test_user
