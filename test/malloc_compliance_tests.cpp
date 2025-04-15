@@ -119,7 +119,7 @@ void realloc_compliance_test(umf_memory_pool_handle_t hPool) {
             << "malloc returned NULL, couldn't allocate much memory";
 
         // Fit memory region with data and store
-        // it's content somehere before realloc
+        // it's content somewhere before realloc
         void *saved_obj = umfPoolMalloc(hPool, alloc_size);
         ASSERT_NE(saved_obj, nullptr)
             << "malloc returned NULL, couldn't allocate much memory";
