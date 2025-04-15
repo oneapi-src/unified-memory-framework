@@ -442,10 +442,10 @@ static umf_result_t user_block_merge(coarse_t *coarse, ravl_node_t *node1,
     assert(block1->data < block2->data);
 
     bool same_used = ((block1->used == used) && (block2->used == used));
-    bool contignous_data = (block1->data + block1->size == block2->data);
+    bool contiguous_data = (block1->data + block1->size == block2->data);
 
     // check if blocks can be merged
-    if (!same_used || !contignous_data) {
+    if (!same_used || !contiguous_data) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
