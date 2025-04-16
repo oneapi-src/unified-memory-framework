@@ -472,6 +472,7 @@ void *critnib_remove(struct critnib *c, word key) {
 
 del_leaf:
     value = k->value;
+    utils_atomic_store_release_ptr(&k->value, NULL);
     c->pending_del_leaves[del] = k;
 
 not_found:
@@ -635,7 +636,10 @@ void *critnib_find_le(struct critnib *c, word key) {
         struct critnib_node *n; /* avoid a subtle TOCTOU */
         utils_atomic_load_acquire_ptr((void **)&c->root, (void **)&n);
         struct critnib_leaf *k = n ? find_le(n, key) : NULL;
-        res = k ? k->value : NULL;
+        res = NULL;
+        if (k) {
+            utils_atomic_load_acquire_ptr(&k->value, &res);
+        }
         utils_atomic_load_acquire_u64(&c->remove_count, &wrs2);
     } while (wrs1 + DELETED_LIFE <= wrs2);
 

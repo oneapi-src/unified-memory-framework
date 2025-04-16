@@ -81,8 +81,20 @@ static tracker_alloc_info_t *get_most_nested_alloc_segment(
         found =
             critnib_find(hTracker->alloc_segments_map[level], (uintptr_t)ptr,
                          FIND_LE, (void *)&rkey, (void **)&rvalue);
-        if (!found || !rvalue) {
+        if (!found) {
             break;
+        }
+
+        // rvalue == NULL means that the entry was removed
+        if (rvalue == NULL) {
+            // restart the search
+            parent_value = NULL;
+            parent_key = 0;
+            rkey = 0;
+            rsize = 0;
+            level = 0;
+            found = 0;
+            continue;
         }
 
         utils_atomic_load_acquire_u64((uint64_t *)&rvalue->size, &rsize);
@@ -195,8 +207,20 @@ static umf_result_t umfMemoryTrackerAdd(umf_memory_tracker_handle_t hTracker,
         found =
             critnib_find(hTracker->alloc_segments_map[level], (uintptr_t)ptr,
                          FIND_LE, (void *)&rkey, (void **)&rvalue);
-        if (!found || !rvalue) {
+        if (!found) {
             break;
+        }
+
+        // rvalue == NULL means that the entry was removed
+        if (rvalue == NULL) {
+            // restart the search
+            parent_value = NULL;
+            parent_key = 0;
+            rkey = 0;
+            rsize = 0;
+            level = 0;
+            found = 0;
+            continue;
         }
 
         utils_atomic_load_acquire_u64((uint64_t *)&rvalue->size, &rsize);
@@ -383,6 +407,17 @@ umf_result_t umfMemoryTrackerGetAllocInfo(const void *ptr,
         assert(level < MAX_LEVELS_OF_ALLOC_SEGMENT_MAP);
         found = critnib_find(TRACKER->alloc_segments_map[level], (uintptr_t)ptr,
                              FIND_LE, (void *)&rkey, (void **)&rvalue);
+        // rvalue == NULL means that the entry was removed
+        if (found && (rvalue == NULL)) {
+            // restart the search
+            top_most_value = NULL;
+            top_most_key = 0;
+            rkey = 0;
+            level = 0;
+            found = 0;
+            continue;
+        }
+
         if (found && (uintptr_t)ptr < rkey + rvalue->size) {
             top_most_key = rkey;
             top_most_value = rvalue;
@@ -428,8 +463,14 @@ umf_result_t umfMemoryTrackerGetIpcInfo(const void *ptr,
 
     uintptr_t rkey;
     tracker_ipc_info_t *rvalue = NULL;
-    int found = critnib_find(TRACKER->ipc_segments_map, (uintptr_t)ptr, FIND_LE,
+    int found = 0;
+
+    do {
+        found = critnib_find(TRACKER->ipc_segments_map, (uintptr_t)ptr, FIND_LE,
                              (void *)&rkey, (void **)&rvalue);
+        // rvalue == NULL means that the entry was removed
+    } while (found && (rvalue == NULL));
+
     if (!found || (uintptr_t)ptr >= rkey + rvalue->size) {
         LOG_DEBUG("pointer %p not found in the tracker, TRACKER=%p", ptr,
                   (void *)TRACKER);
@@ -768,6 +809,11 @@ static void check_if_tracker_is_empty(umf_memory_tracker_handle_t hTracker,
 
         while (1 == critnib_find(hTracker->alloc_segments_map[i], last_key,
                                  FIND_G, &rkey, (void **)&rvalue)) {
+            // rvalue == NULL means that the entry was removed
+            if (rvalue == NULL) {
+                continue;
+            }
+
             if (rvalue->pool == pool || pool == NULL) {
                 n_items++;
             }
