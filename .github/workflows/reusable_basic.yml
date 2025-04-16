@@ -126,6 +126,11 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y clang cmake libnuma-dev lcov
 
+    - name: Install hwloc
+      if: matrix.disable_hwloc == 'OFF'
+      run: |
+        sudo apt-get install -y libhwloc-dev
+
     - name: Install TBB apt package
       if: matrix.install_tbb == 'ON'
       run: |
@@ -143,9 +148,6 @@ jobs:
     - name: Install g++-7
       if: matrix.compiler.cxx == 'g++-7'
       run: sudo apt-get install -y ${{matrix.compiler.cxx}}
-
-    - name: Install libhwloc
-      run: .github/scripts/install_hwloc.sh
 
     - name: Get UMF version
       run: |
