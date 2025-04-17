@@ -116,6 +116,7 @@ struct critnib_node {
 struct critnib_leaf {
     word key;
     void *value;
+    uint64_t ref_count;
 };
 
 struct critnib {
@@ -336,6 +337,8 @@ int critnib_insert(struct critnib *c, word key, void *value, int update) {
 
     utils_atomic_store_release_ptr((void **)&k->key, (void *)key);
     utils_atomic_store_release_ptr((void **)&k->value, value);
+    // set the most significant bit of the ref_count
+    utils_atomic_store_release_u64(&k->ref_count, 1ULL << 63);
 
     struct critnib_node *kn = (void *)((word)k | 1);
 
@@ -486,6 +489,8 @@ void *critnib_remove(struct critnib *c, word key) {
     c->pending_del_nodes[del] = n;
 
 del_leaf:
+    // clear the most significant bit of the ref_count
+    utils_atomic_and_u64(&k->ref_count, (1ULL << 63) - 1);
     value = k->value;
     c->pending_del_leaves[del] = k;
 
@@ -505,12 +510,14 @@ not_found:
  * we need only one that was valid at any point after the call started.
  */
 void *critnib_get(struct critnib *c, word key) {
+    struct critnib_leaf *k;
+    struct critnib_node *n;
     uint64_t wrs1, wrs2;
     void *res;
 
-    do {
-        struct critnib_node *n;
+    int value_read = 0;
 
+    do {
         utils_atomic_load_acquire_u64(&c->remove_count, &wrs1);
         utils_atomic_load_acquire_ptr((void **)&c->root, (void **)&n);
 
@@ -525,10 +532,30 @@ void *critnib_get(struct critnib *c, word key) {
         }
 
         /* ... as we check it at the end. */
-        struct critnib_leaf *k = to_leaf(n);
-        res = (n && k->key == key) ? k->value : NULL;
+        k = to_leaf(n);
+        if (n && k->key == key) {
+            res = k->value;
+            value_read = 1;
+        } else {
+            res = NULL;
+        }
         utils_atomic_load_acquire_u64(&c->remove_count, &wrs2);
     } while (wrs1 + DELETED_LIFE <= wrs2);
+
+    if (!value_read) {
+        return res;
+    }
+
+    // test the most significant bit of the ref_count
+    uint64_t ref_count;
+    utils_atomic_load_acquire_u64(&k->ref_count, &ref_count);
+    if ((ref_count & (1ULL << 63)) == 0) {
+        // the leaf was already removed
+        return NULL;
+    }
+
+    // the leaf is still in use, increment the refcount and return the value
+    utils_atomic_increment_u64(&k->ref_count);
 
     return res;
 }
@@ -786,6 +813,17 @@ int critnib_find(struct critnib *c, uintptr_t key, enum find_dir_t dir,
     } while (wrs1 + DELETED_LIFE <= wrs2);
 
     if (k) {
+        // test the most significant bit of the ref_count
+        uint64_t ref_count;
+        utils_atomic_load_acquire_u64(&k->ref_count, &ref_count);
+        if ((ref_count & (1ULL << 63)) == 0) {
+            // the leaf was already removed
+            return 0;
+        }
+
+        // the leaf is still in use, increment the refcount and return the value
+        utils_atomic_increment_u64(&k->ref_count);
+
         if (rkey) {
             *rkey = _rkey;
         }
