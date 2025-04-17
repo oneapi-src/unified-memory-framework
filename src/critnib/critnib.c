@@ -293,7 +293,7 @@ static void free_leaf(struct critnib *__restrict c,
         return;
     }
 
-    if (c->cb_free_leaf && k) {
+    if (c->cb_free_leaf && k && k->value) {
         c->cb_free_leaf(c->leaf_allocator, (void *)k->value);
     }
 
@@ -375,6 +375,10 @@ int critnib_insert(struct critnib *c, word key, void *value, int update) {
     word at = path ^ key;
     if (!at) {
         ASSERT(is_leaf(n));
+        if (to_leaf(kn)->value == value) {
+            // do not free the value
+            to_leaf(kn)->value = NULL;
+        }
         free_leaf(c, to_leaf(kn));
 
         if (update) {

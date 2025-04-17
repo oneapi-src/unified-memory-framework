@@ -140,8 +140,6 @@ static void destroy_slab(slab_t *slab) {
     if (res != UMF_RESULT_SUCCESS) {
         LOG_ERR("deallocation of slab data failed!");
     }
-
-    umf_ba_global_free(slab);
 }
 
 static size_t slab_find_first_available_chunk_idx(const slab_t *slab) {
@@ -570,6 +568,18 @@ static void *disjoint_pool_allocate(disjoint_pool_t *pool, size_t size) {
     return ptr;
 }
 
+/*
+ * free_slab - callback for freeing the slab.
+ *             It is called by critnib when the slab
+ *             is removed from the critnib.
+ */
+static void free_slab(void *unused, void *slab) {
+    (void)unused;
+    if (slab) {
+        umf_ba_global_free(slab);
+    }
+}
+
 umf_result_t disjoint_pool_initialize(umf_memory_provider_handle_t provider,
                                       const void *params, void **ppPool) {
     // TODO set defaults when user pass the NULL as params
@@ -597,7 +607,7 @@ umf_result_t disjoint_pool_initialize(umf_memory_provider_handle_t provider,
     disjoint_pool->provider = provider;
     disjoint_pool->params = *dp_params;
 
-    disjoint_pool->known_slabs = critnib_new(NULL, NULL);
+    disjoint_pool->known_slabs = critnib_new(free_slab, NULL);
     if (disjoint_pool->known_slabs == NULL) {
         goto err_free_disjoint_pool;
     }
