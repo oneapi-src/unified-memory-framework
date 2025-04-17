@@ -929,6 +929,7 @@ void disjoint_pool_finalize(void *pool) {
 }
 
 static umf_memory_pool_ops_t UMF_DISJOINT_POOL_OPS = {
+    .size = sizeof(umf_memory_provider_ops_t),
     .version = UMF_VERSION_CURRENT,
     .initialize = disjoint_pool_initialize,
     .finalize = disjoint_pool_finalize,

@@ -444,6 +444,7 @@ static umf_result_t pool_ctl(void *hPool, int operationType, const char *name,
 }
 
 static umf_memory_pool_ops_t UMF_SCALABLE_POOL_OPS = {
+    .size = sizeof(umf_memory_provider_ops_t),
     .version = UMF_POOL_OPS_VERSION_CURRENT,
     .initialize = tbb_pool_initialize,
     .finalize = tbb_pool_finalize,
@@ -454,7 +455,7 @@ static umf_memory_pool_ops_t UMF_SCALABLE_POOL_OPS = {
     .malloc_usable_size = tbb_malloc_usable_size,
     .free = tbb_free,
     .get_last_allocation_error = tbb_get_last_allocation_error,
-    .ctl = pool_ctl};
+    .ext_ctl = pool_ctl};
 
 const umf_memory_pool_ops_t *umfScalablePoolOps(void) {
     return &UMF_SCALABLE_POOL_OPS;

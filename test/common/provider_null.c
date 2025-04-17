@@ -129,6 +129,7 @@ static umf_result_t nullCloseIpcHandle(void *provider, void *ptr, size_t size) {
 }
 
 umf_memory_provider_ops_t UMF_NULL_PROVIDER_OPS = {
+    .size = sizeof(umf_memory_provider_ops_t),
     .version = UMF_PROVIDER_OPS_VERSION_CURRENT,
     .initialize = nullInitialize,
     .finalize = nullFinalize,
@@ -138,13 +139,13 @@ umf_memory_provider_ops_t UMF_NULL_PROVIDER_OPS = {
     .get_recommended_page_size = nullGetRecommendedPageSize,
     .get_min_page_size = nullGetPageSize,
     .get_name = nullName,
-    .ext.purge_lazy = nullPurgeLazy,
-    .ext.purge_force = nullPurgeForce,
-    .ext.allocation_merge = nullAllocationMerge,
-    .ext.allocation_split = nullAllocationSplit,
-    .ipc.get_ipc_handle_size = nullGetIpcHandleSize,
-    .ipc.get_ipc_handle = nullGetIpcHandle,
-    .ipc.put_ipc_handle = nullPutIpcHandle,
-    .ipc.open_ipc_handle = nullOpenIpcHandle,
-    .ipc.close_ipc_handle = nullCloseIpcHandle,
+    .ext_purge_lazy = nullPurgeLazy,
+    .ext_purge_force = nullPurgeForce,
+    .ext_allocation_merge = nullAllocationMerge,
+    .ext_allocation_split = nullAllocationSplit,
+    .ext_get_ipc_handle_size = nullGetIpcHandleSize,
+    .ext_get_ipc_handle = nullGetIpcHandle,
+    .ext_put_ipc_handle = nullPutIpcHandle,
+    .ext_open_ipc_handle = nullOpenIpcHandle,
+    .ext_close_ipc_handle = nullCloseIpcHandle,
 };
