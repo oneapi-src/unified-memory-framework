@@ -274,14 +274,14 @@ static umf_result_t file_initialize(const void *params, void **provider) {
         goto err_coarse_delete;
     }
 
-    file_provider->fd_offset_map = critnib_new();
+    file_provider->fd_offset_map = critnib_new(NULL, NULL);
     if (!file_provider->fd_offset_map) {
         LOG_ERR("creating the map of file descriptor offsets failed");
         ret = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
         goto err_mutex_destroy_not_free;
     }
 
-    file_provider->mmaps = critnib_new();
+    file_provider->mmaps = critnib_new(NULL, NULL);
     if (!file_provider->mmaps) {
         LOG_ERR("creating the map of memory mappings failed");
         ret = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;

@@ -131,6 +131,12 @@ static inline uint64_t utils_atomic_decrement_u64(uint64_t *ptr) {
     return InterlockedDecrement64((LONG64 volatile *)ptr);
 }
 
+static inline uint64_t utils_atomic_and_u64(uint64_t *ptr, uint64_t val) {
+    ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
+    // return the value that had previously been in *ptr
+    return InterlockedAnd64((LONG64 volatile *)(ptr), val);
+}
+
 static inline uint64_t utils_fetch_and_add_u64(uint64_t *ptr, uint64_t val) {
     ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
     // return the value that had previously been in *ptr
@@ -196,6 +202,12 @@ static inline uint64_t utils_atomic_decrement_u64(uint64_t *val) {
     ASSERT_IS_ALIGNED((uintptr_t)val, 8);
     // return decremented value
     return __atomic_sub_fetch(val, 1, memory_order_acq_rel);
+}
+
+static inline uint64_t utils_atomic_and_u64(uint64_t *ptr, uint64_t val) {
+    ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
+    // return the value that had previously been in *ptr
+    return __atomic_fetch_and(ptr, val, memory_order_acq_rel);
 }
 
 static inline uint64_t utils_fetch_and_add_u64(uint64_t *ptr, uint64_t val) {
