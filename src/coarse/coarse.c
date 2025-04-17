@@ -623,6 +623,24 @@ static umf_result_t coarse_add_used_block(coarse_t *coarse, void *addr,
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t coarse_add_free_block(coarse_t *coarse, void *addr,
+                                          size_t size, block_t **free_block) {
+    *free_block = NULL;
+
+    block_t *new_block =
+        coarse_ravl_add_new(coarse->all_blocks, addr, size, NULL);
+    if (new_block == NULL) {
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    new_block->used = false;
+    coarse->alloc_size += size;
+
+    *free_block = new_block;
+
+    return UMF_RESULT_SUCCESS;
+}
+
 static void coarse_ravl_cb_rm_all_blocks_node(void *data, void *arg) {
     assert(data);
     assert(arg);
@@ -1053,9 +1071,60 @@ umf_result_t coarse_alloc(coarse_t *coarse, size_t size, size_t alignment,
 
     assert(debug_check(coarse));
 
+    *resultPtr = NULL;
+
     // Find a block with greater or equal size using the given memory allocation strategy
     block_t *curr = find_free_block(coarse->free_blocks, size, alignment,
                                     coarse->allocation_strategy);
+    if (curr == NULL) {
+        // no suitable block found - try to get more memory from the upstream provider
+        umf_result = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+
+        if (!coarse->cb.alloc) {
+            LOG_ERR("out of memory (the memory provider does not support "
+                    "allocating more memory)");
+            goto err_unlock;
+        }
+
+        size_t size_aligned = ALIGN_UP_SAFE(size, alignment);
+        if (size_aligned == 0) {
+            // cannot align up (arithmetic overflow)
+            umf_result = UMF_RESULT_ERROR_INVALID_ARGUMENT;
+            LOG_ERR("size too huge (arithmetic overflow)");
+            goto err_unlock;
+        }
+
+        umf_result = coarse->cb.alloc(coarse->provider, size_aligned, alignment,
+                                      resultPtr);
+        if (umf_result != UMF_RESULT_SUCCESS) {
+            LOG_ERR("alloc() of memory provider failed: out of memory");
+            goto err_unlock;
+        }
+
+        ASSERT_IS_ALIGNED(((uintptr_t)(*resultPtr)), alignment);
+
+        block_t *new_free_block = NULL;
+        umf_result = coarse_add_free_block(coarse, *resultPtr, size_aligned,
+                                           &new_free_block);
+        if (umf_result != UMF_RESULT_SUCCESS) {
+            LOG_ERR("failed to add a newly allocated block from the memory "
+                    "provider");
+            if (coarse->cb.free) {
+                coarse->cb.free(coarse->provider, *resultPtr, size_aligned);
+            } else {
+                LOG_WARN("the memory provider does not support the free() "
+                         "operation, so the following memory block was leaked: "
+                         "address %p, size %zu",
+                         *resultPtr, size_aligned);
+            }
+            goto err_unlock;
+        }
+
+        LOG_DEBUG("coarse_ALLOC (memory_provider) %zu used %zu alloc %zu",
+                  size_aligned, coarse->used_size, coarse->alloc_size);
+
+        curr = new_free_block;
+    }
 
     // If the block that we want to reuse has a greater size, split it.
     // Try to merge the split part with the successor if it is not used.
@@ -1065,76 +1134,45 @@ umf_result_t coarse_alloc(coarse_t *coarse, size_t size, size_t alignment,
         action = ACTION_SPLIT;
     } else if (curr && curr->size == size) {
         action = ACTION_USE;
-    }
-
-    if (action) { // ACTION_SPLIT or ACTION_USE
-        assert(curr->used == false);
-
-        // In case of non-zero alignment create an aligned block what would be further used.
-        if (alignment > 0) {
-            umf_result = create_aligned_block(coarse, size, alignment, &curr);
-            if (umf_result != UMF_RESULT_SUCCESS) {
-                (void)free_blocks_re_add(coarse, curr);
-                goto err_unlock;
-            }
-        }
-
-        if (action == ACTION_SPLIT) {
-            // Split the current block and put the new block after the one that we use.
-            umf_result = split_current_block(coarse, curr, size);
-            if (umf_result != UMF_RESULT_SUCCESS) {
-                (void)free_blocks_re_add(coarse, curr);
-                goto err_unlock;
-            }
-
-            curr->size = size;
-
-            LOG_DEBUG("coarse_ALLOC (split_block) %zu used %zu alloc %zu", size,
-                      coarse->used_size, coarse->alloc_size);
-
-        } else { // action == ACTION_USE
-            LOG_DEBUG("coarse_ALLOC (same_block) %zu used %zu alloc %zu", size,
-                      coarse->used_size, coarse->alloc_size);
-        }
-
-        curr->used = true;
-        *resultPtr = curr->data;
-        coarse->used_size += size;
-
-        assert(debug_check(coarse));
-        utils_mutex_unlock(&coarse->lock);
-
-        return UMF_RESULT_SUCCESS;
-    }
-
-    // no suitable block found - try to get more memory from the upstream provider
-    umf_result = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-
-    *resultPtr = NULL;
-
-    if (!coarse->cb.alloc) {
+    } else {
+        umf_result = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
         LOG_ERR("out of memory");
         goto err_unlock;
     }
 
-    umf_result = coarse->cb.alloc(coarse->provider, size, alignment, resultPtr);
-    if (umf_result != UMF_RESULT_SUCCESS) {
-        LOG_ERR("coarse_alloc_cb() failed: out of memory");
-        goto err_unlock;
-    }
+    // ACTION_SPLIT or ACTION_USE
+    assert(curr->used == false);
 
-    ASSERT_IS_ALIGNED(((uintptr_t)(*resultPtr)), alignment);
-
-    umf_result = coarse_add_used_block(coarse, *resultPtr, size);
-    if (umf_result != UMF_RESULT_SUCCESS) {
-        if (coarse->cb.free) {
-            coarse->cb.free(coarse->provider, *resultPtr, size);
+    // In case of non-zero alignment create an aligned block what would be further used.
+    if (alignment > 0) {
+        umf_result = create_aligned_block(coarse, size, alignment, &curr);
+        if (umf_result != UMF_RESULT_SUCCESS) {
+            (void)free_blocks_re_add(coarse, curr);
+            goto err_unlock;
         }
-        goto err_unlock;
     }
 
-    LOG_DEBUG("coarse_ALLOC (memory_provider) %zu used %zu alloc %zu", size,
-              coarse->used_size, coarse->alloc_size);
+    if (action == ACTION_SPLIT) {
+        // Split the current block and put the new block after the one that we use.
+        umf_result = split_current_block(coarse, curr, size);
+        if (umf_result != UMF_RESULT_SUCCESS) {
+            (void)free_blocks_re_add(coarse, curr);
+            goto err_unlock;
+        }
+
+        curr->size = size;
+
+        LOG_DEBUG("coarse_ALLOC (split_block) %zu used %zu alloc %zu", size,
+                  coarse->used_size, coarse->alloc_size);
+
+    } else { // action == ACTION_USE
+        LOG_DEBUG("coarse_ALLOC (same_block) %zu used %zu alloc %zu", size,
+                  coarse->used_size, coarse->alloc_size);
+    }
+
+    curr->used = true;
+    *resultPtr = curr->data;
+    coarse->used_size += size;
 
     umf_result = UMF_RESULT_SUCCESS;
 
