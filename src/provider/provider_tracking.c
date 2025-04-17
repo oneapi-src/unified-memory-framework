@@ -271,8 +271,6 @@ static umf_result_t umfMemoryTrackerRemove(umf_memory_tracker_handle_t hTracker,
         parent_value->n_children--;
     }
 
-    umf_ba_free(hTracker->alloc_info_allocator, value);
-
     return UMF_RESULT_SUCCESS;
 }
 
@@ -338,8 +336,6 @@ umfMemoryTrackerRemoveIpcSegment(umf_memory_tracker_handle_t hTracker,
               "provider=%p, cache_entry=%p",
               (void *)hTracker, ptr, v->size, (void *)v->provider,
               (void *)v->ipc_cache_value);
-
-    umf_ba_free(hTracker->ipc_info_allocator, value);
 
     return UMF_RESULT_SUCCESS;
 }
@@ -664,8 +660,6 @@ static umf_result_t trackingAllocationMerge(void *hProvider, void *lowPtr,
               lowLevel, lowPtr, lowValue->n_children, highPtr,
               highValue->n_children, totalSize);
 
-    umf_ba_free(provider->hTracker->alloc_info_allocator, highValue);
-
     return UMF_RESULT_SUCCESS;
 
 err_fatal:
@@ -715,7 +709,6 @@ static umf_result_t trackingFree(void *hProvider, void *ptr, size_t size) {
                     "size=%zu, ret = %d",
                     ptr, size, ret);
         }
-        umf_ba_global_free(value);
     }
 
     ret = umfMemoryProviderFree(p->hUpstream, ptr, size);
@@ -1116,6 +1109,13 @@ umf_memory_provider_ops_t UMF_TRACKING_MEMORY_PROVIDER_OPS = {
     .ipc.open_ipc_handle = trackingOpenIpcHandle,
     .ipc.close_ipc_handle = trackingCloseIpcHandle};
 
+static void free_ipc_cache_value(void *unused, void *ipc_cache_value) {
+    (void)unused;
+    if (ipc_cache_value) {
+        umf_ba_global_free(ipc_cache_value);
+    }
+}
+
 umf_result_t umfTrackingMemoryProviderCreate(
     umf_memory_provider_handle_t hUpstream, umf_memory_pool_handle_t hPool,
     umf_memory_provider_handle_t *hTrackingProvider) {
@@ -1128,7 +1128,7 @@ umf_result_t umfTrackingMemoryProviderCreate(
         return UMF_RESULT_ERROR_UNKNOWN;
     }
     params.pool = hPool;
-    params.ipcCache = critnib_new(NULL, NULL);
+    params.ipcCache = critnib_new(free_ipc_cache_value, NULL);
     if (!params.ipcCache) {
         LOG_ERR("failed to create IPC cache");
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
@@ -1156,6 +1156,18 @@ void umfTrackingMemoryProviderGetUpstreamProvider(
     *hUpstream = p->hUpstream;
 }
 
+static void free_leaf(void *leaf_allocator, void *ptr) {
+    if (ptr) {
+        umf_ba_free(leaf_allocator, ptr);
+    }
+}
+
+static void free_ipc_segment(void *ipc_info_allocator, void *ptr) {
+    if (ptr) {
+        umf_ba_free(ipc_info_allocator, ptr);
+    }
+}
+
 umf_memory_tracker_handle_t umfMemoryTrackerCreate(void) {
     umf_memory_tracker_handle_t handle =
         umf_ba_global_alloc(sizeof(struct umf_memory_tracker_t));
@@ -1180,7 +1192,8 @@ umf_memory_tracker_handle_t umfMemoryTrackerCreate(void) {
 
     int i;
     for (i = 0; i < MAX_LEVELS_OF_ALLOC_SEGMENT_MAP; i++) {
-        handle->alloc_segments_map[i] = critnib_new(NULL, NULL);
+        handle->alloc_segments_map[i] =
+            critnib_new(free_leaf, alloc_info_allocator);
         if (!handle->alloc_segments_map[i]) {
             goto err_destroy_alloc_segments_map;
         }
@@ -1192,7 +1205,8 @@ umf_memory_tracker_handle_t umfMemoryTrackerCreate(void) {
         goto err_destroy_alloc_segments_map;
     }
 
-    handle->ipc_segments_map = critnib_new(NULL, NULL);
+    handle->ipc_segments_map =
+        critnib_new(free_ipc_segment, handle->ipc_info_allocator);
     if (!handle->ipc_segments_map) {
         goto err_destroy_ipc_info_allocator;
     }
