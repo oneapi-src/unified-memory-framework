@@ -629,7 +629,7 @@ static umf_result_t ze_memory_provider_initialize(void *params,
     umf_result_t result =
         query_min_page_size(ze_provider, &ze_provider->min_page_size);
     if (result != UMF_RESULT_SUCCESS) {
-        ze_memory_provider_finalize(provider);
+        ze_memory_provider_finalize(ze_provider);
         return result;
     }
 
