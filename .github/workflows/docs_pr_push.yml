@@ -1,36 +1,36 @@
-# This workflow is strictly for documentation updates. It triggers only when files related
-# to documentation or specific workflows are edited, ensuring that the job runs only for
-# relevant changes.
+# # This workflow is strictly for documentation updates. It triggers only when files related
+# # to documentation or specific workflows are edited, ensuring that the job runs only for
+# # relevant changes.
 
-name: Documentation PR/push
+# name: Documentation PR/push
 
-on:
-  push:
-    branches-ignore:
-      - 'dependabot/**'
-      - 'main'  # Ignore main branch as it's handled by docs.yml
-    paths:
-      - 'docs/**'
-      - 'include/**'
-      - .github/workflows/reusable_docs_build.yml
-      - .github/workflows/docs_pr_push.yml
-      - 'third_party/requirements.txt'
+# on:
+#   push:
+#     branches-ignore:
+#       - 'dependabot/**'
+#       - 'main'  # Ignore main branch as it's handled by docs.yml
+#     paths:
+#       - 'docs/**'
+#       - 'include/**'
+#       - .github/workflows/reusable_docs_build.yml
+#       - .github/workflows/docs_pr_push.yml
+#       - 'third_party/requirements.txt'
 
-  pull_request:
-    paths:
-      - 'docs/**'
-      - 'include/**'
-      - .github/workflows/reusable_docs_build.yml
-      - .github/workflows/docs_pr_push.yml
-      - 'third_party/requirements.txt'
+#   pull_request:
+#     paths:
+#       - 'docs/**'
+#       - 'include/**'
+#       - .github/workflows/reusable_docs_build.yml
+#       - .github/workflows/docs_pr_push.yml
+#       - 'third_party/requirements.txt'
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
-  cancel-in-progress: true
+# concurrency:
+#   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+#   cancel-in-progress: true
 
-permissions:
-  contents: read
+# permissions:
+#   contents: read
 
-jobs:
-  DocsBuild:
-    uses: ./.github/workflows/reusable_docs_build.yml
+# jobs:
+#   DocsBuild:
+#     uses: ./.github/workflows/reusable_docs_build.yml
