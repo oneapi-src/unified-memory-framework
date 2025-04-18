@@ -3,9 +3,9 @@ name: Nightly
 
 # This job is run at 04:00 UTC every day or on demand.
 on:
-  workflow_dispatch:
-  # schedule:
-  #   - cron: '0 4 * * *'
+  workflow_call:
+    paths:
+      - '.github/**'
 
 permissions:
   contents: read
