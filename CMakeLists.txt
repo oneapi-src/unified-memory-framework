@@ -73,10 +73,6 @@ umf_option(UMF_BUILD_EXAMPLES "Build UMF examples" ON)
 umf_option(UMF_BUILD_GPU_EXAMPLES "Build UMF GPU examples" OFF)
 umf_option(UMF_BUILD_FUZZTESTS "Build UMF fuzz tests" OFF)
 umf_option(
-    UMF_DISABLE_HWLOC
-    "Disable hwloc and UMF features requiring it (OS provider, memtargets, topology discovery)"
-    OFF)
-umf_option(
     UMF_LINK_HWLOC_STATICALLY
     "Link UMF with HWLOC library statically (proxy library will be disabled on Windows+Debug build)"
     OFF)
@@ -249,7 +245,7 @@ else()
     )
 endif()
 
-if(NOT UMF_DISABLE_HWLOC AND (NOT UMF_LINK_HWLOC_STATICALLY))
+if(NOT UMF_LINK_HWLOC_STATICALLY)
     pkg_check_modules(LIBHWLOC hwloc>=2.3.0)
     if(NOT LIBHWLOC_FOUND)
         find_package(LIBHWLOC 2.3.0 COMPONENTS hwloc)
@@ -267,108 +263,93 @@ if(NOT UMF_DISABLE_HWLOC AND (NOT UMF_LINK_HWLOC_STATICALLY))
     endif()
 endif()
 
-if(UMF_LINK_HWLOC_STATICALLY AND LINUX)
-    find_program(AUTORECONF_EXECUTABLE autoreconf)
-    if(NOT AUTORECONF_EXECUTABLE)
-        message(WARNING "autoreconf is not installed. Disabling hwloc.")
-        set(UMF_DISABLE_HWLOC ON)
-        set(UMF_LINK_HWLOC_STATICALLY OFF)
+if(UMF_LINK_HWLOC_STATICALLY)
+    if(NOT DEFINED UMF_HWLOC_REPO)
+        set(UMF_HWLOC_REPO "https://github.com/open-mpi/hwloc.git")
     endif()
-endif()
+    if(NOT DEFINED UMF_HWLOC_TAG)
+        set(UMF_HWLOC_TAG hwloc-2.10.0)
+    endif()
 
-if(UMF_DISABLE_HWLOC)
-    message(STATUS "hwloc is disabled, hence OS provider, memtargets, "
-                   "topology discovery, examples won't be available!")
-else()
-    if(UMF_LINK_HWLOC_STATICALLY)
-        if(NOT DEFINED UMF_HWLOC_REPO)
-            set(UMF_HWLOC_REPO "https://github.com/open-mpi/hwloc.git")
-        endif()
+    message(
+        STATUS "Will fetch hwloc from ${UMF_HWLOC_REPO} (tag: ${UMF_HWLOC_TAG})"
+    )
 
-        if(NOT DEFINED UMF_HWLOC_TAG)
-            set(UMF_HWLOC_TAG hwloc-2.10.0)
-        endif()
-        message(
-            STATUS
-                "Will fetch hwloc from ${UMF_HWLOC_REPO} (tag: ${UMF_HWLOC_TAG})"
-        )
-
-        if(WINDOWS)
-            set(HWLOC_ENABLE_TESTING OFF)
-            set(HWLOC_SKIP_LSTOPO ON)
-            set(HWLOC_SKIP_TOOLS ON)
-            set(HWLOC_SKIP_INCLUDES ON)
-
-            FetchContent_Declare(
-                hwloc_targ
-                GIT_REPOSITORY ${UMF_HWLOC_REPO}
-                GIT_TAG ${UMF_HWLOC_TAG}
-                SOURCE_SUBDIR contrib/windows-cmake/)
-            FetchContent_MakeAvailable(hwloc_targ)
-
-            set(HWLOC_LIB_PATH "")
-            if(CMAKE_GENERATOR STREQUAL "NMake Makefiles")
-                set(HWLOC_LIB_PATH "${hwloc_targ_BINARY_DIR}/hwloc.lib")
-            else()
-                set(HWLOC_LIB_PATH "${hwloc_targ_BINARY_DIR}/lib/hwloc.lib")
-            endif()
-
-            get_filename_component(LIBHWLOC_LIBRARY_DIRS ${HWLOC_LIB_PATH}
-                                   DIRECTORY)
-            set(LIBHWLOC_LIBRARIES ${HWLOC_LIB_PATH})
-            set(LIBHWLOC_INCLUDE_DIRS ${hwloc_targ_BINARY_DIR}/include)
-        else() # not Windows
-            FetchContent_Declare(
-                hwloc_targ
-                GIT_REPOSITORY ${UMF_HWLOC_REPO}
-                GIT_TAG ${UMF_HWLOC_TAG})
-            FetchContent_MakeAvailable(hwloc_targ)
-
-            add_custom_command(
-                COMMAND ./autogen.sh
-                WORKING_DIRECTORY ${hwloc_targ_SOURCE_DIR}
-                OUTPUT ${hwloc_targ_SOURCE_DIR}/configure)
-            add_custom_command(
-                COMMAND
-                    ./configure --prefix=${hwloc_targ_BINARY_DIR}
-                    --enable-static=yes --enable-shared=no --disable-libxml2
-                    --disable-pci --disable-levelzero --disable-opencl
-                    --disable-cuda --disable-nvml --disable-libudev
-                    --disable-rsmi CFLAGS=-fPIC CXXFLAGS=-fPIC
-                WORKING_DIRECTORY ${hwloc_targ_SOURCE_DIR}
-                OUTPUT ${hwloc_targ_SOURCE_DIR}/Makefile
-                DEPENDS ${hwloc_targ_SOURCE_DIR}/configure)
-            add_custom_command(
-                COMMAND make
-                WORKING_DIRECTORY ${hwloc_targ_SOURCE_DIR}
-                OUTPUT ${hwloc_targ_SOURCE_DIR}/lib/libhwloc.la
-                DEPENDS ${hwloc_targ_SOURCE_DIR}/Makefile)
-            add_custom_command(
-                COMMAND make install
-                WORKING_DIRECTORY ${hwloc_targ_SOURCE_DIR}
-                OUTPUT ${hwloc_targ_BINARY_DIR}/lib/libhwloc.a
-                DEPENDS ${hwloc_targ_SOURCE_DIR}/lib/libhwloc.la)
-
-            add_custom_target(hwloc_prod
-                              DEPENDS ${hwloc_targ_BINARY_DIR}/lib/libhwloc.a)
-            add_library(hwloc INTERFACE)
-            target_link_libraries(
-                hwloc INTERFACE ${hwloc_targ_BINARY_DIR}/lib/libhwloc.a)
-            add_dependencies(hwloc hwloc_prod)
-
-            set(LIBHWLOC_LIBRARY_DIRS ${hwloc_targ_BINARY_DIR}/lib)
-            set(LIBHWLOC_INCLUDE_DIRS ${hwloc_targ_BINARY_DIR}/include)
-            set(LIBHWLOC_LIBRARIES ${hwloc_targ_BINARY_DIR}/lib/libhwloc.a)
-        endif()
-    endif() # UMF_LINK_HWLOC_STATICALLY
-
-    message(STATUS "    LIBHWLOC_LIBRARIES = ${LIBHWLOC_LIBRARIES}")
-    message(STATUS "    LIBHWLOC_INCLUDE_DIRS = ${LIBHWLOC_INCLUDE_DIRS}")
-    message(STATUS "    LIBHWLOC_LIBRARY_DIRS = ${LIBHWLOC_LIBRARY_DIRS}")
-    message(STATUS "    LIBHWLOC_API_VERSION = ${LIBHWLOC_API_VERSION}")
     if(WINDOWS)
-        message(STATUS "    LIBHWLOC_DLL_DIRS = ${LIBHWLOC_DLL_DIRS}")
+        set(HWLOC_ENABLE_TESTING OFF)
+        set(HWLOC_SKIP_LSTOPO ON)
+        set(HWLOC_SKIP_TOOLS ON)
+        set(HWLOC_SKIP_INCLUDES ON)
+
+        FetchContent_Declare(
+            hwloc_targ
+            GIT_REPOSITORY ${UMF_HWLOC_REPO}
+            GIT_TAG ${UMF_HWLOC_TAG}
+            SOURCE_SUBDIR contrib/windows-cmake/)
+        FetchContent_MakeAvailable(hwloc_targ)
+
+        set(HWLOC_LIB_PATH "")
+        if(CMAKE_GENERATOR STREQUAL "NMake Makefiles")
+            set(HWLOC_LIB_PATH "${hwloc_targ_BINARY_DIR}/hwloc.lib")
+        else()
+            set(HWLOC_LIB_PATH "${hwloc_targ_BINARY_DIR}/lib/hwloc.lib")
+        endif()
+
+        get_filename_component(LIBHWLOC_LIBRARY_DIRS ${HWLOC_LIB_PATH}
+                               DIRECTORY)
+        set(LIBHWLOC_LIBRARIES ${HWLOC_LIB_PATH})
+        set(LIBHWLOC_INCLUDE_DIRS ${hwloc_targ_BINARY_DIR}/include)
+    else() # not Windows
+        FetchContent_Declare(
+            hwloc_targ
+            GIT_REPOSITORY ${UMF_HWLOC_REPO}
+            GIT_TAG ${UMF_HWLOC_TAG})
+        FetchContent_MakeAvailable(hwloc_targ)
+
+        add_custom_command(
+            COMMAND ./autogen.sh
+            WORKING_DIRECTORY ${hwloc_targ_SOURCE_DIR}
+            OUTPUT ${hwloc_targ_SOURCE_DIR}/configure)
+        add_custom_command(
+            COMMAND
+                ./configure --prefix=${hwloc_targ_BINARY_DIR}
+                --enable-static=yes --enable-shared=no --disable-libxml2
+                --disable-pci --disable-levelzero --disable-opencl
+                --disable-cuda --disable-nvml --disable-libudev --disable-rsmi
+                CFLAGS=-fPIC CXXFLAGS=-fPIC
+            WORKING_DIRECTORY ${hwloc_targ_SOURCE_DIR}
+            OUTPUT ${hwloc_targ_SOURCE_DIR}/Makefile
+            DEPENDS ${hwloc_targ_SOURCE_DIR}/configure)
+        add_custom_command(
+            COMMAND make
+            WORKING_DIRECTORY ${hwloc_targ_SOURCE_DIR}
+            OUTPUT ${hwloc_targ_SOURCE_DIR}/lib/libhwloc.la
+            DEPENDS ${hwloc_targ_SOURCE_DIR}/Makefile)
+        add_custom_command(
+            COMMAND make install
+            WORKING_DIRECTORY ${hwloc_targ_SOURCE_DIR}
+            OUTPUT ${hwloc_targ_BINARY_DIR}/lib/libhwloc.a
+            DEPENDS ${hwloc_targ_SOURCE_DIR}/lib/libhwloc.la)
+
+        add_custom_target(hwloc_prod
+                          DEPENDS ${hwloc_targ_BINARY_DIR}/lib/libhwloc.a)
+        add_library(hwloc INTERFACE)
+        target_link_libraries(hwloc
+                              INTERFACE ${hwloc_targ_BINARY_DIR}/lib/libhwloc.a)
+        add_dependencies(hwloc hwloc_prod)
+
+        set(LIBHWLOC_LIBRARY_DIRS ${hwloc_targ_BINARY_DIR}/lib)
+        set(LIBHWLOC_INCLUDE_DIRS ${hwloc_targ_BINARY_DIR}/include)
+        set(LIBHWLOC_LIBRARIES ${hwloc_targ_BINARY_DIR}/lib/libhwloc.a)
     endif()
+endif() # UMF_LINK_HWLOC_STATICALLY
+
+message(STATUS "    LIBHWLOC_LIBRARIES = ${LIBHWLOC_LIBRARIES}")
+message(STATUS "    LIBHWLOC_INCLUDE_DIRS = ${LIBHWLOC_INCLUDE_DIRS}")
+message(STATUS "    LIBHWLOC_LIBRARY_DIRS = ${LIBHWLOC_LIBRARY_DIRS}")
+message(STATUS "    LIBHWLOC_API_VERSION = ${LIBHWLOC_API_VERSION}")
+if(WINDOWS)
+    message(STATUS "    LIBHWLOC_DLL_DIRS = ${LIBHWLOC_DLL_DIRS}")
 endif()
 
 if(hwloc_targ_SOURCE_DIR)
@@ -463,7 +444,7 @@ if(WINDOWS AND UMF_USE_DEBUG_POSTFIX)
             -DUMF_BUILD_TESTS=OFF -DUMF_BUILD_GPU_TESTS=OFF
             -DUMF_BUILD_BENCHMARKS=OFF -DUMF_BUILD_BENCHMARKS_MT=OFF
             -DUMF_BUILD_EXAMPLES=OFF -DUMF_BUILD_GPU_EXAMPLES=OFF
-            -DUMF_BUILD_FUZZTESTS=OFF -DUMF_DISABLE_HWLOC=${UMF_DISABLE_HWLOC}
+            -DUMF_BUILD_FUZZTESTS=OFF
             -DUMF_LINK_HWLOC_STATICALLY=${UMF_LINK_HWLOC_STATICALLY}
             -DUMF_HWLOC_NAME=${UMF_HWLOC_NAME}
             -DUMF_INSTALL_RPATH=${UMF_INSTALL_RPATH} -DUMF_DEVELOPER_MODE=OFF
@@ -648,9 +629,7 @@ if(WINDOWS)
 endif()
 
 # set UMF_PROXY_LIB_ENABLED
-if(UMF_DISABLE_HWLOC)
-    message(STATUS "Disabling the proxy library, because HWLOC is disabled")
-elseif(NOT UMF_BUILD_SHARED_LIBRARY)
+if(NOT UMF_BUILD_SHARED_LIBRARY)
     # TODO enable this scenario
     message(
         STATUS
@@ -707,7 +686,7 @@ if(UMF_BUILD_BENCHMARKS)
     add_subdirectory(benchmark)
 endif()
 
-if(UMF_BUILD_EXAMPLES AND NOT UMF_DISABLE_HWLOC)
+if(UMF_BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif()
 

@@ -49,6 +49,7 @@ function(build_umf_test)
     set(TEST_TARGET_NAME test_${ARG_NAME})
 
     set(LIB_DIRS ${LIB_DIRS} ${LIBHWLOC_LIBRARY_DIRS})
+    set(INC_DIRS ${INC_DIRS} ${LIBHWLOC_INCLUDE_DIRS})
 
     if(UMF_BUILD_CUDA_PROVIDER)
         set(INC_DIRS ${INC_DIRS} ${CUDA_INCLUDE_DIRS})
@@ -57,10 +58,6 @@ function(build_umf_test)
 
     if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
         set(INC_DIRS ${INC_DIRS} ${LEVEL_ZERO_INCLUDE_DIRS})
-    endif()
-
-    if(NOT UMF_DISABLE_HWLOC)
-        set(INC_DIRS ${INC_DIRS} ${LIBHWLOC_INCLUDE_DIRS})
     endif()
 
     if(UMF_POOL_JEMALLOC_ENABLED)
@@ -250,7 +247,7 @@ add_umf_test(
     SRCS c_api/disjoint_pool.c ${BA_SOURCES_FOR_TEST}
     LIBS ${UMF_UTILS_FOR_TEST})
 
-if(LINUX AND (NOT UMF_DISABLE_HWLOC))
+if(LINUX)
     # this test uses the file provider
     add_umf_test(
         NAME disjoint_pool_file_prov
@@ -258,13 +255,11 @@ if(LINUX AND (NOT UMF_DISABLE_HWLOC))
         LIBS ${UMF_UTILS_FOR_TEST})
 endif()
 
-if(UMF_POOL_JEMALLOC_ENABLED
-   AND UMF_POOL_SCALABLE_ENABLED
-   AND (NOT UMF_DISABLE_HWLOC))
+if(UMF_POOL_JEMALLOC_ENABLED AND UMF_POOL_SCALABLE_ENABLED)
     add_umf_test(NAME c_api_multi_pool SRCS c_api/multi_pool.c)
 endif()
 
-if(UMF_POOL_JEMALLOC_ENABLED AND (NOT UMF_DISABLE_HWLOC))
+if(UMF_POOL_JEMALLOC_ENABLED)
     add_umf_test(
         NAME jemalloc_pool
         SRCS pools/jemalloc_pool.cpp malloc_compliance_tests.cpp
@@ -272,7 +267,7 @@ if(UMF_POOL_JEMALLOC_ENABLED AND (NOT UMF_DISABLE_HWLOC))
         LIBS ${UMF_UTILS_FOR_TEST})
 endif()
 
-if(UMF_POOL_SCALABLE_ENABLED AND (NOT UMF_DISABLE_HWLOC))
+if(UMF_POOL_SCALABLE_ENABLED)
     add_umf_test(
         NAME scalable_pool
         SRCS pools/scalable_pool.cpp malloc_compliance_tests.cpp
@@ -280,8 +275,8 @@ if(UMF_POOL_SCALABLE_ENABLED AND (NOT UMF_DISABLE_HWLOC))
         LIBS ${UMF_UTILS_FOR_TEST})
 endif()
 
-if(LINUX AND (NOT UMF_DISABLE_HWLOC)) # OS-specific functions are implemented
-                                      # only for Linux now
+if(LINUX) # OS-specific functions are implemented
+    # only for Linux now
     if(PkgConfig_FOUND)
         pkg_check_modules(LIBNUMA numa)
     endif()
@@ -402,13 +397,6 @@ else()
     add_umf_test(
         NAME provider_devdax_memory_not_impl
         SRCS provider_devdax_memory_not_impl.cpp
-        LIBS ${UMF_UTILS_FOR_TEST})
-endif()
-
-if(UMF_DISABLE_HWLOC)
-    add_umf_test(
-        NAME provider_os_memory_not_impl
-        SRCS provider_os_memory_not_impl.cpp
         LIBS ${UMF_UTILS_FOR_TEST})
 endif()
 
@@ -588,7 +576,7 @@ function(add_umf_ipc_test)
 endfunction()
 
 if(LINUX)
-    if(NOT UMF_DISABLE_HWLOC AND UMF_POOL_SCALABLE_ENABLED)
+    if(UMF_POOL_SCALABLE_ENABLED)
         build_umf_test(
             NAME ipc_os_prov_consumer
             SRCS ipc_os_prov_consumer.c common/ipc_common.c
@@ -667,8 +655,7 @@ endif()
 
 if(LINUX
    AND UMF_BUILD_SHARED_LIBRARY
-   AND UMF_POOL_SCALABLE_ENABLED
-   AND NOT UMF_DISABLE_HWLOC)
+   AND UMF_POOL_SCALABLE_ENABLED)
     add_umf_test(
         NAME init_teardown
         SRCS test_init_teardown.c
@@ -760,7 +747,7 @@ if(LINUX
         )
     endif()
 
-    if(EXAMPLES AND NOT UMF_DISABLE_HWLOC)
+    if(EXAMPLES)
         set(STANDALONE_CMAKE_OPTIONS
             "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
         )
