@@ -128,7 +128,7 @@ jobs:
 
     - name: Install benchmarking scripts deps
       run: |
-        python -m venv .venv
+        python3 -m venv .venv
         source .venv/bin/activate
         pip install -r ${{github.workspace}}/sc/devops/scripts/benchmarks/requirements.txt
 
@@ -147,20 +147,46 @@ jobs:
         echo "Selected core: $CORES"
         echo "CORES=$CORES" >> $GITHUB_ENV
 
-        ZE_AFFINITY_MASK=1
+        ZE_AFFINITY_MASK=0
         echo "ZE_AFFINITY_MASK=$ZE_AFFINITY_MASK" >> $GITHUB_ENV
 
-    - name: Run UMF benchmarks
+    - name: Download latest sycl
+      run: |
+        llvm_tag=$(curl -s https://api.github.com/repos/intel/llvm/releases | awk -F'"' '/"tag_name": "nightly/ {print $4; exit}')
+        download_url="https://github.com/intel/llvm/releases/download/${llvm_tag}/sycl_linux.tar.gz"
+        echo "llvm tag: $llvm_tag"
+        wget --no-verbose $download_url -O sycl_linux.tar.gz
+
+    - name: Unpack sycl
+      run: |
+        mkdir -p sycl
+        tar -xzf sycl_linux.tar.gz -C sycl --strip-components=1
+        rm sycl_linux.tar.gz
+        echo "SYCL_DIR=${{ github.workspace }}/sycl" >> $GITHUB_ENV
+
+    - name: Remove UMF libraries from sycl
+      if: false
+      run: rm -f ${{ env.SYCL_DIR }}/lib/libumf*
+
+    - name: Run sycl-ls
+      env:
+        LD_LIBRARY_PATH: ${{ env.SYCL_DIR }}/lib
+        SYCL_UR_TRACE: 1
+        SYCL_UR_USE_LEVEL_ZERO_V2: 1
+      run: ${{ env.SYCL_DIR }}/bin/sycl-ls
+
+    - name: Run benchmarks
       id: benchmarks
+      env:
+        LD_LIBRARY_PATH: ${{ env.SYCL_DIR }}/lib
+        CPATH: ${{ env.SYCL_DIR }}/include
       run: >
         source .venv/bin/activate &&
         taskset -c ${{ env.CORES }} ./sc/devops/scripts/benchmarks/main.py
         ~/bench_workdir_umf
-        --umf ${{env.BUILD_DIR}}
+        --umf ${{ env.BUILD_DIR }}
         --timeout 3000
-        --output-html remote
         --results-dir ${{ github.workspace }}/results-repo
-        --output-markdown
         ${{ env.bench_params }}
 
     # In case it failed to add a comment, we can still print the results.
@@ -196,6 +222,7 @@ jobs:
 
     - name: Commit data.json and results directory
       working-directory: results-repo
+      if: success()
       run: |
         git config --global user.name "GitHub Actions Bot"
         git config --global user.email "actions@github.com"
