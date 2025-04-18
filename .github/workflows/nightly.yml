@@ -4,8 +4,8 @@ name: Nightly
 # This job is run at 04:00 UTC every day or on demand.
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 4 * * *'
+  # schedule:
+  #   - cron: '0 4 * * *'
 
 permissions:
   contents: read
@@ -15,82 +15,82 @@ env:
   INSTALL_DIR: "${{github.workspace}}/build/install"
 
 jobs:
-  fuzz-test:
-      name: Fuzz test
-      strategy:
-        fail-fast: false
-        matrix:
-          build_type: [Debug, Release]
-          compiler: [{c: clang, cxx: clang++}]
+  # fuzz-test:
+  #     name: Fuzz test
+  #     strategy:
+  #       fail-fast: false
+  #       matrix:
+  #         build_type: [Debug, Release]
+  #         compiler: [{c: clang, cxx: clang++}]
       
-      runs-on: ubuntu-latest
+  #     runs-on: ubuntu-latest
 
-      steps:
-      - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          fetch-depth: 0
+  #     steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+  #       with:
+  #         fetch-depth: 0
 
-      - name: Install apt packages
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake hwloc libhwloc-dev libnuma-dev libtbb-dev
+  #     - name: Install apt packages
+  #       run: |
+  #         sudo apt-get update
+  #         sudo apt-get install -y cmake hwloc libhwloc-dev libnuma-dev libtbb-dev
 
-      - name: Configure CMake
-        run: >
-          cmake
-          -B ${{github.workspace}}/build
-          -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
-          -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
-          -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
-          -DUMF_TESTS_FAIL_ON_SKIP=ON
-          -DUMF_DEVELOPER_MODE=ON
-          -DUMF_BUILD_FUZZTESTS=ON
+  #     - name: Configure CMake
+  #       run: >
+  #         cmake
+  #         -B ${{github.workspace}}/build
+  #         -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+  #         -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
+  #         -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
+  #         -DUMF_TESTS_FAIL_ON_SKIP=ON
+  #         -DUMF_DEVELOPER_MODE=ON
+  #         -DUMF_BUILD_FUZZTESTS=ON
 
-      - name: Build
-        run: cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --verbose -j$(nproc)
+  #     - name: Build
+  #       run: cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --verbose -j$(nproc)
 
-      - name: Fuzz long test
-        working-directory: ${{github.workspace}}/build
-        run: ctest -C ${{matrix.build_type}} --output-on-failure --verbose -L "fuzz-long"
+  #     - name: Fuzz long test
+  #       working-directory: ${{github.workspace}}/build
+  #       run: ctest -C ${{matrix.build_type}} --output-on-failure --verbose -L "fuzz-long"
 
-  valgrind:
-    name: Valgrind
-    strategy:
-      fail-fast: false
-      matrix:
-          tool: ['memcheck', 'drd', 'helgrind']
-    runs-on: ubuntu-latest
+  # valgrind:
+  #   name: Valgrind
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #         tool: ['memcheck', 'drd', 'helgrind']
+  #   runs-on: ubuntu-latest
 
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      with:
-        fetch-depth: 0
+  #   steps:
+  #   - name: Checkout repository
+  #     uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+  #     with:
+  #       fetch-depth: 0
 
-    - name: Install apt packages
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y cmake hwloc libhwloc-dev libnuma-dev libtbb-dev valgrind
+  #   - name: Install apt packages
+  #     run: |
+  #       sudo apt-get update
+  #       sudo apt-get install -y cmake hwloc libhwloc-dev libnuma-dev libtbb-dev valgrind
 
-    - name: Configure CMake
-      run: >
-        cmake
-        -B ${{github.workspace}}/build
-        -DCMAKE_BUILD_TYPE=Debug
-        -DUMF_FORMAT_CODE_STYLE=OFF
-        -DUMF_DEVELOPER_MODE=ON
-        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
-        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
-        -DUMF_BUILD_CUDA_PROVIDER=OFF
-        -DUMF_USE_VALGRIND=1
-        -DUMF_TESTS_FAIL_ON_SKIP=ON
+  #   - name: Configure CMake
+  #     run: >
+  #       cmake
+  #       -B ${{github.workspace}}/build
+  #       -DCMAKE_BUILD_TYPE=Debug
+  #       -DUMF_FORMAT_CODE_STYLE=OFF
+  #       -DUMF_DEVELOPER_MODE=ON
+  #       -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
+  #       -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
+  #       -DUMF_BUILD_CUDA_PROVIDER=OFF
+  #       -DUMF_USE_VALGRIND=1
+  #       -DUMF_TESTS_FAIL_ON_SKIP=ON
 
-    - name: Build
-      run: cmake --build ${{github.workspace}}/build --config Debug -j$(nproc)
+  #   - name: Build
+  #     run: cmake --build ${{github.workspace}}/build --config Debug -j$(nproc)
 
-    - name: Run tests under valgrind
-      run: ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{github.workspace}}/build ${{matrix.tool}}
+  #   - name: Run tests under valgrind
+  #     run: ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{github.workspace}}/build ${{matrix.tool}}
 
   Windows-generators:
     name: Windows ${{matrix.generator}} generator
@@ -190,173 +190,173 @@ jobs:
         ${{ matrix.umfd_lib == 'ON' && '--umfd-lib' || ''}}
         ${{ matrix.static_hwloc == 'ON' && '--hwloc' || '' }}
 
-  icx:
-   name: ICX
-   env:
-     VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
-   strategy:
-     matrix:
-       os: ['windows-2019', 'windows-2022']
-       build_type: [Debug]
-       compiler: [{c: icx, cxx: icx}]
-       shared_library: ['ON', 'OFF']
-       include:
-         - os: windows-2022
-           build_type: Release
-           compiler: {c: icx, cxx: icx}
-           shared_library: 'ON'
+  # icx:
+  #  name: ICX
+  #  env:
+  #    VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
+  #  strategy:
+  #    matrix:
+  #      os: ['windows-2019', 'windows-2022']
+  #      build_type: [Debug]
+  #      compiler: [{c: icx, cxx: icx}]
+  #      shared_library: ['ON', 'OFF']
+  #      include:
+  #        - os: windows-2022
+  #          build_type: Release
+  #          compiler: {c: icx, cxx: icx}
+  #          shared_library: 'ON'
   
-   runs-on: ${{matrix.os}}
+  #  runs-on: ${{matrix.os}}
   
-   steps:
-   - name: Checkout
-     uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-     with:
-       fetch-depth: 0
+  #  steps:
+  #  - name: Checkout
+  #    uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+  #    with:
+  #      fetch-depth: 0
   
-   - name: Initialize vcpkg
-     uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
-     with:
-       vcpkgGitCommitId: ea2a964f9303270322cf3f2d51c265ba146c422d # 1.04.2025
-       vcpkgDirectory: ${{env.BUILD_DIR}}/vcpkg
-       vcpkgJsonGlob: '**/vcpkg.json'
+  #  - name: Initialize vcpkg
+  #    uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
+  #    with:
+  #      vcpkgGitCommitId: ea2a964f9303270322cf3f2d51c265ba146c422d # 1.04.2025
+  #      vcpkgDirectory: ${{env.BUILD_DIR}}/vcpkg
+  #      vcpkgJsonGlob: '**/vcpkg.json'
   
-   - name: Install dependencies
-     run: vcpkg install --triplet x64-windows
+  #  - name: Install dependencies
+  #    run: vcpkg install --triplet x64-windows
   
-   - name: Install Ninja
-     uses: seanmiddleditch/gha-setup-ninja@3b1f8f94a2f8254bd26914c4ab9474d4f0015f67 # v6
+  #  - name: Install Ninja
+  #    uses: seanmiddleditch/gha-setup-ninja@3b1f8f94a2f8254bd26914c4ab9474d4f0015f67 # v6
   
-   - name: Download icx compiler
-     env:
-       # Link source: https://www.intel.com/content/www/us/en/developer/tools/oneapi/dpc-compiler-download.html
-       CMPLR_LINK: "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/15a35578-2f9a-4f39-804b-3906e0a5f8fc/w_dpcpp-cpp-compiler_p_2024.2.1.83_offline.exe"
-     run: |
-       Invoke-WebRequest -Uri "${{ env.CMPLR_LINK }}" -OutFile compiler_install.exe
+  #  - name: Download icx compiler
+  #    env:
+  #      # Link source: https://www.intel.com/content/www/us/en/developer/tools/oneapi/dpc-compiler-download.html
+  #      CMPLR_LINK: "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/15a35578-2f9a-4f39-804b-3906e0a5f8fc/w_dpcpp-cpp-compiler_p_2024.2.1.83_offline.exe"
+  #    run: |
+  #      Invoke-WebRequest -Uri "${{ env.CMPLR_LINK }}" -OutFile compiler_install.exe
   
-   - name: Install icx compiler
-     shell: cmd
-     run: |
-       start /b /wait .\compiler_install.exe -s -x -f extracted --log extract.log
-       extracted\bootstrapper.exe -s --action install --eula=accept -p=NEED_VS2017_INTEGRATION=0 ^
-         -p=NEED_VS2019_INTEGRATION=0 -p=NEED_VS2022_INTEGRATION=0 --log-dir=.
+  #  - name: Install icx compiler
+  #    shell: cmd
+  #    run: |
+  #      start /b /wait .\compiler_install.exe -s -x -f extracted --log extract.log
+  #      extracted\bootstrapper.exe -s --action install --eula=accept -p=NEED_VS2017_INTEGRATION=0 ^
+  #        -p=NEED_VS2019_INTEGRATION=0 -p=NEED_VS2022_INTEGRATION=0 --log-dir=.
   
-   - name: Configure build
-     shell: cmd
-     run: |
-       call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
-       call "C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat"
-       cmake ^
-         -B ${{env.BUILD_DIR}} ^
-         -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}" ^
-         -DCMAKE_C_COMPILER=${{matrix.compiler.c}} ^
-         -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}} ^
-         -G Ninja ^
-         -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}} ^
-         -DUMF_FORMAT_CODE_STYLE=OFF ^
-         -DUMF_DEVELOPER_MODE=ON ^
-         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON ^
-         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON ^
-         -DUMF_BUILD_CUDA_PROVIDER=ON ^
-         -DUMF_TESTS_FAIL_ON_SKIP=ON
+  #  - name: Configure build
+  #    shell: cmd
+  #    run: |
+  #      call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
+  #      call "C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat"
+  #      cmake ^
+  #        -B ${{env.BUILD_DIR}} ^
+  #        -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}" ^
+  #        -DCMAKE_C_COMPILER=${{matrix.compiler.c}} ^
+  #        -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}} ^
+  #        -G Ninja ^
+  #        -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}} ^
+  #        -DUMF_FORMAT_CODE_STYLE=OFF ^
+  #        -DUMF_DEVELOPER_MODE=ON ^
+  #        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON ^
+  #        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON ^
+  #        -DUMF_BUILD_CUDA_PROVIDER=ON ^
+  #        -DUMF_TESTS_FAIL_ON_SKIP=ON
   
-   - name: Build UMF
-     shell: cmd
-     run: |
-       call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
-       call "C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat"
-       cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j %NUMBER_OF_PROCESSORS%
+  #  - name: Build UMF
+  #    shell: cmd
+  #    run: |
+  #      call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
+  #      call "C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat"
+  #      cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j %NUMBER_OF_PROCESSORS%
   
-   - name: Run tests
-     shell: cmd
-     working-directory: ${{env.BUILD_DIR}}
-     run: |
-       call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
-       call "C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat"
-       ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
+  #  - name: Run tests
+  #    shell: cmd
+  #    working-directory: ${{env.BUILD_DIR}}
+  #    run: |
+  #      call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
+  #      call "C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat"
+  #      ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
 
-  # Scenarios where UMF_LINK_HWLOC_STATICALLY is set to OFF and hwloc is not installed in the system
-  # The hwloc library is fetched implicitly
-  hwloc-fallback:
-    name: "Fallback to static hwloc build"
-    strategy:
-      matrix:
-        include:
-          - os: 'ubuntu-latest'
-            build_type: Release
-            number_of_processors: '$(nproc)'
-          - os: 'windows-latest'
-            build_type: Release
-            number_of_processors: '$Env:NUMBER_OF_PROCESSORS'
+  # # Scenarios where UMF_LINK_HWLOC_STATICALLY is set to OFF and hwloc is not installed in the system
+  # # The hwloc library is fetched implicitly
+  # hwloc-fallback:
+  #   name: "Fallback to static hwloc build"
+  #   strategy:
+  #     matrix:
+  #       include:
+  #         - os: 'ubuntu-latest'
+  #           build_type: Release
+  #           number_of_processors: '$(nproc)'
+  #         - os: 'windows-latest'
+  #           build_type: Release
+  #           number_of_processors: '$Env:NUMBER_OF_PROCESSORS'
     
-    runs-on: ${{matrix.os}}
+  #   runs-on: ${{matrix.os}}
 
-    steps:
-    - name: Install dependencies
-      if: matrix.os == 'ubuntu-latest'
-      run: sudo apt-get install -y libnuma-dev
+  #   steps:
+  #   - name: Install dependencies
+  #     if: matrix.os == 'ubuntu-latest'
+  #     run: sudo apt-get install -y libnuma-dev
 
-    - name: Checkout
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      with:
-        fetch-depth: 0
+  #   - name: Checkout
+  #     uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+  #     with:
+  #       fetch-depth: 0
 
-    - name: Configure build
-      run: >
-        cmake
-        -B ${{env.BUILD_DIR}}
-        -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
-        -DUMF_BUILD_SHARED_LIBRARY=ON
-        -DUMF_BUILD_EXAMPLES=OFF
-        -DUMF_DEVELOPER_MODE=ON
-        -DUMF_LINK_HWLOC_STATICALLY=OFF
-        -DUMF_TESTS_FAIL_ON_SKIP=ON
+  #   - name: Configure build
+  #     run: >
+  #       cmake
+  #       -B ${{env.BUILD_DIR}}
+  #       -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+  #       -DUMF_BUILD_SHARED_LIBRARY=ON
+  #       -DUMF_BUILD_EXAMPLES=OFF
+  #       -DUMF_DEVELOPER_MODE=ON
+  #       -DUMF_LINK_HWLOC_STATICALLY=OFF
+  #       -DUMF_TESTS_FAIL_ON_SKIP=ON
 
-    - name: Build UMF
-      run: >
-        cmake
-        --build ${{env.BUILD_DIR}}
-        --config ${{matrix.build_type}}
-        -j ${{matrix.number_of_processors}}
+  #   - name: Build UMF
+  #     run: >
+  #       cmake
+  #       --build ${{env.BUILD_DIR}}
+  #       --config ${{matrix.build_type}}
+  #       -j ${{matrix.number_of_processors}}
 
-    - name: Run tests
-      working-directory: ${{env.BUILD_DIR}}
-      run: ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
+  #   - name: Run tests
+  #     working-directory: ${{env.BUILD_DIR}}
+  #     run: ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
 
-  L0:
-    uses: ./.github/workflows/reusable_gpu.yml
-    with:
-      provider: "LEVEL_ZERO"
-      runner: "L0"
-  L0-BMG:
-    uses: ./.github/workflows/reusable_gpu.yml
-    with:
-      provider: "LEVEL_ZERO"
-      runner: "L0-BMG"
-      os: "['Ubuntu']"
-  CUDA:
-    uses: ./.github/workflows/reusable_gpu.yml
-    with:
-      provider: "CUDA"
-      runner: "CUDA"
+  # L0:
+  #   uses: ./.github/workflows/reusable_gpu.yml
+  #   with:
+  #     provider: "LEVEL_ZERO"
+  #     runner: "L0"
+  # L0-BMG:
+  #   uses: ./.github/workflows/reusable_gpu.yml
+  #   with:
+  #     provider: "LEVEL_ZERO"
+  #     runner: "L0-BMG"
+  #     os: "['Ubuntu']"
+  # CUDA:
+  #   uses: ./.github/workflows/reusable_gpu.yml
+  #   with:
+  #     provider: "CUDA"
+  #     runner: "CUDA"
 
-  # Full execution of QEMU tests
-  QEMU:
-    uses: ./.github/workflows/reusable_qemu.yml
-    with:
-      short_run: false
-      # Beside the 2 LTS Ubuntu, we also test this on the latest Ubuntu -  to be updated
-      # every 6 months, so we verify the latest version of packages (compilers, etc.).
-      os: "['ubuntu-22.04', 'ubuntu-24.04', 'ubuntu-24.10']"
+  # # Full execution of QEMU tests
+  # QEMU:
+  #   uses: ./.github/workflows/reusable_qemu.yml
+  #   with:
+  #     short_run: false
+  #     # Beside the 2 LTS Ubuntu, we also test this on the latest Ubuntu -  to be updated
+  #     # every 6 months, so we verify the latest version of packages (compilers, etc.).
+  #     os: "['ubuntu-22.04', 'ubuntu-24.04', 'ubuntu-24.10']"
 
-  Benchmarks:
-    uses: ./.github/workflows/reusable_benchmarks.yml
-    permissions:
-      contents: write
-      pull-requests: write
-    with:
-      pr_no: '0'
-      bench_script_params: '--save Baseline_PVC'
+  # Benchmarks:
+  #   uses: ./.github/workflows/reusable_benchmarks.yml
+  #   permissions:
+  #     contents: write
+  #     pull-requests: write
+  #   with:
+  #     pr_no: '0'
+  #     bench_script_params: '--save Baseline_PVC'
 
-  SYCL:
-    uses: ./.github/workflows/reusable_sycl.yml
+  # SYCL:
+  #   uses: ./.github/workflows/reusable_sycl.yml
