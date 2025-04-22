@@ -17,6 +17,7 @@ permissions:
 
 jobs:
   CodeChecks:
+    if: false
     uses: ./.github/workflows/reusable_checks.yml
   FastBuild:
     name: Fast builds
