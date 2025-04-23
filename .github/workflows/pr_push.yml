@@ -19,8 +19,6 @@ permissions:
   contents: read
 
 jobs:
-  env:
-    ENABLE_TESTING_JOBS: false
   CodeChecks:
     if: ($ENABLE_TESTING_JOBS == false) 
     uses: ./.github/workflows/reusable_checks.yml
