@@ -20,28 +20,28 @@ permissions:
 
 jobs:
   CodeChecks:
-    if: ${{ env.ENABLE_TESTING_JOBS }} 
+    if: ${{ env.ENABLE_TESTING_JOBS == false }} 
     uses: ./.github/workflows/reusable_checks.yml
   FastBuild:
-    if: ${{ env.ENABLE_TESTING_JOBS }} 
+    if: ${{ env.ENABLE_TESTING_JOBS == false }} 
     name: Fast builds
     needs: [CodeChecks]
     uses: ./.github/workflows/reusable_fast.yml
   Build:
-    if: ${{ env.ENABLE_TESTING_JOBS }} 
+    if: ${{ env.ENABLE_TESTING_JOBS == false }} 
     name: Basic builds
     needs: [FastBuild]
     uses: ./.github/workflows/reusable_basic.yml
   DevDax:
-    if: ${{ env.ENABLE_TESTING_JOBS }} 
+    if: ${{ env.ENABLE_TESTING_JOBS == false }} 
     needs: [FastBuild]
     uses: ./.github/workflows/reusable_dax.yml
   MultiNuma:
-    if: ${{ env.ENABLE_TESTING_JOBS }} 
+    if: ${{ env.ENABLE_TESTING_JOBS == false }} 
     needs: [FastBuild]
     uses: ./.github/workflows/reusable_multi_numa.yml
   L0:
-    if: ${{ env.ENABLE_TESTING_JOBS }} 
+    if: ${{ env.ENABLE_TESTING_JOBS == false }} 
     needs: [Build]
     uses: ./.github/workflows/reusable_gpu.yml
     with:
@@ -49,7 +49,7 @@ jobs:
       runner: "L0"
       shared_lib: "['ON']"
   L0-BMG:
-    if: ${{ env.ENABLE_TESTING_JOBS }} 
+    if: ${{ env.ENABLE_TESTING_JOBS == false }} 
     needs: [Build]
     uses: ./.github/workflows/reusable_gpu.yml
     with:
@@ -58,7 +58,7 @@ jobs:
       shared_lib: "['ON']"
       os: "['Ubuntu']"
   CUDA:
-    if: ${{ env.ENABLE_TESTING_JOBS }} 
+    if: ${{ env.ENABLE_TESTING_JOBS == false }} 
     needs: [Build]
     uses: ./.github/workflows/reusable_gpu.yml
     with:
@@ -66,38 +66,38 @@ jobs:
       runner: "CUDA"
       shared_lib: "['ON']"
   Sanitizers:
-    if: ${{ env.ENABLE_TESTING_JOBS }} 
+    if: ${{ env.ENABLE_TESTING_JOBS == false }} 
     needs: [FastBuild]
     uses: ./.github/workflows/reusable_sanitizers.yml
   QEMU:
-    if: ${{ env.ENABLE_TESTING_JOBS }} 
+    if: ${{ env.ENABLE_TESTING_JOBS == false }} 
     needs: [FastBuild]
     uses: ./.github/workflows/reusable_qemu.yml
     with:
       short_run: true
   ProxyLib:
-    if: ${{ env.ENABLE_TESTING_JOBS }} 
+    if: ${{ env.ENABLE_TESTING_JOBS == false }} 
     needs: [Build]
     uses: ./.github/workflows/reusable_proxy_lib.yml
   Valgrind:
-    if: ${{ env.ENABLE_TESTING_JOBS }} 
+    if: ${{ env.ENABLE_TESTING_JOBS == false }} 
     needs: [Build]
     uses: ./.github/workflows/reusable_valgrind.yml
   Coverage:
     
     # total coverage (on upstream only)
-    if: ${{ env.ENABLE_TESTING_JOBS }} 
+    if: ${{ env.ENABLE_TESTING_JOBS == false }} 
     needs: [Build, DevDax, L0, CUDA, MultiNuma, QEMU, ProxyLib]
     uses: ./.github/workflows/reusable_coverage.yml
     secrets: inherit
     with:
       trigger: "${{github.event_name}}"
   Coverage_partial:
-    if: ${{ env.ENABLE_TESTING_JOBS }} 
+    if: ${{ env.ENABLE_TESTING_JOBS == false }} 
     needs: [Build, QEMU, ProxyLib]
     uses: ./.github/workflows/reusable_coverage.yml
   CodeQL:
-    if: ${{ env.ENABLE_TESTING_JOBS }} 
+    if: ${{ env.ENABLE_TESTING_JOBS == false }} 
     needs: [Build]
     permissions:
       contents: read
