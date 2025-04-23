@@ -2,10 +2,11 @@
 name: Nightly.
 
 # This job is run at 04:00 UTC every day or on demand.
-on: workflow_dispatch
-
-permissions:
-  contents: read
+on:
+  push:
+    branches-ignore:
+      - 'dependabot/**'
+  pull_request:
 
 env:
   BUILD_DIR : "${{github.workspace}}/build"
