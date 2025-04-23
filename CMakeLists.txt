@@ -391,7 +391,7 @@ endif()
 # headers are not provided by the user (via setting UMF_LEVEL_ZERO_INCLUDE_DIR).
 if(UMF_BUILD_LEVEL_ZERO_PROVIDER AND (NOT UMF_LEVEL_ZERO_INCLUDE_DIR))
     set(LEVEL_ZERO_LOADER_REPO "https://github.com/oneapi-src/level-zero.git")
-    set(LEVEL_ZERO_LOADER_TAG v1.20.2)
+    set(LEVEL_ZERO_LOADER_TAG v1.21.9)
 
     message(
         STATUS
