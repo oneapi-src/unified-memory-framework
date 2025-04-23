@@ -84,9 +84,9 @@ jobs:
     needs: [Build]
     uses: ./.github/workflows/reusable_valgrind.yml
   Coverage:
-    if: $ENABLE_TESTING_JOBS
+    
     # total coverage (on upstream only)
-    if: github.repository == 'oneapi-src/unified-memory-framework'
+    if: $ENABLE_TESTING_JOBS
     needs: [Build, DevDax, L0, CUDA, MultiNuma, QEMU, ProxyLib]
     uses: ./.github/workflows/reusable_coverage.yml
     secrets: inherit
@@ -94,8 +94,6 @@ jobs:
       trigger: "${{github.event_name}}"
   Coverage_partial:
     if: $ENABLE_TESTING_JOBS
-    # partial coverage (on forks)
-    if: github.repository != 'oneapi-src/unified-memory-framework'
     needs: [Build, QEMU, ProxyLib]
     uses: ./.github/workflows/reusable_coverage.yml
   CodeQL:
