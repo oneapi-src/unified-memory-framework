@@ -136,6 +136,9 @@ jobs:
     - name: NMake Makefiles
       if: matrix.generator == 'Unix Makefiles'
       run: cmake -G "Unix Makefiles"
+      env:
+        UMF_TESTS_FAIL_ON_SKIP: ON
+
       
 
     - name: Configure MSVC environment
