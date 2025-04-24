@@ -137,7 +137,7 @@ jobs:
       if: matrix.generator == 'Unix Makefiles'
       env:
         UMF_TESTS_FAIL_ON_SKIP: ON
-      run: cmake -G "Unix Makefiles" UMF_TESTS_FAIL_ON_SKIP=ON
+      run: cmake -G "Unix Makefiles" -DUMF_TESTS_FAIL_ON_SKIP=ON
 
 
       
