@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -102,7 +102,7 @@ static void umfMemspaceHighestBandwidthInit(void) {
     umf_result_t ret =
         umfMemspaceHighestBandwidthCreate(&UMF_MEMSPACE_HIGHEST_BANDWIDTH);
     if (ret != UMF_RESULT_SUCCESS) {
-        LOG_ERR(
+        LOG_DEBUG(
             "Creating the highest bandwidth memspace failed with the error: %u",
             ret);
         assert(ret == UMF_RESULT_ERROR_NOT_SUPPORTED);
