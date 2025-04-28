@@ -101,7 +101,6 @@ static void umfMemspaceLowestLatencyInit(void) {
         LOG_DEBUG(
             "Creating the lowest latency memspace failed with the error: %u",
             ret);
-        assert(ret == UMF_RESULT_ERROR_NOT_SUPPORTED);
     }
 
 #if defined(_WIN32) && !defined(UMF_SHARED_LIBRARY)
