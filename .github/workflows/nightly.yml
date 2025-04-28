@@ -91,7 +91,7 @@ jobs:
   #     run: ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{github.workspace}}/build ${{matrix.tool}}
 
   Windows-generators:
-    name: Windows ${{matrix.generator}} generator
+    name: Windows ${{matrix.generator}} generator.
     strategy:
       matrix:
         build_type: [Debug, Release]
