@@ -28,7 +28,7 @@ env:
   UMF_TESTS_FSDAX_PATH: "/mnt/pmem1/file"
   UMF_TESTS_FSDAX_PATH_2: "/mnt/pmem1/file_2"
   BUILD_DIR : "${{github.workspace}}/build"
-  INSTL_DIR : "${{github.workspace}}/../install-dir"
+  INSTL_DIR : "${{github.workspace}}/install-dir"
   COVERAGE_DIR : "${{github.workspace}}/coverage"
   COVERAGE_NAME : "exports-coverage-dax"
   DAX_TESTS: "./test/test_provider_file_memory ./test/test_provider_devdax_memory"

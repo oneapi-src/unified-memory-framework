@@ -71,7 +71,8 @@ umf_option(UMF_BUILD_BENCHMARKS "Build UMF benchmarks" OFF)
 umf_option(UMF_BUILD_BENCHMARKS_MT "Build UMF multithreaded benchmarks" OFF)
 umf_option(UMF_BUILD_EXAMPLES "Build UMF examples" ON)
 umf_option(UMF_BUILD_GPU_EXAMPLES "Build UMF GPU examples" OFF)
-umf_option(UMF_BUILD_FUZZTESTS "Build UMF fuzz tests" OFF)
+umf_option(UMF_BUILD_FUZZTESTS
+           "Build UMF fuzz tests (supported only on Linux with Clang)" OFF)
 umf_option(
     UMF_DISABLE_HWLOC
     "Disable hwloc and UMF features requiring it (OS provider, memtargets, topology discovery)"
@@ -391,7 +392,7 @@ endif()
 # headers are not provided by the user (via setting UMF_LEVEL_ZERO_INCLUDE_DIR).
 if(UMF_BUILD_LEVEL_ZERO_PROVIDER AND (NOT UMF_LEVEL_ZERO_INCLUDE_DIR))
     set(LEVEL_ZERO_LOADER_REPO "https://github.com/oneapi-src/level-zero.git")
-    set(LEVEL_ZERO_LOADER_TAG v1.20.2)
+    set(LEVEL_ZERO_LOADER_TAG v1.21.9)
 
     message(
         STATUS
@@ -579,12 +580,33 @@ if(UMF_USE_MSAN)
                     "prevent reporting false-positives")
     add_sanitizer_flag(memory)
 endif()
+
 # Fuzzer instrumentation for the whole library
-if(UMF_BUILD_FUZZTESTS
-   AND CMAKE_CXX_COMPILER_ID MATCHES "Clang"
-   AND LINUX)
-    add_compile_options("-fsanitize=fuzzer-no-link")
-    add_link_options("-fsanitize=fuzzer-no-link")
+if(UMF_BUILD_FUZZTESTS)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND LINUX)
+        add_compile_options("-fsanitize=fuzzer-no-link")
+        add_link_options("-fsanitize=fuzzer-no-link")
+
+        # We need to find the fuzzer lib in the LLVM installation dir and link
+        # it statically as UMF does not define the main function used by fuzzer
+        # as well as __sancov_* functions
+        find_library(FUZZER_NO_MAIN_LIB
+                     NAMES libclang_rt.fuzzer_no_main-x86_64.a)
+
+        if(FUZZER_NO_MAIN_LIB)
+            message(STATUS "Found fuzzer lib: ${FUZZER_NO_MAIN_LIB}")
+            # Fuzzer lib requires libstdc++
+            link_libraries(${FUZZER_NO_MAIN_LIB} "stdc++")
+        else()
+            message(FATAL_ERROR "libclang_rt.fuzzer_no_main-x86_64 not found!")
+        endif()
+    else()
+        message(
+            FATAL_ERROR
+                "UMF_BUILD_FUZZTESTS option is set, but fuzz tests are supported only on Linux with Clang"
+        )
+        set(UMF_BUILD_FUZZTESTS OFF)
+    endif()
 endif()
 
 # A header-only lib to specify include directories in transitive dependencies

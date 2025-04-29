@@ -97,6 +97,20 @@ List of sanitizers available on Windows:
 
 Listed sanitizers can be enabled with appropriate [CMake options](#cmake-standard-options).
 
+### Fuzz testing
+
+To enable fuzz testing, the `UMF_BUILD_FUZZTESTS` CMake configuration flag must
+be set to `ON`. Note, that this feature is supported only on Linux and requires
+Clang. Additionally, ensure that the `CMAKE_PREFIX_PATH` includes the directory
+containing the libraries necessary for fuzzing (e.g., Clang's
+libclang_rt.fuzzer_no_main-x86_64.a).
+
+Example:
+
+```bash
+cmake -B build -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Debug -DUMF_BUILD_FUZZTESTS=ON -DCMAKE_PREFIX_PATH=/path/to/fuzzer/libs
+```
+
 ### CMake standard options
 
 List of options provided by CMake:
@@ -111,7 +125,7 @@ List of options provided by CMake:
 | UMF_BUILD_GPU_TESTS | Build UMF GPU tests | ON/OFF | OFF |
 | UMF_BUILD_BENCHMARKS | Build UMF benchmarks | ON/OFF | OFF |
 | UMF_BUILD_EXAMPLES | Build UMF examples | ON/OFF | ON |
-| UMF_BUILD_FUZZTESTS | Build UMF fuzz tests | ON/OFF | OFF |
+| UMF_BUILD_FUZZTESTS | Build UMF fuzz tests (supported only on Linux with Clang) | ON/OFF | OFF |
 | UMF_BUILD_GPU_EXAMPLES | Build UMF GPU examples | ON/OFF | OFF |
 | UMF_DEVELOPER_MODE | Enable additional developer checks | ON/OFF | OFF |
 | UMF_FORMAT_CODE_STYLE | Add clang, cmake, and black -format-check and -format-apply targets to make | ON/OFF | OFF |
