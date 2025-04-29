@@ -36,19 +36,34 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y cmake hwloc libhwloc-dev libnuma-dev libtbb-dev
 
+      - name: Find Clang fuzzer lib
+        run: |
+          CLANG_LIBS_DIR=$(find /usr/lib -name "libclang_rt.fuzzer_no_main-x86_64.a" -exec dirname {} \; | head -n 1)
+          echo "CLANG_LIBS_DIR=${CLANG_LIBS_DIR}" >> $GITHUB_ENV
+
       - name: Configure CMake
         run: >
           cmake
           -B ${{github.workspace}}/build
+          -DCMAKE_PREFIX_PATH=${{env.CLANG_LIBS_DIR}}
           -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
           -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
           -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
+          -DUMF_BUILD_SHARED_LIBRARY=ON
           -DUMF_TESTS_FAIL_ON_SKIP=ON
           -DUMF_DEVELOPER_MODE=ON
           -DUMF_BUILD_FUZZTESTS=ON
 
       - name: Build
         run: cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --verbose -j$(nproc)
+
+      - name: Run regular tests
+        working-directory: ${{github.workspace}}/build
+        run: ctest -C ${{matrix.build_type}} --output-on-failure -E "fuzz|test_init_teardown"
+
+      - name: Run regular tests with proxy library
+        working-directory: ${{env.BUILD_DIR}}
+        run: LD_PRELOAD=./lib/libumf_proxy.so ctest -C ${{matrix.build_type}} --output-on-failure -E "fuzz|test_init_teardown"
 
       - name: Fuzz long test
         working-directory: ${{github.workspace}}/build
