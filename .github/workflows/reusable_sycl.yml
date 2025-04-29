@@ -20,7 +20,7 @@ jobs:
         llvm_tag: ["latest", "nightly-2025-03-15"] # "latest" or llvm with UMF v0.11.0-dev4
 
     steps:
-    # Install sycl
+    # 1. Install sycl
     - name: Clean up
       if: always()
       run: rm -rf llvm sycl_linux.tar.gz
@@ -48,7 +48,7 @@ jobs:
         echo "${{ github.workspace }}/llvm/bin" >> $GITHUB_PATH
         echo "LD_LIBRARY_PATH=${{ github.workspace }}/llvm/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
 
-    # Install UMF
+    # 2. Install UMF
     - name: Checkout UMF
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
@@ -75,24 +75,26 @@ jobs:
     - name: Print installed lib files
       run: ls -l llvm/lib
 
-    # Test sycl-ls
+    # 3. Test sycl-ls
     - name: Run sycl-ls
       env:
         SYCL_UR_TRACE: 1
       run: |
+        which clang++
+        which sycl-ls
         ./llvm/bin/sycl-ls | tee sycl-ls-output.log
         grep -q "level_zero:gpu" sycl-ls-output.log
 
-    # Test several sycl e2e test
-    # These are arbitrarily picked tests to check the compatibility
-    # Note that some intel/llvm tests may be flaky, although I haven't noticed such a behavior in the following tests
+    # 4. Test several sycl e2e test
+    # Arbitrarily picked tests to check the compatibility. Note that some intel/llvm tests may be flaky
+    # Checkout the repo in the version that matches the downloaded version
     - name: Checkout sycl
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         repository: intel/llvm
         path: sycl_repo
         fetch-depth: 1
-        ref: sycl
+        ref: ${{ matrix.llvm_tag == 'latest' && 'sycl' || matrix.llvm_tag }}
 
     - name: Create sycl tests build directory
       run: |
@@ -100,12 +102,16 @@ jobs:
         mkdir $TESTS_BUILD_DIR
         echo "TESTS_BUILD_DIR=$TESTS_BUILD_DIR" >> $GITHUB_ENV
 
+    # Paths of some tests have changed in the latest llvm release
+    # TODO: when new tagged SYCL version is used (and it's later than 23.04) - remove the extra test paths
     - name: Build sycl e2e tests
       working-directory: sycl_repo
       run: |
         ${{github.workspace}}/llvm/bin/clang++ -fsycl sycl/test-e2e/AbiNeutral/submit-kernel.cpp -o ${{env.TESTS_BUILD_DIR}}/submit-kernel -Iinclude
-        ${{github.workspace}}/llvm/bin/clang++ -fsycl sycl/test-e2e/Adapters/interop-l0-direct.cpp -o ${{env.TESTS_BUILD_DIR}}/interop-l0-direct -lze_loader -Iinclude
-        ${{github.workspace}}/llvm/bin/clang++ -fsycl sycl/test-e2e/Adapters/level_zero_interop_memcpy.cpp -o ${{env.TESTS_BUILD_DIR}}/level_zero_interop_memcpy -Iinclude
+        ${{github.workspace}}/llvm/bin/clang++ -fsycl sycl/test-e2e/Adapters/level_zero/interop-direct.cpp -o ${{env.TESTS_BUILD_DIR}}/l0-interop-direct -lze_loader -Iinclude || \
+          ${{github.workspace}}/llvm/bin/clang++ -fsycl sycl/test-e2e/Adapters/interop-l0-direct.cpp -o ${{env.TESTS_BUILD_DIR}}/interop-l0-direct -lze_loader -Iinclude
+        ${{github.workspace}}/llvm/bin/clang++ -fsycl sycl/test-e2e/Adapters/level_zero/interop_memcpy.cpp -o ${{env.TESTS_BUILD_DIR}}/l0-interop-memcpy -Iinclude || \
+          ${{github.workspace}}/llvm/bin/clang++ -fsycl sycl/test-e2e/Adapters/level_zero_interop_memcpy.cpp -o ${{env.TESTS_BUILD_DIR}}/level_zero_interop_memcpy -Iinclude
         ${{github.workspace}}/llvm/bin/clang++ -fsycl sycl/test-e2e/Basic/build_log.cpp -o ${{env.TESTS_BUILD_DIR}}/build_log -Iinclude
         ${{github.workspace}}/llvm/bin/clang++ -fsycl sycl/test-e2e/PerformanceTests/ParallelFor/parallel_for_range_roundup.cpp -fsycl-range-rounding=force -o ${{env.TESTS_BUILD_DIR}}/parallel_for_range_roundup -Iinclude
         ${{github.workspace}}/llvm/bin/clang++ -fsycl sycl/test-e2e/USM/fill_any_size.cpp -o ${{env.TESTS_BUILD_DIR}}/fill_any_size -Iinclude
@@ -116,9 +122,9 @@ jobs:
         UMF_LOG: "level:debug;flush:debug;output:stdout;pid:yes"
       working-directory: ${{env.TESTS_BUILD_DIR}}
       run: |
-        echo "---Run submit-kernel test" && ./submit-kernel
-        echo "---Run interop-l0-direct test" && ./interop-l0-direct
-        echo "---Run level_zero_interop_memcpy test" && ./level_zero_interop_memcpy
-        echo "---Run build_log test" && ./build_log
-        echo "---Run parallel_for_range_roundup test" && ./parallel_for_range_roundup
-        echo "---Run fill_any_size test" && ./fill_any_size
+        for test in ./*; do
+          if [ -x "$test" ] && [ ! -d "$test" ]; then
+            echo "### Running test: $test"
+            "$test"
+          fi
+        done
