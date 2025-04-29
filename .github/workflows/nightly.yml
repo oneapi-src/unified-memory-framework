@@ -46,6 +46,10 @@ jobs:
   
    - name: Install dependencies
      run: vcpkg install --triplet x64-windows
+
+   - name: choco install make
+     run: choco install make
+     
   
    - name: Install Ninja
      uses: seanmiddleditch/gha-setup-ninja@3b1f8f94a2f8254bd26914c4ab9474d4f0015f67 # v6
