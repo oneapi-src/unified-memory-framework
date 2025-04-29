@@ -391,7 +391,7 @@ if(LINUX AND (NOT UMF_DISABLE_HWLOC)) # OS-specific functions are implemented
             LIBS ${UMF_UTILS_FOR_TEST})
     endif()
 
-    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND UMF_BUILD_FUZZTESTS)
+    if(UMF_BUILD_FUZZTESTS)
         add_subdirectory(fuzz)
     endif()
 else()
