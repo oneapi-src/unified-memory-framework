@@ -79,6 +79,7 @@ jobs:
    - name: Configure build
      shell: cmd
      run: |
+       sh -l
        call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
        call "C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat"
        cmake ^
