@@ -47,11 +47,12 @@ jobs:
    - name: Install dependencies
      run: vcpkg install --triplet x64-windows
 
-   - name: Download and install win64devkit
-     shell: cmd
+   - name: Download win64devkit
      run: |
-       curl -L https://github.com/skeeto/w64devkit/archive/refs/tags/v2.2.0.zip --output w64devkit.zip
-       Expand-Archive -force -Path w64devkit.zip -DestinationPath .
+       Invoke-RestMethod "https://github.com/skeeto/w64devkit/archive/refs/tags/v2.2.0.zip" -OutFile 'w64devkit.zip'
+   - name: install win64devkit
+     run: |
+       Expand-Archive ./w64devkit.zip -DestinationPath .
 
    - name: Add w64devkit to PATH
      run: |
