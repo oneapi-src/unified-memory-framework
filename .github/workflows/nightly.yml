@@ -50,7 +50,7 @@ jobs:
    - name: Download and install win64devkit
      shell: cmd
      run: |
-       curl -L https://github.com/skeeto/w64devkit/releases/download/v2.2.0/w64devkit-x64-2.2.0.7z.exe --output w64devkit.zip
+       curl -L https://github.com/skeeto/w64devkit/archive/refs/tags/v2.2.0.zip --output w64devkit.zip
        Expand-Archive -force -Path w64devkit.zip -DestinationPath .
 
    - name: Add w64devkit to PATH
