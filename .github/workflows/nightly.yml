@@ -47,8 +47,14 @@ jobs:
    - name: Install dependencies
      run: vcpkg install --triplet x64-windows
 
-   - name: choco install make
-     run: choco install make
+   - name: Download and install win64devkit
+     run: |
+       curl -L https://github.com/skeeto/w64devkit/releases/download/v2.2.0/w64devkit-x64-2.2.0.7z.exe --output w64devkit.zip
+       Expand-Archive w64devkit.zip -DestinationPath .
+
+   - name: Add w64devkit to PATH
+     run: |
+       echo "$(Get-Location)\w64devkit\bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
      
   
    - name: Install Ninja
