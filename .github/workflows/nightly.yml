@@ -46,17 +46,23 @@ jobs:
   
    - name: Install dependencies
      run: vcpkg install --triplet x64-windows
+   - name: Install llvm-mingw
+     run: |
+       curl -LO https://github.com/mstorsjo/llvm-mingw/releases/download/20250430/llvm-mingw-20250430-ucrt-x86_64.zip
+       powershell Expand-Archive llvm-mingw*.zip -DestinationPath .
+       del llvm-mingw*.zip
+       mv llvm-mingw* c:\llvm-mingw
+       echo "c:\llvm-mingw\bin" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
+   # - name: Download win64devkit
+   #   run: |
+   #     Invoke-RestMethod "https://github.com/skeeto/w64devkit/archive/refs/tags/v2.2.0.zip" -OutFile 'w64devkit.zip'
+   # - name: install win64devkit
+   #   run: |
+   #     Expand-Archive ./w64devkit.zip -DestinationPath .
 
-   - name: Download win64devkit
-     run: |
-       Invoke-RestMethod "https://github.com/skeeto/w64devkit/archive/refs/tags/v2.2.0.zip" -OutFile 'w64devkit.zip'
-   - name: install win64devkit
-     run: |
-       Expand-Archive ./w64devkit.zip -DestinationPath .
-
-   - name: Add w64devkit to PATH
-     run: |
-       echo "$(Get-Location)\w64devkit\bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
+   # - name: Add w64devkit to PATH
+   #   run: |
+   #     echo "$(Get-Location)\w64devkit\bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
      
   
    - name: Install Ninja
