@@ -130,6 +130,7 @@ jobs:
       run: |
         python -m venv .venv
         source .venv/bin/activate
+        echo "$PATH" >> $GITHUB_PATH
         pip install -r ${{github.workspace}}/sc/devops/scripts/benchmarks/requirements.txt
 
     - name: Set core range and GPU mask
@@ -153,7 +154,6 @@ jobs:
     - name: Run UMF benchmarks
       id: benchmarks
       run: >
-        source .venv/bin/activate &&
         taskset -c ${{ env.CORES }} ./sc/devops/scripts/benchmarks/main.py
         ~/bench_workdir_umf
         --umf ${{env.BUILD_DIR}}
