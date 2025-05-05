@@ -24,7 +24,6 @@ jobs:
         level_zero_provider: ['ON']
         cuda_provider: ['ON']
         install_tbb: ['ON']
-        disable_hwloc: ['OFF']
         link_hwloc_statically: ['OFF']
         include:
           - os: 'ubuntu-22.04'
@@ -34,7 +33,6 @@ jobs:
             level_zero_provider: 'ON'
             cuda_provider: 'ON'
             install_tbb: 'ON'
-            disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
           - os: 'ubuntu-22.04'
             build_type: Release
@@ -43,7 +41,6 @@ jobs:
             level_zero_provider: 'ON'
             cuda_provider: 'ON'
             install_tbb: 'ON'
-            disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
           - os: 'ubuntu-24.04'
             build_type: Debug
@@ -52,7 +49,6 @@ jobs:
             level_zero_provider: 'ON'
             cuda_provider: 'ON'
             install_tbb: 'ON'
-            disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
           # test level_zero_provider='OFF' and cuda_provider='OFF'
           - os: 'ubuntu-22.04'
@@ -62,7 +58,6 @@ jobs:
             level_zero_provider: 'OFF'
             cuda_provider: 'OFF'
             install_tbb: 'ON'
-            disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
           # test icx compiler
           - os: 'ubuntu-22.04'
@@ -72,7 +67,6 @@ jobs:
             level_zero_provider: 'ON'
             cuda_provider: 'ON'
             install_tbb: 'ON'
-            disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
           # test lld linker
           - os: 'ubuntu-24.04'
@@ -82,7 +76,6 @@ jobs:
             level_zero_provider: 'ON'
             cuda_provider: 'ON'
             install_tbb: 'ON'
-            disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
             llvm_linker: '-DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" -DCMAKE_MODULE_LINKER_FLAGS="-fuse-ld=lld" -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld"'
           # test without installing TBB
@@ -93,16 +86,6 @@ jobs:
             level_zero_provider: 'ON'
             cuda_provider: 'ON'
             install_tbb: 'OFF'
-            disable_hwloc: 'OFF'
-            link_hwloc_statically: 'OFF'
-          - os: 'ubuntu-22.04'
-            build_type: Debug
-            compiler: {c: gcc, cxx: g++}
-            shared_library: 'ON'
-            level_zero_provider: 'ON'
-            cuda_provider: 'ON'
-            install_tbb: 'ON'
-            disable_hwloc: 'ON'
             link_hwloc_statically: 'OFF'
           - os: 'ubuntu-22.04'
             build_type: Release
@@ -111,7 +94,6 @@ jobs:
             level_zero_provider: 'ON'
             cuda_provider: 'ON'
             install_tbb: 'ON'
-            disable_hwloc: 'OFF'
             link_hwloc_statically: 'ON'
     runs-on: ${{matrix.os}}
 
@@ -127,7 +109,6 @@ jobs:
         sudo apt-get install -y clang cmake libnuma-dev lcov
 
     - name: Install hwloc
-      if: matrix.disable_hwloc == 'OFF'
       run: |
         sudo apt-get install -y libhwloc-dev
 
@@ -170,7 +151,6 @@ jobs:
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
         -DUMF_TESTS_FAIL_ON_SKIP=ON
-        -DUMF_DISABLE_HWLOC=${{matrix.disable_hwloc}}
         -DUMF_LINK_HWLOC_STATICALLY=${{matrix.link_hwloc_statically}}
         ${{ matrix.build_type == 'Debug' && matrix.compiler.c == 'gcc' && '-DUMF_USE_COVERAGE=ON' || '' }}
         ${{ matrix.llvm_linker || '' }}
@@ -190,7 +170,7 @@ jobs:
       if:  ${{ matrix.build_type == 'Debug' && matrix.compiler.c == 'gcc' }}
       working-directory: ${{env.BUILD_DIR}}
       run: |
-        export COVERAGE_FILE_NAME=${{env.COVERAGE_NAME}}-${{matrix.os}}-shared-${{matrix.shared_library}}-no_hwloc-${{matrix.disable_hwloc}}
+        export COVERAGE_FILE_NAME=${{env.COVERAGE_NAME}}-${{matrix.os}}-shared-${{matrix.shared_library}}
         echo "COVERAGE_FILE_NAME: $COVERAGE_FILE_NAME"
         ../scripts/coverage/coverage_capture.sh $COVERAGE_FILE_NAME
         mkdir -p ${{env.COVERAGE_DIR}}
@@ -199,7 +179,7 @@ jobs:
     - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       if:  ${{ matrix.build_type == 'Debug' && matrix.compiler.c == 'gcc' }}
       with:
-        name: ${{env.COVERAGE_NAME}}-${{matrix.os}}-shared-${{matrix.shared_library}}-no_hwloc-${{matrix.disable_hwloc}}
+        name: ${{env.COVERAGE_NAME}}-${{matrix.os}}-shared-${{matrix.shared_library}}
         path: ${{env.COVERAGE_DIR}}
 
     - name: Remove the installation directory
@@ -212,7 +192,7 @@ jobs:
         --build-dir ${{env.BUILD_DIR}}
         --install-dir ${{env.INSTL_DIR}}
         --build-type ${{matrix.build_type}}
-        ${{ matrix.install_tbb == 'ON' && matrix.disable_hwloc != 'ON' && matrix.shared_library == 'ON' && '--proxy' || '' }}
+        ${{ matrix.install_tbb == 'ON' && matrix.shared_library == 'ON' && '--proxy' || '' }}
         --umf-version ${{env.UMF_VERSION}}
         ${{ matrix.shared_library == 'ON' && '--shared-library' || '' }}
 

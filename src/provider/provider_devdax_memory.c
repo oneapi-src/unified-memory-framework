@@ -19,7 +19,7 @@
 
 #include "utils_log.h"
 
-#if defined(_WIN32) || defined(UMF_NO_HWLOC)
+#if defined(_WIN32)
 
 const umf_memory_provider_ops_t *umfDevDaxMemoryProviderOps(void) {
     // not supported
@@ -62,7 +62,7 @@ umf_result_t umfDevDaxMemoryProviderParamsSetProtection(
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
-#else // !defined(_WIN32) && !defined(UMF_NO_HWLOC)
+#else // !defined(_WIN32)
 
 #include "base_alloc_global.h"
 #include "coarse.h"
@@ -658,4 +658,4 @@ umf_result_t umfDevDaxMemoryProviderParamsSetProtection(
     return UMF_RESULT_SUCCESS;
 }
 
-#endif // !defined(_WIN32) && !defined(UMF_NO_HWLOC)
+#endif // !defined(_WIN32)

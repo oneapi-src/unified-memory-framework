@@ -20,84 +20,11 @@
 #include <umf/memory_provider_ops.h>
 #include <umf/providers/provider_os_memory.h>
 
-#include "utils_assert.h"
-// OS Memory Provider requires HWLOC
-#if defined(UMF_NO_HWLOC)
-
-const umf_memory_provider_ops_t *umfOsMemoryProviderOps(void) { return NULL; }
-
-umf_result_t umfOsMemoryProviderParamsCreate(
-    umf_os_memory_provider_params_handle_t *hParams) {
-    (void)hParams;
-    return UMF_RESULT_ERROR_NOT_SUPPORTED;
-}
-
-umf_result_t umfOsMemoryProviderParamsDestroy(
-    umf_os_memory_provider_params_handle_t hParams) {
-    (void)hParams;
-    return UMF_RESULT_ERROR_NOT_SUPPORTED;
-}
-
-umf_result_t umfOsMemoryProviderParamsSetProtection(
-    umf_os_memory_provider_params_handle_t hParams, unsigned protection) {
-    (void)hParams;
-    (void)protection;
-    return UMF_RESULT_ERROR_NOT_SUPPORTED;
-}
-
-umf_result_t umfOsMemoryProviderParamsSetVisibility(
-    umf_os_memory_provider_params_handle_t hParams,
-    umf_memory_visibility_t visibility) {
-    (void)hParams;
-    (void)visibility;
-    return UMF_RESULT_ERROR_NOT_SUPPORTED;
-}
-
-umf_result_t umfOsMemoryProviderParamsSetShmName(
-    umf_os_memory_provider_params_handle_t hParams, const char *shm_name) {
-    (void)hParams;
-    (void)shm_name;
-    return UMF_RESULT_ERROR_NOT_SUPPORTED;
-}
-
-umf_result_t umfOsMemoryProviderParamsSetNumaList(
-    umf_os_memory_provider_params_handle_t hParams, unsigned *numa_list,
-    unsigned numa_list_len) {
-    (void)hParams;
-    (void)numa_list;
-    (void)numa_list_len;
-    return UMF_RESULT_ERROR_NOT_SUPPORTED;
-}
-
-umf_result_t umfOsMemoryProviderParamsSetNumaMode(
-    umf_os_memory_provider_params_handle_t hParams, umf_numa_mode_t numa_mode) {
-    (void)hParams;
-    (void)numa_mode;
-    return UMF_RESULT_ERROR_NOT_SUPPORTED;
-}
-
-umf_result_t umfOsMemoryProviderParamsSetPartSize(
-    umf_os_memory_provider_params_handle_t hParams, size_t part_size) {
-    (void)hParams;
-    (void)part_size;
-    return UMF_RESULT_ERROR_NOT_SUPPORTED;
-}
-
-umf_result_t umfOsMemoryProviderParamsSetPartitions(
-    umf_os_memory_provider_params_handle_t hParams,
-    umf_numa_split_partition_t *partitions, unsigned partitions_len) {
-    (void)hParams;
-    (void)partitions;
-    (void)partitions_len;
-    return UMF_RESULT_ERROR_NOT_SUPPORTED;
-}
-
-#else // !defined(UMF_NO_HWLOC)
-
 #include "base_alloc_global.h"
 #include "critnib.h"
 #include "libumf.h"
 #include "provider_os_memory_internal.h"
+#include "utils_assert.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
 #include "utils_log.h"
@@ -1653,5 +1580,3 @@ umf_result_t umfOsMemoryProviderParamsSetPartitions(
 
     return UMF_RESULT_SUCCESS;
 }
-
-#endif // !defined(UMF_NO_HWLOC)
