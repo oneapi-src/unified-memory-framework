@@ -181,8 +181,10 @@ class UmfInstaller:
                     f"Error: Installation directory '{self.install_dir}' is not empty"
                 )
 
-        install_cmd = f"cmake --install {self.build_dir} --config {self.build_type.title()} --prefix {self.install_dir}"
+        install_cmd = f"cmake --build {self.build_dir} --config {self.build_type.title()} --target install"
+
         try:
+            print(f"Running command: {install_cmd}", flush=True)
             subprocess.run(install_cmd.split()).check_returncode()  # nosec B603
         except subprocess.CalledProcessError:
             sys.exit(f"Error: UMF installation command '{install_cmd}' failed")

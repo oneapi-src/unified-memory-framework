@@ -2,7 +2,9 @@
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
+message(STATUS "CMake version: ${CMAKE_VERSION}")
 cmake_minimum_required(VERSION 3.14.0 FATAL_ERROR)
+
 # needed when UMF is used as an external project
 set(UMF_CMAKE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
