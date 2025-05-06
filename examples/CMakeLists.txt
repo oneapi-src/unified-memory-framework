@@ -41,7 +41,7 @@ if(UMF_POOL_SCALABLE_ENABLED)
     endif()
 endif()
 
-if(UMF_BUILD_GPU_EXAMPLES AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
+if(UMF_BUILD_GPU_EXAMPLES AND UMF_LEVEL_ZERO_ENABLED)
     set(EXAMPLE_NAME umf_example_level_zero_shared_memory)
 
     add_umf_executable(
@@ -56,7 +56,8 @@ if(UMF_BUILD_GPU_EXAMPLES AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
                 ${UMF_CMAKE_SOURCE_DIR}/include
                 ${UMF_CMAKE_SOURCE_DIR}/examples/common)
 
-    target_link_directories(${EXAMPLE_NAME} PRIVATE ${LIBHWLOC_LIBRARY_DIRS})
+    target_link_directories(${EXAMPLE_NAME} PRIVATE ${LIBHWLOC_LIBRARY_DIRS}
+                            ${ZE_LOADER_LIBRARY_DIRS})
 
     add_test(
         NAME ${EXAMPLE_NAME}
@@ -70,25 +71,13 @@ if(UMF_BUILD_GPU_EXAMPLES AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
         set_property(TEST ${EXAMPLE_NAME} PROPERTY ENVIRONMENT_MODIFICATION
                                                    "${DLL_PATH_LIST}")
     endif()
-    if(LINUX)
-        # prepend LD_LIBRARY_PATH with ${CMAKE_BINARY_DIR}/lib it is required
-        # because ${CMAKE_BINARY_DIR}/lib contains libze_loader.so and tests
-        # should use it instead of system one.
-        set_property(
-            TEST ${EXAMPLE_NAME}
-            PROPERTY ENVIRONMENT_MODIFICATION
-                     "LD_LIBRARY_PATH=path_list_prepend:${CMAKE_BINARY_DIR}/lib"
-        )
-    endif()
 else()
     message(STATUS "GPU Level Zero shared memory example requires "
                    "UMF_BUILD_GPU_EXAMPLES and UMF_BUILD_LEVEL_ZERO_PROVIDER "
                    "to be turned ON - skipping")
 endif()
 
-if(UMF_BUILD_GPU_EXAMPLES
-   AND UMF_BUILD_CUDA_PROVIDER
-   AND UMF_CUDA_ENABLED)
+if(UMF_BUILD_GPU_EXAMPLES AND UMF_CUDA_ENABLED)
     set(EXAMPLE_NAME umf_example_cuda_shared_memory)
 
     add_umf_executable(
@@ -127,7 +116,7 @@ endif()
 # TODO: it looks like there is some problem with IPC implementation in Level
 # Zero on windows
 if(UMF_BUILD_GPU_EXAMPLES
-   AND UMF_BUILD_LEVEL_ZERO_PROVIDER
+   AND UMF_LEVEL_ZERO_ENABLED
    AND LINUX)
     set(EXAMPLE_NAME umf_example_ipc_level_zero)
 
@@ -143,7 +132,8 @@ if(UMF_BUILD_GPU_EXAMPLES
                 ${UMF_CMAKE_SOURCE_DIR}/include
                 ${UMF_CMAKE_SOURCE_DIR}/examples/common)
 
-    target_link_directories(${EXAMPLE_NAME} PRIVATE ${LIBHWLOC_LIBRARY_DIRS})
+    target_link_directories(${EXAMPLE_NAME} PRIVATE ${LIBHWLOC_LIBRARY_DIRS}
+                            ${ZE_LOADER_LIBRARY_DIRS})
 
     add_test(
         NAME ${EXAMPLE_NAME}
@@ -156,16 +146,6 @@ if(UMF_BUILD_GPU_EXAMPLES
         # append PATH to DLLs
         set_property(TEST ${EXAMPLE_NAME} PROPERTY ENVIRONMENT_MODIFICATION
                                                    "${DLL_PATH_LIST}")
-    endif()
-    if(LINUX)
-        # prepend LD_LIBRARY_PATH with ${CMAKE_BINARY_DIR}/lib it is required
-        # because ${CMAKE_BINARY_DIR}/lib contains libze_loader.so and tests
-        # should use it instead of system one.
-        set_property(
-            TEST ${EXAMPLE_NAME}
-            PROPERTY ENVIRONMENT_MODIFICATION
-                     "LD_LIBRARY_PATH=path_list_prepend:${CMAKE_BINARY_DIR}/lib"
-        )
     endif()
 else()
     message(

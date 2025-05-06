@@ -390,60 +390,94 @@ if(hwloc_targ_SOURCE_DIR)
     endif()
 endif()
 
-# Fetch L0 loader only if needed i.e.: if building L0 provider is ON and L0
-# headers are not provided by the user (via setting UMF_LEVEL_ZERO_INCLUDE_DIR).
-if(UMF_BUILD_LEVEL_ZERO_PROVIDER AND (NOT UMF_LEVEL_ZERO_INCLUDE_DIR))
-    set(LEVEL_ZERO_LOADER_REPO "https://github.com/oneapi-src/level-zero.git")
-    set(LEVEL_ZERO_LOADER_TAG v1.21.9)
+if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
+    if(UMF_BUILD_GPU_TESTS OR UMF_BUILD_GPU_EXAMPLES)
+        # Level Zero loader library is required to build Level Zero GPU tests
+        # and examples
+        find_package(ZE_LOADER REQUIRED ze_loader)
+    else()
+        find_package(ZE_LOADER COMPONENTS ze_loader)
+    endif()
 
-    message(
-        STATUS
-            "Fetching L0 loader (${LEVEL_ZERO_LOADER_TAG}) from ${LEVEL_ZERO_LOADER_REPO} ..."
-    )
+    # If the Level Zero headers are not provided by the user and not found in
+    # the system, we will fetch them from the repo
+    if(UMF_LEVEL_ZERO_INCLUDE_DIR)
+        set(LEVEL_ZERO_INCLUDE_DIRS ${UMF_LEVEL_ZERO_INCLUDE_DIR})
+    elseif(ZE_LOADER_INCLUDE_DIR)
+        set(LEVEL_ZERO_INCLUDE_DIRS ${ZE_LOADER_INCLUDE_DIR})
+    else()
+        set(LEVEL_ZERO_LOADER_REPO
+            "https://github.com/oneapi-src/level-zero.git")
+        set(LEVEL_ZERO_LOADER_TAG v1.21.9)
 
-    FetchContent_Declare(
-        level-zero-loader
-        GIT_REPOSITORY ${LEVEL_ZERO_LOADER_REPO}
-        GIT_TAG ${LEVEL_ZERO_LOADER_TAG}
-        EXCLUDE_FROM_ALL)
-    # Only populate the repo - we don't need to build it
-    FetchContent_Populate(level-zero-loader)
+        message(STATUS "Fetching Level Zero loader (${LEVEL_ZERO_LOADER_TAG}) "
+                       "from ${LEVEL_ZERO_LOADER_REPO} ...")
+        FetchContent_Declare(
+            level-zero-loader
+            GIT_REPOSITORY ${LEVEL_ZERO_LOADER_REPO}
+            GIT_TAG ${LEVEL_ZERO_LOADER_TAG}
+            EXCLUDE_FROM_ALL)
+        # Only populate the repo - we don't need to build it
+        FetchContent_Populate(level-zero-loader)
 
-    set(LEVEL_ZERO_INCLUDE_DIRS
-        ${level-zero-loader_SOURCE_DIR}/include
-        CACHE PATH "Path to Level Zero headers")
+        set(LEVEL_ZERO_INCLUDE_DIRS
+            ${level-zero-loader_SOURCE_DIR}/include
+            CACHE PATH "Path to Level Zero headers")
+    endif()
     message(STATUS "LEVEL_ZERO_INCLUDE_DIRS = ${LEVEL_ZERO_INCLUDE_DIRS}")
-elseif(UMF_BUILD_LEVEL_ZERO_PROVIDER)
-    # Only header is needed to build UMF
-    set(LEVEL_ZERO_INCLUDE_DIRS ${UMF_LEVEL_ZERO_INCLUDE_DIR})
-    message(STATUS "LEVEL_ZERO_INCLUDE_DIRS = ${LEVEL_ZERO_INCLUDE_DIRS}")
+
+    if(ZE_LOADER_LIBRARIES)
+        set(UMF_LEVEL_ZERO_ENABLED TRUE)
+    else()
+        message(
+            STATUS
+                "Disabling tests and examples that use the Level Zero Provider "
+                "because the Level Zero libraries they require were not found.")
+    endif()
 endif()
 
-# Fetch CUDA only if needed i.e.: if building CUDA provider is ON and CUDA
-# headers are not provided by the user (via setting UMF_CUDA_INCLUDE_DIR).
-if(UMF_BUILD_CUDA_PROVIDER AND (NOT UMF_CUDA_INCLUDE_DIR))
-    set(CUDA_REPO
-        "https://gitlab.com/nvidia/headers/cuda-individual/cudart.git")
-    set(CUDA_TAG cuda-12.5.1)
+if(UMF_BUILD_CUDA_PROVIDER)
+    if(UMF_BUILD_GPU_TESTS OR UMF_BUILD_GPU_EXAMPLES)
+        # CUDA library is required to build CUDA GPU tests and examples
+        find_package(CUDA REQUIRED cuda)
+    else()
+        find_package(CUDA COMPONENTS cuda)
+    endif()
 
-    message(STATUS "Fetching CUDA (${CUDA_TAG}) from ${CUDA_REPO} ...")
+    # If the CUDA headers are not provided by the user and not found in the
+    # system, we will fetch them from the repo
+    if(UMF_CUDA_INCLUDE_DIR)
+        set(CUDA_INCLUDE_DIRS ${UMF_CUDA_INCLUDE_DIR})
+    elseif(CUDA_INCLUDE_DIR)
+        set(CUDA_INCLUDE_DIRS ${CUDA_INCLUDE_DIR})
+    else()
+        set(CUDA_REPO
+            "https://gitlab.com/nvidia/headers/cuda-individual/cudart.git")
+        set(CUDA_TAG cuda-12.5.1)
 
-    FetchContent_Declare(
-        cuda-headers
-        GIT_REPOSITORY ${CUDA_REPO}
-        GIT_TAG ${CUDA_TAG}
-        EXCLUDE_FROM_ALL)
-    # Only populate the repo - we don't need to build it
-    FetchContent_Populate(cuda-headers)
+        message(
+            STATUS "Fetching CUDA (${CUDA_TAG}) headers from ${CUDA_REPO} ...")
+        FetchContent_Declare(
+            cuda-headers
+            GIT_REPOSITORY ${CUDA_REPO}
+            GIT_TAG ${CUDA_TAG}
+            EXCLUDE_FROM_ALL)
+        # Only populate the repo - we don't need to build it
+        FetchContent_Populate(cuda-headers)
 
-    set(CUDA_INCLUDE_DIRS
-        ${cuda-headers_SOURCE_DIR}
-        CACHE PATH "Path to CUDA headers")
+        set(CUDA_INCLUDE_DIRS
+            ${cuda-headers_SOURCE_DIR}
+            CACHE PATH "Path to CUDA headers")
+    endif()
     message(STATUS "CUDA_INCLUDE_DIRS = ${CUDA_INCLUDE_DIRS}")
-elseif(UMF_BUILD_CUDA_PROVIDER)
-    # Only header is needed to build UMF
-    set(CUDA_INCLUDE_DIRS ${UMF_CUDA_INCLUDE_DIR})
-    message(STATUS "CUDA_INCLUDE_DIRS = ${CUDA_INCLUDE_DIRS}")
+
+    if(CUDA_LIBRARIES)
+        set(UMF_CUDA_ENABLED TRUE)
+    else()
+        message(
+            STATUS "Disabling tests and examples that use the CUDA Provider "
+                   "because the CUDA libraries they require were not found.")
+    endif()
 endif()
 
 # Build the umfd target in a separate directory with Debug configuration
@@ -709,18 +743,6 @@ else()
         FATAL_ERROR
             "Proxy library: pool manager not chosen or set to a non-supported one (see UMF_PROXY_LIB_BASED_ON_POOL)"
     )
-endif()
-
-if((UMF_BUILD_GPU_TESTS OR UMF_BUILD_GPU_EXAMPLES) AND UMF_BUILD_CUDA_PROVIDER)
-    find_package(CUDA REQUIRED cuda)
-    if(CUDA_LIBRARIES)
-        set(UMF_CUDA_ENABLED TRUE)
-    else()
-        message(
-            STATUS "Disabling tests and examples that use the CUDA provider "
-                   "because the CUDA libraries they require were not found.")
-    endif()
-    # TODO do the same for ze_loader
 endif()
 
 add_subdirectory(src)

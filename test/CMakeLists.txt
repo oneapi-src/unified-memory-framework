@@ -50,13 +50,14 @@ function(build_umf_test)
 
     set(LIB_DIRS ${LIB_DIRS} ${LIBHWLOC_LIBRARY_DIRS})
 
-    if(UMF_BUILD_CUDA_PROVIDER)
+    if(UMF_CUDA_ENABLED)
         set(INC_DIRS ${INC_DIRS} ${CUDA_INCLUDE_DIRS})
         set(LIB_DIRS ${LIB_DIRS} ${CUDA_LIBRARY_DIRS})
     endif()
 
-    if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
+    if(UMF_LEVEL_ZERO_ENABLED)
         set(INC_DIRS ${INC_DIRS} ${LEVEL_ZERO_INCLUDE_DIRS})
+        set(LIB_DIRS ${LIB_DIRS} ${ZE_LOADER_LIBRARY_DIRS})
     endif()
 
     if(NOT UMF_DISABLE_HWLOC)
@@ -153,16 +154,6 @@ function(add_umf_test)
         # append PATH to DLLs
         set_property(TEST ${TEST_NAME} PROPERTY ENVIRONMENT_MODIFICATION
                                                 "${DLL_PATH_LIST}")
-    endif()
-    if(LINUX)
-        # prepend LD_LIBRARY_PATH with ${CMAKE_BINARY_DIR}/lib it is required
-        # because ${CMAKE_BINARY_DIR}/lib contains libze_loader.so and tests
-        # should use it instead of system one.
-        set_property(
-            TEST ${TEST_NAME}
-            PROPERTY ENVIRONMENT_MODIFICATION
-                     "LD_LIBRARY_PATH=path_list_prepend:${CMAKE_BINARY_DIR}/lib"
-        )
     endif()
 endfunction()
 
@@ -412,7 +403,7 @@ if(UMF_DISABLE_HWLOC)
         LIBS ${UMF_UTILS_FOR_TEST})
 endif()
 
-if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
+if(UMF_BUILD_GPU_TESTS AND UMF_LEVEL_ZERO_ENABLED)
     # we have two test binaries here that use the same sources, but differ in
     # the way they are linked to the Level Zero (statically or at runtime using
     # dlopen)
@@ -575,16 +566,6 @@ function(add_umf_ipc_test)
     if(NOT UMF_TESTS_FAIL_ON_SKIP)
         set_tests_properties(${TEST_NAME} PROPERTIES SKIP_RETURN_CODE 125)
     endif()
-    if(LINUX)
-        # prepend LD_LIBRARY_PATH with ${CMAKE_BINARY_DIR}/lib it is required
-        # because ${CMAKE_BINARY_DIR}/lib contains libze_loader.so and tests
-        # should use it instead of system one.
-        set_property(
-            TEST ${TEST_NAME}
-            PROPERTY ENVIRONMENT_MODIFICATION
-                     "LD_LIBRARY_PATH=path_list_prepend:${CMAKE_BINARY_DIR}/lib"
-        )
-    endif()
 endfunction()
 
 if(LINUX)
@@ -632,7 +613,7 @@ if(LINUX)
 
     # TODO add IPC tests for CUDA
 
-    if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
+    if(UMF_BUILD_GPU_TESTS AND UMF_LEVEL_ZERO_ENABLED)
         build_umf_test(
             NAME ipc_level_zero_prov_consumer
             SRCS providers/ipc_level_zero_prov_consumer.c common/ipc_common.c
@@ -712,7 +693,7 @@ if(LINUX
         )
     endif()
 
-    if(UMF_BUILD_GPU_EXAMPLES AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
+    if(UMF_BUILD_GPU_EXAMPLES AND UMF_LEVEL_ZERO_ENABLED)
         set(EXAMPLES ${EXAMPLES} level_zero_shared_memory)
     else()
         message(
@@ -721,9 +702,7 @@ if(LINUX
                 "UMF_BUILD_LEVEL_ZERO_PROVIDER to be turned ON - skipping")
     endif()
 
-    if(UMF_BUILD_GPU_EXAMPLES
-       AND UMF_BUILD_CUDA_PROVIDER
-       AND UMF_CUDA_ENABLED)
+    if(UMF_BUILD_GPU_EXAMPLES AND UMF_CUDA_ENABLED)
         set(EXAMPLES ${EXAMPLES} cuda_shared_memory)
     else()
         message(
@@ -734,7 +713,7 @@ if(LINUX
     endif()
 
     # TODO add IPC examples for CUDA
-    if(UMF_BUILD_GPU_EXAMPLES AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
+    if(UMF_BUILD_GPU_EXAMPLES AND UMF_LEVEL_ZERO_ENABLED)
         set(EXAMPLES ${EXAMPLES} ipc_level_zero)
     else()
         message(
@@ -780,15 +759,5 @@ if(LINUX
                 "${CMAKE_INSTALL_PREFIX}" "${STANDALONE_CMAKE_OPTIONS}"
                 ${EXAMPLES}
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-        if(LINUX)
-            # prepend LD_LIBRARY_PATH with ${CMAKE_BINARY_DIR}/lib it is
-            # required because ${CMAKE_BINARY_DIR}/lib contains libze_loader.so
-            # and tests should use it instead of system one.
-            set_property(
-                TEST umf-standalone_examples
-                PROPERTY
-                    ENVIRONMENT_MODIFICATION
-                    "LD_LIBRARY_PATH=path_list_prepend:${CMAKE_BINARY_DIR}/lib")
-        endif()
     endif()
 endif()
