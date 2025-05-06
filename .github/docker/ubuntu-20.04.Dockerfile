@@ -31,7 +31,7 @@ ARG HWLOC_DEPS="\
 COPY .github/scripts/install_hwloc.sh /opt/umf/install_hwloc.sh
 
 # UMF's dependencies
-# libhwloc-dev is required - installed via script because hwloc verion is to old on this OS
+# libhwloc-dev is required - installed via script because hwloc version is to old on this OS
 
 # Dependencies for tests (optional)
 ARG TEST_DEPS="\

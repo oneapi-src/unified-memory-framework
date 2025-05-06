@@ -16,8 +16,7 @@ jobs:
     name: Linux
     runs-on: ${{ github.repository_owner == 'oneapi-src' && 'intel-ubuntu-22.04' || 'ubuntu-22.04' }}
     container:
-      # image: ghcr.io/bb-ur/umf-ubuntu-${{ matrix.ubuntu_ver }}:latest
-      image: ghcr.io/rbanka1/umf-ubuntu-${{ matrix.ubuntu_ver }}:latest # test
+      image: ghcr.io/bb-ur/umf-ubuntu-${{ matrix.ubuntu_ver }}:latest
       options: --user root --privileged
       volumes:
         - ${{ github.workspace }}:${{ github.workspace }}
@@ -34,14 +33,11 @@ jobs:
             build_tests: 'OFF'
             extra_build_options: '-DUMF_BUILD_BENCHMARKS=ON'
             simple_cmake: 'OFF'
-          # simplest CMake on Ubuntu 22.04, 24.04, 20.04
+          # simplest CMake on Ubuntu 22.04, 24.04
           - ubuntu_ver: 22.04
             build_tests: 'ON'
             simple_cmake: 'ON'
           - ubuntu_ver: 24.04
-            build_tests: 'ON'
-            simple_cmake: 'ON'
-          - ubuntu_ver: 20.04
             build_tests: 'ON'
             simple_cmake: 'ON'
 

@@ -18,7 +18,6 @@ jobs:
     outputs: 
       status: ${{ job.status }}
     env:
-      GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }} # test
       IMG: ghcr.io/bb-ur/umf-ubuntu-${{ matrix.ubuntu-version }}:latest
 
     steps:
@@ -31,10 +30,8 @@ jobs:
         uses: docker/login-action@30f019fb76bb54d03ec1e716054622be511a13b2 # v3.2.0
         with: 
           registry: ghcr.io
-          username: ${{ github.actor }} # test
-          password: ${{ env.GHCR_TOKEN }} # test
-          # username: bb-ur
-          # password: ${{ secrets.BB_GHCR_TOKEN }}
+          username: bb-ur
+          password: ${{ secrets.BB_GHCR_TOKEN }}
 
       - name: Build and push ubuntu-${{ matrix.ubuntu-version }} Docker image
         run: |

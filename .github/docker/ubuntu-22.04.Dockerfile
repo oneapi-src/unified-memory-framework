@@ -20,7 +20,8 @@ ENV DEBIAN_FRONTEND noninteractive
 ARG BASE_DEPS="\
 	build-essential \
 	cmake \
-	git"
+	git \
+	libtool"
 
 # UMF's dependencies
 ARG UMF_DEPS="\
