@@ -84,9 +84,9 @@ jobs:
   
    - name: Configure build
      run: |
-       sh -l
        call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
        call "C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat"
+       sh -l
        cmake ^
          -B ${{env.BUILD_DIR}} ^
          -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}" ^
