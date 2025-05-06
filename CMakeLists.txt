@@ -406,16 +406,17 @@ if(UMF_BUILD_LEVEL_ZERO_PROVIDER AND (NOT UMF_LEVEL_ZERO_INCLUDE_DIR))
         GIT_REPOSITORY ${LEVEL_ZERO_LOADER_REPO}
         GIT_TAG ${LEVEL_ZERO_LOADER_TAG}
         EXCLUDE_FROM_ALL)
-    FetchContent_MakeAvailable(level-zero-loader)
+    # Only populate the repo - we don't need to build it
+    FetchContent_Populate(level-zero-loader)
 
     set(LEVEL_ZERO_INCLUDE_DIRS
         ${level-zero-loader_SOURCE_DIR}/include
-        CACHE PATH "Path to Level Zero Headers")
-    message(STATUS "Level Zero include directory: ${LEVEL_ZERO_INCLUDE_DIRS}")
+        CACHE PATH "Path to Level Zero headers")
+    message(STATUS "LEVEL_ZERO_INCLUDE_DIRS = ${LEVEL_ZERO_INCLUDE_DIRS}")
 elseif(UMF_BUILD_LEVEL_ZERO_PROVIDER)
     # Only header is needed to build UMF
     set(LEVEL_ZERO_INCLUDE_DIRS ${UMF_LEVEL_ZERO_INCLUDE_DIR})
-    message(STATUS "Level Zero include directory: ${LEVEL_ZERO_INCLUDE_DIRS}")
+    message(STATUS "LEVEL_ZERO_INCLUDE_DIRS = ${LEVEL_ZERO_INCLUDE_DIRS}")
 endif()
 
 # Fetch CUDA only if needed i.e.: if building CUDA provider is ON and CUDA
@@ -425,14 +426,15 @@ if(UMF_BUILD_CUDA_PROVIDER AND (NOT UMF_CUDA_INCLUDE_DIR))
         "https://gitlab.com/nvidia/headers/cuda-individual/cudart.git")
     set(CUDA_TAG cuda-12.5.1)
 
-    message(STATUS "Fetching CUDA ${CUDA_TAG} from ${CUDA_REPO} ...")
+    message(STATUS "Fetching CUDA (${CUDA_TAG}) from ${CUDA_REPO} ...")
 
     FetchContent_Declare(
         cuda-headers
         GIT_REPOSITORY ${CUDA_REPO}
         GIT_TAG ${CUDA_TAG}
         EXCLUDE_FROM_ALL)
-    FetchContent_MakeAvailable(cuda-headers)
+    # Only populate the repo - we don't need to build it
+    FetchContent_Populate(cuda-headers)
 
     set(CUDA_INCLUDE_DIRS
         ${cuda-headers_SOURCE_DIR}
