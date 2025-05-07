@@ -65,7 +65,7 @@ umf_result_t umfGetIPCHandle(const void *ptr, umf_ipc_handle_t *umfIPCHandle,
         return ret;
     }
 
-    ret = umfPoolGetIPCHandleSize(allocInfo.pool, &ipcHandleSize);
+    ret = umfPoolGetIPCHandleSize(allocInfo.props->pool, &ipcHandleSize);
     if (ret != UMF_RESULT_SUCCESS) {
         LOG_ERR("cannot get IPC handle size.");
         return ret;
@@ -79,7 +79,7 @@ umf_result_t umfGetIPCHandle(const void *ptr, umf_ipc_handle_t *umfIPCHandle,
 
     // We cannot use umfPoolGetMemoryProvider function because it returns
     // upstream provider but we need tracking one
-    umf_memory_provider_handle_t provider = allocInfo.pool->provider;
+    umf_memory_provider_handle_t provider = allocInfo.props->pool->provider;
     assert(provider);
 
     ret = umfMemoryProviderGetIPCHandle(provider, allocInfo.base,
