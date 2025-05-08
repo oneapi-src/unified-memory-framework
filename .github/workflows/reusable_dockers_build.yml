@@ -11,6 +11,7 @@ permissions:
 
 jobs: 
   build-dockers:
+    # if: github.repository == 'oneapi-src/unified-memory-framework'
     runs-on: ubuntu-latest
     strategy: 
       matrix:
@@ -26,14 +27,19 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Build ubuntu-${{ matrix.ubuntu-version }} Docker image
+        run: |
+          docker build -f .github/docker/ubuntu-${{ matrix.ubuntu-version }}.Dockerfile -t ${{ env.IMG }} .
+
       - name: Login to GitHub Container Registry
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@30f019fb76bb54d03ec1e716054622be511a13b2 # v3.2.0
-        with: 
+        with:
           registry: ghcr.io
           username: bb-ur
           password: ${{ secrets.BB_GHCR_TOKEN }}
 
-      - name: Build and push ubuntu-${{ matrix.ubuntu-version }} Docker image
+      - name: Push ubuntu-${{ matrix.ubuntu-version }} Docker image
+        if: github.event_name != 'pull_request'
         run: |
-          docker build -f .github/docker/ubuntu-${{ matrix.ubuntu-version }}.Dockerfile -t ${{ env.IMG }} .
           docker push ${{ env.IMG }}

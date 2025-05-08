@@ -28,15 +28,17 @@ ARG HWLOC_DEPS="\
 	libtool"
 
 # Copy hwloc
+# libhwloc-dev is required - installed via script because hwloc version is to old on this OS
 COPY .github/scripts/install_hwloc.sh /opt/umf/install_hwloc.sh
 
 # UMF's dependencies
-# libhwloc-dev is required - installed via script because hwloc version is to old on this OS
+ARG UMF_DEPS="\
+	libtbb-dev"
 
 # Dependencies for tests (optional)
 ARG TEST_DEPS="\
 	libnuma-dev \
-	libtbb-dev\
+	libtbb-dev \
 	valgrind"
 
 # Miscellaneous for our builds/CI (optional)

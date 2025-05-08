@@ -25,12 +25,12 @@ ARG BASE_DEPS="\
 
 # UMF's dependencies
 ARG UMF_DEPS="\
+	libtbb-dev \
 	libhwloc-dev"
 
 # Dependencies for tests (optional)
 ARG TEST_DEPS="\
 	libnuma-dev \
-	libtbb-dev\
 	valgrind"
 
 # Miscellaneous for our builds/CI (optional)
