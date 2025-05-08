@@ -26,6 +26,7 @@ jobs:
         install_tbb: ['ON']
         disable_hwloc: ['OFF']
         link_hwloc_statically: ['OFF']
+        cmake_ver: ['latest']
         include:
           - os: 'ubuntu-22.04'
             build_type: Release
@@ -36,6 +37,8 @@ jobs:
             install_tbb: 'ON'
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
+            # check minimum supported cmake version
+            cmake_ver: '3.14.0'
           - os: 'ubuntu-22.04'
             build_type: Release
             compiler: {c: gcc, cxx: g++}
@@ -45,6 +48,7 @@ jobs:
             install_tbb: 'ON'
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
+            cmake_ver: 'latest'
           - os: 'ubuntu-24.04'
             build_type: Debug
             compiler: {c: gcc, cxx: g++}
@@ -54,6 +58,7 @@ jobs:
             install_tbb: 'ON'
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
+            cmake_ver: 'latest'
           # test level_zero_provider='OFF' and cuda_provider='OFF'
           - os: 'ubuntu-22.04'
             build_type: Release
@@ -64,6 +69,7 @@ jobs:
             install_tbb: 'ON'
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
+            cmake_ver: 'latest'
           # test icx compiler
           - os: 'ubuntu-22.04'
             build_type: Release
@@ -74,6 +80,7 @@ jobs:
             install_tbb: 'ON'
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
+            cmake_ver: 'latest'
           # test lld linker
           - os: 'ubuntu-24.04'
             build_type: Release
@@ -85,7 +92,8 @@ jobs:
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
             llvm_linker: '-DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" -DCMAKE_MODULE_LINKER_FLAGS="-fuse-ld=lld" -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld"'
-          # test without installing TBB
+            cmake_ver: 'latest'
+            # test without installing TBB
           - os: 'ubuntu-22.04'
             build_type: Release
             compiler: {c: gcc, cxx: g++}
@@ -95,6 +103,7 @@ jobs:
             install_tbb: 'OFF'
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
+            cmake_ver: 'latest'
           - os: 'ubuntu-22.04'
             build_type: Debug
             compiler: {c: gcc, cxx: g++}
@@ -104,6 +113,7 @@ jobs:
             install_tbb: 'ON'
             disable_hwloc: 'ON'
             link_hwloc_statically: 'OFF'
+            cmake_ver: 'latest'
           - os: 'ubuntu-22.04'
             build_type: Release
             compiler: {c: gcc, cxx: g++}
@@ -113,6 +123,7 @@ jobs:
             install_tbb: 'ON'
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'ON'
+            cmake_ver: 'latest'
     runs-on: ${{matrix.os}}
 
     steps:
@@ -124,7 +135,15 @@ jobs:
     - name: Install apt packages
       run: |
         sudo apt-get update
-        sudo apt-get install -y clang cmake libnuma-dev lcov
+        sudo apt-get install -y clang libnuma-dev lcov
+
+    - name: Install cmake (minimum supported version)
+      if: matrix.cmake_ver != 'latest'
+      run: |
+        sudo apt-get remove --purge -y cmake
+        wget https://github.com/Kitware/CMake/releases/download/v${{matrix.cmake_ver}}/cmake-${{matrix.cmake_ver}}-Linux-x86_64.sh
+        chmod +x cmake-${{matrix.cmake_ver}}-Linux-x86_64.sh
+        sudo ./cmake-${{matrix.cmake_ver}}-Linux-x86_64.sh --skip-license --prefix=/usr/local
 
     - name: Install hwloc
       if: matrix.disable_hwloc == 'OFF'
