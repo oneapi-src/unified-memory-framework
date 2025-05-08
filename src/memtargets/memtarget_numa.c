@@ -309,8 +309,8 @@ static umf_result_t query_attribute_value(void *srcMemoryTarget,
     int ret = hwloc_memattr_get_value(topology, hwlocMemAttrType, dstNumaNode,
                                       &initiator, 0, &memAttrValue);
     if (ret) {
-        LOG_PERR("Getting an attribute value for a specific target NUMA node "
-                 "failed");
+        LOG_PDEBUG("Getting an attribute value for a specific target NUMA node "
+                   "failed");
         return (errno == EINVAL) ? UMF_RESULT_ERROR_NOT_SUPPORTED
                                  : UMF_RESULT_ERROR_UNKNOWN;
     }
@@ -330,9 +330,10 @@ static umf_result_t numa_get_bandwidth(void *srcMemoryTarget,
     umf_result_t ret = query_attribute_value(srcMemoryTarget, dstMemoryTarget,
                                              bandwidth, MEMATTR_TYPE_BANDWIDTH);
     if (ret) {
-        LOG_ERR("Retrieving bandwidth for initiator node %u to node %u failed.",
-                ((struct numa_memtarget_t *)srcMemoryTarget)->physical_id,
-                ((struct numa_memtarget_t *)dstMemoryTarget)->physical_id);
+        LOG_DEBUG(
+            "Retrieving bandwidth for initiator node %u to node %u failed.",
+            ((struct numa_memtarget_t *)srcMemoryTarget)->physical_id,
+            ((struct numa_memtarget_t *)dstMemoryTarget)->physical_id);
         return ret;
     }
 
@@ -348,9 +349,9 @@ static umf_result_t numa_get_latency(void *srcMemoryTarget,
     umf_result_t ret = query_attribute_value(srcMemoryTarget, dstMemoryTarget,
                                              latency, MEMATTR_TYPE_LATENCY);
     if (ret) {
-        LOG_ERR("Retrieving latency for initiator node %u to node %u failed.",
-                ((struct numa_memtarget_t *)srcMemoryTarget)->physical_id,
-                ((struct numa_memtarget_t *)dstMemoryTarget)->physical_id);
+        LOG_DEBUG("Retrieving latency for initiator node %u to node %u failed.",
+                  ((struct numa_memtarget_t *)srcMemoryTarget)->physical_id,
+                  ((struct numa_memtarget_t *)dstMemoryTarget)->physical_id);
         return ret;
     }
 
