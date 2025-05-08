@@ -60,8 +60,10 @@ function(add_umf_benchmark)
         LIBS ${BENCH_LIBS})
 
     target_include_directories(
-        ${BENCH_NAME} PRIVATE ${UMF_CMAKE_SOURCE_DIR}/include
-                              ${UMF_CMAKE_SOURCE_DIR}/src/utils)
+        ${BENCH_NAME}
+        PRIVATE ${UMF_CMAKE_SOURCE_DIR}/include
+                ${UMF_CMAKE_SOURCE_DIR}/src/utils
+                ${UMF_CMAKE_SOURCE_DIR}/test/common)
 
     target_link_directories(${BENCH_NAME} PRIVATE ${ARG_LIBDIRS})
 
@@ -87,16 +89,6 @@ function(add_umf_benchmark)
         set_property(TEST ${BENCH_NAME} PROPERTY ENVIRONMENT_MODIFICATION
                                                  "${DLL_PATH_LIST}")
     endif()
-    if(LINUX)
-        # prepend LD_LIBRARY_PATH with ${CMAKE_BINARY_DIR}/lib it is required
-        # because ${CMAKE_BINARY_DIR}/lib contains libze_loader.so and tests
-        # should use it instead of system one.
-        set_property(
-            TEST ${BENCH_NAME}
-            PROPERTY ENVIRONMENT_MODIFICATION
-                     "LD_LIBRARY_PATH=path_list_prepend:${CMAKE_BINARY_DIR}/lib"
-        )
-    endif()
 
     if(UMF_POOL_JEMALLOC_ENABLED)
         target_compile_definitions(${BENCH_NAME}
@@ -106,19 +98,16 @@ function(add_umf_benchmark)
         target_compile_definitions(${BENCH_NAME}
                                    PRIVATE UMF_POOL_SCALABLE_ENABLED=1)
     endif()
-    if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
+    if(UMF_LEVEL_ZERO_ENABLED)
         target_compile_definitions(${BENCH_NAME}
                                    PRIVATE UMF_PROVIDER_LEVEL_ZERO_ENABLED=1)
-        target_include_directories(
-            ${BENCH_NAME} PRIVATE ${UMF_CMAKE_SOURCE_DIR}/test/common
-                                  ${LEVEL_ZERO_INCLUDE_DIRS})
+        target_include_directories(${BENCH_NAME}
+                                   PRIVATE ${LEVEL_ZERO_INCLUDE_DIRS})
     endif()
-    if(UMF_BUILD_CUDA_PROVIDER)
+    if(UMF_CUDA_ENABLED)
         target_compile_definitions(${BENCH_NAME}
                                    PRIVATE UMF_BUILD_CUDA_PROVIDER=1)
-        target_include_directories(
-            ${BENCH_NAME} PRIVATE ${UMF_CMAKE_SOURCE_DIR}/test/common
-                                  ${CUDA_INCLUDE_DIRS})
+        target_include_directories(${BENCH_NAME} PRIVATE ${CUDA_INCLUDE_DIRS})
     endif()
     if(UMF_BUILD_GPU_TESTS)
         target_compile_definitions(${BENCH_NAME} PRIVATE UMF_BUILD_GPU_TESTS=1)
@@ -131,8 +120,9 @@ set(LIB_DIRS ${LIBHWLOC_LIBRARY_DIRS})
 if(LINUX)
     set(LIBS_OPTIONAL ${LIBS_OPTIONAL} m)
 endif()
-if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_LEVEL_ZERO_PROVIDER)
+if(UMF_BUILD_GPU_TESTS AND UMF_LEVEL_ZERO_ENABLED)
     set(SRCS_OPTIONAL ${SRCS_OPTIONAL} ../src/utils/utils_level_zero.cpp)
+    set(LIB_DIRS ${LIB_DIRS} ${ZE_LOADER_LIBRARY_DIRS})
     set(LIBS_OPTIONAL ${LIBS_OPTIONAL} ze_loader)
     # TODO add CUDA
 endif()

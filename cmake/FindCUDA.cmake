@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Intel Corporation
+# Copyright (C) 2024-2025 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -6,6 +6,10 @@ message(STATUS "Checking for module 'cuda' using find_library()")
 
 find_library(CUDA_LIBRARY NAMES libcuda cuda)
 set(CUDA_LIBRARIES ${CUDA_LIBRARY})
+
+find_file(CUDA_HEADER NAMES "cuda.h")
+get_filename_component(CUDA_INCLUDE_DIR ${CUDA_HEADER} DIRECTORY)
+set(CUDA_INCLUDE_DIRS ${CUDA_INCLUDE_DIR})
 
 get_filename_component(CUDA_LIB_DIR ${CUDA_LIBRARIES} DIRECTORY)
 set(CUDA_LIBRARY_DIRS ${CUDA_LIB_DIR})
