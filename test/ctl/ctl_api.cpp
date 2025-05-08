@@ -101,11 +101,17 @@ class Pool {
         umf_result_t ret;
         char ret_buf[256] = {0};
         if constexpr (std::is_same_v<T, std::string>) {
-            strncpy(ret_buf, value.c_str(), sizeof(ret_buf));
+            strncpy(ret_buf, value.c_str(), sizeof(ret_buf) - 1);
+            ret_buf[sizeof(ret_buf) - 1] = '\0'; // Ensure null-termination
+            ret = ctlApiFunction(name, disableContext ? nullptr : pool,
+                                 (void *)ret_buf, sizeof(ret_buf));
+        } else if constexpr (std::is_arithmetic_v<T>) {
+            std::string value_str = std::to_string(value);
+            strncpy(ret_buf, value_str.c_str(), sizeof(ret_buf) - 1);
+            ret_buf[sizeof(ret_buf) - 1] = '\0'; // Ensure null-termination
             ret = ctlApiFunction(name, disableContext ? nullptr : pool,
                                  (void *)ret_buf, sizeof(ret_buf));
         } else {
-            strncpy(ret_buf, value, sizeof(value));
             ret = ctlApiFunction(name, disableContext ? nullptr : pool, &value,
                                  sizeof(value));
         }
