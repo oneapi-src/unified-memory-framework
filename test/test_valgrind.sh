@@ -154,7 +154,7 @@ for test in $TESTS; do
 
 	LAST_TEST_FAILED=0
 	set +e
-	HWLOC_CPUID_PATH=./cpuid valgrind $OPTION $OPT_SUP --gen-suppressions=all $test $FILTER >$LOG 2>&1
+	HWLOC_CPUID_PATH=./cpuid time valgrind $OPTION $OPT_SUP --gen-suppressions=all $test $FILTER >$LOG 2>&1
 	RET=$?
 	set -e
 	# 125 is the return code when the test is skipped
@@ -172,9 +172,11 @@ for test in $TESTS; do
 	grep -e "ERROR SUMMARY:" $LOG | grep -v -e "ERROR SUMMARY: 0 errors from 0 contexts" > $ERR || true
 	if [ $LAST_TEST_FAILED -eq 0 -a $(cat $ERR | wc -l) -eq 0 ]; then
 		[ $RET -eq 0 ] && echo "- OK" || echo "- SKIPPED"
+		tail -n2 $LOG || true # print out the output of the "time" command
 		rm -f $LOG $ERR
 	else
 		echo "- FAILED!"
+		tail -n2 $LOG || true # print out the output of the "time" command
 		cat $ERR | cut -d' ' -f2-
 		ANY_TEST_FAILED=1
 	fi || true
