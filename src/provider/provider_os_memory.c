@@ -179,12 +179,13 @@ static UTIL_ONCE_FLAG ctl_initialized = UTIL_ONCE_FLAG_INIT;
 
 static int CTL_READ_HANDLER(ipc_enabled)(void *ctx,
                                          umf_ctl_query_source_t source,
-                                         void *arg,
+                                         void *arg, size_t size,
                                          umf_ctl_index_utlist_t *indexes,
                                          const char *extra_name,
                                          umf_ctl_query_type_t query_type) {
     /* suppress unused-parameter errors */
-    (void)source, (void)indexes, (void)ctx, (void)extra_name, (void)query_type;
+    (void)source, (void)indexes, (void)ctx, (void)extra_name, (void)query_type,
+        (void)size;
 
     int *arg_out = arg;
     os_memory_provider_t *os_provider = (os_memory_provider_t *)ctx;
@@ -1442,10 +1443,11 @@ static umf_result_t os_close_ipc_handle(void *provider, void *ptr,
 }
 
 static umf_result_t os_ctl(void *hProvider, int operationType, const char *name,
-                           void *arg, umf_ctl_query_type_t query_type) {
+                           void *arg, size_t size,
+                           umf_ctl_query_type_t query_type) {
     utils_init_once(&ctl_initialized, initialize_os_ctl);
     return ctl_query(os_memory_ctl_root, hProvider, operationType, name,
-                     query_type, arg);
+                     query_type, arg, size);
 }
 
 static umf_memory_provider_ops_t UMF_OS_MEMORY_PROVIDER_OPS = {
