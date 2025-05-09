@@ -152,6 +152,7 @@ jobs:
         echo "ZE_AFFINITY_MASK=$ZE_AFFINITY_MASK" >> $GITHUB_ENV
 
     - name: Run UMF benchmarks
+    # Test running benchmarks for the branch
       id: benchmarks
       run: >
         taskset -c ${{ env.CORES }} ./sc/devops/scripts/benchmarks/main.py
