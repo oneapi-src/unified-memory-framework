@@ -412,13 +412,24 @@ if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
 
         message(STATUS "Fetching Level Zero loader (${LEVEL_ZERO_LOADER_TAG}) "
                        "from ${LEVEL_ZERO_LOADER_REPO} ...")
-        FetchContent_Declare(
-            level-zero-loader
-            GIT_REPOSITORY ${LEVEL_ZERO_LOADER_REPO}
-            GIT_TAG ${LEVEL_ZERO_LOADER_TAG}
-            EXCLUDE_FROM_ALL)
-        # Only populate the repo - we don't need to build it
-        FetchContent_Populate(level-zero-loader)
+
+        # We don't want to build and include Level Zero binaries to our install
+        # target. For CMake >= 3.28 we use EXCLUDE_FROM_ALL flag to do that, but
+        # for older versions we need to use FetchContent_Populate.
+        if(CMAKE_VERSION VERSION_LESS 3.28)
+            FetchContent_Declare(
+                level-zero-loader
+                GIT_REPOSITORY ${LEVEL_ZERO_LOADER_REPO}
+                GIT_TAG ${LEVEL_ZERO_LOADER_TAG})
+            FetchContent_Populate(level-zero-loader)
+        else()
+            FetchContent_Declare(
+                level-zero-loader
+                GIT_REPOSITORY ${LEVEL_ZERO_LOADER_REPO}
+                GIT_TAG ${LEVEL_ZERO_LOADER_TAG}
+                EXCLUDE_FROM_ALL)
+            FetchContent_MakeAvailable(level-zero-loader)
+        endif()
 
         set(LEVEL_ZERO_INCLUDE_DIRS
             ${level-zero-loader_SOURCE_DIR}/include
@@ -457,13 +468,24 @@ if(UMF_BUILD_CUDA_PROVIDER)
 
         message(
             STATUS "Fetching CUDA (${CUDA_TAG}) headers from ${CUDA_REPO} ...")
-        FetchContent_Declare(
-            cuda-headers
-            GIT_REPOSITORY ${CUDA_REPO}
-            GIT_TAG ${CUDA_TAG}
-            EXCLUDE_FROM_ALL)
-        # Only populate the repo - we don't need to build it
-        FetchContent_Populate(cuda-headers)
+
+        # We don't want to build and include CUDA binaries to our install
+        # target. For CMake >= 3.28 we could use EXCLUDE_FROM_ALL flag to do
+        # that, but for older versions we need to use FetchContent_Populate.
+        if(CMAKE_VERSION VERSION_LESS 3.28)
+            FetchContent_Declare(
+                cuda-headers
+                GIT_REPOSITORY ${CUDA_REPO}
+                GIT_TAG ${CUDA_TAG})
+            FetchContent_Populate(cuda-headers)
+        else()
+            FetchContent_Declare(
+                cuda-headers
+                GIT_REPOSITORY ${CUDA_REPO}
+                GIT_TAG ${CUDA_TAG}
+                EXCLUDE_FROM_ALL)
+            FetchContent_MakeAvailable(cuda-headers)
+        endif()
 
         set(CUDA_INCLUDE_DIRS
             ${cuda-headers_SOURCE_DIR}
