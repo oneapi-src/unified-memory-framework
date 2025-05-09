@@ -49,6 +49,11 @@ umfJemallocPoolParamsSetNumArenas(umf_jemalloc_pool_params_handle_t hParams,
 
 #define MALLOCX_ARENA_MAX (MALLCTL_ARENAS_ALL - 1)
 
+// Number of arenas greater than 253 causes
+// the "Resource temporarily unavailable" error
+// on a machine with 96 cores.
+#define MALLOCX_ARENA_MAX_SOFT 250
+
 typedef struct umf_jemalloc_pool_params_t {
     size_t n_arenas;
 } umf_jemalloc_pool_params_t;
@@ -440,9 +445,13 @@ static umf_result_t op_initialize(umf_memory_provider_handle_t provider,
 
     if (n_arenas == 0) {
         n_arenas = utils_get_num_cores() * 4;
+        if (n_arenas > MALLOCX_ARENA_MAX_SOFT) {
+            n_arenas = MALLOCX_ARENA_MAX_SOFT;
+        }
     }
     if (n_arenas > MALLOCX_ARENA_MAX) {
-        LOG_ERR("Number of arenas exceeds the limit.");
+        LOG_ERR("Number of arenas %zu exceeds the limit (%i).", n_arenas,
+                MALLOCX_ARENA_MAX);
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -461,7 +470,9 @@ static umf_result_t op_initialize(umf_memory_provider_handle_t provider,
         err = je_mallctl("arenas.create", (void *)&arena_index, &unsigned_size,
                          NULL, 0);
         if (err) {
-            LOG_ERR("Could not create arena.");
+            LOG_ERR("Could not create a jemalloc arena (n_arenas = %zu, i = "
+                    "%zu, arena_index = %u, unsigned_size = %zu): %s",
+                    n_arenas, i, arena_index, unsigned_size, strerror(err));
             goto err_cleanup;
         }
 
