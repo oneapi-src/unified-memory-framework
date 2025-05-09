@@ -140,8 +140,6 @@ static void destroy_slab(slab_t *slab) {
     if (res != UMF_RESULT_SUCCESS) {
         LOG_ERR("deallocation of slab data failed!");
     }
-
-    umf_ba_global_free(slab);
 }
 
 static size_t slab_find_first_available_chunk_idx(const slab_t *slab) {
@@ -233,7 +231,11 @@ static umf_result_t pool_unregister_slab(disjoint_pool_t *pool, slab_t *slab) {
     // TODO ASSERT_IS_ALIGNED((uintptr_t)slab_addr, bucket->size);
     LOG_DEBUG("slab: %p, start: %p", (void *)slab, slab_addr);
 
-    critnib_remove(slabs, (uintptr_t)slab_addr);
+    void *ref_slabs = NULL;
+    critnib_remove(slabs, (uintptr_t)slab_addr, &ref_slabs);
+    if (ref_slabs) {
+        critnib_release(slabs, ref_slabs);
+    }
 
     return UMF_RESULT_SUCCESS;
 }
@@ -570,6 +572,13 @@ static void *disjoint_pool_allocate(disjoint_pool_t *pool, size_t size) {
     return ptr;
 }
 
+static void free_slab(void *unused, void *slab) {
+    (void)unused;
+    if (slab) {
+        umf_ba_global_free(slab);
+    }
+}
+
 umf_result_t disjoint_pool_initialize(umf_memory_provider_handle_t provider,
                                       const void *params, void **ppPool) {
     // TODO set defaults when user pass the NULL as params
@@ -597,7 +606,7 @@ umf_result_t disjoint_pool_initialize(umf_memory_provider_handle_t provider,
     disjoint_pool->provider = provider;
     disjoint_pool->params = *dp_params;
 
-    disjoint_pool->known_slabs = critnib_new();
+    disjoint_pool->known_slabs = critnib_new(free_slab, NULL);
     if (disjoint_pool->known_slabs == NULL) {
         goto err_free_disjoint_pool;
     }
@@ -807,8 +816,9 @@ size_t disjoint_pool_malloc_usable_size(void *pool, const void *ptr) {
     }
 
     // check if given pointer is allocated inside any Disjoint Pool slab
-    slab_t *slab =
-        (slab_t *)critnib_find_le(disjoint_pool->known_slabs, (uintptr_t)ptr);
+    void *ref_slab = NULL;
+    slab_t *slab = (slab_t *)critnib_find_le(disjoint_pool->known_slabs,
+                                             (uintptr_t)ptr, &ref_slab);
     if (slab == NULL || ptr >= slab_get_end(slab)) {
         // memory comes directly from the provider
         umf_alloc_info_t allocInfo = {NULL, 0, NULL};
@@ -826,7 +836,12 @@ size_t disjoint_pool_malloc_usable_size(void *pool, const void *ptr) {
 
     ptrdiff_t diff = (ptrdiff_t)ptr - (ptrdiff_t)unaligned_ptr;
 
-    return slab->bucket->size - diff;
+    size_t size = slab->bucket->size - diff;
+
+    assert(ref_slab);
+    critnib_release(disjoint_pool->known_slabs, ref_slab);
+
+    return size;
 }
 
 umf_result_t disjoint_pool_free(void *pool, void *ptr) {
@@ -836,8 +851,9 @@ umf_result_t disjoint_pool_free(void *pool, void *ptr) {
     }
 
     // check if given pointer is allocated inside any Disjoint Pool slab
-    slab_t *slab =
-        (slab_t *)critnib_find_le(disjoint_pool->known_slabs, (uintptr_t)ptr);
+    void *ref_slab = NULL;
+    slab_t *slab = (slab_t *)critnib_find_le(disjoint_pool->known_slabs,
+                                             (uintptr_t)ptr, &ref_slab);
 
     if (slab == NULL || ptr >= slab_get_end(slab)) {
 
@@ -883,6 +899,9 @@ umf_result_t disjoint_pool_free(void *pool, void *ptr) {
 
     utils_annotate_memory_inaccessible(unaligned_ptr, bucket->size);
     bucket_free_chunk(bucket, unaligned_ptr, slab, &to_pool);
+
+    assert(ref_slab);
+    critnib_release(disjoint_pool->known_slabs, ref_slab);
 
     if (disjoint_pool->params.pool_trace > 1) {
         bucket->free_count++;
