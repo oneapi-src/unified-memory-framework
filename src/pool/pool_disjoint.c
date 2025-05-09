@@ -231,7 +231,11 @@ static umf_result_t pool_unregister_slab(disjoint_pool_t *pool, slab_t *slab) {
     // TODO ASSERT_IS_ALIGNED((uintptr_t)slab_addr, bucket->size);
     LOG_DEBUG("slab: %p, start: %p", (void *)slab, slab_addr);
 
-    critnib_remove(slabs, (uintptr_t)slab_addr);
+    void *ref_slabs = NULL;
+    critnib_remove(slabs, (uintptr_t)slab_addr, &ref_slabs);
+    if (ref_slabs) {
+        critnib_release(slabs, ref_slabs);
+    }
 
     return UMF_RESULT_SUCCESS;
 }
@@ -812,8 +816,9 @@ size_t disjoint_pool_malloc_usable_size(void *pool, const void *ptr) {
     }
 
     // check if given pointer is allocated inside any Disjoint Pool slab
-    slab_t *slab =
-        (slab_t *)critnib_find_le(disjoint_pool->known_slabs, (uintptr_t)ptr);
+    void *ref_slab = NULL;
+    slab_t *slab = (slab_t *)critnib_find_le(disjoint_pool->known_slabs,
+                                             (uintptr_t)ptr, &ref_slab);
     if (slab == NULL || ptr >= slab_get_end(slab)) {
         // memory comes directly from the provider
         umf_alloc_info_t allocInfo = {NULL, 0, NULL};
@@ -831,7 +836,12 @@ size_t disjoint_pool_malloc_usable_size(void *pool, const void *ptr) {
 
     ptrdiff_t diff = (ptrdiff_t)ptr - (ptrdiff_t)unaligned_ptr;
 
-    return slab->bucket->size - diff;
+    size_t size = slab->bucket->size - diff;
+
+    assert(ref_slab);
+    critnib_release(disjoint_pool->known_slabs, ref_slab);
+
+    return size;
 }
 
 umf_result_t disjoint_pool_free(void *pool, void *ptr) {
@@ -841,8 +851,9 @@ umf_result_t disjoint_pool_free(void *pool, void *ptr) {
     }
 
     // check if given pointer is allocated inside any Disjoint Pool slab
-    slab_t *slab =
-        (slab_t *)critnib_find_le(disjoint_pool->known_slabs, (uintptr_t)ptr);
+    void *ref_slab = NULL;
+    slab_t *slab = (slab_t *)critnib_find_le(disjoint_pool->known_slabs,
+                                             (uintptr_t)ptr, &ref_slab);
 
     if (slab == NULL || ptr >= slab_get_end(slab)) {
 
@@ -888,6 +899,9 @@ umf_result_t disjoint_pool_free(void *pool, void *ptr) {
 
     utils_annotate_memory_inaccessible(unaligned_ptr, bucket->size);
     bucket_free_chunk(bucket, unaligned_ptr, slab, &to_pool);
+
+    assert(ref_slab);
+    critnib_release(disjoint_pool->known_slabs, ref_slab);
 
     if (disjoint_pool->params.pool_trace > 1) {
         bucket->free_count++;
