@@ -28,12 +28,23 @@ set(CUDA_REPO "https://gitlab.com/nvidia/headers/cuda-individual/cudart.git")
 set(CUDA_TAG cuda-12.5.1)
 message(STATUS "Fetching CUDA ${CUDA_TAG} from ${CUDA_REPO} ...")
 
-FetchContent_Declare(
-    cuda-headers
-    GIT_REPOSITORY ${CUDA_REPO}
-    GIT_TAG ${CUDA_TAG}
-    EXCLUDE_FROM_ALL)
-FetchContent_Populate(cuda-headers)
+# We don't want to build and include CUDA binaries to our install target. For
+# CMake >= 3.28 we use EXCLUDE_FROM_ALL flag to do that, but for older versions
+# we need to use FetchContent_Populate.
+if(CMAKE_VERSION VERSION_LESS 3.28)
+    FetchContent_Declare(
+        cuda-headers
+        GIT_REPOSITORY ${CUDA_REPO}
+        GIT_TAG ${CUDA_TAG})
+    FetchContent_Populate(cuda-headers)
+else()
+    FetchContent_Declare(
+        cuda-headers
+        GIT_REPOSITORY ${CUDA_REPO}
+        GIT_TAG ${CUDA_TAG}
+        EXCLUDE_FROM_ALL)
+    FetchContent_MakeAvailable(cuda-headers)
+endif()
 
 set(CUDA_INCLUDE_DIRS
     ${cuda-headers_SOURCE_DIR}
