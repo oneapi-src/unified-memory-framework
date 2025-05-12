@@ -239,6 +239,7 @@ jobs:
     name: Windows
     env:
       VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
+      VCPKG_PATH_BIN: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows/bin;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows/bin;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows/bin"
     strategy:
       matrix:
         os: ['windows-2019', 'windows-2022']
@@ -247,6 +248,7 @@ jobs:
         shared_library: ['ON', 'OFF']
         level_zero_provider: ['ON']
         cuda_provider: ['ON']
+        cmake_ver: ['default']
         include:
           - os: 'windows-2019'
             # clang build fails on Windows 2022
@@ -256,6 +258,7 @@ jobs:
             level_zero_provider: 'ON'
             cuda_provider: 'ON'
             toolset: "-T ClangCL"
+            cmake_ver: '3.14.0-win64-x64'
           - os: 'windows-2022'
             build_type: Release
             compiler: {c: cl, cxx: cl}
@@ -263,12 +266,14 @@ jobs:
             level_zero_provider: 'ON'
             cuda_provider: 'ON'
             umfd_lib: 'ON'
+            cmake_ver: '3.28.0-windows-x86_64'
           - os: 'windows-2022'
             build_type: Release
             compiler: {c: cl, cxx: cl}
             shared_library: 'ON'
             level_zero_provider: 'OFF'
             cuda_provider: 'OFF'
+            cmake_ver: 'default'
 
     runs-on: ${{matrix.os}}
 
@@ -278,6 +283,25 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Install cmake (non-default version)
+      if: matrix.cmake_ver != 'default'
+      run: |
+        $ErrorActionPreference = "Stop"
+        $cmakePath = "C:\Program Files\CMake"
+        if (Test-Path -Path $cmakePath) {
+          Write-Host "Removing existing CMake installation..."
+          Remove-Item -Recurse -Force -Path $cmakePath
+        }
+        $cmakeInstaller = "cmake-${{matrix.cmake_ver}}.msi"
+        $cmakeInstallerParts = $cmakeInstaller -split '-|\.'
+        $cmakeMajorMinorPatch = "$($cmakeInstallerParts[1]).$($cmakeInstallerParts[2]).$($cmakeInstallerParts[3])"
+        $cmakeUrl = "https://github.com/Kitware/CMake/releases/download/v$cmakeMajorMinorPatch/$cmakeInstaller"
+        Write-Host "Downloading CMake version ${{matrix.cmake_ver}}..."
+        Invoke-WebRequest -Uri $cmakeUrl -OutFile $cmakeInstaller -TimeoutSec 360
+        Write-Host "Installing CMake version ${{matrix.cmake_ver}}..."
+        Start-Process msiexec.exe -ArgumentList "/i $cmakeInstaller /quiet /norestart" -Wait
+        cmake --version
+
     - name: Initialize vcpkg
       uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
       with:
@@ -285,8 +309,13 @@ jobs:
         vcpkgDirectory: ${{env.BUILD_DIR}}/vcpkg
         vcpkgJsonGlob: '**/vcpkg.json'
 
+    # Install the dependencies and add the bin folders to the PATH for older
+    # versions of CMake to correctly locate the libraries
     - name: Install dependencies
-      run: vcpkg install --triplet x64-windows
+      run: |
+        vcpkg install --triplet x64-windows        
+        $env:Path = "${{env.VCPKG_PATH_BIN}};$env:Path"
+        echo "PATH=$env:Path" >> $env:GITHUB_ENV
       shell: pwsh # Specifies PowerShell as the shell for running the script.
 
     - name: Get UMF version
@@ -318,10 +347,23 @@ jobs:
 
     - name: Run tests
       working-directory: ${{env.BUILD_DIR}}
-      run: ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
+      # For CMake versions < 3.22 we have to add the build directory to the PATH
+      # manually
+      run: |
+        $m = [regex]::Matches((cmake --version), "cmake version (\d+)\.(\d+)\.(\d+)")
+        if ($m) {
+          $major = [int]$m.groups[1].Value
+          $minor = [int]$m.groups[2].Value
+          if ($major -lt 3 -or ($major -eq 3 -and $minor -lt 22)) {
+            $env:Path = "${{env.BUILD_DIR}}/bin/${{matrix.build_type}};${{env.BUILD_DIR}}/src/proxy_lib/${{matrix.build_type}};$env:Path"
+          }
+        }
+        ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
+      shell: pwsh
 
     - name: Test UMF installation and uninstallation
-      # The '--shared-library' parameter is added to the installation test when the UMF is built as a shared library
+      # The '--shared-library' parameter is added to the installation test when
+      # the UMF is built as a shared library
       run: >
         python3 ${{github.workspace}}/test/test_installation.py
         --build-dir ${{env.BUILD_DIR}}

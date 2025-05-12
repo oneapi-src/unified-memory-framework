@@ -151,7 +151,9 @@ function(add_umf_test)
             "${DLL_PATH_LIST};PATH=path_list_append:${CMAKE_BINARY_DIR}/bin/;PATH=path_list_append:${CMAKE_BINARY_DIR}/bin/$<CONFIG>/"
         )
 
-        # append PATH to DLLs
+        # append PATH to DLLs NOTE: this would work only for the CMake ver >= #
+        # 3.22. For the older versions, the PATH variable should be set in the
+        # test script)
         set_property(TEST ${TEST_NAME} PROPERTY ENVIRONMENT_MODIFICATION
                                                 "${DLL_PATH_LIST}")
     endif()
