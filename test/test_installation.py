@@ -181,7 +181,10 @@ class UmfInstaller:
                     f"Error: Installation directory '{self.install_dir}' is not empty"
                 )
 
-        install_cmd = f"cmake --build {self.build_dir} --config {self.build_type.title()} --target install"
+        if platform.system() == "Windows":
+            install_cmd = f"cmake --install {self.build_dir} --config {self.build_type.title()} --prefix {self.install_dir}"
+        else:
+            install_cmd = f"cmake --build {self.build_dir} --config {self.build_type.title()} --target install"
 
         try:
             print(f"Running command: {install_cmd}", flush=True)
