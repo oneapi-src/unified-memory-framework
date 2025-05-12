@@ -35,7 +35,6 @@ jobs:
     name: "${{matrix.os}}, ${{matrix.build_type}}, shared=${{matrix.shared_library}}"
     env:
       VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows;"
-      CUDA_PATH: "C:/cuda"
       COVERAGE_NAME : "exports-coverage-${{inputs.name}}"
     # run only on upstream; forks will not have the HW
     if: github.repository == 'oneapi-src/unified-memory-framework'
@@ -52,6 +51,7 @@ jobs:
           - os: 'Windows'
             compiler: {c: cl, cxx: cl}
             number_of_processors: '$Env:NUMBER_OF_PROCESSORS'
+            extra_cmake_path: '$Env:CUDA_PATH'
 
     runs-on: ["DSS-${{inputs.name}}", "DSS-${{matrix.os}}"]
     steps:
@@ -81,7 +81,7 @@ jobs:
       - name: Configure build
         run: >
           cmake
-          -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}${{env.CUDA_PATH}}"
+          -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}};${{matrix.extra_cmake_path}}"
           -B ${{env.BUILD_DIR}}
           -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
           -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
