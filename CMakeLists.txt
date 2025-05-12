@@ -119,6 +119,13 @@ set_property(CACHE UMF_PROXY_LIB_BASED_ON_POOL
              PROPERTY STRINGS ${KNOWN_PROXY_LIB_POOLS})
 list(APPEND UMF_OPTIONS_LIST UMF_PROXY_LIB_BASED_ON_POOL)
 
+if(UMF_DISABLE_HWLOC)
+    message(
+        WARNING
+            "UMF_DISABLE_HWLOC option is now deprecated and will be removed in v0.12.0 UMF release!"
+    )
+endif()
+
 # --------------------------------------------------------------------------- #
 # Setup required variables, definitions; fetch dependencies; include
 # sub_directories based on build options; set flags; etc.
