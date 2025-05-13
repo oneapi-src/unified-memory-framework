@@ -311,10 +311,10 @@ static void file_finalize(void *provider) {
     uintptr_t key = 0;
     uintptr_t rkey = 0;
     void *rvalue = NULL;
-    while (1 ==
-           critnib_find(file_provider->mmaps, key, FIND_G, &rkey, &rvalue)) {
+    while (1 == critnib_find(file_provider->mmaps, key, FIND_G, &rkey, &rvalue,
+                             NULL)) {
         utils_munmap((void *)rkey, (size_t)rvalue);
-        critnib_remove(file_provider->mmaps, rkey);
+        critnib_remove(file_provider->mmaps, rkey, NULL);
         key = rkey;
     }
 
@@ -644,7 +644,8 @@ static umf_result_t file_allocation_split_cb(void *provider, void *ptr,
         return UMF_RESULT_SUCCESS;
     }
 
-    void *value = critnib_get(file_provider->fd_offset_map, (uintptr_t)ptr);
+    void *value =
+        critnib_get(file_provider->fd_offset_map, (uintptr_t)ptr, NULL);
     if (value == NULL) {
         LOG_ERR("getting a value from the file descriptor offset map failed "
                 "(addr=%p)",
@@ -691,7 +692,7 @@ static umf_result_t file_allocation_merge_cb(void *provider, void *lowPtr,
     }
 
     void *value =
-        critnib_remove(file_provider->fd_offset_map, (uintptr_t)highPtr);
+        critnib_remove(file_provider->fd_offset_map, (uintptr_t)highPtr, NULL);
     if (value == NULL) {
         LOG_ERR("removing a value from the file descriptor offset map failed "
                 "(addr=%p)",
@@ -734,7 +735,8 @@ static umf_result_t file_get_ipc_handle(void *provider, const void *ptr,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    void *value = critnib_get(file_provider->fd_offset_map, (uintptr_t)ptr);
+    void *value =
+        critnib_get(file_provider->fd_offset_map, (uintptr_t)ptr, NULL);
     if (value == NULL) {
         LOG_ERR("getting a value from the IPC cache failed (addr=%p)", ptr);
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;

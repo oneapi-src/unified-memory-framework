@@ -1133,7 +1133,7 @@ static umf_result_t os_free(void *provider, void *ptr, size_t size) {
     os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
 
     if (os_provider->fd > 0) {
-        critnib_remove(os_provider->fd_offset_map, (uintptr_t)ptr);
+        critnib_remove(os_provider->fd_offset_map, (uintptr_t)ptr, NULL);
     }
 
     errno = 0;
@@ -1245,7 +1245,7 @@ static umf_result_t os_allocation_split(void *provider, void *ptr,
         return UMF_RESULT_SUCCESS;
     }
 
-    void *value = critnib_get(os_provider->fd_offset_map, (uintptr_t)ptr);
+    void *value = critnib_get(os_provider->fd_offset_map, (uintptr_t)ptr, NULL);
     if (value == NULL) {
         LOG_ERR("os_allocation_split(): getting a value from the file "
                 "descriptor offset map failed (addr=%p)",
@@ -1279,7 +1279,7 @@ static umf_result_t os_allocation_merge(void *provider, void *lowPtr,
     }
 
     void *value =
-        critnib_remove(os_provider->fd_offset_map, (uintptr_t)highPtr);
+        critnib_remove(os_provider->fd_offset_map, (uintptr_t)highPtr, NULL);
     if (value == NULL) {
         LOG_ERR("os_allocation_merge(): removing a value from the file "
                 "descriptor offset map failed (addr=%p)",
@@ -1324,7 +1324,7 @@ static umf_result_t os_get_ipc_handle(void *provider, const void *ptr,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    void *value = critnib_get(os_provider->fd_offset_map, (uintptr_t)ptr);
+    void *value = critnib_get(os_provider->fd_offset_map, (uintptr_t)ptr, NULL);
     if (value == NULL) {
         LOG_ERR("getting a value from the IPC cache failed (addr=%p)", ptr);
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
