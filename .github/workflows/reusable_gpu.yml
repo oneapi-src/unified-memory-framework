@@ -39,7 +39,6 @@ jobs:
     name: "${{matrix.os}}, ${{matrix.build_type}}, shared=${{matrix.shared_library}}"
     env:
       VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows;"
-      CUDA_PATH: "C:/cuda"
       COVERAGE_NAME : "exports-coverage-${{inputs.provider}}-${{inputs.runner}}"
     # run only on upstream; forks will not have the HW
     if: github.repository == 'oneapi-src/unified-memory-framework'
@@ -52,13 +51,14 @@ jobs:
 
     runs-on: ["DSS-${{inputs.runner}}", "DSS-${{matrix.os}}"]
     steps:
-      # Set number of processes and compiler based on OS
+      # Set various build params based on OS
       - name: "[Win] Establish build params"
         if : ${{ matrix.os == 'Windows' }}
         run: |
-          echo "C_COMPILER=cl" >> $GITHUB_ENV
-          echo "CXX_COMPILER=cl" >> $GITHUB_ENV
-          echo "PROCS=$Env:NUMBER_OF_PROCESSORS" >> $GITHUB_ENV
+          echo "C_COMPILER=cl" >> $env:GITHUB_ENV
+          echo "CXX_COMPILER=cl" >> $env:GITHUB_ENV
+          echo "PROCS=$Env:NUMBER_OF_PROCESSORS" >> $env:GITHUB_ENV
+          echo "EXTRA_CMAKE_PATH=$Env:CUDA_PATH" >> $env:GITHUB_ENV
 
       - name: "[Lin] Establish build params"
         if : ${{ matrix.os == 'Ubuntu' }}
@@ -93,7 +93,7 @@ jobs:
       - name: Configure build
         run: >
           cmake
-          -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}${{env.CUDA_PATH}}"
+          -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}};${{env.EXTRA_CMAKE_PATH}}"
           -B ${{env.BUILD_DIR}}
           -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
           -DCMAKE_BUILD_TYPE=${{matrix.build_type}}

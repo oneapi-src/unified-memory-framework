@@ -263,17 +263,15 @@ static umf_result_t query_attribute_value(void *srcMemoryTarget,
         return UMF_RESULT_ERROR_NOT_SUPPORTED;
     }
 
-    hwloc_obj_t srcNumaNode = hwloc_get_obj_by_type(
-        topology, HWLOC_OBJ_NUMANODE,
-        ((struct numa_memtarget_t *)srcMemoryTarget)->physical_id);
+    hwloc_obj_t srcNumaNode = hwloc_get_numanode_obj_by_os_index(
+        topology, ((struct numa_memtarget_t *)srcMemoryTarget)->physical_id);
     if (!srcNumaNode) {
         LOG_PERR("Getting HWLOC object by type failed");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    hwloc_obj_t dstNumaNode = hwloc_get_obj_by_type(
-        topology, HWLOC_OBJ_NUMANODE,
-        ((struct numa_memtarget_t *)dstMemoryTarget)->physical_id);
+    hwloc_obj_t dstNumaNode = hwloc_get_numanode_obj_by_os_index(
+        topology, ((struct numa_memtarget_t *)dstMemoryTarget)->physical_id);
     if (!dstNumaNode) {
         LOG_PERR("Getting HWLOC object by type failed");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
