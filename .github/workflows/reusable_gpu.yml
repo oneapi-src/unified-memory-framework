@@ -55,10 +55,10 @@ jobs:
       - name: "[Win] Establish build params"
         if : ${{ matrix.os == 'Windows' }}
         run: |
-          echo "C_COMPILER=cl" >> $GITHUB_ENV
-          echo "CXX_COMPILER=cl" >> $GITHUB_ENV
-          echo "PROCS=$Env:NUMBER_OF_PROCESSORS" >> $GITHUB_ENV
-          echo "EXTRA_CMAKE_PATH=$Env:CUDA_PATH" >> $GITHUB_ENV
+          echo "C_COMPILER=cl" >> $env:GITHUB_ENV
+          echo "CXX_COMPILER=cl" >> $env:GITHUB_ENV
+          echo "PROCS=$Env:NUMBER_OF_PROCESSORS" >> $env:GITHUB_ENV
+          echo "EXTRA_CMAKE_PATH=$Env:CUDA_PATH" >> $env:GITHUB_ENV
 
       - name: "[Lin] Establish build params"
         if : ${{ matrix.os == 'Ubuntu' }}
