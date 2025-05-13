@@ -21,13 +21,11 @@ if(NOT LIBHWLOC_FOUND)
     find_package(LIBHWLOC 2.3.0 REQUIRED hwloc)
 endif()
 
-find_package(CUDA REQUIRED cuda)
-
+# the CUDA headers are fetched from the NVIDIA repository
 include(FetchContent)
 
 set(CUDA_REPO "https://gitlab.com/nvidia/headers/cuda-individual/cudart.git")
 set(CUDA_TAG cuda-12.5.1)
-
 message(STATUS "Fetching CUDA ${CUDA_TAG} from ${CUDA_REPO} ...")
 
 FetchContent_Declare(
@@ -35,28 +33,28 @@ FetchContent_Declare(
     GIT_REPOSITORY ${CUDA_REPO}
     GIT_TAG ${CUDA_TAG}
     EXCLUDE_FROM_ALL)
-FetchContent_MakeAvailable(cuda-headers)
+FetchContent_Populate(cuda-headers)
 
 set(CUDA_INCLUDE_DIRS
     ${cuda-headers_SOURCE_DIR}
     CACHE PATH "Path to CUDA headers")
-message(STATUS "CUDA include directory: ${CUDA_INCLUDE_DIRS}")
+
+find_package(CUDA REQUIRED cuda)
+
+set(CUDA_SM_LIBRARY_DIRS ${LIBUMF_LIBRARY_DIRS} ${LIBHWLOC_LIBRARY_DIRS}
+                         ${CUDA_LIBRARY_DIRS})
+set(CUDA_SM_INCLUDE_DIRS ${CUDA_INCLUDE_DIRS} ${LIBUMF_INCLUDE_DIRS}
+                         ${UMF_EXAMPLE_DIR}/common)
+set(CUDA_SM_LIBS stdc++ ${CUDA_LIBRARIES} ${LIBUMF_LIBRARIES})
 
 # build the example
 set(EXAMPLE_NAME umf_example_cuda_shared_memory)
 add_executable(${EXAMPLE_NAME} cuda_shared_memory.c)
-target_include_directories(
-    ${EXAMPLE_NAME} PRIVATE ${CUDA_INCLUDE_DIRS} ${LIBUMF_INCLUDE_DIRS}
-                            ${UMF_EXAMPLE_DIR}/common)
-target_link_directories(
-    ${EXAMPLE_NAME}
-    PRIVATE
-    ${LIBUMF_LIBRARY_DIRS}
-    ${LIBHWLOC_LIBRARY_DIRS}
-    ${CUDA_LIBRARY_DIRS})
+target_include_directories(${EXAMPLE_NAME} PRIVATE ${CUDA_SM_INCLUDE_DIRS})
+target_link_directories(${EXAMPLE_NAME} PRIVATE ${CUDA_SM_LIBRARY_DIRS})
 target_link_options(${EXAMPLE_NAME} PRIVATE "-Wl,--start-group")
-target_link_libraries(${EXAMPLE_NAME} PRIVATE stdc++ ${CUDA_LIBRARIES}
-                                              ${LIBUMF_LIBRARIES})
+target_link_libraries(${EXAMPLE_NAME} PRIVATE ${CUDA_SM_LIBS})
+target_link_options(${EXAMPLE_NAME} PRIVATE "-Wl,--end-group")
 
 # an optional part - adds a test of this example
 add_test(
@@ -68,10 +66,10 @@ set_tests_properties(${EXAMPLE_NAME} PROPERTIES LABELS "example-standalone")
 
 if(LINUX)
     # set LD_LIBRARY_PATH
+    string(JOIN ":" CUDA_SM_LIBRARY_DIRS_JOINED ${CUDA_SM_LIBRARY_DIRS})
     set_property(
         TEST ${EXAMPLE_NAME}
         PROPERTY
             ENVIRONMENT_MODIFICATION
-            "LD_LIBRARY_PATH=path_list_append:${LIBUMF_LIBRARY_DIRS};LD_LIBRARY_PATH=path_list_append:${LIBHWLOC_LIBRARY_DIRS}"
-    )
+            "LD_LIBRARY_PATH=path_list_append:${CUDA_SM_LIBRARY_DIRS_JOINED}")
 endif()

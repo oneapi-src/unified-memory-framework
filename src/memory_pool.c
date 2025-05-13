@@ -115,6 +115,10 @@ err_provider_create:
 }
 
 void umfPoolDestroy(umf_memory_pool_handle_t hPool) {
+    if (umf_ba_global_is_destroyed()) {
+        return;
+    }
+
     hPool->ops.finalize(hPool->pool_priv);
 
     umf_memory_provider_handle_t hUpstreamProvider = NULL;

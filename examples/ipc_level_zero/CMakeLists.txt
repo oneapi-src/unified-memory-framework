@@ -21,40 +21,29 @@ if(NOT LIBHWLOC_FOUND)
     find_package(LIBHWLOC 2.3.0 REQUIRED hwloc)
 endif()
 
-include(FetchContent)
+pkg_check_modules(ZE_LOADER ze_loader)
+if(NOT ZE_LOADER_FOUND)
+    find_package(ZE_LOADER REQUIRED ze_loader)
+endif()
 
-set(LEVEL_ZERO_LOADER_REPO "https://github.com/oneapi-src/level-zero.git")
-set(LEVEL_ZERO_LOADER_TAG v1.21.9)
-
-message(
-    STATUS
-        "Fetching L0 loader (${LEVEL_ZERO_LOADER_TAG}) from ${LEVEL_ZERO_LOADER_REPO} ..."
-)
-
-FetchContent_Declare(
-    level-zero-loader
-    GIT_REPOSITORY ${LEVEL_ZERO_LOADER_REPO}
-    GIT_TAG ${LEVEL_ZERO_LOADER_TAG}
-    EXCLUDE_FROM_ALL)
-FetchContent_MakeAvailable(level-zero-loader)
-
-set(LEVEL_ZERO_INCLUDE_DIRS
-    ${level-zero-loader_SOURCE_DIR}/include
-    CACHE PATH "Path to Level Zero Headers")
-message(STATUS "Level Zero include directory: ${LEVEL_ZERO_INCLUDE_DIRS}")
+set(EXAMPLE_NAME umf_example_ipc_level_zero)
+set(IPC_LEVEL_ZERO_SM_LIBRARY_DIRS
+    ${LIBUMF_LIBRARY_DIRS} ${LIBHWLOC_LIBRARY_DIRS} ${ZE_LOADER_LIBRARY_DIRS})
+set(IPC_LEVEL_ZERO_SM_INCLUDE_DIRS
+    ${LIBUMF_INCLUDE_DIRS} ${ZE_LOADER_INCLUDE_DIRS} ${UMF_EXAMPLE_DIR}/common)
 
 # build the example
-set(EXAMPLE_NAME umf_example_ipc_level_zero)
 add_executable(
     ${EXAMPLE_NAME} ipc_level_zero.c
                     ${UMF_EXAMPLE_DIR}/common/examples_level_zero_helpers.c)
-target_include_directories(${EXAMPLE_NAME} PRIVATE ${LIBUMF_INCLUDE_DIRS}
-                                                   ${UMF_EXAMPLE_DIR}/common)
-target_link_directories(${EXAMPLE_NAME} PRIVATE ${LIBUMF_LIBRARY_DIRS}
-                        ${LIBHWLOC_LIBRARY_DIRS})
+target_include_directories(${EXAMPLE_NAME}
+                           PRIVATE ${IPC_LEVEL_ZERO_SM_INCLUDE_DIRS})
+target_link_directories(${EXAMPLE_NAME} PRIVATE
+                        ${IPC_LEVEL_ZERO_SM_LIBRARY_DIRS})
 target_link_options(${EXAMPLE_NAME} PRIVATE "-Wl,--start-group")
 target_link_libraries(${EXAMPLE_NAME} PRIVATE stdc++ ze_loader
                                               ${LIBUMF_LIBRARIES})
+target_link_options(${EXAMPLE_NAME} PRIVATE "-Wl,--end-group")
 
 # an optional part - adds a test of this example
 add_test(
@@ -65,10 +54,13 @@ add_test(
 set_tests_properties(${EXAMPLE_NAME} PROPERTIES LABELS "example-standalone")
 
 if(LINUX)
+    # set LD_LIBRARY_PATH
+    string(JOIN ":" IPC_LEVEL_ZERO_SM_LIBRARY_DIRS_JOINED
+           ${IPC_LEVEL_ZERO_SM_LIBRARY_DIRS})
     set_property(
         TEST ${EXAMPLE_NAME}
         PROPERTY
             ENVIRONMENT_MODIFICATION
-            "LD_LIBRARY_PATH=path_list_prepend:${LIBUMF_LIBRARY_DIRS};LD_LIBRARY_PATH=path_list_append:${LIBHWLOC_LIBRARY_DIRS}"
+            "LD_LIBRARY_PATH=path_list_prepend:${IPC_LEVEL_ZERO_SM_LIBRARY_DIRS_JOINED}"
     )
 endif()
