@@ -11,8 +11,9 @@ TOOL=$3
 TESTS=$4
 
 function print_usage() {
-	echo "$(basename $0) - run UMF tests and examples under a valgrind tool (memcheck, drd or helgrind)"
-	echo "Usage: $(basename $0) <workspace_dir> <build_dir> <memcheck|drd|helgrind> [tests_examples]"
+	echo "$(basename $0) - run UMF tests and examples under a valgrind tool (memcheck, drd, drdshort or helgrind)"
+	echo "                 drdshort - same as drd, but the longest lasting tests are excluded"
+	echo "Usage: $(basename $0) <workspace_dir> <build_dir> <memcheck|drd|drdshort|helgrind> [tests_examples]"
 	echo "Where:"
 	echo
 	echo "tests_examples - (optional) list of tests or examples to be run (paths relative to the <build_dir> build directory)."
@@ -43,12 +44,19 @@ if [ $(ls -1 ${BUILD_DIR}/test/test_* 2>/dev/null | wc -l) -eq 0 ]; then
 	exit 1
 fi
 
+EXCLUDE_LONGEST_TESTS=0
+
 case $TOOL in
 memcheck)
 	OPTION="--leak-check=full"
 	;;
 drd)
 	OPTION="--tool=drd"
+	;;
+drdshort)
+	OPTION="--tool=drd"
+	TOOL="drd"
+	EXCLUDE_LONGEST_TESTS=1
 	;;
 helgrind)
 	OPTION="--tool=helgrind"
@@ -149,6 +157,16 @@ for test in $TESTS; do
 		continue; # skip testing helper binaries used by the umf_example_ipc_ipcapi_* examples
 		;;
 	esac
+
+	if [ $EXCLUDE_LONGEST_TESTS -eq 1 ]; then
+		# skip the longest tests
+		case $test in
+		./test/test_jemalloc_pool|./test/test_jemalloc_coarse_file|./test/test_scalable_pool|./test/test_ipc_max_opened_limit)
+			echo "- SKIPPED (VERY LONG TEST)"
+			continue;
+			;;
+		esac
+	fi
 
 	[ "$FILTER" != "" ] && echo -n "($FILTER) "
 

@@ -34,7 +34,7 @@ jobs:
         install_tbb: ['ON']
         disable_hwloc: ['OFF']
         link_hwloc_statically: ['OFF']
-        cmake_ver: ['latest']
+        cmake_ver: ['default']
         include:
           - ubuntu_ver: 22.04
             build_type: Release
@@ -63,7 +63,7 @@ jobs:
             install_tbb: 'ON'
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
-            cmake_ver: 'latest'
+            cmake_ver: 'default'
           # test level_zero_provider='OFF' and cuda_provider='OFF'
           - ubuntu_ver: 22.04
             build_type: Release
@@ -74,7 +74,7 @@ jobs:
             install_tbb: 'ON'
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
-            cmake_ver: 'latest'
+            cmake_ver: 'default'
           # test icx compiler
           - ubuntu_ver: 22.04
             build_type: Release
@@ -85,7 +85,7 @@ jobs:
             install_tbb: 'ON'
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
-            cmake_ver: 'latest'
+            cmake_ver: 'default'
           # test lld linker
           - ubuntu_ver: 24.04
             build_type: Release
