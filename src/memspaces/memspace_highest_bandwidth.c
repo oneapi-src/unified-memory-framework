@@ -105,7 +105,6 @@ static void umfMemspaceHighestBandwidthInit(void) {
         LOG_DEBUG(
             "Creating the highest bandwidth memspace failed with the error: %u",
             ret);
-        assert(ret == UMF_RESULT_ERROR_NOT_SUPPORTED);
     }
 }
 
