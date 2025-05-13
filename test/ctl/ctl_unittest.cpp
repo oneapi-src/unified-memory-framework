@@ -50,7 +50,6 @@ TEST_F(test, ctl_debug_read_from_string) {
               0);
 
     debug_ctl_register(ctl_handler);
-    deinitialize_debug_ctl();
 }
 
 int ctl_config_write_to_file(const char *filename, const char *data) {
@@ -89,6 +88,5 @@ TEST_F(test, ctl_debug_read_from_file) {
     ASSERT_EQ(value, 1);
 
     debug_ctl_register(ctl_handler);
-    deinitialize_debug_ctl();
 #endif
 }

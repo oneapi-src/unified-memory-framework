@@ -57,12 +57,11 @@ static __TLS fixed_last_native_error_t TLS_last_native_error;
 #define CTL_PROVIDER_TYPE fixed_memory_provider_t
 #include "provider_ctl_stats_impl.h"
 
-struct ctl *fixed_memory_ctl_root;
+struct ctl fixed_memory_ctl_root;
 static UTIL_ONCE_FLAG ctl_initialized = UTIL_ONCE_FLAG_INIT;
 
 static void initialize_fixed_ctl(void) {
-    fixed_memory_ctl_root = ctl_new();
-    CTL_REGISTER_MODULE(fixed_memory_ctl_root, stats);
+    CTL_REGISTER_MODULE(&fixed_memory_ctl_root, stats);
 }
 
 static const char *Native_error_str[] = {
@@ -283,7 +282,7 @@ static umf_result_t fixed_ctl(void *provider, int operationType,
                               const char *name, void *arg, size_t size,
                               umf_ctl_query_type_t query_type) {
     utils_init_once(&ctl_initialized, initialize_fixed_ctl);
-    return ctl_query(fixed_memory_ctl_root, provider, operationType, name,
+    return ctl_query(&fixed_memory_ctl_root, provider, operationType, name,
                      query_type, arg, size);
 }
 

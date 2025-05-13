@@ -144,9 +144,11 @@ typedef struct umf_memory_pool_ops_t {
                         void *arg, size_t size, umf_ctl_query_type_t queryType);
 
     ///
-    /// @brief Get the name of the memory pool.
-    /// @param pool pointer to the memory pool
-    /// @return name of the memory pool
+    /// @brief Retrieves the name of the disjoint memory pool [optional]
+    /// @param pool pointer to the memory pool or NULL value
+    /// @return A constant character string representing the pool's name.
+    ///         Returns "disjoint" if `pool` is NULL, otherwise returns the
+    ///         configured name of the specific pool instance.
     ///
     const char *(*get_name)(void *pool);
 } umf_memory_pool_ops_t;

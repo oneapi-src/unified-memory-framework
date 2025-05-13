@@ -545,24 +545,6 @@ error_file_parse:
 #endif
 
 /*
- * ctl_new -- allocates and initializes ctl data structures
- */
-struct ctl *ctl_new(void) {
-    struct ctl *c = Zalloc(sizeof(struct ctl));
-    if (c == NULL) {
-        return NULL;
-    }
-
-    c->first_free = 0;
-    return c;
-}
-
-/*
- * ctl_delete -- deletes ctl
- */
-void ctl_delete(struct ctl *c) { umf_ba_global_free(c); }
-
-/*
  * ctl_parse_ll -- (internal) parses and returns a long long signed integer
  */
 static long long ctl_parse_ll(const char *str) {

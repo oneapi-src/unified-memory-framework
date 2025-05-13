@@ -173,7 +173,7 @@ static const char *Native_error_str[] = {
         "HWLOC topology discovery failed",
 };
 
-struct ctl *os_memory_ctl_root;
+struct ctl os_memory_ctl_root;
 
 static UTIL_ONCE_FLAG ctl_initialized = UTIL_ONCE_FLAG_INIT;
 
@@ -197,9 +197,8 @@ static const umf_ctl_node_t CTL_NODE(params)[] = {CTL_LEAF_RO(ipc_enabled),
                                                   CTL_NODE_END};
 
 static void initialize_os_ctl(void) {
-    os_memory_ctl_root = ctl_new();
-    CTL_REGISTER_MODULE(os_memory_ctl_root, params);
-    CTL_REGISTER_MODULE(os_memory_ctl_root, stats);
+    CTL_REGISTER_MODULE(&os_memory_ctl_root, params);
+    CTL_REGISTER_MODULE(&os_memory_ctl_root, stats);
 }
 
 static void os_store_last_native_error(int32_t native_error, int errno_value) {
@@ -1446,7 +1445,7 @@ static umf_result_t os_ctl(void *hProvider, int operationType, const char *name,
                            void *arg, size_t size,
                            umf_ctl_query_type_t query_type) {
     utils_init_once(&ctl_initialized, initialize_os_ctl);
-    return ctl_query(os_memory_ctl_root, hProvider, operationType, name,
+    return ctl_query(&os_memory_ctl_root, hProvider, operationType, name,
                      query_type, arg, size);
 }
 

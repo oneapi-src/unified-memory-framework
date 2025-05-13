@@ -113,9 +113,6 @@ struct ctl {
     int first_free;
 };
 
-struct ctl *ctl_new(void);
-void ctl_delete(struct ctl *c);
-
 void initialize_global_ctl(void);
 
 int ctl_load_config_from_string(struct ctl *ctl, void *ctx,

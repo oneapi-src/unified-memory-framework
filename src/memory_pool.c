@@ -69,7 +69,7 @@ static int CTL_SUBTREE_HANDLER(default)(void *ctx,
         }
         if (UMF_DEFAULT_SIZE == i) {
             LOG_ERR("Default entries array is full");
-            return -1;
+            return UMF_RESULT_ERROR_OUT_OF_RESOURCES;
         }
     } else if (queryType == CTL_QUERY_READ) {
         int i = 0;
