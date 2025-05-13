@@ -721,6 +721,7 @@ TEST_P(umfIpcTest, ConcurrentDestroyIpcHandlers) {
 
     for (size_t i = 0; i < NUM_POOLS; ++i) {
         consumerPools.push_back(makePool());
+        ASSERT_NE(consumerPools[i].get(), nullptr);
     }
 
     for (size_t i = 0; i < NUM_ALLOCS; ++i) {
