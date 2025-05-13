@@ -85,6 +85,7 @@ jobs:
    - name: Configure build
      shell: cmd
      run: |
+       rmdir ${{env.BUILD_DIR}} /s /q
        call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
        call "C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat"
        cmake ^
