@@ -1133,7 +1133,7 @@ static umf_result_t os_free(void *provider, void *ptr, size_t size) {
     os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
 
     if (os_provider->fd > 0) {
-        critnib_remove(os_provider->fd_offset_map, (uintptr_t)ptr);
+        critnib_remove_release(os_provider->fd_offset_map, (uintptr_t)ptr);
     }
 
     errno = 0;
@@ -1245,7 +1245,9 @@ static umf_result_t os_allocation_split(void *provider, void *ptr,
         return UMF_RESULT_SUCCESS;
     }
 
-    void *value = critnib_get(os_provider->fd_offset_map, (uintptr_t)ptr);
+    void *ref_value = NULL;
+    void *value =
+        critnib_get(os_provider->fd_offset_map, (uintptr_t)ptr, &ref_value);
     if (value == NULL) {
         LOG_ERR("os_allocation_split(): getting a value from the file "
                 "descriptor offset map failed (addr=%p)",
@@ -1255,6 +1257,7 @@ static umf_result_t os_allocation_split(void *provider, void *ptr,
 
     uintptr_t new_key = (uintptr_t)ptr + firstSize;
     void *new_value = (void *)((uintptr_t)value + firstSize);
+    critnib_release(os_provider->fd_offset_map, ref_value);
     int ret = critnib_insert(os_provider->fd_offset_map, new_key, new_value,
                              0 /* update */);
     if (ret) {
@@ -1278,9 +1281,9 @@ static umf_result_t os_allocation_merge(void *provider, void *lowPtr,
         return UMF_RESULT_SUCCESS;
     }
 
-    void *value =
-        critnib_remove(os_provider->fd_offset_map, (uintptr_t)highPtr);
-    if (value == NULL) {
+    int ret =
+        critnib_remove_release(os_provider->fd_offset_map, (uintptr_t)highPtr);
+    if (ret) {
         LOG_ERR("os_allocation_merge(): removing a value from the file "
                 "descriptor offset map failed (addr=%p)",
                 highPtr);
@@ -1324,7 +1327,9 @@ static umf_result_t os_get_ipc_handle(void *provider, const void *ptr,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    void *value = critnib_get(os_provider->fd_offset_map, (uintptr_t)ptr);
+    void *ref_value = NULL;
+    void *value =
+        critnib_get(os_provider->fd_offset_map, (uintptr_t)ptr, &ref_value);
     if (value == NULL) {
         LOG_ERR("getting a value from the IPC cache failed (addr=%p)", ptr);
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
@@ -1333,6 +1338,7 @@ static umf_result_t os_get_ipc_handle(void *provider, const void *ptr,
     os_ipc_data_t *os_ipc_data = (os_ipc_data_t *)providerIpcData;
     os_ipc_data->pid = utils_getpid();
     os_ipc_data->fd_offset = (size_t)value - 1;
+    critnib_release(os_provider->fd_offset_map, ref_value);
     os_ipc_data->size = size;
     os_ipc_data->protection = os_provider->protection;
     os_ipc_data->visibility = os_provider->visibility;
