@@ -14,7 +14,7 @@
 using umf_test::test;
 
 TEST_F(test, memoryProviderTrace) {
-    using calls_type = std::unordered_map<std::string, size_t>;
+    using calls_type = std::unordered_map<std::string, unsigned int>;
     calls_type calls;
     auto trace = [](void *handler, const char *name) {
         auto &calls = *static_cast<calls_type *>(handler);
@@ -30,47 +30,47 @@ TEST_F(test, memoryProviderTrace) {
     void *ptr;
     auto ret = umfMemoryProviderAlloc(tracingProvider.get(), 0, 0, &ptr);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
-    ASSERT_EQ(calls["alloc"], 1);
+    ASSERT_EQ(calls["alloc"], 1UL);
     ASSERT_EQ(calls.size(), ++call_count);
 
     ret = umfMemoryProviderFree(tracingProvider.get(), nullptr, 0);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
-    ASSERT_EQ(calls["free"], 1);
+    ASSERT_EQ(calls["free"], 1UL);
     ASSERT_EQ(calls.size(), ++call_count);
 
     umfMemoryProviderGetLastNativeError(tracingProvider.get(), nullptr,
                                         nullptr);
-    ASSERT_EQ(calls["get_last_native_error"], 1);
+    ASSERT_EQ(calls["get_last_native_error"], 1UL);
     ASSERT_EQ(calls.size(), ++call_count);
 
     size_t page_size;
     ret = umfMemoryProviderGetRecommendedPageSize(tracingProvider.get(), 0,
                                                   &page_size);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
-    ASSERT_EQ(calls["get_recommended_page_size"], 1);
+    ASSERT_EQ(calls["get_recommended_page_size"], 1UL);
     ASSERT_EQ(calls.size(), ++call_count);
 
     ret = umfMemoryProviderGetMinPageSize(tracingProvider.get(), nullptr,
                                           &page_size);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
-    ASSERT_EQ(calls["get_min_page_size"], 1);
+    ASSERT_EQ(calls["get_min_page_size"], 1UL);
     ASSERT_EQ(calls.size(), ++call_count);
 
     const char *pName = umfMemoryProviderGetName(tracingProvider.get());
-    ASSERT_EQ(calls["name"], 1);
+    ASSERT_EQ(calls["name"], 1UL);
     ASSERT_EQ(calls.size(), ++call_count);
     ASSERT_EQ(std::string(pName), std::string("null"));
 
     ret = umfMemoryProviderPurgeLazy(tracingProvider.get(), &page_size,
                                      sizeof(page_size));
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
-    ASSERT_EQ(calls["purge_lazy"], 1);
+    ASSERT_EQ(calls["purge_lazy"], 1UL);
     ASSERT_EQ(calls.size(), ++call_count);
 
     ret = umfMemoryProviderPurgeForce(tracingProvider.get(), &page_size,
                                       sizeof(page_size));
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
-    ASSERT_EQ(calls["purge_force"], 1);
+    ASSERT_EQ(calls["purge_force"], 1UL);
     ASSERT_EQ(calls.size(), ++call_count);
 
     void *lowPtr = (void *)0xBAD;
@@ -78,14 +78,14 @@ TEST_F(test, memoryProviderTrace) {
     ret = umfMemoryProviderAllocationMerge(tracingProvider.get(), lowPtr,
                                            highPtr, 2 * 4096);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
-    ASSERT_EQ(calls["allocation_merge"], 1);
+    ASSERT_EQ(calls["allocation_merge"], 1UL);
     ASSERT_EQ(calls.size(), ++call_count);
 
     ptr = (void *)0xBAD;
     ret = umfMemoryProviderAllocationSplit(tracingProvider.get(), ptr, 2 * 4096,
                                            4096);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
-    ASSERT_EQ(calls["allocation_split"], 1);
+    ASSERT_EQ(calls["allocation_split"], 1UL);
     ASSERT_EQ(calls.size(), ++call_count);
 }
 

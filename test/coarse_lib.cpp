@@ -145,27 +145,27 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_basic_provider) {
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     umf_result = coarse_alloc(ch, 2 * MB, 0, (void **)&ptr);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(ptr, nullptr);
     ASSERT_EQ(coarse_get_stats(ch).used_size, 2 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 2);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)2);
 
     umf_result = coarse_free(ch, ptr, 2 * MB);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_EQ(coarse_get_stats(ch).used_size, 0);
+    ASSERT_EQ(coarse_get_stats(ch).used_size, (size_t)0);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     // test double free
     umf_result = coarse_free(ch, ptr, 2 * MB);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
-    ASSERT_EQ(coarse_get_stats(ch).used_size, 0);
+    ASSERT_EQ(coarse_get_stats(ch).used_size, (size_t)0);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     coarse_delete(ch);
     umfMemoryProviderDestroy(malloc_memory_provider);
@@ -194,27 +194,27 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_basic_fixed_memory) {
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, buff_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     umf_result = coarse_alloc(ch, 2 * MB, 0, (void **)&ptr);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(ptr, nullptr);
     ASSERT_EQ(coarse_get_stats(ch).used_size, 2 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, buff_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 2);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)2);
 
     umf_result = coarse_free(ch, ptr, 2 * MB);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_EQ(coarse_get_stats(ch).used_size, 0);
+    ASSERT_EQ(coarse_get_stats(ch).used_size, (size_t)0);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, buff_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     // test double free
     umf_result = coarse_free(ch, ptr, 2 * MB);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
-    ASSERT_EQ(coarse_get_stats(ch).used_size, 0);
+    ASSERT_EQ(coarse_get_stats(ch).used_size, (size_t)0);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, buff_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     coarse_delete(ch);
 }
@@ -242,7 +242,7 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_fixed_memory_various) {
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, buff_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     // free NULL
     umf_result = coarse_free(ch, nullptr, 2 * MB);
@@ -257,9 +257,9 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_fixed_memory_various) {
     umf_result = coarse_alloc(ch, 2 * MB, 3, (void **)&ptr);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ALIGNMENT);
     ASSERT_EQ(ptr, nullptr);
-    ASSERT_EQ(coarse_get_stats(ch).used_size, 0);
+    ASSERT_EQ(coarse_get_stats(ch).used_size, (size_t)0);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, buff_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     // not freed allocation
     // coarse_delete() prints LOG_WARN() in Debug mode
@@ -268,7 +268,7 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_fixed_memory_various) {
     ASSERT_NE(ptr, nullptr);
     ASSERT_EQ(coarse_get_stats(ch).used_size, 2 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, buff_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 2);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)2);
 
     coarse_delete(ch);
 }
@@ -295,7 +295,7 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_split_merge) {
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     /* test coarse_split */
     umf_result = coarse_alloc(ch, 2 * MB, 0, (void **)&ptr);
@@ -303,25 +303,25 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_split_merge) {
     ASSERT_NE(ptr, nullptr);
     ASSERT_EQ(coarse_get_stats(ch).used_size, 2 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 2);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)2);
 
     umf_result = coarse_split(ch, ptr, 2 * MB, 1 * MB);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_EQ(coarse_get_stats(ch).used_size, 2 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 3);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)3);
 
     umf_result = coarse_free(ch, (ptr + 1 * MB), 1 * MB);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_EQ(coarse_get_stats(ch).used_size, 1 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 2);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)2);
 
     umf_result = coarse_free(ch, ptr, 1 * MB);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_EQ(coarse_get_stats(ch).used_size, 0);
+    ASSERT_EQ(coarse_get_stats(ch).used_size, (size_t)0);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     /* test coarse_merge */
     umf_result = coarse_alloc(ch, 2 * MB, 0, (void **)&ptr);
@@ -329,25 +329,25 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_split_merge) {
     ASSERT_NE(ptr, nullptr);
     ASSERT_EQ(coarse_get_stats(ch).used_size, 2 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 2);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)2);
 
     umf_result = coarse_split(ch, ptr, 2 * MB, 1 * MB);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_EQ(coarse_get_stats(ch).used_size, 2 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 3);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)3);
 
     umf_result = coarse_merge(ch, ptr, (ptr + 1 * MB), 2 * MB);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_EQ(coarse_get_stats(ch).used_size, 2 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 2);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)2);
 
     umf_result = coarse_free(ch, ptr, 2 * MB);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_EQ(coarse_get_stats(ch).used_size, 0);
+    ASSERT_EQ(coarse_get_stats(ch).used_size, (size_t)0);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     coarse_delete(coarse_handle);
     umfMemoryProviderDestroy(malloc_memory_provider);
@@ -432,10 +432,10 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_add_memory_fixed_null_0) {
 }
 
 TEST_P(CoarseWithMemoryStrategyTest, coarseTest_null_stats) {
-    ASSERT_EQ(coarse_get_stats(nullptr).alloc_size, 0);
-    ASSERT_EQ(coarse_get_stats(nullptr).used_size, 0);
-    ASSERT_EQ(coarse_get_stats(nullptr).num_all_blocks, 0);
-    ASSERT_EQ(coarse_get_stats(nullptr).num_free_blocks, 0);
+    ASSERT_EQ(coarse_get_stats(nullptr).alloc_size, (size_t)0);
+    ASSERT_EQ(coarse_get_stats(nullptr).used_size, (size_t)0);
+    ASSERT_EQ(coarse_get_stats(nullptr).num_all_blocks, (size_t)0);
+    ASSERT_EQ(coarse_get_stats(nullptr).num_free_blocks, (size_t)0);
 }
 
 TEST_P(CoarseWithMemoryStrategyTest, coarseTest_split_merge_negative) {
@@ -460,7 +460,7 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_split_merge_negative) {
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     /* test coarse_split */
 
@@ -469,7 +469,7 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_split_merge_negative) {
     ASSERT_NE(ptr, nullptr);
     ASSERT_EQ(coarse_get_stats(ch).used_size, 6 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 2);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)2);
 
     // firstSize >= totalSize
     umf_result = coarse_split(ch, ptr, 6 * MB, 6 * MB);
@@ -495,14 +495,14 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_split_merge_negative) {
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     // split freed block
     umf_result = coarse_split(ch, ptr, alloc_size, 1 * MB);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     /* test coarse_merge */
 
@@ -511,21 +511,21 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_split_merge_negative) {
     ASSERT_NE(ptr, nullptr);
     ASSERT_EQ(coarse_get_stats(ch).used_size, 6 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 2);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)2);
 
     // split (6 * MB) block into (1 * MB) + (5 * MB)
     umf_result = coarse_split(ch, ptr, 6 * MB, 1 * MB);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_EQ(coarse_get_stats(ch).used_size, 6 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 3);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)3);
 
     // split (5 * MB) block into (2 * MB) + (3 * MB)
     umf_result = coarse_split(ch, (ptr + 1 * MB), 5 * MB, 2 * MB);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_EQ(coarse_get_stats(ch).used_size, 6 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 4);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)4);
 
     // now we have 3 used blocks: (1 * MB) + (2 * MB) + (3 * MB)
 
@@ -558,7 +558,7 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_split_merge_negative) {
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_EQ(coarse_get_stats(ch).used_size, 4 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 4);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)4);
 
     // now we have 3 blocks: (1 * MB) used + (2 * MB) freed + (3 * MB) used
 
@@ -574,13 +574,13 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_split_merge_negative) {
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_EQ(coarse_get_stats(ch).used_size, 3 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 3);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)3);
 
     umf_result = coarse_free(ch, (ptr + 3 * MB), 3 * MB);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_EQ(coarse_get_stats(ch).used_size, 0);
+    ASSERT_EQ(coarse_get_stats(ch).used_size, (size_t)0);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     coarse_delete(coarse_handle);
     umfMemoryProviderDestroy(malloc_memory_provider);
@@ -607,8 +607,8 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_basic_alloc_cb_fails) {
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY);
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
-    ASSERT_EQ(coarse_get_stats(ch).alloc_size, 0);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 0);
+    ASSERT_EQ(coarse_get_stats(ch).alloc_size, (size_t)0);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)0);
 
     coarse_delete(ch);
     umfMemoryProviderDestroy(malloc_memory_provider);
@@ -636,7 +636,7 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_basic_free_cb_fails) {
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     coarse_delete(ch);
     umfMemoryProviderDestroy(malloc_memory_provider);
@@ -669,34 +669,34 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_split_cb_fails) {
     void *ptr = nullptr;
     const size_t alloc_size = 20 * MB;
 
-    ASSERT_EQ(coarse_get_stats(ch).used_size, 0);
-    ASSERT_EQ(coarse_get_stats(ch).alloc_size, 0);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 0);
+    ASSERT_EQ(coarse_get_stats(ch).used_size, (size_t)0);
+    ASSERT_EQ(coarse_get_stats(ch).alloc_size, (size_t)0);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)0);
 
     umf_result = coarse_add_memory_from_provider(ch, alloc_size);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     // coarse_alloc(alloc_size / 2, alignment = 0)
     umf_result = coarse_alloc(ch, alloc_size / 2, 0, &ptr);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_USER_SPECIFIC);
     ASSERT_EQ(ptr, nullptr);
 
-    ASSERT_EQ(coarse_get_stats(ch).used_size, 0);
+    ASSERT_EQ(coarse_get_stats(ch).used_size, (size_t)0);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     // coarse_alloc(alloc_size / 2, alignment = 2 * MB)
     umf_result = coarse_alloc(ch, alloc_size / 2, 2 * MB, &ptr);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_USER_SPECIFIC);
     ASSERT_EQ(ptr, nullptr);
 
-    ASSERT_EQ(coarse_get_stats(ch).used_size, 0);
+    ASSERT_EQ(coarse_get_stats(ch).used_size, (size_t)0);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     // coarse_alloc(alloc_size, alignment = 0) - OK
     umf_result = coarse_alloc(ch, alloc_size, 0, &ptr);
@@ -705,21 +705,21 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_split_cb_fails) {
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, alloc_size);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     umf_result = coarse_split(ch, ptr, alloc_size, alloc_size / 2);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_USER_SPECIFIC);
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, alloc_size);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     umf_result = coarse_free(ch, ptr, alloc_size);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
-    ASSERT_EQ(coarse_get_stats(ch).used_size, 0);
+    ASSERT_EQ(coarse_get_stats(ch).used_size, (size_t)0);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     coarse_delete(coarse_handle);
     umfMemoryProviderDestroy(malloc_memory_provider);
@@ -749,7 +749,7 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_merge_cb_fails) {
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, buff_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     /* test coarse_merge */
     umf_result = coarse_alloc(ch, 3 * MB, 0, (void **)&ptr);
@@ -757,37 +757,37 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_merge_cb_fails) {
     ASSERT_NE(ptr, nullptr);
     ASSERT_EQ(coarse_get_stats(ch).used_size, 3 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, buff_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 2);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)2);
 
     umf_result = coarse_split(ch, ptr, 3 * MB, 1 * MB);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_EQ(coarse_get_stats(ch).used_size, 3 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, buff_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 3);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)3);
 
     umf_result = coarse_merge(ch, ptr, (ptr + 1 * MB), 3 * MB);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_USER_SPECIFIC);
     ASSERT_EQ(coarse_get_stats(ch).used_size, 3 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, buff_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 3);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)3);
 
     umf_result = coarse_free(ch, ptr, 3 * MB);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
     ASSERT_EQ(coarse_get_stats(ch).used_size, 3 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, buff_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 3);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)3);
 
     umf_result = coarse_free(ch, ptr, 1 * MB);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_EQ(coarse_get_stats(ch).used_size, 2 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, buff_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 3);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)3);
 
     umf_result = coarse_free(ch, (ptr + 1 * MB), 2 * MB);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_EQ(coarse_get_stats(ch).used_size, 0);
+    ASSERT_EQ(coarse_get_stats(ch).used_size, (size_t)0);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, buff_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 3);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)3);
 
     coarse_delete(coarse_handle);
 }
@@ -808,15 +808,15 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_fixed_memory_alloc_set) {
     coarse_t *ch = coarse_handle;
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
-    ASSERT_EQ(coarse_get_stats(ch).alloc_size, 0);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 0);
+    ASSERT_EQ(coarse_get_stats(ch).alloc_size, (size_t)0);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)0);
 
     umf_result = coarse_add_memory_fixed(ch, buf, buff_size);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
-    ASSERT_EQ(coarse_get_stats(ch).alloc_size, 0);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 0);
+    ASSERT_EQ(coarse_get_stats(ch).alloc_size, (size_t)0);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)0);
 
     coarse_delete(ch);
 }
@@ -837,15 +837,15 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_fixed_memory_free_set) {
     coarse_t *ch = coarse_handle;
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
-    ASSERT_EQ(coarse_get_stats(ch).alloc_size, 0);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 0);
+    ASSERT_EQ(coarse_get_stats(ch).alloc_size, (size_t)0);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)0);
 
     umf_result = coarse_add_memory_fixed(ch, buf, buff_size);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
-    ASSERT_EQ(coarse_get_stats(ch).alloc_size, 0);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 0);
+    ASSERT_EQ(coarse_get_stats(ch).alloc_size, (size_t)0);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)0);
 
     coarse_delete(ch);
 }
@@ -864,15 +864,15 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_fixed_memory_alloc_free_set) {
     coarse_t *ch = coarse_handle;
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
-    ASSERT_EQ(coarse_get_stats(ch).alloc_size, 0);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 0);
+    ASSERT_EQ(coarse_get_stats(ch).alloc_size, (size_t)0);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)0);
 
     umf_result = coarse_add_memory_fixed(ch, buf, buff_size);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
-    ASSERT_EQ(coarse_get_stats(ch).alloc_size, 0);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 0);
+    ASSERT_EQ(coarse_get_stats(ch).alloc_size, (size_t)0);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)0);
 
     coarse_delete(ch);
 }
@@ -896,31 +896,31 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_provider_alloc_not_set) {
     void *ptr;
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
-    ASSERT_EQ(coarse_get_stats(ch).alloc_size, 0);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 0);
+    ASSERT_EQ(coarse_get_stats(ch).alloc_size, (size_t)0);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)0);
 
     umf_result = coarse_add_memory_from_provider(ch, alloc_size);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
-    ASSERT_EQ(coarse_get_stats(ch).alloc_size, 0);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 0);
+    ASSERT_EQ(coarse_get_stats(ch).alloc_size, (size_t)0);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)0);
 
     umf_result = coarse_alloc(ch, 2 * MB, 0, &ptr);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY);
     ASSERT_EQ(ptr, nullptr);
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
-    ASSERT_EQ(coarse_get_stats(ch).alloc_size, 0);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 0);
+    ASSERT_EQ(coarse_get_stats(ch).alloc_size, (size_t)0);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)0);
 
     umf_result = coarse_alloc(ch, 2 * MB, 2 * MB, &ptr);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY);
     ASSERT_EQ(ptr, nullptr);
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
-    ASSERT_EQ(coarse_get_stats(ch).alloc_size, 0);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 0);
+    ASSERT_EQ(coarse_get_stats(ch).alloc_size, (size_t)0);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)0);
 
     coarse_delete(ch);
     umfMemoryProviderDestroy(malloc_memory_provider);
@@ -957,7 +957,7 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_basic) {
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, init_buffer_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     // alloc 2x 2MB
     umf_result = coarse_alloc(ch, 2 * MB, 0, (void **)&p1);
@@ -965,14 +965,14 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_basic) {
     ASSERT_NE(p1, nullptr);
     ASSERT_EQ(coarse_get_stats(ch).used_size, 2 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, init_buffer_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 2);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)2);
 
     umf_result = coarse_alloc(ch, 2 * MB, 0, (void **)&p2);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(p2, nullptr);
     ASSERT_EQ(coarse_get_stats(ch).used_size, 4 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, init_buffer_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 3);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)3);
     ASSERT_NE(p1, p2);
 
     // swap pointers to get p1 < p2
@@ -988,14 +988,14 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_basic) {
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_EQ(coarse_get_stats(ch).used_size, 2 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, init_buffer_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 3);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)3);
 
     umf_result = coarse_alloc(ch, 2 * MB, 0, (void **)&p1);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(p1, nullptr);
     ASSERT_EQ(coarse_get_stats(ch).used_size, 4 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, init_buffer_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 3);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)3);
 
     // free all allocs
     // overall alloc size shouldn't change
@@ -1003,24 +1003,24 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_basic) {
     // and the remaining init block
     umf_result = coarse_free(ch, p1, 2 * MB);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 3);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)3);
     umf_result = coarse_free(ch, p2, 2 * MB);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, init_buffer_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     // test allocations with alignment
     // TODO: what about holes?
     umf_result = coarse_alloc(ch, 1 * MB - 4, 128, (void **)&p1);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(p1, nullptr);
-    ASSERT_EQ((uintptr_t)p1 & 127, 0);
+    ASSERT_EQ((uintptr_t)p1 & 127, 0ULL);
 
     umf_result = coarse_alloc(ch, 1 * MB - 4, 128, (void **)&p2);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(p2, nullptr);
-    ASSERT_EQ((uintptr_t)p2 & 127, 0);
+    ASSERT_EQ((uintptr_t)p2 & 127, 0ULL);
 
     umf_result = coarse_free(ch, p1, 1 * MB - 4);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
@@ -1034,7 +1034,7 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_basic) {
     ASSERT_NE(p1, nullptr);
     ASSERT_EQ(coarse_get_stats(ch).used_size, init_buffer_size);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, init_buffer_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     // free all memory
     umf_result = coarse_free(ch, p1, init_buffer_size);
@@ -1045,7 +1045,7 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_basic) {
     ASSERT_NE(p1, nullptr);
     ASSERT_EQ(coarse_get_stats(ch).used_size, 2 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, init_buffer_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 2);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)2);
 
     // alloc additional 2 MB
     // the non-used block should be used
@@ -1054,7 +1054,7 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_basic) {
     ASSERT_NE(p2, nullptr);
     ASSERT_EQ(coarse_get_stats(ch).used_size, 4 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, init_buffer_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 3);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)3);
     ASSERT_NE(p1, p2);
 
     // make sure that p1 < p2
@@ -1069,12 +1069,12 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_basic) {
     coarse_free(ch, p1, 2 * MB);
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, init_buffer_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     // alloc 10x 2 MB - this should occupy all allocated memory
-    constexpr int allocs_size = 10;
+    constexpr size_t allocs_size = 10;
     void *allocs[allocs_size] = {0};
-    for (int i = 0; i < allocs_size; i++) {
+    for (size_t i = 0; i < allocs_size; i++) {
         ASSERT_EQ(coarse_get_stats(ch).used_size, i * 2 * MB);
         umf_result = coarse_alloc(ch, 2 * MB, 0, &allocs[i]);
         ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
@@ -1086,12 +1086,12 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_basic) {
     ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, allocs_size);
 
     // free all memory
-    for (int i = 0; i < allocs_size; i++) {
+    for (size_t i = 0; i < allocs_size; i++) {
         umf_result = coarse_free(ch, allocs[i], 2 * MB);
         ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     }
 
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, init_buffer_size);
 
@@ -1129,7 +1129,7 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_simple1) {
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, init_buffer_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     // test 1
 
@@ -1204,7 +1204,7 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_simple2) {
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, init_buffer_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     // test
     double sizes[] = {2, 4, 0.5, 1, 8, 0.25};
@@ -1249,10 +1249,10 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_alignment_provider) {
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     const int niter = 10;
-    const int size = 1 * MB;
+    const size_t size = 1 * MB;
     void *ptr[niter] = {0};
 
     for (int i = 0; i < niter; i++) {
@@ -1263,7 +1263,7 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_alignment_provider) {
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, niter * size);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, niter + 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)(niter + 1));
 
     for (int i = 0; i < niter; i += 2) {
         umf_result = coarse_free(ch, ptr[i], size);
@@ -1273,7 +1273,7 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_alignment_provider) {
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, niter * size / 2);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, niter + 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)(niter + 1));
 
     for (int i = 0; i < niter; i += 2) {
         ASSERT_EQ(ptr[i], nullptr);
@@ -1289,8 +1289,8 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_alignment_provider) {
         ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     }
 
-    ASSERT_EQ(coarse_get_stats(ch).used_size, 0);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).used_size, (size_t)0);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     coarse_delete(ch);
     umfMemoryProviderDestroy(malloc_memory_provider);
@@ -1318,10 +1318,10 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_alignment_fixed_memory) {
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     const int niter = 10;
-    const int size = 1 * MB;
+    const size_t size = 1 * MB;
     void *ptr[niter] = {0};
 
     for (int i = 0; i < niter; i++) {
@@ -1332,7 +1332,7 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_alignment_fixed_memory) {
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, niter * size);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, niter + 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)(niter + 1));
 
     for (int i = 0; i < niter; i += 2) {
         umf_result = coarse_free(ch, ptr[i], size);
@@ -1342,7 +1342,7 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_alignment_fixed_memory) {
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, niter * size / 2);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, niter + 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)(niter + 1));
 
     for (int i = 0; i < niter; i += 2) {
         ASSERT_EQ(ptr[i], nullptr);
@@ -1358,8 +1358,8 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_alignment_fixed_memory) {
         ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     }
 
-    ASSERT_EQ(coarse_get_stats(ch).used_size, 0);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).used_size, (size_t)0);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     coarse_delete(ch);
 }
@@ -1396,7 +1396,7 @@ TEST_P(CoarseWithMemoryStrategyTest,
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, buf_non_aligned_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     umf_result = coarse_alloc(ch, buf_non_aligned_size, 0, (void **)&ptr);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY);
@@ -1404,7 +1404,7 @@ TEST_P(CoarseWithMemoryStrategyTest,
 
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, buf_non_aligned_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, 1);
+    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     coarse_delete(ch);
 }

@@ -13,240 +13,21 @@ env:
   COVERAGE_NAME : "exports-coverage-basic"
 
 jobs:
-  ubuntu-build:
-    name: Ubuntu
-    strategy:
-      matrix:
-        os: ['ubuntu-22.04', 'ubuntu-24.04']
-        build_type: [Debug, Release]
-        compiler: [{c: gcc, cxx: g++}]
-        shared_library: ['OFF']
-        level_zero_provider: ['ON']
-        cuda_provider: ['ON']
-        install_tbb: ['ON']
-        disable_hwloc: ['OFF']
-        link_hwloc_statically: ['OFF']
-        cmake_ver: ['default']
-        include:
-          - os: 'ubuntu-22.04'
-            build_type: Release
-            compiler: {c: clang, cxx: clang++}
-            shared_library: 'OFF'
-            level_zero_provider: 'ON'
-            cuda_provider: 'ON'
-            install_tbb: 'ON'
-            disable_hwloc: 'OFF'
-            link_hwloc_statically: 'OFF'
-            # check minimum supported cmake version
-            cmake_ver: '3.14.0'
-          - os: 'ubuntu-22.04'
-            build_type: Release
-            compiler: {c: gcc, cxx: g++}
-            shared_library: 'ON'
-            level_zero_provider: 'ON'
-            cuda_provider: 'ON'
-            install_tbb: 'ON'
-            disable_hwloc: 'OFF'
-            link_hwloc_statically: 'OFF'
-            cmake_ver: '3.28.0'
-          - os: 'ubuntu-24.04'
-            build_type: Debug
-            compiler: {c: gcc, cxx: g++}
-            shared_library: 'ON'
-            level_zero_provider: 'ON'
-            cuda_provider: 'ON'
-            install_tbb: 'ON'
-            disable_hwloc: 'OFF'
-            link_hwloc_statically: 'OFF'
-            cmake_ver: 'default'
-          # test level_zero_provider='OFF' and cuda_provider='OFF'
-          - os: 'ubuntu-22.04'
-            build_type: Release
-            compiler: {c: gcc, cxx: g++}
-            shared_library: 'OFF'
-            level_zero_provider: 'OFF'
-            cuda_provider: 'OFF'
-            install_tbb: 'ON'
-            disable_hwloc: 'OFF'
-            link_hwloc_statically: 'OFF'
-            cmake_ver: 'default'
-          # test icx compiler
-          - os: 'ubuntu-22.04'
-            build_type: Release
-            compiler: {c: icx, cxx: icpx}
-            shared_library: 'ON'
-            level_zero_provider: 'ON'
-            cuda_provider: 'ON'
-            install_tbb: 'ON'
-            disable_hwloc: 'OFF'
-            link_hwloc_statically: 'OFF'
-            cmake_ver: 'default'
-          # test lld linker
-          - os: 'ubuntu-24.04'
-            build_type: Release
-            compiler: {c: icx, cxx: icpx}
-            shared_library: 'ON'
-            level_zero_provider: 'ON'
-            cuda_provider: 'ON'
-            install_tbb: 'ON'
-            disable_hwloc: 'OFF'
-            link_hwloc_statically: 'OFF'
-            llvm_linker: '-DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" -DCMAKE_MODULE_LINKER_FLAGS="-fuse-ld=lld" -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld"'
-            cmake_ver: 'default'
-            # test without installing TBB
-          - os: 'ubuntu-22.04'
-            build_type: Release
-            compiler: {c: gcc, cxx: g++}
-            shared_library: 'ON'
-            level_zero_provider: 'ON'
-            cuda_provider: 'ON'
-            install_tbb: 'OFF'
-            disable_hwloc: 'OFF'
-            link_hwloc_statically: 'OFF'
-            cmake_ver: 'default'
-          - os: 'ubuntu-22.04'
-            build_type: Debug
-            compiler: {c: gcc, cxx: g++}
-            shared_library: 'ON'
-            level_zero_provider: 'ON'
-            cuda_provider: 'ON'
-            install_tbb: 'ON'
-            disable_hwloc: 'ON'
-            link_hwloc_statically: 'OFF'
-            cmake_ver: 'default'
-          - os: 'ubuntu-22.04'
-            build_type: Release
-            compiler: {c: gcc, cxx: g++}
-            shared_library: 'ON'
-            level_zero_provider: 'ON'
-            cuda_provider: 'ON'
-            install_tbb: 'ON'
-            disable_hwloc: 'OFF'
-            link_hwloc_statically: 'ON'
-            cmake_ver: 'default'
-    runs-on: ${{matrix.os}}
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      with:
-        fetch-depth: 0
-
-    - name: Install apt packages
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y clang libnuma-dev lcov
-
-    - name: Install cmake (non-default version)
-      if: matrix.cmake_ver != 'default'
-      run: |
-        sudo apt-get remove --purge -y cmake
-        wget https://github.com/Kitware/CMake/releases/download/v${{matrix.cmake_ver}}/cmake-${{matrix.cmake_ver}}-Linux-x86_64.sh
-        chmod +x cmake-${{matrix.cmake_ver}}-Linux-x86_64.sh
-        sudo ./cmake-${{matrix.cmake_ver}}-Linux-x86_64.sh --skip-license --prefix=/usr/local
-
-    - name: Install hwloc
-      if: matrix.disable_hwloc == 'OFF'
-      run: |
-        sudo apt-get install -y libhwloc-dev
-
-    - name: Install TBB apt package
-      if: matrix.install_tbb == 'ON'
-      run: |
-        sudo apt-get install -y libtbb-dev
-
-    - name: Install oneAPI basekit
-      if: matrix.compiler.cxx == 'icpx'
-      run: |
-        sudo apt-get install -y gpg-agent wget
-        wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
-        echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
-        sudo apt-get update
-        sudo apt-get install -y intel-oneapi-ippcp-devel intel-oneapi-ipp-devel intel-oneapi-common-oneapi-vars intel-oneapi-compiler-dpcpp-cpp
-  
-    - name: Install g++-7
-      if: matrix.compiler.cxx == 'g++-7'
-      run: sudo apt-get install -y ${{matrix.compiler.cxx}}
-
-    - name: Get UMF version
-      run: |
-        VERSION=$(git describe --tags --abbrev=0 | grep -oP '\d+\.\d+\.\d+')
-        echo "UMF_VERSION=$VERSION" >> $GITHUB_ENV
-
-    - name: Configure build
-      run: >
-        ${{ matrix.compiler.cxx == 'icpx' && '. /opt/intel/oneapi/setvars.sh &&' || ''}} 
-        cmake
-        -B ${{env.BUILD_DIR}}
-        -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
-        -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
-        -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
-        -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
-        -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
-        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=${{matrix.level_zero_provider}}
-        -DUMF_BUILD_CUDA_PROVIDER=${{matrix.cuda_provider}}
-        -DUMF_FORMAT_CODE_STYLE=OFF
-        -DUMF_DEVELOPER_MODE=ON
-        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
-        -DUMF_TESTS_FAIL_ON_SKIP=ON
-        -DUMF_DISABLE_HWLOC=${{matrix.disable_hwloc}}
-        -DUMF_LINK_HWLOC_STATICALLY=${{matrix.link_hwloc_statically}}
-        ${{ matrix.build_type == 'Debug' && matrix.compiler.c == 'gcc' && '-DUMF_USE_COVERAGE=ON' || '' }}
-        ${{ matrix.llvm_linker || '' }}
-
-    - name: Build UMF
-      run: |
-        ${{ matrix.compiler.cxx == 'icpx' && '. /opt/intel/oneapi/setvars.sh' || true }}
-        cmake --build ${{env.BUILD_DIR}} -j $(nproc)
-
-    - name: Run tests
-      working-directory: ${{env.BUILD_DIR}}
-      run: |
-        ${{ matrix.compiler.cxx == 'icpx' && '. /opt/intel/oneapi/setvars.sh' || true }}
-        LD_LIBRARY_PATH="${{env.BUILD_DIR}}/lib/:${LD_LIBRARY_PATH}" ctest --output-on-failure
-
-    - name: Check coverage
-      if:  ${{ matrix.build_type == 'Debug' && matrix.compiler.c == 'gcc' }}
-      working-directory: ${{env.BUILD_DIR}}
-      run: |
-        export COVERAGE_FILE_NAME=${{env.COVERAGE_NAME}}-${{matrix.os}}-shared-${{matrix.shared_library}}-no_hwloc-${{matrix.disable_hwloc}}
-        echo "COVERAGE_FILE_NAME: $COVERAGE_FILE_NAME"
-        ../scripts/coverage/coverage_capture.sh $COVERAGE_FILE_NAME
-        mkdir -p ${{env.COVERAGE_DIR}}
-        mv ./$COVERAGE_FILE_NAME ${{env.COVERAGE_DIR}}
-
-    - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-      if:  ${{ matrix.build_type == 'Debug' && matrix.compiler.c == 'gcc' }}
-      with:
-        name: ${{env.COVERAGE_NAME}}-${{matrix.os}}-shared-${{matrix.shared_library}}-no_hwloc-${{matrix.disable_hwloc}}
-        path: ${{env.COVERAGE_DIR}}
-
-    - name: Remove the installation directory
-      run: rm -rf ${{env.INSTL_DIR}}
-
-    - name: Test UMF installation and uninstallation
-      # The '--shared-library' parameter is added to the installation test when the UMF is built as a shared library
-      run: >
-        python3 ${{github.workspace}}/test/test_installation.py
-        --build-dir ${{env.BUILD_DIR}}
-        --install-dir ${{env.INSTL_DIR}}
-        --build-type ${{matrix.build_type}}
-        ${{ matrix.install_tbb == 'ON' && matrix.disable_hwloc != 'ON' && matrix.shared_library == 'ON' && '--proxy' || '' }}
-        --umf-version ${{env.UMF_VERSION}}
-        ${{ matrix.shared_library == 'ON' && '--shared-library' || '' }}
 
   windows-build:
     name: Windows
     env:
       VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
+      VCPKG_PATH_BIN: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows/bin;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows/bin;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows/bin"
     strategy:
       matrix:
         os: ['windows-2019', 'windows-2022']
-        build_type: [Debug, Release]
+        build_type: [Debug]
         compiler: [{c: cl, cxx: cl}]
-        shared_library: ['ON', 'OFF']
+        shared_library: ['ON']
         level_zero_provider: ['ON']
         cuda_provider: ['ON']
+        cmake_ver: ['default']
         include:
           - os: 'windows-2019'
             # clang build fails on Windows 2022
@@ -256,6 +37,7 @@ jobs:
             level_zero_provider: 'ON'
             cuda_provider: 'ON'
             toolset: "-T ClangCL"
+            cmake_ver: '3.14.0-win64-x64'
           - os: 'windows-2022'
             build_type: Release
             compiler: {c: cl, cxx: cl}
@@ -263,12 +45,14 @@ jobs:
             level_zero_provider: 'ON'
             cuda_provider: 'ON'
             umfd_lib: 'ON'
+            cmake_ver: '3.28.0-windows-x86_64'
           - os: 'windows-2022'
             build_type: Release
             compiler: {c: cl, cxx: cl}
             shared_library: 'ON'
             level_zero_provider: 'OFF'
             cuda_provider: 'OFF'
+            cmake_ver: 'default'
 
     runs-on: ${{matrix.os}}
 
@@ -278,6 +62,25 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Install cmake (non-default version)
+      if: matrix.cmake_ver != 'default'
+      run: |
+        $ErrorActionPreference = "Stop"
+        $cmakePath = "C:\Program Files\CMake"
+        if (Test-Path -Path $cmakePath) {
+          Write-Host "Removing existing CMake installation..."
+          Remove-Item -Recurse -Force -Path $cmakePath
+        }
+        $cmakeInstaller = "cmake-${{matrix.cmake_ver}}.msi"
+        $cmakeInstallerParts = $cmakeInstaller -split '-|\.'
+        $cmakeMajorMinorPatch = "$($cmakeInstallerParts[1]).$($cmakeInstallerParts[2]).$($cmakeInstallerParts[3])"
+        $cmakeUrl = "https://github.com/Kitware/CMake/releases/download/v$cmakeMajorMinorPatch/$cmakeInstaller"
+        Write-Host "Downloading CMake version ${{matrix.cmake_ver}}..."
+        Invoke-WebRequest -Uri $cmakeUrl -OutFile $cmakeInstaller -TimeoutSec 360
+        Write-Host "Installing CMake version ${{matrix.cmake_ver}}..."
+        Start-Process msiexec.exe -ArgumentList "/i $cmakeInstaller /quiet /norestart" -Wait
+        cmake --version
+
     - name: Initialize vcpkg
       uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
       with:
@@ -286,7 +89,10 @@ jobs:
         vcpkgJsonGlob: '**/vcpkg.json'
 
     - name: Install dependencies
-      run: vcpkg install --triplet x64-windows
+      run: |
+        vcpkg install --triplet x64-windows        
+        $env:Path = "${{env.VCPKG_PATH_BIN}};$env:Path"
+        echo "PATH=$env:Path" >> $env:GITHUB_ENV
       shell: pwsh # Specifies PowerShell as the shell for running the script.
 
     - name: Get UMF version
@@ -318,10 +124,24 @@ jobs:
 
     - name: Run tests
       working-directory: ${{env.BUILD_DIR}}
-      run: ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
+      # For older CMake versions we have to add the build directory to the PATH
+      # manually
+      # $env:Path = "${{env.VCPKG_PATH_BIN}};$env:Path"
+      run: |
+        $m = [regex]::Matches((cmake --version), "cmake version (\d+)\.(\d+)\.(\d+)")
+        if ($m) {
+          $major = [int]$m.groups[1].Value
+          $minor = [int]$m.groups[2].Value
+          if ($major -lt 3 -or ($major -eq 3 -and $minor -lt 22)) {
+            $env:Path = "${{env.BUILD_DIR}}/bin/${{matrix.build_type}};${{env.BUILD_DIR}}/src/proxy_lib/${{matrix.build_type}};$env:Path"
+          }
+        }
+        ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
+      shell: pwsh
 
     - name: Test UMF installation and uninstallation
-      # The '--shared-library' parameter is added to the installation test when the UMF is built as a shared library
+      # The '--shared-library' parameter is added to the installation test when
+      # the UMF is built as a shared library
       run: >
         python3 ${{github.workspace}}/test/test_installation.py
         --build-dir ${{env.BUILD_DIR}}
@@ -342,195 +162,4 @@ jobs:
       run: ${{github.workspace}}/.github/scripts/check_dll_flags.ps1 ${{env.BUILD_DIR}}/src/proxy_lib/${{matrix.build_type}}/umf_proxy.dll
       shell: pwsh
 
-  windows-dynamic_build_hwloc:
-    name: "Windows dynamic UMF + static hwloc"
-    strategy:
-      matrix:
-        build_type: [Release]
-
-    runs-on: 'windows-2022'
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      with:
-        fetch-depth: 0
-
-    - name: Configure build
-      run: >
-        cmake
-        -B ${{env.BUILD_DIR}}
-        -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
-        -DUMF_BUILD_SHARED_LIBRARY=ON
-        -DUMF_BUILD_EXAMPLES=ON
-        -DUMF_FORMAT_CODE_STYLE=OFF
-        -DUMF_DEVELOPER_MODE=ON
-        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=OFF
-        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
-        -DUMF_BUILD_CUDA_PROVIDER=ON
-        -DUMF_TESTS_FAIL_ON_SKIP=ON
-        -DUMF_LINK_HWLOC_STATICALLY=ON
-
-    - name: Build UMF
-      run: cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j $Env:NUMBER_OF_PROCESSORS
-
-    - name: Run tests
-      working-directory: ${{env.BUILD_DIR}}
-      run: ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
-
-      # we check umf.dll only here - note that the proxy library is disabled in
-      # this configuration
-    - name: check /DEPENDENTLOADFLAG in umf.dll
-      run: ${{github.workspace}}/.github/scripts/check_dll_flags.ps1 ${{env.BUILD_DIR}}/bin/${{matrix.build_type}}/umf.dll
-      shell: pwsh
-
-  windows-static_build_hwloc:
-    name: "Windows static UMF + static hwloc"
-    strategy:
-      matrix:
-        build_type: [Release]
-
-    runs-on: 'windows-2022'
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      with:
-        fetch-depth: 0
-
-    - name: Configure build
-      run: >
-        cmake
-        -B ${{env.BUILD_DIR}}
-        -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
-        -DUMF_BUILD_SHARED_LIBRARY=OFF
-        -DUMF_BUILD_EXAMPLES=ON
-        -DUMF_FORMAT_CODE_STYLE=OFF
-        -DUMF_DEVELOPER_MODE=ON
-        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=OFF
-        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
-        -DUMF_BUILD_CUDA_PROVIDER=ON
-        -DUMF_TESTS_FAIL_ON_SKIP=ON
-        -DUMF_LINK_HWLOC_STATICALLY=ON
-
-    - name: Build UMF
-      run: cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j $Env:NUMBER_OF_PROCESSORS -v
-
-    - name: Run tests
-      working-directory: ${{env.BUILD_DIR}}
-      run: ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
-
-  windows-dynamic_mingw_hwloc:
-    env:
-      HWLOC_PACKAGE_NAME: hwloc-win64-build-2.10.0
-      TBB_PACKAGE_NAME: oneapi-tbb-2021.12.0
-      TBB_LIB_DIR: lib\intel64\vc14
-      TBB_BIN_DIR: redist\intel64\vc14
-
-    name: "Windows dynamic UMF + mingw libhwloc"
-    strategy:
-      matrix:
-        build_type: [Release]
-
-    runs-on: 'windows-2022'
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      with:
-        fetch-depth: 0
-
-    - name: Get hwloc from official repo (mingw version)
-      run: |
-        Invoke-WebRequest -Uri https://download.open-mpi.org/release/hwloc/v2.10/${{env.HWLOC_PACKAGE_NAME}}.zip -OutFile ${{github.workspace}}\${{env.HWLOC_PACKAGE_NAME}}.zip -TimeoutSec 360
-        Expand-Archive ${{github.workspace}}\${{env.HWLOC_PACKAGE_NAME}}.zip -DestinationPath ${{github.workspace}}
-
-    - name: Get TBB from github
-      run: |
-        Invoke-WebRequest -Uri https://github.com/oneapi-src/oneTBB/releases/download/v2021.12.0/${{env.TBB_PACKAGE_NAME}}-win.zip -OutFile "${{github.workspace}}\${{env.TBB_PACKAGE_NAME}}-win.zip" -TimeoutSec 360
-        Expand-Archive "${{github.workspace}}\${{env.TBB_PACKAGE_NAME}}-win.zip" -DestinationPath ${{github.workspace}}
-
-    - name: Configure build
-      run: >
-        cmake
-        -B ${{env.BUILD_DIR}}
-        -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
-        -DCMAKE_PREFIX_PATH="${{github.workspace}}\${{env.HWLOC_PACKAGE_NAME}};${{github.workspace}}\${{env.TBB_PACKAGE_NAME}};${{github.workspace}}\${{env.TBB_PACKAGE_NAME}}\${{env.TBB_LIB_DIR}};${{github.workspace}}\${{env.TBB_PACKAGE_NAME}}\${{env.TBB_BIN_DIR}}"
-        -DUMF_BUILD_SHARED_LIBRARY=ON
-        -DUMF_BUILD_EXAMPLES=ON
-        -DUMF_FORMAT_CODE_STYLE=OFF
-        -DUMF_DEVELOPER_MODE=ON
-        -DUMF_TESTS_FAIL_ON_SKIP=ON
-        -DUMF_HWLOC_NAME=libhwloc
-
-    - name: Build UMF
-      run: cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j $Env:NUMBER_OF_PROCESSORS
-
-    - name: Run tests
-      working-directory: ${{env.BUILD_DIR}}
-      run: ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
-
-  macos-build:
-    name: MacOS
-    strategy:
-      matrix:
-        os: ['macos-13', 'macos-14']
-        include:
-          - os: macos-14
-            static_hwloc: '-DUMF_LINK_HWLOC_STATICALLY=ON'
-    env:
-      BUILD_TYPE : "Release"
-    runs-on: ${{matrix.os}}
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      with:
-        fetch-depth: 0
-
-    # Latest distros do not allow global pip installation
-    - name: Install Python requirements in venv
-      run: |
-        python3 -m venv .venv
-        . .venv/bin/activate
-        echo "$PATH" >> $GITHUB_PATH
-        python3 -m pip install -r third_party/requirements.txt
-
-    - name: Install dependencies
-      run: brew install jemalloc tbb automake libtool
-
-    - name: Install hwloc
-      if: ${{ !matrix.static_hwloc }}
-      run: brew install hwloc
-
-    - name: Get UMF version
-      run: |
-        VERSION=$(git describe --tags --abbrev=0 | grep -Eo '\d+\.\d+\.\d+')
-        echo "UMF_VERSION=$VERSION" >> $GITHUB_ENV
-
-    - name: Configure build
-      run: >
-        cmake
-        -B ${{env.BUILD_DIR}}
-        -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
-        -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-        -DUMF_FORMAT_CODE_STYLE=OFF
-        -DUMF_DEVELOPER_MODE=ON
-        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
-        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
-        -DUMF_BUILD_SHARED_LIBRARY=ON
-        -DUMF_TESTS_FAIL_ON_SKIP=ON
-        ${{matrix.static_hwloc}}
-
-    - name: Build UMF
-      run: cmake --build ${{env.BUILD_DIR}} -j $(sysctl -n hw.logicalcpu)
-
-    - name: Test UMF installation and uninstallation
-      run: >
-        python3 ${{github.workspace}}/test/test_installation.py
-        --build-dir ${{env.BUILD_DIR}}
-        --install-dir ${{env.INSTL_DIR}}
-        --build-type ${{env.BUILD_TYPE}}
-        --proxy
-        --umf-version ${{env.UMF_VERSION}}
-        --shared-library
+ 

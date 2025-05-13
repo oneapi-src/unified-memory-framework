@@ -63,7 +63,7 @@ TEST_F(test, internals) {
     umf_result_t res = ops->initialize(provider_handle, params, (void **)&pool);
     EXPECT_EQ(res, UMF_RESULT_SUCCESS);
     EXPECT_NE(pool, nullptr);
-    EXPECT_EQ(pool->provider_min_page_size, 1024);
+    EXPECT_EQ(pool->provider_min_page_size, (size_t)1024);
 
     // check buckets sizes
     size_t expected_size = DEFAULT_DISJOINT_MIN_BUCKET_SIZE;
@@ -95,16 +95,16 @@ TEST_F(test, internals) {
     EXPECT_NE(bucket, nullptr);
 
     // check bucket stats
-    EXPECT_EQ(bucket->alloc_count, 1);
+    EXPECT_EQ(bucket->alloc_count, (size_t)1);
 
     // first allocation will always use external memory (newly added to the
     // pool) and this is counted as allocation from the outside of the pool
-    EXPECT_EQ(bucket->alloc_pool_count, 0);
-    EXPECT_EQ(bucket->curr_slabs_in_use, 1);
+    EXPECT_EQ(bucket->alloc_pool_count, (size_t)0);
+    EXPECT_EQ(bucket->curr_slabs_in_use, (size_t)1);
 
     // check slab - there should be only single slab allocated
     EXPECT_NE(bucket->available_slabs, nullptr);
-    EXPECT_EQ(bucket->available_slabs_num, 1);
+    EXPECT_EQ(bucket->available_slabs_num, (size_t)1);
     EXPECT_EQ(bucket->available_slabs->next, nullptr);
     slab_t *slab = bucket->available_slabs->val;
 
@@ -243,8 +243,8 @@ TEST_F(test, sharedLimits) {
     ret = umfDisjointPoolParamsDestroy(params);
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
 
-    EXPECT_EQ(0, numAllocs);
-    EXPECT_EQ(0, numFrees);
+    EXPECT_EQ((size_t)0, numAllocs);
+    EXPECT_EQ((size_t)0, numFrees);
 
     std::vector<std::unique_ptr<void, decltype(&umfFree)>> ptrs;
     for (size_t i = 0; i < MaxSize / SlabMinSize; i++) {
@@ -253,7 +253,7 @@ TEST_F(test, sharedLimits) {
     }
 
     EXPECT_EQ(MaxSize / SlabMinSize * 2, numAllocs);
-    EXPECT_EQ(0, numFrees);
+    EXPECT_EQ((size_t)0, numFrees);
 
     ptrs.clear();
 
