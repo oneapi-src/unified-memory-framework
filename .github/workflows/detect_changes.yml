@@ -31,13 +31,14 @@ jobs:
         env:
           ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
         run: |
-          echo "Changed files: ${{ steps.changed-files.outputs.all_changed_files }}"
+          echo "Changed files: $ALL_CHANGED_FILES"
 
-       name: Run reusable docker
-       if: ${{ contains(join(needs.DetectChanges.outputs.changed_files, ' '), '.github/docker/') }}
-        permissions:
-          contents: read
-        packages: write
-        secrets: inherit
-        uses: ./.github/workflows/reusable_dockers_build.yml
-
+  RunReusableDocker:
+    needs: DetectChanges
+    runs-on: ubuntu-latest
+    if: ${{ contains(join(needs.DetectChanges.outputs.changed_files, ' '), '.github/docker/') }}
+    permissions:
+      contents: read
+      packages: write
+    secrets: inherit
+    uses: ./.github/workflows/reusable_dockers_build.yml
