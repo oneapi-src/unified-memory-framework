@@ -16,7 +16,8 @@ jobs:
     name: Linux
     runs-on: ${{ github.repository_owner == 'oneapi-src' && 'intel-ubuntu-22.04' || 'ubuntu-22.04' }}
     container:
-      image: ghcr.io/bb-ur/umf-ubuntu-${{ matrix.ubuntu_ver }}:latest
+      # image: ghcr.io/bb-ur/umf-ubuntu-${{ matrix.ubuntu_ver }}:latest
+      image: ghcr.io/rbanka1/umf-ubuntu-${{ matrix.ubuntu_ver }}:latest # test
       options: --user root --privileged
       volumes:
         - ${{ github.workspace }}:${{ github.workspace }}

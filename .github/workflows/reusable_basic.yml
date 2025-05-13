@@ -18,7 +18,8 @@ jobs:
     name: Ubuntu
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/bb-ur/umf-ubuntu-${{ matrix.ubuntu_ver }}:latest
+      # image: ghcr.io/bb-ur/umf-ubuntu-${{ matrix.ubuntu_ver }}:latest
+      image: ghcr.io/rbanka1/umf-ubuntu-${{ matrix.ubuntu_ver }}:latest # test
       options: --user root --privileged
       volumes:
         - ${{ github.workspace }}:${{ github.workspace }}
