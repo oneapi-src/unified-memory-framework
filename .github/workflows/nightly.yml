@@ -174,7 +174,7 @@ jobs:
         cmake
         -B ${{env.BUILD_DIR}}
         -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
-        -DCMAKE_PREFIX_PATH="c:\llvm-mingw\bin"
+        -DCMAKE_PREFIX_PATH="c:\llvm-mingw\bin:${{env.VCPKG_PATH}}"
         -DCMAKE_C_COMPILER="x86_64-w64-mingw32-${{matrix.compiler.c}}.exe" 
         -DCMAKE_CXX_COMPILER="x86_64-w64-mingw32-${{matrix.compiler.c}}.exe" 
         -G "${{matrix.generator}}"
