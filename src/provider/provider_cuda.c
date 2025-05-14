@@ -25,62 +25,7 @@ void fini_cu_global_state(void) {
     }
 }
 
-#if defined(UMF_NO_CUDA_PROVIDER)
-
-umf_result_t umfCUDAMemoryProviderParamsCreate(
-    umf_cuda_memory_provider_params_handle_t *hParams) {
-    (void)hParams;
-    LOG_ERR("CUDA provider is disabled (UMF_BUILD_CUDA_PROVIDER is OFF)!");
-    return UMF_RESULT_ERROR_NOT_SUPPORTED;
-}
-
-umf_result_t umfCUDAMemoryProviderParamsDestroy(
-    umf_cuda_memory_provider_params_handle_t hParams) {
-    (void)hParams;
-    LOG_ERR("CUDA provider is disabled (UMF_BUILD_CUDA_PROVIDER is OFF)!");
-    return UMF_RESULT_ERROR_NOT_SUPPORTED;
-}
-
-umf_result_t umfCUDAMemoryProviderParamsSetContext(
-    umf_cuda_memory_provider_params_handle_t hParams, void *hContext) {
-    (void)hParams;
-    (void)hContext;
-    LOG_ERR("CUDA provider is disabled (UMF_BUILD_CUDA_PROVIDER is OFF)!");
-    return UMF_RESULT_ERROR_NOT_SUPPORTED;
-}
-
-umf_result_t umfCUDAMemoryProviderParamsSetDevice(
-    umf_cuda_memory_provider_params_handle_t hParams, int hDevice) {
-    (void)hParams;
-    (void)hDevice;
-    LOG_ERR("CUDA provider is disabled (UMF_BUILD_CUDA_PROVIDER is OFF)!");
-    return UMF_RESULT_ERROR_NOT_SUPPORTED;
-}
-
-umf_result_t umfCUDAMemoryProviderParamsSetMemoryType(
-    umf_cuda_memory_provider_params_handle_t hParams,
-    umf_usm_memory_type_t memoryType) {
-    (void)hParams;
-    (void)memoryType;
-    LOG_ERR("CUDA provider is disabled (UMF_BUILD_CUDA_PROVIDER is OFF)!");
-    return UMF_RESULT_ERROR_NOT_SUPPORTED;
-}
-
-umf_result_t umfCUDAMemoryProviderParamsSetAllocFlags(
-    umf_cuda_memory_provider_params_handle_t hParams, unsigned int flags) {
-    (void)hParams;
-    (void)flags;
-    LOG_ERR("CUDA provider is disabled (UMF_BUILD_CUDA_PROVIDER is OFF)!");
-    return UMF_RESULT_ERROR_NOT_SUPPORTED;
-}
-
-const umf_memory_provider_ops_t *umfCUDAMemoryProviderOps(void) {
-    // not supported
-    LOG_ERR("CUDA provider is disabled (UMF_BUILD_CUDA_PROVIDER is OFF)!");
-    return NULL;
-}
-
-#else // !defined(UMF_NO_CUDA_PROVIDER)
+#if UMF_BUILD_CUDA_PROVIDER
 
 // disable warning 4201: nonstandard extension used: nameless struct/union
 #if defined(_MSC_VER)
@@ -759,4 +704,59 @@ const umf_memory_provider_ops_t *umfCUDAMemoryProviderOps(void) {
     return &UMF_CUDA_MEMORY_PROVIDER_OPS;
 }
 
-#endif // !defined(UMF_NO_CUDA_PROVIDER)
+#else // !UMF_BUILD_CUDA_PROVIDER
+
+umf_result_t umfCUDAMemoryProviderParamsCreate(
+    umf_cuda_memory_provider_params_handle_t *hParams) {
+    (void)hParams;
+    LOG_ERR("CUDA provider is disabled (UMF_BUILD_CUDA_PROVIDER is OFF)!");
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+umf_result_t umfCUDAMemoryProviderParamsDestroy(
+    umf_cuda_memory_provider_params_handle_t hParams) {
+    (void)hParams;
+    LOG_ERR("CUDA provider is disabled (UMF_BUILD_CUDA_PROVIDER is OFF)!");
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+umf_result_t umfCUDAMemoryProviderParamsSetContext(
+    umf_cuda_memory_provider_params_handle_t hParams, void *hContext) {
+    (void)hParams;
+    (void)hContext;
+    LOG_ERR("CUDA provider is disabled (UMF_BUILD_CUDA_PROVIDER is OFF)!");
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+umf_result_t umfCUDAMemoryProviderParamsSetDevice(
+    umf_cuda_memory_provider_params_handle_t hParams, int hDevice) {
+    (void)hParams;
+    (void)hDevice;
+    LOG_ERR("CUDA provider is disabled (UMF_BUILD_CUDA_PROVIDER is OFF)!");
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+umf_result_t umfCUDAMemoryProviderParamsSetMemoryType(
+    umf_cuda_memory_provider_params_handle_t hParams,
+    umf_usm_memory_type_t memoryType) {
+    (void)hParams;
+    (void)memoryType;
+    LOG_ERR("CUDA provider is disabled (UMF_BUILD_CUDA_PROVIDER is OFF)!");
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+umf_result_t umfCUDAMemoryProviderParamsSetAllocFlags(
+    umf_cuda_memory_provider_params_handle_t hParams, unsigned int flags) {
+    (void)hParams;
+    (void)flags;
+    LOG_ERR("CUDA provider is disabled (UMF_BUILD_CUDA_PROVIDER is OFF)!");
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+const umf_memory_provider_ops_t *umfCUDAMemoryProviderOps(void) {
+    // not supported
+    LOG_ERR("CUDA provider is disabled (UMF_BUILD_CUDA_PROVIDER is OFF)!");
+    return NULL;
+}
+
+#endif // !UMF_BUILD_CUDA_PROVIDER
