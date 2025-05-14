@@ -150,8 +150,8 @@ jobs:
       if: matrix.generator == 'Ninja'
       uses: seanmiddleditch/gha-setup-ninja@3b1f8f94a2f8254bd26914c4ab9474d4f0015f67 # v6
 
-    # - name: Configure MSVC environment
-    #   uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
+    - name: Configure MSVC environment
+      uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
       
     - name: Install llvm-mingw
       run: |
