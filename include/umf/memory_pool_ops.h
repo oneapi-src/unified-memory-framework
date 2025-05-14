@@ -28,6 +28,9 @@ extern "C" {
 /// pointers.
 ///
 typedef struct umf_memory_pool_ops_t {
+    /// Size of this structure.
+    /// Should be initialized with sizeof(umf_memory_pool_ops_t) in the current umf version
+    size_t size;
     /// Version of the ops structure.
     /// Should be initialized using UMF_POOL_OPS_VERSION_CURRENT.
     uint32_t version;
@@ -127,6 +130,11 @@ typedef struct umf_memory_pool_ops_t {
     umf_result_t (*get_last_allocation_error)(void *pool);
 
     ///
+    /// Following functions, with ext prefix, are optional and memory pool implementation
+    /// can keep them NULL.
+    ///
+
+    ///
     /// @brief Control operation for the memory pool.
     ///        The function is used to perform various control operations
     ///        on the memory pool.
@@ -139,8 +147,12 @@ typedef struct umf_memory_pool_ops_t {
     ///
     /// @return umf_result_t result of the control operation.
     ///
-    umf_result_t (*ctl)(void *hPool, int operationType, const char *name,
-                        void *arg, umf_ctl_query_type_t queryType);
+    umf_result_t (*ext_ctl)(void *hPool, int operationType, const char *name,
+                            void *arg, umf_ctl_query_type_t queryType);
+
+    /// Reserved for future use
+    /// Note: When copying this structure, use its provided size field rather than using sizeof.
+    char reserved[];
 } umf_memory_pool_ops_t;
 
 #ifdef __cplusplus

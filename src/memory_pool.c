@@ -30,7 +30,7 @@ static int CTL_SUBTREE_HANDLER(by_handle_pool)(void *ctx,
                                                umf_ctl_query_type_t queryType) {
     (void)indexes, (void)source;
     umf_memory_pool_handle_t hPool = (umf_memory_pool_handle_t)ctx;
-    hPool->ops.ctl(hPool, /*unused*/ 0, extra_name, arg, queryType);
+    hPool->ops.ext_ctl(hPool, /*unused*/ 0, extra_name, arg, queryType);
     return 0;
 }
 
@@ -58,16 +58,29 @@ static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
     }
 
     umf_result_t ret = UMF_RESULT_SUCCESS;
-    umf_memory_pool_handle_t pool =
-        umf_ba_global_alloc(sizeof(umf_memory_pool_t));
-    if (!pool) {
-        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-    }
 
     if (ops->version != UMF_POOL_OPS_VERSION_CURRENT) {
         LOG_WARN("Memory Pool ops version \"%d\" is different than the current "
                  "version \"%d\"",
                  ops->version, UMF_POOL_OPS_VERSION_CURRENT);
+    }
+
+    if (ops->size == 0) {
+        LOG_ERR("Memory Pool ops size is not set");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (ops->size > sizeof(umf_memory_pool_ops_t)) {
+        LOG_ERR("Memory Pool ops size \"%zu\" is greater than the current "
+                "size \"%zu\"",
+                ops->size, sizeof(umf_memory_pool_ops_t));
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    umf_memory_pool_handle_t pool =
+        umf_ba_global_alloc(sizeof(umf_memory_pool_t));
+    if (!pool) {
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
     if (!(flags & UMF_POOL_CREATE_FLAG_DISABLE_TRACKING)) {
@@ -84,8 +97,8 @@ static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
     pool->ops = *ops;
     pool->tag = NULL;
 
-    if (NULL == pool->ops.ctl) {
-        pool->ops.ctl = umfDefaultCtlPoolHandle;
+    if (NULL == pool->ops.ext_ctl) {
+        pool->ops.ext_ctl = umfDefaultCtlPoolHandle;
     }
 
     if (NULL == utils_mutex_init(&pool->lock)) {
