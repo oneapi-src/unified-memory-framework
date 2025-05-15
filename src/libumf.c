@@ -103,14 +103,8 @@ umf_result_t umfCtlGet(const char *name, void *ctx, void *arg, size_t size) {
     if (name == NULL || arg == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
-    // using ctx is disallowed for default settings
-    if (ctx && strstr(name, ".default.")) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
     return ctl_query(NULL, ctx, CTL_QUERY_PROGRAMMATIC, name, CTL_QUERY_READ,
-                     arg, size)
-               ? UMF_RESULT_ERROR_UNKNOWN
-               : UMF_RESULT_SUCCESS;
+                     arg, size);
 }
 
 umf_result_t umfCtlSet(const char *name, void *ctx, void *arg, size_t size) {
@@ -118,10 +112,7 @@ umf_result_t umfCtlSet(const char *name, void *ctx, void *arg, size_t size) {
     if (name == NULL || arg == NULL || size == 0) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
-    // using ctx is disallowed for default settings
-    if (ctx && strstr(name, ".default.")) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
+
     return ctl_query(NULL, ctx, CTL_QUERY_PROGRAMMATIC, name, CTL_QUERY_WRITE,
                      arg, size)
                ? UMF_RESULT_ERROR_UNKNOWN

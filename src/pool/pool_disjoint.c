@@ -75,8 +75,8 @@ umf_result_t disjoint_pool_ctl(void *hPool, int operationType, const char *name,
     (void)operationType, (void)queryType;
     utils_init_once(&ctl_initialized, initialize_disjoint_ctl);
 
-    return ctl_query(&disjoint_ctl_root, hPool, CTL_QUERY_PROGRAMMATIC,
-                     name, queryType, arg, size);
+    return ctl_query(&disjoint_ctl_root, hPool, CTL_QUERY_PROGRAMMATIC, name,
+                     queryType, arg, size);
 }
 
 // Temporary solution for disabling memory poisoning. This is needed because
