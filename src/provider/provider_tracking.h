@@ -20,6 +20,7 @@
 
 #include "base_alloc.h"
 #include "critnib.h"
+#include "memory_props_internal.h"
 #include "utils_concurrency.h"
 
 #ifdef __cplusplus
@@ -35,11 +36,12 @@ umf_memory_tracker_handle_t umfMemoryTrackerCreate(void);
 void umfMemoryTrackerDestroy(umf_memory_tracker_handle_t handle);
 
 umf_memory_pool_handle_t umfMemoryTrackerGetPool(const void *ptr);
+umf_memory_properties_handle_t umfMemoryTrackerGetProps(const void *ptr);
 
 typedef struct umf_alloc_info_t {
     void *base;
     size_t baseSize;
-    umf_memory_pool_handle_t pool;
+    umf_memory_properties_handle_t props;
 } umf_alloc_info_t;
 
 umf_result_t umfMemoryTrackerGetAllocInfo(const void *ptr,

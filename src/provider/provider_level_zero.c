@@ -11,10 +11,13 @@
 #include <string.h>
 
 #include <umf.h>
+#include <umf/memory_props.h>
 #include <umf/memory_provider_ops.h>
 #include <umf/providers/provider_level_zero.h>
 
-#include "provider_level_zero_internal.h"
+#include "memory_props_internal.h"
+#include "memory_provider_internal.h"
+#include "provider/provider_level_zero_internal.h"
 #include "utils_load_library.h"
 #include "utils_log.h"
 
@@ -31,6 +34,7 @@ void fini_ze_global_state(void) {
 
 #include "base_alloc_global.h"
 #include "libumf.h"
+#include "provider_level_zero_internal.h"
 #include "utils_assert.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
@@ -61,7 +65,7 @@ typedef struct umf_level_zero_memory_provider_params_t {
 typedef struct ze_memory_provider_t {
     ze_context_handle_t context;
     ze_device_handle_t device;
-    ze_memory_type_t memory_type;
+    umf_usm_memory_type_t memory_type;
 
     ze_device_handle_t *resident_device_handles;
     uint32_t resident_device_count;
@@ -502,7 +506,7 @@ static umf_result_t ze_memory_provider_initialize(const void *params,
 
     ze_provider->context = ze_params->level_zero_context_handle;
     ze_provider->device = ze_params->level_zero_device_handle;
-    ze_provider->memory_type = (ze_memory_type_t)ze_params->memory_type;
+    ze_provider->memory_type = ze_params->memory_type;
     ze_provider->freePolicyFlags =
         umfFreePolicyToZePolicy(ze_params->freePolicy);
     ze_provider->min_page_size = 0;
@@ -760,6 +764,50 @@ ze_memory_provider_close_ipc_handle(void *provider, void *ptr, size_t size) {
     return UMF_RESULT_SUCCESS;
 }
 
+umf_result_t umfLevelZeroMemoryProviderGetMemoryProperty(
+    umf_memory_properties_handle_t props_handle,
+    umf_memory_property_id_t memory_property_id, void *value) {
+
+    umf_memory_provider_t *provider = NULL;
+    umfPoolGetMemoryProvider(props_handle->pool, &provider);
+    assert(provider != NULL);
+    assert(provider->ops.get_name(provider) ==
+           umfLevelZeroMemoryProviderOps()->get_name(provider));
+
+    ze_memory_provider_t *ze_provider =
+        (ze_memory_provider_t *)provider->provider_priv;
+
+    switch (memory_property_id) {
+    case UMF_MEMORY_PROPERTY_POINTER_TYPE:
+        *(umf_usm_memory_type_t *)value = ze_provider->memory_type;
+        return UMF_RESULT_SUCCESS;
+
+    case UMF_MEMORY_PROPERTY_DEVICE:
+        *(ze_device_handle_t *)value = ze_provider->device;
+        return UMF_RESULT_SUCCESS;
+
+    case UMF_MEMORY_PROPERTY_DEVICE_ATTRIBUTES:
+        // TODO comment
+        if (props_handle->gpu_properties_initialized == false) {
+            props_handle->gpu.ze_properties.stype =
+                ZE_STRUCTURE_TYPE_MEMORY_ALLOCATION_PROPERTIES;
+            g_ze_ops.zeMemGetAllocProperties(
+                ze_provider->context, props_handle->ptr,
+                &props_handle->gpu.ze_properties, NULL);
+            props_handle->gpu_properties_initialized = true;
+        }
+        ze_memory_allocation_properties_t *ze_properties =
+            &props_handle->gpu.ze_properties;
+        *(ze_memory_allocation_properties_t **)value = ze_properties;
+        return UMF_RESULT_SUCCESS;
+
+    default:
+        break;
+    }
+
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
 static umf_memory_provider_ops_t UMF_LEVEL_ZERO_MEMORY_PROVIDER_OPS = {
     .version = UMF_PROVIDER_OPS_VERSION_CURRENT,
     .initialize = ze_memory_provider_initialize,
@@ -865,6 +913,15 @@ const umf_memory_provider_ops_t *umfLevelZeroMemoryProviderOps(void) {
     LOG_ERR("L0 memory provider is disabled! (UMF_BUILD_LEVEL_ZERO_PROVIDER is "
             "OFF)");
     return NULL;
+}
+
+umf_result_t umfLevelZeroMemoryProviderGetMemoryProperty(
+    umf_memory_properties_handle_t props_handle,
+    umf_memory_property_id_t memory_property_id, void *value) {
+    (void)props_handle;
+    (void)memory_property_id;
+    (void)value;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
 #endif // !UMF_BUILD_LEVEL_ZERO_PROVIDER

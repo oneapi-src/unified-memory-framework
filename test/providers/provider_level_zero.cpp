@@ -480,6 +480,48 @@ TEST_P(umfLevelZeroProviderTest, setDeviceOrdinalValid) {
     }
 }
 
+TEST_P(umfLevelZeroProviderTest, memProps) {
+    umf_memory_provider_handle_t provider = nullptr;
+    umf_result_t umf_result = umfMemoryProviderCreate(
+        umfLevelZeroMemoryProviderOps(), params, &provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(provider, nullptr);
+
+    void *ptr = nullptr;
+    size_t size = 1024;
+
+    umf_result_t result = umfMemoryProviderAlloc(provider, size, 0, &ptr);
+    ASSERT_EQ(result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(ptr, nullptr);
+
+    // TODO
+
+    umfMemoryProviderDestroy(provider);
+}
+
+/*
+TODO move to generic
+TEST_P(umfGetMemoryPropertiesHandleTest, InvalidMemoryPropertiesHandle) {
+    umf_memory_provider_handle_t provider = nullptr;
+    umf_result_t result = umfMemoryProviderCreate(
+        umfLevelZeroMemoryProviderOps(), params, &provider);
+    ASSERT_EQ(result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(provider, nullptr);
+
+    ze_memory_allocation_properties_t memProps = {};
+    void *invalidPtr = reinterpret_cast<void *>(0xDEADBEEF);
+
+    ze_context_handle_t context = l0TestHelper.get_test_context();
+    ASSERT_NE(context, nullptr);
+
+    ze_result_t zeResult =
+        utils_ze_get_memory_properties(context, invalidPtr, &memProps);
+    ASSERT_EQ(zeResult, ZE_RESULT_ERROR_INVALID_ARGUMENT);
+
+    umfMemoryProviderDestroy(provider);
+}
+*/
+
 // TODO add tests that mixes Level Zero Memory Provider and Disjoint Pool
 
 INSTANTIATE_TEST_SUITE_P(umfLevelZeroProviderTestSuite,
