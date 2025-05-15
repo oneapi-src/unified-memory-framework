@@ -375,6 +375,85 @@ TEST_F(test, sharedLimits) {
     EXPECT_EQ(MaxSize / SlabMinSize * 2, numFrees);
 }
 
+TEST_F(test, disjointPoolTrim) {
+    struct memory_provider : public umf_test::provider_base_t {
+        umf_result_t alloc(size_t size, size_t alignment, void **ptr) noexcept {
+            *ptr = umf_ba_global_aligned_alloc(size, alignment);
+            return UMF_RESULT_SUCCESS;
+        }
+
+        umf_result_t free(void *ptr, [[maybe_unused]] size_t size) noexcept {
+            umf_ba_global_free(ptr);
+            return UMF_RESULT_SUCCESS;
+        }
+    };
+
+    umf_memory_provider_ops_t provider_ops =
+        umf_test::providerMakeCOps<memory_provider, void>();
+
+    auto providerUnique =
+        wrapProviderUnique(createProviderChecked(&provider_ops, nullptr));
+
+    umf_memory_provider_handle_t provider_handle;
+    provider_handle = providerUnique.get();
+
+    umf_disjoint_pool_params_handle_t params =
+        (umf_disjoint_pool_params_handle_t)defaultDisjointPoolConfig();
+    params->pool_trace = 3;
+    // Set the slab min size to 64 so allocating 64 bytes will use the whole
+    // slab.
+    params->slab_min_size = 64;
+    params->capacity = 4;
+
+    // in "internals" test we use ops interface to directly manipulate the pool
+    // structure
+    const umf_memory_pool_ops_t *ops = umfDisjointPoolOps();
+    EXPECT_NE(ops, nullptr);
+
+    disjoint_pool_t *pool;
+    umf_result_t res = ops->initialize(provider_handle, params, (void **)&pool);
+    EXPECT_EQ(res, UMF_RESULT_SUCCESS);
+    EXPECT_NE(pool, nullptr);
+
+    // do 4 allocs, then free all of them
+    size_t size = 64;
+    void *ptrs[4] = {0};
+    ptrs[0] = ops->malloc(pool, size);
+    EXPECT_NE(ptrs[0], nullptr);
+    ptrs[1] = ops->malloc(pool, size);
+    EXPECT_NE(ptrs[1], nullptr);
+    ptrs[2] = ops->malloc(pool, size);
+    EXPECT_NE(ptrs[2], nullptr);
+    ptrs[3] = ops->malloc(pool, size);
+    EXPECT_NE(ptrs[3], nullptr);
+
+    ops->free(pool, ptrs[0]);
+    ops->free(pool, ptrs[1]);
+    ops->free(pool, ptrs[2]);
+    ops->free(pool, ptrs[3]);
+
+    // Because we set the slab min size to 64, each allocation should go to the
+    // separate slab. Additionally, because we set the capacity to 4, all slabs
+    // should still be in the pool available for new allocations.
+    EXPECT_EQ(pool->buckets[0]->available_slabs_num, 4);
+    EXPECT_EQ(pool->buckets[0]->curr_slabs_in_use, 0);
+    EXPECT_EQ(pool->buckets[0]->curr_slabs_in_pool, 4);
+
+    // Trim memory - leave only one slab
+    umfDisjointPoolTrimMemory(pool, 1);
+    EXPECT_EQ(pool->buckets[0]->available_slabs_num, 1);
+    EXPECT_EQ(pool->buckets[0]->curr_slabs_in_pool, 1);
+
+    // Trim the rest of memory
+    umfDisjointPoolTrimMemory(pool, 0);
+    EXPECT_EQ(pool->buckets[0]->available_slabs_num, 0);
+    EXPECT_EQ(pool->buckets[0]->curr_slabs_in_pool, 0);
+
+    ops->finalize(pool);
+    res = umfDisjointPoolParamsDestroy(params);
+    EXPECT_EQ(res, UMF_RESULT_SUCCESS);
+}
+
 TEST_F(test, disjointPoolNullParams) {
     umf_result_t res = umfDisjointPoolParamsCreate(nullptr);
     EXPECT_EQ(res, UMF_RESULT_ERROR_INVALID_ARGUMENT);
