@@ -174,14 +174,6 @@ jobs:
         cmake
         -B ${{env.BUILD_DIR}}
         -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
-        # for mingw
-        # -DCMAKE_PREFIX_PATH="c:\llvm-mingw\bin:${{env.VCPKG_PATH}}"
-        # -DCMAKE_C_COMPILER="x86_64-w64-mingw32-${{matrix.compiler.c}}.exe" 
-        # -DCMAKE_CXX_COMPILER="x86_64-w64-mingw32-${{matrix.compiler.c}}.exe" 
-        # orginal
-        # -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
-        # -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
-        # -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
         -DCMAKE_PREFIX_PATH="c:\llvm-mingw\bin:${{env.VCPKG_PATH}}"
         -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
         -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
@@ -195,7 +187,6 @@ jobs:
         -DUMF_BUILD_CUDA_PROVIDER=ON
         -DUMF_TESTS_FAIL_ON_SKIP=ON
         ${{ matrix.umfd_lib == 'ON' && '-DUMF_USE_DEBUG_POSTFIX=ON' || '' }}
-
     - name: Build UMF
       shell: cmd
       run: cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j %NUMBER_OF_PROCESSORS%
