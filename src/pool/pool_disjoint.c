@@ -75,15 +75,8 @@ umf_result_t disjoint_pool_ctl(void *hPool, int operationType, const char *name,
     (void)operationType, (void)queryType;
     utils_init_once(&ctl_initialized, initialize_disjoint_ctl);
 
-    const char *prefix = "disjoint.";
-    const char *name_wo_prefix = strstr(name, "disjoint.");
-
-    // Check if the name has the prefix
-    if ((name_wo_prefix = strstr(name, prefix)) == NULL) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
     return ctl_query(&disjoint_ctl_root, hPool, CTL_QUERY_PROGRAMMATIC,
-                     name_wo_prefix, queryType, arg, size);
+                     name, queryType, arg, size);
 }
 
 // Temporary solution for disabling memory poisoning. This is needed because
