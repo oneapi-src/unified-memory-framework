@@ -174,9 +174,17 @@ jobs:
         cmake
         -B ${{env.BUILD_DIR}}
         -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+        # for mingw
+        # -DCMAKE_PREFIX_PATH="c:\llvm-mingw\bin:${{env.VCPKG_PATH}}"
+        # -DCMAKE_C_COMPILER="x86_64-w64-mingw32-${{matrix.compiler.c}}.exe" 
+        # -DCMAKE_CXX_COMPILER="x86_64-w64-mingw32-${{matrix.compiler.c}}.exe" 
+        # orginal
+        # -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
+        # -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
+        # -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
         -DCMAKE_PREFIX_PATH="c:\llvm-mingw\bin:${{env.VCPKG_PATH}}"
-        -DCMAKE_C_COMPILER="x86_64-w64-mingw32-${{matrix.compiler.c}}.exe" 
-        -DCMAKE_CXX_COMPILER="x86_64-w64-mingw32-${{matrix.compiler.c}}.exe" 
+        -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
+        -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
         -G "${{matrix.generator}}"
         -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
         -DUMF_LINK_HWLOC_STATICALLY=${{matrix.static_hwloc}}
