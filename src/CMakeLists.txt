@@ -115,20 +115,22 @@ set(UMF_SOURCES_LINUX libumf_linux.c)
 set(UMF_SOURCES_MACOSX libumf_linux.c)
 set(UMF_SOURCES_WINDOWS libumf_windows.c)
 
-# Add compile definitions to handle unsupported functions
-if(NOT UMF_BUILD_CUDA_PROVIDER)
+if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
+    if(LINUX)
+        # WA for error ze_api.h:14234:20: no newline at end of file
+        # [-Werror,-Wnewline-eof]
+        set_source_files_properties(
+            provider/provider_level_zero.c
+            PROPERTIES APPEND_STRING PROPERTY COMPILE_FLAGS "-Wno-newline-eof")
+    endif()
+
     set(UMF_COMMON_COMPILE_DEFINITIONS ${UMF_COMMON_COMPILE_DEFINITIONS}
-                                       "UMF_NO_CUDA_PROVIDER=1")
+                                       "UMF_BUILD_LEVEL_ZERO_PROVIDER=1")
 endif()
-if(NOT UMF_BUILD_LEVEL_ZERO_PROVIDER)
+
+if(UMF_BUILD_CUDA_PROVIDER)
     set(UMF_COMMON_COMPILE_DEFINITIONS ${UMF_COMMON_COMPILE_DEFINITIONS}
-                                       "UMF_NO_LEVEL_ZERO_PROVIDER=1")
-endif()
-if(UMF_DISABLE_HWLOC OR WINDOWS)
-    set(UMF_COMMON_COMPILE_DEFINITIONS ${UMF_COMMON_COMPILE_DEFINITIONS}
-                                       "UMF_NO_DEVDAX_PROVIDER=1")
-    set(UMF_COMMON_COMPILE_DEFINITIONS ${UMF_COMMON_COMPILE_DEFINITIONS}
-                                       "UMF_NO_FILE_PROVIDER=1")
+                                       "UMF_BUILD_CUDA_PROVIDER=1")
 endif()
 
 if(LINUX)
@@ -196,24 +198,6 @@ endif()
 
 if(NOT WINDOWS AND UMF_POOL_JEMALLOC_ENABLED)
     add_dependencies(umf jemalloc)
-endif()
-
-if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
-    if(LINUX)
-        # WA for error ze_api.h:14234:20: no newline at end of file
-        # [-Werror,-Wnewline-eof]
-        set_source_files_properties(
-            provider/provider_level_zero.c
-            PROPERTIES APPEND_STRING PROPERTY COMPILE_FLAGS "-Wno-newline-eof")
-    endif()
-
-    set(UMF_COMPILE_DEFINITIONS ${UMF_COMPILE_DEFINITIONS}
-                                "UMF_BUILD_LEVEL_ZERO_PROVIDER=1")
-endif()
-
-if(UMF_BUILD_CUDA_PROVIDER)
-    set(UMF_COMPILE_DEFINITIONS ${UMF_COMPILE_DEFINITIONS}
-                                "UMF_BUILD_CUDA_PROVIDER=1")
 endif()
 
 add_library(${PROJECT_NAME}::umf ALIAS umf)
