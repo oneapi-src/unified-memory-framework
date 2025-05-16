@@ -267,27 +267,33 @@ jobs:
          -p=NEED_VS2019_INTEGRATION=0 -p=NEED_VS2022_INTEGRATION=0 --log-dir=.
 
 
-   - name: Install llvm-mingw
-     run: |
-       curl -LO https://github.com/mstorsjo/llvm-mingw/releases/download/20250430/llvm-mingw-20250430-ucrt-x86_64.zip
-   - name: Install llvm-mingw (extract)
-     run: |
-       powershell Expand-Archive llvm-mingw*.zip -DestinationPath .
-       del llvm-mingw*.zip
-       mv llvm-mingw* c:\llvm-mingw
-       echo "c:\llvm-mingw\bin" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
-       dir "c:\llvm-mingw\bin"
-   - name: cmake version
-     run: |
-       cmake --version
-       make --version
-       gcc --version
+   # - name: Install llvm-mingw
+   #   run: |
+   #     curl -LO https://github.com/mstorsjo/llvm-mingw/releases/download/20250430/llvm-mingw-20250430-ucrt-x86_64.zip
+   # - name: Install llvm-mingw (extract)
+   #   run: |
+   #     powershell Expand-Archive llvm-mingw*.zip -DestinationPath .
+   #     del llvm-mingw*.zip
+   #     mv llvm-mingw* c:\llvm-mingw
+   #     echo "c:\llvm-mingw\bin" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
+   #     dir "c:\llvm-mingw\bin"
+   # - name: cmake version
+   #   run: |
+   #     cmake --version
+   #     make --version
+   #     gcc --version
+
+   - name: Install MSYS2
+     uses: msys2/setup-msys2@v2
+     with:
+       update: true
+       install: "make cmake"
 
    - name: Configure build
-     shell: cmd
+     shell: msys2 {0}
      run: |
-       call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
-       call "C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat"
+       # call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
+       # call "C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat"
        cmake ^
          -B ${{env.BUILD_DIR}} ^
          -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}" ^
