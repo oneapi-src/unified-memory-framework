@@ -292,8 +292,6 @@ jobs:
    - name: Configure build
      shell: msys2 {0}
      run: |
-       # call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
-       # call "C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat"
        cmake ^
          -B ${{env.BUILD_DIR}} ^
          -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}" ^
