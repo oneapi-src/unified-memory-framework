@@ -17,28 +17,28 @@ jobs:
     runs-on: ${{ github.repository_owner == 'oneapi-src' && 'intel-ubuntu-22.04' || 'ubuntu-22.04' }}
     container:
       # image: ghcr.io/bb-ur/umf-ubuntu-${{ matrix.ubuntu_ver }}:latest
-      image: ghcr.io/rbanka1/umf-ubuntu-${{ matrix.ubuntu_ver }}:latest # test
+      image: ghcr.io/rbanka1/umf-${{ matrix.ubuntu_ver }}:latest # test
       options: --user root
       volumes:
         - ${{ github.workspace }}:${{ github.workspace }}
     strategy:
       matrix:
         include:
-          - ubuntu_ver: 22.04
+          - ubuntu_ver: ubuntu-22.04
             build_tests: 'ON'
             extra_build_options: ' -DUMF_BUILD_BENCHMARKS=ON -DUMF_BUILD_BENCHMARKS_MT=ON'
             simple_cmake: 'OFF'
           # pure C build
-          - ubuntu_ver: 22.04
+          - ubuntu_ver: ubuntu-22.04
             # Tests' building is off for a pure C build
             build_tests: 'OFF'
             extra_build_options: '-DUMF_BUILD_BENCHMARKS=ON'
             simple_cmake: 'OFF'
           # simplest CMake on Ubuntu 22.04, 24.04
-          - ubuntu_ver: 22.04
+          - ubuntu_ver: ubuntu-22.04
             build_tests: 'ON'
             simple_cmake: 'ON'
-          - ubuntu_ver: 24.04
+          - ubuntu_ver: ubuntu-24.04
             build_tests: 'ON'
             simple_cmake: 'ON'
 
