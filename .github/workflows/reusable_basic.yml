@@ -20,7 +20,7 @@ jobs:
     container:
       # image: ghcr.io/bb-ur/umf-ubuntu-${{ matrix.ubuntu_ver }}:latest
       image: ghcr.io/rbanka1/umf-${{ matrix.ubuntu_ver }}:latest # test
-      options: --user root
+      options: --user test-user --privileged
       volumes:
         - ${{ github.workspace }}:${{ github.workspace }}
     strategy:
@@ -141,7 +141,7 @@ jobs:
     - name: Install cmake (non-default version)
       if: matrix.cmake_ver != 'default'
       run: |
-        apt-get remove --purge -y cmake
+        echo ${USERPASS} | sudo -Sk apt-get remove --purge -y cmake
         wget https://github.com/Kitware/CMake/releases/download/v${{matrix.cmake_ver}}/cmake-${{matrix.cmake_ver}}-Linux-x86_64.sh
         chmod +x cmake-${{matrix.cmake_ver}}-Linux-x86_64.sh
         ./cmake-${{matrix.cmake_ver}}-Linux-x86_64.sh --skip-license --prefix=/usr/local
@@ -149,17 +149,17 @@ jobs:
     - name: Uninstall TBB apt package
       if: matrix.install_tbb == 'OFF'
       run: |
-        apt-get remove --purge -y libtbb-dev
+        echo ${USERPASS} | sudo -Sk apt-get remove --purge -y libtbb-dev
 
     - name: Install oneAPI basekit
       if: matrix.compiler.cxx == 'icpx'
       run: |
-        apt-get update
-        apt-get install -y gpg-agent
+        echo ${USERPASS} | sudo -Sk apt-get update
+        echo ${USERPASS} | sudo -Sk apt-get install -y gpg-agent
         wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor -o /usr/share/keyrings/oneapi-archive-keyring.gpg
         echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" > /etc/apt/sources.list.d/oneAPI.list
-        apt-get update
-        apt-get install -y intel-oneapi-ippcp-devel intel-oneapi-ipp-devel intel-oneapi-common-oneapi-vars intel-oneapi-compiler-dpcpp-cpp
+        echo ${USERPASS} | sudo -Sk apt-get update
+        echo ${USERPASS} | sudo -Sk apt-get install -y intel-oneapi-ippcp-devel intel-oneapi-ipp-devel intel-oneapi-common-oneapi-vars intel-oneapi-compiler-dpcpp-cpp
 
     - name: Get UMF version
       run: |

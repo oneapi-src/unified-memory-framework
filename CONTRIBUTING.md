@@ -6,7 +6,7 @@
   - [Opening new issues](#opening-new-issues)
   - [Submitting Pull Requests](#submitting-pull-requests)
     - [Building and testing](#building-and-testing)
-    - [Bulding/Rebulding Docker Images](#buldingrebulding-docker-images)
+    - [Building/Rebuilding Docker Images](#buildingrebuilding-docker-images)
     - [Code style](#code-style)
     - [When my PR is merged?](#when-my-pr-is-merged)
     - [Extending public API](#extending-public-api)
@@ -68,7 +68,7 @@ To enable additional checks (including `-Werror` / `/WX` compilation flag), swit
 `UMF_DEVELOPER_MODE`. To read more about all available CMake options please see
 ["CMake standard options"](./README.md#cmake-standard-options) section in the top-level Readme.
 
-### Bulding/Rebulding Docker Images
+### Building/Rebuilding Docker Images
 
 If you want to rebuild existing Docker images or add a new one, you must open a separate pull 
 request dedicated to Docker-related changes. This PR must be merged into the main branch first.
