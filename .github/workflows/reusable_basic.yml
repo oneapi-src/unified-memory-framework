@@ -18,13 +18,14 @@ jobs:
     name: Ubuntu
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/bb-ur/umf-ubuntu-${{ matrix.ubuntu_ver }}:latest
-      options: --user root --privileged
+      # image: ghcr.io/bb-ur/umf-ubuntu-${{ matrix.ubuntu_ver }}:latest
+      image: ghcr.io/rbanka1/umf-ubuntu-${{ matrix.ubuntu_ver }}:latest # test
+      options: --user root
       volumes:
         - ${{ github.workspace }}:${{ github.workspace }}
     strategy:
       matrix:
-        ubuntu_ver: ['22.04', '24.04']
+        ubuntu_ver: ['ubuntu-22.04', 'ubuntu-24.04']
         build_type: [Debug, Release]
         compiler: [{c: gcc, cxx: g++}]
         shared_library: ['OFF']
@@ -35,7 +36,7 @@ jobs:
         link_hwloc_statically: ['OFF']
         cmake_ver: ['default']
         include:
-          - ubuntu_ver: 22.04
+          - ubuntu_ver: ubuntu-22.04
             build_type: Release
             compiler: {c: clang, cxx: clang++}
             shared_library: 'OFF'
@@ -46,7 +47,7 @@ jobs:
             link_hwloc_statically: 'OFF'
             # check minimum supported cmake version
             cmake_ver: '3.14.0'
-          - ubuntu_ver: 22.04
+          - ubuntu_ver: ubuntu-22.04
             build_type: Release
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
@@ -56,7 +57,7 @@ jobs:
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
             cmake_ver: '3.28.0'
-          - ubuntu_ver: 24.04
+          - ubuntu_ver: ubuntu-24.04
             build_type: Debug
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
@@ -67,7 +68,7 @@ jobs:
             link_hwloc_statically: 'OFF'
             cmake_ver: 'default'
           # test level_zero_provider='OFF' and cuda_provider='OFF'
-          - ubuntu_ver: 22.04
+          - ubuntu_ver: ubuntu-22.04
             build_type: Release
             compiler: {c: gcc, cxx: g++}
             shared_library: 'OFF'
@@ -78,7 +79,7 @@ jobs:
             link_hwloc_statically: 'OFF'
             cmake_ver: 'default'
           # test icx compiler
-          - ubuntu_ver: 22.04
+          - ubuntu_ver: ubuntu-22.04
             build_type: Release
             compiler: {c: icx, cxx: icpx}
             shared_library: 'ON'
@@ -89,7 +90,7 @@ jobs:
             link_hwloc_statically: 'OFF'
             cmake_ver: 'default'
           # test lld linker
-          - ubuntu_ver: 24.04
+          - ubuntu_ver: ubuntu-24.04
             build_type: Release
             compiler: {c: icx, cxx: icpx}
             shared_library: 'ON'
@@ -101,7 +102,7 @@ jobs:
             llvm_linker: '-DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" -DCMAKE_MODULE_LINKER_FLAGS="-fuse-ld=lld" -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld"'
             cmake_ver: 'default'
           # test without installing TBB
-          - ubuntu_ver: 22.04
+          - ubuntu_ver: ubuntu-22.04
             build_type: Release
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
@@ -111,7 +112,7 @@ jobs:
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
             cmake_ver: 'default'
-          - ubuntu_ver: 22.04
+          - ubuntu_ver: ubuntu-22.04
             build_type: Debug
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
@@ -121,7 +122,7 @@ jobs:
             disable_hwloc: 'ON'
             link_hwloc_statically: 'OFF'
             cmake_ver: 'default'
-          - ubuntu_ver: 22.04
+          - ubuntu_ver: ubuntu-22.04
             build_type: Release
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
@@ -202,7 +203,7 @@ jobs:
       if:  ${{ matrix.build_type == 'Debug' && matrix.compiler.c == 'gcc' }}
       working-directory: ${{env.BUILD_DIR}}
       run: |
-        export COVERAGE_FILE_NAME=${{env.COVERAGE_NAME}}-ubuntu-${{matrix.ubuntu_ver}}-shared-${{matrix.shared_library}}-no_hwloc-${{matrix.disable_hwloc}}
+        export COVERAGE_FILE_NAME=${{env.COVERAGE_NAME}}-${{matrix.ubuntu_ver}}-shared-${{matrix.shared_library}}-no_hwloc-${{matrix.disable_hwloc}}
         echo "COVERAGE_FILE_NAME: $COVERAGE_FILE_NAME"
         ../scripts/coverage/coverage_capture.sh $COVERAGE_FILE_NAME
         mkdir -p ${{env.COVERAGE_DIR}}
