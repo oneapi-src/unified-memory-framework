@@ -24,16 +24,7 @@ ARG BASE_DEPS="\
 
 # Hwloc installation dependencies
 ARG HWLOC_DEPS="\
-	dos2unix \
 	libtool"
-
-# Copy hwloc
-# libhwloc-dev is required - installed via script because hwloc version is to old on this OS
-COPY .github/scripts/install_hwloc.sh /opt/umf/install_hwloc.sh
-
-# UMF's dependencies
-ARG UMF_DEPS="\
-	libtbb-dev"
 
 # Dependencies for tests (optional)
 ARG TEST_DEPS="\
@@ -46,10 +37,13 @@ ARG MISC_DEPS="\
 	automake \
 	clang \
 	g++-7 \
+	lcov \
 	python3-pip \
 	sudo \
-	whois \
-	lcov"
+	whois"
+
+# libhwloc-dev is required - installed via script because hwloc version is too old on this OS
+COPY .github/scripts/install_hwloc.sh /opt/umf/install_hwloc.sh
 
 # Update and install required packages
 RUN apt-get update \

@@ -21,26 +21,28 @@ ARG BASE_DEPS="\
 	build-essential \
 	cmake \
 	git \
-	libtool"
+	gnupg \
+	libtool \
+	wget"
 
 # UMF's dependencies
 ARG UMF_DEPS="\
-	libtbb-dev \
 	libhwloc-dev"
 
 # Dependencies for tests (optional)
 ARG TEST_DEPS="\
 	libnuma-dev \
+	libtbb-dev \
 	valgrind"
 
 # Miscellaneous for our builds/CI (optional)
 ARG MISC_DEPS="\
 	automake \
 	clang \
+	lcov \
 	python3-pip \
 	sudo \
-	whois \
-	lcov"
+	whois"
 
 # Update and install required packages
 RUN apt-get update \

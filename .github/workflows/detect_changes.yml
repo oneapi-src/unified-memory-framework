@@ -10,9 +10,8 @@ on:
 
 permissions:
   contents: read
-  packages: read
 
-jobs: 
+jobs:
   DetectChanges:
     runs-on: ubuntu-latest
     outputs:
@@ -25,7 +24,7 @@ jobs:
 
       - name: Get changed files
         id: changed-files
-        uses: tj-actions/changed-files@v45.0.3
+        uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c #v46.0.5
 
       - name: List all changed files
         env:
@@ -35,10 +34,9 @@ jobs:
 
   RunReusableDocker:
     needs: DetectChanges
-    runs-on: ubuntu-latest
     if: ${{ contains(join(needs.DetectChanges.outputs.changed_files, ' '), '.github/docker/') }}
+    uses: ./.github/workflows/reusable_dockers_build.yml
     permissions:
       contents: read
       packages: write
     secrets: inherit
-    uses: ./.github/workflows/reusable_dockers_build.yml

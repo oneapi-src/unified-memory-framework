@@ -11,15 +11,11 @@ permissions:
 
 jobs: 
   build-dockers:
-    # if: github.repository == 'oneapi-src/unified-memory-framework'
     runs-on: ubuntu-latest
     strategy: 
       matrix:
         ubuntu-version: [20.04, 22.04, 24.04]
-    outputs: 
-      status: ${{ job.status }}
     env:
-      GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }} # test
       IMG: ghcr.io/bb-ur/umf-ubuntu-${{ matrix.ubuntu-version }}:latest
 
     steps:
@@ -37,13 +33,10 @@ jobs:
         uses: docker/login-action@30f019fb76bb54d03ec1e716054622be511a13b2 # v3.2.0
         with:
           registry: ghcr.io
-          username: ${{ github.actor }} # test
-          password: ${{ env.GHCR_TOKEN }} # test
-          # registry: ghcr.io
-          # username: bb-ur
-          # password: ${{ secrets.BB_GHCR_TOKEN }}
+          username: bb-ur
+          password: ${{ secrets.BB_GHCR_TOKEN }}
 
       - name: Push ubuntu-${{ matrix.ubuntu-version }} Docker image
-        # if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request'
         run: |
           docker push ${{ env.IMG }}

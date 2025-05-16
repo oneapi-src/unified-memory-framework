@@ -9,15 +9,14 @@ permissions:
 
 env:
   BUILD_DIR : "${{github.workspace}}/build"
-  INSTL_DIR : "${{github.workspace}}/../install-dir"
+  INSTL_DIR : "${{github.workspace}}/install-dir"
 
 jobs:
   ubuntu-build:
     name: Linux
     runs-on: ${{ github.repository_owner == 'oneapi-src' && 'intel-ubuntu-22.04' || 'ubuntu-22.04' }}
     container:
-      # image: ghcr.io/bb-ur/umf-ubuntu-${{ matrix.ubuntu_ver }}:latest
-      image: ghcr.io/rbanka1/umf-ubuntu-${{ matrix.ubuntu_ver }}:latest # test
+      image: ghcr.io/bb-ur/umf-ubuntu-${{ matrix.ubuntu_ver }}:latest
       options: --user root --privileged
       volumes:
         - ${{ github.workspace }}:${{ github.workspace }}

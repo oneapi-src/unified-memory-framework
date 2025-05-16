@@ -18,8 +18,7 @@ jobs:
     name: Ubuntu
     runs-on: ubuntu-latest
     container:
-      # image: ghcr.io/bb-ur/umf-ubuntu-${{ matrix.ubuntu_ver }}:latest
-      image: ghcr.io/rbanka1/umf-ubuntu-${{ matrix.ubuntu_ver }}:latest # test
+      image: ghcr.io/bb-ur/umf-ubuntu-${{ matrix.ubuntu_ver }}:latest
       options: --user root --privileged
       volumes:
         - ${{ github.workspace }}:${{ github.workspace }}
@@ -45,6 +44,8 @@ jobs:
             install_tbb: 'ON'
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
+            # check minimum supported cmake version
+            cmake_ver: '3.14.0'
           - ubuntu_ver: 22.04
             build_type: Release
             compiler: {c: gcc, cxx: g++}
@@ -54,6 +55,7 @@ jobs:
             install_tbb: 'ON'
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
+            cmake_ver: '3.28.0'
           - ubuntu_ver: 24.04
             build_type: Debug
             compiler: {c: gcc, cxx: g++}
@@ -97,6 +99,7 @@ jobs:
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
             llvm_linker: '-DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" -DCMAKE_MODULE_LINKER_FLAGS="-fuse-ld=lld" -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld"'
+            cmake_ver: 'default'
           # test without installing TBB
           - ubuntu_ver: 22.04
             build_type: Release
@@ -107,6 +110,7 @@ jobs:
             install_tbb: 'OFF'
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
+            cmake_ver: 'default'
           - ubuntu_ver: 22.04
             build_type: Debug
             compiler: {c: gcc, cxx: g++}
@@ -116,6 +120,7 @@ jobs:
             install_tbb: 'ON'
             disable_hwloc: 'ON'
             link_hwloc_statically: 'OFF'
+            cmake_ver: 'default'
           - ubuntu_ver: 22.04
             build_type: Release
             compiler: {c: gcc, cxx: g++}
@@ -125,21 +130,41 @@ jobs:
             install_tbb: 'ON'
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'ON'
+            cmake_ver: 'default'
     steps:
     - name: Checkout
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         fetch-depth: 0
 
+    - name: Install cmake (non-default version)
+      if: matrix.cmake_ver != 'default'
+      run: |
+        apt-get remove --purge -y cmake
+        wget https://github.com/Kitware/CMake/releases/download/v${{matrix.cmake_ver}}/cmake-${{matrix.cmake_ver}}-Linux-x86_64.sh
+        chmod +x cmake-${{matrix.cmake_ver}}-Linux-x86_64.sh
+        ./cmake-${{matrix.cmake_ver}}-Linux-x86_64.sh --skip-license --prefix=/usr/local
+
+    - name: Uninstall TBB apt package
+      if: matrix.install_tbb == 'OFF'
+      run: |
+        apt-get remove --purge -y libtbb-dev
+
     - name: Install oneAPI basekit
       if: matrix.compiler.cxx == 'icpx'
       run: |
-        sudo apt-get update
-        sudo apt-get install -y gpg-agent wget
-        wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
-        echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
-        sudo apt-get update
-        sudo apt-get install -y intel-oneapi-ippcp-devel intel-oneapi-ipp-devel intel-oneapi-common-oneapi-vars intel-oneapi-compiler-dpcpp-cpp
+        apt-get update
+        apt-get install -y gpg-agent
+        wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor -o /usr/share/keyrings/oneapi-archive-keyring.gpg
+        echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" > /etc/apt/sources.list.d/oneAPI.list
+        apt-get update
+        apt-get install -y intel-oneapi-ippcp-devel intel-oneapi-ipp-devel intel-oneapi-common-oneapi-vars intel-oneapi-compiler-dpcpp-cpp
+
+    - name: Get UMF version
+      run: |
+        git config --global --add safe.directory $GITHUB_WORKSPACE
+        VERSION=$(git describe --tags --abbrev=0 | grep -oP '\d+\.\d+\.\d+')
+        echo "UMF_VERSION=$VERSION" >> $GITHUB_ENV
 
     - name: Configure build
       run: >
@@ -160,6 +185,7 @@ jobs:
         -DUMF_DISABLE_HWLOC=${{matrix.disable_hwloc}}
         -DUMF_LINK_HWLOC_STATICALLY=${{matrix.link_hwloc_statically}}
         ${{ matrix.build_type == 'Debug' && matrix.compiler.c == 'gcc' && '-DUMF_USE_COVERAGE=ON' || '' }}
+        ${{ matrix.llvm_linker || '' }}
 
     - name: Build UMF
       run: |
@@ -172,14 +198,11 @@ jobs:
         ${{ matrix.compiler.cxx == 'icpx' && '. /opt/intel/oneapi/setvars.sh' || true }}
         LD_LIBRARY_PATH="${{env.BUILD_DIR}}/lib/:${LD_LIBRARY_PATH}" ctest --output-on-failure
 
-    - name: Set OS name
-      run: echo "OS_VER=ubuntu-${{ matrix.ubuntu_ver }}" >> $GITHUB_ENV
-
     - name: Check coverage
       if:  ${{ matrix.build_type == 'Debug' && matrix.compiler.c == 'gcc' }}
       working-directory: ${{env.BUILD_DIR}}
       run: |
-        export COVERAGE_FILE_NAME=${{env.COVERAGE_NAME}}-${{env.OS_VER}}-shared-${{matrix.shared_library}}-no_hwloc-${{matrix.disable_hwloc}}
+        export COVERAGE_FILE_NAME=${{env.COVERAGE_NAME}}-ubuntu-${{matrix.ubuntu_ver}}-shared-${{matrix.shared_library}}-no_hwloc-${{matrix.disable_hwloc}}
         echo "COVERAGE_FILE_NAME: $COVERAGE_FILE_NAME"
         ../scripts/coverage/coverage_capture.sh $COVERAGE_FILE_NAME
         mkdir -p ${{env.COVERAGE_DIR}}
@@ -188,7 +211,7 @@ jobs:
     - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       if:  ${{ matrix.build_type == 'Debug' && matrix.compiler.c == 'gcc' }}
       with:
-        name: ${{env.COVERAGE_NAME}}-${{env.OS_VER}}-shared-${{matrix.shared_library}}-no_hwloc-${{matrix.disable_hwloc}}
+        name: ${{env.COVERAGE_NAME}}-${{matrix.ubuntu_ver}}-shared-${{matrix.shared_library}}-no_hwloc-${{matrix.disable_hwloc}}
         path: ${{env.COVERAGE_DIR}}
 
     - name: Remove the installation directory
