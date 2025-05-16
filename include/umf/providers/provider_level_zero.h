@@ -8,6 +8,7 @@
 #ifndef UMF_PROVIDER_LEVEL_ZERO_H
 #define UMF_PROVIDER_LEVEL_ZERO_H
 
+#include <umf/memory_props.h>
 #include <umf/memory_provider_gpu.h>
 
 #ifdef __cplusplus
@@ -90,6 +91,11 @@ umf_result_t umfLevelZeroMemoryProviderParamsSetFreePolicy(
 umf_result_t umfLevelZeroMemoryProviderParamsSetDeviceOrdinal(
     umf_level_zero_memory_provider_params_handle_t hParams,
     uint32_t deviceOrdinal);
+
+/// TODO
+umf_result_t umfLevelZeroMemoryProviderGetMemoryProperty(
+    umf_memory_properties_handle_t props_handle,
+    umf_memory_property_id_t memory_property_id, void *value);
 
 const umf_memory_provider_ops_t *umfLevelZeroMemoryProviderOps(void);
 

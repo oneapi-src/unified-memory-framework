@@ -12,6 +12,8 @@
 #include <umf.h>
 #include <umf/providers/provider_cuda.h>
 
+#include "memory_props_internal.h"
+#include "memory_provider_internal.h"
 #include "provider_cuda_internal.h"
 #include "utils_load_library.h"
 #include "utils_log.h"
@@ -704,6 +706,39 @@ const umf_memory_provider_ops_t *umfCUDAMemoryProviderOps(void) {
     return &UMF_CUDA_MEMORY_PROVIDER_OPS;
 }
 
+umf_result_t umfCUDAMemoryProviderGetMemoryProperty(
+    umf_memory_properties_handle_t props_handle,
+    umf_memory_property_id_t memory_property_id, void *value) {
+
+    umf_memory_provider_t *provider = NULL;
+    umfPoolGetMemoryProvider(props_handle->pool, &provider);
+    assert(provider != NULL);
+    assert(provider->ops.get_name(provider) ==
+           umfCUDAMemoryProviderOps()->get_name(provider));
+
+    cu_memory_provider_t *cuda_provider =
+        (cu_memory_provider_t *)provider->provider_priv;
+
+    switch (memory_property_id) {
+    case UMF_MEMORY_PROPERTY_POINTER_TYPE:
+        *(umf_usm_memory_type_t *)value = cuda_provider->memory_type;
+        return UMF_RESULT_SUCCESS;
+
+    case UMF_MEMORY_PROPERTY_DEVICE:
+        *(CUdevice *)value = cuda_provider->device;
+        return UMF_RESULT_SUCCESS;
+
+    case UMF_MEMORY_PROPERTY_DEVICE_ATTRIBUTES:
+        assert(0); // TODO
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+
+    default:
+        break;
+    }
+
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
 #else // !UMF_BUILD_CUDA_PROVIDER
 
 umf_result_t umfCUDAMemoryProviderParamsCreate(
@@ -750,6 +785,15 @@ umf_result_t umfCUDAMemoryProviderParamsSetAllocFlags(
     (void)hParams;
     (void)flags;
     LOG_ERR("CUDA provider is disabled (UMF_BUILD_CUDA_PROVIDER is OFF)!");
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+umf_result_t umfCUDAMemoryProviderGetMemoryProperty(
+    umf_memory_properties_handle_t props_handle,
+    umf_memory_property_id_t memory_property_id, void *value) {
+    (void)props_handle;
+    (void)memory_property_id;
+    (void)value;
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
