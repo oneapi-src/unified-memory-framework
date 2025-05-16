@@ -42,7 +42,7 @@ struct umfPoolWithCreateFlagsTest
 };
 
 TEST_P(umfPoolWithCreateFlagsTest, memoryPoolTrace) {
-    using calls_type = std::unordered_map<std::string, size_t>;
+    using calls_type = std::unordered_map<std::string, unsigned int>;
     calls_type poolCalls;
     calls_type providerCalls;
     auto tracePool = [](void *handler, const char *name) {
@@ -71,43 +71,43 @@ TEST_P(umfPoolWithCreateFlagsTest, memoryPoolTrace) {
     size_t provider_call_count = 0;
 
     umfPoolMalloc(tracingPool.get(), 0);
-    ASSERT_EQ(poolCalls["malloc"], 1);
+    ASSERT_EQ(poolCalls["malloc"], 1UL);
     ASSERT_EQ(poolCalls.size(), ++pool_call_count);
 
-    ASSERT_EQ(providerCalls["alloc"], 1);
+    ASSERT_EQ(providerCalls["alloc"], 1UL);
     ASSERT_EQ(providerCalls.size(), ++provider_call_count);
 
     umfPoolMallocUsableSize(tracingPool.get(), nullptr);
-    ASSERT_EQ(poolCalls["malloc_usable_size"], 1);
+    ASSERT_EQ(poolCalls["malloc_usable_size"], 1UL);
     ASSERT_EQ(poolCalls.size(), ++pool_call_count);
 
     ASSERT_EQ(providerCalls.size(), provider_call_count);
 
     umfPoolFree(tracingPool.get(), nullptr);
-    ASSERT_EQ(poolCalls["free"], 1);
+    ASSERT_EQ(poolCalls["free"], 1UL);
     ASSERT_EQ(poolCalls.size(), ++pool_call_count);
 
-    ASSERT_EQ(providerCalls["free"], 1);
+    ASSERT_EQ(providerCalls["free"], 1UL);
     ASSERT_EQ(providerCalls.size(), ++provider_call_count);
 
     umfPoolCalloc(tracingPool.get(), 0, 0);
-    ASSERT_EQ(poolCalls["calloc"], 1);
+    ASSERT_EQ(poolCalls["calloc"], 1UL);
     ASSERT_EQ(poolCalls.size(), ++pool_call_count);
 
     umfPoolRealloc(tracingPool.get(), nullptr, 0);
-    ASSERT_EQ(poolCalls["realloc"], 1);
+    ASSERT_EQ(poolCalls["realloc"], 1UL);
     ASSERT_EQ(poolCalls.size(), ++pool_call_count);
 
     umfPoolAlignedMalloc(tracingPool.get(), 0, 0);
-    ASSERT_EQ(poolCalls["aligned_malloc"], 1);
+    ASSERT_EQ(poolCalls["aligned_malloc"], 1UL);
     ASSERT_EQ(poolCalls.size(), ++pool_call_count);
 
-    ASSERT_EQ(providerCalls["alloc"], 2);
+    ASSERT_EQ(providerCalls["alloc"], 2UL);
     ASSERT_EQ(providerCalls.size(), provider_call_count);
 
     auto ret = umfPoolGetLastAllocationError(tracingPool.get());
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
-    ASSERT_EQ(poolCalls["get_last_native_error"], 1);
+    ASSERT_EQ(poolCalls["get_last_native_error"], 1UL);
     ASSERT_EQ(poolCalls.size(), ++pool_call_count);
 
     if (manuallyDestroyProvider) {

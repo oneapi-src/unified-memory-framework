@@ -437,7 +437,7 @@ TEST_P(umfIpcTest, GetIPCHandleSize) {
 
     umf_result_t ret = umfPoolGetIPCHandleSize(pool.get(), &size);
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
-    EXPECT_GT(size, 0);
+    EXPECT_GT(size, (size_t)0);
 }
 
 TEST_P(umfIpcTest, GetIPCHandleSizeInvalidArgs) {
@@ -547,9 +547,9 @@ TEST_P(umfIpcTest, BasicFlow) {
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
 
     pool.reset(nullptr);
-    EXPECT_EQ(stat.getCount, 1);
+    EXPECT_EQ(stat.getCount, (size_t)1);
     EXPECT_EQ(stat.putCount, stat.getCount);
-    EXPECT_EQ(stat.openCount, 1);
+    EXPECT_EQ(stat.openCount, (size_t)1);
     EXPECT_EQ(stat.closeCount, stat.openCount);
 }
 
@@ -673,9 +673,9 @@ TEST_P(umfIpcTest, openInTwoIpcHandlers) {
 
     pool1.reset(nullptr);
     pool2.reset(nullptr);
-    EXPECT_EQ(stat.getCount, 1);
+    EXPECT_EQ(stat.getCount, (size_t)1);
     EXPECT_EQ(stat.putCount, stat.getCount);
-    EXPECT_EQ(stat.openCount, 2);
+    EXPECT_EQ(stat.openCount, (size_t)2);
     EXPECT_EQ(stat.closeCount, stat.openCount);
 }
 
