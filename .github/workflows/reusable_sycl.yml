@@ -28,10 +28,11 @@ jobs:
     - name: Download llvm daily release
       run: |
         if [ "${{ matrix.llvm_tag }}" == "latest" ]; then
-          llvm_tag=$(curl -s https://api.github.com/repos/intel/llvm/releases | awk -F'"' '/"tag_name":/ {print $4; exit}')
+          llvm_tag=$(curl -s https://api.github.com/repos/intel/llvm/releases | awk -F'"' '/"tag_name": "nightly/ {print $4; exit}')
         else
           llvm_tag="${{ matrix.llvm_tag }}"
         fi
+        echo "llvm tag: $llvm_tag"
         download_url="https://github.com/intel/llvm/releases/download/${llvm_tag}/sycl_linux.tar.gz"
         wget --no-verbose $download_url -O sycl_linux.tar.gz
 
