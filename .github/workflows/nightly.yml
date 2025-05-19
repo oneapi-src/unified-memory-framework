@@ -266,7 +266,11 @@ jobs:
        extracted\bootstrapper.exe -s --action install --eula=accept -p=NEED_VS2017_INTEGRATION=0 ^
          -p=NEED_VS2019_INTEGRATION=0 -p=NEED_VS2022_INTEGRATION=0 --log-dir=.
 
-
+   - name: test msys2
+     shell: msys2 {0}
+     run: |
+       pwd
+       find .
    # - name: Install llvm-mingw
    #   run: |
    #     curl -LO https://github.com/mstorsjo/llvm-mingw/releases/download/20250430/llvm-mingw-20250430-ucrt-x86_64.zip
