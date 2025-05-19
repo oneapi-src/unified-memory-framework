@@ -1,4 +1,4 @@
-name: Nightly
+name: Nightly.
 
 # This job is run at 04:00 UTC every day or on demand.
 on:
@@ -294,10 +294,10 @@ jobs:
      run: |
        cmake ^
          -B ${{env.BUILD_DIR}} ^
-         -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}" ^
+         -DCMAKE_PREFIX_PATH="${{github.workspace}}\build\vcpkg\packages\hwloc_x64-windows;${{github.workspace}}\build\vcpkg\packages\tbb_x64-windows;${{github.workspace}}\build\vcpkg\packages\jemalloc_x64-windows" ^
          -DCMAKE_C_COMPILER=${{matrix.compiler.c}} ^
          -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}} ^
-         -G Unix\ Makefiles ^
+         -G "Unix Makefiles" ^
          -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}} ^
          -DUMF_FORMAT_CODE_STYLE=OFF ^
          -DUMF_DEVELOPER_MODE=ON ^
