@@ -1,10 +1,11 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 */
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <thread>
@@ -50,9 +51,9 @@ TEST_F(test, baseAllocLinearPoolContainsPointer) {
 }
 
 TEST_F(test, baseAllocLinearMultiThreadedAllocMemset) {
-    static constexpr int NTHREADS = 10;
     static constexpr int ITERATIONS = 1000;
     static constexpr int MAX_ALLOCATION_SIZE = 1024;
+    int numThreads = std::max(10, (int)utils_get_num_cores());
 
     srand(0);
 
@@ -94,7 +95,7 @@ TEST_F(test, baseAllocLinearMultiThreadedAllocMemset) {
     };
 
     std::vector<std::thread> threads;
-    for (int i = 0; i < NTHREADS; i++) {
+    for (int i = 0; i < numThreads; i++) {
         threads.emplace_back(poolAlloc, i, pool.get());
     }
 
