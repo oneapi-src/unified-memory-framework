@@ -233,7 +233,7 @@ add_umf_test(
 add_umf_test(
     NAME disjoint_pool
     SRCS pools/disjoint_pool.cpp malloc_compliance_tests.cpp
-         ${BA_SOURCES_FOR_TEST}
+         ${BA_SOURCES_FOR_TEST} ${UMF_CMAKE_SOURCE_DIR}/src/critnib/critnib.c
     LIBS ${UMF_UTILS_FOR_TEST})
 
 add_umf_test(
