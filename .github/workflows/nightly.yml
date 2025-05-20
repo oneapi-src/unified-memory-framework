@@ -269,8 +269,8 @@ jobs:
    - name: test msys2
      shell: msys2 {0}
      run: |
-       pwd
-       find .
+       dir /s /b /o:gn
+
    # - name: Install llvm-mingw
    #   run: |
    #     curl -LO https://github.com/mstorsjo/llvm-mingw/releases/download/20250430/llvm-mingw-20250430-ucrt-x86_64.zip
