@@ -134,6 +134,112 @@ TEST_F(test, internals) {
     umfDisjointPoolParamsDestroy(params);
 }
 
+TEST_F(test, internals_reuse) {
+    static umf_result_t expectedResult = UMF_RESULT_SUCCESS;
+    struct memory_provider : public umf_test::provider_base_t {
+        umf_result_t alloc(size_t size, size_t alignment, void **ptr) noexcept {
+            *ptr = umf_ba_global_aligned_alloc(size, alignment);
+            return UMF_RESULT_SUCCESS;
+        }
+
+        umf_result_t free(void *ptr, [[maybe_unused]] size_t size) noexcept {
+            // do the actual free only when we expect the success
+            if (expectedResult == UMF_RESULT_SUCCESS) {
+                umf_ba_global_free(ptr);
+            }
+            return expectedResult;
+        }
+
+        umf_result_t
+        get_min_page_size([[maybe_unused]] const void *ptr,
+                          [[maybe_unused]] size_t *pageSize) noexcept {
+            *pageSize = 1024;
+            return UMF_RESULT_SUCCESS;
+        }
+    };
+    umf_memory_provider_ops_t provider_ops =
+        umf_test::providerMakeCOps<memory_provider, void>();
+
+    auto providerUnique =
+        wrapProviderUnique(createProviderChecked(&provider_ops, nullptr));
+
+    umf_memory_provider_handle_t provider_handle;
+    provider_handle = providerUnique.get();
+
+    umf_disjoint_pool_params_handle_t params =
+        (umf_disjoint_pool_params_handle_t)defaultDisjointPoolConfig();
+
+    // set to maximum tracing
+    params->pool_trace = 3;
+    params->max_poolable_size = 1024 * 1024;
+    params->capacity = 4;
+    params->reuse_strategy = 1;
+
+    // in "internals" test we use ops interface to directly manipulate the pool
+    // structure
+    const umf_memory_pool_ops_t *ops = umfDisjointPoolOps();
+    EXPECT_NE(ops, nullptr);
+
+    disjoint_pool_t *pool;
+    umf_result_t res = ops->initialize(provider_handle, params, (void **)&pool);
+    EXPECT_EQ(res, UMF_RESULT_SUCCESS);
+    EXPECT_NE(pool, nullptr);
+    EXPECT_EQ(pool->provider_min_page_size, 1024);
+
+    // allocate large object, free, then allocate small object and check if
+    // it is allocated from the same slab
+    size_t large_size = 1024;
+    void *ptr = ops->malloc(pool, large_size);
+    EXPECT_NE(ptr, nullptr);
+
+    // get slab and bucket
+    slab_t *large_slab =
+        (slab_t *)critnib_find_le(pool->known_slabs, (uintptr_t)ptr);
+    EXPECT_NE(large_slab, nullptr);
+    bucket_t *large_bucket = large_slab->bucket;
+    EXPECT_EQ(large_bucket->size, large_size);
+
+    // there is 1 slab in use and 0 completely free slabs available in the pool
+    EXPECT_EQ(large_bucket->curr_slabs_in_use, 1);
+    EXPECT_EQ(large_bucket->curr_slabs_in_pool, 0);
+
+    ops->free(pool, ptr);
+    EXPECT_EQ(large_bucket->available_slabs_num, 1);
+    EXPECT_EQ(large_bucket->curr_slabs_in_use, 0);
+    EXPECT_EQ(large_bucket->curr_slabs_in_pool, 1);
+
+    size_t small_size = 64;
+    ptr = ops->malloc(pool, small_size);
+    EXPECT_NE(ptr, nullptr);
+
+    // we should reuse the slab from the large bucket
+    EXPECT_EQ(large_bucket->available_slabs_num, 0);
+    EXPECT_EQ(large_bucket->curr_slabs_in_use, 0);
+    EXPECT_EQ(large_bucket->curr_slabs_in_pool, 0);
+
+    // get slab and bucket
+    slab_t *small_slab =
+        (slab_t *)critnib_find_le(pool->known_slabs, (uintptr_t)ptr);
+    EXPECT_NE(small_slab, nullptr);
+    bucket_t *small_bucket = small_slab->bucket;
+    EXPECT_EQ(small_bucket->size, small_size);
+    EXPECT_EQ(small_bucket->available_slabs_num, 1);
+    EXPECT_EQ(small_bucket->curr_slabs_in_use, 1);
+    EXPECT_EQ(small_bucket->curr_slabs_in_pool, 0);
+
+    // check if small object is allocated from the same memory as large
+    EXPECT_EQ(large_slab->mem_ptr, small_slab->mem_ptr);
+
+    // check that the whole large slab was divided into correct number of small
+    // chunks
+    EXPECT_EQ(small_slab->num_chunks_total,
+              large_size / small_size * large_slab->num_chunks_total);
+
+    // cleanup
+    ops->finalize(pool);
+    umfDisjointPoolParamsDestroy(params);
+}
+
 TEST_F(test, freeErrorPropagation) {
     static umf_result_t expectedResult = UMF_RESULT_SUCCESS;
     struct memory_provider : public umf_test::provider_base_t {
