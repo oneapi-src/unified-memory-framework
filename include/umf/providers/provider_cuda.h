@@ -8,6 +8,7 @@
 #ifndef UMF_PROVIDER_CUDA_H
 #define UMF_PROVIDER_CUDA_H
 
+#include <umf/memory_props.h>
 #include <umf/memory_provider_gpu.h>
 
 #ifdef __cplusplus
@@ -60,6 +61,11 @@ umf_result_t umfCUDAMemoryProviderParamsSetMemoryType(
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 umf_result_t umfCUDAMemoryProviderParamsSetAllocFlags(
     umf_cuda_memory_provider_params_handle_t hParams, unsigned int flags);
+
+/// TODO
+umf_result_t umfCUDAMemoryProviderGetMemoryProperty(
+    umf_memory_properties_handle_t props_handle,
+    umf_memory_property_id_t memory_property_id, void *value);
 
 const umf_memory_provider_ops_t *umfCUDAMemoryProviderOps(void);
 
