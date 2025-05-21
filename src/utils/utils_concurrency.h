@@ -103,6 +103,15 @@ static inline void utils_atomic_load_acquire_u64(uint64_t *ptr, uint64_t *out) {
     *out = *(uint64_t *)&ret;
 }
 
+// There is no good way to do atomic_load on windows...
+static inline void utils_atomic_load_acquire_u8(uint8_t *ptr, uint8_t *out) {
+    // On Windows, there is no equivalent to __atomic_load, so we use cmpxchg
+    // with 0, 0 here. This will always return the value under the pointer
+    // without writing anything.
+    char ret = _InterlockedCompareExchange8((char volatile *)ptr, 0, 0);
+    *out = *(uint8_t *)&ret;
+}
+
 static inline void utils_atomic_load_acquire_ptr(void **ptr, void **out) {
     ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
     uintptr_t ret = (uintptr_t)InterlockedCompareExchangePointer(ptr, 0, 0);
@@ -112,6 +121,10 @@ static inline void utils_atomic_load_acquire_ptr(void **ptr, void **out) {
 static inline void utils_atomic_store_release_u64(uint64_t *ptr, uint64_t val) {
     ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
     InterlockedExchange64((LONG64 volatile *)ptr, val);
+}
+
+static inline void utils_atomic_store_release_u8(uint8_t *ptr, uint8_t val) {
+    InterlockedExchange8((CHAR volatile *)ptr, val);
 }
 
 static inline void utils_atomic_store_release_ptr(void **ptr, void *val) {
@@ -167,6 +180,11 @@ static inline void utils_atomic_load_acquire_u64(uint64_t *ptr, uint64_t *out) {
     utils_annotate_acquire(ptr);
 }
 
+static inline void utils_atomic_load_acquire_u8(uint8_t *ptr, uint8_t *out) {
+    __atomic_load(ptr, out, memory_order_acquire);
+    utils_annotate_acquire(ptr);
+}
+
 static inline void utils_atomic_load_acquire_ptr(void **ptr, void **out) {
     ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
     ASSERT_IS_ALIGNED((uintptr_t)out, 8);
@@ -176,6 +194,11 @@ static inline void utils_atomic_load_acquire_ptr(void **ptr, void **out) {
 
 static inline void utils_atomic_store_release_u64(uint64_t *ptr, uint64_t val) {
     ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
+    utils_annotate_release(ptr);
+    __atomic_store_n(ptr, val, memory_order_release);
+}
+
+static inline void utils_atomic_store_release_u8(uint8_t *ptr, uint8_t val) {
     utils_annotate_release(ptr);
     __atomic_store_n(ptr, val, memory_order_release);
 }
