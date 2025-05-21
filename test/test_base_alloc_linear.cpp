@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -40,11 +40,11 @@ TEST_F(test, baseAllocLinearPoolContainsPointer) {
     ASSERT_NE(ptr, nullptr);
     memset(ptr, 0, size);
     // assert pool contains pointer ptr
-    ASSERT_NE(umf_ba_linear_pool_contains_pointer(pool.get(), ptr), 0);
+    ASSERT_NE(umf_ba_linear_pool_contains_pointer(pool.get(), ptr), (size_t)0);
 
     // assert pool does NOT contain pointer 0x0123
     ASSERT_EQ(umf_ba_linear_pool_contains_pointer(pool.get(), (void *)0x0123),
-              0);
+              (size_t)0);
 
     umf_ba_linear_free(pool.get(), ptr);
 }

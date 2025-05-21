@@ -181,7 +181,24 @@ class UmfInstaller:
                     f"Error: Installation directory '{self.install_dir}' is not empty"
                 )
 
-        install_cmd = f"cmake --build {self.build_dir} --config {self.build_type.title()} --target install"
+        # cmake <= 3.14 does not support --prefix option
+        try:
+            cmake_ver_cmd = "cmake --version"
+            cmake_ver = subprocess.run(
+                cmake_ver_cmd.split(), capture_output=True, text=True
+            )  # nosec B603
+            cmake_ver = cmake_ver.stdout.splitlines()[0].split(" ")[2]
+            cmake_ver = Version(cmake_ver)
+            print(f"CMake version: {cmake_ver}", flush=True)
+        except subprocess.CalledProcessError:
+            sys.exit(f"Error: CMake check version command '{cmake_ver_cmd}' failed")
+
+        if cmake_ver <= Version("3.14"):  # both Linux and Windows
+            install_cmd = f"cmake --build {self.build_dir} --config {self.build_type.title()} --target install"
+        elif platform.system() == "Windows":
+            install_cmd = f"cmake --install {self.build_dir} --config {self.build_type.title()} --prefix {self.install_dir}"
+        else:
+            install_cmd = f"cmake --build {self.build_dir} --config {self.build_type.title()} --target install"
 
         try:
             print(f"Running command: {install_cmd}", flush=True)
