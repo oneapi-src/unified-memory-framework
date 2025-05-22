@@ -16,13 +16,12 @@ env:
 
 jobs:
   fuzz-test:
-      name: Fuzz test
       strategy:
         fail-fast: false
         matrix:
           build_type: [Debug, Release]
           compiler: [{c: clang, cxx: clang++}]
-      
+      name: Fuzz test (ubuntu-latest, build_type=${{matrix.build_type}}, compilers=${{matrix.compiler.c}}/${{matrix.compiler.cxx}})
       runs-on: ubuntu-latest
 
       steps:
@@ -70,11 +69,11 @@ jobs:
         run: ctest -C ${{matrix.build_type}} --output-on-failure --verbose -L "fuzz-long"
 
   valgrind:
-    name: Valgrind
     strategy:
       fail-fast: false
       matrix:
           tool: ['memcheck', 'drd', 'helgrind']
+    name: Valgrind (${{matrix.tool}})
     runs-on: ubuntu-latest
 
     steps:
@@ -108,7 +107,6 @@ jobs:
       run: ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{github.workspace}}/build ${{matrix.tool}}
 
   Windows-generators:
-    name: Windows ${{matrix.generator}} generator
     strategy:
       matrix:
         build_type: [Debug, Release]
@@ -117,6 +115,7 @@ jobs:
         static_hwloc: ['ON', 'OFF']
         generator: ['Ninja', 'NMake Makefiles']
         umfd_lib: ['ON', 'OFF']
+    name: Windows (generator=${{matrix.generator}}, compilers=${{matrix.compiler.c}}/${{matrix.compiler.cxx}}, build_type=${{matrix.build_type}}, shared_library=${{matrix.shared_library}}, static_hwloc=${{matrix.static_hwloc}}, umfd_lib=${{matrix.umfd_lib}})
 
     runs-on: windows-latest
 
@@ -201,7 +200,6 @@ jobs:
         ${{ matrix.static_hwloc == 'ON' && '--hwloc' || '' }}
 
   icx:
-   name: ICX
    env:
      VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
    strategy:
@@ -215,7 +213,7 @@ jobs:
            build_type: Release
            compiler: {c: icx, cxx: icx}
            shared_library: 'ON'
-  
+   name: ICX (${{matrix.os}}, build_type=${{matrix.build_type}}, compilers=${{matrix.compiler.c}}/${{matrix.compiler.cxx}}, shared_library=${{matrix.shared_library}})
    runs-on: ${{matrix.os}}
   
    steps:
@@ -288,7 +286,7 @@ jobs:
   # Scenarios where UMF_LINK_HWLOC_STATICALLY is set to OFF and hwloc is not installed in the system
   # The hwloc library is fetched implicitly
   hwloc-fallback:
-    name: "Fallback to static hwloc build"
+
     strategy:
       matrix:
         include:
@@ -298,7 +296,7 @@ jobs:
           - os: 'windows-latest'
             build_type: Release
             number_of_processors: '$Env:NUMBER_OF_PROCESSORS'
-    
+    name: "Fallback to static hwloc build (${{matrix.os}}), build_type=${{matrix.build_type}})"
     runs-on: ${{matrix.os}}
 
     steps:

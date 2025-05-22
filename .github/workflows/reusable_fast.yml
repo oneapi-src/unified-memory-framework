@@ -12,7 +12,6 @@ env:
 
 jobs:
   FastBuild:
-    name: Fast builds
     env:
       VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
     strategy:
@@ -48,6 +47,7 @@ jobs:
             build_tests: 'ON'
             extra_build_options: '-DCMAKE_BUILD_TYPE=Release'
             simple_cmake: 'ON'
+    name: Fast builds (${{matrix.os}}, build_tests=${{matrix.build_tests}}, simple_cmake=${{matrix.simple_cmake}}, extra_build_options=${{matrix.extra_build_options}})
     runs-on: ${{ (matrix.os == 'ubuntu-latest' && github.repository_owner == 'oneapi-src') && 'intel-ubuntu-22.04' || matrix.os }}
 
     steps:

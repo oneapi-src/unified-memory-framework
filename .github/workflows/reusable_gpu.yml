@@ -36,7 +36,6 @@ env:
 
 jobs:
   gpu:
-    name: "${{matrix.os}}, ${{matrix.build_type}}, shared=${{matrix.shared_library}}"
     env:
       VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows;"
       COVERAGE_NAME : "exports-coverage-${{inputs.provider}}-${{inputs.runner}}"
@@ -48,8 +47,9 @@ jobs:
         shared_library: ${{ fromJSON(inputs.shared_lib)}}
         os: ${{ fromJSON(inputs.os)}}
         build_type: ${{ fromJSON(inputs.build_type)}}
-
+    name: GPU (${{matrix.os}}, build_type=${{matrix.build_type}}, shared=${{matrix.shared_library}})
     runs-on: ["DSS-${{inputs.runner}}", "DSS-${{matrix.os}}"]
+
     steps:
       # Set various build params based on OS
       - name: "[Win] Establish build params"
