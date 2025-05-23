@@ -228,8 +228,6 @@ target_include_directories(
 
 install(TARGETS umf EXPORT ${PROJECT_NAME}-targets)
 
-add_subdirectory(pool)
-
 if(UMF_PROXY_LIB_ENABLED)
     add_subdirectory(proxy_lib)
 endif()
