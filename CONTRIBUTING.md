@@ -6,6 +6,7 @@
   - [Opening new issues](#opening-new-issues)
   - [Submitting Pull Requests](#submitting-pull-requests)
     - [Building and testing](#building-and-testing)
+    - [Building/Rebuilding Docker Images](#buildingrebuilding-docker-images)
     - [Code style](#code-style)
     - [When my PR is merged?](#when-my-pr-is-merged)
     - [Extending public API](#extending-public-api)
@@ -66,6 +67,13 @@ Any test's failure will produce error log.
 To enable additional checks (including `-Werror` / `/WX` compilation flag), switch on CMake flag
 `UMF_DEVELOPER_MODE`. To read more about all available CMake options please see
 ["CMake standard options"](./README.md#cmake-standard-options) section in the top-level Readme.
+
+### Building/Rebuilding Docker Images
+
+If you want to rebuild existing Docker images or add a new one, you must open a separate pull 
+request dedicated to Docker-related changes. This PR must be merged into the main branch first.
+
+The updated Docker images will be available for use in workflows only when this PR is merged.
 
 ### Code style
 We use `clang-format` to verify and apply code style changes to C/C++ source files.

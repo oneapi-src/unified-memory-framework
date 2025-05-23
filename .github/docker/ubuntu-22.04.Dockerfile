@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Intel Corporation
+# Copyright (C) 2024-2025 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -17,24 +17,30 @@ ENV NOTTY 1
 ENV DEBIAN_FRONTEND noninteractive
 
 # Base development packages
+# It seems that libtool is not directly needed
+# but it is still required when Building UMF
 ARG BASE_DEPS="\
 	build-essential \
 	cmake \
-	git"
+	git \
+	libtool \
+	wget"
 
 # UMF's dependencies
 ARG UMF_DEPS="\
-	libhwloc-dev \
-	libtbb-dev"
+	libhwloc-dev"
 
 # Dependencies for tests (optional)
 ARG TEST_DEPS="\
-	libnuma-dev"
+	libnuma-dev \
+	libtbb-dev \
+	valgrind"
 
 # Miscellaneous for our builds/CI (optional)
 ARG MISC_DEPS="\
 	automake \
 	clang \
+	lcov \
 	python3-pip \
 	sudo \
 	whois"
@@ -43,14 +49,14 @@ ARG MISC_DEPS="\
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
 	${BASE_DEPS} \
-	${UMF_DEPS} \
 	${TEST_DEPS} \
 	${MISC_DEPS} \
+	${UMF_DEPS} \
  && rm -rf /var/lib/apt/lists/* \
  && apt-get clean all
 
 # Prepare a dir (accessible by anyone)
-RUN mkdir --mode 777 /opt/umf/
+RUN mkdir -p --mode 777 /opt/umf/
 
 # Additional dependencies (installed via pip)
 COPY third_party/requirements.txt /opt/umf/requirements.txt
@@ -59,5 +65,5 @@ RUN pip3 install --no-cache-dir -r /opt/umf/requirements.txt
 # Add a new (non-root) 'test_user'
 ENV USER test_user
 ENV USERPASS pass
-RUN useradd -m "${USER}" -g sudo -p "$(mkpasswd ${USERPASS})"
+RUN useradd -m -u 1001 "${USER}" -g sudo -p "$(mkpasswd ${USERPASS})"
 USER test_user
