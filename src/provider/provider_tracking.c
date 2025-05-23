@@ -729,9 +729,8 @@ static umf_result_t trackingFree(void *hProvider, void *ptr, size_t size) {
 
         if (umfMemoryTrackerAdd(p->hTracker, p->pool, ptr, size) !=
             UMF_RESULT_SUCCESS) {
-            LOG_ERR(
-                "cannot add memory back to the tracker, ptr = %p, size = %zu",
-                ptr, size);
+            LOG_ERR("cannot add memory back to the tracker, ptr=%p, size=%zu",
+                    ptr, size);
         }
         return ret;
     }
@@ -770,6 +769,10 @@ static void check_if_tracker_is_empty(umf_memory_tracker_handle_t hTracker,
                                  FIND_G, &rkey, (void **)&rvalue)) {
             if (rvalue->pool == pool || pool == NULL) {
                 n_items++;
+                LOG_DEBUG(
+                    "found abandoned allocation in the tracking provider: "
+                    "pool=%p, ptr=%p, size=%zu",
+                    (void *)rvalue->pool, (void *)rkey, (size_t)rvalue->size);
             }
 
             last_key = rkey;
