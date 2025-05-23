@@ -5,6 +5,7 @@ on: workflow_call
 
 permissions:
   contents: read
+  packages: read
 
 env:
   BUILD_DIR : "${{github.workspace}}/build"
@@ -15,6 +16,12 @@ env:
 jobs:
   ubuntu-build:
     name: Ubuntu
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/bb-ur/umf-${{ matrix.os }}:latest
+      options: --privileged
+      volumes:
+        - ${{ github.workspace }}:${{ github.workspace }}
     strategy:
       matrix:
         os: ['ubuntu-22.04', 'ubuntu-24.04']
@@ -93,7 +100,7 @@ jobs:
             link_hwloc_statically: 'OFF'
             llvm_linker: '-DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" -DCMAKE_MODULE_LINKER_FLAGS="-fuse-ld=lld" -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld"'
             cmake_ver: 'default'
-            # test without installing TBB
+          # test without installing TBB
           - os: 'ubuntu-22.04'
             build_type: Release
             compiler: {c: gcc, cxx: g++}
@@ -124,52 +131,34 @@ jobs:
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'ON'
             cmake_ver: 'default'
-    runs-on: ${{matrix.os}}
-
     steps:
     - name: Checkout
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         fetch-depth: 0
 
-    - name: Install apt packages
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y clang libnuma-dev lcov
-
     - name: Install cmake (non-default version)
       if: matrix.cmake_ver != 'default'
       run: |
-        sudo apt-get remove --purge -y cmake
+        echo ${USERPASS} | sudo -Sk apt-get remove --purge -y cmake
         wget https://github.com/Kitware/CMake/releases/download/v${{matrix.cmake_ver}}/cmake-${{matrix.cmake_ver}}-Linux-x86_64.sh
         chmod +x cmake-${{matrix.cmake_ver}}-Linux-x86_64.sh
-        sudo ./cmake-${{matrix.cmake_ver}}-Linux-x86_64.sh --skip-license --prefix=/usr/local
+        echo ${USERPASS} | sudo -Sk ./cmake-${{matrix.cmake_ver}}-Linux-x86_64.sh --skip-license --prefix=/usr/local
 
-    - name: Install hwloc
-      if: matrix.disable_hwloc == 'OFF'
+    - name: Uninstall TBB apt package
+      if: matrix.install_tbb == 'OFF'
       run: |
-        sudo apt-get install -y libhwloc-dev
-
-    - name: Install TBB apt package
-      if: matrix.install_tbb == 'ON'
-      run: |
-        sudo apt-get install -y libtbb-dev
+        echo ${USERPASS} | sudo -Sk apt-get remove --purge -y libtbb-dev
 
     - name: Install oneAPI basekit
       if: matrix.compiler.cxx == 'icpx'
+      # Installing via script to avoid installing multi-line bash command by root
       run: |
-        sudo apt-get install -y gpg-agent wget
-        wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
-        echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
-        sudo apt-get update
-        sudo apt-get install -y intel-oneapi-ippcp-devel intel-oneapi-ipp-devel intel-oneapi-common-oneapi-vars intel-oneapi-compiler-dpcpp-cpp
-  
-    - name: Install g++-7
-      if: matrix.compiler.cxx == 'g++-7'
-      run: sudo apt-get install -y ${{matrix.compiler.cxx}}
+        echo "${USERPASS}" | sudo -Sk ./.github/scripts/install_oneAPI.sh
 
     - name: Get UMF version
       run: |
+        git config --global --add safe.directory $GITHUB_WORKSPACE
         VERSION=$(git describe --tags --abbrev=0 | grep -oP '\d+\.\d+\.\d+')
         echo "UMF_VERSION=$VERSION" >> $GITHUB_ENV
 
