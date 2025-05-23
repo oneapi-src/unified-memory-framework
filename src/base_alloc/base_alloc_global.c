@@ -41,6 +41,7 @@ struct base_alloc_t {
 static struct base_alloc_t BASE_ALLOC = {.ac_sizes = ALLOCATION_CLASSES};
 
 void umf_ba_destroy_global(void) {
+    LOG_DEBUG("destroying global base allocator");
     ba_is_destroyed = true;
 
     for (int i = 0; i < NUM_ALLOCATION_CLASSES; i++) {
@@ -73,7 +74,8 @@ static void umf_ba_create_global(void) {
     size_t smallestSize = BASE_ALLOC.ac_sizes[0];
     BASE_ALLOC.smallest_ac_size_log2 = utils_msb64(smallestSize);
 
-    LOG_DEBUG("UMF base allocator created");
+    LOG_DEBUG("global base allocator created");
+    ba_is_destroyed = false;
 }
 
 // returns index of the allocation class for a given size
