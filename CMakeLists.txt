@@ -632,6 +632,23 @@ if(CMAKE_GENERATOR MATCHES "Visual Studio" OR CMAKE_GENERATOR MATCHES
     set(CMAKE_UMF_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/$<CONFIG>)
 endif()
 
+# Valgrind
+if(UMF_USE_VALGRIND)
+    if(UMF_USE_ASAN
+       OR UMF_USE_TSAN
+       OR UMF_USE_UBSAN
+       OR UMF_USE_MSAN)
+        message(FATAL_ERROR "Cannot use valgrind and sanitizers together")
+    endif()
+
+    if(PkgConfig_FOUND)
+        pkg_check_modules(VALGRIND valgrind)
+    endif()
+    if(NOT VALGRIND_FOUND)
+        find_package(VALGRIND REQUIRED valgrind)
+    endif()
+endif()
+
 # Sanitizer flags
 if(UMF_USE_ASAN)
     add_sanitizer_flag(address)
