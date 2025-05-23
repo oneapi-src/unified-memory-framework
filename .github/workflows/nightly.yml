@@ -58,11 +58,11 @@ jobs:
 
       - name: Run regular tests
         working-directory: ${{github.workspace}}/build
-        run: ctest -C ${{matrix.build_type}} --output-on-failure -E "fuzz|test_init_teardown"
+        run: ctest -C ${{matrix.build_type}} --output-on-failure -E "fuzz"
 
       - name: Run regular tests with proxy library
         working-directory: ${{env.BUILD_DIR}}
-        run: LD_PRELOAD=./lib/libumf_proxy.so ctest -C ${{matrix.build_type}} --output-on-failure -E "fuzz|test_init_teardown"
+        run: LD_PRELOAD=./lib/libumf_proxy.so ctest -C ${{matrix.build_type}} --output-on-failure -E "fuzz"
 
       - name: Fuzz long test
         working-directory: ${{github.workspace}}/build

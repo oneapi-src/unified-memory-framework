@@ -56,12 +56,11 @@ jobs:
         # On RHEL/SLES, hwloc version is just a little too low.
         # Skip some tests until we upgrade hwloc and update CMake to properly handle local hwloc installation.
         # TODO: fix issue #560
-        # TODO: add issue for -E test_init_teardown - it is not clear why it fails
       - name: Run tests (on RHEL/SLES)
         if: (matrix.os == 'rhel-9.1') || (matrix.os == 'sles-15')
         working-directory: ${{github.workspace}}/build
         run: |
-          ctest --output-on-failure --test-dir test -E "test_provider_os_memory_multiple_numa_nodes|test_init_teardown"
+          ctest --output-on-failure --test-dir test -E "test_provider_os_memory_multiple_numa_nodes"
           ./test/test_provider_os_memory_multiple_numa_nodes \
             --gtest_filter="-*checkModeLocal/*:*checkModePreferredEmptyNodeset/*:testNuma.checkModeInterleave"
 
