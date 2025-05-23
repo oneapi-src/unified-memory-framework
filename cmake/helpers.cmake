@@ -225,7 +225,8 @@ endfunction()
 
 function(add_umf_target_compile_options name)
     check_add_target_compile_options(${name} "-Wno-covered-switch-default")
-
+    target_compile_definitions(${name}
+                               PRIVATE ${UMF_COMMON_COMPILE_DEFINITIONS})
     if(NOT MSVC)
         target_compile_options(
             ${name}
@@ -259,6 +260,10 @@ function(add_umf_target_compile_options name)
                 target_compile_options(${name} PRIVATE -fprofile-update=atomic
                                                        -g -O0)
             endif()
+        endif()
+        if(UMF_USE_VALGRIND)
+            target_compile_definitions(${name} PRIVATE "UMF_VG_ENABLED=1")
+            target_include_directories(${name} PRIVATE ${VALGRIND_INCLUDE_DIRS})
         endif()
     elseif(MSVC)
         target_compile_options(
@@ -386,6 +391,7 @@ function(add_umf_library)
     target_include_directories(
         ${ARG_NAME}
         PRIVATE ${UMF_CMAKE_SOURCE_DIR}/include
+                ${UMF_CMAKE_SOURCE_DIR}/src
                 ${UMF_CMAKE_SOURCE_DIR}/src/utils
                 ${UMF_CMAKE_SOURCE_DIR}/src/base_alloc
                 ${UMF_CMAKE_SOURCE_DIR}/src/coarse)
