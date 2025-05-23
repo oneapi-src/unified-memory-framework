@@ -14,7 +14,6 @@ env:
 
 jobs:
   ubuntu-build:
-    name: Ubuntu
     strategy:
       matrix:
         os: ['ubuntu-22.04', 'ubuntu-24.04']
@@ -124,6 +123,7 @@ jobs:
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'ON'
             cmake_ver: 'default'
+    name: Basic (${{matrix.os}}, build_type=${{matrix.build_type}}, compilers=${{matrix.compiler.c}}/${{matrix.compiler.cxx}}, shared_library=${{matrix.shared_library}}, level_zero_provider=${{matrix.level_zero_provider}}, cuda_provider=${{matrix.cuda_provider}}, install_tbb=${{matrix.install_tbb}}, disable_hwloc=${{matrix.disable_hwloc}}, link_hwloc_statically=${{matrix.link_hwloc_statically}}, cmake_ver=${{matrix.cmake_ver}})
     runs-on: ${{matrix.os}}
 
     steps:
@@ -236,7 +236,6 @@ jobs:
         ${{ matrix.shared_library == 'ON' && '--shared-library' || '' }}
 
   windows-build:
-    name: Windows
     env:
       VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
       VCPKG_PATH_BIN: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows/bin;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows/bin;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows/bin"
@@ -274,7 +273,7 @@ jobs:
             level_zero_provider: 'OFF'
             cuda_provider: 'OFF'
             cmake_ver: 'default'
-
+    name: Basic (${{matrix.os}}, build_type=${{matrix.build_type}}, compilers=${{matrix.compiler.c}}/${{matrix.compiler.cxx}}, shared_library=${{matrix.shared_library}}, level_zero_provider=${{matrix.level_zero_provider}}, cuda_provider=${{matrix.cuda_provider}}, cmake_ver=${{matrix.cmake_ver}})
     runs-on: ${{matrix.os}}
 
     steps:
@@ -513,15 +512,15 @@ jobs:
       run: ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
 
   macos-build:
-    name: MacOS
     strategy:
       matrix:
         os: ['macos-13', 'macos-14']
         include:
           - os: macos-14
-            static_hwloc: '-DUMF_LINK_HWLOC_STATICALLY=ON'
+            static_hwloc: 'ON'
     env:
       BUILD_TYPE : "Release"
+    name: Basic (${{matrix.os}}, static_hwloc=${{matrix.static_hwloc}})
     runs-on: ${{matrix.os}}
 
     steps:
@@ -562,6 +561,7 @@ jobs:
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
         -DUMF_BUILD_SHARED_LIBRARY=ON
         -DUMF_TESTS_FAIL_ON_SKIP=ON
+        -DUMF_LINK_HWLOC_STATICALLY=${{matrix.static_hwloc}}
         ${{matrix.static_hwloc}}
 
     - name: Build UMF

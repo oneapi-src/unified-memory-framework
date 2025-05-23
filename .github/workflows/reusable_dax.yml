@@ -35,15 +35,15 @@ env:
 
 jobs:
   dax:
-    name: Build
     # run only on upstream; forks may not have a DAX device
     if: github.repository == 'oneapi-src/unified-memory-framework'
     strategy:
       matrix:
         build_type: [Debug, Release]
         shared_library: ['ON', 'OFF']
-
+    name: DAX (ubuntu, build_type=${{matrix.build_type}}, shared_library=${{matrix.shared_library}})
     runs-on: ["DSS-DEVDAX", "DSS-Ubuntu"]
+    
     steps:
       - name: Check configuration of the DEVDAX
         run: |
