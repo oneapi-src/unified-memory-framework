@@ -7,43 +7,103 @@
  *
  */
 
-#include "libumf.h"
-#include "memory_pool_internal.h"
-#include "utils_assert.h"
-
+#include <umf/base.h>
 #include <umf/memory_pool.h>
 #include <umf/memory_pool_ops.h>
 
 #include <assert.h>
-#include <stdlib.h>
+#include <string.h>
 
 #include "base_alloc_global.h"
+#include "ctl/ctl.h"
+#include "libumf.h"
 #include "memory_pool_internal.h"
 #include "memory_provider_internal.h"
 #include "provider_tracking.h"
+#include "utils_assert.h"
+#include "utils_concurrency.h"
+#include "utils_log.h"
+
+#define UMF_DEFAULT_SIZE 100
+#define UMF_DEFAULT_LEN 100
+
+utils_mutex_t ctl_mtx;
+static UTIL_ONCE_FLAG mem_pool_ctl_initialized = UTIL_ONCE_FLAG_INIT;
+
+char CTL_DEFAULT_ENTRIES[UMF_DEFAULT_SIZE][UMF_DEFAULT_LEN] = {0};
+char CTL_DEFAULT_VALUES[UMF_DEFAULT_SIZE][UMF_DEFAULT_LEN] = {0};
+
+void ctl_init(void) { utils_mutex_init(&ctl_mtx); }
 
 static int CTL_SUBTREE_HANDLER(by_handle_pool)(void *ctx,
                                                umf_ctl_query_source_t source,
-                                               void *arg,
+                                               void *arg, size_t size,
                                                umf_ctl_index_utlist_t *indexes,
                                                const char *extra_name,
                                                umf_ctl_query_type_t queryType) {
     (void)indexes, (void)source;
     umf_memory_pool_handle_t hPool = (umf_memory_pool_handle_t)ctx;
-    hPool->ops.ctl(hPool, /*unused*/ 0, extra_name, arg, queryType);
+    hPool->ops.ctl(hPool->pool_priv, /*unused*/ 0, extra_name, arg, size,
+                   queryType);
+    return 0;
+}
+
+static int CTL_SUBTREE_HANDLER(default)(void *ctx,
+                                        umf_ctl_query_source_t source,
+                                        void *arg, size_t size,
+                                        umf_ctl_index_utlist_t *indexes,
+                                        const char *extra_name,
+                                        umf_ctl_query_type_t queryType) {
+    (void)indexes, (void)source, (void)ctx;
+    utils_init_once(&mem_pool_ctl_initialized, ctl_init);
+    utils_mutex_lock(&ctl_mtx);
+
+    if (queryType == CTL_QUERY_WRITE) {
+        int i = 0;
+        for (; i < UMF_DEFAULT_SIZE; i++) {
+            if (CTL_DEFAULT_ENTRIES[i][0] == '\0' ||
+                strcmp(CTL_DEFAULT_ENTRIES[i], extra_name) == 0) {
+                strncpy(CTL_DEFAULT_ENTRIES[i], extra_name, UMF_DEFAULT_LEN);
+                strncpy(CTL_DEFAULT_VALUES[i], arg, UMF_DEFAULT_LEN);
+                break;
+            }
+        }
+        if (UMF_DEFAULT_SIZE == i) {
+            LOG_ERR("Default entries array is full");
+            utils_mutex_unlock(&ctl_mtx);
+            return UMF_RESULT_ERROR_OUT_OF_RESOURCES;
+        }
+    } else if (queryType == CTL_QUERY_READ) {
+        int i = 0;
+        for (; i < UMF_DEFAULT_SIZE; i++) {
+            if (strcmp(CTL_DEFAULT_ENTRIES[i], extra_name) == 0) {
+                strncpy(arg, CTL_DEFAULT_VALUES[i], size);
+                break;
+            }
+        }
+        if (UMF_DEFAULT_SIZE == i) {
+            LOG_WARN("Wrong path name: %s", extra_name);
+            utils_mutex_unlock(&ctl_mtx);
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        }
+    }
+
+    utils_mutex_unlock(&ctl_mtx);
     return 0;
 }
 
 umf_ctl_node_t CTL_NODE(pool)[] = {CTL_LEAF_SUBTREE2(by_handle, by_handle_pool),
-                                   CTL_NODE_END};
+                                   CTL_LEAF_SUBTREE(default), CTL_NODE_END};
 
 static umf_result_t umfDefaultCtlPoolHandle(void *hPool, int operationType,
                                             const char *name, void *arg,
+                                            size_t size,
                                             umf_ctl_query_type_t queryType) {
     (void)hPool;
     (void)operationType;
     (void)name;
     (void)arg;
+    (void)size;
     (void)queryType;
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
@@ -80,6 +140,8 @@ static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
         pool->provider = provider;
     }
 
+    utils_init_once(&mem_pool_ctl_initialized, ctl_init);
+
     pool->flags = flags;
     pool->ops = *ops;
     pool->tag = NULL;
@@ -97,6 +159,16 @@ static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
     ret = ops->initialize(pool->provider, params, &pool->pool_priv);
     if (ret != UMF_RESULT_SUCCESS) {
         goto err_pool_init;
+    }
+
+    // Set default property "name" to pool if exists
+    for (int i = 0; i < UMF_DEFAULT_SIZE; i++) {
+        if (CTL_DEFAULT_ENTRIES[i][0] != '\0' &&
+            strstr(CTL_DEFAULT_ENTRIES[i], ops->get_name(NULL))) {
+            ops->ctl(pool->pool_priv, CTL_QUERY_PROGRAMMATIC,
+                     CTL_DEFAULT_ENTRIES[i], CTL_DEFAULT_VALUES[i],
+                     UMF_DEFAULT_LEN, CTL_QUERY_WRITE);
+        }
     }
 
     *hPool = pool;
@@ -170,6 +242,14 @@ umf_result_t umfPoolGetMemoryProvider(umf_memory_pool_handle_t hPool,
     }
 
     return UMF_RESULT_SUCCESS;
+}
+
+const char *umfPoolGetName(umf_memory_pool_handle_t pool) {
+    UMF_CHECK((pool != NULL), NULL);
+    if (pool->ops.get_name == NULL) {
+        return NULL;
+    }
+    return pool->ops.get_name(pool->pool_priv);
 }
 
 umf_result_t umfPoolCreate(const umf_memory_pool_ops_t *ops,

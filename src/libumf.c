@@ -8,6 +8,7 @@
  */
 
 #include <stddef.h>
+#include <string.h>
 
 #include "base_alloc_global.h"
 #include "ipc_cache.h"
@@ -97,3 +98,38 @@ void umfTearDown(void) {
 }
 
 int umfGetCurrentVersion(void) { return UMF_VERSION_CURRENT; }
+
+umf_result_t umfCtlGet(const char *name, void *ctx, void *arg, size_t size) {
+    // ctx can be NULL when getting defaults
+    if (name == NULL || arg == NULL || size == 0) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    return ctl_query(NULL, ctx, CTL_QUERY_PROGRAMMATIC, name, CTL_QUERY_READ,
+                     arg, size);
+}
+
+umf_result_t umfCtlSet(const char *name, void *ctx, void *arg, size_t size) {
+    // ctx can be NULL when setting defaults
+    if (name == NULL || arg == NULL || size == 0) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    return ctl_query(NULL, ctx, CTL_QUERY_PROGRAMMATIC, name, CTL_QUERY_WRITE,
+                     arg, size)
+               ? UMF_RESULT_ERROR_UNKNOWN
+               : UMF_RESULT_SUCCESS;
+}
+
+umf_result_t umfCtlExec(const char *name, void *ctx, void *arg, size_t size) {
+    // arg can be NULL when executing a command
+    // ctx can be NULL when executing defaults
+    // size can depends on the arg
+    if (name == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    return ctl_query(NULL, ctx, CTL_QUERY_PROGRAMMATIC, name,
+                     CTL_QUERY_RUNNABLE, arg, size)
+               ? UMF_RESULT_ERROR_UNKNOWN
+               : UMF_RESULT_SUCCESS;
+}

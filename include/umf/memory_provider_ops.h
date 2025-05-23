@@ -255,16 +255,17 @@ typedef struct umf_memory_provider_ops_t {
     ///        The function is used to perform various control operations
     ///        on the memory provider.
     ///
-    /// @param hProvider handle to the memory provider.
+    /// @param provider handle to the memory provider.
     /// @param operationType type of the operation to be performed.
     /// @param name name associated with the operation.
     /// @param arg argument for the operation.
+    /// @param size size of the argument [optional - check path requirements]
     /// @param queryType type of the query to be performed.
     ///
     /// @return umf_result_t result of the control operation.
     ///
-    umf_result_t (*ctl)(void *hProvider, int operationType, const char *name,
-                        void *arg, umf_ctl_query_type_t queryType);
+    umf_result_t (*ctl)(void *provider, int operationType, const char *name,
+                        void *arg, size_t size, umf_ctl_query_type_t queryType);
 
 } umf_memory_provider_ops_t;
 
