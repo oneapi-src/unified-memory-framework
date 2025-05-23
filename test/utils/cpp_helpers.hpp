@@ -89,15 +89,15 @@ template <typename T> constexpr umf_memory_provider_ops_t providerOpsBase() {
     UMF_ASSIGN_OP(ops, T, get_recommended_page_size, UMF_RESULT_ERROR_UNKNOWN);
     UMF_ASSIGN_OP(ops, T, get_min_page_size, UMF_RESULT_ERROR_UNKNOWN);
     UMF_ASSIGN_OP(ops, T, get_name, "");
-    UMF_ASSIGN_OP(ops.ext, T, purge_lazy, UMF_RESULT_ERROR_UNKNOWN);
-    UMF_ASSIGN_OP(ops.ext, T, purge_force, UMF_RESULT_ERROR_UNKNOWN);
-    UMF_ASSIGN_OP(ops.ext, T, allocation_merge, UMF_RESULT_ERROR_UNKNOWN);
-    UMF_ASSIGN_OP(ops.ext, T, allocation_split, UMF_RESULT_ERROR_UNKNOWN);
-    UMF_ASSIGN_OP(ops.ipc, T, get_ipc_handle_size, UMF_RESULT_ERROR_UNKNOWN);
-    UMF_ASSIGN_OP(ops.ipc, T, get_ipc_handle, UMF_RESULT_ERROR_UNKNOWN);
-    UMF_ASSIGN_OP(ops.ipc, T, put_ipc_handle, UMF_RESULT_ERROR_UNKNOWN);
-    UMF_ASSIGN_OP(ops.ipc, T, open_ipc_handle, UMF_RESULT_ERROR_UNKNOWN);
-    UMF_ASSIGN_OP(ops.ipc, T, close_ipc_handle, UMF_RESULT_ERROR_UNKNOWN);
+    UMF_ASSIGN_OP(ops, T, ext_purge_lazy, UMF_RESULT_ERROR_UNKNOWN);
+    UMF_ASSIGN_OP(ops, T, ext_purge_force, UMF_RESULT_ERROR_UNKNOWN);
+    UMF_ASSIGN_OP(ops, T, ext_allocation_merge, UMF_RESULT_ERROR_UNKNOWN);
+    UMF_ASSIGN_OP(ops, T, ext_allocation_split, UMF_RESULT_ERROR_UNKNOWN);
+    UMF_ASSIGN_OP(ops, T, ext_get_ipc_handle_size, UMF_RESULT_ERROR_UNKNOWN);
+    UMF_ASSIGN_OP(ops, T, ext_get_ipc_handle, UMF_RESULT_ERROR_UNKNOWN);
+    UMF_ASSIGN_OP(ops, T, ext_put_ipc_handle, UMF_RESULT_ERROR_UNKNOWN);
+    UMF_ASSIGN_OP(ops, T, ext_open_ipc_handle, UMF_RESULT_ERROR_UNKNOWN);
+    UMF_ASSIGN_OP(ops, T, ext_close_ipc_handle, UMF_RESULT_ERROR_UNKNOWN);
     return ops;
 }
 } // namespace detail
