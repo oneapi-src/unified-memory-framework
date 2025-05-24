@@ -98,6 +98,13 @@ umf_result_t umfDisjointPoolParamsSetSharedLimits(
     umf_disjoint_pool_params_handle_t hParams,
     umf_disjoint_pool_shared_limits_handle_t hSharedLimits);
 
+// TODO add comments
+// reuseStrategy - 1 to enable allocation from larger slabs
+// TODO - CTL?
+umf_result_t
+umfDisjointPoolParamsSetReuseStrategy(umf_disjoint_pool_params_handle_t hParams,
+                                      unsigned int reuseStrategy);
+
 /// @brief Set custom name of the disjoint pool to be used in the traces.
 /// @param hParams handle to the parameters of the disjoint pool.
 /// @param name custom name of the pool. Name longer than 64 characters will be truncated.

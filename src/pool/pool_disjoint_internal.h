@@ -125,6 +125,10 @@ typedef struct umf_disjoint_pool_params_t {
     // Holds size of the pool managed by the allocator.
     size_t cur_pool_size;
 
+    // Reuse strategy
+    // 1 - reuse larger slabs
+    unsigned int reuse_strategy;
+
     // Whether to print pool usage statistics
     int pool_trace;
 
