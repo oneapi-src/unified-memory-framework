@@ -970,12 +970,11 @@ if(UMF_FORMAT_CODE_STYLE)
             COMMENT "Format C/C++, CMake, and Python files")
         message(
             STATUS
-                "  Adding convenience targets 'format-check' and 'format-apply'."
-        )
+                "Adding convenience targets 'format-check' and 'format-apply'.")
     else()
         message(
             STATUS
-                "  Convenience targets 'format-check' and 'format-apply' are "
+                "Convenience targets 'format-check' and 'format-apply' are "
                 "not available. Use commands specific for found tools (see the log above)."
         )
     endif()

@@ -30,38 +30,16 @@ set(UMF_COMMON_COMPILE_DEFINITIONS
     ${UMF_COMMON_COMPILE_DEFINITIONS} UMF_VERSION=${UMF_VERSION}
     UMF_ALL_CMAKE_VARIABLES="${UMF_ALL_CMAKE_VARIABLES}")
 
-set(BA_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/base_alloc/base_alloc.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/base_alloc/base_alloc_linear.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/base_alloc/base_alloc_global.c)
-
 add_subdirectory(utils)
+add_subdirectory(base_alloc)
 add_subdirectory(coarse)
 
-set(UMF_LIBS $<BUILD_INTERFACE:umf_utils> $<BUILD_INTERFACE:coarse>)
-
-set(CTL_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/ctl/ctl.c)
-
-if(LINUX)
-    set(BA_SOURCES ${BA_SOURCES}
-                   ${CMAKE_CURRENT_SOURCE_DIR}/base_alloc/base_alloc_linux.c)
-elseif(WINDOWS)
-    set(BA_SOURCES ${BA_SOURCES}
-                   ${CMAKE_CURRENT_SOURCE_DIR}/base_alloc/base_alloc_windows.c)
-elseif(MACOSX)
-    set(BA_SOURCES ${BA_SOURCES}
-                   ${CMAKE_CURRENT_SOURCE_DIR}/base_alloc/base_alloc_linux.c)
-endif()
-
-set(BA_SOURCES
-    ${BA_SOURCES}
-    PARENT_SCOPE)
+set(UMF_LIBS umf_utils umf_ba umf_coarse)
 
 set(HWLOC_DEPENDENT_SOURCES topology.c)
 
 set(UMF_SOURCES
-    ${BA_SOURCES}
-    ${CTL_SOURCES}
+    ctl/ctl.c
     libumf.c
     ipc.c
     ipc_cache.c
@@ -178,7 +156,7 @@ target_include_directories(umf PRIVATE ${UMF_PRIVATE_INCLUDE_DIRS})
 target_link_directories(umf PRIVATE ${UMF_PRIVATE_LIBRARY_DIRS})
 target_compile_definitions(umf PRIVATE ${UMF_COMMON_COMPILE_DEFINITIONS})
 
-add_dependencies(umf coarse)
+add_dependencies(umf umf_ba umf_coarse umf_utils)
 
 if(UMF_LINK_HWLOC_STATICALLY)
     add_dependencies(umf ${UMF_HWLOC_NAME})
