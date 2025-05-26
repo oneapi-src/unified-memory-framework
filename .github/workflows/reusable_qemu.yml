@@ -98,7 +98,7 @@ jobs:
       if: ${{ inputs.short_run == true }}
       run: |
         echo "SHORT_RUN=true" >> $GITHUB_ENV
-        declare -a short_configs=("default.xml" "sock_2_var3.xml" "sock_4_var1_hmat.xml")
+        declare -a short_configs=("default.xml" "sock_2_var3.xml" "sock_8_var1_hmat.xml")
         echo "CONFIG_OPTIONS=${short_configs[@]}" >> $GITHUB_ENV
 
     - name: Set vars if long run
