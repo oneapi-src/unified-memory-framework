@@ -14,13 +14,12 @@ env:
 
 jobs:
   proxy-ubuntu:
-    name: Ubuntu
-
     strategy:
       matrix:
         build_type: [Release, Debug]
         compiler: [{c: gcc, cxx: g++}]
         proxy_lib_pool: ['SCALABLE', 'JEMALLOC']
+    name: Proxy Library (ubuntu-22.04, build_type=${{matrix.build_type}}, compilers=${{matrix.compiler.c}}/${{matrix.compiler.cxx}}, proxy_lib_pool=${{matrix.proxy_lib_pool}}) 
     runs-on: ${{ github.repository_owner == 'oneapi-src' && 'intel-ubuntu-22.04' || 'ubuntu-22.04' }}
 
     steps:

@@ -18,10 +18,10 @@ permissions:
 
 jobs:
   qemu-build:
-    name: QEMU
     strategy:
       matrix:
         os: ${{ fromJson(inputs.os) }}
+    name: QEMU (${{ matrix.os }})
 
     # Host QEMU on any Linux platform
     runs-on: ubuntu-22.04
