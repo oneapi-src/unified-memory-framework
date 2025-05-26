@@ -125,6 +125,9 @@ class UmfInstaller:
                 )
                 lib.append(f"lib/{lib_prefix}umf.{self.umf_version}.{lib_ext_shared}")
         else:
+            lib.append(f"lib/{lib_prefix}umf_ba.{lib_ext_static}")
+            lib.append(f"lib/{lib_prefix}umf_coarse.{lib_ext_static}")
+            lib.append(f"lib/{lib_prefix}umf_utils.{lib_ext_static}")
             lib.append(f"lib/{lib_prefix}umf.{lib_ext_static}")
             if self.umfd_lib and platform.system() == "Windows":
                 lib.append(f"lib/{lib_prefix}umfd.{lib_ext_static}")
