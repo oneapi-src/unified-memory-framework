@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 Intel Corporation
+// Copyright (C) 2023-2025 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -252,8 +252,8 @@ TEST_F(numaNodesCapacityTest, CapacityFilter) {
     ret = umfMemspaceFilterByCapacity(hMemspace, filter_size);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 
-    ASSERT_EQ(umfMemspaceMemtargetNum(hMemspace), (capacities.size() + 1) / 2);
-    for (size_t i = 0; i < umfMemspaceMemtargetNum(hMemspace); i++) {
+    size_t num_filtered = umfMemspaceMemtargetNum(hMemspace);
+    for (size_t i = 0; i < num_filtered; i++) {
         auto hTarget = umfMemspaceMemtargetGet(hMemspace, i);
         ASSERT_NE(hTarget, nullptr);
         size_t capacity;
@@ -266,6 +266,17 @@ TEST_F(numaNodesCapacityTest, CapacityFilter) {
             capacities.erase(it);
         }
     }
+
+    // Number of filtered targets and remaining targets should match the total
+    // number of targets in the memspace
+    size_t num_all = umfMemspaceMemtargetNum(umfMemspaceHostAllGet());
+    ASSERT_EQ(num_filtered + capacities.size(), num_all);
+
+    // check that remaining capacities are less than filter_size
+    for (const auto &capacity : capacities) {
+        ASSERT_LT(capacity, filter_size);
+    }
+
     umfMemspaceDestroy(hMemspace);
 }
 
