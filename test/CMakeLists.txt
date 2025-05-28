@@ -233,6 +233,12 @@ add_umf_test(
     LIBS ${UMF_UTILS_FOR_TEST} ${UMF_BA_FOR_TEST})
 
 add_umf_test(
+    NAME disjoint_pool_ctl
+    SRCS pools/disjoint_pool_ctl.cpp malloc_compliance_tests.cpp
+         ${BA_SOURCES_FOR_TEST}
+    LIBS ${UMF_UTILS_FOR_TEST})
+
+add_umf_test(
     NAME c_api_disjoint_pool
     SRCS c_api/disjoint_pool.c
     LIBS ${UMF_UTILS_FOR_TEST})

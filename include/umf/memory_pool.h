@@ -166,6 +166,14 @@ umf_result_t umfPoolGetMemoryProvider(umf_memory_pool_handle_t hPool,
                                       umf_memory_provider_handle_t *hProvider);
 
 ///
+/// @brief Retrieve name of a given memory \p pool.
+/// @param pool handle to the memory pool
+/// @return pointer to a string containing the name of the \p pool
+///         or NULL if the pool doesn't support retrieving its name.
+///
+const char *umfPoolGetName(umf_memory_pool_handle_t pool);
+
+///
 /// @brief Set a custom tag on the memory pool that can be later retrieved using umfPoolGetTag.
 /// @param hPool specified memory pool
 /// @param tag tag to be set

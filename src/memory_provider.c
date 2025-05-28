@@ -22,13 +22,13 @@
 #include "utils_assert.h"
 
 static int CTL_SUBTREE_HANDLER(by_handle_provider)(
-    void *ctx, umf_ctl_query_source_t source, void *arg,
+    void *ctx, umf_ctl_query_source_t source, void *arg, size_t size,
     umf_ctl_index_utlist_t *indexes, const char *extra_name,
     umf_ctl_query_type_t queryType) {
     (void)indexes, (void)source;
     umf_memory_provider_handle_t hProvider = (umf_memory_provider_handle_t)ctx;
     hProvider->ops.ctl(hProvider->provider_priv, /*unused*/ 0, extra_name, arg,
-                       queryType);
+                       size, queryType);
     return 0;
 }
 
@@ -110,11 +110,13 @@ static umf_result_t umfDefaultCloseIPCHandle(void *provider, void *ptr,
 
 static umf_result_t umfDefaultCtlHandle(void *provider, int operationType,
                                         const char *name, void *arg,
+                                        size_t size,
                                         umf_ctl_query_type_t queryType) {
     (void)provider;
     (void)operationType;
     (void)name;
     (void)arg;
+    (void)size;
     (void)queryType;
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }

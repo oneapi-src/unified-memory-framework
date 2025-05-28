@@ -4,6 +4,8 @@
 
 #include <memory>
 
+#include <umf/base.h>
+#include <umf/memory_pool.h>
 #include <umf/pools/pool_disjoint.h>
 
 #include "pool.hpp"
@@ -324,6 +326,33 @@ TEST_F(test, disjointPoolInvalidBucketSize) {
     res = umfDisjointPoolParamsSetMinBucketSize(params, 24);
     EXPECT_EQ(res, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 
+    umfDisjointPoolParamsDestroy(params);
+}
+
+TEST_F(test, disjointPoolName) {
+    umf_disjoint_pool_params_handle_t params = nullptr;
+    umf_result_t res = umfDisjointPoolParamsCreate(&params);
+    EXPECT_EQ(res, UMF_RESULT_SUCCESS);
+    umf_memory_provider_handle_t provider_handle = nullptr;
+    umf_memory_pool_handle_t pool = NULL;
+
+    struct memory_provider : public umf_test::provider_base_t {};
+
+    umf_memory_provider_ops_t provider_ops =
+        umf_test::providerMakeCOps<memory_provider, void>();
+
+    auto providerUnique =
+        wrapProviderUnique(createProviderChecked(&provider_ops, nullptr));
+
+    provider_handle = providerUnique.get();
+
+    res =
+        umfPoolCreate(umfDisjointPoolOps(), provider_handle, params, 0, &pool);
+    EXPECT_EQ(res, UMF_RESULT_SUCCESS);
+    const char *name = umfPoolGetName(pool);
+    EXPECT_STREQ(name, "disjoint");
+
+    umfPoolDestroy(pool);
     umfDisjointPoolParamsDestroy(params);
 }
 
