@@ -32,6 +32,7 @@ if(WINDOWS)
 endif()
 
 if(TBB_LIBRARY)
+    set(TBB_FOUND TRUE)
     message(STATUS "  Found tbb using find_library()")
     message(STATUS "    TBB_LIBRARIES = ${TBB_LIBRARIES}")
     message(STATUS "    TBB_INCLUDE_DIRS = ${TBB_INCLUDE_DIRS}")

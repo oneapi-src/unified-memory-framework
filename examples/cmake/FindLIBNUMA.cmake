@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Intel Corporation
+# Copyright (C) 2024-2025 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -8,6 +8,7 @@ find_library(LIBNUMA_LIBRARY NAMES libnuma numa)
 set(LIBNUMA_LIBRARIES ${LIBNUMA_LIBRARY})
 
 if(LIBNUMA_LIBRARY)
+    set(LIBNUMA_FOUND TRUE)
     message(STATUS "  Found libnuma using find_library()")
 else()
     set(MSG_NOT_FOUND

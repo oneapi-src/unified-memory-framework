@@ -21,6 +21,7 @@ if(WINDOWS)
 endif()
 
 if(CUDA_LIBRARY)
+    set(CUDA_FOUND TRUE)
     message(STATUS "  Found cuda using find_library()")
     message(STATUS "    CUDA_LIBRARIES = ${CUDA_LIBRARIES}")
     message(STATUS "    CUDA_INCLUDE_DIRS = ${CUDA_INCLUDE_DIRS}")

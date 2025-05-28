@@ -21,6 +21,7 @@ if(WINDOWS)
 endif()
 
 if(ZE_LOADER_LIBRARY)
+    set(ZE_LOADER_FOUND TRUE)
     message(STATUS "  Found ZE_LOADER using find_library()")
     message(STATUS "    ZE_LOADER_LIBRARIES = ${ZE_LOADER_LIBRARIES}")
     message(STATUS "    ZE_LOADER_INCLUDE_DIRS = ${ZE_LOADER_INCLUDE_DIRS}")

@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Intel Corporation
+# Copyright (C) 2024-2025 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -17,6 +17,7 @@ if(WINDOWS)
 endif()
 
 if(CUDA_LIBRARY)
+    set(CUDA_FOUND TRUE)
     message(STATUS "  Found cuda using find_library()")
     message(STATUS "    CUDA_LIBRARIES = ${CUDA_LIBRARIES}")
     message(STATUS "    CUDA_INCLUDE_DIRS = ${CUDA_INCLUDE_DIRS}")

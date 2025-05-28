@@ -55,6 +55,7 @@ if(WINDOWS)
 endif()
 
 if(LIBHWLOC_LIBRARY)
+    set(LIBHWLOC_FOUND TRUE)
     message(STATUS "  Found libhwloc: ${LIBHWLOC_LIBRARY}")
 
     if(LIBHWLOC_FIND_VERSION)

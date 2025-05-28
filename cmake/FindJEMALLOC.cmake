@@ -34,6 +34,7 @@ if(WINDOWS)
 endif()
 
 if(JEMALLOC_LIBRARY)
+    set(JEMALLOC_FOUND TRUE)
     message(STATUS "  Found jemalloc using find_library()")
 else()
     set(MSG_NOT_FOUND

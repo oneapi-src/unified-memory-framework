@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Intel Corporation
+# Copyright (C) 2024-2025 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -36,6 +36,7 @@ if(WINDOWS)
 endif()
 
 if(JEMALLOC_LIBRARY)
+    set(JEMALLOC_FOUND TRUE)
     message(STATUS "  Found jemalloc using find_library()")
     message(STATUS "    JEMALLOC_LIBRARIES = ${JEMALLOC_LIBRARIES}")
     message(STATUS "    JEMALLOC_INCLUDE_DIRS = ${JEMALLOC_INCLUDE_DIRS}")
