@@ -110,13 +110,13 @@ typedef struct umf_disjoint_pool_shared_limits_t {
 
 typedef struct umf_disjoint_pool_params_t {
     // Minimum allocation size that will be requested from the memory provider.
-    size_t slab_min_size;
+    size_t slab_min_size; // Default: 64KB
 
     // Allocations up to this limit will be subject to chunking/pooling
-    size_t max_poolable_size;
+    size_t max_poolable_size; // Default: 2MB
 
     // When pooling, each bucket will hold a max of 'capacity' unfreed slabs
-    size_t capacity;
+    size_t capacity; // Default: 4
 
     // Holds the minimum bucket size valid for allocation of a memory type.
     // This value must be a power of 2.
