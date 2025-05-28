@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/bb-ur/umf-${{ matrix.os }}:latest
-      options: --privileged
+      options: --user test_user --cap-add=SYS_NICE --cap-add=SYS_ADMIN --cap-add=CAP_SYS_RESOURCE --cap-add=CAP_SETUID --cap-add=CAP_KILL --cap-add=SYS_PTRACE --cgroupns=host
       volumes:
         - ${{ github.workspace }}:${{ github.workspace }}
     strategy:
@@ -157,7 +157,6 @@ jobs:
 
     - name: Install oneAPI basekit
       if: matrix.compiler.cxx == 'icpx'
-      # Installing via script to avoid installing multi-line bash command by root
       run: |
         echo "${USERPASS}" | sudo -Sk ./.github/scripts/install_oneAPI.sh
 

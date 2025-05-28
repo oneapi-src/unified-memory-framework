@@ -17,7 +17,7 @@ jobs:
     runs-on: ${{ github.repository_owner == 'oneapi-src' && 'intel-ubuntu-22.04' || 'ubuntu-22.04' }}
     container:
       image: ghcr.io/bb-ur/umf-${{ matrix.os }}:latest
-      options: --user test_user --privileged
+      options: --user test_user --cap-add=SYS_NICE --cap-add=SYS_ADMIN --cap-add=CAP_SYS_RESOURCE --cap-add=CAP_SETUID --cap-add=CAP_KILL --cap-add=SYS_PTRACE --cgroupns=host
       volumes:
         - ${{ github.workspace }}:${{ github.workspace }}
     strategy:
