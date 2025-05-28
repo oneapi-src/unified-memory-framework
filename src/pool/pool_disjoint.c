@@ -33,6 +33,7 @@ static char *DEFAULT_NAME = "disjoint";
 struct ctl disjoint_ctl_root;
 static UTIL_ONCE_FLAG ctl_initialized = UTIL_ONCE_FLAG_INIT;
 
+// CTL: name attribute
 static int CTL_READ_HANDLER(name)(void *ctx, umf_ctl_query_source_t source,
                                   void *arg, size_t size,
                                   umf_ctl_index_utlist_t *indexes,
@@ -66,8 +67,27 @@ static int CTL_WRITE_HANDLER(name)(void *ctx, umf_ctl_query_source_t source,
     return 0;
 }
 
-static const umf_ctl_node_t CTL_NODE(disjoint)[] = {CTL_LEAF_RW(name),
-                                                    CTL_NODE_END};
+// CTL: allocation counters
+static uint64_t allocation_balance = 0;
+
+static int CTL_READ_HANDLER(allocation_balance)(
+    void *ctx, umf_ctl_query_source_t source, void *arg, size_t size,
+    umf_ctl_index_utlist_t *indexes, const char *extra_name,
+    umf_ctl_query_type_t queryType) {
+    (void)ctx, (void)source, (void)size, (void)indexes, (void)extra_name,
+        (void)queryType;
+    if (arg == NULL) {
+        return -1;
+    }
+    uint64_t *balance = (uint64_t *)arg;
+    *balance = 0;
+    utils_atomic_load_acquire_u64(&allocation_balance, balance);
+
+    return 0;
+}
+
+static const umf_ctl_node_t CTL_NODE(disjoint)[] = {
+    CTL_LEAF_RW(name), CTL_LEAF_RO(allocation_balance), CTL_NODE_END};
 
 static void initialize_disjoint_ctl(void) {
     CTL_REGISTER_MODULE(&disjoint_ctl_root, disjoint);
@@ -579,7 +599,6 @@ static void *disjoint_pool_allocate(disjoint_pool_t *pool, size_t size) {
     }
 
     void *ptr = NULL;
-
     if (size > pool->params.max_poolable_size) {
         umf_result_t ret =
             umfMemoryProviderAlloc(pool->provider, size, 0, &ptr);
@@ -755,7 +774,7 @@ err_free_disjoint_pool:
 void *disjoint_pool_malloc(void *pool, size_t size) {
     disjoint_pool_t *hPool = (disjoint_pool_t *)pool;
     void *ptr = disjoint_pool_allocate(hPool, size);
-
+    utils_atomic_increment_u64(&allocation_balance);
     return ptr;
 }
 
@@ -939,8 +958,9 @@ umf_result_t disjoint_pool_free(void *pool, void *ptr) {
         if (ret != UMF_RESULT_SUCCESS) {
             TLS_last_allocation_error = ret;
             LOG_ERR("deallocation from the memory provider failed");
+        } else {
+            utils_atomic_decrement_u64(&allocation_balance);
         }
-
         return ret;
     }
 
@@ -971,6 +991,9 @@ umf_result_t disjoint_pool_free(void *pool, void *ptr) {
     critnib_release(disjoint_pool->known_slabs, ref_slab);
 
     if (disjoint_pool->params.pool_trace > 1) {
+        printf("Freeing %8zu %s bytes from %s -> %p\n", bucket->size,
+               disjoint_pool->params.name, (to_pool ? "pool" : "provider"),
+               unaligned_ptr);
         bucket->free_count++;
     }
 
@@ -985,7 +1008,7 @@ umf_result_t disjoint_pool_free(void *pool, void *ptr) {
                   disjoint_pool_get_limits(disjoint_pool)->total_size, name,
                   disjoint_pool->params.cur_pool_size);
     }
-
+    utils_atomic_decrement_u64(&allocation_balance);
     return UMF_RESULT_SUCCESS;
 }
 
