@@ -490,6 +490,8 @@ if(NOT WINDOWS)
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${KNOWN_BUILD_TYPES})
 endif()
 
+set(CMAKE_C_STANDARD 11)
+
 # For using the options listed in the OPTIONS_REQUIRING_CXX variable a C++17
 # compiler is required. Moreover, if these options are not set, CMake will set
 # up a strict C build, without C++ support.

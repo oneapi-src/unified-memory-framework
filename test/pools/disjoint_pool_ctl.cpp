@@ -85,6 +85,63 @@ class ProviderWrapper {
     void *m_params;
 };
 
+TEST_F(test, disjointCtlAllocationBalance) {
+    umf_os_memory_provider_params_handle_t os_memory_provider_params = nullptr;
+    if (UMF_RESULT_ERROR_NOT_SUPPORTED ==
+        umfOsMemoryProviderParamsCreate(&os_memory_provider_params)) {
+        GTEST_SKIP() << "OS memory provider is not supported!";
+    }
+
+    ProviderWrapper providerWrapper(umfOsMemoryProviderOps(),
+                                    os_memory_provider_params);
+    if (providerWrapper.get() == NULL) {
+        GTEST_SKIP() << "OS memory provider is not supported!";
+    }
+
+    umf_disjoint_pool_params_handle_t params = nullptr;
+    ASSERT_SUCCESS(umfDisjointPoolParamsCreate(&params));
+    PoolWrapper poolWrapper(providerWrapper.get(), umfDisjointPoolOps(),
+                            params);
+
+    // Check that the allocation balance is zero
+    int allocation_balance = 0;
+    ASSERT_SUCCESS(umfCtlGet("umf.pool.by_handle.disjoint.allocation_balance",
+                             poolWrapper.get(), &allocation_balance,
+                             sizeof(allocation_balance)));
+    ASSERT_EQ(allocation_balance, 0);
+
+    // Allocate some memory from the pool
+    size_t allocation_size = 1024; // 1 KB
+    const int max_allocations = 10;
+    void *ptr[max_allocations] = {nullptr};
+    int i = 0;
+    while (i < max_allocations) {
+        ptr[i] = umfPoolMalloc(poolWrapper.get(), allocation_size);
+        ASSERT_NE(ptr[i], nullptr);
+        ++i;
+    }
+
+    // Check the allocation balance after allocations
+    ASSERT_SUCCESS(umfCtlGet("umf.pool.by_handle.disjoint.allocation_balance",
+                             poolWrapper.get(), &allocation_balance,
+                             sizeof(allocation_balance)));
+    ASSERT_EQ(allocation_balance, i);
+
+    // Check balance after freeing the allocations
+    for (int j = 0; j < max_allocations; ++j) {
+        if (ptr[j]) {
+            umfPoolFree(poolWrapper.get(), ptr[j]);
+        }
+    }
+    ASSERT_SUCCESS(umfCtlGet("umf.pool.by_handle.disjoint.allocation_balance",
+                             poolWrapper.get(), &allocation_balance,
+                             sizeof(allocation_balance)));
+    ASSERT_EQ(allocation_balance, 0);
+
+    ASSERT_SUCCESS(umfDisjointPoolParamsDestroy(params));
+    ASSERT_SUCCESS(umfOsMemoryProviderParamsDestroy(os_memory_provider_params));
+}
+
 TEST_F(test, disjointCtlName) {
     umf_os_memory_provider_params_handle_t os_memory_provider_params = nullptr;
     if (UMF_RESULT_ERROR_NOT_SUPPORTED ==

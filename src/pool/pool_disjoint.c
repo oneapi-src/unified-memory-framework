@@ -9,6 +9,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <inttypes.h>
+#include <stdatomic.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -33,6 +34,7 @@ static char *DEFAULT_NAME = "disjoint";
 struct ctl disjoint_ctl_root;
 static UTIL_ONCE_FLAG ctl_initialized = UTIL_ONCE_FLAG_INIT;
 
+// CTL: name attribute
 static int CTL_READ_HANDLER(name)(void *ctx, umf_ctl_query_source_t source,
                                   void *arg, size_t size,
                                   umf_ctl_index_utlist_t *indexes,
@@ -66,10 +68,24 @@ static int CTL_WRITE_HANDLER(name)(void *ctx, umf_ctl_query_source_t source,
     return 0;
 }
 
-static const umf_ctl_node_t CTL_NODE(disjoint)[] = {CTL_LEAF_RW(name),
-                                                    CTL_NODE_END};
+// CTL: allocation counters
+atomic_int counter_alloc_balance;
+
+static int CTL_READ_HANDLER(allocation_balance)(
+    void *ctx, umf_ctl_query_source_t source, void *arg, size_t size,
+    umf_ctl_index_utlist_t *indexes, const char *extra_name,
+    umf_ctl_query_type_t queryType) {
+    (void)ctx, (void)source, (void)size, (void)indexes, (void)extra_name,
+        (void)queryType;
+    *(int *)arg = atomic_load(&counter_alloc_balance);
+    return 0;
+}
+
+static const umf_ctl_node_t CTL_NODE(disjoint)[] = {
+    CTL_LEAF_RW(name), CTL_LEAF_RO(allocation_balance), CTL_NODE_END};
 
 static void initialize_disjoint_ctl(void) {
+    atomic_init(&counter_alloc_balance, 0);
     CTL_REGISTER_MODULE(&disjoint_ctl_root, disjoint);
 }
 
@@ -745,7 +761,7 @@ err_free_disjoint_pool:
 void *disjoint_pool_malloc(void *pool, size_t size) {
     disjoint_pool_t *hPool = (disjoint_pool_t *)pool;
     void *ptr = disjoint_pool_allocate(hPool, size);
-
+    atomic_fetch_add(&counter_alloc_balance, 1);
     return ptr;
 }
 
@@ -779,6 +795,7 @@ void *disjoint_pool_aligned_malloc(void *pool, size_t size, size_t alignment) {
     }
 
     if (alignment <= 1) {
+        atomic_fetch_add(&counter_alloc_balance, 1);
         return disjoint_pool_allocate(pool, size);
     }
 
@@ -809,6 +826,7 @@ void *disjoint_pool_aligned_malloc(void *pool, size_t size, size_t alignment) {
 
         assert(ptr);
         utils_annotate_memory_undefined(ptr, size);
+        atomic_fetch_add(&counter_alloc_balance, 1);
         return ptr;
     }
 
@@ -847,6 +865,7 @@ void *disjoint_pool_aligned_malloc(void *pool, size_t size, size_t alignment) {
                   (from_pool ? "pool" : "provider"), ptr);
     }
 
+    atomic_fetch_add(&counter_alloc_balance, 1);
     return aligned_ptr;
 }
 
@@ -914,6 +933,8 @@ umf_result_t disjoint_pool_free(void *pool, void *ptr) {
         if (ret != UMF_RESULT_SUCCESS) {
             TLS_last_allocation_error = ret;
             LOG_ERR("deallocation from the memory provider failed");
+        } else {
+            atomic_fetch_sub(&counter_alloc_balance, 1);
         }
 
         return ret;
@@ -958,6 +979,7 @@ umf_result_t disjoint_pool_free(void *pool, void *ptr) {
                   disjoint_pool->params.cur_pool_size);
     }
 
+    atomic_fetch_sub(&counter_alloc_balance, 1);
     return UMF_RESULT_SUCCESS;
 }
 
