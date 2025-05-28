@@ -1295,15 +1295,15 @@ umf_memory_provider_ops_t UMF_TRACKING_MEMORY_PROVIDER_OPS = {
     .get_min_page_size = trackingGetMinPageSize,
     .get_recommended_page_size = trackingGetRecommendedPageSize,
     .get_name = trackingName,
-    .ext.purge_force = trackingPurgeForce,
-    .ext.purge_lazy = trackingPurgeLazy,
-    .ext.allocation_split = trackingAllocationSplit,
-    .ext.allocation_merge = trackingAllocationMerge,
-    .ipc.get_ipc_handle_size = trackingGetIpcHandleSize,
-    .ipc.get_ipc_handle = trackingGetIpcHandle,
-    .ipc.put_ipc_handle = trackingPutIpcHandle,
-    .ipc.open_ipc_handle = trackingOpenIpcHandle,
-    .ipc.close_ipc_handle = trackingCloseIpcHandle};
+    .ext_purge_force = trackingPurgeForce,
+    .ext_purge_lazy = trackingPurgeLazy,
+    .ext_allocation_split = trackingAllocationSplit,
+    .ext_allocation_merge = trackingAllocationMerge,
+    .ext_get_ipc_handle_size = trackingGetIpcHandleSize,
+    .ext_get_ipc_handle = trackingGetIpcHandle,
+    .ext_put_ipc_handle = trackingPutIpcHandle,
+    .ext_open_ipc_handle = trackingOpenIpcHandle,
+    .ext_close_ipc_handle = trackingCloseIpcHandle};
 
 static void free_ipc_cache_value(void *unused, void *ipc_cache_value) {
     (void)unused;
