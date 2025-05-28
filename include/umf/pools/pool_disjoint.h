@@ -51,6 +51,7 @@ umf_result_t
 umfDisjointPoolParamsDestroy(umf_disjoint_pool_params_handle_t hParams);
 
 /// @brief Set minimum allocation size that will be requested from the memory provider.
+/// @details Default value for minimum size of slab's is 64KB.
 /// @param hParams handle to the parameters of the disjoint pool.
 /// @param slabMinSize minimum allocation size.
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
@@ -59,6 +60,7 @@ umfDisjointPoolParamsSetSlabMinSize(umf_disjoint_pool_params_handle_t hParams,
                                     size_t slabMinSize);
 
 /// @brief Set size limit for allocations that are subject to pooling.
+/// @details Default value for maximum poolable size is 2MB.
 /// @param hParams handle to the parameters of the disjoint pool.
 /// @param maxPoolableSize maximum poolable size.
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
@@ -67,6 +69,7 @@ umf_result_t umfDisjointPoolParamsSetMaxPoolableSize(
 
 /// @brief Set maximum capacity of each bucket. Each bucket will hold a
 ///        max of \p maxCapacity unfreed slabs.
+/// @details Default value for capacity is 4.
 /// @param hParams handle to the parameters of the disjoint pool.
 /// @param maxCapacity maximum capacity of each bucket.
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
