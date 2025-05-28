@@ -351,6 +351,14 @@ TEST_F(CtlTest, ctlSizeValidation) {
     p.freeResources();
 }
 
+TEST_F(CtlTest, ctlExecInvalidSize) {
+    std::string name = "umf.pool.default.disjoint.name";
+    ASSERT_EQ(umfCtlSet(name.c_str(), NULL, (void *)"test_value", 0),
+              UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    ASSERT_EQ(umfCtlSet(name.c_str(), NULL, NULL, 10),
+              UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
 #ifdef PROVIDER_DEFAULTS_NOT_IMPLEMENTED_YET
 TEST_F(CtlTest, ctlDefaultMultithreadedProvider) {
     std::vector<std::thread> threads;
