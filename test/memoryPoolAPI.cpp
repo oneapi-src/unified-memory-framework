@@ -349,6 +349,25 @@ TEST_P(umfPoolWithCreateFlagsTest, umfPoolCreateFlagsInvalidProviders) {
     ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 }
 
+// logical sum (OR) of all umf_pool_create_flags_t flags
+static constexpr umf_pool_create_flags_t UMF_POOL_CREATE_FLAG_ALL =
+    UMF_POOL_CREATE_FLAG_OWN_PROVIDER | UMF_POOL_CREATE_FLAG_DISABLE_TRACKING;
+
+TEST_P(umfPoolWithCreateFlagsTest, umfPoolCreateInvalidFlags) {
+    umf_memory_provider_handle_t provider = nullptr;
+    umf_result_t ret =
+        umfMemoryProviderCreate(&UMF_NULL_PROVIDER_OPS, nullptr, &provider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(provider, nullptr);
+
+    umf_memory_pool_handle_t pool = nullptr;
+    ret = umfPoolCreate(&MALLOC_POOL_OPS, provider, nullptr,
+                        (UMF_POOL_CREATE_FLAG_ALL + 1), &pool);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    umfMemoryProviderDestroy(provider);
+}
+
 struct poolInitializeTest : umf_test::test,
                             ::testing::WithParamInterface<umf_result_t> {};
 

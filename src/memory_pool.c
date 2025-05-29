@@ -110,12 +110,22 @@ static umf_result_t umfDefaultCtlPoolHandle(void *hPool, int operationType,
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
+// logical sum (OR) of all umf_pool_create_flags_t flags
+static const umf_pool_create_flags_t UMF_POOL_CREATE_FLAG_ALL =
+    UMF_POOL_CREATE_FLAG_OWN_PROVIDER | UMF_POOL_CREATE_FLAG_DISABLE_TRACKING;
+
 static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
                                           umf_memory_provider_handle_t provider,
                                           const void *params,
                                           umf_pool_create_flags_t flags,
                                           umf_memory_pool_handle_t *hPool) {
     if (!ops || !provider || !hPool) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    // validate flags
+    if (flags & ~UMF_POOL_CREATE_FLAG_ALL) {
+        LOG_ERR("Invalid flags: 0x%x", flags);
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
