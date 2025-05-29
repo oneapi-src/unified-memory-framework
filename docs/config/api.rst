@@ -28,6 +28,14 @@ memory as well as functions that create, destroy and operate on the pool.
 .. doxygenfile:: memory_pool.h
     :sections: define enum typedef func var
     
+TODO
+------------------------------------------
+
+TODO
+
+.. doxygenfile:: memory_props.h
+    :sections: define enum typedef func var
+
 Disjoint Pool
 ------------------------------------------
 

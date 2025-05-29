@@ -51,6 +51,39 @@ typedef enum umf_result_t {
     UMF_RESULT_ERROR_UNKNOWN = 0x7ffffffe  ///< Unknown error
 } umf_result_t;
 
+/// @brief TODO
+typedef struct umf_memory_properties_t *umf_memory_properties_handle_t;
+
+/// @brief TODO
+// write about experimental api
+typedef enum umf_memory_property_id_t {
+    UMF_MEMORY_PROPERTY_INVALID = -1, ///< TODO
+
+    // UMF specyfic
+    UMF_MEMORY_PROVIDER_HANDLE,
+    UMF_MEMORY_PROVIDER_OPS, // == type?
+    UMF_MEMORY_POOL_HANDLE,
+    UMF_MEMORY_POOL_OPS, // == type?
+
+    // generic pointer properties
+    UMF_MEMORY_PROPERTY_POINTER_TYPE, // unreg host, reg host ??, dev, managed or umf_usm_memory_type_t?
+    UMF_MEMORY_PROPERTY_BASE_ADDRESS, // base address
+    UMF_MEMORY_PROPERTY_BASE_SIZE,    // base size
+
+    // GPU specific
+    UMF_MEMORY_PROPERTY_DEVICE, // handle (ze) or id (cuda)
+    UMF_MEMORY_PROPERTY_BUFFER_ID, // unique id NOTE: this id is unique across all UMF allocs and != L0 or CUDA ID
+    UMF_MEMORY_PROPERTY_DEVICE_ATTRIBUTES, // ze_memory_allocation_properties_t ?
+
+    // all cuda + l0
+    // next other providers?
+    // todo return type?
+
+    /// @cond
+    UMF_MEMORY_PROPERTY_MAX_RESERVED = 0x1000, ///< Maximum reserved value
+    /// @endcond
+} umf_memory_property_id_t;
+
 /// @brief Type of the CTL query
 typedef enum umf_ctl_query_type {
     CTL_QUERY_READ,

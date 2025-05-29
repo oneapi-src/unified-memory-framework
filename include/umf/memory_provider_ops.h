@@ -268,6 +268,11 @@ typedef struct umf_memory_provider_ops_t {
                             void *arg, size_t size,
                             umf_ctl_query_type_t queryType);
 
+    /// TODO
+    umf_result_t (*ext_get_allocation_properties)(void *provider,
+                                  umf_memory_properties_handle_t props_handle,
+                                  umf_memory_property_id_t memory_property_id,
+                                  void *value);
 } umf_memory_provider_ops_t;
 
 #ifdef __cplusplus

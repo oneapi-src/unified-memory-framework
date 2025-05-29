@@ -260,6 +260,13 @@ umf_result_t
 umfMemoryProviderAllocationMerge(umf_memory_provider_handle_t hProvider,
                                  void *lowPtr, void *highPtr, size_t totalSize);
 
+/// TODO
+umf_result_t
+umfMemoryProviderGetAllocationProperties(umf_memory_provider_handle_t hProvider,
+                                         umf_memory_properties_handle_t hProps,
+                                         umf_memory_property_id_t propertyId,
+                                         void *value);
+
 #ifdef __cplusplus
 }
 #endif
