@@ -130,7 +130,7 @@ static inline ravl_node_t *get_node_next(ravl_node_t *node) {
     return ravl_node_successor(node);
 }
 
-#ifndef NDEBUG
+#if !defined(NDEBUG) && defined(UMF_DEVELOPER_MODE)
 static block_t *get_block_prev(ravl_node_t *node) {
     ravl_node_t *ravl_prev = ravl_node_predecessor(node);
     if (!ravl_prev) {
@@ -148,7 +148,7 @@ static block_t *get_block_next(ravl_node_t *node) {
 
     return get_node_block(ravl_next);
 }
-#endif /* NDEBUG */
+#endif /* !defined(NDEBUG) && defined(UMF_DEVELOPER_MODE) */
 
 // The functions "coarse_ravl_*" handles the coarse->all_blocks list of blocks
 // sorted by a pointer (block_t->data) to the beginning of the block data.
@@ -528,6 +528,7 @@ static ravl_node_t *free_block_merge_with_next(coarse_t *coarse,
 }
 
 #ifndef NDEBUG // begin of DEBUG code
+#ifdef UMF_DEVELOPER_MODE
 
 typedef struct debug_cb_args_t {
     coarse_t *provider;
@@ -606,6 +607,12 @@ static bool debug_check(coarse_t *provider) {
 
     return true;
 }
+#else               /* !UMF_DEVELOPER_MODE */
+static inline bool debug_check(coarse_t *provider) {
+    (void)provider; // suppress unused variable warning
+    return true;
+}
+#endif              /* !UMF_DEVELOPER_MODE */
 #endif /* NDEBUG */ // end of DEBUG code
 
 static umf_result_t coarse_add_used_block(coarse_t *coarse, void *addr,
