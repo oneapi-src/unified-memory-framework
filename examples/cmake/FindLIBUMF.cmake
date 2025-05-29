@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Intel Corporation
+# Copyright (C) 2024-2025 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -15,6 +15,7 @@ get_filename_component(LIBUMF_INCLUDE_DIR ${LIBUMF_HEADER} DIRECTORY)
 set(LIBUMF_INCLUDE_DIRS ${LIBUMF_INCLUDE_DIR})
 
 if(LIBUMF_LIBRARY)
+    set(LIBUMF_FOUND TRUE)
     message(STATUS "  Found libumf using find_library()")
     message(STATUS "    LIBUMF_LIBRARIES = ${LIBUMF_LIBRARIES}")
     message(STATUS "    LIBUMF_INCLUDE_DIRS = ${LIBUMF_INCLUDE_DIRS}")

@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Intel Corporation
+# Copyright (C) 2024-2025 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -32,6 +32,7 @@ if(WINDOWS)
 endif()
 
 if(TBB_LIBRARY)
+    set(TBB_FOUND TRUE)
     message(STATUS "  Found tbb using find_library()")
     message(STATUS "    TBB_LIBRARIES = ${TBB_LIBRARIES}")
     message(STATUS "    TBB_INCLUDE_DIRS = ${TBB_INCLUDE_DIRS}")

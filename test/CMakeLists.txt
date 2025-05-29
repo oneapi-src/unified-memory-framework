@@ -680,7 +680,7 @@ if(LINUX
         )
     endif()
 
-    if(LIBNUMA_LIBRARIES)
+    if(LIBNUMA_FOUND)
         set(EXAMPLES ${EXAMPLES} memspace_hmat memspace_numa)
     else()
         message(
