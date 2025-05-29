@@ -688,16 +688,16 @@ static umf_memory_provider_ops_t UMF_CUDA_MEMORY_PROVIDER_OPS = {
     .get_name = cu_memory_provider_get_name,
     // TODO
     /*
-    .ext.purge_lazy = cu_memory_provider_purge_lazy,
-    .ext.purge_force = cu_memory_provider_purge_force,
-    .ext.allocation_merge = cu_memory_provider_allocation_merge,
-    .ext.allocation_split = cu_memory_provider_allocation_split,
+    .ext_purge_lazy = cu_memory_provider_purge_lazy,
+    .ext_purge_force = cu_memory_provider_purge_force,
+    .ext_allocation_merge = cu_memory_provider_allocation_merge,
+    .ext_allocation_split = cu_memory_provider_allocation_split,
     */
-    .ipc.get_ipc_handle_size = cu_memory_provider_get_ipc_handle_size,
-    .ipc.get_ipc_handle = cu_memory_provider_get_ipc_handle,
-    .ipc.put_ipc_handle = cu_memory_provider_put_ipc_handle,
-    .ipc.open_ipc_handle = cu_memory_provider_open_ipc_handle,
-    .ipc.close_ipc_handle = cu_memory_provider_close_ipc_handle,
+    .ext_get_ipc_handle_size = cu_memory_provider_get_ipc_handle_size,
+    .ext_get_ipc_handle = cu_memory_provider_get_ipc_handle,
+    .ext_put_ipc_handle = cu_memory_provider_put_ipc_handle,
+    .ext_open_ipc_handle = cu_memory_provider_open_ipc_handle,
+    .ext_close_ipc_handle = cu_memory_provider_close_ipc_handle,
 };
 
 const umf_memory_provider_ops_t *umfCUDAMemoryProviderOps(void) {

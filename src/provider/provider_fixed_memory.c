@@ -296,16 +296,16 @@ static umf_memory_provider_ops_t UMF_FIXED_MEMORY_PROVIDER_OPS = {
     .get_recommended_page_size = fixed_get_recommended_page_size,
     .get_min_page_size = fixed_get_min_page_size,
     .get_name = fixed_get_name,
-    .ext.purge_lazy = fixed_purge_lazy,
-    .ext.purge_force = fixed_purge_force,
-    .ext.allocation_merge = fixed_allocation_merge,
-    .ext.allocation_split = fixed_allocation_split,
-    .ipc.get_ipc_handle_size = NULL,
-    .ipc.get_ipc_handle = NULL,
-    .ipc.put_ipc_handle = NULL,
-    .ipc.open_ipc_handle = NULL,
-    .ipc.close_ipc_handle = NULL,
-    .ctl = fixed_ctl};
+    .ext_purge_lazy = fixed_purge_lazy,
+    .ext_purge_force = fixed_purge_force,
+    .ext_allocation_merge = fixed_allocation_merge,
+    .ext_allocation_split = fixed_allocation_split,
+    .ext_get_ipc_handle_size = NULL,
+    .ext_get_ipc_handle = NULL,
+    .ext_put_ipc_handle = NULL,
+    .ext_open_ipc_handle = NULL,
+    .ext_close_ipc_handle = NULL,
+    .ext_ctl = fixed_ctl};
 
 const umf_memory_provider_ops_t *umfFixedMemoryProviderOps(void) {
     return &UMF_FIXED_MEMORY_PROVIDER_OPS;

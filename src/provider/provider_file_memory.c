@@ -865,15 +865,15 @@ static umf_memory_provider_ops_t UMF_FILE_MEMORY_PROVIDER_OPS = {
     .get_recommended_page_size = file_get_recommended_page_size,
     .get_min_page_size = file_get_min_page_size,
     .get_name = file_get_name,
-    .ext.purge_lazy = file_purge_lazy,
-    .ext.purge_force = file_purge_force,
-    .ext.allocation_merge = file_allocation_merge,
-    .ext.allocation_split = file_allocation_split,
-    .ipc.get_ipc_handle_size = file_get_ipc_handle_size,
-    .ipc.get_ipc_handle = file_get_ipc_handle,
-    .ipc.put_ipc_handle = file_put_ipc_handle,
-    .ipc.open_ipc_handle = file_open_ipc_handle,
-    .ipc.close_ipc_handle = file_close_ipc_handle};
+    .ext_purge_lazy = file_purge_lazy,
+    .ext_purge_force = file_purge_force,
+    .ext_allocation_merge = file_allocation_merge,
+    .ext_allocation_split = file_allocation_split,
+    .ext_get_ipc_handle_size = file_get_ipc_handle_size,
+    .ext_get_ipc_handle = file_get_ipc_handle,
+    .ext_put_ipc_handle = file_put_ipc_handle,
+    .ext_open_ipc_handle = file_open_ipc_handle,
+    .ext_close_ipc_handle = file_close_ipc_handle};
 
 const umf_memory_provider_ops_t *umfFileMemoryProviderOps(void) {
     return &UMF_FILE_MEMORY_PROVIDER_OPS;
