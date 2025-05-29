@@ -5,8 +5,10 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include "provider_null.h"
 #include <umf/memory_provider_ops.h>
+#include <umf/memory_props.h>
+
+#include "provider_null.h"
 
 static umf_result_t nullInitialize(const void *params, void **pool) {
     (void)params;

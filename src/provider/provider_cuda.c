@@ -12,6 +12,8 @@
 #include <umf.h>
 #include <umf/providers/provider_cuda.h>
 
+#include "memory_props_internal.h"
+#include "memory_provider_internal.h"
 #include "provider_cuda_internal.h"
 #include "utils_load_library.h"
 #include "utils_log.h"
@@ -676,6 +678,35 @@ cu_memory_provider_close_ipc_handle(void *provider, void *ptr, size_t size) {
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t cu_memory_provider_get_allocation_properties(
+    void *provider, umf_memory_properties_handle_t props_handle,
+    umf_memory_property_id_t memory_property_id, void *value) {
+
+    (void)props_handle;
+
+    cu_memory_provider_t *cuda_provider =
+        (cu_memory_provider_t *)provider;
+
+    switch (memory_property_id) {
+    case UMF_MEMORY_PROPERTY_POINTER_TYPE:
+        *(umf_usm_memory_type_t *)value = cuda_provider->memory_type;
+        return UMF_RESULT_SUCCESS;
+
+    case UMF_MEMORY_PROPERTY_DEVICE:
+        *(CUdevice *)value = cuda_provider->device;
+        return UMF_RESULT_SUCCESS;
+
+    case UMF_MEMORY_PROPERTY_DEVICE_ATTRIBUTES:
+        assert(0); // TODO
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+
+    default:
+        break;
+    }
+
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
 static umf_memory_provider_ops_t UMF_CUDA_MEMORY_PROVIDER_OPS = {
     .version = UMF_PROVIDER_OPS_VERSION_CURRENT,
     .initialize = cu_memory_provider_initialize,
@@ -698,6 +729,9 @@ static umf_memory_provider_ops_t UMF_CUDA_MEMORY_PROVIDER_OPS = {
     .ext_put_ipc_handle = cu_memory_provider_put_ipc_handle,
     .ext_open_ipc_handle = cu_memory_provider_open_ipc_handle,
     .ext_close_ipc_handle = cu_memory_provider_close_ipc_handle,
+    .ext_ctl = NULL,
+    .ext_get_allocation_properties =
+        cu_memory_provider_get_allocation_properties,
 };
 
 const umf_memory_provider_ops_t *umfCUDAMemoryProviderOps(void) {
