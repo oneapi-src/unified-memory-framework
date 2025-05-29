@@ -235,12 +235,13 @@ else()
         jemalloc INTERFACE ${jemalloc_targ_BINARY_DIR}/lib/libjemalloc.a)
     add_dependencies(jemalloc jemalloc_prod)
 
+    set(JEMALLOC_FOUND TRUE)
     set(JEMALLOC_LIBRARY_DIRS ${jemalloc_targ_BINARY_DIR}/lib)
     set(JEMALLOC_INCLUDE_DIRS ${jemalloc_targ_BINARY_DIR}/include)
     set(JEMALLOC_LIBRARIES ${jemalloc_targ_BINARY_DIR}/lib/libjemalloc.a)
 endif()
 
-if(JEMALLOC_FOUND OR JEMALLOC_LIBRARIES)
+if(JEMALLOC_FOUND)
     set(UMF_POOL_JEMALLOC_ENABLED TRUE)
     # add PATH to DLL on Windows
     set(DLL_PATH_LIST
@@ -263,12 +264,9 @@ if(NOT UMF_DISABLE_HWLOC AND (NOT UMF_LINK_HWLOC_STATICALLY))
     pkg_check_modules(LIBHWLOC hwloc>=2.3.0)
     if(NOT LIBHWLOC_FOUND)
         find_package(LIBHWLOC 2.3.0 COMPONENTS hwloc)
-        if(LIBHWLOC_LIBRARIES)
-            set(LIBHWLOC_AVAILABLE TRUE)
-        endif()
     endif()
 
-    if(LIBHWLOC_AVAILABLE OR LIBHWLOC_FOUND)
+    if(LIBHWLOC_FOUND)
         # add PATH to DLL on Windows
         set(DLL_PATH_LIST
             "${DLL_PATH_LIST};PATH=path_list_append:${LIBHWLOC_DLL_DIRS}")
@@ -327,6 +325,7 @@ else()
                                    DIRECTORY)
             set(LIBHWLOC_LIBRARIES ${HWLOC_LIB_PATH})
             set(LIBHWLOC_INCLUDE_DIRS ${hwloc_targ_BINARY_DIR}/include)
+            set(LIBHWLOC_FOUND TRUE)
         else() # not Windows
             FetchContent_Declare(
                 hwloc_targ
@@ -369,6 +368,7 @@ else()
             set(LIBHWLOC_LIBRARY_DIRS ${hwloc_targ_BINARY_DIR}/lib)
             set(LIBHWLOC_INCLUDE_DIRS ${hwloc_targ_BINARY_DIR}/include)
             set(LIBHWLOC_LIBRARIES ${hwloc_targ_BINARY_DIR}/lib/libhwloc.a)
+            set(LIBHWLOC_FOUND TRUE)
         endif()
     endif() # UMF_LINK_HWLOC_STATICALLY
 
@@ -444,7 +444,7 @@ if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
     endif()
     message(STATUS "LEVEL_ZERO_INCLUDE_DIRS = ${LEVEL_ZERO_INCLUDE_DIRS}")
 
-    if(ZE_LOADER_LIBRARIES)
+    if(ZE_LOADER_FOUND)
         set(UMF_LEVEL_ZERO_ENABLED TRUE)
     else()
         message(
@@ -500,7 +500,7 @@ if(UMF_BUILD_CUDA_PROVIDER)
     endif()
     message(STATUS "CUDA_INCLUDE_DIRS = ${CUDA_INCLUDE_DIRS}")
 
-    if(CUDA_LIBRARIES)
+    if(CUDA_FOUND)
         set(UMF_CUDA_ENABLED TRUE)
     else()
         message(
@@ -722,7 +722,7 @@ pkg_check_modules(TBB tbb)
 if(NOT TBB_FOUND)
     find_package(TBB OPTIONAL_COMPONENTS tbb)
 endif()
-if(TBB_FOUND OR TBB_LIBRARY_DIRS)
+if(TBB_FOUND)
     # add PATH to DLL on Windows
     set(DLL_PATH_LIST "${DLL_PATH_LIST};PATH=path_list_append:${TBB_DLL_DIRS}")
     set(UMF_POOL_SCALABLE_ENABLED TRUE)
