@@ -1,10 +1,11 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 */
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <thread>
@@ -17,9 +18,9 @@
 using umf_test::test;
 
 TEST_F(test, baseAllocMultiThreadedAllocMemset) {
-    static constexpr int NTHREADS = 10;
     static constexpr int ITERATIONS = 1000;
     static constexpr int ALLOCATION_SIZE = 16;
+    int numThreads = std::max(10, (int)utils_get_num_cores());
 
     auto pool = std::shared_ptr<umf_ba_pool_t>(umf_ba_create(ALLOCATION_SIZE),
                                                umf_ba_destroy);
@@ -43,7 +44,7 @@ TEST_F(test, baseAllocMultiThreadedAllocMemset) {
     };
 
     std::vector<std::thread> threads;
-    for (int i = 0; i < NTHREADS; i++) {
+    for (int i = 0; i < numThreads; i++) {
         threads.emplace_back(poolAlloc, i, pool.get());
     }
 
