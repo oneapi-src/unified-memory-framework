@@ -129,6 +129,32 @@ static umf_result_t ze2umf_result(ze_result_t result) {
     }
 }
 
+static umf_usm_memory_type_t ze2umf_memory_type(ze_memory_type_t memory_type) {
+    switch (memory_type) {
+    case ZE_MEMORY_TYPE_HOST:
+        return UMF_MEMORY_TYPE_HOST;
+    case ZE_MEMORY_TYPE_DEVICE:
+        return UMF_MEMORY_TYPE_DEVICE;
+    case ZE_MEMORY_TYPE_SHARED:
+        return UMF_MEMORY_TYPE_SHARED;
+    default:
+        return UMF_MEMORY_TYPE_UNKNOWN;
+    }
+}
+
+static ze_memory_type_t umf2ze_memory_type(umf_usm_memory_type_t memory_type) {
+    switch (memory_type) {
+    case UMF_MEMORY_TYPE_HOST:
+        return ZE_MEMORY_TYPE_HOST;
+    case UMF_MEMORY_TYPE_DEVICE:
+        return ZE_MEMORY_TYPE_DEVICE;
+    case UMF_MEMORY_TYPE_SHARED:
+        return ZE_MEMORY_TYPE_SHARED;
+    default:
+        return ZE_MEMORY_TYPE_UNKNOWN;
+    }
+}
+
 static void init_ze_global_state(void) {
 #ifdef _WIN32
     const char *lib_name = "ze_loader.dll";
@@ -343,7 +369,7 @@ static umf_result_t ze_memory_provider_alloc(void *provider, size_t size,
     ze_memory_provider_t *ze_provider = (ze_memory_provider_t *)provider;
 
     ze_result_t ze_result = ZE_RESULT_SUCCESS;
-    switch (ze_provider->memory_type) {
+    switch (ze2umf_memory_type(ze_provider->memory_type)) {
     case UMF_MEMORY_TYPE_HOST: {
         ze_host_mem_alloc_desc_t host_desc = {
             .stype = ZE_STRUCTURE_TYPE_HOST_MEM_ALLOC_DESC,
@@ -502,7 +528,7 @@ static umf_result_t ze_memory_provider_initialize(const void *params,
 
     ze_provider->context = ze_params->level_zero_context_handle;
     ze_provider->device = ze_params->level_zero_device_handle;
-    ze_provider->memory_type = (ze_memory_type_t)ze_params->memory_type;
+    ze_provider->memory_type = umf2ze_memory_type(ze_params->memory_type);
     ze_provider->freePolicyFlags =
         umfFreePolicyToZePolicy(ze_params->freePolicy);
     ze_provider->min_page_size = 0;
