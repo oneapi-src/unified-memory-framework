@@ -127,6 +127,9 @@ umf_result_t umfCtlExec(const char *name, void *ctx, void *arg, size_t size) {
     if (name == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
+    if ((arg == NULL && size != 0) || (arg != NULL && size == 0)) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
 
     return ctl_query(NULL, ctx, CTL_QUERY_PROGRAMMATIC, name,
                      CTL_QUERY_RUNNABLE, arg, size)
