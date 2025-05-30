@@ -65,7 +65,9 @@ static int CTL_SUBTREE_HANDLER(default)(void *ctx,
             if (CTL_DEFAULT_ENTRIES[i][0] == '\0' ||
                 strcmp(CTL_DEFAULT_ENTRIES[i], extra_name) == 0) {
                 strncpy(CTL_DEFAULT_ENTRIES[i], extra_name, UMF_DEFAULT_LEN);
+                CTL_DEFAULT_ENTRIES[i][UMF_DEFAULT_LEN - 1] = '\0';
                 strncpy(CTL_DEFAULT_VALUES[i], arg, UMF_DEFAULT_LEN);
+                CTL_DEFAULT_VALUES[i][UMF_DEFAULT_LEN - 1] = '\0';
                 break;
             }
         }
