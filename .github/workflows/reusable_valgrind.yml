@@ -8,8 +8,12 @@ permissions:
 
 jobs:
   valgrind:
-    name: Valgrind
+    name: Valgrind (${{matrix.tool}})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        tool: ['memcheck', 'drd', 'helgrind']
 
     steps:
     - name: Checkout repository
@@ -38,11 +42,5 @@ jobs:
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config Debug -j$(nproc)
 
-    - name: Run tests with 'memcheck'
-      run: ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{github.workspace}}/build memcheck
-
-    - name: Run tests with 'drd'
-      run: ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{github.workspace}}/build drdshort
-
-    - name: Run tests with 'helgrind'
-      run: ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{github.workspace}}/build helgrind
+    - name: Run valgrind tests
+      run: ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{github.workspace}}/build ${{matrix.tool}}
