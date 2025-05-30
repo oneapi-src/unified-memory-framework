@@ -67,6 +67,7 @@ struct umf_ba_next_pool_t {
 };
 
 #ifndef NDEBUG
+#ifdef UMF_DEVELOPER_MODE
 static void ba_debug_checks(umf_ba_pool_t *pool) {
     // count pools
     size_t n_pools = 1;
@@ -89,6 +90,12 @@ static void ba_debug_checks(umf_ba_pool_t *pool) {
     }
     assert(n_free_chunks == pool->metadata.n_chunks - pool->metadata.n_allocs);
 }
+#else  /* !UMF_DEVELOPER_MODE */
+static inline void ba_debug_checks(umf_ba_pool_t *pool) {
+    // no debug checks in release mode
+    (void)pool; // suppress unused parameter warning
+}
+#endif /* !UMF_DEVELOPER_MODE */
 #endif /* NDEBUG */
 
 // ba_divide_memory_into_chunks - divide given memory into chunks of chunk_size and add them to the free_list
