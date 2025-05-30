@@ -311,7 +311,7 @@ TEST_F(CtlTest, ctlNameValidation) {
         auto ret = p.instantiatePool(umfDisjointPoolOps(), params);
         ASSERT_EQ(ret, 0);
 
-        p.validateQuery(umfCtlGet, "umf.pool.by_handle.disjoint.name", value,
+        p.validateQuery(umfCtlGet, "umf.pool.by_handle.disjoint.name", std::move(value),
                         UMF_RESULT_SUCCESS);
     } catch (...) {
         GTEST_FAIL() << "Unknown exception!";
