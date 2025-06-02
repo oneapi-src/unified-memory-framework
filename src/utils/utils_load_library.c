@@ -13,6 +13,7 @@
 // are available to other system headers that depend on it, such as "libloaderapi.h".
 // clang-format off
 #include <windows.h>
+// #include <winnt.h>
 #include <libloaderapi.h>
 // clang-format on
 
@@ -34,10 +35,12 @@
 void *utils_open_library(const char *filename, int userFlags) {
     if (userFlags & UMF_UTIL_OPEN_LIBRARY_NO_LOAD) {
         HMODULE hModule;
-        BOOL ret = GetModuleHandleEx(0, TEXT(filename), &hModule);
+        // BOOL ret = GetModuleHandleEx(0, TEXT(filename), &hModule);
+        BOOL ret = GetModuleHandleEx(0, filename, &hModule);
         return ret ? hModule : NULL;
     }
-    return LoadLibrary(TEXT(filename));
+    // return LoadLibrary(TEXT(filename));
+    return LoadLibrary(filename);
 }
 
 int utils_close_library(void *handle) {
