@@ -41,7 +41,7 @@ jobs:
     - name: Run tests with 'memcheck'
       run: ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{github.workspace}}/build memcheck
 
-    - name: Run tests with 'drd'
+    - name: Run tests with 'drd' ("drdshort" - very long lasting tests are disabled)
       run: ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{github.workspace}}/build drdshort
 
     - name: Run tests with 'helgrind'
