@@ -745,7 +745,7 @@ static umf_result_t file_get_ipc_handle(void *provider, const void *ptr,
     file_ipc_data_t *file_ipc_data = (file_ipc_data_t *)providerIpcData;
     file_ipc_data->offset_fd = (size_t)value - 1;
     file_ipc_data->size = size;
-    strncpy(file_ipc_data->path, file_provider->path, PATH_MAX - 1);
+    strncpy(file_ipc_data->path, file_provider->path, PATH_MAX);
     file_ipc_data->path[PATH_MAX - 1] = '\0';
     file_ipc_data->protection = file_provider->protection;
     file_ipc_data->visibility = file_provider->visibility;

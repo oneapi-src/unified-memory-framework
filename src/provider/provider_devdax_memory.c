@@ -417,7 +417,7 @@ static umf_result_t devdax_get_ipc_handle(void *provider, const void *ptr,
         (devdax_memory_provider_t *)provider;
 
     devdax_ipc_data_t *devdax_ipc_data = (devdax_ipc_data_t *)providerIpcData;
-    strncpy(devdax_ipc_data->path, devdax_provider->path, PATH_MAX - 1);
+    strncpy(devdax_ipc_data->path, devdax_provider->path, PATH_MAX);
     devdax_ipc_data->path[PATH_MAX - 1] = '\0';
     devdax_ipc_data->protection = devdax_provider->protection;
     devdax_ipc_data->offset =
