@@ -464,7 +464,7 @@ if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_CUDA_PROVIDER)
     else()
         message(
             STATUS
-                "CUDA provdier tests requires CUDA libraries to be installed and added to the default library search path - skipping"
+                "CUDA provider tests requires CUDA libraries to be installed and added to the default library search path - skipping"
         )
     endif()
 endif()
