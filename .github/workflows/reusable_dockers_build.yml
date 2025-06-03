@@ -30,7 +30,7 @@ jobs:
 
       - name: Login to GitHub Container Registry
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@30f019fb76bb54d03ec1e716054622be511a13b2 # v3.2.0
+        uses: docker/login-action@6d4b68b490aef8836e8fb5e50ee7b3bdfa5894f0 # v3.2.0
         with:
           registry: ghcr.io
           username: bb-ur
