@@ -1,54 +1,106 @@
-# Fast builds
+# Fast build linux part is working in dockers, Windows is not
 name: FastBuild
 
 on: workflow_call
 
 permissions:
   contents: read
+  packages: read
 
 env:
   BUILD_DIR : "${{github.workspace}}/build"
   INSTL_DIR : "${{github.workspace}}/install-dir"
 
 jobs:
-  FastBuild:
+  ubuntu-build:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/bb-ur/umf-${{ matrix.os }}:latest
+      options: --user test_user --cap-add=SYS_NICE --cap-add=SYS_PTRACE
+      volumes:
+        - ${{ github.workspace }}:${{ github.workspace }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            build_tests: 'ON'
+            extra_build_options: ' -DUMF_BUILD_BENCHMARKS=ON -DUMF_BUILD_BENCHMARKS_MT=ON'
+            simple_cmake: 'OFF'
+          # pure C build
+          - os: ubuntu-24.04
+            # Tests' building is off for a pure C build
+            build_tests: 'OFF'
+            extra_build_options: '-DUMF_BUILD_BENCHMARKS=ON'
+            simple_cmake: 'OFF'
+          # simplest CMake on Ubuntu 22.04, 24.04
+          - os: ubuntu-24.04
+            build_tests: 'ON'
+            simple_cmake: 'ON'
+          - os: ubuntu-22.04
+            build_tests: 'ON'
+            simple_cmake: 'ON'
+    name: Fast (${{matrix.os}}, build_tests=${{matrix.build_tests}}, simple_cmake=${{matrix.simple_cmake}}, extra_build_options=${{matrix.extra_build_options}})
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        fetch-depth: 0
+
+    - name: Configure CMake
+      if: matrix.simple_cmake == 'OFF'
+      run: >
+        cmake
+        -B ${{env.BUILD_DIR}}
+        -DCMAKE_BUILD_TYPE=Release
+        -DUMF_FORMAT_CODE_STYLE=OFF
+        -DUMF_DEVELOPER_MODE=ON
+        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
+        -DUMF_BUILD_TESTS=${{matrix.build_tests}}
+        -DUMF_BUILD_EXAMPLES=ON
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
+        -DUMF_BUILD_CUDA_PROVIDER=ON
+        -DUMF_TESTS_FAIL_ON_SKIP=ON
+        -DUMF_BUILD_SHARED_LIBRARY=ON
+        ${{matrix.extra_build_options}}
+
+    - name: Configure CMake (simple)
+      if: matrix.simple_cmake == 'ON'
+      run: >
+        cmake
+        -B ${{env.BUILD_DIR}}
+        -DCMAKE_BUILD_TYPE=Release
+        -DUMF_BUILD_SHARED_LIBRARY=ON
+        -DUMF_TESTS_FAIL_ON_SKIP=ON
+        ${{matrix.extra_build_options}}
+
+    - name: Build
+      run: cmake --build ${{env.BUILD_DIR}} --config Release -j $(nproc)
+
+    - name: Run examples
+      working-directory: ${{env.BUILD_DIR}}
+      run: ctest --output-on-failure --test-dir examples -C Release
+
+    - name: Run tests
+      if: matrix.build_tests == 'ON'
+      working-directory: ${{env.BUILD_DIR}}
+      run: ctest --output-on-failure --test-dir test -C Release
+
+  # TODO: use dockers
+  windows-build:
+    runs-on: windows-latest 
     env:
       VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
     strategy:
       matrix:
         include:
-          - os: windows-latest
-            build_tests: 'ON'
+          - build_tests: 'ON'
             simple_cmake: 'OFF'
-          # pure C build (Windows)
-          - os: windows-latest
-            # Tests' building is off for a pure C build
-            build_tests: 'OFF'
+          - build_tests: 'OFF'
             simple_cmake: 'OFF'
-          - os: ubuntu-latest
-            build_tests: 'ON'
-            # Windows doesn't recognize 'CMAKE_BUILD_TYPE', it uses '--config' param in build command
-            extra_build_options: '-DCMAKE_BUILD_TYPE=Release -DUMF_BUILD_BENCHMARKS=ON -DUMF_BUILD_BENCHMARKS_MT=ON'
-            simple_cmake: 'OFF'
-          # pure C build (Linux)
-          - os: ubuntu-latest
-            # Windows doesn't recognize 'CMAKE_BUILD_TYPE', it uses '--config' param in build command
-            # Tests' building is off for a pure C build
-            build_tests: 'OFF'
-            extra_build_options: '-DCMAKE_BUILD_TYPE=Release -DUMF_BUILD_BENCHMARKS=ON'
-            simple_cmake: 'OFF'
-          # simplest CMake on ubuntu-latest
-          - os: ubuntu-latest
-            build_tests: 'ON'
-            extra_build_options: '-DCMAKE_BUILD_TYPE=Release'
+          - build_tests: 'OFF'
             simple_cmake: 'ON'
-          # simplest CMake ubuntu-22.04
-          - os: ubuntu-22.04
-            build_tests: 'ON'
-            extra_build_options: '-DCMAKE_BUILD_TYPE=Release'
-            simple_cmake: 'ON'
-    name: Fast builds (${{matrix.os}}, build_tests=${{matrix.build_tests}}, simple_cmake=${{matrix.simple_cmake}}, extra_build_options=${{matrix.extra_build_options}})
-    runs-on: ${{ (matrix.os == 'ubuntu-latest' && github.repository_owner == 'oneapi-src') && 'intel-ubuntu-22.04' || matrix.os }}
+    name: Fast (windows-latest, build_tests=${{matrix.build_tests}}, simple_cmake=${{matrix.simple_cmake}})
 
     steps:
     - name: Checkout repository
@@ -57,23 +109,15 @@ jobs:
         fetch-depth: 0
 
     - name: Initialize vcpkg
-      if: matrix.os == 'windows-latest'
       uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
       with:
         vcpkgGitCommitId: ea2a964f9303270322cf3f2d51c265ba146c422d # 1.04.2025
         vcpkgDirectory: ${{env.BUILD_DIR}}/vcpkg
         vcpkgJsonGlob: '**/vcpkg.json'
 
-    - name: Install dependencies (windows-latest)
-      if: matrix.os == 'windows-latest'
+    - name: Install dependencies
       run: vcpkg install --triplet x64-windows
       shell: pwsh # Specifies PowerShell as the shell for running the script.
-
-    - name: Install dependencies
-      if: matrix.os != 'windows-latest'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y cmake libhwloc-dev libnuma-dev libtbb-dev
 
     - name: Configure CMake
       if: matrix.simple_cmake == 'OFF'
@@ -91,7 +135,6 @@ jobs:
         -DUMF_BUILD_CUDA_PROVIDER=ON
         -DUMF_TESTS_FAIL_ON_SKIP=ON
         -DUMF_BUILD_SHARED_LIBRARY=ON
-        ${{matrix.extra_build_options}}
 
     - name: Configure CMake (simple)
       if: matrix.simple_cmake == 'ON'
@@ -99,9 +142,9 @@ jobs:
         cmake
         -B ${{env.BUILD_DIR}}
         -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
+        -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
         -DUMF_BUILD_SHARED_LIBRARY=ON
         -DUMF_TESTS_FAIL_ON_SKIP=ON
-        ${{matrix.extra_build_options}}
 
     - name: Build
       run: cmake --build ${{env.BUILD_DIR}} --config Release -j
@@ -118,7 +161,6 @@ jobs:
     # TODO: We could add some script to verify metadata of dll's (selected fields, perhaps)
     # ref. https://superuser.com/questions/381276/what-are-some-nice-command-line-ways-to-inspect-dll-exe-details
     - name: Print metadata of our dll's
-      if: matrix.os == 'windows-latest'
       run: |
         get-command ${{github.workspace}}/build/bin/Release/umf.dll | format-list
         get-command ${{github.workspace}}/build/src/proxy_lib/Release/umf_proxy.dll | format-list

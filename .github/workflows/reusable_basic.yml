@@ -5,6 +5,7 @@ on: workflow_call
 
 permissions:
   contents: read
+  packages: read
 
 env:
   BUILD_DIR : "${{github.workspace}}/build"
@@ -14,6 +15,12 @@ env:
 
 jobs:
   ubuntu-build:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/bb-ur/umf-${{ matrix.os }}:latest
+      options: --user test_user --cap-add=SYS_NICE --cap-add=SYS_PTRACE
+      volumes:
+        - ${{ github.workspace }}:${{ github.workspace }}
     strategy:
       matrix:
         os: ['ubuntu-22.04', 'ubuntu-24.04']
@@ -27,7 +34,7 @@ jobs:
         link_hwloc_statically: ['OFF']
         cmake_ver: ['default']
         include:
-          - os: 'ubuntu-22.04'
+          - os: ubuntu-22.04
             build_type: Release
             compiler: {c: clang, cxx: clang++}
             shared_library: 'OFF'
@@ -38,7 +45,7 @@ jobs:
             link_hwloc_statically: 'OFF'
             # check minimum supported cmake version
             cmake_ver: '3.14.0'
-          - os: 'ubuntu-22.04'
+          - os: ubuntu-22.04
             build_type: Release
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
@@ -48,7 +55,7 @@ jobs:
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
             cmake_ver: '3.28.0'
-          - os: 'ubuntu-24.04'
+          - os: ubuntu-24.04
             build_type: Debug
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
@@ -59,7 +66,7 @@ jobs:
             link_hwloc_statically: 'OFF'
             cmake_ver: 'default'
           # test level_zero_provider='OFF' and cuda_provider='OFF'
-          - os: 'ubuntu-22.04'
+          - os: ubuntu-22.04
             build_type: Release
             compiler: {c: gcc, cxx: g++}
             shared_library: 'OFF'
@@ -70,7 +77,7 @@ jobs:
             link_hwloc_statically: 'OFF'
             cmake_ver: 'default'
           # test icx compiler
-          - os: 'ubuntu-22.04'
+          - os: ubuntu-22.04
             build_type: Release
             compiler: {c: icx, cxx: icpx}
             shared_library: 'ON'
@@ -81,7 +88,7 @@ jobs:
             link_hwloc_statically: 'OFF'
             cmake_ver: 'default'
           # test lld linker
-          - os: 'ubuntu-24.04'
+          - os: ubuntu-24.04
             build_type: Release
             compiler: {c: icx, cxx: icpx}
             shared_library: 'ON'
@@ -92,8 +99,8 @@ jobs:
             link_hwloc_statically: 'OFF'
             llvm_linker: '-DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" -DCMAKE_MODULE_LINKER_FLAGS="-fuse-ld=lld" -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld"'
             cmake_ver: 'default'
-            # test without installing TBB
-          - os: 'ubuntu-22.04'
+          # test without installing TBB
+          - os: ubuntu-22.04
             build_type: Release
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
@@ -103,7 +110,7 @@ jobs:
             disable_hwloc: 'OFF'
             link_hwloc_statically: 'OFF'
             cmake_ver: 'default'
-          - os: 'ubuntu-22.04'
+          - os: ubuntu-22.04
             build_type: Debug
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
@@ -113,7 +120,7 @@ jobs:
             disable_hwloc: 'ON'
             link_hwloc_statically: 'OFF'
             cmake_ver: 'default'
-          - os: 'ubuntu-22.04'
+          - os: ubuntu-22.04
             build_type: Release
             compiler: {c: gcc, cxx: g++}
             shared_library: 'ON'
@@ -124,7 +131,6 @@ jobs:
             link_hwloc_statically: 'ON'
             cmake_ver: 'default'
     name: Basic (${{matrix.os}}, build_type=${{matrix.build_type}}, compilers=${{matrix.compiler.c}}/${{matrix.compiler.cxx}}, shared_library=${{matrix.shared_library}}, level_zero_provider=${{matrix.level_zero_provider}}, cuda_provider=${{matrix.cuda_provider}}, install_tbb=${{matrix.install_tbb}}, disable_hwloc=${{matrix.disable_hwloc}}, link_hwloc_statically=${{matrix.link_hwloc_statically}}, cmake_ver=${{matrix.cmake_ver}})
-    runs-on: ${{matrix.os}}
 
     steps:
     - name: Checkout
@@ -132,44 +138,34 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Install apt packages
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y clang libnuma-dev lcov
-
     - name: Install cmake (non-default version)
       if: matrix.cmake_ver != 'default'
       run: |
-        sudo apt-get remove --purge -y cmake
+        echo ${USERPASS} | sudo -Sk apt-get remove --purge -y cmake
         wget https://github.com/Kitware/CMake/releases/download/v${{matrix.cmake_ver}}/cmake-${{matrix.cmake_ver}}-Linux-x86_64.sh
         chmod +x cmake-${{matrix.cmake_ver}}-Linux-x86_64.sh
-        sudo ./cmake-${{matrix.cmake_ver}}-Linux-x86_64.sh --skip-license --prefix=/usr/local
+        echo ${USERPASS} | sudo -Sk ./cmake-${{matrix.cmake_ver}}-Linux-x86_64.sh --skip-license --prefix=/usr/local
 
-    - name: Install hwloc
-      if: matrix.disable_hwloc == 'OFF'
+    - name: Uninstall hwloc
+      if: matrix.disable_hwloc == 'ON'
       run: |
-        sudo apt-get install -y libhwloc-dev
+        echo ${USERPASS} | sudo -Sk apt-get remove --purge -y '*hwloc*'
+        echo ${USERPASS} | sudo -Sk apt-get autoremove -y
 
-    - name: Install TBB apt package
-      if: matrix.install_tbb == 'ON'
+    - name: Uninstall TBB apt package
+      if: matrix.install_tbb == 'OFF'
       run: |
-        sudo apt-get install -y libtbb-dev
+        echo ${USERPASS} | sudo -Sk apt-get remove --purge -y '*tbb*'
+        echo ${USERPASS} | sudo -Sk apt-get autoremove -y
 
     - name: Install oneAPI basekit
       if: matrix.compiler.cxx == 'icpx'
       run: |
-        sudo apt-get install -y gpg-agent wget
-        wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
-        echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
-        sudo apt-get update
-        sudo apt-get install -y intel-oneapi-ippcp-devel intel-oneapi-ipp-devel intel-oneapi-common-oneapi-vars intel-oneapi-compiler-dpcpp-cpp
-  
-    - name: Install g++-7
-      if: matrix.compiler.cxx == 'g++-7'
-      run: sudo apt-get install -y ${{matrix.compiler.cxx}}
+        echo "${USERPASS}" | sudo -Sk ./.github/scripts/install_oneAPI.sh
 
     - name: Get UMF version
       run: |
+        git config --global --add safe.directory $GITHUB_WORKSPACE
         VERSION=$(git describe --tags --abbrev=0 | grep -oP '\d+\.\d+\.\d+')
         echo "UMF_VERSION=$VERSION" >> $GITHUB_ENV
 
