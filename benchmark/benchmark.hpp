@@ -73,6 +73,7 @@
 #include <list>
 #include <malloc.h>
 #include <random>
+#include <stdexcept>
 
 #include <benchmark/benchmark.h>
 #include <umf/memory_pool.h>
@@ -209,30 +210,69 @@ class provider_allocator : public allocator_interface {
 // TODO: assert Pool to be a pool_interface<provider_interface>.
 template <typename Pool> class pool_allocator : public allocator_interface {
   public:
-    unsigned SetUp(::benchmark::State &state, unsigned argPos) override {
+    virtual unsigned SetUp(::benchmark::State &state,
+                           unsigned argPos) override {
         pool.SetUp(state);
         return argPos;
     }
 
-    void preBench(::benchmark::State &state) override { pool.preBench(state); }
-    void postBench(::benchmark::State &state) override {
+    virtual void preBench(::benchmark::State &state) override {
+        pool.preBench(state);
+    }
+    virtual void postBench(::benchmark::State &state) override {
         pool.postBench(state);
     }
 
-    void TearDown(::benchmark::State &state) override { pool.TearDown(state); }
+    virtual void TearDown(::benchmark::State &state) override {
+        pool.TearDown(state);
+    }
 
-    void *benchAlloc(size_t size) override {
+    virtual void *benchAlloc(size_t size) override {
         return umfPoolMalloc(pool.pool, size);
     }
 
-    void benchFree(void *ptr, [[maybe_unused]] size_t size) override {
+    virtual void benchFree(void *ptr, [[maybe_unused]] size_t size) override {
         umfPoolFree(pool.pool, ptr);
     }
 
     static std::string name() { return Pool::name(); }
 
-  private:
+  protected:
     Pool pool;
+};
+
+template <typename Provider>
+class pool_stacked_allocator
+    : public pool_allocator<disjoint_pool_stack<Provider>> {
+    using base = pool_allocator<disjoint_pool_stack<Provider>>;
+
+  public:
+    virtual void preBench([[maybe_unused]] ::benchmark::State &state) override {
+        // we do not measure fragmentation for stack pools
+    }
+    virtual void
+    postBench([[maybe_unused]] ::benchmark::State &state) override {
+        // we do not measure fragmentation for stack pools
+    }
+    void *benchAlloc(size_t size) override {
+        static thread_local int counter = 0;
+        static auto pool_number = base::pool.pools.size();
+        // stacked pools has limited space, so we might need a few
+        // tries to find one with free space
+        auto retry = pool_number;
+        while (retry--) {
+            void *ptr = umfPoolMalloc(
+                base::pool.pools[(++counter % pool_number)], size);
+            if (ptr != NULL) {
+                return ptr;
+            }
+        }
+        return NULL;
+    }
+
+    void benchFree(void *ptr, [[maybe_unused]] size_t size) override {
+        umfFree(ptr);
+    }
 };
 
 template <typename Size, typename Allocator>
