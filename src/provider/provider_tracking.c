@@ -22,6 +22,7 @@
 #include "ipc_cache.h"
 #include "ipc_internal.h"
 #include "memory_pool_internal.h"
+#include "memory_props_internal.h"
 #include "provider_tracking.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
@@ -31,6 +32,8 @@
 #define MAX_LEVELS_OF_ALLOC_SEGMENT_MAP 8
 
 uint64_t IPC_HANDLE_ID = 0;
+
+uint64_t unique_alloc_id = 0; // requires atomic access
 
 struct umf_memory_tracker_t {
     umf_ba_pool_t *alloc_info_allocator;
@@ -44,11 +47,10 @@ struct umf_memory_tracker_t {
 };
 
 typedef struct tracker_alloc_info_t {
-    umf_memory_pool_handle_t pool;
+    umf_memory_properties_t props;
     size_t size;
-    // number of overlapping memory regions
-    // in the next level of map
-    // falling within the current range
+    // number of overlapping memory regions in the next level of map falling
+    // within the current range
     size_t n_children;
 #if !defined(NDEBUG) && defined(UMF_DEVELOPER_MODE)
     uint64_t is_freed;
@@ -192,7 +194,13 @@ umfMemoryTrackerAddAtLevel(umf_memory_tracker_handle_t hTracker, int level,
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    value->pool = pool;
+    memset(&value->props, 0, sizeof(umf_memory_properties_t));
+    value->props.pool = pool;
+    umfPoolGetMemoryProvider(pool, &value->props.provider);
+    value->props.id = utils_atomic_increment_u64(&unique_alloc_id);
+    value->props.base = (void *)ptr;
+    value->props.base_size = size;
+
     value->size = size;
     value->n_children = 0;
 #if !defined(NDEBUG) && defined(UMF_DEVELOPER_MODE)
@@ -214,8 +222,8 @@ umfMemoryTrackerAddAtLevel(umf_memory_tracker_handle_t hTracker, int level,
                 "child #%zu added to memory region: tracker=%p, level=%i, "
                 "pool=%p, ptr=%p, size=%zu",
                 n_children, (void *)hTracker, level - 1,
-                (void *)parent_value->pool, (void *)parent_key,
-                parent_value->size);
+                (void *)parent_value->props.pool, (void *)parent_key,
+                parent_value->props.base_size);
             assert(ref_parent_value);
             critnib_release(hTracker->alloc_segments_map[level - 1],
                             ref_parent_value);
@@ -300,8 +308,8 @@ static umf_result_t umfMemoryTrackerAdd(umf_memory_tracker_handle_t hTracker,
                     "cannot insert to the tracker value (pool=%p, ptr=%p, "
                     "size=%zu) "
                     "that exceeds the parent value (pool=%p, ptr=%p, size=%zu)",
-                    (void *)pool, ptr, size, (void *)rvalue->pool, (void *)rkey,
-                    (size_t)rsize);
+                    (void *)pool, ptr, size, (void *)rvalue->props.pool,
+                    (void *)rkey, (size_t)rsize);
                 return UMF_RESULT_ERROR_INVALID_ARGUMENT;
             }
             parent_key = rkey;
@@ -363,7 +371,8 @@ static umf_result_t umfMemoryTrackerRemove(umf_memory_tracker_handle_t hTracker,
 
     LOG_DEBUG("memory region removed: tracker=%p, level=%i, pool=%p, ptr=%p, "
               "size=%zu",
-              (void *)hTracker, level, (void *)value->pool, ptr, value->size);
+              (void *)hTracker, level, (void *)value->props.pool, ptr,
+              value->size);
 
     // release the reference to the value got from critnib_remove()
     assert(ref_value);
@@ -375,8 +384,9 @@ static umf_result_t umfMemoryTrackerRemove(umf_memory_tracker_handle_t hTracker,
         LOG_DEBUG(
             "child #%zu removed from memory region: tracker=%p, level=%i, "
             "pool=%p, ptr=%p, size=%zu",
-            n_children, (void *)hTracker, level - 1, (void *)parent_value->pool,
-            (void *)parent_key, parent_value->size);
+            n_children, (void *)hTracker, level - 1,
+            (void *)parent_value->props.pool, (void *)parent_key,
+            parent_value->props.base_size);
 
         assert(ref_parent_value);
         assert(level >= 1);
@@ -458,18 +468,9 @@ umfMemoryTrackerRemoveIpcSegment(umf_memory_tracker_handle_t hTracker,
     return UMF_RESULT_SUCCESS;
 }
 
-umf_memory_pool_handle_t umfMemoryTrackerGetPool(const void *ptr) {
-    umf_alloc_info_t allocInfo = {NULL, 0, NULL};
-    umf_result_t ret = umfMemoryTrackerGetAllocInfo(ptr, &allocInfo);
-    if (ret != UMF_RESULT_SUCCESS) {
-        return NULL;
-    }
-
-    return allocInfo.pool;
-}
-
-umf_result_t umfMemoryTrackerGetAllocInfo(const void *ptr,
-                                          umf_alloc_info_t *pAllocInfo) {
+umf_result_t
+umfMemoryTrackerGetAllocInfo(const void *ptr,
+                             umf_memory_properties_handle_t *pAllocInfo) {
     assert(pAllocInfo);
 
     if (ptr == NULL) {
@@ -555,9 +556,8 @@ umf_result_t umfMemoryTrackerGetAllocInfo(const void *ptr,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    pAllocInfo->base = (void *)top_most_key;
-    pAllocInfo->baseSize = top_most_value->size;
-    pAllocInfo->pool = top_most_value->pool;
+    *pAllocInfo = &top_most_value->props;
+    (*pAllocInfo)->base = (void *)top_most_key; // ???
 
     assert(ref_top_most_value);
     critnib_release(TRACKER->alloc_segments_map[ref_level], ref_top_most_value);
@@ -805,7 +805,7 @@ static umf_result_t trackingAllocationMerge(void *hProvider, void *lowPtr,
         ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
         goto err_fatal;
     }
-    if (lowValue->pool != highValue->pool) {
+    if (lowValue->props.pool != highValue->props.pool) {
         LOG_FATAL("pool mismatch");
         ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
         goto err_fatal;
@@ -950,12 +950,13 @@ static void check_if_tracker_is_empty(umf_memory_tracker_handle_t hTracker,
 
         while (1 == critnib_find(hTracker->alloc_segments_map[i], last_key,
                                  FIND_G, &rkey, (void **)&rvalue, &ref_value)) {
-            if (rvalue && ((rvalue->pool == pool) || pool == NULL)) {
+            if (rvalue && ((rvalue->props.pool == pool) || pool == NULL)) {
                 n_items++;
                 LOG_DEBUG(
                     "found abandoned allocation in the tracking provider: "
                     "pool=%p, ptr=%p, size=%zu",
-                    (void *)rvalue->pool, (void *)rkey, (size_t)rvalue->size);
+                    (void *)rvalue->props.pool, (void *)rkey,
+                    (size_t)rvalue->size);
             }
 
             if (ref_value) {
@@ -1294,6 +1295,16 @@ static umf_result_t trackingCloseIpcHandle(void *provider, void *ptr,
     return umf_result;
 }
 
+static umf_result_t
+trackingGetAllocationProperties(void *provider, const void *ptr,
+                                umf_memory_property_id_t memory_property_id,
+                                void *value) {
+    umf_tracking_memory_provider_t *p =
+        (umf_tracking_memory_provider_t *)provider;
+    return umfMemoryProviderGetAllocationProperties(p->hUpstream, ptr,
+                                                    memory_property_id, value);
+}
+
 umf_memory_provider_ops_t UMF_TRACKING_MEMORY_PROVIDER_OPS = {
     .version = UMF_PROVIDER_OPS_VERSION_CURRENT,
     .initialize = trackingInitialize,
@@ -1312,7 +1323,10 @@ umf_memory_provider_ops_t UMF_TRACKING_MEMORY_PROVIDER_OPS = {
     .ext_get_ipc_handle = trackingGetIpcHandle,
     .ext_put_ipc_handle = trackingPutIpcHandle,
     .ext_open_ipc_handle = trackingOpenIpcHandle,
-    .ext_close_ipc_handle = trackingCloseIpcHandle};
+    .ext_close_ipc_handle = trackingCloseIpcHandle,
+    .ext_ctl = NULL,
+    .ext_get_allocation_properties = trackingGetAllocationProperties,
+};
 
 static void free_ipc_cache_value(void *unused, void *ipc_cache_value) {
     (void)unused;

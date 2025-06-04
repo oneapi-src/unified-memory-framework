@@ -884,13 +884,13 @@ size_t disjoint_pool_malloc_usable_size(void *pool, const void *ptr) {
             critnib_release(disjoint_pool->known_slabs, ref_slab);
         }
 
-        umf_alloc_info_t allocInfo = {NULL, 0, NULL};
+        umf_memory_properties_handle_t allocInfo = NULL;
         umf_result_t ret = umfMemoryTrackerGetAllocInfo(ptr, &allocInfo);
         if (ret != UMF_RESULT_SUCCESS) {
             return 0;
         }
 
-        return allocInfo.baseSize;
+        return allocInfo->base_size;
     }
 
     // Get the unaligned pointer
@@ -925,7 +925,7 @@ umf_result_t disjoint_pool_free(void *pool, void *ptr) {
             critnib_release(disjoint_pool->known_slabs, ref_slab);
         }
 
-        umf_alloc_info_t allocInfo = {NULL, 0, NULL};
+        umf_memory_properties_handle_t allocInfo = NULL;
         umf_result_t ret = umfMemoryTrackerGetAllocInfo(ptr, &allocInfo);
         if (ret != UMF_RESULT_SUCCESS) {
             TLS_last_allocation_error = ret;
@@ -933,7 +933,7 @@ umf_result_t disjoint_pool_free(void *pool, void *ptr) {
             return ret;
         }
 
-        size_t size = allocInfo.baseSize;
+        size_t size = allocInfo->base_size;
         umf_memory_provider_handle_t provider = disjoint_pool->provider;
         ret = umfMemoryProviderFree(provider, ptr, size);
         if (ret != UMF_RESULT_SUCCESS) {

@@ -1469,6 +1469,7 @@ static umf_memory_provider_ops_t UMF_OS_MEMORY_PROVIDER_OPS = {
     .ext_open_ipc_handle = os_open_ipc_handle,
     .ext_close_ipc_handle = os_close_ipc_handle,
     .ext_ctl = os_ctl,
+    .ext_get_allocation_properties = NULL,
 };
 
 const umf_memory_provider_ops_t *umfOsMemoryProviderOps(void) {
