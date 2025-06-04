@@ -1243,12 +1243,12 @@ static umf_result_t trackingOpenIpcHandle(void *provider, void *providerIpcData,
     }
 
     assert(cache_entry != NULL);
-
     void *mapped_ptr = NULL;
+
+    utils_mutex_lock(&(cache_entry->mmap_lock));
     utils_atomic_load_acquire_ptr(&(cache_entry->mapped_base_ptr),
                                   (void **)&mapped_ptr);
     if (mapped_ptr == NULL) { // new cache entry
-        utils_mutex_lock(&(cache_entry->mmap_lock));
         utils_atomic_load_acquire_ptr(&(cache_entry->mapped_base_ptr),
                                       (void **)&mapped_ptr);
         if (mapped_ptr == NULL) {
@@ -1256,8 +1256,8 @@ static umf_result_t trackingOpenIpcHandle(void *provider, void *providerIpcData,
                                         ipcUmfData->baseSize, cache_entry);
         }
         mapped_ptr = cache_entry->mapped_base_ptr;
-        utils_mutex_unlock(&(cache_entry->mmap_lock));
     }
+    utils_mutex_unlock(&(cache_entry->mmap_lock));
 
     if (ret == UMF_RESULT_SUCCESS) {
         assert(mapped_ptr != NULL);
