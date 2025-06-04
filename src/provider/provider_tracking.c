@@ -81,6 +81,7 @@ static tracker_alloc_info_t *get_most_nested_alloc_segment(
     uintptr_t parent_key = 0;
     uintptr_t rkey = 0;
     uint64_t rsize = 0;
+    size_t n_children = 0;
     int level = 0;
     int found = 0;
 
@@ -113,8 +114,8 @@ static tracker_alloc_info_t *get_most_nested_alloc_segment(
         }
 
         utils_atomic_load_acquire_u64((uint64_t *)&rvalue->size, &rsize);
-
-        if (found && ((uintptr_t)ptr < rkey + rsize) && rvalue->n_children) {
+        utils_atomic_load_acquire_size_t(&rvalue->n_children, &n_children);
+        if (found && ((uintptr_t)ptr < rkey + rsize) && n_children) {
             if (level == MAX_LEVELS_OF_ALLOC_SEGMENT_MAP - 1) {
                 break;
             }
@@ -146,13 +147,13 @@ static tracker_alloc_info_t *get_most_nested_alloc_segment(
                 ref_value = NULL;
             }
         }
-    } while (found && ((uintptr_t)ptr < rkey + rsize) && rvalue->n_children);
+    } while (found && ((uintptr_t)ptr < rkey + rsize) && n_children);
 
     if (!rvalue || rkey != (uintptr_t)ptr) {
         return NULL;
     }
 
-    if (no_children && (rvalue->n_children > 0)) {
+    if (no_children && (n_children > 0)) {
         return NULL;
     }
 
@@ -207,11 +208,12 @@ umfMemoryTrackerAddAtLevel(umf_memory_tracker_handle_t hTracker, int level,
                   (void *)hTracker, level, (void *)pool, ptr, size);
 
         if (parent_value) {
-            parent_value->n_children++;
+            size_t n_children =
+                utils_atomic_increment_size_t(&parent_value->n_children) + 1;
             LOG_DEBUG(
                 "child #%zu added to memory region: tracker=%p, level=%i, "
                 "pool=%p, ptr=%p, size=%zu",
-                parent_value->n_children, (void *)hTracker, level - 1,
+                n_children, (void *)hTracker, level - 1,
                 (void *)parent_value->pool, (void *)parent_key,
                 parent_value->size);
             assert(ref_parent_value);
@@ -243,6 +245,7 @@ static umf_result_t umfMemoryTrackerAdd(umf_memory_tracker_handle_t hTracker,
     uintptr_t parent_key = 0;
     uintptr_t rkey = 0;
     uint64_t rsize = 0;
+    size_t n_children = 0;
     int level = 0;
     int found = 0;
 
@@ -311,7 +314,8 @@ static umf_result_t umfMemoryTrackerAdd(umf_memory_tracker_handle_t hTracker,
             ref_parent_value = ref_value;
             level++;
         }
-    } while (found && ((uintptr_t)ptr < rkey + rsize) && rvalue->n_children);
+        utils_atomic_load_acquire_size_t(&rvalue->n_children, &n_children);
+    } while (found && ((uintptr_t)ptr < rkey + rsize) && n_children);
 
     if (ref_value && ref_value != ref_parent_value) {
         critnib_release(hTracker->alloc_segments_map[level], ref_value);
@@ -366,12 +370,14 @@ static umf_result_t umfMemoryTrackerRemove(umf_memory_tracker_handle_t hTracker,
     critnib_release(hTracker->alloc_segments_map[level], ref_value);
 
     if (parent_value) {
+        size_t n_children =
+            utils_atomic_decrement_size_t(&parent_value->n_children);
         LOG_DEBUG(
             "child #%zu removed from memory region: tracker=%p, level=%i, "
             "pool=%p, ptr=%p, size=%zu",
-            parent_value->n_children, (void *)hTracker, level - 1,
-            (void *)parent_value->pool, (void *)parent_key, parent_value->size);
-        parent_value->n_children--;
+            n_children, (void *)hTracker, level - 1, (void *)parent_value->pool,
+            (void *)parent_key, parent_value->size);
+
         assert(ref_parent_value);
         assert(level >= 1);
         // release the ref_parent_value got from get_most_nested_alloc_segment()
@@ -485,6 +491,7 @@ umf_result_t umfMemoryTrackerGetAllocInfo(const void *ptr,
     uintptr_t top_most_key = 0;
     uintptr_t rkey = 0;
     uint64_t rsize = 0;
+    size_t n_children = 0;
     int level = 0;
     int found = 0;
 
@@ -519,7 +526,7 @@ umf_result_t umfMemoryTrackerGetAllocInfo(const void *ptr,
         }
 
         utils_atomic_load_acquire_u64((uint64_t *)&rvalue->size, &rsize);
-
+        utils_atomic_load_acquire_size_t(&rvalue->n_children, &n_children);
         if (found && (uintptr_t)ptr < rkey + rsize) {
             top_most_key = rkey;
             top_most_value = rvalue;
@@ -530,13 +537,13 @@ umf_result_t umfMemoryTrackerGetAllocInfo(const void *ptr,
             }
             ref_top_most_value = ref_value;
             ref_level = level;
-            if (rvalue->n_children == 0 ||
+            if (n_children == 0 ||
                 level == MAX_LEVELS_OF_ALLOC_SEGMENT_MAP - 1) {
                 break;
             }
             level++;
         }
-    } while (found && (uintptr_t)ptr < rkey + rsize && rvalue->n_children);
+    } while (found && (uintptr_t)ptr < rkey + rsize && n_children);
 
     if (!top_most_value) {
         if (ref_value) {

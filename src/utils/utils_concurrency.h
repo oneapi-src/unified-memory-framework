@@ -270,6 +270,16 @@ static inline bool utils_compare_exchange_size_t(size_t *ptr, size_t *expected,
                                       (uint64_t *)desired);
 }
 
+static inline size_t utils_atomic_increment_size_t(size_t *val) {
+    COMPILE_ERROR_ON(sizeof(size_t) != sizeof(uint64_t));
+    return utils_atomic_increment_u64((uint64_t *)val);
+}
+
+static inline size_t utils_atomic_decrement_size_t(size_t *val) {
+    COMPILE_ERROR_ON(sizeof(size_t) != sizeof(uint64_t));
+    return utils_atomic_decrement_u64((uint64_t *)val);
+}
+
 #ifdef __cplusplus
 }
 #endif
