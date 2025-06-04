@@ -7,27 +7,6 @@
 }
 
 {
-   [false-positive] Double check locking pattern in trackingOpenIpcHandle
-   drd:ConflictingAccess
-   fun:utils_atomic_store_release_ptr
-   fun:upstreamOpenIPCHandle
-   fun:trackingOpenIpcHandle
-   fun:umfMemoryProviderOpenIPCHandle
-   fun:umfOpenIPCHandle
-   ...
-}
-
-{
-   [false-positive] Double check locking pattern in trackingOpenIpcHandle
-   drd:ConflictingAccess
-   fun:utils_atomic_load_acquire_ptr
-   fun:trackingOpenIpcHandle
-   fun:umfMemoryProviderOpenIPCHandle
-   fun:umfOpenIPCHandle
-   ...
-}
-
-{
    False-positive ConflictingAccess in jemalloc
    drd:ConflictingAccess
    fun:atomic_*
