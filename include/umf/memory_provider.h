@@ -51,8 +51,9 @@ umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
 ///
 /// @brief Destroys memory provider.
 /// @param hProvider handle to the memory provider
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 ///
-void umfMemoryProviderDestroy(umf_memory_provider_handle_t hProvider);
+umf_result_t umfMemoryProviderDestroy(umf_memory_provider_handle_t hProvider);
 
 ///
 /// @brief Allocates \p size bytes of uninitialized storage from memory \p hProvider

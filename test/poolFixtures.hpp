@@ -621,9 +621,13 @@ TEST_P(umfPoolTest, pool_from_ptr_whole_size_success) {
     umf_result = umfPoolFree(poolFromPtr, ptr);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
-    umfPoolDestroy(poolFromPtr);
-    umfMemoryProviderDestroy(providerFromPtr);
-    umfFixedMemoryProviderParamsDestroy(params);
+    umf_result = umfPoolDestroy(poolFromPtr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result = umfMemoryProviderDestroy(providerFromPtr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umf_result = umfFixedMemoryProviderParamsDestroy(params);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
     umf_result = umfPoolFree(pool_get, ptr_for_pool);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);

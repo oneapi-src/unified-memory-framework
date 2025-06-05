@@ -153,10 +153,11 @@ err_free_fixed_provider:
     return ret;
 }
 
-static void fixed_finalize(void *provider) {
+static umf_result_t fixed_finalize(void *provider) {
     fixed_memory_provider_t *fixed_provider = provider;
     coarse_delete(fixed_provider->coarse);
     umf_ba_global_free(fixed_provider);
+    return UMF_RESULT_SUCCESS;
 }
 
 static umf_result_t fixed_alloc(void *provider, size_t size, size_t alignment,

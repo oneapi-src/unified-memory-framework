@@ -988,7 +988,7 @@ static void check_if_tracker_is_empty(umf_memory_tracker_handle_t hTracker,
 }
 #endif /* NDEBUG */
 
-static void trackingFinalize(void *provider) {
+static umf_result_t trackingFinalize(void *provider) {
     umf_tracking_memory_provider_t *p =
         (umf_tracking_memory_provider_t *)provider;
 
@@ -997,6 +997,7 @@ static void trackingFinalize(void *provider) {
     critnib_delete(p->ipcCache);
 
     umf_ba_global_free(provider);
+    return UMF_RESULT_SUCCESS;
 }
 
 static void trackingGetLastError(void *provider, const char **msg,
