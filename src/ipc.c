@@ -58,14 +58,14 @@ umf_result_t umfGetIPCHandle(const void *ptr, umf_ipc_handle_t *umfIPCHandle,
     }
 
     size_t ipcHandleSize = 0;
-    umf_alloc_info_t allocInfo;
+    umf_memory_properties_handle_t allocInfo = NULL;
     umf_result_t ret = umfMemoryTrackerGetAllocInfo(ptr, &allocInfo);
     if (ret != UMF_RESULT_SUCCESS) {
         LOG_ERR("cannot get alloc info for ptr = %p.", ptr);
         return ret;
     }
 
-    ret = umfPoolGetIPCHandleSize(allocInfo.pool, &ipcHandleSize);
+    ret = umfPoolGetIPCHandleSize(allocInfo->pool, &ipcHandleSize);
     if (ret != UMF_RESULT_SUCCESS) {
         LOG_ERR("cannot get IPC handle size.");
         return ret;
@@ -79,11 +79,11 @@ umf_result_t umfGetIPCHandle(const void *ptr, umf_ipc_handle_t *umfIPCHandle,
 
     // We cannot use umfPoolGetMemoryProvider function because it returns
     // upstream provider but we need tracking one
-    umf_memory_provider_handle_t provider = allocInfo.pool->provider;
+    umf_memory_provider_handle_t provider = allocInfo->pool->provider;
     assert(provider);
 
-    ret = umfMemoryProviderGetIPCHandle(provider, allocInfo.base,
-                                        allocInfo.baseSize,
+    ret = umfMemoryProviderGetIPCHandle(provider, allocInfo->base,
+                                        allocInfo->base_size,
                                         (void *)ipcData->providerIpcData);
     if (ret != UMF_RESULT_SUCCESS) {
         LOG_ERR("failed to get IPC handle.");
@@ -92,10 +92,10 @@ umf_result_t umfGetIPCHandle(const void *ptr, umf_ipc_handle_t *umfIPCHandle,
     }
 
     // ipcData->handle_id is filled by tracking provider
-    ipcData->base = allocInfo.base;
+    ipcData->base = allocInfo->base;
     ipcData->pid = utils_getpid();
-    ipcData->baseSize = allocInfo.baseSize;
-    ipcData->offset = (uintptr_t)ptr - (uintptr_t)allocInfo.base;
+    ipcData->baseSize = allocInfo->base_size;
+    ipcData->offset = (uintptr_t)ptr - (uintptr_t)allocInfo->base;
 
     *umfIPCHandle = ipcData;
     *size = ipcHandleSize;

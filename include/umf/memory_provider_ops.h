@@ -268,6 +268,19 @@ typedef struct umf_memory_provider_ops_t {
                             void *arg, size_t size,
                             umf_ctl_query_type_t queryType);
 
+    ///
+    /// @brief Retrieve properties of the memory allocation.
+    /// @param provider pointer to the memory provider
+    /// @param ptr TODO
+    /// @param memory_property_id identifier of the memory property to retrieve.
+    /// @param value [out] pointer to the preallocated variable where the value will be stored.
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+    ///         UMF_RESULT_ERROR_INVALID_ARGUMENT if memory_property_id is invalid or value is NULL.
+    ///         UMF_RESULT_ERROR_NOT_SUPPORTED if the property is not supported by this provider.
+    ///
+    umf_result_t (*ext_get_allocation_properties)(
+        void *provider, const void *ptr,
+        umf_memory_property_id_t memory_property_id, void *value);
 } umf_memory_provider_ops_t;
 
 #ifdef __cplusplus

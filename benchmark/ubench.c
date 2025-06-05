@@ -15,6 +15,7 @@
 
 #include <umf/ipc.h>
 #include <umf/memory_pool.h>
+#include <umf/memory_props.h>
 #include <umf/pools/pool_disjoint.h>
 #include <umf/pools/pool_proxy.h>
 #include <umf/pools/pool_scalable.h>
@@ -438,6 +439,47 @@ static void do_ipc_get_put_benchmark(alloc_t *allocs, size_t num_allocs,
     }
 }
 
+static void do_umf_mem_props_benchmark(ze_context_handle_t context,
+                                       bool use_umf, alloc_t *allocs,
+                                       size_t num_allocs, size_t repeats) {
+    assert(context != NULL);
+
+    for (size_t r = 0; r < repeats * 10; ++r) {
+        for (size_t i = 0; i < num_allocs; ++i) {
+            if (use_umf) {
+                umf_memory_properties_handle_t props_handle = NULL;
+                umf_result_t res =
+                    umfGetMemoryPropertiesHandle(allocs[i].ptr, &props_handle);
+                (void)res;
+                assert(res == UMF_RESULT_SUCCESS);
+
+                umf_usm_memory_type_t type = UMF_MEMORY_TYPE_UNKNOWN;
+                res = umfGetMemoryProperty(
+                    props_handle, UMF_MEMORY_PROPERTY_POINTER_TYPE, &type);
+                assert(res == UMF_RESULT_SUCCESS);
+                if (type != UMF_MEMORY_TYPE_DEVICE) {
+                    fprintf(stderr,
+                            "error: unexpected alloc_props.type value: %d\n",
+                            type);
+                    exit(-1);
+                }
+            } else {
+                ze_memory_allocation_properties_t alloc_props = {0};
+                ze_device_handle_t device = 0;
+                // calls zeMemGetAllocProperties()
+                utils_ze_get_mem_props(context, allocs[i].ptr, &alloc_props,
+                                       &device);
+                if (alloc_props.type != ZE_MEMORY_TYPE_DEVICE) {
+                    fprintf(stderr,
+                            "error: unexpected alloc_props.type value: %d\n",
+                            alloc_props.type);
+                    exit(-1);
+                }
+            }
+        }
+    }
+}
+
 static int create_level_zero_params(ze_context_handle_t *context,
                                     ze_device_handle_t *device) {
     uint32_t driver_idx = 0;
@@ -623,6 +665,198 @@ err_destroy_params:
 err_destroy_context:
     utils_ze_destroy_context(context);
 }
+
+UBENCH_EX(mem_props, level_zero) {
+    const size_t BUFFER_SIZE = 100;
+    const size_t N_BUFFERS = 1000;
+
+    alloc_t *allocs = alloc_array(N_BUFFERS);
+    if (allocs == NULL) {
+        fprintf(stderr, "error: alloc_array() failed\n");
+    }
+
+    ze_context_handle_t context = NULL;
+    ze_device_handle_t device = NULL;
+    int ret = create_level_zero_params(&context, &device);
+    if (ret != 0) {
+        fprintf(stderr, "error: create_level_zero_params() failed\n");
+        exit(-1);
+    }
+
+    ze_device_mem_alloc_desc_t dev_desc = {
+        .stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC,
+        .pNext = NULL,
+        .flags = 0,
+        .ordinal = 0};
+
+    for (size_t i = 0; i < N_BUFFERS; ++i) {
+        ze_result_t ze_result = zeMemAllocDevice(
+            context, &dev_desc, BUFFER_SIZE, 0, device, &allocs[i].ptr);
+        if (ze_result != ZE_RESULT_SUCCESS) {
+            fprintf(stderr, "error: zeMemAllocDevice() failed\n");
+        }
+        allocs[i].size = BUFFER_SIZE;
+    }
+
+    do_umf_mem_props_benchmark(context, false, allocs, N_BUFFERS,
+                               1); // WARMUP
+    UBENCH_DO_BENCHMARK() {
+        do_umf_mem_props_benchmark(context, false, allocs, N_BUFFERS,
+                                   N_ITERATIONS);
+    }
+
+    for (size_t i = 0; i < N_BUFFERS; ++i) {
+        zeMemFree(context, allocs[i].ptr);
+    }
+
+    free(allocs);
+    utils_ze_destroy_context(context);
+}
+
+UBENCH_EX(mem_props, disjoint_pool_with_level_zero_provider_use_umf) {
+    const size_t BUFFER_SIZE = 4 * 1024;
+    const size_t N_BUFFERS = 1000;
+    umf_result_t umf_result;
+    ze_context_handle_t context = NULL;
+    ze_device_handle_t device = NULL;
+    umf_level_zero_memory_provider_params_handle_t level_zero_params = NULL;
+
+    int ret = create_level_zero_params(&context, &device);
+    if (ret != 0) {
+        fprintf(stderr, "error: create_level_zero_params() failed\n");
+        exit(-1);
+    }
+
+    umf_result = umfLevelZeroMemoryProviderParamsCreate(&level_zero_params);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr,
+                "error: umfLevelZeroMemoryProviderParamsCreate() failed\n");
+        goto err_destroy_context;
+    }
+
+    umf_result =
+        umfLevelZeroMemoryProviderParamsSetContext(level_zero_params, context);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr,
+                "error: umfLevelZeroMemoryProviderParamsSetContext() failed\n");
+        goto err_destroy_params;
+    }
+
+    umf_result =
+        umfLevelZeroMemoryProviderParamsSetDevice(level_zero_params, device);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr,
+                "error: umfLevelZeroMemoryProviderParamsSetDevice() failed\n");
+        goto err_destroy_params;
+    }
+
+    umf_result = umfLevelZeroMemoryProviderParamsSetMemoryType(
+        level_zero_params, UMF_MEMORY_TYPE_DEVICE);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(
+            stderr,
+            "error: umfLevelZeroMemoryProviderParamsSetMemoryType() failed\n");
+        goto err_destroy_params;
+    }
+
+    alloc_t *allocs = alloc_array(N_BUFFERS);
+    if (allocs == NULL) {
+        fprintf(stderr, "error: alloc_array() failed\n");
+        goto err_destroy_context;
+    }
+
+    umf_memory_provider_handle_t provider = NULL;
+    umf_result = umfMemoryProviderCreate(umfLevelZeroMemoryProviderOps(),
+                                         level_zero_params, &provider);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "error: umfMemoryProviderCreate() failed\n");
+        goto err_free_allocs;
+    }
+
+    umf_disjoint_pool_params_handle_t disjoint_params = NULL;
+    umf_result = umfDisjointPoolParamsCreate(&disjoint_params);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "ERROR: umfDisjointPoolParamsCreate failed\n");
+        goto err_provider_destroy;
+    }
+
+    umf_result =
+        umfDisjointPoolParamsSetSlabMinSize(disjoint_params, BUFFER_SIZE * 10);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr,
+                "error: umfDisjointPoolParamsSetSlabMinSize() failed\n");
+        goto err_params_destroy;
+    }
+
+    umf_result = umfDisjointPoolParamsSetMaxPoolableSize(
+        disjoint_params, 4ull * 1024ull * 1024ull);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr,
+                "error: umfDisjointPoolParamsSetMaxPoolableSize() failed\n");
+        goto err_params_destroy;
+    }
+
+    umf_result =
+        umfDisjointPoolParamsSetCapacity(disjoint_params, 64ull * 1024ull);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "error: umfDisjointPoolParamsSetCapacity() failed\n");
+        goto err_params_destroy;
+    }
+
+    umf_result = umfDisjointPoolParamsSetMinBucketSize(disjoint_params, 64);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr,
+                "error: umfDisjointPoolParamsSetMinBucketSize() failed\n");
+        goto err_params_destroy;
+    }
+
+    umf_pool_create_flags_t flags = UMF_POOL_CREATE_FLAG_NONE;
+    umf_memory_pool_handle_t pool;
+    umf_result = umfPoolCreate(umfDisjointPoolOps(), provider, disjoint_params,
+                               flags, &pool);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "error: umfPoolCreate() failed\n");
+        goto err_params_destroy;
+    }
+
+    for (size_t i = 0; i < N_BUFFERS; ++i) {
+        allocs[i].ptr = umfPoolMalloc(pool, BUFFER_SIZE);
+        if (allocs[i].ptr == NULL) {
+            goto err_buffer_destroy;
+        }
+        allocs[i].size = BUFFER_SIZE;
+    }
+
+    do_umf_mem_props_benchmark(context, true, allocs, N_BUFFERS,
+                               1); // WARMUP
+    UBENCH_DO_BENCHMARK() {
+        do_umf_mem_props_benchmark(context, true, allocs, N_BUFFERS,
+                                   N_ITERATIONS);
+    }
+
+err_buffer_destroy:
+    for (size_t i = 0; i < N_BUFFERS; ++i) {
+        umfPoolFree(pool, allocs[i].ptr);
+    }
+
+    umfPoolDestroy(pool);
+
+err_params_destroy:
+    umfDisjointPoolParamsDestroy(disjoint_params);
+
+err_provider_destroy:
+    umfMemoryProviderDestroy(provider);
+
+err_free_allocs:
+    free(allocs);
+
+err_destroy_params:
+    umfLevelZeroMemoryProviderParamsDestroy(level_zero_params);
+
+err_destroy_context:
+    //utils_ze_destroy_context(context);
+}
+
 #endif /* (defined UMF_BUILD_LEVEL_ZERO_PROVIDER && defined UMF_BUILD_GPU_TESTS) */
 
 // TODO add IPC benchmark for CUDA
