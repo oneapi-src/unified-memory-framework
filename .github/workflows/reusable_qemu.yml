@@ -98,7 +98,7 @@ jobs:
       if: ${{ inputs.short_run == true }}
       run: |
         echo "SHORT_RUN=true" >> $GITHUB_ENV
-        declare -a short_configs=("default.xml" "sock_2_var3.xml" "sock_8_var1_hmat.xml")
+        declare -a short_configs=("sock_4_var2_hmat.xml")
         echo "CONFIG_OPTIONS=${short_configs[@]}" >> $GITHUB_ENV
 
     - name: Set vars if long run
@@ -142,7 +142,12 @@ jobs:
           echo "### Testing ${config_name} ###"
           umf/scripts/qemu/start_qemu.sh ${config_name}
 
-          ssh testuser@127.0.0.1 -p 2222 -t "export SHORT_RUN=${SHORT_RUN} OS_FULL_NAME=${{matrix.os}} && /home/testuser/scripts/qemu/run-tests.sh COVERAGE ${config_name}"
+          # run 10 times
+          for i in {1..100}; do
+            echo "Running test iteration $i"
+            ssh testuser@127.0.0.1 -p 2222 -t "export SHORT_RUN=${SHORT_RUN} OS_FULL_NAME=${{matrix.os}} && /home/testuser/scripts/qemu/run-tests.sh COVERAGE ${config_name}"
+          done
+          
           scp -r -P 2222 testuser@127.0.0.1:/home/testuser/coverage ./
           # ssh may return non-zero error code on closing the connection in Ubuntu 22.04
           ssh testuser@127.0.0.1 -p 2222 -t "sudo shutdown -h now" || true

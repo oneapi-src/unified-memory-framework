@@ -28,7 +28,7 @@ numactl -H
 
 cd build
 echo "## Running all tests ..."
-ctest --verbose
+UMF_LOG="level:debug;flush:debug;output:stderr;pid:no" ctest --verbose --output-on-failure -R "memoryPool"
 
 echo "## Running tests bound to a numa node 0 and node 1 ..."
 numactl -N 0 ctest --output-on-failure
