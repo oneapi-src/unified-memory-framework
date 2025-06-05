@@ -313,10 +313,15 @@ err_tbb_init:
     return res;
 }
 
-static void tbb_pool_finalize(void *pool) {
+static umf_result_t tbb_pool_finalize(void *pool) {
     tbb_memory_pool_t *pool_data = (tbb_memory_pool_t *)pool;
-    tbb_callbacks.pool_destroy(pool_data->tbb_pool);
+    umf_result_t ret = UMF_RESULT_SUCCESS;
+    if (!tbb_callbacks.pool_destroy(pool_data->tbb_pool)) {
+        LOG_ERR("TBB pool destroy failed");
+        ret = UMF_RESULT_ERROR_UNKNOWN;
+    }
     umf_ba_global_free(pool_data);
+    return ret;
 }
 
 static void *tbb_malloc(void *pool, size_t size) {

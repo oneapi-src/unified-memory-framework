@@ -68,7 +68,10 @@ umf_result_t initialize(T *obj, ArgsTuple &&args) {
 template <typename T> umf_memory_pool_ops_t poolOpsBase() {
     umf_memory_pool_ops_t ops{};
     ops.version = UMF_POOL_OPS_VERSION_CURRENT;
-    ops.finalize = [](void *obj) { delete reinterpret_cast<T *>(obj); };
+    ops.finalize = [](void *obj) {
+        delete reinterpret_cast<T *>(obj);
+        return UMF_RESULT_SUCCESS;
+    };
     UMF_ASSIGN_OP(ops, T, malloc, ((void *)nullptr));
     UMF_ASSIGN_OP(ops, T, calloc, ((void *)nullptr));
     UMF_ASSIGN_OP(ops, T, aligned_malloc, ((void *)nullptr));
@@ -82,7 +85,10 @@ template <typename T> umf_memory_pool_ops_t poolOpsBase() {
 template <typename T> constexpr umf_memory_provider_ops_t providerOpsBase() {
     umf_memory_provider_ops_t ops{};
     ops.version = UMF_PROVIDER_OPS_VERSION_CURRENT;
-    ops.finalize = [](void *obj) { delete reinterpret_cast<T *>(obj); };
+    ops.finalize = [](void *obj) {
+        delete reinterpret_cast<T *>(obj);
+        return UMF_RESULT_SUCCESS;
+    };
     UMF_ASSIGN_OP(ops, T, alloc, UMF_RESULT_ERROR_UNKNOWN);
     UMF_ASSIGN_OP(ops, T, free, UMF_RESULT_ERROR_UNKNOWN);
     UMF_ASSIGN_OP_NORETURN(ops, T, get_last_native_error);

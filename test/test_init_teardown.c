@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -18,7 +18,7 @@ typedef int (*umfMemoryProviderCreateFromMemspace_t)(void *hMemspace,
                                                      void **hPool);
 typedef int (*umfPoolCreate_t)(void *ops, void *provider, void *params,
                                uint32_t flags, void **hPool);
-typedef void (*umfDestroy_t)(void *handle);
+typedef int (*umfDestroy_t)(void *handle);
 typedef void (*umfVoidVoid_t)(void);
 typedef void *(*umfGetPtr_t)(void);
 

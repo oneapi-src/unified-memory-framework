@@ -17,7 +17,10 @@ static umf_result_t nullInitialize(umf_memory_provider_handle_t provider,
     return UMF_RESULT_SUCCESS;
 }
 
-static void nullFinalize(void *pool) { (void)pool; }
+static umf_result_t nullFinalize(void *pool) {
+    (void)pool;
+    return UMF_RESULT_SUCCESS;
+}
 
 static void *nullMalloc(void *pool, size_t size) {
     (void)pool;

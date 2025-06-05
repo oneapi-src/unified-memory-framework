@@ -168,7 +168,8 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_basic_provider) {
     ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     coarse_delete(ch);
-    umfMemoryProviderDestroy(malloc_memory_provider);
+    umf_result = umfMemoryProviderDestroy(malloc_memory_provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 }
 
 TEST_P(CoarseWithMemoryStrategyTest, coarseTest_basic_fixed_memory) {

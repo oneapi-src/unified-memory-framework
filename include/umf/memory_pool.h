@@ -58,8 +58,9 @@ umf_result_t umfPoolCreate(const umf_memory_pool_ops_t *ops,
 ///
 /// @brief Destroys memory pool.
 /// @param hPool handle to the pool
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 ///
-void umfPoolDestroy(umf_memory_pool_handle_t hPool);
+umf_result_t umfPoolDestroy(umf_memory_pool_handle_t hPool);
 
 ///
 /// @brief Allocates \p size bytes of uninitialized storage from \p hPool

@@ -201,24 +201,30 @@ err_provider_create:
     return ret;
 }
 
-void umfPoolDestroy(umf_memory_pool_handle_t hPool) {
+umf_result_t umfPoolDestroy(umf_memory_pool_handle_t hPool) {
     if (umf_ba_global_is_destroyed()) {
-        return;
+        return UMF_RESULT_ERROR_UNKNOWN;
     }
 
-    hPool->ops.finalize(hPool->pool_priv);
+    umf_result_t ret = hPool->ops.finalize(hPool->pool_priv);
 
     umf_memory_provider_handle_t hUpstreamProvider = NULL;
     umfPoolGetMemoryProvider(hPool, &hUpstreamProvider);
 
     if (!(hPool->flags & UMF_POOL_CREATE_FLAG_DISABLE_TRACKING)) {
         // Destroy tracking provider.
-        umfMemoryProviderDestroy(hPool->provider);
+        umf_result_t ret2 = umfMemoryProviderDestroy(hPool->provider);
+        if (ret == UMF_RESULT_SUCCESS) {
+            ret = ret2;
+        }
     }
 
     if (hPool->flags & UMF_POOL_CREATE_FLAG_OWN_PROVIDER) {
         // Destroy associated memory provider.
-        umfMemoryProviderDestroy(hUpstreamProvider);
+        umf_result_t ret2 = umfMemoryProviderDestroy(hUpstreamProvider);
+        if (ret == UMF_RESULT_SUCCESS) {
+            ret = ret2;
+        }
     }
 
     utils_mutex_destroy_not_free(&hPool->lock);
@@ -227,6 +233,7 @@ void umfPoolDestroy(umf_memory_pool_handle_t hPool) {
 
     // TODO: this free keeps memory in base allocator, so it can lead to OOM in some scenarios (it should be optimized)
     umf_ba_global_free(hPool);
+    return ret;
 }
 
 umf_result_t umfFree(void *ptr) {

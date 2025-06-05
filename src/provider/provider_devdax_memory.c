@@ -265,12 +265,19 @@ err_free_devdax_provider:
     return ret;
 }
 
-static void devdax_finalize(void *provider) {
+static umf_result_t devdax_finalize(void *provider) {
     devdax_memory_provider_t *devdax_provider = provider;
+    umf_result_t ret = UMF_RESULT_SUCCESS;
     utils_mutex_destroy_not_free(&devdax_provider->lock);
-    utils_munmap(devdax_provider->base, devdax_provider->size);
+    if (utils_munmap(devdax_provider->base, devdax_provider->size)) {
+        LOG_PERR("unmapping the devdax memory failed (path: %s, size: %zu)",
+                 devdax_provider->path, devdax_provider->size);
+        ret = UMF_RESULT_ERROR_UNKNOWN;
+    }
+
     coarse_delete(devdax_provider->coarse);
     umf_ba_global_free(devdax_provider);
+    return ret;
 }
 
 static umf_result_t devdax_alloc(void *provider, size_t size, size_t alignment,

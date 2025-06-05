@@ -995,9 +995,9 @@ umf_result_t disjoint_pool_get_last_allocation_error(void *pool) {
 }
 
 // Define destructor for use with unique_ptr
-void disjoint_pool_finalize(void *pool) {
+umf_result_t disjoint_pool_finalize(void *pool) {
     disjoint_pool_t *hPool = (disjoint_pool_t *)pool;
-
+    umf_result_t ret = UMF_RESULT_SUCCESS;
     if (hPool->params.pool_trace > 1) {
         disjoint_pool_print_stats(hPool);
     }
@@ -1007,11 +1007,16 @@ void disjoint_pool_finalize(void *pool) {
     }
 
     VALGRIND_DO_DESTROY_MEMPOOL(hPool);
+    ret = umfDisjointPoolSharedLimitsDestroy(hPool->default_shared_limits);
+    if (ret != UMF_RESULT_SUCCESS) {
+        ret = UMF_RESULT_ERROR_UNKNOWN;
+        LOG_ERR("umfDisjointPoolSharedLimitsDestroy failed");
+    }
 
-    umfDisjointPoolSharedLimitsDestroy(hPool->default_shared_limits);
     critnib_delete(hPool->known_slabs);
 
     umf_ba_global_free(hPool);
+    return ret;
 }
 
 const char *disjoint_pool_get_name(void *pool) {
@@ -1053,9 +1058,10 @@ umfDisjointPoolSharedLimitsCreate(size_t max_size) {
     return ptr;
 }
 
-void umfDisjointPoolSharedLimitsDestroy(
-    umf_disjoint_pool_shared_limits_t *limits) {
+umf_result_t
+umfDisjointPoolSharedLimitsDestroy(umf_disjoint_pool_shared_limits_t *limits) {
     umf_ba_global_free(limits);
+    return UMF_RESULT_SUCCESS;
 }
 
 umf_result_t

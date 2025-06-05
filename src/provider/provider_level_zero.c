@@ -479,11 +479,12 @@ static umf_result_t query_min_page_size(ze_memory_provider_t *ze_provider,
     return ze2umf_result(ze_result);
 }
 
-static void ze_memory_provider_finalize(void *provider) {
+static umf_result_t ze_memory_provider_finalize(void *provider) {
     ze_memory_provider_t *ze_provider = (ze_memory_provider_t *)provider;
     umf_ba_global_free(ze_provider->resident_device_handles);
 
     umf_ba_global_free(provider);
+    return UMF_RESULT_SUCCESS;
 }
 
 static umf_result_t ze_memory_provider_initialize(const void *params,

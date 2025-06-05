@@ -235,11 +235,18 @@ umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
     return UMF_RESULT_SUCCESS;
 }
 
-void umfMemoryProviderDestroy(umf_memory_provider_handle_t hProvider) {
-    if (hProvider && !umf_ba_global_is_destroyed()) {
-        hProvider->ops.finalize(hProvider->provider_priv);
-        umf_ba_global_free(hProvider);
+umf_result_t umfMemoryProviderDestroy(umf_memory_provider_handle_t hProvider) {
+    if (umf_ba_global_is_destroyed()) {
+        return UMF_RESULT_ERROR_UNKNOWN;
     }
+
+    if (!hProvider) {
+        return UMF_RESULT_SUCCESS;
+    }
+
+    umf_result_t ret = hProvider->ops.finalize(hProvider->provider_priv);
+    umf_ba_global_free(hProvider);
+    return ret;
 }
 
 static void
