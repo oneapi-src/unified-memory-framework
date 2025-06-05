@@ -158,7 +158,7 @@ target_compile_definitions(umf PRIVATE ${UMF_COMMON_COMPILE_DEFINITIONS})
 
 add_dependencies(umf umf_ba umf_coarse umf_utils)
 
-if(UMF_LINK_HWLOC_STATICALLY)
+if(NOT UMF_DISABLE_HWLOC AND UMF_LINK_HWLOC_STATICALLY)
     add_dependencies(umf ${UMF_HWLOC_NAME})
     # On Darwin, link with the IOKit and Foundation frameworks, if they are
     # available in the system. This is to comply with hwloc which links these,
