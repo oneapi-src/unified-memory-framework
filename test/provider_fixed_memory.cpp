@@ -240,6 +240,11 @@ TEST_P(FixedProviderTest, alloc_page64_align_one_half_pages_WRONG_ALIGNMENT_2) {
                        UMF_RESULT_ERROR_INVALID_ALIGNMENT, 0);
 }
 
+TEST_P(FixedProviderTest, alloc_size_exceeds_buffer) {
+    size_t size = memory_size + page_size;
+    test_alloc_failure(size, 0, UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY, 0);
+}
+
 // Other positive tests
 
 TEST_P(FixedProviderTest, get_min_page_size) {
@@ -334,10 +339,104 @@ TEST_F(test, create_with_zero_size) {
     ASSERT_EQ(wrong_params, nullptr);
 }
 
-TEST_P(FixedProviderTest, alloc_size_exceeds_buffer) {
-    size_t size = memory_size + page_size;
-    test_alloc_failure(size, 0, UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY, 0);
+TEST_F(test, params_several_set_memory) {
+    umf_memory_provider_handle_t provider1 = nullptr, provider2 = nullptr;
+    size_t memory_size1 = FIXED_BUFFER_SIZE,
+           memory_size2 = FIXED_BUFFER_SIZE * 10;
+    size_t alloc_size1 = memory_size1 / 2, alloc_size2 = memory_size2 / 2;
+    void *memory_buffer1 = nullptr;
+    void *memory_buffer2 = nullptr;
+    memory_buffer1 = malloc(memory_size1);
+    memory_buffer2 = malloc(memory_size2);
+    void *ptr1 = nullptr;
+    void *ptr2 = nullptr;
+    const char *source_str = "Allocated memory!";
+
+    umf_fixed_memory_provider_params_handle_t params = nullptr;
+    umf_result_t umf_result = umfFixedMemoryProviderParamsCreate(
+        &params, memory_buffer1, memory_size1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umf_result = umfMemoryProviderCreate(umfFixedMemoryProviderOps(), params,
+                                         &provider1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umf_result = umfMemoryProviderAlloc(provider1, alloc_size1, 0, &ptr1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(ptr1, nullptr);
+
+    // provider1: write to the allocated memory and free it
+    memset(ptr1, '\0', alloc_size1);
+    memcpy(ptr1, (const void *)source_str, sizeof(source_str));
+    ASSERT_GE((uintptr_t)ptr1, (uintptr_t)memory_buffer1);
+    ASSERT_LE((uintptr_t)ptr1 + alloc_size1,
+              (uintptr_t)memory_buffer1 + memory_size1);
+
+    umf_result = umfMemoryProviderFree(provider1, ptr1, alloc_size1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    // Reuse the same params for the new provider
+    umf_result = umfFixedMemoryProviderParamsSetMemory(params, memory_buffer2,
+                                                       memory_size2);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umf_result = umfMemoryProviderCreate(umfFixedMemoryProviderOps(), params,
+                                         &provider2);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umf_result = umfMemoryProviderAlloc(provider2, alloc_size2, 0, &ptr2);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(ptr2, nullptr);
+
+    // provider2: write to the allocated memory and free it
+    memset(ptr2, '\0', alloc_size2);
+    memcpy(ptr2, (const void *)source_str, sizeof(source_str));
+    ASSERT_GE((uintptr_t)ptr2, (uintptr_t)memory_buffer2);
+    ASSERT_LE((uintptr_t)ptr2 + alloc_size2,
+              (uintptr_t)memory_buffer2 + memory_size2);
+
+    umf_result = umfMemoryProviderFree(provider2, ptr2, alloc_size2);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    ASSERT_NE(ptr1, ptr2);
+    ASSERT_NE(provider1, provider2);
+
+    // Cleanup
+    umfMemoryProviderDestroy(provider1);
+    umfMemoryProviderDestroy(provider2);
+
+    umf_result = umfFixedMemoryProviderParamsDestroy(params);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    free(memory_buffer1);
+    free(memory_buffer2);
 }
+
+TEST_F(test, params_invalid_set_memory) {
+    constexpr size_t memory_size = 100;
+    char memory_buffer[memory_size];
+    umf_fixed_memory_provider_params_handle_t valid_params = nullptr;
+    umf_result_t umf_result = umfFixedMemoryProviderParamsCreate(
+        &valid_params, memory_buffer, memory_size);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umf_result =
+        umfFixedMemoryProviderParamsSetMemory(NULL, memory_buffer, memory_size);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    umf_result =
+        umfFixedMemoryProviderParamsSetMemory(valid_params, NULL, memory_size);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    umf_result =
+        umfFixedMemoryProviderParamsSetMemory(valid_params, memory_buffer, 0);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    umf_result = umfFixedMemoryProviderParamsDestroy(valid_params);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+}
+
+// Split / merge tests
 
 TEST_P(FixedProviderTest, merge) {
     umf_result_t umf_result;
