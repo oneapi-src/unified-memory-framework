@@ -20,23 +20,6 @@
 }
 
 {
-   False-positive race in critnib_insert (lack of instrumentation)
-   Helgrind:Race
-   fun:utils_atomic_store_release_ptr
-   fun:critnib_insert
-   ...
-}
-
-{
-   False-positive race in critnib_find (lack of instrumentation)
-   Helgrind:Race
-   fun:find_predecessor
-   fun:find_le
-   fun:critnib_find
-   ...
-}
-
-{
    False-positive ConflictingAccess in jemalloc
    Helgrind:Race
    fun:atomic_*
