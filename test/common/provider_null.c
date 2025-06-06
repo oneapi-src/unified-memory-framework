@@ -14,7 +14,10 @@ static umf_result_t nullInitialize(const void *params, void **pool) {
     return UMF_RESULT_SUCCESS;
 }
 
-static void nullFinalize(void *pool) { (void)pool; }
+static umf_result_t nullFinalize(void *pool) {
+    (void)pool;
+    return UMF_RESULT_SUCCESS;
+}
 
 static umf_result_t nullAlloc(void *provider, size_t size, size_t alignment,
                               void **ptr) {

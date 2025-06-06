@@ -369,8 +369,9 @@ static umf_result_t cu_memory_provider_initialize(const void *params,
     return UMF_RESULT_SUCCESS;
 }
 
-static void cu_memory_provider_finalize(void *provider) {
+static umf_result_t cu_memory_provider_finalize(void *provider) {
     umf_ba_global_free(provider);
+    return UMF_RESULT_SUCCESS;
 }
 
 /*

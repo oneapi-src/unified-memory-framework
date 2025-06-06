@@ -43,7 +43,7 @@ typedef struct umf_memory_provider_ops_t {
     /// @brief Finalizes memory provider.
     /// @param provider provider to finalize
     ///
-    void (*finalize)(void *provider);
+    umf_result_t (*finalize)(void *provider);
 
     ///
     /// @brief Allocates \p size bytes of uninitialized storage from memory \p provider

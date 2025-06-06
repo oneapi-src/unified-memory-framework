@@ -521,18 +521,23 @@ err_cleanup:
     return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
 }
 
-static void op_finalize(void *pool) {
+static umf_result_t op_finalize(void *pool) {
     assert(pool);
+    umf_result_t ret = UMF_RESULT_SUCCESS;
     jemalloc_memory_pool_t *je_pool = (jemalloc_memory_pool_t *)pool;
     for (size_t i = 0; i < je_pool->n_arenas; i++) {
         char cmd[64];
         unsigned arena = je_pool->arena_index[i];
         snprintf(cmd, sizeof(cmd), "arena.%u.destroy", arena);
-        (void)je_mallctl(cmd, NULL, 0, NULL, 0);
+        if (je_mallctl(cmd, NULL, 0, NULL, 0)) {
+            LOG_ERR("Could not destroy jemalloc arena %u", arena);
+            ret = UMF_RESULT_ERROR_UNKNOWN;
+        }
     }
     umf_ba_global_free(je_pool);
 
     VALGRIND_DO_DESTROY_MEMPOOL(pool);
+    return ret;
 }
 
 static size_t op_malloc_usable_size(void *pool, const void *ptr) {

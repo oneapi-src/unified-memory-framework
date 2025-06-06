@@ -152,8 +152,10 @@ TEST_P(TrackingProviderTest, whole_size_success) {
     umf_result = umfPoolFree(pool1, ptr1);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
-    umfPoolDestroy(pool1);
-    umfMemoryProviderDestroy(provider1);
+    umf_result = umfPoolDestroy(pool1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result = umfMemoryProviderDestroy(provider1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
     umf_result = umfPoolFree(pool0, ptr0);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
@@ -184,8 +186,10 @@ TEST_P(TrackingProviderTest, half_size_success) {
     umf_result = umfPoolFree(pool1, ptr1);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
-    umfPoolDestroy(pool1);
-    umfMemoryProviderDestroy(provider1);
+    umf_result = umfPoolDestroy(pool1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result = umfMemoryProviderDestroy(provider1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
     umf_result = umfPoolFree(pool0, ptr0);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
@@ -213,8 +217,10 @@ TEST_P(TrackingProviderTest, failure_exceeding_size) {
     ptr1 = umfPoolMalloc(pool1, size1);
     ASSERT_EQ(ptr1, nullptr);
 
-    umfPoolDestroy(pool1);
-    umfMemoryProviderDestroy(provider1);
+    umf_result = umfPoolDestroy(pool1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result = umfMemoryProviderDestroy(provider1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
     umf_result = umfPoolFree(pool0, ptr0);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
@@ -253,8 +259,10 @@ TEST_P(TrackingProviderTest, success_max_levels) {
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
     for (int i = TEST_LEVEL_SUCCESS - 1; i >= 0; i--) {
-        umfPoolDestroy(pools[i + 1]);
-        umfMemoryProviderDestroy(providers[i + 1]);
+        umf_result = umfPoolDestroy(pools[i + 1]);
+        ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+        umf_result = umfMemoryProviderDestroy(providers[i + 1]);
+        ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
         fprintf(stderr, "Free #%d\n", i);
         umf_result = umfPoolFree(pools[i], ptr[i]);
@@ -288,8 +296,10 @@ TEST_P(TrackingProviderTest, failure_exceeding_levels) {
     ASSERT_EQ(ptr[f], nullptr);
 
     for (int i = TEST_LEVEL_FAILURE - 1; i >= 0; i--) {
-        umfPoolDestroy(pools[i + 1]);
-        umfMemoryProviderDestroy(providers[i + 1]);
+        umf_result = umfPoolDestroy(pools[i + 1]);
+        ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+        umf_result = umfMemoryProviderDestroy(providers[i + 1]);
+        ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
         fprintf(stderr, "Free #%d\n", i);
         umf_result = umfPoolFree(pools[i], ptr[i]);
@@ -327,8 +337,10 @@ TEST_P(TrackingProviderTest, reverted_free_half_size) {
     umf_result = umfPoolFree(pool1, ptr1);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
-    umfPoolDestroy(pool1);
-    umfMemoryProviderDestroy(provider1);
+    umf_result = umfPoolDestroy(pool1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result = umfMemoryProviderDestroy(provider1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
     // It could have been freed above,
     // so we cannot verify the result here.
@@ -366,8 +378,10 @@ TEST_P(TrackingProviderTest, reverted_free_the_same_size) {
     umf_result = umfPoolFree(pool1, ptr1);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
-    umfPoolDestroy(pool1);
-    umfMemoryProviderDestroy(provider1);
+    umf_result = umfPoolDestroy(pool1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result = umfMemoryProviderDestroy(provider1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
     // It could have been freed above,
     // so we cannot verify the result here.
