@@ -159,7 +159,7 @@ static void init_ze_global_state(void) {
 #ifdef _WIN32
     const char *lib_name = "ze_loader.dll";
 #else
-    const char *lib_name = "libze_loader.so";
+    const char *lib_name = "libze_loader.so.1";
 #endif
     // The Level Zero shared library should be already loaded by the user
     // of the Level Zero provider. UMF just want to reuse it
