@@ -5,6 +5,7 @@ on: workflow_call
 
 permissions:
   contents: read
+  security-events: read
 
 env:
   BUILD_DIR : "${{github.workspace}}/build"
