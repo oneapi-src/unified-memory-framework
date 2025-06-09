@@ -1,6 +1,5 @@
-# Check code with looped compilers' sanitizers
-# This build lasts 6 hours.
-name: Sanitizers - Looped
+# Various non-standard tests, requiring e.g. very long runs or just not required to be run very often.
+name: Weekly
 
 # This job is run every Saturday at 01:00 UTC or on demand.
 on:
@@ -16,8 +15,9 @@ permissions:
   contents: read
 
 jobs:
-  ubuntu-build:
-    name: Ubuntu
+  # Check code with looped compilers' sanitizers. With 1000 iterations it should take around 4,5 hours.
+  sanitizers-looped:
+    name: Sanitizers looped
     strategy:
       fail-fast: false
       matrix:
@@ -39,12 +39,7 @@ jobs:
 
     - name: Install oneAPI basekit
       if: matrix.compiler.cxx == 'icpx'
-      run: |
-        sudo apt-get install -y gpg-agent wget
-        wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
-        echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
-        sudo apt-get update
-        sudo apt-get install -y intel-oneapi-ippcp-devel intel-oneapi-ipp-devel intel-oneapi-common-oneapi-vars intel-oneapi-compiler-dpcpp-cpp
+      run: sudo .github/scripts/install_oneAPI.sh
 
     - name: Configure build
       run: >
@@ -77,4 +72,4 @@ jobs:
       env:
         ASAN_OPTIONS: allocator_may_return_null=1
         TSAN_OPTIONS: allocator_may_return_null=1
-      run: while ctest --output-on-failure; do date; done && exit 1
+      run: for i in {1..1000}; do ctest --output-on-failure || exit 1; date; done
