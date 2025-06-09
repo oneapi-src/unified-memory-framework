@@ -221,7 +221,6 @@ jobs:
       run: rm -rf ${{env.INSTL_DIR}}
 
     - name: Test UMF installation and uninstallation
-      # The '--shared-library' parameter is added to the installation test when the UMF is built as a shared library
       run: >
         python3 ${{github.workspace}}/test/test_installation.py
         --build-dir ${{env.BUILD_DIR}}
@@ -308,10 +307,10 @@ jobs:
     # versions of CMake to correctly locate the libraries
     - name: Install dependencies
       run: |
-        vcpkg install --triplet x64-windows        
+        vcpkg install --triplet x64-windows
         $env:Path = "${{env.VCPKG_PATH_BIN}};$env:Path"
         echo "PATH=$env:Path" >> $env:GITHUB_ENV
-      shell: pwsh # Specifies PowerShell as the shell for running the script.
+      shell: pwsh
 
     - name: Get UMF version
       run: |
@@ -357,8 +356,6 @@ jobs:
       shell: pwsh
 
     - name: Test UMF installation and uninstallation
-      # The '--shared-library' parameter is added to the installation test when
-      # the UMF is built as a shared library
       run: >
         python3 ${{github.workspace}}/test/test_installation.py
         --build-dir ${{env.BUILD_DIR}}
