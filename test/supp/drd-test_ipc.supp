@@ -15,3 +15,14 @@
    fun:umfOpenIPCHandle
    ...
 }
+
+{
+   [false-positive] Double check locking pattern in trackingOpenIpcHandle
+   drd:ConflictingAccess
+   fun:utils_atomic_store_release_ptr
+   fun:upstreamOpenIPCHandle
+   fun:trackingOpenIpcHandle
+   fun:umfMemoryProviderOpenIPCHandle
+   fun:umfOpenIPCHandle
+   ...
+}
