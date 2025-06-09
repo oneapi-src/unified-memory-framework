@@ -141,7 +141,7 @@ int InitLevelZeroOps() {
 #ifdef _WIN32
     const char *lib_name = "ze_loader.dll";
 #else
-    const char *lib_name = "libze_loader.so";
+    const char *lib_name = "libze_loader.so.1";
 #endif
     // Load Level Zero symbols
 #if OPEN_ZE_LIBRARY_GLOBAL
