@@ -33,7 +33,9 @@ static UTIL_ONCE_FLAG mem_pool_ctl_initialized = UTIL_ONCE_FLAG_INIT;
 char CTL_DEFAULT_ENTRIES[UMF_DEFAULT_SIZE][UMF_DEFAULT_LEN] = {0};
 char CTL_DEFAULT_VALUES[UMF_DEFAULT_SIZE][UMF_DEFAULT_LEN] = {0};
 
-void ctl_init(void) { utils_mutex_init(&ctl_mtx); }
+static struct ctl umf_pool_ctl_root;
+
+static void ctl_init(void);
 
 static int CTL_SUBTREE_HANDLER(by_handle_pool)(void *ctx,
                                                umf_ctl_query_source_t source,
@@ -43,9 +45,15 @@ static int CTL_SUBTREE_HANDLER(by_handle_pool)(void *ctx,
                                                umf_ctl_query_type_t queryType) {
     (void)indexes, (void)source;
     umf_memory_pool_handle_t hPool = (umf_memory_pool_handle_t)ctx;
+    int ret = ctl_query(&umf_pool_ctl_root, hPool, source, extra_name,
+                        queryType, arg, size);
+    if (ret == -1 &&
+        errno == EINVAL) { // node was not found in pool_ctl_root, try to
+                           // query the specific pool directly
+        hPool->ops.ext_ctl(hPool->pool_priv, source, extra_name, arg, size,
+                           queryType);
+    }
 
-    hPool->ops.ext_ctl(hPool->pool_priv, /*unused*/ 0, extra_name, arg, size,
-                       queryType);
     return 0;
 }
 
@@ -96,8 +104,37 @@ static int CTL_SUBTREE_HANDLER(default)(void *ctx,
     return 0;
 }
 
+static int CTL_READ_HANDLER(alloc_count)(void *ctx,
+                                         umf_ctl_query_source_t source,
+                                         void *arg, size_t size,
+                                         umf_ctl_index_utlist_t *indexes,
+                                         const char *extra_name,
+                                         umf_ctl_query_type_t query_type) {
+    /* suppress unused-parameter errors */
+    (void)source, (void)size, (void)indexes, (void)extra_name, (void)query_type;
+
+    size_t *arg_out = arg;
+    if (ctx == NULL || arg_out == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    assert(size == sizeof(size_t));
+
+    umf_memory_pool_handle_t pool = (umf_memory_pool_handle_t)ctx;
+    utils_atomic_load_acquire_size_t(&pool->stats.alloc_count, arg_out);
+    return UMF_RESULT_SUCCESS;
+}
+
+static const umf_ctl_node_t CTL_NODE(stats)[] = {CTL_LEAF_RO(alloc_count),
+                                                 CTL_NODE_END};
+
 umf_ctl_node_t CTL_NODE(pool)[] = {CTL_LEAF_SUBTREE2(by_handle, by_handle_pool),
                                    CTL_LEAF_SUBTREE(default), CTL_NODE_END};
+
+static void ctl_init(void) {
+    utils_mutex_init(&ctl_mtx);
+    CTL_REGISTER_MODULE(&umf_pool_ctl_root, stats);
+}
 
 static umf_result_t umfDefaultCtlPoolHandle(void *hPool, int operationType,
                                             const char *name, void *arg,
@@ -160,6 +197,7 @@ static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
     pool->flags = flags;
     pool->ops = *ops;
     pool->tag = NULL;
+    memset(&pool->stats, 0, sizeof(pool->stats));
 
     if (NULL == pool->ops.ext_ctl) {
         pool->ops.ext_ctl = umfDefaultCtlPoolHandle;
@@ -285,23 +323,47 @@ umf_result_t umfPoolCreate(const umf_memory_pool_ops_t *ops,
 
 void *umfPoolMalloc(umf_memory_pool_handle_t hPool, size_t size) {
     UMF_CHECK((hPool != NULL), NULL);
-    return hPool->ops.malloc(hPool->pool_priv, size);
+    void *ret = hPool->ops.malloc(hPool->pool_priv, size);
+    if (!ret) {
+        return NULL;
+    }
+
+    utils_atomic_increment_size_t(&hPool->stats.alloc_count);
+    return ret;
 }
 
 void *umfPoolAlignedMalloc(umf_memory_pool_handle_t hPool, size_t size,
                            size_t alignment) {
     UMF_CHECK((hPool != NULL), NULL);
-    return hPool->ops.aligned_malloc(hPool->pool_priv, size, alignment);
+    void *ret = hPool->ops.aligned_malloc(hPool->pool_priv, size, alignment);
+    if (!ret) {
+        return NULL;
+    }
+
+    utils_atomic_increment_size_t(&hPool->stats.alloc_count);
+    return ret;
 }
 
 void *umfPoolCalloc(umf_memory_pool_handle_t hPool, size_t num, size_t size) {
     UMF_CHECK((hPool != NULL), NULL);
-    return hPool->ops.calloc(hPool->pool_priv, num, size);
+    void *ret = hPool->ops.calloc(hPool->pool_priv, num, size);
+    if (!ret) {
+        return NULL;
+    }
+
+    utils_atomic_increment_size_t(&hPool->stats.alloc_count);
+    return ret;
 }
 
 void *umfPoolRealloc(umf_memory_pool_handle_t hPool, void *ptr, size_t size) {
     UMF_CHECK((hPool != NULL), NULL);
-    return hPool->ops.realloc(hPool->pool_priv, ptr, size);
+    void *ret = hPool->ops.realloc(hPool->pool_priv, ptr, size);
+    if (size == 0 && ret == NULL && ptr != NULL) { // this is free(ptr)
+        utils_atomic_decrement_size_t(&hPool->stats.alloc_count);
+    } else if (ptr == NULL && ret != NULL) { // this is malloc(size)
+        utils_atomic_increment_size_t(&hPool->stats.alloc_count);
+    }
+    return ret;
 }
 
 size_t umfPoolMallocUsableSize(umf_memory_pool_handle_t hPool,
@@ -312,7 +374,15 @@ size_t umfPoolMallocUsableSize(umf_memory_pool_handle_t hPool,
 
 umf_result_t umfPoolFree(umf_memory_pool_handle_t hPool, void *ptr) {
     UMF_CHECK((hPool != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
-    return hPool->ops.free(hPool->pool_priv, ptr);
+    umf_result_t ret = hPool->ops.free(hPool->pool_priv, ptr);
+
+    if (ret != UMF_RESULT_SUCCESS) {
+        return ret;
+    }
+    if (ptr != NULL) {
+        utils_atomic_decrement_size_t(&hPool->stats.alloc_count);
+    }
+    return ret;
 }
 
 umf_result_t umfPoolGetLastAllocationError(umf_memory_pool_handle_t hPool) {

@@ -83,7 +83,11 @@ bool isCallocSupported(umf_memory_pool_handle_t hPool) {
     return supported;
 }
 
-bool isAlignedAllocSupported(umf_memory_pool_handle_t hPool) {
+bool isAlignedAllocSupported([[maybe_unused]] umf_memory_pool_handle_t hPool) {
+#ifdef _WIN32
+    // On Windows, aligned allocation is not supported
+    return false;
+#else
     static constexpr size_t allocSize = 8;
     static constexpr size_t alignment = 8;
     auto *ptr = umfPoolAlignedMalloc(hPool, allocSize, alignment);
@@ -97,6 +101,7 @@ bool isAlignedAllocSupported(umf_memory_pool_handle_t hPool) {
     } else {
         throw std::runtime_error("AlignedMalloc failed with unexpected error");
     }
+#endif
 }
 
 typedef struct pool_base_t {
