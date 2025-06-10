@@ -264,7 +264,8 @@ err_free_bitmaps:
         hwloc_bitmap_free(out_nodeset[i]);
     }
 err_free_list:
-    umf_ba_global_free(*out_nodeset);
+    // free the array of bitmap pointers
+    umf_ba_global_free(out_nodeset);
     os_provider->nodeset_len = 0;
     return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
 }
