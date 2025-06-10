@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2025 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -102,4 +102,46 @@ TEST_F(numaNodesTest, getIdInvalid) {
     ASSERT_NE(hTarget, nullptr);
     ret = umfMemtargetGetId(hTarget, NULL);
     EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, memTargetInvalidAdd) {
+    umf_const_memspace_handle_t const_memspace = umfMemspaceHostAllGet();
+    umf_memspace_handle_t memspace = nullptr;
+    umf_result_t ret = umfMemspaceClone(const_memspace, &memspace);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(memspace, nullptr);
+    umf_const_memtarget_handle_t memtarget =
+        umfMemspaceMemtargetGet(memspace, 0);
+
+    ret = umfMemspaceMemtargetAdd(memspace, nullptr);
+    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    ret = umfMemspaceMemtargetAdd(nullptr, memtarget);
+    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    // Try to add the same memtarget again
+    ret = umfMemspaceMemtargetAdd(memspace, memtarget);
+    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    ret = umfMemspaceDestroy(memspace);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+}
+
+TEST_F(test, memTargetInvalidRemove) {
+    umf_const_memspace_handle_t const_memspace = umfMemspaceHostAllGet();
+    umf_memspace_handle_t memspace = nullptr;
+    umf_result_t ret = umfMemspaceClone(const_memspace, &memspace);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(memspace, nullptr);
+    umf_const_memtarget_handle_t memtarget =
+        umfMemspaceMemtargetGet(memspace, 0);
+
+    ret = umfMemspaceMemtargetRemove(memspace, nullptr);
+    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    ret = umfMemspaceMemtargetRemove(nullptr, memtarget);
+    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    ret = umfMemspaceDestroy(memspace);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
 }
