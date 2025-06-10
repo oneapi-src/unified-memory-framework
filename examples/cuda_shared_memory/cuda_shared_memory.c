@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -146,7 +146,7 @@ int main(void) {
 
     // Allocate some memory from the pool
     int *ptr = umfPoolMalloc(cu_disjoint_memory_pool, sizeof(int));
-    if (res != UMF_RESULT_SUCCESS) {
+    if (ptr == NULL) {
         fprintf(stderr, "Failed to allocate memory from the memory pool!\n");
         ret = -1;
         goto memory_pool_destroy;
