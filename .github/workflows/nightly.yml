@@ -207,7 +207,7 @@ jobs:
      VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
    strategy:
      matrix:
-       os: ['windows-2019', 'windows-2022']
+       os: ['windows-2022', 'windows-2025']
        build_type: [Debug]
        compiler: [{c: icx, cxx: icx}]
        shared_library: ['ON', 'OFF']

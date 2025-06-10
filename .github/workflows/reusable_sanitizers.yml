@@ -82,8 +82,8 @@ jobs:
         compiler: [{c: cl, cxx: cl}, {c: clang-cl, cxx: clang-cl}]
         # Only ASAN is supported
         sanitizers: [{asan: ON}]
-    name: Sanitizers (windows-2022, compilers=${{matrix.compiler.c}}/${{matrix.compiler.cxx}}, asan=${{matrix.sanitizers.asan}})
-    runs-on: windows-2022
+    name: Sanitizers (windows-latest, compilers=${{matrix.compiler.c}}/${{matrix.compiler.cxx}}, asan=${{matrix.sanitizers.asan}})
+    runs-on: windows-latest
 
     steps:
     - name: Checkout

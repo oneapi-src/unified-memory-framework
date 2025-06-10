@@ -126,7 +126,7 @@ jobs:
     env:
       VCPKG_PATH: "${{github.workspace}}/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/vcpkg/packages/jemalloc_x64-windows"
       VCPKG_BIN_PATH: "${{github.workspace}}/vcpkg/packages/hwloc_x64-windows/bin;${{github.workspace}}/vcpkg/packages/tbb_x64-windows/bin;${{github.workspace}}/vcpkg/packages/jemalloc_x64-windows/bin"
-    runs-on: "windows-2022"
+    runs-on: "windows-latest"
 
     steps:
     - name: Checkout "tag" UMF version

@@ -235,8 +235,9 @@ jobs:
       VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
       VCPKG_PATH_BIN: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows/bin;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows/bin;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows/bin"
     strategy:
+      # TODO: add '3.14.0-win64-x64' CMake testing
       matrix:
-        os: ['windows-2019', 'windows-2022']
+        os: ['windows-2022', 'windows-2025']
         build_type: [Debug, Release]
         compiler: [{c: cl, cxx: cl}]
         shared_library: ['ON', 'OFF']
@@ -244,16 +245,18 @@ jobs:
         cuda_provider: ['ON']
         cmake_ver: ['default']
         include:
-          - os: 'windows-2019'
-            # clang build fails on Windows 2022
-            build_type: Release
+          # clang-cl works well with Ninja, Debug build
+          # For VS generator it produces build errors not related to UMF
+          - os: 'windows-2025'
+            build_type: Debug
             compiler: {c: clang-cl, cxx: clang-cl}
+            extra_build_options: '-G Ninja'
             shared_library: 'ON'
             level_zero_provider: 'ON'
             cuda_provider: 'ON'
-            toolset: "-T ClangCL"
-            cmake_ver: '3.14.0-win64-x64'
-          - os: 'windows-2022'
+            cmake_ver: 'default'
+          # Custom CMake and umfd enabled
+          - os: 'windows-2025'
             build_type: Release
             compiler: {c: cl, cxx: cl}
             shared_library: 'ON'
@@ -261,7 +264,8 @@ jobs:
             cuda_provider: 'ON'
             umfd_lib: 'ON'
             cmake_ver: '3.28.0-windows-x86_64'
-          - os: 'windows-2022'
+          # L0/CUDA providers disabled
+          - os: 'windows-2025'
             build_type: Release
             compiler: {c: cl, cxx: cl}
             shared_library: 'ON'
@@ -322,7 +326,7 @@ jobs:
       run: >
         cmake
         -B ${{env.BUILD_DIR}}
-        ${{matrix.toolset}}
+        ${{matrix.extra_build_options || ''}}
         -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
         -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
         -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
@@ -382,7 +386,7 @@ jobs:
       matrix:
         build_type: [Release]
 
-    runs-on: 'windows-2022'
+    runs-on: 'windows-latest'
 
     steps:
     - name: Checkout
@@ -424,7 +428,7 @@ jobs:
       matrix:
         build_type: [Release]
 
-    runs-on: 'windows-2022'
+    runs-on: 'windows-latest'
 
     steps:
     - name: Checkout
@@ -466,7 +470,7 @@ jobs:
       matrix:
         build_type: [Release]
 
-    runs-on: 'windows-2022'
+    runs-on: 'windows-latest'
 
     steps:
     - name: Checkout
