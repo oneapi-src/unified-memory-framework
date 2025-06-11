@@ -331,18 +331,26 @@ static void free_leaf(struct critnib *__restrict c,
         return;
     }
 
+    // k should be added to the c->deleted_leaf list here
+    // or in critnib_release() when the reference count drops to 0.
+    utils_atomic_store_release_u8(&k->pending_deleted_leaf, 1);
+
     if (c->cb_free_leaf) {
         uint64_t ref_count;
         utils_atomic_load_acquire_u64(&k->ref_count, &ref_count);
         if (ref_count > 0) {
-            // k will be added to c->deleted_leaf in critnib_release()
+            // k will be added to the c->deleted_leaf list in critnib_release()
             // when the reference count drops to 0.
-            utils_atomic_store_release_u8(&k->pending_deleted_leaf, 1);
             return;
         }
     }
 
-    add_to_deleted_leaf_list(c, k);
+    uint8_t expected = 1;
+    uint8_t desired = 0;
+    if (utils_compare_exchange_u8(&k->pending_deleted_leaf, &expected,
+                                  &desired)) {
+        add_to_deleted_leaf_list(c, k);
+    }
 }
 
 /*
@@ -392,8 +400,8 @@ int critnib_insert(struct critnib *c, word key, void *value, int update) {
     utils_atomic_store_release_u8(&k->pending_deleted_leaf, 0);
 
     if (c->cb_free_leaf) {
-        // mark the leaf as valid (ref_count == 1)
-        utils_atomic_store_release_u64(&k->ref_count, 1ULL);
+        // mark the leaf as valid (ref_count == 2)
+        utils_atomic_store_release_u64(&k->ref_count, 2ULL);
     } else {
         // the reference counter is not used in this case
         utils_atomic_store_release_u64(&k->ref_count, 0ULL);
@@ -609,20 +617,25 @@ int critnib_release(struct critnib *c, void *ref) {
     }
 
     /* decrement the reference count */
-    if (utils_atomic_decrement_u64(&k->ref_count) == 0) {
+    if (utils_atomic_decrement_u64(&k->ref_count) == 1) {
         void *to_be_freed = NULL;
         utils_atomic_load_acquire_ptr(&k->to_be_freed, &to_be_freed);
         if (to_be_freed) {
             utils_atomic_store_release_ptr(&k->to_be_freed, NULL);
             c->cb_free_leaf(c->leaf_allocator, to_be_freed);
         }
-        uint8_t pending_deleted_leaf;
-        utils_atomic_load_acquire_u8(&k->pending_deleted_leaf,
-                                     &pending_deleted_leaf);
-        if (pending_deleted_leaf) {
-            utils_atomic_store_release_u8(&k->pending_deleted_leaf, 0);
+
+        // mark the leaf as not used (ref_count == 0)
+        utils_atomic_store_release_u64(&k->ref_count, 0ULL);
+
+        uint8_t expected = 1;
+        uint8_t desired = 0;
+        if (utils_compare_exchange_u8(&k->pending_deleted_leaf, &expected,
+                                      &desired)) {
             add_to_deleted_leaf_list(c, k);
         }
+
+        return 0;
     }
 
 #ifndef NDEBUG
