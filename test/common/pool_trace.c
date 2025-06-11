@@ -31,7 +31,10 @@ static umf_result_t traceInitialize(umf_memory_provider_handle_t provider,
     return UMF_RESULT_SUCCESS;
 }
 
-static void traceFinalize(void *pool) { free(pool); }
+static umf_result_t traceFinalize(void *pool) {
+    free(pool);
+    return UMF_RESULT_SUCCESS;
+}
 
 static void *traceMalloc(void *pool, size_t size) {
     trace_pool_t *trace_pool = (trace_pool_t *)pool;

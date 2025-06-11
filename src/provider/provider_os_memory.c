@@ -702,7 +702,7 @@ err_free_os_provider:
     return ret;
 }
 
-static void os_finalize(void *provider) {
+static umf_result_t os_finalize(void *provider) {
     os_memory_provider_t *os_provider = provider;
 
     if (os_provider->fd > 0) {
@@ -722,6 +722,7 @@ static void os_finalize(void *provider) {
     }
     hwloc_topology_destroy(os_provider->topo);
     umf_ba_global_free(os_provider);
+    return UMF_RESULT_SUCCESS;
 }
 
 // TODO: this function should be re-enabled when CTL is implemented

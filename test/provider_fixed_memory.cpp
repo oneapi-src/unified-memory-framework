@@ -537,14 +537,16 @@ TEST_P(FixedProviderTest, pool_from_ptr_whole_size_success) {
     umf_result = umfPoolFree(poolFromPtr, ptr);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
-    umfPoolDestroy(poolFromPtr);
+    umf_result = umfPoolDestroy(poolFromPtr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     umfMemoryProviderDestroy(providerFromPtr);
     umfFixedMemoryProviderParamsDestroy(params);
 
     umf_result = umfPoolFree(proxyFixedPool, ptr_for_pool);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
-    umfPoolDestroy(proxyFixedPool);
+    umf_result = umfPoolDestroy(proxyFixedPool);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 }
 
 TEST_P(FixedProviderTest, pool_from_ptr_half_size_success) {
@@ -590,12 +592,14 @@ TEST_P(FixedProviderTest, pool_from_ptr_half_size_success) {
     umf_result = umfPoolFree(poolFromPtr, ptr);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
-    umfPoolDestroy(poolFromPtr);
+    umf_result = umfPoolDestroy(poolFromPtr);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     umfMemoryProviderDestroy(providerFromPtr);
     umfFixedMemoryProviderParamsDestroy(params);
 
     umf_result = umfPoolFree(proxyFixedPool, ptr_for_pool);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
-    umfPoolDestroy(proxyFixedPool);
+    umf_result = umfPoolDestroy(proxyFixedPool);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 }

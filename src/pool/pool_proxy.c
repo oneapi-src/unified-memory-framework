@@ -39,7 +39,10 @@ proxy_pool_initialize(umf_memory_provider_handle_t hProvider,
     return UMF_RESULT_SUCCESS;
 }
 
-static void proxy_pool_finalize(void *pool) { umf_ba_global_free(pool); }
+static umf_result_t proxy_pool_finalize(void *pool) {
+    umf_ba_global_free(pool);
+    return UMF_RESULT_SUCCESS;
+}
 
 static void *proxy_aligned_malloc(void *pool, size_t size, size_t alignment) {
     assert(pool);

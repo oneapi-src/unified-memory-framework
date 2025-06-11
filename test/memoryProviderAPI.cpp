@@ -169,6 +169,11 @@ TEST_F(test, memoryProviderOpsNullAllIPCFields) {
     umfMemoryProviderDestroy(hProvider);
 }
 
+TEST_F(test, memoryProviderNullDelete) {
+    auto ret = umfMemoryProviderDestroy(nullptr);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+}
+
 ////////////////// Negative test cases /////////////////
 
 TEST_F(test, memoryProviderCreateNullOps) {

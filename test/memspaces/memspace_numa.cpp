@@ -71,7 +71,8 @@ TEST_F(numaNodesTest, createDestroy) {
         EXPECT_NE(umfMemspaceMemtargetGet(hMemspace, i), nullptr);
     }
 
-    umfMemspaceDestroy(hMemspace);
+    ret = umfMemspaceDestroy(hMemspace);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 }
 
 TEST_F(numaNodesTest, createInvalidNullArray) {
@@ -102,7 +103,8 @@ TEST_F(memspaceNumaTest, providerFromNumaMemspace) {
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
     ASSERT_NE(hProvider, nullptr);
 
-    umfMemoryProviderDestroy(hProvider);
+    ret = umfMemoryProviderDestroy(hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 }
 
 TEST_F(memspaceNumaTest, memtargetsInvalid) {
@@ -157,9 +159,12 @@ TEST_F(memspaceNumaTest, memspaceCopyTarget) {
     ret = umfMemoryProviderFree(hProvider2, ptr2, SIZE_4K);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 
-    umfMemoryProviderDestroy(hProvider1);
-    umfMemoryProviderDestroy(hProvider2);
-    umfMemspaceDestroy(hMemspaceCopy);
+    ret = umfMemoryProviderDestroy(hProvider1);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ret = umfMemoryProviderDestroy(hProvider2);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ret = umfMemspaceDestroy(hMemspaceCopy);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 }
 
 TEST_F(memspaceNumaTest, memspaceDeleteTarget) {
@@ -216,9 +221,12 @@ TEST_F(memspaceNumaTest, memspaceDeleteTarget) {
     ret = umfMemoryProviderFree(hProvider2, ptr2, SIZE_4K);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 
-    umfMemoryProviderDestroy(hProvider1);
-    umfMemoryProviderDestroy(hProvider2);
-    umfMemspaceDestroy(hMemspaceCopy);
+    ret = umfMemoryProviderDestroy(hProvider1);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ret = umfMemoryProviderDestroy(hProvider2);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ret = umfMemspaceDestroy(hMemspaceCopy);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 }
 
 TEST_F(memspaceNumaProviderTest, allocFree) {
@@ -277,7 +285,8 @@ TEST_F(numaNodesCapacityTest, CapacityFilter) {
         ASSERT_LT(capacity, filter_size);
     }
 
-    umfMemspaceDestroy(hMemspace);
+    ret = umfMemspaceDestroy(hMemspace);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 }
 
 TEST_F(numaNodesTest, idfilter) {
@@ -308,7 +317,8 @@ TEST_F(numaNodesTest, idfilter) {
             ids.erase(it);
         }
     }
-    umfMemspaceDestroy(hMemspace);
+    ret = umfMemspaceDestroy(hMemspace);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 }
 
 int customfilter(umf_const_memspace_handle_t memspace,
@@ -356,7 +366,8 @@ TEST_F(numaNodesTest, customfilter) {
         }
     }
     ASSERT_EQ(vec.size(), 0);
-    umfMemspaceDestroy(hMemspace);
+    ret = umfMemspaceDestroy(hMemspace);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 }
 
 int invalidFilter(umf_const_memspace_handle_t memspace,
@@ -393,5 +404,6 @@ TEST_F(numaNodesTest, invalidFilters) {
 
     ret = umfMemspaceUserFilter(hMemspace, invalidFilter, nullptr);
     ASSERT_EQ(ret, UMF_RESULT_ERROR_USER_SPECIFIC);
-    umfMemspaceDestroy(hMemspace);
+    ret = umfMemspaceDestroy(hMemspace);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 }

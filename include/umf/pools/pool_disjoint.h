@@ -35,7 +35,8 @@ umfDisjointPoolSharedLimitsCreate(size_t MaxSize);
 
 /// @brief Destroy previously created pool limits struct.
 /// @param hSharedLimits handle to the shared limits struct.
-void umfDisjointPoolSharedLimitsDestroy(
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+umf_result_t umfDisjointPoolSharedLimitsDestroy(
     umf_disjoint_pool_shared_limits_handle_t hSharedLimits);
 
 /// @brief  Create a struct to store parameters of disjoint pool.

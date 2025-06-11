@@ -48,8 +48,11 @@ void test_disjoint_pool_shared_limits(void) {
 
     umfPoolDestroy(pool);
     umfMemoryProviderDestroy(provider);
-    umfDisjointPoolSharedLimitsDestroy(limits);
-    umfDisjointPoolParamsDestroy(params);
+    retp = umfDisjointPoolSharedLimitsDestroy(limits);
+    UT_ASSERTeq(retp, UMF_RESULT_SUCCESS);
+
+    retp = umfDisjointPoolParamsDestroy(params);
+    UT_ASSERTeq(retp, UMF_RESULT_SUCCESS);
 }
 
 int main(void) {

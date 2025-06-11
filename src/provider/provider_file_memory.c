@@ -305,12 +305,13 @@ err_free_file_provider:
     return ret;
 }
 
-static void file_finalize(void *provider) {
+static umf_result_t file_finalize(void *provider) {
     file_memory_provider_t *file_provider = provider;
 
     uintptr_t key = 0;
     uintptr_t rkey = 0;
     void *rvalue = NULL;
+    umf_result_t ret = UMF_RESULT_SUCCESS;
     while (1 == critnib_find(file_provider->mmaps, key, FIND_G, &rkey, &rvalue,
                              NULL)) {
         utils_munmap((void *)rkey, (size_t)rvalue);
@@ -319,11 +320,17 @@ static void file_finalize(void *provider) {
     }
 
     utils_mutex_destroy_not_free(&file_provider->lock);
-    utils_close_fd(file_provider->fd);
+
+    if (utils_close_fd(file_provider->fd)) {
+        LOG_PERR("closing file descriptor %d failed", file_provider->fd);
+        ret = UMF_RESULT_ERROR_UNKNOWN;
+    }
     critnib_delete(file_provider->fd_offset_map);
     critnib_delete(file_provider->mmaps);
     coarse_delete(file_provider->coarse);
     umf_ba_global_free(file_provider);
+
+    return ret;
 }
 
 static umf_result_t file_mmap_aligned(file_memory_provider_t *file_provider,

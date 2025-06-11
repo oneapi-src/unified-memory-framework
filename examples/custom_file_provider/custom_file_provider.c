@@ -104,11 +104,12 @@ cleanup_malloc:
 }
 
 // Function to deinitialize the file provider
-static void file_deinit(void *provider) {
+static umf_result_t file_deinit(void *provider) {
     file_provider_t *file_provider = (file_provider_t *)provider;
     munmap(file_provider->ptr, ADDRESS_RESERVATION);
     close(file_provider->fd);
     free(file_provider);
+    return UMF_RESULT_SUCCESS;
 }
 
 // Function to allocate memory from the file provider

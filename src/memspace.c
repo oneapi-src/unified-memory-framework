@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2024 Intel Corporation
+ * Copyright (C) 2023-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -130,7 +130,7 @@ umf_result_t umfMemspaceNew(umf_memspace_handle_t *hMemspace) {
     return UMF_RESULT_SUCCESS;
 }
 
-void umfMemspaceDestroy(umf_memspace_handle_t memspace) {
+umf_result_t umfMemspaceDestroy(umf_memspace_handle_t memspace) {
     assert(memspace);
     for (size_t i = 0; i < memspace->size; i++) {
         umfMemtargetDestroy(memspace->nodes[i]);
@@ -138,6 +138,7 @@ void umfMemspaceDestroy(umf_memspace_handle_t memspace) {
 
     umf_ba_global_free(memspace->nodes);
     umf_ba_global_free(memspace);
+    return UMF_RESULT_SUCCESS;
 }
 
 umf_result_t umfMemspaceClone(umf_const_memspace_handle_t hMemspace,

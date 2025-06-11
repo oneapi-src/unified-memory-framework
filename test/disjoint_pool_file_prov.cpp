@@ -129,9 +129,12 @@ TEST_P(FileWithMemoryStrategyTest, disjointFileMallocPool_simple1) {
         }
     }
 
-    umfPoolDestroy(pool);
-    umfMemoryProviderDestroy(file_memory_provider);
-    umfMemoryProviderDestroy(malloc_memory_provider);
+    umf_result = umfPoolDestroy(pool);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result = umfMemoryProviderDestroy(file_memory_provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result = umfMemoryProviderDestroy(malloc_memory_provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 }
 
 TEST_P(FileWithMemoryStrategyTest, disjointFileMallocPool_simple2) {
@@ -202,9 +205,12 @@ TEST_P(FileWithMemoryStrategyTest, disjointFileMallocPool_simple2) {
         }
     }
 
-    umfPoolDestroy(pool);
-    umfMemoryProviderDestroy(file_memory_provider);
-    umfMemoryProviderDestroy(malloc_memory_provider);
+    umf_result = umfPoolDestroy(pool);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result = umfMemoryProviderDestroy(file_memory_provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result = umfMemoryProviderDestroy(malloc_memory_provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 }
 
 struct alloc_ptr_size {
@@ -358,6 +364,8 @@ TEST_P(FileWithMemoryStrategyTest, disjointFileMMapPool_random) {
         allocs.erase(allocs.begin());
     }
 
-    umfPoolDestroy(pool);
-    umfMemoryProviderDestroy(file_memory_provider);
+    umf_result = umfPoolDestroy(pool);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result = umfMemoryProviderDestroy(file_memory_provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 }

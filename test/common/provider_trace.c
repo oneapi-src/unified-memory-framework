@@ -28,13 +28,18 @@ static umf_result_t traceInitialize(const void *params, void **pool) {
     return UMF_RESULT_SUCCESS;
 }
 
-static void traceFinalize(void *provider) {
+static umf_result_t traceFinalize(void *provider) {
     umf_provider_trace_params_t *traceProvider =
         (umf_provider_trace_params_t *)provider;
     if (traceProvider->own_upstream) {
-        umfMemoryProviderDestroy(traceProvider->hUpstreamProvider);
+        umf_result_t ret =
+            umfMemoryProviderDestroy(traceProvider->hUpstreamProvider);
+        if (ret != UMF_RESULT_SUCCESS) {
+            return ret;
+        }
     }
     free(provider);
+    return UMF_RESULT_SUCCESS;
 }
 
 static umf_result_t traceAlloc(void *provider, size_t size, size_t alignment,

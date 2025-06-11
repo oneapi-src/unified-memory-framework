@@ -81,7 +81,8 @@ TEST_F(test, mempolicyDefaultInterleave) {
     EXPECT_EQ(ProviderInternal->numa_flags, HWLOC_MEMBIND_BYNODESET);
     EXPECT_EQ(ProviderInternal->part_size, 0);
     EXPECT_EQ(ProviderInternal->mode, UMF_NUMA_MODE_INTERLEAVE);
-    umfMemoryProviderDestroy(hProvider);
+    ret = umfMemoryProviderDestroy(hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 }
 
 TEST_F(test, mempolicyInterleavePartSize) {
@@ -109,7 +110,8 @@ TEST_F(test, mempolicyInterleavePartSize) {
               HWLOC_MEMBIND_BYNODESET | HWLOC_MEMBIND_STRICT);
     EXPECT_EQ(ProviderInternal->part_size, part_size);
     EXPECT_EQ(ProviderInternal->mode, UMF_NUMA_MODE_INTERLEAVE);
-    umfMemoryProviderDestroy(hProvider);
+    ret = umfMemoryProviderDestroy(hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 }
 
 TEST_F(test, mempolicyDefaultSplit) {
@@ -134,7 +136,8 @@ TEST_F(test, mempolicyDefaultSplit) {
               HWLOC_MEMBIND_BYNODESET | HWLOC_MEMBIND_STRICT);
     EXPECT_EQ(ProviderInternal->partitions_len, ProviderInternal->nodeset_len);
     EXPECT_EQ(ProviderInternal->mode, UMF_NUMA_MODE_SPLIT);
-    umfMemoryProviderDestroy(hProvider);
+    ret = umfMemoryProviderDestroy(hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 }
 
 TEST_F(test, mempolicyCustomSplit) {
@@ -166,7 +169,8 @@ TEST_F(test, mempolicyCustomSplit) {
     EXPECT_EQ(ProviderInternal->partitions_weight_sum, 2);
     EXPECT_EQ(ProviderInternal->partitions[0].target,
               ProviderInternal->partitions[1].target);
-    umfMemoryProviderDestroy(hProvider);
+    ret = umfMemoryProviderDestroy(hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 }
 
 TEST_F(test, mempolicySplitNegative) {

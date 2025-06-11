@@ -47,8 +47,9 @@ typedef struct umf_memory_pool_ops_t {
     ///
     /// @brief Finalizes memory pool
     /// @param pool pool to finalize
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
     ///
-    void (*finalize)(void *pool);
+    umf_result_t (*finalize)(void *pool);
 
     ///
     /// @brief Allocates \p size bytes of uninitialized storage from \p pool
