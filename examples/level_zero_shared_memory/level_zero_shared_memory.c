@@ -157,7 +157,7 @@ int main(void) {
 
     // Allocate some memory from the pool
     int *ptr = umfPoolMalloc(ze_disjoint_memory_pool, sizeof(int));
-    if (res != UMF_RESULT_SUCCESS) {
+    if (ptr == NULL) {
         fprintf(stderr, "Failed to allocate memory from the memory pool!\n");
         ret = -1;
         goto memory_pool_destroy;
