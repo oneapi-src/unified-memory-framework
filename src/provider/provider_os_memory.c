@@ -396,7 +396,7 @@ create_fd_for_mmap(const umf_os_memory_provider_params_t *in_params,
                                        provider->shm_name)) {
             LOG_ERR("invalid name of a shared memory file: %s",
                     in_params->shm_name);
-            return -1;
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
         }
 
         /* create a new shared memory file */
@@ -407,7 +407,7 @@ create_fd_for_mmap(const umf_os_memory_provider_params_t *in_params,
                     "memory mapping failed",
                     in_params->shm_name, provider->max_size_fd);
             provider->shm_name[0] = '\0'; // zero shm_name
-            return -1;
+            return UMF_RESULT_ERROR_UNKNOWN;
         }
 
         LOG_DEBUG("created the shared memory file /dev/shm/%s of size %zu",
