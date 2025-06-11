@@ -16,8 +16,9 @@ using namespace umf_test;
 TEST_F(test, ctl_debug_read_from_string) {
     initialize_debug_ctl();
     auto ctl_handler = get_debug_ctl();
-    ctl_load_config_from_string(ctl_handler, NULL,
-                                "debug.heap.alloc_pattern=1");
+    ASSERT_EQ(ctl_load_config_from_string(ctl_handler, NULL,
+                                          "debug.heap.alloc_pattern=1"),
+              UMF_RESULT_SUCCESS);
 
     int value = 0;
     ctl_query(ctl_handler, NULL, CTL_QUERY_PROGRAMMATIC,
@@ -26,16 +27,18 @@ TEST_F(test, ctl_debug_read_from_string) {
     ASSERT_EQ(value, 1);
 
     // Test setting alloc_pattern to 2
-    ctl_load_config_from_string(ctl_handler, NULL,
-                                "debug.heap.alloc_pattern=2");
+    ASSERT_EQ(ctl_load_config_from_string(ctl_handler, NULL,
+                                          "debug.heap.alloc_pattern=2"),
+              UMF_RESULT_SUCCESS);
     ctl_query(ctl_handler, NULL, CTL_QUERY_PROGRAMMATIC,
               "debug.heap.alloc_pattern", CTL_QUERY_READ, &value,
               sizeof(value));
     ASSERT_EQ(value, 2);
 
     // Test setting alloc_pattern to 0
-    ctl_load_config_from_string(ctl_handler, NULL,
-                                "debug.heap.alloc_pattern=0");
+    ASSERT_EQ(ctl_load_config_from_string(ctl_handler, NULL,
+                                          "debug.heap.alloc_pattern=0"),
+              UMF_RESULT_SUCCESS);
     ctl_query(ctl_handler, NULL, CTL_QUERY_PROGRAMMATIC,
               "debug.heap.alloc_pattern", CTL_QUERY_READ, &value,
               sizeof(value));
@@ -45,13 +48,13 @@ TEST_F(test, ctl_debug_read_from_string) {
     ASSERT_NE(ctl_query(ctl_handler, NULL, CTL_QUERY_PROGRAMMATIC,
                         "debug.heap.non_existent", CTL_QUERY_READ, &value,
                         sizeof(value)),
-              0);
+              UMF_RESULT_SUCCESS);
 
     // Negative test: invalid path
     ASSERT_NE(ctl_query(ctl_handler, NULL, CTL_QUERY_PROGRAMMATIC,
                         "invalid.path.alloc_pattern", CTL_QUERY_READ, &value,
                         sizeof(value)),
-              0);
+              UMF_RESULT_SUCCESS);
 
     debug_ctl_register(ctl_handler);
 }
@@ -74,7 +77,8 @@ TEST_F(test, ctl_debug_read_from_file) {
               0);
     initialize_debug_ctl();
     auto ctl_handler = get_debug_ctl();
-    ASSERT_EQ(ctl_load_config_from_file(ctl_handler, NULL, "config.txt"), 0);
+    ASSERT_EQ(ctl_load_config_from_file(ctl_handler, NULL, "config.txt"),
+              UMF_RESULT_SUCCESS);
 
     int value = 0;
     ctl_query(ctl_handler, NULL, CTL_QUERY_PROGRAMMATIC,

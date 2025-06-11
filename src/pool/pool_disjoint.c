@@ -33,41 +33,43 @@ static char *DEFAULT_NAME = "disjoint";
 struct ctl disjoint_ctl_root;
 static UTIL_ONCE_FLAG ctl_initialized = UTIL_ONCE_FLAG_INIT;
 
-static int CTL_READ_HANDLER(name)(void *ctx, umf_ctl_query_source_t source,
-                                  void *arg, size_t size,
-                                  umf_ctl_index_utlist_t *indexes,
-                                  const char *extra_name,
-                                  umf_ctl_query_type_t queryType) {
+static umf_result_t
+CTL_READ_HANDLER(name)(void *ctx, umf_ctl_query_source_t source, void *arg,
+                       size_t size, umf_ctl_index_utlist_t *indexes,
+                       const char *extra_name, umf_ctl_query_type_t queryType) {
     (void)source, (void)indexes, (void)queryType, (void)extra_name;
     disjoint_pool_t *pool = (disjoint_pool_t *)ctx;
 
     if (arg == NULL) {
-        return -1;
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
     if (size > 0) {
         strncpy((char *)arg, pool->params.name, size - 1);
         ((char *)arg)[size - 1] = '\0';
     }
-    return 0;
+
+    return UMF_RESULT_SUCCESS;
 }
 
 static const struct ctl_argument CTL_ARG(name) = CTL_ARG_STRING(255);
 
-static int CTL_WRITE_HANDLER(name)(void *ctx, umf_ctl_query_source_t source,
-                                   void *arg, size_t size,
-                                   umf_ctl_index_utlist_t *indexes,
-                                   const char *extra_name,
-                                   umf_ctl_query_type_t queryType) {
+static umf_result_t CTL_WRITE_HANDLER(name)(void *ctx,
+                                            umf_ctl_query_source_t source,
+                                            void *arg, size_t size,
+                                            umf_ctl_index_utlist_t *indexes,
+                                            const char *extra_name,
+                                            umf_ctl_query_type_t queryType) {
     (void)source, (void)indexes, (void)queryType, (void)size, (void)extra_name;
     disjoint_pool_t *pool = (disjoint_pool_t *)ctx;
     if (arg == NULL) {
-        return -1;
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
     strncpy(pool->params.name, (char *)arg, sizeof(pool->params.name) - 1);
     pool->params.name[sizeof(pool->params.name) - 1] = '\0';
-    return 0;
+
+    return UMF_RESULT_SUCCESS;
 }
 
 static const umf_ctl_node_t CTL_NODE(disjoint)[] = {CTL_LEAF_RW(name),
