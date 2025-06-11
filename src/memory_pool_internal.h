@@ -24,6 +24,10 @@ extern "C" {
 #include "base_alloc.h"
 #include "utils_concurrency.h"
 
+typedef struct umf_pool_stats {
+    size_t alloc_count;
+} umf_pool_stats_t;
+
 typedef struct umf_memory_pool_t {
     void *pool_priv;
     umf_pool_create_flags_t flags;
@@ -33,6 +37,8 @@ typedef struct umf_memory_pool_t {
 
     utils_mutex_t lock;
     void *tag;
+    // Memory pool statistics
+    umf_pool_stats_t stats;
 
     // ops should be the last due to possible change size in the future
     umf_memory_pool_ops_t ops;
