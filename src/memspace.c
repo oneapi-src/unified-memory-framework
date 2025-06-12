@@ -387,6 +387,13 @@ umfMemspaceMemtargetRemove(umf_memspace_handle_t hMemspace,
     if (!hMemspace || !hMemtarget) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
+
+    // Trying to remove the last memory target from the memspace
+    if (hMemspace->size == 1) {
+        LOG_ERR("Cannot remove the last memory target from the memspace");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     unsigned i;
     for (i = 0; i < hMemspace->size; i++) {
         int cmp;
