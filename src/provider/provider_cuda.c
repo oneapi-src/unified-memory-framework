@@ -529,9 +529,11 @@ static void cu_memory_provider_get_last_native_error(void *provider,
     if (result == CUDA_SUCCESS && error_name != NULL) {
         strncpy(TLS_last_native_error.msg_buff, error_name,
                 TLS_MSG_BUF_LEN - 1);
+        TLS_last_native_error.msg_buff[TLS_MSG_BUF_LEN - 1] = '\0';
     } else {
         strncpy(TLS_last_native_error.msg_buff, "cuGetErrorName() failed",
                 TLS_MSG_BUF_LEN - 1);
+        TLS_last_native_error.msg_buff[TLS_MSG_BUF_LEN - 1] = '\0';
     }
 
     buf_size = strlen(TLS_last_native_error.msg_buff);
