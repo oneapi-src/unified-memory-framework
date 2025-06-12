@@ -1046,6 +1046,45 @@ static umf_memory_pool_ops_t UMF_DISJOINT_POOL_OPS = {
     .ext_ctl = disjoint_pool_ctl,
 };
 
+umf_result_t umfDisjointPoolTrimMemory(void *pool, size_t minSlabsToKeep) {
+    if (pool == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    disjoint_pool_t *hPool = (disjoint_pool_t *)pool;
+
+    for (size_t i = 0; i < hPool->buckets_num; i++) {
+        bucket_t *bucket = hPool->buckets[i];
+        utils_mutex_lock(&bucket->bucket_lock);
+
+        int skip = (int)minSlabsToKeep;
+        // remove empty slabs from the pool
+        slab_list_item_t *it = NULL, *tmp = NULL;
+        LL_FOREACH_SAFE(bucket->available_slabs, it, tmp) {
+            slab_t *slab = it->val;
+            if (slab->num_chunks_allocated == 0) {
+                // skip first minSlabsToKeep slabs from each bucket
+                if (--skip >= 0) {
+                    continue;
+                }
+
+                // remove slab
+                pool_unregister_slab(hPool, slab);
+                DL_DELETE(bucket->available_slabs, it);
+                assert(bucket->available_slabs_num > 0);
+                bucket->available_slabs_num--;
+                destroy_slab(slab);
+
+                // update stats
+                bucket_update_stats(bucket, 0, -1);
+            }
+        }
+
+        utils_mutex_unlock(&bucket->bucket_lock);
+    }
+
+    return UMF_RESULT_SUCCESS;
+}
+
 const umf_memory_pool_ops_t *umfDisjointPoolOps(void) {
     return &UMF_DISJOINT_POOL_OPS;
 }

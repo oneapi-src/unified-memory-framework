@@ -107,6 +107,12 @@ umf_result_t
 umfDisjointPoolParamsSetName(umf_disjoint_pool_params_handle_t hParams,
                              const char *name);
 
+/// @brief Tries to release unused pooled memory back to the provider.
+/// @param pool handle to the memory pool.
+/// @param minSlabsToKeep minimum number of slabs to keep.
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+umf_result_t umfDisjointPoolTrimMemory(void *pool, size_t minSlabsToKeep);
+
 const umf_memory_pool_ops_t *umfDisjointPoolOps(void);
 
 #ifdef __cplusplus
