@@ -45,7 +45,10 @@ static int CTL_READ_HANDLER(name)(void *ctx, umf_ctl_query_source_t source,
         return -1;
     }
 
-    strncpy((char *)arg, pool->params.name, size);
+    if (size > 0) {
+        strncpy((char *)arg, pool->params.name, size - 1);
+        ((char *)arg)[size - 1] = '\0';
+    }
     return 0;
 }
 
@@ -63,6 +66,7 @@ static int CTL_WRITE_HANDLER(name)(void *ctx, umf_ctl_query_source_t source,
     }
 
     strncpy(pool->params.name, (char *)arg, sizeof(pool->params.name) - 1);
+    pool->params.name[sizeof(pool->params.name) - 1] = '\0';
     return 0;
 }
 
@@ -1089,6 +1093,7 @@ umfDisjointPoolParamsCreate(umf_disjoint_pool_params_handle_t *hParams) {
     };
 
     strncpy(params->name, DEFAULT_NAME, sizeof(params->name) - 1);
+    params->name[sizeof(params->name) - 1] = '\0';
 
     *hParams = params;
     return UMF_RESULT_SUCCESS;
@@ -1190,5 +1195,6 @@ umfDisjointPoolParamsSetName(umf_disjoint_pool_params_handle_t hParams,
     }
 
     strncpy(hParams->name, name, sizeof(hParams->name) - 1);
+    hParams->name[sizeof(hParams->name) - 1] = '\0';
     return UMF_RESULT_SUCCESS;
 }
