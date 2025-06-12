@@ -20,9 +20,8 @@
 umf_result_t umfMemtargetCreate(const umf_memtarget_ops_t *ops, void *params,
                                 umf_memtarget_handle_t *memoryTarget) {
     libumfInit();
-    if (!ops || !memoryTarget) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
+    assert(ops);
+    assert(memoryTarget);
 
     umf_memtarget_handle_t target =
         umf_ba_global_alloc(sizeof(umf_memtarget_t));
@@ -93,9 +92,9 @@ umf_result_t umfMemtargetGetCapacity(umf_const_memtarget_handle_t memoryTarget,
 umf_result_t umfMemtargetGetBandwidth(umf_memtarget_handle_t srcMemoryTarget,
                                       umf_memtarget_handle_t dstMemoryTarget,
                                       size_t *bandwidth) {
-    if (!srcMemoryTarget || !dstMemoryTarget || !bandwidth) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
+    assert(srcMemoryTarget);
+    assert(dstMemoryTarget);
+    assert(bandwidth);
 
     return srcMemoryTarget->ops->get_bandwidth(
         srcMemoryTarget->priv, dstMemoryTarget->priv, bandwidth);
@@ -104,9 +103,9 @@ umf_result_t umfMemtargetGetBandwidth(umf_memtarget_handle_t srcMemoryTarget,
 umf_result_t umfMemtargetGetLatency(umf_memtarget_handle_t srcMemoryTarget,
                                     umf_memtarget_handle_t dstMemoryTarget,
                                     size_t *latency) {
-    if (!srcMemoryTarget || !dstMemoryTarget || !latency) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
+    assert(srcMemoryTarget);
+    assert(dstMemoryTarget);
+    assert(latency);
 
     return srcMemoryTarget->ops->get_latency(srcMemoryTarget->priv,
                                              dstMemoryTarget->priv, latency);
