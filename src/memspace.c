@@ -387,6 +387,7 @@ umfMemspaceMemtargetRemove(umf_memspace_handle_t hMemspace,
     if (!hMemspace || !hMemtarget) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
+
     unsigned i;
     for (i = 0; i < hMemspace->size; i++) {
         int cmp;
@@ -407,10 +408,16 @@ umfMemspaceMemtargetRemove(umf_memspace_handle_t hMemspace,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    umf_memtarget_handle_t *newNodes =
-        umf_ba_global_alloc(sizeof(*newNodes) * (hMemspace->size - 1));
-    if (!newNodes) {
-        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    umf_memtarget_handle_t *newNodes = NULL;
+
+    if (hMemspace->size == 1) {
+        LOG_DEBUG("Removing the last memory target from the memspace.");
+    } else {
+        newNodes =
+            umf_ba_global_alloc(sizeof(*newNodes) * (hMemspace->size - 1));
+        if (!newNodes) {
+            return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+        }
     }
 
     for (unsigned j = 0, z = 0; j < hMemspace->size; j++) {

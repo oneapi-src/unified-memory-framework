@@ -145,3 +145,30 @@ TEST_F(test, memTargetInvalidRemove) {
     ret = umfMemspaceDestroy(memspace);
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
 }
+
+TEST_F(test, memTargetRemoveAll) {
+    umf_const_memspace_handle_t const_memspace = umfMemspaceHostAllGet();
+    umf_memspace_handle_t memspace = nullptr;
+    umf_result_t ret = umfMemspaceClone(const_memspace, &memspace);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(memspace, nullptr);
+    umf_const_memtarget_handle_t memtarget = nullptr;
+
+    // Remove all memtargets
+    size_t len = umfMemspaceMemtargetNum(memspace);
+    ASSERT_GT(len, 0);
+    size_t i = len - 1;
+    do {
+        memtarget = umfMemspaceMemtargetGet(memspace, i);
+        EXPECT_NE(memtarget, nullptr);
+        ret = umfMemspaceMemtargetRemove(memspace, memtarget);
+        ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    } while (i-- > 0);
+
+    // Try to remove the last one for the second time
+    ret = umfMemspaceMemtargetRemove(memspace, memtarget);
+    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    ret = umfMemspaceDestroy(memspace);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+}
