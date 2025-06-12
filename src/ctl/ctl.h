@@ -45,10 +45,11 @@ typedef enum ctl_query_source {
     MAX_CTL_QUERY_SOURCE
 } umf_ctl_query_source_t;
 
-typedef int (*node_callback)(void *ctx, umf_ctl_query_source_t type, void *arg,
-                             size_t size, umf_ctl_index_utlist_t *indexes,
-                             const char *extra_name,
-                             umf_ctl_query_type_t query_type);
+typedef umf_result_t (*node_callback)(void *ctx, umf_ctl_query_source_t type,
+                                      void *arg, size_t size,
+                                      umf_ctl_index_utlist_t *indexes,
+                                      const char *extra_name,
+                                      umf_ctl_query_type_t query_type);
 
 enum ctl_node_type {
     CTL_NODE_UNKNOWN,
@@ -115,9 +116,10 @@ struct ctl {
 
 void initialize_global_ctl(void);
 
-int ctl_load_config_from_string(struct ctl *ctl, void *ctx,
-                                const char *cfg_string);
-int ctl_load_config_from_file(struct ctl *ctl, void *ctx, const char *cfg_file);
+umf_result_t ctl_load_config_from_string(struct ctl *ctl, void *ctx,
+                                         const char *cfg_string);
+umf_result_t ctl_load_config_from_file(struct ctl *ctl, void *ctx,
+                                       const char *cfg_file);
 
 /* Use through CTL_REGISTER_MODULE, never directly */
 void ctl_register_module_node(struct ctl *c, const char *name,
@@ -149,9 +151,9 @@ int ctl_arg_string(const void *arg, void *dest, size_t dest_size);
 
 #define CTL_NODE(name, ...) ctl_node_##__VA_ARGS__##_##name
 
-int ctl_query(struct ctl *ctl, void *ctx, umf_ctl_query_source_t source,
-              const char *name, umf_ctl_query_type_t type, void *arg,
-              size_t size);
+umf_result_t ctl_query(struct ctl *ctl, void *ctx,
+                       umf_ctl_query_source_t source, const char *name,
+                       umf_ctl_query_type_t type, void *arg, size_t size);
 
 /* Declaration of a new child node */
 #define CTL_CHILD(name, ...)                                                   \

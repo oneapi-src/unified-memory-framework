@@ -115,9 +115,7 @@ umf_result_t umfCtlSet(const char *name, void *ctx, void *arg, size_t size) {
     }
 
     return ctl_query(NULL, ctx, CTL_QUERY_PROGRAMMATIC, name, CTL_QUERY_WRITE,
-                     arg, size)
-               ? UMF_RESULT_ERROR_UNKNOWN
-               : UMF_RESULT_SUCCESS;
+                     arg, size);
 }
 
 umf_result_t umfCtlExec(const char *name, void *ctx, void *arg, size_t size) {
@@ -133,7 +131,5 @@ umf_result_t umfCtlExec(const char *name, void *ctx, void *arg, size_t size) {
     }
 
     return ctl_query(NULL, ctx, CTL_QUERY_PROGRAMMATIC, name,
-                     CTL_QUERY_RUNNABLE, arg, size)
-               ? UMF_RESULT_ERROR_UNKNOWN
-               : UMF_RESULT_SUCCESS;
+                     CTL_QUERY_RUNNABLE, arg, size);
 }
