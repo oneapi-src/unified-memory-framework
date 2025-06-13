@@ -517,8 +517,9 @@ jobs:
   macos-build:
     strategy:
       matrix:
-        os: ['macos-13', 'macos-14']
         include:
+          - os: macos-13
+            static_hwloc: 'OFF'
           - os: macos-14
             static_hwloc: 'ON'
     env:
@@ -544,7 +545,7 @@ jobs:
       run: brew install jemalloc tbb automake libtool
 
     - name: Install hwloc
-      if: ${{ !matrix.static_hwloc }}
+      if: ${{ matrix.static_hwloc == 'OFF' }}
       run: brew install hwloc
 
     - name: Get UMF version
@@ -565,7 +566,6 @@ jobs:
         -DUMF_BUILD_SHARED_LIBRARY=ON
         -DUMF_TESTS_FAIL_ON_SKIP=ON
         -DUMF_LINK_HWLOC_STATICALLY=${{matrix.static_hwloc}}
-        ${{matrix.static_hwloc}}
 
     - name: Build UMF
       run: cmake --build ${{env.BUILD_DIR}} -j $(sysctl -n hw.logicalcpu)
