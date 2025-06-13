@@ -888,13 +888,19 @@ size_t disjoint_pool_malloc_usable_size(void *pool, const void *ptr) {
             critnib_release(disjoint_pool->known_slabs, ref_slab);
         }
 
-        umf_alloc_info_t allocInfo = {NULL, 0, NULL};
-        umf_result_t ret = umfMemoryTrackerGetAllocInfo(ptr, &allocInfo);
-        if (ret != UMF_RESULT_SUCCESS) {
+        umf_memory_properties_handle_t props = NULL;
+        umf_result_t umf_result = umfGetMemoryPropertiesHandle(ptr, &props);
+        if (umf_result != UMF_RESULT_SUCCESS) {
             return 0;
         }
 
-        return allocInfo.baseSize;
+        if (props == NULL) {
+            TLS_last_allocation_error = UMF_RESULT_ERROR_UNKNOWN;
+            LOG_ERR("failed to get allocation info from the memory tracker");
+            return 0;
+        }
+
+        return props->base_size;
     }
 
     // Get the unaligned pointer
@@ -929,15 +935,21 @@ umf_result_t disjoint_pool_free(void *pool, void *ptr) {
             critnib_release(disjoint_pool->known_slabs, ref_slab);
         }
 
-        umf_alloc_info_t allocInfo = {NULL, 0, NULL};
-        umf_result_t ret = umfMemoryTrackerGetAllocInfo(ptr, &allocInfo);
+        umf_memory_properties_handle_t props = NULL;
+        umf_result_t ret = umfGetMemoryPropertiesHandle(ptr, &props);
         if (ret != UMF_RESULT_SUCCESS) {
             TLS_last_allocation_error = ret;
             LOG_ERR("failed to get allocation info from the memory tracker");
             return ret;
         }
 
-        size_t size = allocInfo.baseSize;
+        if (props == NULL) {
+            TLS_last_allocation_error = UMF_RESULT_ERROR_UNKNOWN;
+            LOG_ERR("failed to get allocation info from the memory tracker");
+            return UMF_RESULT_ERROR_UNKNOWN;
+        }
+
+        size_t size = props->base_size;
         umf_memory_provider_handle_t provider = disjoint_pool->provider;
         ret = umfMemoryProviderFree(provider, ptr, size);
         if (ret != UMF_RESULT_SUCCESS) {
