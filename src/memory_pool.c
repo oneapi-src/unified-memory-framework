@@ -285,7 +285,13 @@ umf_result_t umfFree(void *ptr) {
 }
 
 umf_memory_pool_handle_t umfPoolByPtr(const void *ptr) {
-    return umfMemoryTrackerGetPool(ptr);
+    umf_memory_properties_handle_t props = NULL;
+    umf_result_t ret = umfGetMemoryPropertiesHandle(ptr, &props);
+    if (ret != UMF_RESULT_SUCCESS || props == NULL) {
+        return NULL;
+    }
+
+    return props->pool;
 }
 
 umf_result_t umfPoolGetMemoryProvider(umf_memory_pool_handle_t hPool,
