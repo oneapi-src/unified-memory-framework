@@ -1083,8 +1083,8 @@ umfDisjointPoolParamsCreate(umf_disjoint_pool_params_handle_t *hParams) {
     }
 
     *params = (umf_disjoint_pool_params_t){
-        .slab_min_size = 0,
-        .max_poolable_size = 0,
+        .slab_min_size = 64 * 1024,           // 64K
+        .max_poolable_size = 2 * 1024 * 1024, // 2MB
         .capacity = 0,
         .min_bucket_size = UMF_DISJOINT_POOL_MIN_BUCKET_DEFAULT_SIZE,
         .cur_pool_size = 0,
