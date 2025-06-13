@@ -46,9 +46,9 @@ umfMemoryProviderCreateFromMemspace(umf_const_memspace_handle_t hMemspace,
                                     umf_const_mempolicy_handle_t hPolicy,
                                     umf_memory_provider_handle_t *hProvider);
 ///
-/// \brief Creates new memspace from array of NUMA node ids.
+/// \brief Creates new memspace from an array of NUMA node ids.
 /// \param nodeIds array of NUMA node ids
-/// \param numIds size of the array
+/// \param numIds size of the array; it has to be greater than 0
 /// \param hMemspace [out] handle to the newly created memspace
 /// \return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 ///
@@ -126,7 +126,8 @@ umf_result_t umfMemspaceMemtargetAdd(umf_memspace_handle_t hMemspace,
 ///
 /// \param hMemspace handle to memspace
 /// \param hMemtarget handle to memory target
-/// \return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+/// \return UMF_RESULT_SUCCESS on success, UMF_RESULT_ERROR_INVALID_ARGUMENT when trying to remove
+///     the last memory target from a memspace, or other appropriate error code on failure.
 ///
 umf_result_t
 umfMemspaceMemtargetRemove(umf_memspace_handle_t hMemspace,

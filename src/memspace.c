@@ -204,9 +204,8 @@ static int propertyCmp(const void *a, const void *b) {
 
 umf_result_t umfMemspaceSortDesc(umf_memspace_handle_t hMemspace,
                                  umfGetPropertyFn getProperty) {
-    if (!hMemspace || !getProperty) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
+    assert(hMemspace);
+    assert(getProperty);
 
     struct memtarget_sort_entry *entries = umf_ba_global_alloc(
         sizeof(struct memtarget_sort_entry) * hMemspace->size);
@@ -241,9 +240,8 @@ umf_result_t umfMemspaceSortDesc(umf_memspace_handle_t hMemspace,
 umf_result_t umfMemspaceFilter(umf_const_memspace_handle_t hMemspace,
                                umfGetTargetFn getTarget,
                                umf_memspace_handle_t *filteredMemspace) {
-    if (!hMemspace || !getTarget) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
+    assert(hMemspace);
+    assert(getTarget);
 
     umf_memtarget_handle_t *uniqueBestNodes =
         umf_ba_global_alloc(hMemspace->size * sizeof(*uniqueBestNodes));
@@ -389,6 +387,13 @@ umfMemspaceMemtargetRemove(umf_memspace_handle_t hMemspace,
     if (!hMemspace || !hMemtarget) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
+
+    // Trying to remove the last memory target from the memspace
+    if (hMemspace->size == 1) {
+        LOG_ERR("Cannot remove the last memory target from the memspace");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     unsigned i;
     for (i = 0; i < hMemspace->size; i++) {
         int cmp;
@@ -433,10 +438,8 @@ umfMemspaceMemtargetRemove(umf_memspace_handle_t hMemspace,
 static int umfMemspaceFilterHelper(umf_memspace_handle_t memspace,
                                    umf_memspace_filter_func_t filter,
                                    void *args) {
-
-    if (!memspace || !filter) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
+    assert(memspace);
+    assert(filter);
 
     size_t idx = 0;
     int ret;
