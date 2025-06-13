@@ -235,7 +235,6 @@ jobs:
       VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
       VCPKG_PATH_BIN: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows/bin;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows/bin;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows/bin"
     strategy:
-      # TODO: add '3.14.0-win64-x64' CMake testing
       matrix:
         os: ['windows-2022', 'windows-2025']
         build_type: [Debug, Release]
@@ -243,36 +242,34 @@ jobs:
         shared_library: ['ON', 'OFF']
         level_zero_provider: ['ON']
         cuda_provider: ['ON']
-        cmake_ver: ['default']
         include:
-          # clang-cl works well with Ninja, Debug build
-          # For VS generator it produces build errors not related to UMF
-          - os: 'windows-2025'
-            build_type: Debug
-            compiler: {c: clang-cl, cxx: clang-cl}
-            extra_build_options: '-G Ninja'
-            shared_library: 'ON'
-            level_zero_provider: 'ON'
-            cuda_provider: 'ON'
-            cmake_ver: 'default'
-          # Custom CMake and umfd enabled
+          # extra job: Custom (old) CMake, clang-cl compiler
+          # Note: This CMake uses NMake generator as VS paths are probably messed up (by CMake?)
           - os: 'windows-2025'
             build_type: Release
-            compiler: {c: cl, cxx: cl}
+            extra_build_options: '-DCMAKE_BUILD_TYPE=Release' # NMake generator requires this
+            compiler: {c: clang-cl, cxx: clang-cl}
             shared_library: 'ON'
             level_zero_provider: 'ON'
             cuda_provider: 'ON'
-            umfd_lib: 'ON'
-            cmake_ver: '3.28.0-windows-x86_64'
-          # L0/CUDA providers disabled
+            cmake_ver: '3.14.0-win64-x64'
+          # extra job: Custom CMake, L0/CUDA providers disabled
           - os: 'windows-2025'
             build_type: Release
             compiler: {c: cl, cxx: cl}
             shared_library: 'ON'
             level_zero_provider: 'OFF'
             cuda_provider: 'OFF'
-            cmake_ver: 'default'
-    name: Basic (${{matrix.os}}, build_type=${{matrix.build_type}}, compilers=${{matrix.compiler.c}}/${{matrix.compiler.cxx}}, shared_library=${{matrix.shared_library}}, level_zero_provider=${{matrix.level_zero_provider}}, cuda_provider=${{matrix.cuda_provider}}, cmake_ver=${{matrix.cmake_ver}})
+            cmake_ver: '3.28.0-windows-x86_64'
+          # umfd enabled (this job will replace one from matrix)
+          - os: 'windows-2022'
+            build_type: Release
+            compiler: {c: cl, cxx: cl}
+            shared_library: 'ON'
+            level_zero_provider: 'ON'
+            cuda_provider: 'ON'
+            umfd_lib: 'ON'
+    name: Basic (${{matrix.os}}, build_type=${{matrix.build_type}}, compilers=${{matrix.compiler.c}}/${{matrix.compiler.cxx}}, shared_library=${{matrix.shared_library}}, level_zero_provider=${{matrix.level_zero_provider}}, cuda_provider=${{matrix.cuda_provider}}, cmake_ver=${{matrix.cmake_ver || 'default'}}, umfd=${{matrix.umfd_lib || 'OFF'}})
     runs-on: ${{matrix.os}}
 
     steps:
@@ -282,7 +279,7 @@ jobs:
         fetch-depth: 0
 
     - name: Install cmake (non-default version)
-      if: matrix.cmake_ver != 'default'
+      if: ${{ matrix.cmake_ver != 'default' && matrix.cmake_ver != '' }}
       run: |
         $ErrorActionPreference = "Stop"
         $cmakePath = "C:\Program Files\CMake"
@@ -299,6 +296,13 @@ jobs:
         Write-Host "Installing CMake version ${{matrix.cmake_ver}}..."
         Start-Process msiexec.exe -ArgumentList "/i $cmakeInstaller /quiet /norestart" -Wait
         cmake --version
+
+    # Ensure that the required environment is set
+    # Note: While this step is required for the clang-cl compiler, it can be executed for all jobs
+    - name: Setup MSVC dev command prompt
+      uses: TheMrMilchmann/setup-msvc-dev@fb19abb8a41b3cf0340f5d1be17d420309232be6 # v3.0.1
+      with:
+        arch: x64
 
     - name: Initialize vcpkg
       uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
@@ -338,15 +342,15 @@ jobs:
         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=${{matrix.level_zero_provider}}
         -DUMF_BUILD_CUDA_PROVIDER=${{matrix.cuda_provider}}
         -DUMF_TESTS_FAIL_ON_SKIP=ON
-        -DUMF_USE_DEBUG_POSTFIX=${{matrix.umfd_lib}}
+        -DUMF_USE_DEBUG_POSTFIX=${{matrix.umfd_lib || 'OFF'}}
 
     - name: Build UMF
       run: cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j $Env:NUMBER_OF_PROCESSORS
 
     - name: Run tests
       working-directory: ${{env.BUILD_DIR}}
-      # For CMake versions < 3.22 we have to add the build directory to the PATH
-      # manually
+      # For CMake versions < 3.22 we have to add the build directory to the PATH manually
+      # Extra paths without 'build_type' are set for NMake generator
       run: |
         $m = [regex]::Matches((cmake --version), "cmake version (\d+)\.(\d+)\.(\d+)")
         if ($m) {
@@ -354,6 +358,8 @@ jobs:
           $minor = [int]$m.groups[2].Value
           if ($major -lt 3 -or ($major -eq 3 -and $minor -lt 22)) {
             $env:Path = "${{env.BUILD_DIR}}/bin/${{matrix.build_type}};${{env.BUILD_DIR}}/src/proxy_lib/${{matrix.build_type}};$env:Path"
+            $env:Path = "${{env.BUILD_DIR}}/bin/;${{env.BUILD_DIR}}/src/proxy_lib/;$env:Path"
+            echo "PATH=$env:Path" >> $env:GITHUB_ENV
           }
         }
         ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
@@ -369,7 +375,7 @@ jobs:
         --umf-version ${{env.UMF_VERSION}}
         ${{ matrix.shared_library == 'ON' && '--shared-library' || ''}}
         ${{ matrix.umfd_lib == 'ON' && '--umfd-lib' || ''}}
-        
+
     - name: check /DEPENDENTLOADFLAG in umf.dll
       if: ${{matrix.shared_library == 'ON' && matrix.compiler.cxx == 'cl'}}
       run: ${{github.workspace}}/.github/scripts/check_dll_flags.ps1 ${{env.BUILD_DIR}}/bin/${{matrix.build_type}}/umf.dll
@@ -458,61 +464,12 @@ jobs:
       working-directory: ${{env.BUILD_DIR}}
       run: ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
 
-  windows-dynamic_mingw_hwloc:
-    env:
-      HWLOC_PACKAGE_NAME: hwloc-win64-build-2.10.0
-      TBB_PACKAGE_NAME: oneapi-tbb-2021.12.0
-      TBB_LIB_DIR: lib\intel64\vc14
-      TBB_BIN_DIR: redist\intel64\vc14
-
-    name: "Windows dynamic UMF + mingw libhwloc"
-    strategy:
-      matrix:
-        build_type: [Release]
-
-    runs-on: 'windows-latest'
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      with:
-        fetch-depth: 0
-
-    - name: Get hwloc from official repo (mingw version)
-      run: |
-        Invoke-WebRequest -Uri https://download.open-mpi.org/release/hwloc/v2.10/${{env.HWLOC_PACKAGE_NAME}}.zip -OutFile ${{github.workspace}}\${{env.HWLOC_PACKAGE_NAME}}.zip -TimeoutSec 360
-        Expand-Archive ${{github.workspace}}\${{env.HWLOC_PACKAGE_NAME}}.zip -DestinationPath ${{github.workspace}}
-
-    - name: Get TBB from github
-      run: |
-        Invoke-WebRequest -Uri https://github.com/oneapi-src/oneTBB/releases/download/v2021.12.0/${{env.TBB_PACKAGE_NAME}}-win.zip -OutFile "${{github.workspace}}\${{env.TBB_PACKAGE_NAME}}-win.zip" -TimeoutSec 360
-        Expand-Archive "${{github.workspace}}\${{env.TBB_PACKAGE_NAME}}-win.zip" -DestinationPath ${{github.workspace}}
-
-    - name: Configure build
-      run: >
-        cmake
-        -B ${{env.BUILD_DIR}}
-        -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
-        -DCMAKE_PREFIX_PATH="${{github.workspace}}\${{env.HWLOC_PACKAGE_NAME}};${{github.workspace}}\${{env.TBB_PACKAGE_NAME}};${{github.workspace}}\${{env.TBB_PACKAGE_NAME}}\${{env.TBB_LIB_DIR}};${{github.workspace}}\${{env.TBB_PACKAGE_NAME}}\${{env.TBB_BIN_DIR}}"
-        -DUMF_BUILD_SHARED_LIBRARY=ON
-        -DUMF_BUILD_EXAMPLES=ON
-        -DUMF_FORMAT_CODE_STYLE=OFF
-        -DUMF_DEVELOPER_MODE=ON
-        -DUMF_TESTS_FAIL_ON_SKIP=ON
-        -DUMF_HWLOC_NAME=libhwloc
-
-    - name: Build UMF
-      run: cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j $Env:NUMBER_OF_PROCESSORS
-
-    - name: Run tests
-      working-directory: ${{env.BUILD_DIR}}
-      run: ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
-
   macos-build:
     strategy:
       matrix:
-        os: ['macos-13', 'macos-14']
         include:
+          - os: macos-13
+            static_hwloc: 'OFF'
           - os: macos-14
             static_hwloc: 'ON'
     env:
@@ -538,7 +495,7 @@ jobs:
       run: brew install jemalloc tbb automake libtool
 
     - name: Install hwloc
-      if: ${{ !matrix.static_hwloc }}
+      if: ${{ matrix.static_hwloc == 'OFF' }}
       run: brew install hwloc
 
     - name: Get UMF version
@@ -559,7 +516,6 @@ jobs:
         -DUMF_BUILD_SHARED_LIBRARY=ON
         -DUMF_TESTS_FAIL_ON_SKIP=ON
         -DUMF_LINK_HWLOC_STATICALLY=${{matrix.static_hwloc}}
-        ${{matrix.static_hwloc}}
 
     - name: Build UMF
       run: cmake --build ${{env.BUILD_DIR}} -j $(sysctl -n hw.logicalcpu)
