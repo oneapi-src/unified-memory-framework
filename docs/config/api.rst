@@ -170,6 +170,12 @@ Memtarget
 .. doxygenfile:: experimental/memtarget.h
     :sections: define enum typedef func
 
+Memory Properties
+==========================================
+
+.. doxygenfile:: memory_props.h
+    :sections: define enum typedef func var
+
 Inter-Process Communication
 ==========================================
 
