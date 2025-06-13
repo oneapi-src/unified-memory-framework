@@ -47,6 +47,7 @@ struct umf_memory_tracker_t {
 };
 
 typedef struct tracker_ipc_info_t {
+    umf_memory_properties_t props;
     size_t size;
     umf_memory_provider_handle_t provider;
     ipc_opened_cache_value_t *ipc_cache_value;
@@ -410,6 +411,14 @@ umfMemoryTrackerAddIpcSegment(umf_memory_tracker_handle_t hTracker,
     value->provider = provider;
     value->ipc_cache_value = cache_entry;
 
+    memset(&value->props, 0, sizeof(umf_memory_properties_t));
+    value->props.id = utils_atomic_increment_u64(&unique_alloc_id);
+    value->props.base = (void *)ptr;
+    value->props.base_size = size;
+    value->props.provider = provider;
+    value->props.ptr = (void *)ptr;
+    value->props.pool = NULL; // TODO
+
     int ret =
         critnib_insert(hTracker->ipc_segments_map, (uintptr_t)ptr, value, 0);
     if (ret == 0) {
@@ -592,6 +601,8 @@ umf_result_t umfMemoryTrackerGetIpcInfo(const void *ptr,
     pIpcInfo->base = (void *)rkey;
     pIpcInfo->baseSize = rvalue->size;
     pIpcInfo->provider = rvalue->provider;
+
+    pIpcInfo->props = &rvalue->props;
 
     if (ref_value) {
         critnib_release(TRACKER->ipc_segments_map, ref_value);

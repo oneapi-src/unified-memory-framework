@@ -50,6 +50,8 @@ umf_result_t umfMemoryTrackerGetAllocInfo(const void *ptr,
                                           tracker_alloc_info_t **info);
 
 typedef struct umf_ipc_info_t {
+    umf_memory_properties_handle_t props;
+
     void *base;
     size_t baseSize;
     umf_memory_provider_handle_t provider;
