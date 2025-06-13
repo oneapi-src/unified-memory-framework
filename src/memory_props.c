@@ -30,14 +30,26 @@ umfGetMemoryPropertiesHandle(const void *ptr,
 
     tracker_alloc_info_t *info = NULL;
     umf_result_t ret = umfMemoryTrackerGetAllocInfo(ptr, &info);
-    if (ret != UMF_RESULT_SUCCESS) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+
+    if (ret == UMF_RESULT_SUCCESS) {
+        *props_handle = &info->props;
+        LOG_DEBUG("umfGetMemoryPropertiesHandle: props_handle=%p, id=%" PRIu64,
+                  *props_handle, (*props_handle)->id);
+        return UMF_RESULT_SUCCESS;
     }
 
-    *props_handle = &info->props;
+    // try to get IPC info
+    umf_ipc_info_t ipc_info;
+    ret = umfMemoryTrackerGetIpcInfo(ptr, &ipc_info);
+    if (ret != UMF_RESULT_SUCCESS) {
+        LOG_ERR("Failed to get memory properties handle for ptr=%p", ptr);
+        return ret;
+    }
 
-    LOG_DEBUG("umfGetMemoryPropertiesHandle: props_handle=%p, id=%" PRIu64,
-              *props_handle, (*props_handle)->id);
+    *props_handle = ipc_info.props;
+    LOG_DEBUG(
+        "umfGetMemoryPropertiesHandle (IPC info): props_handle=%p, id=%" PRIu64,
+        *props_handle, (*props_handle)->id);
 
     return UMF_RESULT_SUCCESS;
 }
