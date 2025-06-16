@@ -89,6 +89,9 @@
 #define NIB ((1ULL << SLICE) - 1)
 #define SLNODES (1 << SLICE)
 
+// it has to be >= 2
+#define LEAF_VALID (2ULL)
+
 typedef uintptr_t word;
 typedef uint8_t sh_t;
 
@@ -312,12 +315,13 @@ static void add_to_deleted_leaf_list(struct critnib *__restrict c,
     assert(k);
     struct critnib_leaf *deleted_leaf;
 
-    do {
-        utils_atomic_load_acquire_ptr((void **)&c->deleted_leaf,
-                                      (void **)&deleted_leaf);
-        utils_atomic_store_release_ptr(&k->value, deleted_leaf);
-    } while (!utils_compare_exchange_u64(
-        (uint64_t *)&c->deleted_leaf, (uint64_t *)&k->value, (uint64_t *)&k));
+    utils_atomic_load_acquire_ptr((void **)&c->deleted_leaf,
+                                  (void **)&deleted_leaf);
+    utils_atomic_store_release_ptr(&k->value, deleted_leaf);
+    while (!utils_compare_exchange_u64((uint64_t *)&c->deleted_leaf,
+                                       (uint64_t *)&k->value, (uint64_t *)&k)) {
+        ;
+    }
 }
 
 /*
@@ -331,18 +335,26 @@ static void free_leaf(struct critnib *__restrict c,
         return;
     }
 
+    // k should be added to the c->deleted_leaf list here
+    // or in critnib_release() when the reference count drops to 0.
+    utils_atomic_store_release_u8(&k->pending_deleted_leaf, 1);
+
     if (c->cb_free_leaf) {
         uint64_t ref_count;
         utils_atomic_load_acquire_u64(&k->ref_count, &ref_count);
         if (ref_count > 0) {
-            // k will be added to c->deleted_leaf in critnib_release()
+            // k will be added to the c->deleted_leaf list in critnib_release()
             // when the reference count drops to 0.
-            utils_atomic_store_release_u8(&k->pending_deleted_leaf, 1);
             return;
         }
     }
 
-    add_to_deleted_leaf_list(c, k);
+    uint8_t expected = 1;
+    uint8_t desired = 0;
+    if (utils_compare_exchange_u8(&k->pending_deleted_leaf, &expected,
+                                  &desired)) {
+        add_to_deleted_leaf_list(c, k);
+    }
 }
 
 /*
@@ -351,8 +363,8 @@ static void free_leaf(struct critnib *__restrict c,
 static struct critnib_leaf *alloc_leaf(struct critnib *__restrict c) {
     struct critnib_leaf *k;
 
+    utils_atomic_load_acquire_ptr((void **)&c->deleted_leaf, (void **)&k);
     do {
-        utils_atomic_load_acquire_ptr((void **)&c->deleted_leaf, (void **)&k);
         if (!k) {
             return umf_ba_global_aligned_alloc(sizeof(struct critnib_leaf), 8);
         }
@@ -392,8 +404,8 @@ int critnib_insert(struct critnib *c, word key, void *value, int update) {
     utils_atomic_store_release_u8(&k->pending_deleted_leaf, 0);
 
     if (c->cb_free_leaf) {
-        // mark the leaf as valid (ref_count == 1)
-        utils_atomic_store_release_u64(&k->ref_count, 1ULL);
+        // mark the leaf as valid (ref_count == 2)
+        utils_atomic_store_release_u64(&k->ref_count, LEAF_VALID);
     } else {
         // the reference counter is not used in this case
         utils_atomic_store_release_u64(&k->ref_count, 0ULL);
@@ -602,35 +614,51 @@ int critnib_release(struct critnib *c, void *ref) {
     struct critnib_leaf *k = (struct critnib_leaf *)ref;
 
     uint64_t ref_count;
-    utils_atomic_load_acquire_u64(&k->ref_count, &ref_count);
-
-    if (ref_count == 0) {
-        return -1;
-    }
-
+    uint64_t ref_desired;
     /* decrement the reference count */
-    if (utils_atomic_decrement_u64(&k->ref_count) == 0) {
-        void *to_be_freed = NULL;
-        utils_atomic_load_acquire_ptr(&k->to_be_freed, &to_be_freed);
-        if (to_be_freed) {
-            utils_atomic_store_release_ptr(&k->to_be_freed, NULL);
-            c->cb_free_leaf(c->leaf_allocator, to_be_freed);
+    utils_atomic_load_acquire_u64(&k->ref_count, &ref_count);
+    do {
+        if (ref_count < LEAF_VALID) {
+#ifndef NDEBUG
+            LOG_FATAL("critnib_release() was called too many times (ref_count "
+                      "= %llu)\n",
+                      (unsigned long long)ref_count);
+            assert(ref_count >= LEAF_VALID);
+#endif
+            return -1;
         }
-        uint8_t pending_deleted_leaf;
-        utils_atomic_load_acquire_u8(&k->pending_deleted_leaf,
-                                     &pending_deleted_leaf);
-        if (pending_deleted_leaf) {
-            utils_atomic_store_release_u8(&k->pending_deleted_leaf, 0);
-            add_to_deleted_leaf_list(c, k);
-        }
+        ref_desired = ref_count - 1;
+    } while (
+        !utils_compare_exchange_u64(&k->ref_count, &ref_count, &ref_desired));
+
+    if (ref_desired >= LEAF_VALID) {
+        // ref_counter was decremented and it is still valid
+        return 0;
     }
 
+    /* ref_counter == (LEAF_VALID - 1)) - the leaf will be freed */
+    void *to_be_freed = NULL;
+    utils_atomic_load_acquire_ptr(&k->to_be_freed, &to_be_freed);
+    utils_atomic_store_release_ptr(&k->to_be_freed, NULL);
 #ifndef NDEBUG
-    // check if the reference count is overflowed
-    utils_atomic_load_acquire_u64(&k->ref_count, &ref_count);
-    assert((ref_count & (1ULL << 63)) == 0);
-    assert(ref_count != (uint64_t)(0 - 1ULL));
+    if (to_be_freed == NULL) {
+        LOG_FATAL("leaf will not be freed (to_be_freed == NULL, value = %p)\n",
+                  k->value);
+        assert(to_be_freed != NULL);
+    }
 #endif
+
+    // mark the leaf as not used (ref_count == 0)
+    utils_atomic_store_release_u64(&k->ref_count, 0ULL);
+
+    c->cb_free_leaf(c->leaf_allocator, to_be_freed);
+
+    uint8_t expected = 1;
+    uint8_t desired = 0;
+    if (utils_compare_exchange_u8(&k->pending_deleted_leaf, &expected,
+                                  &desired)) {
+        add_to_deleted_leaf_list(c, k);
+    }
 
     return 0;
 }
@@ -659,9 +687,9 @@ static inline int increment_ref_count(struct critnib_leaf *k) {
     uint64_t expected;
     uint64_t desired;
 
+    utils_atomic_load_acquire_u64(&k->ref_count, &expected);
     do {
-        utils_atomic_load_acquire_u64(&k->ref_count, &expected);
-        if (expected == 0) {
+        if (expected < LEAF_VALID) {
             return -1;
         }
         desired = expected + 1;

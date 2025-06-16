@@ -171,6 +171,19 @@ static inline bool utils_compare_exchange_u64(uint64_t *ptr, uint64_t *expected,
     return false;
 }
 
+static inline bool utils_compare_exchange_u8(uint8_t *ptr, uint8_t *expected,
+                                             uint8_t *desired) {
+    char out = _InterlockedCompareExchange8(
+        (char volatile *)ptr, *(char *)desired, *(char *)expected);
+    if (out == *(char *)expected) {
+        return true;
+    }
+
+    // else
+    *expected = out;
+    return false;
+}
+
 #else // !defined(_WIN32)
 
 static inline void utils_atomic_load_acquire_u64(uint64_t *ptr, uint64_t *out) {
@@ -236,6 +249,13 @@ static inline uint64_t utils_fetch_and_sub_u64(uint64_t *ptr, uint64_t val) {
 static inline bool utils_compare_exchange_u64(uint64_t *ptr, uint64_t *expected,
                                               uint64_t *desired) {
     ASSERT_IS_ALIGNED((uintptr_t)ptr, 8);
+    return __atomic_compare_exchange(ptr, expected, desired, 0 /* strong */,
+                                     memory_order_acq_rel,
+                                     memory_order_relaxed);
+}
+
+static inline bool utils_compare_exchange_u8(uint8_t *ptr, uint8_t *expected,
+                                             uint8_t *desired) {
     return __atomic_compare_exchange(ptr, expected, desired, 0 /* strong */,
                                      memory_order_acq_rel,
                                      memory_order_relaxed);
