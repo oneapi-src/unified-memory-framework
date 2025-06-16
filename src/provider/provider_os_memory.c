@@ -177,12 +177,10 @@ struct ctl os_memory_ctl_root;
 
 static UTIL_ONCE_FLAG ctl_initialized = UTIL_ONCE_FLAG_INIT;
 
-static int CTL_READ_HANDLER(ipc_enabled)(void *ctx,
-                                         umf_ctl_query_source_t source,
-                                         void *arg, size_t size,
-                                         umf_ctl_index_utlist_t *indexes,
-                                         const char *extra_name,
-                                         umf_ctl_query_type_t query_type) {
+static umf_result_t CTL_READ_HANDLER(ipc_enabled)(
+    void *ctx, umf_ctl_query_source_t source, void *arg, size_t size,
+    umf_ctl_index_utlist_t *indexes, const char *extra_name,
+    umf_ctl_query_type_t query_type) {
     /* suppress unused-parameter errors */
     (void)source, (void)indexes, (void)ctx, (void)extra_name, (void)query_type,
         (void)size;
@@ -190,7 +188,7 @@ static int CTL_READ_HANDLER(ipc_enabled)(void *ctx,
     int *arg_out = arg;
     os_memory_provider_t *os_provider = (os_memory_provider_t *)ctx;
     *arg_out = os_provider->IPC_enabled;
-    return 0;
+    return UMF_RESULT_SUCCESS;
 }
 
 static const umf_ctl_node_t CTL_NODE(params)[] = {CTL_LEAF_RO(ipc_enabled),

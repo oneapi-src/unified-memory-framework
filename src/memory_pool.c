@@ -37,32 +37,27 @@ static struct ctl umf_pool_ctl_root;
 
 static void ctl_init(void);
 
-static int CTL_SUBTREE_HANDLER(by_handle_pool)(void *ctx,
-                                               umf_ctl_query_source_t source,
-                                               void *arg, size_t size,
-                                               umf_ctl_index_utlist_t *indexes,
-                                               const char *extra_name,
-                                               umf_ctl_query_type_t queryType) {
+static umf_result_t CTL_SUBTREE_HANDLER(by_handle_pool)(
+    void *ctx, umf_ctl_query_source_t source, void *arg, size_t size,
+    umf_ctl_index_utlist_t *indexes, const char *extra_name,
+    umf_ctl_query_type_t queryType) {
     (void)indexes, (void)source;
     umf_memory_pool_handle_t hPool = (umf_memory_pool_handle_t)ctx;
-    int ret = ctl_query(&umf_pool_ctl_root, hPool, source, extra_name,
-                        queryType, arg, size);
-    if (ret == -1 &&
-        errno == EINVAL) { // node was not found in pool_ctl_root, try to
-                           // query the specific pool directly
-        hPool->ops.ext_ctl(hPool->pool_priv, source, extra_name, arg, size,
-                           queryType);
+    umf_result_t ret = ctl_query(&umf_pool_ctl_root, hPool, source, extra_name,
+                                 queryType, arg, size);
+    if (ret == UMF_RESULT_ERROR_INVALID_ARGUMENT) {
+        // Node was not found in pool_ctl_root, try to query the specific pool
+        ret = hPool->ops.ext_ctl(hPool->pool_priv, source, extra_name, arg,
+                                 size, queryType);
     }
 
-    return 0;
+    return ret;
 }
 
-static int CTL_SUBTREE_HANDLER(default)(void *ctx,
-                                        umf_ctl_query_source_t source,
-                                        void *arg, size_t size,
-                                        umf_ctl_index_utlist_t *indexes,
-                                        const char *extra_name,
-                                        umf_ctl_query_type_t queryType) {
+static umf_result_t CTL_SUBTREE_HANDLER(default)(
+    void *ctx, umf_ctl_query_source_t source, void *arg, size_t size,
+    umf_ctl_index_utlist_t *indexes, const char *extra_name,
+    umf_ctl_query_type_t queryType) {
     (void)indexes, (void)source, (void)ctx;
     utils_init_once(&mem_pool_ctl_initialized, ctl_init);
     utils_mutex_lock(&ctl_mtx);
@@ -101,15 +96,13 @@ static int CTL_SUBTREE_HANDLER(default)(void *ctx,
 
     utils_mutex_unlock(&ctl_mtx);
 
-    return 0;
+    return UMF_RESULT_SUCCESS;
 }
 
-static int CTL_READ_HANDLER(alloc_count)(void *ctx,
-                                         umf_ctl_query_source_t source,
-                                         void *arg, size_t size,
-                                         umf_ctl_index_utlist_t *indexes,
-                                         const char *extra_name,
-                                         umf_ctl_query_type_t query_type) {
+static umf_result_t CTL_READ_HANDLER(alloc_count)(
+    void *ctx, umf_ctl_query_source_t source, void *arg, size_t size,
+    umf_ctl_index_utlist_t *indexes, const char *extra_name,
+    umf_ctl_query_type_t query_type) {
     /* suppress unused-parameter errors */
     (void)source, (void)size, (void)indexes, (void)extra_name, (void)query_type;
 

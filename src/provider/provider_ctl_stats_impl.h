@@ -21,27 +21,23 @@ extern "C" {
 #include "ctl/ctl.h"
 #include "utils/utils_assert.h"
 
-static int CTL_READ_HANDLER(peak_memory)(void *ctx,
-                                         umf_ctl_query_source_t source,
-                                         void *arg, size_t size,
-                                         umf_ctl_index_utlist_t *indexes,
-                                         const char *extra_name,
-                                         umf_ctl_query_type_t query_type) {
+static umf_result_t CTL_READ_HANDLER(peak_memory)(
+    void *ctx, umf_ctl_query_source_t source, void *arg, size_t size,
+    umf_ctl_index_utlist_t *indexes, const char *extra_name,
+    umf_ctl_query_type_t query_type) {
     /* suppress unused-parameter errors */
     (void)source, (void)size, (void)indexes, (void)extra_name, (void)query_type;
 
     size_t *arg_out = arg;
     CTL_PROVIDER_TYPE *provider = (CTL_PROVIDER_TYPE *)ctx;
     utils_atomic_load_acquire_size_t(&provider->stats.peak_memory, arg_out);
-    return 0;
+    return UMF_RESULT_SUCCESS;
 }
 
-static int CTL_READ_HANDLER(allocated_memory)(void *ctx,
-                                              umf_ctl_query_source_t source,
-                                              void *arg, size_t size,
-                                              umf_ctl_index_utlist_t *indexes,
-                                              const char *extra_name,
-                                              umf_ctl_query_type_t query_type) {
+static umf_result_t CTL_READ_HANDLER(allocated_memory)(
+    void *ctx, umf_ctl_query_source_t source, void *arg, size_t size,
+    umf_ctl_index_utlist_t *indexes, const char *extra_name,
+    umf_ctl_query_type_t query_type) {
     /* suppress unused-parameter errors */
     (void)source, (void)size, (void)indexes, (void)extra_name, (void)query_type;
 
@@ -49,14 +45,14 @@ static int CTL_READ_HANDLER(allocated_memory)(void *ctx,
     CTL_PROVIDER_TYPE *provider = (CTL_PROVIDER_TYPE *)ctx;
     utils_atomic_load_acquire_size_t(&provider->stats.allocated_memory,
                                      arg_out);
-    return 0;
+    return UMF_RESULT_SUCCESS;
 }
 
-static int CTL_RUNNABLE_HANDLER(reset)(void *ctx, umf_ctl_query_source_t source,
-                                       void *arg, size_t size,
-                                       umf_ctl_index_utlist_t *indexes,
-                                       const char *extra_name,
-                                       umf_ctl_query_type_t query_type) {
+static umf_result_t
+CTL_RUNNABLE_HANDLER(reset)(void *ctx, umf_ctl_query_source_t source, void *arg,
+                            size_t size, umf_ctl_index_utlist_t *indexes,
+                            const char *extra_name,
+                            umf_ctl_query_type_t query_type) {
     /* suppress unused-parameter errors */
     (void)source, (void)indexes, (void)arg, (void)size, (void)extra_name,
         (void)query_type;
@@ -73,7 +69,7 @@ static int CTL_RUNNABLE_HANDLER(reset)(void *ctx, umf_ctl_query_source_t source,
     } while (!utils_compare_exchange_size_t(&provider->stats.peak_memory,
                                             &current_peak, &allocated));
 
-    return 0;
+    return UMF_RESULT_SUCCESS;
 }
 
 static const umf_ctl_node_t CTL_NODE(peak_memory)[] = {CTL_LEAF_RUNNABLE(reset),
