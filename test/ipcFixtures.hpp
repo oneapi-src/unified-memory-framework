@@ -119,6 +119,7 @@ struct umfIpcTest : umf_test::test,
         providerParamsDestroy = provider_params_destroy;
         memAccessor = accessor;
         openedIpcCacheSize = getOpenedIpcCacheSize();
+        numThreads = std::max(10, (int)utils_get_num_cores());
     }
 
     void TearDown() override { test::TearDown(); }
@@ -188,7 +189,7 @@ struct umfIpcTest : umf_test::test,
               closeCount(0) {}
     };
 
-    static constexpr int NTHREADS = 10;
+    unsigned int numThreads;
     stats_type stat;
     MemoryAccessor *memAccessor = nullptr;
 
@@ -214,9 +215,9 @@ struct umfIpcTest : umf_test::test,
             ptrs.push_back(ptr);
         }
 
-        std::array<std::vector<umf_ipc_handle_t>, NTHREADS> ipcHandles;
+        std::vector<std::vector<umf_ipc_handle_t>> ipcHandles(numThreads);
 
-        umf_test::syncthreads_barrier syncthreads(NTHREADS);
+        umf_test::syncthreads_barrier syncthreads(numThreads);
 
         auto getHandlesFn = [shuffle, &ipcHandles, &ptrs,
                              &syncthreads](size_t tid) {
@@ -238,7 +239,7 @@ struct umfIpcTest : umf_test::test,
             }
         };
 
-        umf_test::parallel_exec(NTHREADS, getHandlesFn);
+        umf_test::parallel_exec(numThreads, getHandlesFn);
 
         auto putHandlesFn = [&ipcHandles, &syncthreads](size_t tid) {
             syncthreads();
@@ -248,7 +249,7 @@ struct umfIpcTest : umf_test::test,
             }
         };
 
-        umf_test::parallel_exec(NTHREADS, putHandlesFn);
+        umf_test::parallel_exec(numThreads, putHandlesFn);
 
         for (void *ptr : ptrs) {
             umf_result_t ret = umfPoolFree(pool.get(), ptr);
@@ -272,7 +273,7 @@ struct umfIpcTest : umf_test::test,
             ptrs.push_back(ptr);
         }
 
-        umf_test::syncthreads_barrier syncthreads(NTHREADS);
+        umf_test::syncthreads_barrier syncthreads(numThreads);
 
         auto getPutHandlesFn = [shuffle, &ptrs, &syncthreads](size_t) {
             // Each thread gets a copy of the pointers to shuffle them
@@ -294,7 +295,7 @@ struct umfIpcTest : umf_test::test,
             }
         };
 
-        umf_test::parallel_exec(NTHREADS, getPutHandlesFn);
+        umf_test::parallel_exec(numThreads, getPutHandlesFn);
 
         for (void *ptr : ptrs) {
             umf_result_t ret = umfPoolFree(pool.get(), ptr);
@@ -328,13 +329,13 @@ struct umfIpcTest : umf_test::test,
             ipcHandles.push_back(ipcHandle);
         }
 
-        std::array<std::vector<void *>, NTHREADS> openedIpcHandles;
+        std::vector<std::vector<umf_ipc_handle_t>> openedIpcHandles(numThreads);
         umf_ipc_handler_handle_t ipcHandler = nullptr;
         ret = umfPoolGetIPCHandler(pool.get(), &ipcHandler);
         ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
         ASSERT_NE(ipcHandler, nullptr);
 
-        umf_test::syncthreads_barrier syncthreads(NTHREADS);
+        umf_test::syncthreads_barrier syncthreads(numThreads);
 
         auto openHandlesFn = [shuffle, &ipcHandles, &openedIpcHandles,
                               &syncthreads, ipcHandler](size_t tid) {
@@ -351,11 +352,11 @@ struct umfIpcTest : umf_test::test,
                 umf_result_t ret =
                     umfOpenIPCHandle(ipcHandler, ipcHandle, &ptr);
                 ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
-                openedIpcHandles[tid].push_back(ptr);
+                openedIpcHandles[tid].push_back((umf_ipc_data_t *)ptr);
             }
         };
 
-        umf_test::parallel_exec(NTHREADS, openHandlesFn);
+        umf_test::parallel_exec(numThreads, openHandlesFn);
 
         auto closeHandlesFn = [&openedIpcHandles, &syncthreads](size_t tid) {
             syncthreads();
@@ -365,7 +366,7 @@ struct umfIpcTest : umf_test::test,
             }
         };
 
-        umf_test::parallel_exec(NTHREADS, closeHandlesFn);
+        umf_test::parallel_exec(numThreads, closeHandlesFn);
 
         for (auto ipcHandle : ipcHandles) {
             ret = umfPutIPCHandle(ipcHandle);
@@ -412,7 +413,7 @@ struct umfIpcTest : umf_test::test,
         ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
         ASSERT_NE(ipcHandler, nullptr);
 
-        umf_test::syncthreads_barrier syncthreads(NTHREADS);
+        umf_test::syncthreads_barrier syncthreads(numThreads);
 
         auto openCloseHandlesFn = [shuffle, &ipcHandles, &syncthreads,
                                    ipcHandler](size_t) {
@@ -434,7 +435,7 @@ struct umfIpcTest : umf_test::test,
             }
         };
 
-        umf_test::parallel_exec(NTHREADS, openCloseHandlesFn);
+        umf_test::parallel_exec(numThreads, openCloseHandlesFn);
 
         for (auto ipcHandle : ipcHandles) {
             ret = umfPutIPCHandle(ipcHandle);
