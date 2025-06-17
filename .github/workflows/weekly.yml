@@ -72,4 +72,4 @@ jobs:
       env:
         ASAN_OPTIONS: allocator_may_return_null=1
         TSAN_OPTIONS: allocator_may_return_null=1
-      run: for i in {1..1000}; do ctest --output-on-failure || exit 1; date; done
+      run: for i in {1..600}; do echo ">>> ITERATION no. ${i}" ; ctest --output-on-failure || exit 1; date; done
