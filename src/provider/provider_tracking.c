@@ -472,6 +472,7 @@ umf_result_t umfMemoryTrackerGetAllocInfo(const void *ptr,
                                           umf_alloc_info_t *pAllocInfo) {
     assert(pAllocInfo);
 
+    // TODO unlikely
     if (ptr == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }

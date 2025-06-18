@@ -13,7 +13,9 @@
 
 #include <umf/memory_provider.h>
 #include <umf/pools/pool_disjoint.h>
+#include <umf/pools/pool_jemalloc.h>
 #include <umf/pools/pool_proxy.h>
+#include <umf/pools/pool_scalable.h>
 
 #ifdef UMF_PROXY_LIB_ENABLED
 #include <umf/proxy_lib_new_delete.h>
@@ -124,6 +126,12 @@ TEST_P(umfPoolWithCreateFlagsTest, memoryPoolWithCustomProvider) {
         umf_result_t
         initialize(umf_memory_provider_handle_t provider) noexcept {
             EXPECT_NE_NOEXCEPT(provider, nullptr);
+            return UMF_RESULT_SUCCESS;
+        }
+        umf_result_t get_name(const char **name) noexcept {
+            if (name) {
+                *name = "pool";
+            }
             return UMF_RESULT_SUCCESS;
         }
     };
@@ -309,7 +317,12 @@ INSTANTIATE_TEST_SUITE_P(
                             &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr},
         poolCreateExtParams{umfDisjointPoolOps(), defaultDisjointPoolConfig,
                             defaultDisjointPoolConfigDestroy,
+                            &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr},
+        poolCreateExtParams{umfScalablePoolOps(), nullptr, nullptr,
                             &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr}));
+// TODO enable jemalloc pool tests
+//poolCreateExtParams{umfJemallocPoolOps(), nullptr, nullptr,
+//                    &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr}));
 
 INSTANTIATE_TEST_SUITE_P(mallocMultiPoolTest, umfMultiPoolTest,
                          ::testing::Values(poolCreateExtParams{

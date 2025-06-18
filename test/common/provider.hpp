@@ -38,66 +38,49 @@ typedef struct provider_base_t {
     umf_result_t alloc(size_t, size_t, void **) noexcept {
         return UMF_RESULT_ERROR_UNKNOWN;
     }
-    umf_result_t free([[maybe_unused]] void *ptr,
-                      [[maybe_unused]] size_t size) noexcept {
+    umf_result_t free(void *, size_t) noexcept {
         return UMF_RESULT_ERROR_UNKNOWN;
     }
     umf_result_t get_last_native_error(const char **, int32_t *) noexcept {
         return UMF_RESULT_ERROR_UNKNOWN;
     }
-    umf_result_t
-    get_recommended_page_size([[maybe_unused]] size_t size,
-                              [[maybe_unused]] size_t *pageSize) noexcept {
+    umf_result_t get_recommended_page_size(size_t, size_t *) noexcept {
         return UMF_RESULT_ERROR_UNKNOWN;
     }
-    umf_result_t get_min_page_size([[maybe_unused]] const void *ptr,
-                                   [[maybe_unused]] size_t *pageSize) noexcept {
+    umf_result_t get_min_page_size(const void *, size_t *) noexcept {
         return UMF_RESULT_ERROR_UNKNOWN;
     }
     umf_result_t get_name(const char **name) noexcept {
         *name = "base";
         return UMF_RESULT_SUCCESS;
     }
-    umf_result_t ext_purge_lazy([[maybe_unused]] void *ptr,
-                                [[maybe_unused]] size_t size) noexcept {
+    umf_result_t ext_purge_lazy(void *, size_t) noexcept {
         return UMF_RESULT_ERROR_UNKNOWN;
     }
-    umf_result_t ext_purge_force([[maybe_unused]] void *ptr,
-                                 [[maybe_unused]] size_t size) noexcept {
-        return UMF_RESULT_ERROR_UNKNOWN;
-    }
-
-    umf_result_t ext_allocation_merge([[maybe_unused]] void *lowPtr,
-                                      [[maybe_unused]] void *highPtr,
-                                      [[maybe_unused]] size_t totalSize) {
+    umf_result_t ext_purge_force(void *, size_t) noexcept {
         return UMF_RESULT_ERROR_UNKNOWN;
     }
 
-    umf_result_t ext_allocation_split([[maybe_unused]] void *ptr,
-                                      [[maybe_unused]] size_t totalSize,
-                                      [[maybe_unused]] size_t firstSize) {
+    umf_result_t ext_allocation_merge(void *, void *, size_t) {
         return UMF_RESULT_ERROR_UNKNOWN;
     }
-    umf_result_t
-    ext_get_ipc_handle_size([[maybe_unused]] size_t *size) noexcept {
+
+    umf_result_t ext_allocation_split(void *, size_t, size_t) {
         return UMF_RESULT_ERROR_UNKNOWN;
     }
-    umf_result_t
-    ext_get_ipc_handle([[maybe_unused]] const void *ptr,
-                       [[maybe_unused]] size_t size,
-                       [[maybe_unused]] void *providerIpcData) noexcept {
+    umf_result_t ext_get_ipc_handle_size(size_t *) noexcept {
         return UMF_RESULT_ERROR_UNKNOWN;
     }
-    umf_result_t
-    ext_put_ipc_handle([[maybe_unused]] void *providerIpcData) noexcept {
+    umf_result_t ext_get_ipc_handle(const void *, size_t, void *) noexcept {
         return UMF_RESULT_ERROR_UNKNOWN;
     }
-    umf_result_t ext_open_ipc_handle([[maybe_unused]] void *providerIpcData,
-                                     [[maybe_unused]] void **ptr) noexcept {
+    umf_result_t ext_put_ipc_handle(void *) noexcept {
         return UMF_RESULT_ERROR_UNKNOWN;
     }
-    umf_result_t ext_close_ipc_handle([[maybe_unused]] void *ptr,
-                                      [[maybe_unused]] size_t size) noexcept {
+    umf_result_t ext_open_ipc_handle(void *, void **) noexcept {
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
+    umf_result_t ext_close_ipc_handle(void *, size_t) noexcept {
         return UMF_RESULT_ERROR_UNKNOWN;
     }
     virtual ~provider_base_t() = default;

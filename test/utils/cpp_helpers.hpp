@@ -10,17 +10,17 @@
 #ifndef UMF_TEST_HELPERS_HPP
 #define UMF_TEST_HELPERS_HPP 1
 
-#include <umf/memory_pool.h>
-#include <umf/memory_pool_ops.h>
-#include <umf/memory_provider.h>
-#include <umf/memory_provider_ops.h>
-
 #include <array>
 #include <functional>
 #include <memory>
 #include <stdexcept>
 #include <tuple>
 #include <utility>
+
+#include <umf/memory_pool.h>
+#include <umf/memory_pool_ops.h>
+#include <umf/memory_provider.h>
+#include <umf/memory_provider_ops.h>
 
 namespace umf_test {
 
@@ -86,6 +86,8 @@ template <typename T> umf_memory_pool_ops_t poolOpsBase() {
     UMF_ASSIGN_OP(ops, T, malloc_usable_size, UMF_RESULT_ERROR_UNKNOWN);
     UMF_ASSIGN_OP(ops, T, free, UMF_RESULT_ERROR_UNKNOWN);
     UMF_ASSIGN_OP(ops, T, get_last_allocation_error, UMF_RESULT_ERROR_UNKNOWN);
+    UMF_ASSIGN_OP(ops, T, ext_ctl, UMF_RESULT_ERROR_UNKNOWN);
+    UMF_ASSIGN_OP(ops, T, ext_trim_memory, UMF_RESULT_ERROR_UNKNOWN);
     return ops;
 }
 

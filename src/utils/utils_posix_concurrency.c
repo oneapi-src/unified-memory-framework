@@ -38,6 +38,11 @@ int utils_mutex_unlock(utils_mutex_t *m) {
 }
 
 void utils_init_once(UTIL_ONCE_FLAG *flag, void (*oneCb)(void)) {
+    if (oneCb == NULL) {
+        LOG_FATAL("utils_init_once: callback is NULL");
+        return;
+    }
+
     pthread_once(flag, oneCb);
 }
 

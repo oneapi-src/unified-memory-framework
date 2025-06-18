@@ -60,6 +60,7 @@ typedef struct tbb_callbacks_t {
     bool (*pool_destroy)(void *);
     void *(*pool_identify)(void *object);
     size_t (*pool_msize)(void *, void *);
+    int (*pool_allocation_command)(int, void *);
 #ifdef _WIN32
     HMODULE lib_handle;
 #else
@@ -422,12 +423,14 @@ static umf_result_t tbb_get_last_allocation_error(void *pool) {
     return TLS_last_allocation_error;
 }
 
+static void initialize_pool_ctl(void) {}
+
 static umf_result_t pool_ctl(void *hPool, umf_ctl_query_source_t operationType,
                              const char *name, void *arg, size_t size,
                              umf_ctl_query_type_t query_type, va_list args) {
     (void)operationType; // unused
     umf_memory_pool_handle_t pool_provider = (umf_memory_pool_handle_t)hPool;
-    utils_init_once(&ctl_initialized, NULL);
+    utils_init_once(&ctl_initialized, initialize_pool_ctl);
     return ctl_query(&pool_scallable_ctl_root, pool_provider->pool_priv,
                      CTL_QUERY_PROGRAMMATIC, name, query_type, arg, size, args);
 }
@@ -435,6 +438,15 @@ static umf_result_t pool_ctl(void *hPool, umf_ctl_query_source_t operationType,
 static umf_result_t scalable_get_name(void *pool, const char **name) {
     (void)pool; // unused
     *name = "scalable";
+    return UMF_RESULT_SUCCESS;
+}
+
+// TODO remove if na
+static umf_result_t scalable_trim_memory(void *pool, size_t minBytesToKeep) {
+    (void)pool;           // unused
+    (void)minBytesToKeep; // unused
+
+    //scalable_allocation_command?
     return UMF_RESULT_SUCCESS;
 }
 
@@ -451,6 +463,7 @@ static umf_memory_pool_ops_t UMF_SCALABLE_POOL_OPS = {
     .get_last_allocation_error = tbb_get_last_allocation_error,
     .ext_ctl = pool_ctl,
     .get_name = scalable_get_name,
+    .ext_trim_memory = scalable_trim_memory,
 };
 
 const umf_memory_pool_ops_t *umfScalablePoolOps(void) {
