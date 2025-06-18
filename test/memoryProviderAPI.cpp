@@ -323,6 +323,21 @@ TEST_F(test, memoryProviderOpsNullAllocationSplitAllocationMergeNegative) {
     umfMemoryProviderDestroy(hProvider);
 }
 
+TEST_F(test, memoryProviderOpsNullGetAllocationProperties) {
+    umf_memory_provider_ops_t provider_ops = UMF_NULL_PROVIDER_OPS;
+    umf_memory_provider_handle_t hProvider;
+
+    umf_result_t ret =
+        umfMemoryProviderCreate(&provider_ops, nullptr, &hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfMemoryProviderGetAllocationProperties(
+        hProvider, nullptr, UMF_MEMORY_PROPERTY_PROVIDER_HANDLE, 0, nullptr);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    umfMemoryProviderDestroy(hProvider);
+}
+
 struct providerInitializeTest : umf_test::test,
                                 ::testing::WithParamInterface<umf_result_t> {};
 
