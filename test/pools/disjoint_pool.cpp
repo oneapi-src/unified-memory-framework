@@ -356,6 +356,57 @@ TEST_F(test, disjointPoolName) {
     umfDisjointPoolParamsDestroy(params);
 }
 
+TEST_F(test, disjointPoolDefaultParams) {
+    umf_disjoint_pool_params_handle_t params = nullptr;
+    umf_memory_pool_handle_t pool = nullptr;
+    umf_memory_provider_handle_t provider_handle = nullptr;
+
+    // Create disjoint pool parameters with default settings
+    umf_result_t res = umfDisjointPoolParamsCreate(&params);
+    EXPECT_EQ(res, UMF_RESULT_SUCCESS);
+
+    struct memory_provider : public umf_test::provider_base_t {
+        umf_result_t alloc(size_t size, size_t alignment, void **ptr) noexcept {
+            *ptr = umf_ba_global_aligned_alloc(size, alignment);
+            return UMF_RESULT_SUCCESS;
+        }
+
+        umf_result_t free(void *ptr, [[maybe_unused]] size_t size) noexcept {
+            // do the actual free only when we expect the success
+            umf_ba_global_free(ptr);
+            return UMF_RESULT_SUCCESS;
+        }
+    };
+
+    umf_memory_provider_ops_t provider_ops =
+        umf_test::providerMakeCOps<memory_provider, void>();
+
+    auto providerUnique =
+        wrapProviderUnique(createProviderChecked(&provider_ops, nullptr));
+    provider_handle = providerUnique.get();
+
+    umf_result_t ret =
+        umfPoolCreate(umfDisjointPoolOps(), provider_handle, params,
+                      UMF_POOL_CREATE_FLAG_DISABLE_TRACKING, &pool);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    // Test allocation and deallocation
+    // This will use the default disjoint pool parameters
+    void *ptr = umfPoolMalloc(pool, 64);
+    ASSERT_NE(ptr, nullptr);
+    ret = umfPoolFree(pool, ptr);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    // Test allocation and deallocation with a different size
+    ptr = umfPoolMalloc(pool, 1024);
+    ASSERT_NE(ptr, nullptr);
+    ret = umfPoolFree(pool, ptr);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    umfPoolDestroy(pool);
+    umfDisjointPoolParamsDestroy(params);
+}
+
 INSTANTIATE_TEST_SUITE_P(disjointPoolTests, umfPoolTest,
                          ::testing::Values(poolCreateExtParams{
                              umfDisjointPoolOps(), defaultDisjointPoolConfig,
