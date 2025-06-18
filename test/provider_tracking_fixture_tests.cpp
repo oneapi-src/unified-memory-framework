@@ -37,7 +37,9 @@ struct provider_from_pool : public umf_test::provider_base_t {
     umf_result_t free(void *ptr, size_t) noexcept {
         return umfPoolFree(pool, ptr);
     }
-    const char *get_name() noexcept { return "provider_from_pool"; }
+    const char *get_name(/*[[maybe_unused]] void *provider*/) noexcept {
+        return "provider_from_pool";
+    }
 
     virtual ~provider_from_pool() {
         if (pool) {
@@ -83,10 +85,12 @@ INSTANTIATE_TEST_SUITE_P(TrackingProviderPoolTest, umfPoolTest,
                          ::testing::Values(poolCreateExtParams{
                              umfProxyPoolOps(), nullptr, nullptr,
                              &PROVIDER_FROM_POOL_OPS,
-                             providerFromPoolParamsCreate, nullptr}));
+                             providerFromPoolParamsCreate, nullptr}),
+                         poolCreateExtParamsNameGen);
 
 INSTANTIATE_TEST_SUITE_P(TrackingProviderMultiPoolTest, umfMultiPoolTest,
                          ::testing::Values(poolCreateExtParams{
                              umfProxyPoolOps(), nullptr, nullptr,
                              &PROVIDER_FROM_POOL_OPS,
-                             providerFromPoolParamsCreate, nullptr}));
+                             providerFromPoolParamsCreate, nullptr}),
+                         poolCreateExtParamsNameGen);

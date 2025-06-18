@@ -13,15 +13,15 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <ctl/ctl.h>
-#include <memory_pool_internal.h>
 #include <umf/memory_pool.h>
 #include <umf/memory_pool_ops.h>
 #include <umf/memory_provider.h>
 #include <umf/pools/pool_scalable.h>
 
 #include "base_alloc_global.h"
+#include "ctl/ctl.h"
 #include "libumf.h"
+#include "memory_pool_internal.h"
 #include "pool_scalable_internal.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
@@ -60,6 +60,7 @@ typedef struct tbb_callbacks_t {
     bool (*pool_destroy)(void *);
     void *(*pool_identify)(void *object);
     size_t (*pool_msize)(void *, void *);
+    int (*pool_allocation_command)(int, void *);
 #ifdef _WIN32
     HMODULE lib_handle;
 #else
@@ -431,6 +432,14 @@ static const char *scalable_get_name(void *pool) {
     return "scalable";
 }
 
+static umf_result_t scalable_trim_memory(void *pool, size_t minBytesToKeep) {
+    (void)pool;           // unused
+    (void)minBytesToKeep; // unused
+
+    //scalable_allocation_command?
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_memory_pool_ops_t UMF_SCALABLE_POOL_OPS = {
     .version = UMF_POOL_OPS_VERSION_CURRENT,
     .initialize = tbb_pool_initialize,
@@ -444,6 +453,7 @@ static umf_memory_pool_ops_t UMF_SCALABLE_POOL_OPS = {
     .get_last_allocation_error = tbb_get_last_allocation_error,
     .ext_ctl = pool_ctl,
     .ext_get_name = scalable_get_name,
+    .trim_memory = scalable_trim_memory,
 };
 
 const umf_memory_pool_ops_t *umfScalablePoolOps(void) {

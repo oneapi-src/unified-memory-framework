@@ -165,6 +165,10 @@ void assignOpsIpcDefaults(umf_memory_provider_ops_t *ops) {
 
 static bool validateOps(const umf_memory_provider_ops_t *ops) {
     // Validate mandatory operations one by one
+    if (ops->get_name == NULL) {
+        LOG_ERR("missing get_name function pointer\n");
+        return false;
+    }
     CHECK_OP(ops, alloc);
     CHECK_OP(ops, free);
     CHECK_OP(ops, get_recommended_page_size);
