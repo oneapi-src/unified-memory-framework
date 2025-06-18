@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2024 Intel Corporation
+ * Copyright (C) 2023-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -66,6 +66,7 @@ umf_result_t umfCloseIPCHandle(void *ptr);
 umf_result_t umfPoolGetIPCHandler(umf_memory_pool_handle_t hPool,
                                   umf_ipc_handler_handle_t *hIPCHandler);
 
+/// todo: IPC handler creation and destruction (IPC provider??)
 #ifdef __cplusplus
 }
 #endif

@@ -275,12 +275,14 @@ umf_result_t umfMemoryProviderFree(umf_memory_provider_handle_t hProvider,
     return res;
 }
 
-void umfMemoryProviderGetLastNativeError(umf_memory_provider_handle_t hProvider,
-                                         const char **ppMessage,
-                                         int32_t *pError) {
-    ASSERT(hProvider != NULL);
-    hProvider->ops.get_last_native_error(hProvider->provider_priv, ppMessage,
-                                         pError);
+umf_result_t
+umfMemoryProviderGetLastNativeError(umf_memory_provider_handle_t hProvider,
+                                    const char **ppMessage, int32_t *pError) {
+    UMF_CHECK((hProvider != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    UMF_CHECK((ppMessage != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    UMF_CHECK((pError != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    return hProvider->ops.get_last_native_error(hProvider->provider_priv,
+                                                ppMessage, pError);
 }
 
 void *umfMemoryProviderGetPriv(umf_memory_provider_handle_t hProvider) {
@@ -310,9 +312,11 @@ umfMemoryProviderGetMinPageSize(umf_memory_provider_handle_t hProvider,
     return res;
 }
 
-const char *umfMemoryProviderGetName(umf_memory_provider_handle_t hProvider) {
-    UMF_CHECK((hProvider != NULL), NULL);
-    return hProvider->ops.get_name(hProvider->provider_priv);
+umf_result_t umfMemoryProviderGetName(umf_memory_provider_handle_t hProvider,
+                                      const char **name) {
+    UMF_CHECK((hProvider != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    UMF_CHECK((name != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    return hProvider->ops.get_name(hProvider->provider_priv, name);
 }
 
 umf_result_t umfMemoryProviderPurgeLazy(umf_memory_provider_handle_t hProvider,
@@ -335,8 +339,11 @@ umf_result_t umfMemoryProviderPurgeForce(umf_memory_provider_handle_t hProvider,
     return res;
 }
 
-umf_memory_provider_handle_t umfGetLastFailedMemoryProvider(void) {
-    return *umfGetLastFailedMemoryProviderPtr();
+umf_result_t
+umfGetLastFailedMemoryProvider(umf_memory_provider_handle_t *provider) {
+    UMF_CHECK((provider != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    *provider = *umfGetLastFailedMemoryProviderPtr();
+    return UMF_RESULT_SUCCESS;
 }
 
 umf_result_t

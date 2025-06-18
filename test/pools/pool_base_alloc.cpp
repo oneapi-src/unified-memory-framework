@@ -31,8 +31,11 @@ struct base_alloc_pool : public umf_test::pool_base_t {
             UMF_RESULT_ERROR_NOT_SUPPORTED;
         return NULL;
     }
-    size_t malloc_usable_size(const void *ptr) noexcept {
-        return umf_ba_global_malloc_usable_size(ptr);
+    umf_result_t malloc_usable_size(const void *ptr, size_t *size) noexcept {
+        if (size) {
+            *size = umf_ba_global_malloc_usable_size(ptr);
+        }
+        return UMF_RESULT_SUCCESS;
     }
     umf_result_t free(void *ptr) noexcept {
         umf_ba_global_free(ptr);

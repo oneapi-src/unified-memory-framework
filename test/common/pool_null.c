@@ -49,10 +49,14 @@ static void *nullAlignedMalloc(void *pool, size_t size, size_t alignment) {
     return NULL;
 }
 
-static size_t nullMallocUsableSize(void *pool, const void *ptr) {
+static umf_result_t nullMallocUsableSize(void *pool, const void *ptr,
+                                         size_t *size) {
     (void)ptr;
     (void)pool;
-    return 0;
+    if (size) {
+        *size = 0;
+    }
+    return UMF_RESULT_SUCCESS;
 }
 
 static umf_result_t nullFree(void *pool, void *ptr) {

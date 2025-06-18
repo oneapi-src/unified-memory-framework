@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 Intel Corporation
+// Copyright (C) 2023-2025 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -87,7 +87,10 @@ int main(void) {
     }
 
     for (int i = 0; i < 4; i++) {
-        UT_ASSERTeq(umfPoolByPtr(ptrs[i]), pools[i]);
+        umf_memory_pool_handle_t pool = NULL;
+        ret = umfPoolByPtr(ptrs[i], &pool);
+        UT_ASSERTeq(ret, UMF_RESULT_SUCCESS);
+        UT_ASSERTeq(pool, pools[i]);
     }
 
     for (int i = 0; i < 4; i++) {

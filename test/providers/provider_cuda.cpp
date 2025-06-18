@@ -268,7 +268,9 @@ TEST_P(umfCUDAProviderTest, getName) {
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(provider, nullptr);
 
-    const char *name = umfMemoryProviderGetName(provider);
+    const char *name = nullptr;
+    umf_result = umfMemoryProviderGetName(provider, &name);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_STREQ(name, "CUDA");
 
     umfMemoryProviderDestroy(provider);

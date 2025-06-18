@@ -33,21 +33,22 @@ static umf_ctl_node_t CTL_NODE(umf)[] = {CTL_CHILD(provider), CTL_CHILD(pool),
 
 void initialize_global_ctl(void) { CTL_REGISTER_MODULE(NULL, umf); }
 
-int umfInit(void) {
+umf_result_t umfInit(void) {
     if (utils_fetch_and_add_u64(&umfRefCount, 1) == 0) {
         utils_log_init();
-        TRACKER = umfMemoryTrackerCreate();
-        if (!TRACKER) {
+        umf_result_t umf_result = umfMemoryTrackerCreate(&TRACKER);
+        if (umf_result != UMF_RESULT_SUCCESS) {
             LOG_ERR("Failed to create memory tracker");
-            return -1;
+            return umf_result;
         }
 
         LOG_DEBUG("UMF tracker created");
 
-        umf_result_t umf_result = umfIpcCacheGlobalInit();
+        umf_result = umfIpcCacheGlobalInit();
         if (umf_result != UMF_RESULT_SUCCESS) {
             LOG_ERR("Failed to initialize IPC cache");
-            return -1;
+            umfMemoryTrackerDestroy(TRACKER);
+            return umf_result;
         }
 
         LOG_DEBUG("UMF IPC cache initialized");
@@ -58,10 +59,10 @@ int umfInit(void) {
         LOG_DEBUG("UMF library initialized");
     }
 
-    return 0;
+    return UMF_RESULT_SUCCESS;
 }
 
-void umfTearDown(void) {
+umf_result_t umfTearDown(void) {
     if (utils_fetch_and_sub_u64(&umfRefCount, 1) == 1) {
 #if !defined(_WIN32) && !defined(UMF_NO_HWLOC)
         umfMemspaceHostAllDestroy();
@@ -95,6 +96,7 @@ void umfTearDown(void) {
         fini_tbb_global_state();
         LOG_DEBUG("UMF library finalized");
     }
+    return UMF_RESULT_SUCCESS;
 }
 
 int umfGetCurrentVersion(void) { return UMF_VERSION_CURRENT; }

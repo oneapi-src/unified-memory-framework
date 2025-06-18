@@ -468,11 +468,15 @@ TEST_P(umfMultiPoolTest, memoryTracking) {
     }
 
     for (auto [ptr, size, expectedPool] : ptrs) {
-        auto pool = umfPoolByPtr(ptr);
+        umf_memory_pool_handle_t pool = nullptr;
+        auto ret = umfPoolByPtr(ptr, &pool);
+        ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
         ASSERT_EQ(pool, expectedPool);
 
-        pool = umfPoolByPtr(reinterpret_cast<void *>(
-            reinterpret_cast<intptr_t>(ptr) + size - 1));
+        ret = umfPoolByPtr(reinterpret_cast<void *>(
+                               reinterpret_cast<intptr_t>(ptr) + size - 1),
+                           &pool);
+        ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
         ASSERT_EQ(pool, expectedPool);
     }
 
@@ -526,6 +530,9 @@ TEST_P(umfPoolTest, mallocUsableSize) {
             << "This test is invalid with AddressSanitizer instrumentation";
     }
 #endif
+    if (pool_ops == umfProxyPoolOps()) {
+        GTEST_SKIP() << "Proxy pool does not support umfPoolMallocUsableSize";
+    }
     for (size_t allocSize :
          {32, 64, 1 << 6, 1 << 10, 1 << 13, 1 << 16, 1 << 19}) {
         for (size_t alignment : {0, 1 << 6, 1 << 8, 1 << 12}) {
@@ -539,7 +546,11 @@ TEST_P(umfPoolTest, mallocUsableSize) {
                 ptr = umfPoolAlignedMalloc(pool.get(), allocSize, alignment);
             }
             ASSERT_NE(ptr, nullptr);
-            size_t result = umfPoolMallocUsableSize(pool.get(), ptr);
+            size_t result = 0;
+            umf_result_t ret =
+                umfPoolMallocUsableSize(pool.get(), ptr, &result);
+
+            ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
             ASSERT_TRUE(result == 0 || result >= allocSize);
 
             // Make sure we can write to this memory

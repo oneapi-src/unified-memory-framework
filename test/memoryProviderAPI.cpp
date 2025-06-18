@@ -7,6 +7,7 @@
 #include "provider_null.h"
 #include "test_helpers.h"
 
+#include <gtest/gtest.h>
 #include <string>
 #include <unordered_map>
 #include <variant>
@@ -38,8 +39,11 @@ TEST_F(test, memoryProviderTrace) {
     ASSERT_EQ(calls["free"], 1UL);
     ASSERT_EQ(calls.size(), ++call_count);
 
-    umfMemoryProviderGetLastNativeError(tracingProvider.get(), nullptr,
-                                        nullptr);
+    const char *buffer;
+    int err;
+    ret = umfMemoryProviderGetLastNativeError(tracingProvider.get(), &buffer,
+                                              &err);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
     ASSERT_EQ(calls["get_last_native_error"], 1UL);
     ASSERT_EQ(calls.size(), ++call_count);
 
@@ -56,7 +60,10 @@ TEST_F(test, memoryProviderTrace) {
     ASSERT_EQ(calls["get_min_page_size"], 1UL);
     ASSERT_EQ(calls.size(), ++call_count);
 
-    const char *pName = umfMemoryProviderGetName(tracingProvider.get());
+    const char *pName = nullptr;
+    ret = umfMemoryProviderGetName(tracingProvider.get(), &pName);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(pName, nullptr);
     ASSERT_EQ(calls["name"], 1UL);
     ASSERT_EQ(calls.size(), ++call_count);
     ASSERT_EQ(std::string(pName), std::string("null"));

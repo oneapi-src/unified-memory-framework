@@ -29,9 +29,10 @@ typedef struct umf_disjoint_pool_params_t *umf_disjoint_pool_params_handle_t;
 
 /// @brief Create a pool limits struct.
 /// @param MaxSize specifies hard limit for memory allocated from a provider.
-/// @return handle to the created shared limits struct.
-umf_disjoint_pool_shared_limits_handle_t
-umfDisjointPoolSharedLimitsCreate(size_t MaxSize);
+/// @param hSharedLimits [out] handle to the newly created shared limits struct.
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+umf_result_t umfDisjointPoolSharedLimitsCreate(
+    size_t MaxSize, umf_disjoint_pool_shared_limits_handle_t *hSharedLimits);
 
 /// @brief Destroy previously created pool limits struct.
 /// @param hSharedLimits handle to the shared limits struct.

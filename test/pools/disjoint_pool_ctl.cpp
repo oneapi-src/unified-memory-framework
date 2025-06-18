@@ -109,7 +109,8 @@ TEST_F(test, disjointCtlName) {
                             params);
 
     // Check that the default name is correctly set
-    const char *name = umfPoolGetName(poolWrapper.get());
+    const char *name = NULL;
+    ASSERT_SUCCESS(umfPoolGetName(poolWrapper.get(), &name));
     ASSERT_STREQ(name, val);
 
     // Clean up
@@ -142,7 +143,8 @@ TEST_F(test, disjointCtlChangeNameTwice) {
                             params);
 
     // Check that the default name is correctly set
-    const char *name = umfPoolGetName(poolWrapper.get());
+    const char *name = NULL;
+    ASSERT_SUCCESS(umfPoolGetName(poolWrapper.get(), &name));
     ASSERT_STREQ(name, val2);
 
     // Clean up
