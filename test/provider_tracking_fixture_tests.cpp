@@ -37,7 +37,10 @@ struct provider_from_pool : public umf_test::provider_base_t {
     umf_result_t free(void *ptr, size_t) noexcept {
         return umfPoolFree(pool, ptr);
     }
-    const char *get_name() noexcept { return "provider_from_pool"; }
+    umf_result_t get_name(const char **name) noexcept {
+        *name = "provider_from_pool";
+        return UMF_RESULT_SUCCESS;
+    }
 
     virtual ~provider_from_pool() {
         if (pool) {

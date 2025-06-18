@@ -180,7 +180,9 @@ TEST(scalablePoolTest, scalablePoolName) {
     ret = umfPoolCreate(umfScalablePoolOps(), provider, nullptr, 0, &pool);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 
-    const char *name = umfPoolGetName(pool);
+    const char *name = nullptr;
+    ret = umfPoolGetName(pool, &name);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
     EXPECT_STREQ(name, "scalable");
 
     umfPoolDestroy(pool);

@@ -391,8 +391,10 @@ void free(void *ptr) {
     if (ba_leak_free(ptr) == 0) {
         return;
     }
+    umf_memory_pool_handle_t pool;
 
-    if (Proxy_pool && (umfPoolByPtr(ptr) == Proxy_pool)) {
+    if (Proxy_pool && (umfPoolByPtr(ptr, &pool) == UMF_RESULT_SUCCESS &&
+                       pool == Proxy_pool)) {
         if (umfPoolFree(Proxy_pool, ptr) != UMF_RESULT_SUCCESS) {
             LOG_ERR("umfPoolFree() failed");
         }
@@ -425,8 +427,10 @@ void *realloc(void *ptr, size_t size) {
     if (leak_pool_contains_pointer) {
         return ba_leak_realloc(ptr, size, leak_pool_contains_pointer);
     }
+    umf_memory_pool_handle_t pool;
 
-    if (Proxy_pool && (umfPoolByPtr(ptr) == Proxy_pool)) {
+    if (Proxy_pool && (umfPoolByPtr(ptr, &pool) == UMF_RESULT_SUCCESS &&
+                       pool == Proxy_pool)) {
         was_called_from_umfPool = 1;
         void *new_ptr = umfPoolRealloc(Proxy_pool, ptr, size);
         was_called_from_umfPool = 0;
@@ -474,10 +478,13 @@ size_t malloc_usable_size(void *ptr) {
     if (ba_leak_pool_contains_pointer(ptr)) {
         return 0; // unsupported in case of the ba_leak allocator
     }
+    umf_memory_pool_handle_t pool;
 
-    if (Proxy_pool && (umfPoolByPtr(ptr) == Proxy_pool)) {
+    if (Proxy_pool && (umfPoolByPtr(ptr, &pool) == UMF_RESULT_SUCCESS &&
+                       pool == Proxy_pool)) {
         was_called_from_umfPool = 1;
-        size_t size = umfPoolMallocUsableSize(Proxy_pool, ptr);
+        size_t size = 0;
+        umfPoolMallocUsableSize(Proxy_pool, ptr, &size);
         was_called_from_umfPool = 0;
         return size;
     }

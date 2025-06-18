@@ -507,17 +507,18 @@ static umf_result_t cu_memory_provider_free(void *provider, void *ptr,
     return cu2umf_result(cu_result);
 }
 
-static void cu_memory_provider_get_last_native_error(void *provider,
-                                                     const char **ppMessage,
-                                                     int32_t *pError) {
+static umf_result_t
+cu_memory_provider_get_last_native_error(void *provider, const char **ppMessage,
+                                         int32_t *pError) {
     (void)provider;
 
     if (ppMessage == NULL || pError == NULL) {
         ASSERT(0);
-        return;
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
     CUresult result;
+    umf_result_t ret = UMF_RESULT_SUCCESS;
     size_t buf_size = 0;
     const char *error_name = NULL;
     const char *error_string = NULL;
@@ -535,6 +536,7 @@ static void cu_memory_provider_get_last_native_error(void *provider,
         strncpy(TLS_last_native_error.msg_buff, "cuGetErrorName() failed",
                 TLS_MSG_BUF_LEN - 1);
         TLS_last_native_error.msg_buff[TLS_MSG_BUF_LEN - 1] = '\0';
+        ret = cu2umf_result(result);
     }
 
     buf_size = strlen(TLS_last_native_error.msg_buff);
@@ -553,10 +555,12 @@ static void cu_memory_provider_get_last_native_error(void *provider,
     } else {
         strncat(TLS_last_native_error.msg_buff, "cuGetErrorString() failed",
                 TLS_MSG_BUF_LEN - buf_size - 1);
+        ret = cu2umf_result(result);
     }
 
     *pError = TLS_last_native_error.native_error;
     *ppMessage = TLS_last_native_error.msg_buff;
+    return ret;
 }
 
 static umf_result_t cu_memory_provider_get_min_page_size(void *provider,
@@ -595,9 +599,11 @@ cu_memory_provider_get_recommended_page_size(void *provider, size_t size,
     return cu2umf_result(cu_result);
 }
 
-static const char *cu_memory_provider_get_name(void *provider) {
+static umf_result_t cu_memory_provider_get_name(void *provider,
+                                                const char **name) {
     (void)provider;
-    return "CUDA";
+    *name = "CUDA";
+    return UMF_RESULT_SUCCESS;
 }
 
 static umf_result_t cu_memory_provider_get_ipc_handle_size(void *provider,

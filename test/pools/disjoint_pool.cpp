@@ -218,11 +218,14 @@ TEST_F(test, sharedLimits) {
     umf_result_t ret = umfDisjointPoolParamsSetSlabMinSize(params, SlabMinSize);
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
 
+    umf_disjoint_pool_shared_limits_handle_t hLimits = nullptr;
+    ret = umfDisjointPoolSharedLimitsCreate(MaxSize, &hLimits);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+    EXPECT_NE(hLimits, nullptr);
     auto limits =
         std::unique_ptr<umf_disjoint_pool_shared_limits_t,
                         decltype(&umfDisjointPoolSharedLimitsDestroy)>(
-            umfDisjointPoolSharedLimitsCreate(MaxSize),
-            &umfDisjointPoolSharedLimitsDestroy);
+            hLimits, &umfDisjointPoolSharedLimitsDestroy);
 
     ret = umfDisjointPoolParamsSetSharedLimits(params, limits.get());
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
@@ -349,7 +352,9 @@ TEST_F(test, disjointPoolName) {
     res =
         umfPoolCreate(umfDisjointPoolOps(), provider_handle, params, 0, &pool);
     EXPECT_EQ(res, UMF_RESULT_SUCCESS);
-    const char *name = umfPoolGetName(pool);
+    const char *name = nullptr;
+    res = umfPoolGetName(pool, &name);
+    EXPECT_EQ(res, UMF_RESULT_SUCCESS);
     EXPECT_STREQ(name, "disjoint");
 
     umfPoolDestroy(pool);

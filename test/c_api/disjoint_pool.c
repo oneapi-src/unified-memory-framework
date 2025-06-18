@@ -36,8 +36,9 @@ void test_disjoint_pool_shared_limits(void) {
     retp = umfDisjointPoolParamsCreate(&params);
     UT_ASSERTeq(retp, UMF_RESULT_SUCCESS);
 
-    umf_disjoint_pool_shared_limits_handle_t limits =
-        umfDisjointPoolSharedLimitsCreate(1024);
+    umf_disjoint_pool_shared_limits_handle_t limits;
+    retp = umfDisjointPoolSharedLimitsCreate(1024, &limits);
+    UT_ASSERTeq(retp, UMF_RESULT_SUCCESS);
     UT_ASSERTne(limits, NULL);
 
     retp = umfDisjointPoolParamsSetSharedLimits(params, limits);

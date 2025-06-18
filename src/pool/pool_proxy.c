@@ -110,14 +110,19 @@ static umf_result_t proxy_free(void *pool, void *ptr) {
     return umfMemoryProviderFree(hPool->hProvider, ptr, size);
 }
 
-static size_t proxy_malloc_usable_size(void *pool, const void *ptr) {
+static umf_result_t proxy_malloc_usable_size(void *pool, const void *ptr,
+                                             size_t *size) {
     assert(pool);
 
     (void)pool;
     (void)ptr;
+    if (!size) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
 
     TLS_last_allocation_error = UMF_RESULT_ERROR_NOT_SUPPORTED;
-    return 0;
+    *size = 0;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
 static umf_result_t proxy_get_last_allocation_error(void *pool) {

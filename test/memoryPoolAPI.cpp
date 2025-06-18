@@ -77,7 +77,9 @@ TEST_P(umfPoolWithCreateFlagsTest, memoryPoolTrace) {
     ASSERT_EQ(providerCalls["alloc"], 1UL);
     ASSERT_EQ(providerCalls.size(), ++provider_call_count);
 
-    umfPoolMallocUsableSize(tracingPool.get(), nullptr);
+    size_t tmpSize;
+    umfPoolMallocUsableSize(tracingPool.get(), nullptr, &tmpSize);
+    // we ignore return value of poolMallocUsabeSize(), as it might be not supported
     ASSERT_EQ(poolCalls["malloc_usable_size"], 1UL);
     ASSERT_EQ(poolCalls.size(), ++pool_call_count);
 
@@ -166,13 +168,17 @@ TEST_F(test, BasicPoolByPtrTest) {
     char *ptr = (char *)umfPoolMalloc(expected_pool, SIZE);
     ASSERT_NE(ptr, nullptr);
 
-    auto ret_pool = umfPoolByPtr(ptr);
+    umf_memory_pool_handle_t ret_pool = nullptr;
+    ret = umfPoolByPtr(ptr, &ret_pool);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
     EXPECT_EQ(ret_pool, expected_pool);
 
-    ret_pool = umfPoolByPtr(ptr + SIZE);
+    ret = umfPoolByPtr(ptr + SIZE, &ret_pool);
+    ASSERT_NE(ret, UMF_RESULT_SUCCESS);
     EXPECT_EQ(ret_pool, nullptr);
 
-    ret_pool = umfPoolByPtr(ptr + SIZE - 1);
+    ret = umfPoolByPtr(ptr + SIZE - 1, &ret_pool);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
     EXPECT_EQ(ret_pool, expected_pool);
 
     ret = umfFree(ptr);
@@ -415,8 +421,8 @@ TEST_F(test, getLastFailedMemoryProvider) {
     static umf_result_t allocResult = UMF_RESULT_SUCCESS;
 
     struct memory_provider : public umf_test::provider_base_t {
-        umf_result_t initialize(const char *inName) {
-            name = inName;
+        umf_result_t initialize(const char *name) {
+            provider_name = name;
             return UMF_RESULT_SUCCESS;
         }
 
@@ -435,9 +441,12 @@ TEST_F(test, getLastFailedMemoryProvider) {
             return UMF_RESULT_SUCCESS;
         }
 
-        const char *get_name() noexcept { return this->name; }
+        umf_result_t get_name(const char **name) noexcept {
+            *name = this->provider_name;
+            return UMF_RESULT_SUCCESS;
+        }
 
-        const char *name;
+        const char *provider_name;
     };
     umf_memory_provider_ops_t provider_ops =
         umf_test::providerMakeCOps<memory_provider, char>();
@@ -459,25 +468,32 @@ TEST_F(test, getLastFailedMemoryProvider) {
     allocResult = UMF_RESULT_ERROR_UNKNOWN;
     ptr = umfPoolMalloc(pool.get(), allocSize);
     ASSERT_EQ(ptr, nullptr);
-    ASSERT_EQ(std::string_view(
-                  umfMemoryProviderGetName(umfGetLastFailedMemoryProvider())),
-              "provider1");
+    umf_memory_provider_handle_t lastProv = nullptr;
+    umf_result_t ret = umfGetLastFailedMemoryProvider(&lastProv);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    const char *lastName = nullptr;
+    ret = umfMemoryProviderGetName(lastProv, &lastName);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(std::string_view(lastName), "provider1");
 
-    auto ret =
-        umfMemoryProviderAlloc(providerUnique2.get(), allocSize, 0, &ptr);
+    ret = umfMemoryProviderAlloc(providerUnique2.get(), allocSize, 0, &ptr);
     ASSERT_NE(ret, UMF_RESULT_SUCCESS);
     ASSERT_EQ(ptr, nullptr);
-    ASSERT_EQ(std::string_view(
-                  umfMemoryProviderGetName(umfGetLastFailedMemoryProvider())),
-              "provider2");
+    ret = umfGetLastFailedMemoryProvider(&lastProv);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ret = umfMemoryProviderGetName(lastProv, &lastName);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(std::string_view(lastName), "provider2");
 
     // successful provider should not be returned by umfGetLastFailedMemoryProvider
     allocResult = UMF_RESULT_SUCCESS;
     ptr = umfPoolMalloc(pool.get(), allocSize);
     ASSERT_NE(ptr, nullptr);
-    ASSERT_EQ(std::string_view(
-                  umfMemoryProviderGetName(umfGetLastFailedMemoryProvider())),
-              "provider2");
+    ret = umfGetLastFailedMemoryProvider(&lastProv);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ret = umfMemoryProviderGetName(lastProv, &lastName);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(std::string_view(lastName), "provider2");
     umfPoolFree(pool.get(), ptr);
 
     // error in another thread should not impact umfGetLastFailedMemoryProvider on this thread
@@ -485,15 +501,21 @@ TEST_F(test, getLastFailedMemoryProvider) {
     std::thread t([&, hPool = pool.get()] {
         ptr = umfPoolMalloc(hPool, allocSize);
         ASSERT_EQ(ptr, nullptr);
-        ASSERT_EQ(std::string_view(umfMemoryProviderGetName(
-                      umfGetLastFailedMemoryProvider())),
-                  "provider1");
+        umf_memory_provider_handle_t prov = nullptr;
+        umf_result_t ret = umfGetLastFailedMemoryProvider(&prov);
+        ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+        const char *name = nullptr;
+        ret = umfMemoryProviderGetName(prov, &name);
+        ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+        ASSERT_EQ(std::string_view(name), "provider1");
     });
     t.join();
 
-    ASSERT_EQ(std::string_view(
-                  umfMemoryProviderGetName(umfGetLastFailedMemoryProvider())),
-              "provider2");
+    ret = umfGetLastFailedMemoryProvider(&lastProv);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ret = umfMemoryProviderGetName(lastProv, &lastName);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(std::string_view(lastName), "provider2");
 }
 
 // This fixture can be instantiated with any function that accepts void

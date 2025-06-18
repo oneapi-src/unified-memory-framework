@@ -90,9 +90,11 @@ typedef struct umf_memory_provider_ops_t {
     /// @param ppMessage [out] pointer to a string containing provider specific
     ///        result in string representation
     /// @param pError [out] pointer to an integer where the adapter specific error code will be stored
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
     ///
-    void (*get_last_native_error)(void *provider, const char **ppMessage,
-                                  int32_t *pError);
+    umf_result_t (*get_last_native_error)(void *provider,
+                                          const char **ppMessage,
+                                          int32_t *pError);
 
     ///
     /// @brief Retrieve recommended page size for a given allocation size.
@@ -118,9 +120,10 @@ typedef struct umf_memory_provider_ops_t {
     ///
     /// @brief Retrieve name of a given memory \p provider.
     /// @param provider pointer to the memory provider
-    /// @return pointer to a string containing the name of the \p provider
+    /// @param name [out] pointer to a string containing the name of the \p provider
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
     ///
-    const char *(*get_name)(void *provider);
+    umf_result_t (*get_name)(void *provider, const char **name);
 
     ///
     /// Following functions, with ext prefix, are optional and memory provider implementation

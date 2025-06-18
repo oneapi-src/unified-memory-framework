@@ -201,18 +201,25 @@ static umf_result_t file_free(void *provider, void *ptr, size_t size) {
 }
 
 // Function to get the name of the file provider
-static const char *file_get_name(void *provider) {
+static umf_result_t file_get_name(void *provider, const char **name) {
     (void)provider; // Unused parameter
-    return "File Provider";
+    if (!name) {
+        fprintf(stderr, "Name is NULL\n");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    *name = "File Provider";
+    return UMF_RESULT_SUCCESS;
 }
 
 // Function to get the last native error of the file provider
 // This function is needed only if the provider returns UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC
-static void file_get_last_native_error(void *provider, const char **ppMessage,
-                                       int32_t *pError) {
+static umf_result_t file_get_last_native_error(void *provider,
+                                               const char **ppMessage,
+                                               int32_t *pError) {
     (void)provider; // Unused parameter
     *ppMessage = "";
     *pError = 0;
+    return UMF_RESULT_SUCCESS;
 }
 
 // Function to get the recommended page size of the file provider
@@ -319,7 +326,12 @@ int main(void) {
     printf("%s %p\n", ptr, (void *)ptr);
 
     // Retrieve a memory pool from a pointer, available with memory tracking
-    umf_memory_pool_handle_t check_pool = umfPoolByPtr(ptr);
+    umf_memory_pool_handle_t check_pool;
+    res = umfPoolByPtr(ptr, &check_pool);
+    if (res != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "Failed to retrieve a memory pool for the pointer!\n");
+        goto memory_pool_destroy;
+    }
     printf("Memory at %p has been allocated from the pool at %p\n", (void *)ptr,
            (void *)check_pool);
 

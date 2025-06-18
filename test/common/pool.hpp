@@ -112,7 +112,12 @@ typedef struct pool_base_t {
     void *calloc(size_t, size_t) noexcept { return nullptr; }
     void *realloc(void *, size_t) noexcept { return nullptr; }
     void *aligned_malloc(size_t, size_t) noexcept { return nullptr; }
-    size_t malloc_usable_size(const void *) noexcept { return 0; }
+    umf_result_t malloc_usable_size(const void *, size_t *size) noexcept {
+        if (size) {
+            *size = 0;
+        }
+        return UMF_RESULT_SUCCESS;
+    }
     umf_result_t free(void *) noexcept { return UMF_RESULT_SUCCESS; }
     umf_result_t get_last_allocation_error() noexcept {
         return UMF_RESULT_SUCCESS;
@@ -138,14 +143,17 @@ struct malloc_pool : public pool_base_t {
         return ::aligned_alloc(alignment, size);
 #endif
     }
-    size_t malloc_usable_size(const void *ptr) noexcept {
+    umf_result_t malloc_usable_size(const void *ptr, size_t *size) noexcept {
+        if (size) {
 #ifdef _WIN32
-        return _msize((void *)ptr);
+            *size = _msize((void *)ptr);
 #elif __APPLE__
-        return ::malloc_size((void *)ptr);
+            *size = ::malloc_size((void *)ptr);
 #else
-        return ::malloc_usable_size((void *)ptr);
+            *size = ::malloc_usable_size((void *)ptr);
 #endif
+        }
+        return UMF_RESULT_SUCCESS;
     }
     umf_result_t free(void *ptr) noexcept {
         ::free(ptr);

@@ -96,7 +96,12 @@ int main(void) {
     printf("%s %p\n", ptr, (void *)ptr);
 
     // Retrieve a memory pool from a pointer, available with memory tracking
-    umf_memory_pool_handle_t check_pool = umfPoolByPtr(ptr);
+    umf_memory_pool_handle_t check_pool;
+    res = umfPoolByPtr(ptr, &check_pool);
+    if (res != UMF_RESULT_SUCCESS) {
+        printf("Failed to retrieve a memory pool for the pointer!\n");
+        goto memory_pool_destroy;
+    }
     printf("Memory at %p has been allocated from the pool at %p\n", (void *)ptr,
            (void *)check_pool);
 

@@ -42,7 +42,9 @@ typedef struct provider_base_t {
                       [[maybe_unused]] size_t size) noexcept {
         return UMF_RESULT_ERROR_UNKNOWN;
     }
-    void get_last_native_error(const char **, int32_t *) noexcept {}
+    umf_result_t get_last_native_error(const char **, int32_t *) noexcept {
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
     umf_result_t
     get_recommended_page_size([[maybe_unused]] size_t size,
                               [[maybe_unused]] size_t *pageSize) noexcept {
@@ -52,7 +54,10 @@ typedef struct provider_base_t {
                                    [[maybe_unused]] size_t *pageSize) noexcept {
         return UMF_RESULT_ERROR_UNKNOWN;
     }
-    const char *get_name() noexcept { return "base"; }
+    umf_result_t get_name(const char **name) noexcept {
+        *name = "base";
+        return UMF_RESULT_SUCCESS;
+    }
     umf_result_t ext_purge_lazy([[maybe_unused]] void *ptr,
                                 [[maybe_unused]] size_t size) noexcept {
         return UMF_RESULT_ERROR_UNKNOWN;
@@ -125,7 +130,10 @@ struct provider_ba_global : public provider_base_t {
         umf_ba_global_free(ptr);
         return UMF_RESULT_SUCCESS;
     }
-    const char *get_name() noexcept { return "umf_ba_global"; }
+    umf_result_t get_name(const char **name) noexcept {
+        *name = "umf_ba_global";
+        return UMF_RESULT_SUCCESS;
+    }
 };
 
 umf_memory_provider_ops_t BA_GLOBAL_PROVIDER_OPS =
@@ -150,7 +158,10 @@ struct provider_mock_out_of_mem : public provider_base_t {
     umf_result_t free(void *ptr, size_t size) noexcept {
         return helper_prov.free(ptr, size);
     }
-    const char *get_name() noexcept { return "mock_out_of_mem"; }
+    umf_result_t get_name(const char **name) noexcept {
+        *name = "mock_out_of_mem";
+        return UMF_RESULT_SUCCESS;
+    }
 };
 
 const umf_memory_provider_ops_t MOCK_OUT_OF_MEM_PROVIDER_OPS =
