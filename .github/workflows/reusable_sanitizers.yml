@@ -91,17 +91,12 @@ jobs:
       with:
         fetch-depth: 0
 
-    # Use the latest MSVC toolset available, when compiling UMF with ASan.
-    # Running binaries compiled with older toolsets results in a
-    # 'STATUS_DLL_INIT_FAILED' error despite being linked with ASan from
-    # the same toolset as the compiler being used.
-    # https://github.com/actions/runner-images/issues/8891
+    # Ensure that the required environment is set
+    # Note: No need to specify version, the latest one will be used and should work fine
     - name: Setup MSVC dev command prompt
-      if: matrix.sanitizers.asan == 'ON'
       uses: TheMrMilchmann/setup-msvc-dev@fb19abb8a41b3cf0340f5d1be17d420309232be6 # v3.0.1
       with:
         arch: x64
-        toolset: '14'
 
     - name: Initialize vcpkg
       uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
@@ -112,7 +107,7 @@ jobs:
 
     - name: Install dependencies
       run: vcpkg install --triplet x64-windows
-      shell: pwsh # Specifies PowerShell as the shell for running the script.
+      shell: pwsh
 
     - name: Configure build
       run: >
