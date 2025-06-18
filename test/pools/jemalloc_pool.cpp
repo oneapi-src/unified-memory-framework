@@ -87,7 +87,8 @@ INSTANTIATE_TEST_SUITE_P(
         poolCreateExtParams{umfJemallocPoolOps(), createJemallocParams<1>,
                             destroyJemallocParams, umfOsMemoryProviderOps(),
                             createOsMemoryProviderParams,
-                            destroyOsMemoryProviderParams}));
+                            destroyOsMemoryProviderParams}),
+    poolCreateExtParamsNameGen);
 
 // this test makes sure that jemalloc does not use
 // memory provider to allocate metadata (and hence

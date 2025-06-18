@@ -161,6 +161,16 @@ typedef struct umf_memory_pool_ops_t {
     /// @return A constant character string representing the pool's name.
     ///
     const char *(*ext_get_name)(void *pool);
+
+    ///
+    /// @brief Trims memory of the pool, removing resources that are not needed
+    ///        to keep the pool operational.
+    /// @param pool pointer to the memory pool
+    /// @param minBytesToKeep minimum number of bytes to keep in the pool if
+    ///        possible.
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+    ///
+    umf_result_t (*trim_memory)(void *pool, size_t minBytesToKeep);
 } umf_memory_pool_ops_t;
 
 #ifdef __cplusplus

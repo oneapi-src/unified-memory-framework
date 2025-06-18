@@ -552,6 +552,28 @@ static umf_result_t op_get_last_allocation_error(void *pool) {
     return TLS_last_allocation_error;
 }
 
+static const char *op_get_name(void *pool) {
+    (void)pool; // not used
+    return "jemalloc";
+}
+
+static umf_result_t op_trim_memory(void *pool, size_t minBytesToKeep) {
+    (void)minBytesToKeep; // unused - TODO?
+
+    jemalloc_memory_pool_t *je_pool = (jemalloc_memory_pool_t *)pool;
+    for (size_t i = 0; i < je_pool->n_arenas; i++) {
+        char cmd[64];
+        unsigned arena = je_pool->arena_index[i];
+        snprintf(cmd, sizeof(cmd), "arena.%u.purge", arena);
+        if (je_mallctl(cmd, NULL, NULL, NULL, 0)) {
+            LOG_ERR("Could not purge jemalloc arena %u", arena);
+            return UMF_RESULT_ERROR_UNKNOWN;
+        }
+    }
+
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_memory_pool_ops_t UMF_JEMALLOC_POOL_OPS = {
     .version = UMF_POOL_OPS_VERSION_CURRENT,
     .initialize = op_initialize,
@@ -563,6 +585,8 @@ static umf_memory_pool_ops_t UMF_JEMALLOC_POOL_OPS = {
     .malloc_usable_size = op_malloc_usable_size,
     .free = op_free,
     .get_last_allocation_error = op_get_last_allocation_error,
+    .ext_get_name = op_get_name,
+    .trim_memory = op_trim_memory,
 };
 
 const umf_memory_pool_ops_t *umfJemallocPoolOps(void) {

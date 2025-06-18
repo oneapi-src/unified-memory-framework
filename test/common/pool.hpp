@@ -117,6 +117,10 @@ typedef struct pool_base_t {
     umf_result_t get_last_allocation_error() noexcept {
         return UMF_RESULT_SUCCESS;
     }
+    umf_result_t
+    trim_memory([[maybe_unused]] size_t minBytesToKeep) noexcept {
+        return UMF_RESULT_SUCCESS;
+    }
 } pool_base_t;
 
 struct malloc_pool : public pool_base_t {
