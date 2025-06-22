@@ -233,6 +233,10 @@ err_provider_create:
 }
 
 umf_result_t umfPoolDestroy(umf_memory_pool_handle_t hPool) {
+    if (hPool == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     if (umf_ba_global_is_destroyed()) {
         return UMF_RESULT_ERROR_UNKNOWN;
     }
@@ -409,4 +413,14 @@ umf_result_t umfPoolGetTag(umf_memory_pool_handle_t hPool, void **tag) {
     *tag = hPool->tag;
     utils_mutex_unlock(&hPool->lock);
     return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t umfPoolTrimMemory(umf_memory_pool_handle_t hPool,
+                               size_t minBytesToKeep) {
+    UMF_CHECK((hPool != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    if (hPool->ops.trim_memory == NULL) {
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
+
+    return hPool->ops.trim_memory(hPool->pool_priv, minBytesToKeep);
 }

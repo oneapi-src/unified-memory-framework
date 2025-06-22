@@ -33,6 +33,28 @@ using poolCreateExtParams =
                pfnPoolParamsDestroy, const umf_memory_provider_ops_t *,
                pfnProviderParamsCreate, pfnProviderParamsDestroy>;
 
+std::string poolCreateExtParamsNameGen(
+    const testing::TestParamInfo<poolCreateExtParams> param) {
+
+    const umf_memory_pool_ops_t *pool_ops = std::get<0>(param.param);
+    const umf_memory_provider_ops_t *provider_ops = std::get<3>(param.param);
+
+    std::string poolName =
+        pool_ops->ext_get_name ? pool_ops->ext_get_name(NULL) : "unknown_pool";
+    std::string providerName =
+        //*
+        provider_ops->get_name ? provider_ops->get_name(NULL)
+                               : "unknown_provider";
+    // */
+
+    std::string poolParams =
+        std::get<1>(param.param)
+            ? std::string("_w_params") + std::to_string(param.index)
+            : std::string("");
+
+    return poolName + poolParams + "_" + providerName;
+}
+
 umf_test::pool_unique_handle_t poolCreateExtUnique(poolCreateExtParams params) {
     auto [pool_ops, poolParamsCreate, poolParamsDestroy, provider_ops,
           providerParamsCreate, providerParamsDestroy] = params;
@@ -400,6 +422,23 @@ TEST_P(umfPoolTest, multiThreadedMallocFreeRandomSizes) {
     for (auto &thread : threads) {
         thread.join();
     }
+}
+
+TEST_P(umfPoolTest, trimMemory) {
+    constexpr size_t size = 1024;
+
+    umf_memory_pool_handle_t hPool = pool.get();
+    char *ptr = (char *)umfPoolMalloc(hPool, size);
+    ASSERT_NE(ptr, nullptr);
+
+    umf_result_t ret = umfFree(ptr);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    // Call to umfPoolTrimMemory should purge the whole memory pool
+    ret = umfPoolTrimMemory(hPool, 0);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    // TODO add CTL to check that the memory was actually purged
 }
 
 TEST_P(umfMemTest, outOfMem) {

@@ -47,7 +47,9 @@ struct provider_mock_ipc : public umf_test::provider_base_t {
         return ret;
     }
 
-    const char *get_name() noexcept { return "mock_ipc"; }
+    const char *get_name(/*[[maybe_unused]] void *provider*/) noexcept {
+        return "mock_ipc";
+    }
 
     umf_result_t ext_get_ipc_handle_size(size_t *size) noexcept {
         *size = sizeof(provider_ipc_data_t);

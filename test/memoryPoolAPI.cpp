@@ -13,7 +13,9 @@
 
 #include <umf/memory_provider.h>
 #include <umf/pools/pool_disjoint.h>
+#include <umf/pools/pool_jemalloc.h>
 #include <umf/pools/pool_proxy.h>
+#include <umf/pools/pool_scalable.h>
 
 #ifdef UMF_PROXY_LIB_ENABLED
 #include <umf/proxy_lib_new_delete.h>
@@ -303,7 +305,12 @@ INSTANTIATE_TEST_SUITE_P(
                             &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr},
         poolCreateExtParams{umfDisjointPoolOps(), defaultDisjointPoolConfig,
                             defaultDisjointPoolConfigDestroy,
-                            &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr}));
+                            &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr}),
+    //  poolCreateExtParams{umfScalablePoolOps(), nullptr, nullptr,
+    //                      &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr},
+    //  poolCreateExtParams{umfJemallocPoolOps(), nullptr, nullptr,
+    //                     &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr}),
+    poolCreateExtParamsNameGen);
 
 INSTANTIATE_TEST_SUITE_P(mallocMultiPoolTest, umfMultiPoolTest,
                          ::testing::Values(poolCreateExtParams{
@@ -435,7 +442,9 @@ TEST_F(test, getLastFailedMemoryProvider) {
             return UMF_RESULT_SUCCESS;
         }
 
-        const char *get_name() noexcept { return this->name; }
+        const char *get_name(/*[[maybe_unused]] void *provider*/) noexcept {
+            return this->name;
+        }
 
         const char *name;
     };
@@ -525,11 +534,18 @@ TEST_P(poolHandleCheck, poolHandleCheckAll) {
 // will be called with zero-initialized arguments.
 INSTANTIATE_TEST_SUITE_P(
     poolHandleCheck, poolHandleCheck,
-    ::testing::Values(
-        umf_test::withGeneratedArgs(umfPoolMalloc),
-        umf_test::withGeneratedArgs(umfPoolAlignedMalloc),
-        umf_test::withGeneratedArgs(umfPoolFree),
-        umf_test::withGeneratedArgs(umfPoolCalloc),
-        umf_test::withGeneratedArgs(umfPoolRealloc),
-        umf_test::withGeneratedArgs(umfPoolMallocUsableSize),
-        umf_test::withGeneratedArgs(umfPoolGetLastAllocationError)));
+    ::testing::Values(umf_test::withGeneratedArgs(umfPoolMalloc),
+                      umf_test::withGeneratedArgs(umfPoolAlignedMalloc),
+                      umf_test::withGeneratedArgs(umfPoolFree),
+                      umf_test::withGeneratedArgs(umfPoolCalloc),
+                      umf_test::withGeneratedArgs(umfPoolRealloc),
+                      umf_test::withGeneratedArgs(umfPoolMallocUsableSize),
+                      umf_test::withGeneratedArgs(umfPoolGetLastAllocationError)
+                      /* umf_test::withGeneratedArgs(umfPoolByPtr),
+        umf_test::withGeneratedArgs(umfPoolGetMemoryProvider),
+        umf_test::withGeneratedArgs(umfPoolGetTag),
+        umf_test::withGeneratedArgs(umfPoolSetTag),
+        umf_test::withGeneratedArgs(umfPoolCreate),
+        umf_test::withGeneratedArgs(umfPoolDestroy),
+        umf_test::withGeneratedArgs(umfPoolTrimMemory))*/
+                      ));

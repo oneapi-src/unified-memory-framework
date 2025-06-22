@@ -92,6 +92,11 @@ static umf_result_t traceGetLastStatus(void *pool) {
     return umfPoolGetLastAllocationError(trace_pool->params.hUpstreamPool);
 }
 
+static const char *traceGetName(void *pool) {
+    (void)pool; // not used
+    return "trace";
+}
+
 umf_memory_pool_ops_t UMF_TRACE_POOL_OPS = {
     .version = UMF_POOL_OPS_VERSION_CURRENT,
     .initialize = traceInitialize,
@@ -102,5 +107,6 @@ umf_memory_pool_ops_t UMF_TRACE_POOL_OPS = {
     .aligned_malloc = traceAlignedMalloc,
     .malloc_usable_size = traceMallocUsableSize,
     .free = traceFree,
+    .ext_get_name = traceGetName,
     .get_last_allocation_error = traceGetLastStatus,
 };
