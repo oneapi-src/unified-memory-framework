@@ -590,12 +590,21 @@ void *critnib_remove(struct critnib *c, word key, void **ref) {
     c->pending_del_nodes[del] = n;
 
 del_leaf:
-    value = k->value;
-    if (c->cb_free_leaf) {
+    utils_atomic_load_acquire_ptr(&k->value, &value);
+    if (c->cb_free_leaf && value) {
+        void *expected = value;
+        void *desired = NULL;
+        if (!utils_compare_exchange_u64((uint64_t *)&k->value,
+                                        (uint64_t *)&expected,
+                                        (uint64_t *)&desired)) {
+            value = NULL;
+            goto not_found;
+        }
+
         utils_atomic_store_release_ptr(&k->to_be_freed, value);
-        utils_atomic_store_release_ptr(&k->value, NULL);
         *ref = k;
     }
+
     c->pending_del_leaves[del] = k;
 
 not_found:
