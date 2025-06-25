@@ -10,6 +10,7 @@ on:
 env:
   BUILD_DIR : "${{github.workspace}}/build"
   INSTL_DIR : "${{github.workspace}}/install-dir"
+  N_ITER_SAN : 400 # Number of iterations for sanitizers looped job
 
 permissions:
   contents: read
@@ -72,4 +73,4 @@ jobs:
       env:
         ASAN_OPTIONS: allocator_may_return_null=1
         TSAN_OPTIONS: allocator_may_return_null=1
-      run: for i in {1..600}; do echo ">>> ITERATION no. ${i}" ; ctest --output-on-failure || exit 1; date; done
+      run: for i in {1..${{env.N_ITER_SAN}}}; do echo ">>> ITERATION no. ${i}" ; ctest --output-on-failure || exit 1; date; done
