@@ -281,8 +281,8 @@ jobs:
         -DCMAKE_C_COMPILER=gcc
         -DCMAKE_CXX_COMPILER=g++
         -DUMF_BUILD_TESTS=OFF
-        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON
-        -DUMF_BUILD_CUDA_PROVIDER=ON
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=${{matrix.provider == 'LEVEL_ZERO' && 'ON' || 'OFF' }}
+        -DUMF_BUILD_CUDA_PROVIDER=${{matrix.provider == 'CUDA' && 'ON' || 'OFF' }}
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
@@ -316,13 +316,11 @@ jobs:
         -DUMF_BUILD_GPU_TESTS=ON
         -DUMF_BUILD_EXAMPLES=ON
         -DUMF_BUILD_GPU_EXAMPLES=ON
-        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
-        -DUMF_BUILD_CUDA_PROVIDER=OFF
-        -DUMF_BUILD_${{matrix.provider}}_PROVIDER=ON
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=${{matrix.provider == 'LEVEL_ZERO' && 'ON' || 'OFF' }}
+        -DUMF_BUILD_CUDA_PROVIDER=${{matrix.provider == 'CUDA' && 'ON' || 'OFF' }}
         -DUMF_FORMAT_CODE_STYLE=OFF
         -DUMF_DEVELOPER_MODE=ON
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
-        -DUMF_BUILD_LIBUMF_POOL_DISJOINT=ON
         -DUMF_TESTS_FAIL_ON_SKIP=ON
 
     - name: Build "tag" UMF
