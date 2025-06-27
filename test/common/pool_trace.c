@@ -69,12 +69,13 @@ static void *traceAlignedMalloc(void *pool, size_t size, size_t alignment) {
                                 alignment);
 }
 
-static size_t traceMallocUsableSize(void *pool, const void *ptr) {
+static umf_result_t traceMallocUsableSize(void *pool, const void *ptr,
+                                          size_t *size) {
     trace_pool_t *trace_pool = (trace_pool_t *)pool;
 
     trace_pool->params.trace_handler(trace_pool->params.trace_context,
                                      "malloc_usable_size");
-    return umfPoolMallocUsableSize(trace_pool->params.hUpstreamPool, ptr);
+    return umfPoolMallocUsableSize(trace_pool->params.hUpstreamPool, ptr, size);
 }
 
 static umf_result_t traceFree(void *pool, void *ptr) {

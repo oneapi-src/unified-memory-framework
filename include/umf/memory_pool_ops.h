@@ -93,9 +93,11 @@ typedef struct umf_memory_pool_ops_t {
     /// @brief Obtains size of block of memory allocated from the \p pool for a given \p ptr
     /// @param pool pointer to the memory pool
     /// @param ptr pointer to the allocated memory
-    /// @return size of the memory block allocated from the \p pool
+    /// @param size [out] size of the memory block allocated from the \p pool
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
     ///
-    size_t (*malloc_usable_size)(void *pool, const void *ptr);
+    umf_result_t (*malloc_usable_size)(void *pool, const void *ptr,
+                                       size_t *size);
 
     ///
     /// @brief Frees the memory space of the specified \p pool pointed by \p ptr
@@ -105,7 +107,7 @@ typedef struct umf_memory_pool_ops_t {
     ///         Whether any status other than UMF_RESULT_SUCCESS can be returned
     ///         depends on the memory provider used by the \p pool.
     ///
-    umf_result_t (*free)(void *pool, void *);
+    umf_result_t (*free)(void *pool, void *ptr);
 
     ///
     /// @brief Retrieve \p umf_result_t representing the error of the last failed allocation
@@ -153,14 +155,15 @@ typedef struct umf_memory_pool_ops_t {
     ///
     /// @brief Retrieves the name of the memory pool
     /// @param pool valid pointer to the memory pool or NULL value
+    /// @param name [out] pointer to a constant character string that will be set to the pool's name
     /// \details
     /// * Implementations *must* return a literal null-terminated string.
     ///
     /// * Implementations *must* return default pool name when NULL is provided,
     ///   otherwise the pool's name is returned.
-    /// @return A constant character string representing the pool's name.
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
     ///
-    const char *(*ext_get_name)(void *pool);
+    umf_result_t (*ext_get_name)(void *pool, const char **name);
 } umf_memory_pool_ops_t;
 
 #ifdef __cplusplus

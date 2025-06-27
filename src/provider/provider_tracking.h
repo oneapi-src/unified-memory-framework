@@ -31,7 +31,7 @@ typedef struct umf_memory_tracker_t *umf_memory_tracker_handle_t;
 
 extern umf_memory_tracker_handle_t TRACKER;
 
-umf_memory_tracker_handle_t umfMemoryTrackerCreate(void);
+umf_result_t umfMemoryTrackerCreate(umf_memory_tracker_handle_t *handle);
 void umfMemoryTrackerDestroy(umf_memory_tracker_handle_t handle);
 
 umf_memory_pool_handle_t umfMemoryTrackerGetPool(const void *ptr);

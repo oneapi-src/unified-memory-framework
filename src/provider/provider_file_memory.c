@@ -554,19 +554,19 @@ static umf_result_t file_alloc_cb(void *provider, size_t size, size_t alignment,
     return UMF_RESULT_SUCCESS;
 }
 
-static void file_get_last_native_error(void *provider, const char **ppMessage,
-                                       int32_t *pError) {
+static umf_result_t file_get_last_native_error(void *provider,
+                                               const char **ppMessage,
+                                               int32_t *pError) {
     (void)provider; // unused
 
     if (ppMessage == NULL || pError == NULL) {
-        assert(0);
-        return;
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
     *pError = TLS_last_native_error.native_error;
     if (TLS_last_native_error.errno_value == 0) {
         *ppMessage = Native_error_str[*pError - UMF_FILE_RESULT_SUCCESS];
-        return;
+        return UMF_RESULT_SUCCESS;
     }
 
     const char *msg;
@@ -587,6 +587,7 @@ static void file_get_last_native_error(void *provider, const char **ppMessage,
                    TLS_last_native_error.msg_buff + pos, TLS_MSG_BUF_LEN - pos);
 
     *ppMessage = TLS_last_native_error.msg_buff;
+    return UMF_RESULT_SUCCESS;
 }
 
 static umf_result_t file_get_recommended_page_size(void *provider, size_t size,
@@ -630,9 +631,10 @@ static umf_result_t file_purge_force(void *provider, void *ptr, size_t size) {
     return UMF_RESULT_SUCCESS;
 }
 
-static const char *file_get_name(void *provider) {
+static umf_result_t file_get_name(void *provider, const char **name) {
     (void)provider; // unused
-    return "FILE";
+    *name = "FILE";
+    return UMF_RESULT_SUCCESS;
 }
 
 static umf_result_t file_allocation_split(void *provider, void *ptr,

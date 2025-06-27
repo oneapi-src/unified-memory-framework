@@ -381,7 +381,9 @@ TEST_P(umfLevelZeroProviderTest, getName) {
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(provider, nullptr);
 
-    const char *name = umfMemoryProviderGetName(provider);
+    const char *name = nullptr;
+    umf_result = umfMemoryProviderGetName(provider, &name);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_STREQ(name, "LEVEL_ZERO");
 
     umfMemoryProviderDestroy(provider);
@@ -400,7 +402,9 @@ TEST_P(umfLevelZeroProviderTest, allocInvalidSize) {
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC);
     const char *message;
     int32_t error;
-    umfMemoryProviderGetLastNativeError(provider, &message, &error);
+    umf_result =
+        umfMemoryProviderGetLastNativeError(provider, &message, &error);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED); // TODO: see #1385
     ASSERT_EQ(error, ZE_RESULT_ERROR_UNSUPPORTED_SIZE);
 
     umfMemoryProviderDestroy(provider);

@@ -582,17 +582,18 @@ static umf_result_t ze_memory_provider_initialize(const void *params,
     return UMF_RESULT_SUCCESS;
 }
 
-static void ze_memory_provider_get_last_native_error(void *provider,
-                                                     const char **ppMessage,
-                                                     int32_t *pError) {
+static umf_result_t
+ze_memory_provider_get_last_native_error(void *provider, const char **ppMessage,
+                                         int32_t *pError) {
     (void)provider;
 
     if (ppMessage == NULL || pError == NULL) {
-        ASSERT(0);
-        return;
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
     *pError = TLS_last_native_error;
+
+    return UMF_RESULT_ERROR_NOT_SUPPORTED; // TODO: see #1385
 }
 
 static umf_result_t ze_memory_provider_get_min_page_size(void *provider,
@@ -645,9 +646,11 @@ ze_memory_provider_get_recommended_page_size(void *provider, size_t size,
     return ze_memory_provider_get_min_page_size(provider, NULL, pageSize);
 }
 
-static const char *ze_memory_provider_get_name(void *provider) {
+static umf_result_t ze_memory_provider_get_name(void *provider,
+                                                const char **name) {
     (void)provider;
-    return "LEVEL_ZERO";
+    *name = "LEVEL_ZERO";
+    return UMF_RESULT_SUCCESS;
 }
 
 static umf_result_t ze_memory_provider_allocation_merge(void *hProvider,

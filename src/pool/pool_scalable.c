@@ -405,10 +405,15 @@ static umf_result_t tbb_free(void *pool, void *ptr) {
     return UMF_RESULT_ERROR_UNKNOWN;
 }
 
-static size_t tbb_malloc_usable_size(void *pool, const void *ptr) {
+static umf_result_t tbb_malloc_usable_size(void *pool, const void *ptr,
+                                           size_t *size) {
     tbb_memory_pool_t *pool_data = (tbb_memory_pool_t *)pool;
+    if (!size) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
     // Remove the 'const' qualifier because the TBB pool_msize function requires a non-const pointer.
-    return tbb_callbacks.pool_msize(pool_data->tbb_pool, (void *)ptr);
+    *size = tbb_callbacks.pool_msize(pool_data->tbb_pool, (void *)ptr);
+    return UMF_RESULT_SUCCESS;
 }
 
 static umf_result_t tbb_get_last_allocation_error(void *pool) {
@@ -426,9 +431,10 @@ static umf_result_t pool_ctl(void *hPool, int operationType, const char *name,
                      CTL_QUERY_PROGRAMMATIC, name, query_type, arg, size);
 }
 
-static const char *scalable_get_name(void *pool) {
+static umf_result_t scalable_get_name(void *pool, const char **name) {
     (void)pool; // unused
-    return "scalable";
+    *name = "scalable";
+    return UMF_RESULT_SUCCESS;
 }
 
 static umf_memory_pool_ops_t UMF_SCALABLE_POOL_OPS = {

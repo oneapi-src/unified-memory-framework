@@ -540,11 +540,16 @@ static umf_result_t op_finalize(void *pool) {
     return ret;
 }
 
-static size_t op_malloc_usable_size(void *pool, const void *ptr) {
+static umf_result_t op_malloc_usable_size(void *pool, const void *ptr,
+                                          size_t *size) {
     (void)pool; // not used
+    if (!size) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
     // Remove the 'const' qualifier because the je_malloc_usable_size
     // function requires a non-const pointer.
-    return je_malloc_usable_size((void *)ptr);
+    *size = je_malloc_usable_size((void *)ptr);
+    return UMF_RESULT_SUCCESS;
 }
 
 static umf_result_t op_get_last_allocation_error(void *pool) {

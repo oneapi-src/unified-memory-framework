@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -70,8 +70,13 @@ TEST_F(test, proxyLib_size_threshold_aligned_alloc) {
     ASSERT_EQ((int)(IS_ALIGNED((uintptr_t)ptr_LT, ALIGN_1024)), 1);
     ASSERT_EQ((int)(IS_ALIGNED((uintptr_t)ptr_EQ, ALIGN_1024)), 1);
 
-    ASSERT_EQ(umfPoolByPtr(ptr_LT), nullptr);
-    ASSERT_NE(umfPoolByPtr(ptr_EQ), nullptr);
+    umf_memory_pool_handle_t poolTmp = nullptr;
+    umf_result_t ret_pool = umfPoolByPtr(ptr_LT, &poolTmp);
+    ASSERT_NE(ret_pool, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(poolTmp, nullptr);
+    ret_pool = umfPoolByPtr(ptr_EQ, &poolTmp);
+    ASSERT_EQ(ret_pool, UMF_RESULT_SUCCESS);
+    ASSERT_NE(poolTmp, nullptr);
 
 #ifdef _WIN32
     _aligned_free(ptr_LT);
@@ -89,8 +94,13 @@ TEST_F(test, proxyLib_size_threshold_malloc) {
     ASSERT_NE(ptr_LT, nullptr);
     ASSERT_NE(ptr_EQ, nullptr);
 
-    ASSERT_EQ(umfPoolByPtr(ptr_LT), nullptr);
-    ASSERT_NE(umfPoolByPtr(ptr_EQ), nullptr);
+    umf_memory_pool_handle_t poolTmp = nullptr;
+    umf_result_t ret_pool = umfPoolByPtr(ptr_LT, &poolTmp);
+    ASSERT_NE(ret_pool, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(poolTmp, nullptr);
+    ret_pool = umfPoolByPtr(ptr_EQ, &poolTmp);
+    ASSERT_EQ(ret_pool, UMF_RESULT_SUCCESS);
+    ASSERT_NE(poolTmp, nullptr);
 
     ::free(ptr_LT);
     ::free(ptr_EQ);
@@ -103,8 +113,13 @@ TEST_F(test, proxyLib_size_threshold_calloc) {
     ASSERT_NE(ptr_LT, nullptr);
     ASSERT_NE(ptr_EQ, nullptr);
 
-    ASSERT_EQ(umfPoolByPtr(ptr_LT), nullptr);
-    ASSERT_NE(umfPoolByPtr(ptr_EQ), nullptr);
+    umf_memory_pool_handle_t poolTmp = nullptr;
+    umf_result_t ret_pool = umfPoolByPtr(ptr_LT, &poolTmp);
+    ASSERT_NE(ret_pool, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(poolTmp, nullptr);
+    ret_pool = umfPoolByPtr(ptr_EQ, &poolTmp);
+    ASSERT_EQ(ret_pool, UMF_RESULT_SUCCESS);
+    ASSERT_NE(poolTmp, nullptr);
 
     ::free(ptr_LT);
     ::free(ptr_EQ);
@@ -123,8 +138,13 @@ TEST_F(test, proxyLib_size_threshold_realloc_up) {
     ASSERT_NE(ptr_LT_r, nullptr);
     ASSERT_NE(ptr_EQ_r, nullptr);
 
-    ASSERT_EQ(umfPoolByPtr(ptr_LT_r), nullptr);
-    ASSERT_NE(umfPoolByPtr(ptr_EQ_r), nullptr);
+    umf_memory_pool_handle_t poolTmp = nullptr;
+    umf_result_t ret_pool = umfPoolByPtr(ptr_LT_r, &poolTmp);
+    ASSERT_NE(ret_pool, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(poolTmp, nullptr);
+    ret_pool = umfPoolByPtr(ptr_EQ_r, &poolTmp);
+    ASSERT_EQ(ret_pool, UMF_RESULT_SUCCESS);
+    ASSERT_NE(poolTmp, nullptr);
 
     ::free(ptr_LT_r);
     ::free(ptr_EQ_r);
@@ -143,8 +163,13 @@ TEST_F(test, proxyLib_size_threshold_realloc_down) {
     ASSERT_NE(ptr_LT_r, nullptr);
     ASSERT_NE(ptr_EQ_r, nullptr);
 
-    ASSERT_EQ(umfPoolByPtr(ptr_LT_r), nullptr);
-    ASSERT_NE(umfPoolByPtr(ptr_EQ_r), nullptr);
+    umf_memory_pool_handle_t poolTmp = nullptr;
+    umf_result_t ret_pool = umfPoolByPtr(ptr_LT_r, &poolTmp);
+    ASSERT_NE(ret_pool, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(poolTmp, nullptr);
+    ret_pool = umfPoolByPtr(ptr_EQ_r, &poolTmp);
+    ASSERT_EQ(ret_pool, UMF_RESULT_SUCCESS);
+    ASSERT_NE(poolTmp, nullptr);
 
     ::free(ptr_LT_r);
     ::free(ptr_EQ_r);

@@ -119,7 +119,9 @@ struct FixedProviderTest
         const char *message;
         int32_t error;
         auto provider = this->provider.get();
-        umfMemoryProviderGetLastNativeError(provider, &message, &error);
+        umf_result_t ret =
+            umfMemoryProviderGetLastNativeError(provider, &message, &error);
+        ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
         ASSERT_EQ(error, err);
         ASSERT_EQ(compare_native_error_str(message, error), 0);
     }
@@ -270,7 +272,9 @@ TEST_P(FixedProviderTest, get_recommended_page_size) {
 }
 
 TEST_P(FixedProviderTest, get_name) {
-    const char *name = umfMemoryProviderGetName(provider.get());
+    const char *name = nullptr;
+    umf_result_t ret = umfMemoryProviderGetName(provider.get(), &name);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
     ASSERT_STREQ(name, "FIXED");
 }
 
