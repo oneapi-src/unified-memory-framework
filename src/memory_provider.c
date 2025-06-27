@@ -12,13 +12,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <umf/base.h>
 #include <umf/memory_provider.h>
 
 #include "base_alloc.h"
 #include "base_alloc_global.h"
 #include "libumf.h"
+#include "memory_props_internal.h"
 #include "memory_provider_internal.h"
-#include "umf/base.h"
 #include "utils_assert.h"
 
 static umf_result_t CTL_SUBTREE_HANDLER(by_handle_provider)(
@@ -419,4 +420,15 @@ umfMemoryProviderCloseIPCHandle(umf_memory_provider_handle_t hProvider,
     UMF_CHECK((ptr != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
     return hProvider->ops.ext_close_ipc_handle(hProvider->provider_priv, ptr,
                                                size);
+}
+
+umf_result_t umfMemoryProviderGetAllocationProperties(
+    umf_memory_provider_handle_t hProvider, const void *ptr,
+    umf_memory_property_id_t propertyId, size_t max_property_size,
+    void *property_value) {
+    UMF_CHECK((hProvider != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    UMF_CHECK((property_value != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    return hProvider->ops.ext_get_allocation_properties(
+        hProvider->provider_priv, ptr, propertyId, max_property_size,
+        property_value);
 }

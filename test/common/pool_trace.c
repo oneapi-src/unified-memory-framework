@@ -5,8 +5,9 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include "pool_trace.h"
 #include <umf/memory_pool_ops.h>
+
+#include "pool_trace.h"
 
 typedef struct trace_pool {
     umf_pool_trace_params_t params;
