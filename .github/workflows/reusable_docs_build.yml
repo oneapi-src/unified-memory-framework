@@ -54,9 +54,9 @@ jobs:
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         repository: intel/llvm
-        # 15.04.2025
+        # 27.06.2025
         # branch: sycl
-        ref: 08d11bcae0cc2daec903f222c9b3e3af92f3b806
+        ref: 3b04aeb7d1d4ad5bbe64fb257f4ca6e5284ec5d0
         path: sc
         sparse-checkout: |
           devops/scripts/benchmarks
@@ -73,7 +73,7 @@ jobs:
       working-directory: ${{ github.workspace }}/build/docs_build/generated/html
       run: |
         cat << 'EOF' > ./performance/config.js
-        remoteDataUrl = 'https://raw.githubusercontent.com/oneapi-src/unified-memory-framework/refs/heads/benchmark-results/data.json';
+        remoteDataUrl = 'https://raw.githubusercontent.com/oneapi-src/unified-memory-framework/refs/heads/benchmark-results/';
         defaultCompareNames = ["Baseline_PVC"];
         EOF
 
