@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -13,6 +13,7 @@
 #include "utils_common.h"
 #include "utils_concurrency.h"
 #include "utils_log.h"
+#include "utils_sanitizers.h"
 
 #ifndef NDEBUG
 #define _DEBUG_EXECUTE(expression) DO_WHILE_EXPRS(expression)
@@ -184,6 +185,8 @@ void *umf_ba_linear_alloc(umf_ba_linear_pool_t *pool, size_t size) {
     }
     _DEBUG_EXECUTE(pool->metadata.global_n_allocs++);
     _DEBUG_EXECUTE(ba_debug_checks(pool));
+    VALGRIND_DO_MALLOCLIKE_BLOCK(ptr, aligned_size, 0, 0);
+    utils_annotate_memory_undefined(ptr, aligned_size);
     utils_mutex_unlock(&pool->metadata.lock);
 
     return ptr;
@@ -206,6 +209,7 @@ int umf_ba_linear_free(umf_ba_linear_pool_t *pool, void *ptr) {
     if (pool_contains_ptr(pool, pool->metadata.pool_size, pool->data, ptr)) {
         pool->metadata.pool_n_allocs--;
         _DEBUG_EXECUTE(pool->metadata.global_n_allocs--);
+        VALGRIND_DO_FREELIKE_BLOCK(ptr, 0);
         size_t page_size = ba_os_get_page_size();
         if ((pool->metadata.pool_n_allocs == 0) && pool->next_pool &&
             (pool->metadata.pool_size > page_size)) {
@@ -241,6 +245,7 @@ int umf_ba_linear_free(umf_ba_linear_pool_t *pool, void *ptr) {
             }
             _DEBUG_EXECUTE(ba_debug_checks(pool));
             utils_mutex_unlock(&pool->metadata.lock);
+            VALGRIND_DO_FREELIKE_BLOCK(ptr, 0);
             return 0;
         }
         prev_pool = next_pool;

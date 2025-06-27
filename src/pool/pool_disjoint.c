@@ -1012,6 +1012,7 @@ umf_result_t disjoint_pool_finalize(void *pool) {
         destroy_bucket(hPool->buckets[i]);
     }
 
+    umf_ba_global_free(hPool->buckets);
     VALGRIND_DO_DESTROY_MEMPOOL(hPool);
     ret = umfDisjointPoolSharedLimitsDestroy(hPool->default_shared_limits);
     if (ret != UMF_RESULT_SUCCESS) {
