@@ -63,6 +63,9 @@ jobs:
     uses: ./.github/workflows/reusable_qemu.yml
     with:
       short_run: true
+  FetchContent:
+    needs: [FastBuild]
+    uses: ./.github/workflows/reusable_fetch_content.yml
   ProxyLib:
     needs: [Build]
     uses: ./.github/workflows/reusable_proxy_lib.yml
