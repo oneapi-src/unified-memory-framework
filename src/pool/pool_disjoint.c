@@ -1034,7 +1034,7 @@ const char *disjoint_pool_get_name(void *pool) {
 }
 
 static umf_memory_pool_ops_t UMF_DISJOINT_POOL_OPS = {
-    .version = UMF_VERSION_CURRENT,
+    .version = UMF_POOL_OPS_VERSION_CURRENT,
     .initialize = disjoint_pool_initialize,
     .finalize = disjoint_pool_finalize,
     .malloc = disjoint_pool_malloc,
