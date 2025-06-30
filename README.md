@@ -327,6 +327,8 @@ Packages required for using this pool and executing tests/benchmarks (not requir
 
 ### Memspaces (Linux-only)
 
+> **Note**: The memspace, memtarget and mempolicy APIs are experimental and may change in future releases.
+
 TODO: Add general information about memspaces.
 
 #### Host all memspace

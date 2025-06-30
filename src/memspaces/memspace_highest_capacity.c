@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -11,7 +11,7 @@
 #include <stdlib.h>
 
 #include <umf.h>
-#include <umf/memspace.h>
+#include <umf/experimental/memspace.h>
 
 // UMF_MEMSPACE_HIGHEST_CAPACITY requires HWLOC
 // Additionally, it is currently unsupported on Win

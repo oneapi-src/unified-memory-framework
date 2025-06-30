@@ -6,8 +6,8 @@
 #include "memspace_helpers.hpp"
 
 #include <umf/base.h>
-#include <umf/memspace.h>
-#include <umf/memtarget.h>
+#include <umf/experimental/memspace.h>
+#include <umf/experimental/memtarget.h>
 
 using umf_test::test;
 

@@ -13,8 +13,6 @@
 #include <umf/base.h>
 #include <umf/memory_pool.h>
 #include <umf/memory_provider.h>
-#include <umf/mempolicy.h>
-#include <umf/memspace.h>
 
 #ifdef __cplusplus
 extern "C" {

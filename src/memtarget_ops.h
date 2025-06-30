@@ -11,8 +11,8 @@
 #define UMF_MEMTARGET_OPS_H 1
 
 #include <umf/base.h>
-#include <umf/memspace.h>
-#include <umf/memtarget.h>
+#include <umf/experimental/memspace.h>
+#include <umf/experimental/memtarget.h>
 
 #ifdef __cplusplus
 extern "C" {

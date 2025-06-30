@@ -11,10 +11,10 @@
 #define UMF_MEMSPACE_H 1
 
 #include <umf/base.h>
+#include <umf/experimental/mempolicy.h>
+#include <umf/experimental/memtarget.h>
 #include <umf/memory_pool.h>
 #include <umf/memory_provider.h>
-#include <umf/mempolicy.h>
-#include <umf/memtarget.h>
 
 #ifdef __cplusplus
 extern "C" {
