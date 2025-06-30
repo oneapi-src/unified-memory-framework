@@ -79,6 +79,12 @@ template <typename T> umf_memory_pool_ops_t poolOpsBase() {
     UMF_ASSIGN_OP(ops, T, malloc_usable_size, UMF_RESULT_SUCCESS);
     UMF_ASSIGN_OP(ops, T, free, UMF_RESULT_SUCCESS);
     UMF_ASSIGN_OP(ops, T, get_last_allocation_error, UMF_RESULT_ERROR_UNKNOWN);
+    ops.get_name = [](void *, const char **name) {
+        if (name) {
+            *name = "test_pool";
+        }
+        return UMF_RESULT_SUCCESS;
+    };
     return ops;
 }
 

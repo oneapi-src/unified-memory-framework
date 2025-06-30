@@ -1056,7 +1056,7 @@ static umf_memory_pool_ops_t UMF_DISJOINT_POOL_OPS = {
     .malloc_usable_size = disjoint_pool_malloc_usable_size,
     .free = disjoint_pool_free,
     .get_last_allocation_error = disjoint_pool_get_last_allocation_error,
-    .ext_get_name = disjoint_pool_get_name,
+    .get_name = disjoint_pool_get_name,
     .ext_ctl = disjoint_pool_ctl,
 };
 

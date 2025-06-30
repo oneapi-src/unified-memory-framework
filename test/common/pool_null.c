@@ -70,6 +70,12 @@ static umf_result_t nullGetLastStatus(void *pool) {
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t nullGetName(void *pool, const char **name) {
+    (void)pool;
+    *name = "null";
+    return UMF_RESULT_SUCCESS;
+}
+
 umf_memory_pool_ops_t UMF_NULL_POOL_OPS = {
     .version = UMF_POOL_OPS_VERSION_CURRENT,
     .initialize = nullInitialize,
@@ -81,4 +87,5 @@ umf_memory_pool_ops_t UMF_NULL_POOL_OPS = {
     .malloc_usable_size = nullMallocUsableSize,
     .free = nullFree,
     .get_last_allocation_error = nullGetLastStatus,
+    .get_name = nullGetName,
 };
