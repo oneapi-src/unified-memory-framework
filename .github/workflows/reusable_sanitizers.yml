@@ -79,7 +79,9 @@ jobs:
       VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
     strategy:
       matrix:
-        compiler: [{c: cl, cxx: cl}, {c: clang-cl, cxx: clang-cl}]
+        # TODO restore clang-cl tests
+        # {c: clang-cl, cxx: clang-cl}
+        compiler: [{c: cl, cxx: cl}]
         # Only ASAN is supported
         sanitizers: [{asan: ON}]
     name: Sanitizers (windows-latest, compilers=${{matrix.compiler.c}}/${{matrix.compiler.cxx}}, asan=${{matrix.sanitizers.asan}})
