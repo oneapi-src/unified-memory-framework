@@ -108,7 +108,23 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Restore vcpkg cache
+      uses: actions/cache@v4
+      id: cache
+      with:
+        path: cache.zip
+        key: reusable-fast-windows-latest-${{ hashFiles('vcpkg.json') }}
+        restore-keys:
+          reusable-fast-windows-latest-
+
+    - name: Unpack vcpkg cache
+      if: steps.cache.outputs.cache-hit == 'true'
+      run: |
+        Expand-Archive -Path ${{github.workspace}}/cache.zip -DestinationPath ${{env.BUILD_DIR}} -Force
+      shell: pwsh
+
     - name: Initialize vcpkg
+      if: steps.cache.outputs.cache-hit != 'true'
       uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
       with:
         vcpkgGitCommitId: ea2a964f9303270322cf3f2d51c265ba146c422d # 1.04.2025
@@ -116,6 +132,7 @@ jobs:
         vcpkgJsonGlob: '**/vcpkg.json'
 
     - name: Install dependencies
+      if: steps.cache.outputs.cache-hit != 'true'
       run: vcpkg install --triplet x64-windows
       shell: pwsh # Specifies PowerShell as the shell for running the script.
 
@@ -164,3 +181,15 @@ jobs:
       run: |
         get-command ${{github.workspace}}/build/bin/Release/umf.dll | format-list
         get-command ${{github.workspace}}/build/src/proxy_lib/Release/umf_proxy.dll | format-list
+
+    - name: Prepare vcpkg cache
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: |
+        Compress-Archive -Path ${{env.BUILD_DIR}}/vcpkg -DestinationPath ${{github.workspace}}/cache.zip -Force -CompressionLevel Fastest
+
+    - name: Cache save
+      if: steps.cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: ${{github.workspace}}/cache.zip
+        key: reusable-fast-windows-latest-${{ hashFiles('vcpkg.json') }}
