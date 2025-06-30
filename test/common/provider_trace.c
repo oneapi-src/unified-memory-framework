@@ -60,8 +60,8 @@ static umf_result_t traceFree(void *provider, void *ptr, size_t size) {
     return umfMemoryProviderFree(traceProvider->hUpstreamProvider, ptr, size);
 }
 
-static void traceGetLastError(void *provider, const char **ppMsg,
-                              int32_t *pError) {
+static umf_result_t traceGetLastError(void *provider, const char **ppMsg,
+                                      int32_t *pError) {
     umf_provider_trace_params_t *traceProvider =
         (umf_provider_trace_params_t *)provider;
 
@@ -69,6 +69,7 @@ static void traceGetLastError(void *provider, const char **ppMsg,
                                  "get_last_native_error");
     umfMemoryProviderGetLastNativeError(traceProvider->hUpstreamProvider, ppMsg,
                                         pError);
+    return UMF_RESULT_SUCCESS;
 }
 
 static umf_result_t traceGetRecommendedPageSize(void *provider, size_t size,
@@ -93,12 +94,12 @@ static umf_result_t traceGetPageSize(void *provider, const void *ptr,
                                            ptr, pageSize);
 }
 
-static const char *traceName(void *provider) {
+static umf_result_t traceName(void *provider, const char **name) {
     umf_provider_trace_params_t *traceProvider =
         (umf_provider_trace_params_t *)provider;
 
     traceProvider->trace_handler(traceProvider->trace_context, "name");
-    return umfMemoryProviderGetName(traceProvider->hUpstreamProvider);
+    return umfMemoryProviderGetName(traceProvider->hUpstreamProvider, name);
 }
 
 static umf_result_t tracePurgeLazy(void *provider, void *ptr, size_t size) {

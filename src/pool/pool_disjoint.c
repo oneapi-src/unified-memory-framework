@@ -688,9 +688,9 @@ umf_result_t disjoint_pool_initialize(umf_memory_provider_handle_t provider,
 
     // Calculate the exponent for min_bucket_size used for finding buckets.
     disjoint_pool->min_bucket_size_exp = (size_t)utils_msb64(Size1);
-    disjoint_pool->default_shared_limits =
-        umfDisjointPoolSharedLimitsCreate(SIZE_MAX);
-    if (disjoint_pool->default_shared_limits == NULL) {
+    if (umfDisjointPoolSharedLimitsCreate(
+            SIZE_MAX, &disjoint_pool->default_shared_limits) !=
+        UMF_RESULT_SUCCESS) {
         goto err_free_known_slabs;
     }
 
@@ -874,10 +874,15 @@ static void *get_unaligned_ptr(size_t chunk_idx, slab_t *slab) {
     return (void *)((uintptr_t)slab->mem_ptr + chunk_idx * slab->bucket->size);
 }
 
-size_t disjoint_pool_malloc_usable_size(void *pool, const void *ptr) {
+umf_result_t disjoint_pool_malloc_usable_size(void *pool, const void *ptr,
+                                              size_t *size) {
     disjoint_pool_t *disjoint_pool = (disjoint_pool_t *)pool;
+    if (!size || !disjoint_pool) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
     if (ptr == NULL) {
-        return 0;
+        *size = 0;
+        return UMF_RESULT_SUCCESS;
     }
 
     // check if given pointer is allocated inside any Disjoint Pool slab
@@ -893,10 +898,12 @@ size_t disjoint_pool_malloc_usable_size(void *pool, const void *ptr) {
         umf_alloc_info_t allocInfo = {NULL, 0, NULL};
         umf_result_t ret = umfMemoryTrackerGetAllocInfo(ptr, &allocInfo);
         if (ret != UMF_RESULT_SUCCESS) {
-            return 0;
+            *size = 0;
+            return ret;
         }
 
-        return allocInfo.baseSize;
+        *size = allocInfo.baseSize;
+        return UMF_RESULT_SUCCESS;
     }
 
     // Get the unaligned pointer
@@ -906,12 +913,12 @@ size_t disjoint_pool_malloc_usable_size(void *pool, const void *ptr) {
 
     ptrdiff_t diff = (ptrdiff_t)ptr - (ptrdiff_t)unaligned_ptr;
 
-    size_t size = slab->bucket->size - diff;
+    *size = slab->bucket->size - diff;
 
     assert(ref_slab);
     critnib_release(disjoint_pool->known_slabs, ref_slab);
 
-    return size;
+    return UMF_RESULT_SUCCESS;
 }
 
 umf_result_t disjoint_pool_free(void *pool, void *ptr) {
@@ -1025,12 +1032,17 @@ umf_result_t disjoint_pool_finalize(void *pool) {
     return ret;
 }
 
-const char *disjoint_pool_get_name(void *pool) {
+static umf_result_t disjoint_pool_get_name(void *pool, const char **name) {
+    if (!name) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
     disjoint_pool_t *hPool = (disjoint_pool_t *)pool;
     if (pool == NULL) {
-        return DEFAULT_NAME;
+        *name = DEFAULT_NAME;
+        return UMF_RESULT_SUCCESS;
     }
-    return hPool->params.name;
+    *name = hPool->params.name;
+    return UMF_RESULT_SUCCESS;
 }
 
 static umf_memory_pool_ops_t UMF_DISJOINT_POOL_OPS = {
@@ -1052,16 +1064,21 @@ const umf_memory_pool_ops_t *umfDisjointPoolOps(void) {
     return &UMF_DISJOINT_POOL_OPS;
 }
 
-umf_disjoint_pool_shared_limits_t *
-umfDisjointPoolSharedLimitsCreate(size_t max_size) {
+umf_result_t umfDisjointPoolSharedLimitsCreate(
+    size_t max_size, umf_disjoint_pool_shared_limits_t **hSharedLimits) {
+    if (!hSharedLimits) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     umf_disjoint_pool_shared_limits_t *ptr = umf_ba_global_alloc(sizeof(*ptr));
     if (ptr == NULL) {
         LOG_ERR("cannot allocate memory for disjoint pool shared limits");
-        return NULL;
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
     ptr->max_size = max_size;
     ptr->total_size = 0;
-    return ptr;
+    *hSharedLimits = ptr;
+    return UMF_RESULT_SUCCESS;
 }
 
 umf_result_t

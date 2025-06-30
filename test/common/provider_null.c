@@ -35,11 +35,12 @@ static umf_result_t nullFree(void *provider, void *ptr, size_t size) {
     return UMF_RESULT_SUCCESS;
 }
 
-static void nullGetLastError(void *provider, const char **ppMsg,
-                             int32_t *pError) {
+static umf_result_t nullGetLastError(void *provider, const char **ppMsg,
+                                     int32_t *pError) {
     (void)provider;
     (void)ppMsg;
     (void)pError;
+    return UMF_RESULT_SUCCESS;
 }
 
 static umf_result_t nullGetRecommendedPageSize(void *provider, size_t size,
@@ -58,9 +59,10 @@ static umf_result_t nullGetPageSize(void *provider, const void *ptr,
     return UMF_RESULT_SUCCESS;
 }
 
-static const char *nullName(void *provider) {
+static umf_result_t nullName(void *provider, const char **name) {
     (void)provider;
-    return "null";
+    *name = "null";
+    return UMF_RESULT_SUCCESS;
 }
 
 static umf_result_t nullPurgeLazy(void *provider, void *ptr, size_t size) {

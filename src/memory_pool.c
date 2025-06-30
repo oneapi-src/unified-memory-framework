@@ -209,8 +209,20 @@ static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
 
     // Set default property "name" to pool if exists
     for (int i = 0; i < UMF_DEFAULT_SIZE; i++) {
-        if (CTL_DEFAULT_ENTRIES[i][0] != '\0' &&
-            strstr(CTL_DEFAULT_ENTRIES[i], ops->ext_get_name(NULL))) {
+        const char *pname = NULL;
+        if (ops->ext_get_name) {
+            ret = ops->ext_get_name(NULL, &pname);
+            if (ret != UMF_RESULT_SUCCESS) {
+                LOG_ERR("Failed to get pool name");
+                goto err_pool_init;
+            }
+        } else {
+            LOG_INFO("Pool name getter is not implemented, CTL defaults "
+                     "settings are not supported for this pool");
+            break;
+        }
+        if (CTL_DEFAULT_ENTRIES[i][0] != '\0' && pname &&
+            strstr(CTL_DEFAULT_ENTRIES[i], pname)) {
             ops->ext_ctl(pool->pool_priv, CTL_QUERY_PROGRAMMATIC,
                          CTL_DEFAULT_ENTRIES[i], CTL_DEFAULT_VALUES[i],
                          UMF_DEFAULT_LEN, CTL_QUERY_WRITE);
@@ -268,24 +280,26 @@ umf_result_t umfPoolDestroy(umf_memory_pool_handle_t hPool) {
 }
 
 umf_result_t umfFree(void *ptr) {
-    umf_memory_pool_handle_t hPool = umfPoolByPtr(ptr);
-    if (hPool) {
+    umf_memory_pool_handle_t hPool = NULL;
+    umf_result_t ret = umfPoolByPtr(ptr, &hPool);
+    if (ret == UMF_RESULT_SUCCESS) {
         LOG_DEBUG("calling umfPoolFree(pool=%p, ptr=%p) ...", (void *)hPool,
                   ptr);
         return umfPoolFree(hPool, ptr);
     }
-    return UMF_RESULT_SUCCESS;
+    return ret;
 }
 
-umf_memory_pool_handle_t umfPoolByPtr(const void *ptr) {
-    return umfMemoryTrackerGetPool(ptr);
+umf_result_t umfPoolByPtr(const void *ptr, umf_memory_pool_handle_t *pool) {
+    UMF_CHECK((pool != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    *pool = umfMemoryTrackerGetPool(ptr);
+    return *pool ? UMF_RESULT_SUCCESS : UMF_RESULT_ERROR_INVALID_ARGUMENT;
 }
 
 umf_result_t umfPoolGetMemoryProvider(umf_memory_pool_handle_t hPool,
                                       umf_memory_provider_handle_t *hProvider) {
-    if (!hProvider) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
+    UMF_CHECK((hPool != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    UMF_CHECK((hProvider != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
 
     if (hPool->flags & UMF_POOL_CREATE_FLAG_DISABLE_TRACKING) {
         *hProvider = hPool->provider;
@@ -297,12 +311,14 @@ umf_result_t umfPoolGetMemoryProvider(umf_memory_pool_handle_t hPool,
     return UMF_RESULT_SUCCESS;
 }
 
-const char *umfPoolGetName(umf_memory_pool_handle_t pool) {
-    UMF_CHECK((pool != NULL), NULL);
+umf_result_t umfPoolGetName(umf_memory_pool_handle_t pool, const char **name) {
+    UMF_CHECK((pool != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    UMF_CHECK((name != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
     if (pool->ops.ext_get_name == NULL) {
-        return NULL;
+        *name = NULL;
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
     }
-    return pool->ops.ext_get_name(pool->pool_priv);
+    return pool->ops.ext_get_name(pool->pool_priv, name);
 }
 
 umf_result_t umfPoolCreate(const umf_memory_pool_ops_t *ops,
@@ -366,10 +382,10 @@ void *umfPoolRealloc(umf_memory_pool_handle_t hPool, void *ptr, size_t size) {
     return ret;
 }
 
-size_t umfPoolMallocUsableSize(umf_memory_pool_handle_t hPool,
-                               const void *ptr) {
-    UMF_CHECK((hPool != NULL), 0);
-    return hPool->ops.malloc_usable_size(hPool->pool_priv, ptr);
+umf_result_t umfPoolMallocUsableSize(umf_memory_pool_handle_t hPool,
+                                     const void *ptr, size_t *size) {
+    UMF_CHECK((hPool != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    return hPool->ops.malloc_usable_size(hPool->pool_priv, ptr, size);
 }
 
 umf_result_t umfPoolFree(umf_memory_pool_handle_t hPool, void *ptr) {

@@ -109,7 +109,9 @@ static void verify_last_native_error(umf_memory_provider_handle_t provider,
                                      int32_t err) {
     const char *message;
     int32_t error;
-    umfMemoryProviderGetLastNativeError(provider, &message, &error);
+    umf_result_t ret =
+        umfMemoryProviderGetLastNativeError(provider, &message, &error);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
     ASSERT_EQ(error, err);
     ASSERT_EQ(compare_native_error_str(message, error), 0);
 }
@@ -326,7 +328,9 @@ TEST_P(umfProviderTest, get_recommended_page_size) {
 }
 
 TEST_P(umfProviderTest, get_name) {
-    const char *name = umfMemoryProviderGetName(provider.get());
+    const char *name = nullptr;
+    umf_result_t ret = umfMemoryProviderGetName(provider.get(), &name);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
     ASSERT_STREQ(name, "OS");
 }
 

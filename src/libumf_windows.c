@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -20,7 +20,7 @@ BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
     if (fdwReason == DLL_PROCESS_ATTACH) {
         (void)umfInit();
     } else if (fdwReason == DLL_PROCESS_DETACH) {
-        umfTearDown();
+        (void)umfTearDown();
     }
     return TRUE;
 }
@@ -39,9 +39,9 @@ BOOL CALLBACK initOnceCb(PINIT_ONCE InitOnce, PVOID Parameter,
     (void)Parameter; // unused
     (void)lpContext; // unused
 
-    int ret = umfInit();
+    umf_result_t ret = umfInit();
     atexit(umfTearDown);
-    return (ret == 0) ? TRUE : FALSE;
+    return (ret == UMF_RESULT_SUCCESS) ? TRUE : FALSE;
 }
 
 void libumfInit(void) {

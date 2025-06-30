@@ -10,6 +10,8 @@
 #ifndef UMF_MEMORY_POOL_H
 #define UMF_MEMORY_POOL_H 1
 
+#include <stddef.h>
+
 #include <umf/base.h>
 #include <umf/memory_pool_ops.h>
 #include <umf/memory_provider.h>
@@ -105,9 +107,11 @@ void *umfPoolRealloc(umf_memory_pool_handle_t hPool, void *ptr, size_t size);
 /// @brief Obtains size of block of memory allocated from the \p hPool for a given \p ptr
 /// @param hPool specified memory hPool
 /// @param ptr pointer to the allocated memory
-/// @return size of the memory block allocated from the \p hPool
+/// @param size [out] pointer to a variable that will receive the size of the memory block
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 ///
-size_t umfPoolMallocUsableSize(umf_memory_pool_handle_t hPool, const void *ptr);
+umf_result_t umfPoolMallocUsableSize(umf_memory_pool_handle_t hPool,
+                                     const void *ptr, size_t *size);
 
 ///
 /// @brief Frees the memory space of the specified \p hPool pointed by \p ptr
@@ -152,14 +156,16 @@ umf_result_t umfPoolGetLastAllocationError(umf_memory_pool_handle_t hPool);
 /// @brief Retrieve memory pool associated with a given ptr. Only memory allocated
 ///        with the usage of a memory provider is being tracked.
 /// @param ptr pointer to memory belonging to a memory pool
-/// @return Handle to a memory pool that contains ptr or NULL if pointer does not belong to any UMF pool.
+/// @param pool [out] handle to the memory pool that contains ptr
+/// @return UMF_RESULT_SUCCESS on success
+///         UMF_RESULT_ERROR_INVALID_ARGUMENT if pool is NULL, or ptr do not belongs to any pool.
 ///
-umf_memory_pool_handle_t umfPoolByPtr(const void *ptr);
+umf_result_t umfPoolByPtr(const void *ptr, umf_memory_pool_handle_t *pool);
 
 ///
 /// @brief Retrieve memory provider associated with a given pool.
 /// @param hPool specified memory pool
-/// @param hProvider [out] memory providers handle.
+/// @param hProvider [out] memory providers handle
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 ///         UMF_RESULT_ERROR_INVALID_ARGUMENT if hProvider is NULL
 ///
@@ -169,10 +175,10 @@ umf_result_t umfPoolGetMemoryProvider(umf_memory_pool_handle_t hPool,
 ///
 /// @brief Retrieve name of a given memory \p pool.
 /// @param pool handle to the memory pool
-/// @return pointer to a string containing the name of the \p pool
-///         or NULL if the pool doesn't support retrieving its name.
+/// @param name [out] pointer to a string containing the name of the \p pool
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 ///
-const char *umfPoolGetName(umf_memory_pool_handle_t pool);
+umf_result_t umfPoolGetName(umf_memory_pool_handle_t pool, const char **name);
 
 ///
 /// @brief Set a custom tag on the memory pool that can be later retrieved using umfPoolGetTag.
