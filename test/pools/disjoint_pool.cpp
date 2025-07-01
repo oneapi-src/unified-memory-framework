@@ -361,6 +361,140 @@ TEST_F(test, disjointPoolName) {
     umfDisjointPoolParamsDestroy(params);
 }
 
+TEST_F(test, disjointPoolDefaultParams) {
+    // Disjoint pool defaults
+    static constexpr size_t DefaultSlabMinSize = 64 * 1024;           // 64K
+    static constexpr size_t DefaultMaxPoolableSize = 2 * 1024 * 1024; // 2MB
+
+    umf_disjoint_pool_params_handle_t params = nullptr;
+    umf_memory_pool_handle_t pool = nullptr;
+    umf_memory_provider_handle_t provider_handle = nullptr;
+
+    // Create disjoint pool parameters with default settings
+    umf_result_t res = umfDisjointPoolParamsCreate(&params);
+    EXPECT_EQ(res, UMF_RESULT_SUCCESS);
+
+    size_t expected_free_counter = 0;
+    static size_t free_counter = 0;
+    static size_t last_requested_size = 0;
+    struct memory_provider : public umf_test::provider_base_t {
+        umf_result_t alloc(size_t size, size_t alignment, void **ptr) noexcept {
+            *ptr = umf_ba_global_aligned_alloc(size, alignment);
+            last_requested_size = size;
+            return UMF_RESULT_SUCCESS;
+        }
+
+        umf_result_t free(void *ptr, [[maybe_unused]] size_t size) noexcept {
+            // do the actual free only when we expect the success
+            umf_ba_global_free(ptr);
+            free_counter++;
+            return UMF_RESULT_SUCCESS;
+        }
+    };
+
+    umf_memory_provider_ops_t provider_ops =
+        umf_test::providerMakeCOps<memory_provider, void>();
+
+    auto providerUnique =
+        wrapProviderUnique(createProviderChecked(&provider_ops, nullptr));
+    provider_handle = providerUnique.get();
+
+    res = umfDisjointPoolParamsSetTrace(params, 3);
+    ASSERT_EQ(res, UMF_RESULT_SUCCESS);
+
+    umf_result_t ret = umfPoolCreate(umfDisjointPoolOps(), provider_handle,
+                                     params, UMF_POOL_CREATE_FLAG_NONE, &pool);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    // Test allocation and deallocation
+    // This will use the default disjoint pool parameters
+    void *ptr = umfPoolMalloc(pool, DefaultSlabMinSize - 1); // Should use pool
+    ASSERT_NE(ptr, nullptr);
+    ASSERT_EQ(
+        last_requested_size,
+        DefaultSlabMinSize); // First allocated size should be at least the slab min size
+    ret = umfPoolFree(pool, ptr);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(free_counter, expected_free_counter);
+
+    // Test allocation and deallocation with a different size
+    expected_free_counter = 1;
+    ptr =
+        umfPoolMalloc(pool, DefaultMaxPoolableSize + 1); // Fallback to provider
+    ASSERT_EQ(last_requested_size, DefaultMaxPoolableSize + 1);
+    ASSERT_NE(ptr, nullptr);
+    ret = umfPoolFree(pool, ptr);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(free_counter, expected_free_counter);
+
+    // Cleaning up
+    umfPoolDestroy(pool);
+    umfDisjointPoolParamsDestroy(params);
+    expected_free_counter = 2;
+    ASSERT_EQ(free_counter, expected_free_counter);
+}
+
+TEST_F(test, disjointPoolDefaultCapacity) {
+    // Disjoint pool defaults
+    static constexpr size_t DefaultSlabMinSize = 64 * 1024; // 64K
+    static constexpr size_t DefaultCapacity = 4;
+
+    static size_t free_counter = 0;
+    static size_t last_requested_size = 0;
+
+    struct memory_provider : public umf_test::provider_base_t {
+        umf_result_t alloc(size_t size, size_t alignment, void **ptr) noexcept {
+            *ptr = umf_ba_global_aligned_alloc(size, alignment);
+            last_requested_size = size;
+            return UMF_RESULT_SUCCESS;
+        }
+        umf_result_t free(void *ptr, [[maybe_unused]] size_t size) noexcept {
+            // do the actual free only when we expect the success
+            umf_ba_global_free(ptr);
+            free_counter++;
+            return UMF_RESULT_SUCCESS;
+        }
+    };
+    umf_memory_provider_ops_t provider_ops =
+        umf_test::providerMakeCOps<memory_provider, void>();
+    auto providerUnique =
+        wrapProviderUnique(createProviderChecked(&provider_ops, nullptr));
+    umf_memory_provider_handle_t provider_handle = providerUnique.get();
+    umf_disjoint_pool_params_handle_t params = nullptr;
+    umf_result_t ret = umfDisjointPoolParamsCreate(&params);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    umf_memory_pool_handle_t pool = nullptr;
+    ret = umfPoolCreate(umfDisjointPoolOps(), provider_handle, params,
+                        UMF_POOL_CREATE_FLAG_NONE, &pool);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    // Test capacity
+    void *ptrs[DefaultCapacity + 1];
+    for (size_t i = 0; i < DefaultCapacity + 1; ++i) {
+        ptrs[i] =
+            umfPoolMalloc(pool, DefaultSlabMinSize - 1); // Should use pool
+        ASSERT_NE(ptrs[i], nullptr);
+        ASSERT_EQ(last_requested_size, DefaultSlabMinSize);
+    }
+
+    size_t i;
+    for (i = 0; i < DefaultCapacity + 1; ++i) {
+        ret = umfPoolFree(pool, ptrs[i]);
+        ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    }
+    ASSERT_EQ(
+        free_counter,
+        i - DefaultCapacity); // only the last allocation exceeds the capacity
+
+    // Cleaning up
+    umfPoolDestroy(pool);
+    umfDisjointPoolParamsDestroy(params);
+    ASSERT_EQ(free_counter,
+              DefaultCapacity +
+                  1); // +1 for the last allocation that exceeded the capacity
+}
+
 INSTANTIATE_TEST_SUITE_P(disjointPoolTests, umfPoolTest,
                          ::testing::Values(poolCreateExtParams{
                              umfDisjointPoolOps(), defaultDisjointPoolConfig,

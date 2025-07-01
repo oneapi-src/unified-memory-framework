@@ -53,6 +53,7 @@ umf_result_t
 umfDisjointPoolParamsDestroy(umf_disjoint_pool_params_handle_t hParams);
 
 /// @brief Set minimum allocation size that will be requested from the memory provider.
+/// @details Default value for minimum size of slab's is 64KB.
 /// @param hParams handle to the parameters of the disjoint pool.
 /// @param slabMinSize minimum allocation size.
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
@@ -61,6 +62,7 @@ umfDisjointPoolParamsSetSlabMinSize(umf_disjoint_pool_params_handle_t hParams,
                                     size_t slabMinSize);
 
 /// @brief Set size limit for allocations that are subject to pooling.
+/// @details Default value for maximum poolable size is 2MB.
 /// @param hParams handle to the parameters of the disjoint pool.
 /// @param maxPoolableSize maximum poolable size.
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
@@ -69,6 +71,7 @@ umf_result_t umfDisjointPoolParamsSetMaxPoolableSize(
 
 /// @brief Set maximum capacity of each bucket. Each bucket will hold a
 ///        max of \p maxCapacity unfreed slabs.
+/// @details Default value for capacity is 4.
 /// @param hParams handle to the parameters of the disjoint pool.
 /// @param maxCapacity maximum capacity of each bucket.
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
@@ -77,6 +80,7 @@ umfDisjointPoolParamsSetCapacity(umf_disjoint_pool_params_handle_t hParams,
                                  size_t maxCapacity);
 
 /// @brief Set minimum bucket allocation size.
+/// @details Default value for minimum bucket size is 8.
 /// @param hParams handle to the parameters of the disjoint pool.
 /// @param minBucketSize minimum bucket size. Must be power of 2.
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
@@ -85,6 +89,7 @@ umfDisjointPoolParamsSetMinBucketSize(umf_disjoint_pool_params_handle_t hParams,
                                       size_t minBucketSize);
 
 /// @brief Set trace level for pool usage statistics.
+/// @details Default value for pool trace is 0 (no traces).
 /// @param hParams handle to the parameters of the disjoint pool.
 /// @param poolTrace trace level.
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.

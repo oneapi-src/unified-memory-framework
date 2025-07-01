@@ -76,6 +76,13 @@ int create_level_zero_pool(ze_context_handle_t context,
         goto provider_destroy;
     }
 
+    // Set max poolable size to 0
+    umf_result = umfDisjointPoolParamsSetMaxPoolableSize(disjoint_params, 0);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "ERROR: Failed to set max poolable size!\n");
+        goto provider_destroy;
+    }
+
     // create pool
     umf_pool_create_flags_t flags = UMF_POOL_CREATE_FLAG_OWN_PROVIDER;
     umf_result = umfPoolCreate(umfDisjointPoolOps(), provider, disjoint_params,
