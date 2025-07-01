@@ -33,6 +33,8 @@ void libumfInit(void) {
 
 INIT_ONCE init_once_flag = INIT_ONCE_STATIC_INIT;
 
+static void umfTearDownWrapper(void) { (void)umfTearDown(); }
+
 BOOL CALLBACK initOnceCb(PINIT_ONCE InitOnce, PVOID Parameter,
                          PVOID *lpContext) {
     (void)InitOnce;  // unused
@@ -40,7 +42,7 @@ BOOL CALLBACK initOnceCb(PINIT_ONCE InitOnce, PVOID Parameter,
     (void)lpContext; // unused
 
     umf_result_t ret = umfInit();
-    atexit(umfTearDown);
+    atexit(umfTearDownWrapper);
     return (ret == UMF_RESULT_SUCCESS) ? TRUE : FALSE;
 }
 
