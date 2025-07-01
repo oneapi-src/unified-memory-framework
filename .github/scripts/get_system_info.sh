@@ -93,7 +93,7 @@ function system_info {
 
 	echo "***************all installed packages***************"
 	# Instructions below will return some minor errors, as they are dependent on the Linux distribution.
-	zypper se --installed-only 2>/dev/null || true
+	zypper -n se --installed-only 2>/dev/null || true
 	apt list --installed 2>/dev/null || true
 	yum list installed 2>/dev/null || true
 }
