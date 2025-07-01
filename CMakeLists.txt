@@ -430,11 +430,13 @@ if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
                 GIT_TAG ${LEVEL_ZERO_LOADER_TAG})
             FetchContent_Populate(level-zero-loader)
         else()
+            # 'non-existing-dir' is set to avoid configuring L0 loader. Ref.
+            # https://gitlab.kitware.com/cmake/cmake/-/issues/26220
             FetchContent_Declare(
                 level-zero-loader
                 GIT_REPOSITORY ${LEVEL_ZERO_LOADER_REPO}
                 GIT_TAG ${LEVEL_ZERO_LOADER_TAG}
-                EXCLUDE_FROM_ALL)
+                EXCLUDE_FROM_ALL SOURCE_SUBDIR "non-existing-dir")
             FetchContent_MakeAvailable(level-zero-loader)
         endif()
 
