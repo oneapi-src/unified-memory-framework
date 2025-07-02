@@ -10,7 +10,7 @@
 #ifndef UMF_OS_MEMORY_PROVIDER_H
 #define UMF_OS_MEMORY_PROVIDER_H
 
-#include "umf/memory_provider.h"
+#include <umf/memory_provider.h>
 
 #ifdef __cplusplus
 extern "C" {

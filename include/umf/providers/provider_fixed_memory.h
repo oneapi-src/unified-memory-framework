@@ -8,7 +8,7 @@
 #ifndef UMF_FIXED_MEMORY_PROVIDER_H
 #define UMF_FIXED_MEMORY_PROVIDER_H
 
-#include <umf/providers/provider_os_memory.h>
+#include <umf/memory_provider.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,12 +24,12 @@ typedef struct umf_fixed_memory_provider_params_t
     *umf_fixed_memory_provider_params_handle_t;
 
 /// @brief  Create a struct to store parameters of the Fixed Memory Provider.
-/// @param  hParams [out] handle to the newly created parameters struct.
 /// @param  ptr [in] pointer to the memory region.
 /// @param  size [in] size of the memory region in bytes.
+/// @param  hParams [out] handle to the newly created parameters struct.
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 umf_result_t umfFixedMemoryProviderParamsCreate(
-    umf_fixed_memory_provider_params_handle_t *hParams, void *ptr, size_t size);
+    void *ptr, size_t size, umf_fixed_memory_provider_params_handle_t *hParams);
 
 /// @brief  Set the memory region in params struct. Overwrites the previous value.
 ///         It provides an ability to use the same instance of params to create multiple

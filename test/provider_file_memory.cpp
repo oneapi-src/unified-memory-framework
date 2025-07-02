@@ -140,7 +140,7 @@ TEST_F(test, test_if_mapped_with_MAP_SYNC) {
     }
 
     umf_file_memory_provider_params_handle_t params = nullptr;
-    umf_result = umfFileMemoryProviderParamsCreate(&params, path);
+    umf_result = umfFileMemoryProviderParamsCreate(path, &params);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(params, nullptr);
 
@@ -179,7 +179,7 @@ using file_params_unique_handle_t =
 
 file_params_unique_handle_t get_file_params_default(char *path) {
     umf_file_memory_provider_params_handle_t file_params = NULL;
-    umf_result_t res = umfFileMemoryProviderParamsCreate(&file_params, path);
+    umf_result_t res = umfFileMemoryProviderParamsCreate(path, &file_params);
     if (res != UMF_RESULT_SUCCESS) {
         throw std::runtime_error(
             "Failed to create File Memory Provider params");
@@ -194,7 +194,7 @@ file_params_unique_handle_t file_params_default =
 
 file_params_unique_handle_t get_file_params_shared(char *path) {
     umf_file_memory_provider_params_handle_t file_params = NULL;
-    umf_result_t res = umfFileMemoryProviderParamsCreate(&file_params, path);
+    umf_result_t res = umfFileMemoryProviderParamsCreate(path, &file_params);
     if (res != UMF_RESULT_SUCCESS) {
         throw std::runtime_error(
             "Failed to create File Memory Provider params");
@@ -384,7 +384,7 @@ TEST_P(FileProviderParamsDefault, free_NULL) {
 
 TEST_F(test, params_null_handle) {
     umf_result_t umf_result =
-        umfFileMemoryProviderParamsCreate(nullptr, FILE_PATH);
+        umfFileMemoryProviderParamsCreate(FILE_PATH, nullptr);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 
     umf_result = umfFileMemoryProviderParamsDestroy(nullptr);
@@ -407,7 +407,7 @@ TEST_F(test, create_empty_path) {
 
     umf_file_memory_provider_params_handle_t wrong_params = nullptr;
     umf_result_t umf_result =
-        umfFileMemoryProviderParamsCreate(&wrong_params, path);
+        umfFileMemoryProviderParamsCreate(path, &wrong_params);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
     ASSERT_EQ(wrong_params, nullptr);
 }
@@ -417,7 +417,7 @@ TEST_F(test, create_null_path) {
 
     umf_file_memory_provider_params_handle_t wrong_params = nullptr;
     umf_result_t umf_result =
-        umfFileMemoryProviderParamsCreate(&wrong_params, path);
+        umfFileMemoryProviderParamsCreate(path, &wrong_params);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
     ASSERT_EQ(wrong_params, nullptr);
 }
@@ -427,7 +427,7 @@ TEST_F(test, set_empty_path) {
 
     umf_file_memory_provider_params_handle_t params = nullptr;
     umf_result_t umf_result =
-        umfFileMemoryProviderParamsCreate(&params, FILE_PATH);
+        umfFileMemoryProviderParamsCreate(FILE_PATH, &params);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
     umf_result = umfFileMemoryProviderParamsSetPath(params, empty_path);
@@ -442,7 +442,7 @@ TEST_F(test, set_null_path) {
 
     umf_file_memory_provider_params_handle_t params = nullptr;
     umf_result_t umf_result =
-        umfFileMemoryProviderParamsCreate(&params, FILE_PATH);
+        umfFileMemoryProviderParamsCreate(FILE_PATH, &params);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
     umf_result = umfFileMemoryProviderParamsSetPath(params, null_path);

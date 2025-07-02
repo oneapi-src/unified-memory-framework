@@ -11,7 +11,7 @@ using umf_test::test;
 TEST_F(test, file_provider_not_implemented) {
     umf_file_memory_provider_params_handle_t params = nullptr;
     umf_result_t umf_result =
-        umfFileMemoryProviderParamsCreate(&params, "path");
+        umfFileMemoryProviderParamsCreate("path", &params);
     EXPECT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
     EXPECT_EQ(params, nullptr);
 

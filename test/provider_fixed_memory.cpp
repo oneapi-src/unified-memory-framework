@@ -69,7 +69,7 @@ struct FixedProviderTest
         // Create provider parameters
         umf_fixed_memory_provider_params_handle_t params = nullptr;
         umf_result_t res = umfFixedMemoryProviderParamsCreate(
-            &params, memory_buffer, memory_size);
+            memory_buffer, memory_size, &params);
         ASSERT_EQ(res, UMF_RESULT_SUCCESS);
         ASSERT_NE(params, nullptr);
 
@@ -317,7 +317,7 @@ TEST_F(test, params_null_handle) {
     constexpr size_t memory_size = 100;
     char memory_buffer[memory_size];
     umf_result_t umf_result =
-        umfFixedMemoryProviderParamsCreate(nullptr, memory_buffer, memory_size);
+        umfFixedMemoryProviderParamsCreate(memory_buffer, memory_size, nullptr);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 
     umf_result = umfFixedMemoryProviderParamsDestroy(nullptr);
@@ -328,7 +328,7 @@ TEST_F(test, create_with_null_ptr) {
     constexpr size_t memory_size = 100;
     umf_fixed_memory_provider_params_handle_t wrong_params = nullptr;
     umf_result_t umf_result =
-        umfFixedMemoryProviderParamsCreate(&wrong_params, nullptr, memory_size);
+        umfFixedMemoryProviderParamsCreate(nullptr, memory_size, &wrong_params);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
     ASSERT_EQ(wrong_params, nullptr);
 }
@@ -338,7 +338,7 @@ TEST_F(test, create_with_zero_size) {
     char memory_buffer[memory_size];
     umf_fixed_memory_provider_params_handle_t wrong_params = nullptr;
     umf_result_t umf_result =
-        umfFixedMemoryProviderParamsCreate(&wrong_params, memory_buffer, 0);
+        umfFixedMemoryProviderParamsCreate(memory_buffer, 0, &wrong_params);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
     ASSERT_EQ(wrong_params, nullptr);
 }
@@ -358,7 +358,7 @@ TEST_F(test, params_several_set_memory) {
 
     umf_fixed_memory_provider_params_handle_t params = nullptr;
     umf_result_t umf_result = umfFixedMemoryProviderParamsCreate(
-        &params, memory_buffer1, memory_size1);
+        memory_buffer1, memory_size1, &params);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
     umf_result = umfMemoryProviderCreate(umfFixedMemoryProviderOps(), params,
@@ -421,7 +421,7 @@ TEST_F(test, params_invalid_set_memory) {
     char memory_buffer[memory_size];
     umf_fixed_memory_provider_params_handle_t valid_params = nullptr;
     umf_result_t umf_result = umfFixedMemoryProviderParamsCreate(
-        &valid_params, memory_buffer, memory_size);
+        memory_buffer, memory_size, &valid_params);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
     umf_result =
@@ -517,8 +517,8 @@ TEST_P(FixedProviderTest, pool_from_ptr_whole_size_success) {
     // Create provider parameters
     size_of_pool_from_ptr = size_of_first_alloc; // whole size
     umf_fixed_memory_provider_params_handle_t params = nullptr;
-    umf_result = umfFixedMemoryProviderParamsCreate(&params, ptr_for_pool,
-                                                    size_of_pool_from_ptr);
+    umf_result = umfFixedMemoryProviderParamsCreate(
+        ptr_for_pool, size_of_pool_from_ptr, &params);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(params, nullptr);
 
@@ -572,8 +572,8 @@ TEST_P(FixedProviderTest, pool_from_ptr_half_size_success) {
     // Create provider parameters
     size_of_pool_from_ptr = size_of_first_alloc / 2; // half size
     umf_fixed_memory_provider_params_handle_t params = nullptr;
-    umf_result = umfFixedMemoryProviderParamsCreate(&params, ptr_for_pool,
-                                                    size_of_pool_from_ptr);
+    umf_result = umfFixedMemoryProviderParamsCreate(
+        ptr_for_pool, size_of_pool_from_ptr, &params);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(params, nullptr);
 

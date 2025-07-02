@@ -53,7 +53,7 @@ static umf_memory_pool_handle_t create_fsdax_pool(const char *path) {
     umf_result_t umf_result;
 
     umf_file_memory_provider_params_handle_t params_fsdax = NULL;
-    umf_result = umfFileMemoryProviderParamsCreate(&params_fsdax, path);
+    umf_result = umfFileMemoryProviderParamsCreate(path, &params_fsdax);
     if (umf_result != UMF_RESULT_SUCCESS) {
         fprintf(stderr, "Failed to create the File Memory Provider params");
         return NULL;

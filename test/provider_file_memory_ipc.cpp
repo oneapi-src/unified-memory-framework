@@ -20,7 +20,7 @@ using umf_test::test;
 void *createFileParamsShared() {
     umf_file_memory_provider_params_handle_t file_params = NULL;
     umf_result_t res =
-        umfFileMemoryProviderParamsCreate(&file_params, FILE_PATH);
+        umfFileMemoryProviderParamsCreate(FILE_PATH, &file_params);
     if (res != UMF_RESULT_SUCCESS) {
         throw std::runtime_error(
             "Failed to create File Memory Provider params");
@@ -45,7 +45,7 @@ umf_result_t destroyFileParamsShared(void *params) {
 void *createFileParamsFSDAX() {
     umf_file_memory_provider_params_handle_t file_params = NULL;
     umf_result_t res = umfFileMemoryProviderParamsCreate(
-        &file_params, getenv("UMF_TESTS_FSDAX_PATH"));
+        getenv("UMF_TESTS_FSDAX_PATH"), &file_params);
     if (res != UMF_RESULT_SUCCESS) {
         //test will be skipped.
         return nullptr;

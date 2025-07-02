@@ -316,8 +316,8 @@ const umf_memory_provider_ops_t *umfFixedMemoryProviderOps(void) {
 }
 
 umf_result_t umfFixedMemoryProviderParamsCreate(
-    umf_fixed_memory_provider_params_handle_t *hParams, void *ptr,
-    size_t size) {
+    void *ptr, size_t size,
+    umf_fixed_memory_provider_params_handle_t *hParams) {
     libumfInit();
     if (hParams == NULL) {
         LOG_ERR("Memory Provider params handle is NULL");

@@ -56,7 +56,7 @@ umf_memory_provider_ops_t PROVIDER_FROM_POOL_OPS =
 static void *providerFromPoolParamsCreate(void) {
     umf_file_memory_provider_params_handle_t paramsFile = NULL;
     umf_result_t umf_result =
-        umfFileMemoryProviderParamsCreate(&paramsFile, FILE_PATH);
+        umfFileMemoryProviderParamsCreate(FILE_PATH, &paramsFile);
     EXPECT_EQ(umf_result, UMF_RESULT_SUCCESS);
     EXPECT_NE(paramsFile, nullptr);
 

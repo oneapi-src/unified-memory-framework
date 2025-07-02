@@ -50,7 +50,7 @@ struct TrackingProviderTest
         // Create provider parameters
         umf_fixed_memory_provider_params_handle_t params = nullptr;
         umf_result_t res = umfFixedMemoryProviderParamsCreate(
-            &params, memory_buffer, memory_size);
+            memory_buffer, memory_size, &params);
         ASSERT_EQ(res, UMF_RESULT_SUCCESS);
         ASSERT_NE(params, nullptr);
 
@@ -96,7 +96,7 @@ createPoolFromAllocation(void *ptr0, size_t size1,
 
     // Create provider parameters
     umf_fixed_memory_provider_params_handle_t params = nullptr;
-    umf_result = umfFixedMemoryProviderParamsCreate(&params, ptr0, size1);
+    umf_result = umfFixedMemoryProviderParamsCreate(ptr0, size1, &params);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(params, nullptr);
 

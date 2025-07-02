@@ -29,7 +29,7 @@ const umf_memory_provider_ops_t *umfFileMemoryProviderOps(void) {
 }
 
 umf_result_t umfFileMemoryProviderParamsCreate(
-    umf_file_memory_provider_params_handle_t *hParams, const char *path) {
+    const char *path, umf_file_memory_provider_params_handle_t *hParams) {
     (void)hParams;
     (void)path;
     LOG_ERR("File memory provider is disabled!");
@@ -889,7 +889,7 @@ const umf_memory_provider_ops_t *umfFileMemoryProviderOps(void) {
 }
 
 umf_result_t umfFileMemoryProviderParamsCreate(
-    umf_file_memory_provider_params_handle_t *hParams, const char *path) {
+    const char *path, umf_file_memory_provider_params_handle_t *hParams) {
     libumfInit();
     if (hParams == NULL) {
         LOG_ERR("File Memory Provider params handle is NULL");

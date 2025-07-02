@@ -49,7 +49,7 @@ TEST_P(FileWithMemoryStrategyTest, disjointFileMallocPool_simple1) {
     ASSERT_NE(malloc_memory_provider, nullptr);
 
     umf_file_memory_provider_params_handle_t file_params = nullptr;
-    umf_result = umfFileMemoryProviderParamsCreate(&file_params, FILE_PATH);
+    umf_result = umfFileMemoryProviderParamsCreate(FILE_PATH, &file_params);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(file_params, nullptr);
 
@@ -147,7 +147,7 @@ TEST_P(FileWithMemoryStrategyTest, disjointFileMallocPool_simple2) {
     ASSERT_NE(malloc_memory_provider, nullptr);
 
     umf_file_memory_provider_params_handle_t file_params = nullptr;
-    umf_result = umfFileMemoryProviderParamsCreate(&file_params, FILE_PATH);
+    umf_result = umfFileMemoryProviderParamsCreate(FILE_PATH, &file_params);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(file_params, nullptr);
 
@@ -238,7 +238,7 @@ TEST_P(FileWithMemoryStrategyTest, disjointFileMMapPool_random) {
     const unsigned char alloc_check_val = 11;
 
     umf_file_memory_provider_params_handle_t file_params = nullptr;
-    umf_result = umfFileMemoryProviderParamsCreate(&file_params, FILE_PATH);
+    umf_result = umfFileMemoryProviderParamsCreate(FILE_PATH, &file_params);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(file_params, nullptr);
 

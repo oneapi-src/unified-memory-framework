@@ -610,8 +610,8 @@ TEST_P(umfPoolTest, pool_from_ptr_whole_size_success) {
     // Create provider parameters
     size_of_pool_from_ptr = size_of_first_alloc; // whole size
     umf_fixed_memory_provider_params_handle_t params = nullptr;
-    umf_result = umfFixedMemoryProviderParamsCreate(&params, ptr_for_pool,
-                                                    size_of_pool_from_ptr);
+    umf_result = umfFixedMemoryProviderParamsCreate(
+        ptr_for_pool, size_of_pool_from_ptr, &params);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(params, nullptr);
 
@@ -667,8 +667,8 @@ TEST_P(umfPoolTest, pool_from_ptr_half_size_success) {
     // Create provider parameters
     size_of_pool_from_ptr = size_of_first_alloc / 2; // half size
     umf_fixed_memory_provider_params_handle_t params = nullptr;
-    umf_result = umfFixedMemoryProviderParamsCreate(&params, ptr_for_pool,
-                                                    size_of_pool_from_ptr);
+    umf_result = umfFixedMemoryProviderParamsCreate(
+        ptr_for_pool, size_of_pool_from_ptr, &params);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(params, nullptr);
 

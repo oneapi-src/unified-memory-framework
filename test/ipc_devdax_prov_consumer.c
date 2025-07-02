@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
 
     umf_devdax_memory_provider_params_handle_t devdax_params = NULL;
     umf_result_t umf_result =
-        umfDevDaxMemoryProviderParamsCreate(&devdax_params, path, atol(size));
+        umfDevDaxMemoryProviderParamsCreate(path, atol(size), &devdax_params);
     if (umf_result != UMF_RESULT_SUCCESS) {
         fprintf(stderr, "[consumer] ERROR: creating DevDax Memory Provider "
                         "params failed\n");

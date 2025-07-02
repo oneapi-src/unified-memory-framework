@@ -28,8 +28,8 @@ const umf_memory_provider_ops_t *umfDevDaxMemoryProviderOps(void) {
 }
 
 umf_result_t umfDevDaxMemoryProviderParamsCreate(
-    umf_devdax_memory_provider_params_handle_t *hParams, const char *path,
-    size_t size) {
+    const char *path, size_t size,
+    umf_devdax_memory_provider_params_handle_t *hParams) {
     (void)hParams;
     (void)path;
     (void)size;
@@ -562,8 +562,8 @@ const umf_memory_provider_ops_t *umfDevDaxMemoryProviderOps(void) {
 }
 
 umf_result_t umfDevDaxMemoryProviderParamsCreate(
-    umf_devdax_memory_provider_params_handle_t *hParams, const char *path,
-    size_t size) {
+    const char *path, size_t size,
+    umf_devdax_memory_provider_params_handle_t *hParams) {
     libumfInit();
     if (hParams == NULL) {
         LOG_ERR("DevDax Memory Provider params handle is NULL");
