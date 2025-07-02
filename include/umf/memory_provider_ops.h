@@ -258,6 +258,9 @@ typedef struct umf_memory_provider_ops_t {
     /// @brief Control operation for the memory provider.
     ///        The function is used to perform various control operations
     ///        on the memory provider.
+    /// \details
+    /// * This API is experimental and may change in future releases.
+    ///   Backward compatibility is not guaranteed.
     ///
     /// @param provider handle to the memory provider.
     /// @param operationType type of the operation to be performed.

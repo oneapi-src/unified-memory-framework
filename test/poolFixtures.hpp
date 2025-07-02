@@ -13,6 +13,7 @@
 #include <string>
 #include <thread>
 
+#include <umf/experimental/ctl.h>
 #include <umf/pools/pool_proxy.h>
 #include <umf/providers/provider_devdax_memory.h>
 #include <umf/providers/provider_fixed_memory.h>

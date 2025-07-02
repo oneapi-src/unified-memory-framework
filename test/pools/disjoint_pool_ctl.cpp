@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exceptiongi
 
 #include <gtest/gtest.h>
+#include <umf/experimental/ctl.h>
 #include <umf/memory_pool.h>
 #include <umf/memory_provider.h>
 #include <umf/memory_provider_ops.h>
