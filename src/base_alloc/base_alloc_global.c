@@ -186,14 +186,24 @@ void *umf_ba_global_aligned_alloc(size_t size, size_t alignment) {
 
     int ac_index = size_to_idx(size);
     if (ac_index >= NUM_ALLOCATION_CLASSES) {
-        return add_metadata_and_align(ba_os_alloc(size), size, alignment);
+        void *ptr = ba_os_alloc(size);
+        if (!ptr) {
+            return NULL;
+        }
+        VALGRIND_DO_MALLOCLIKE_BLOCK(ptr, size, 0, 0);
+        return add_metadata_and_align(ptr, size, alignment);
     }
 
     if (!BASE_ALLOC.ac[ac_index]) {
         // if creating ac failed, fall back to os allocation
         LOG_WARN("base_alloc: allocation class not created. Falling "
                  "back to OS memory allocation.");
-        return add_metadata_and_align(ba_os_alloc(size), size, alignment);
+        void *ptr = ba_os_alloc(size);
+        if (!ptr) {
+            return NULL;
+        }
+        VALGRIND_DO_MALLOCLIKE_BLOCK(ptr, size, 0, 0);
+        return add_metadata_and_align(ptr, size, alignment);
     }
 
     return add_metadata_and_align(umf_ba_alloc(BASE_ALLOC.ac[ac_index]), size,
@@ -220,12 +230,14 @@ void umf_ba_global_free(void *ptr) {
 
     int ac_index = size_to_idx(total_size);
     if (ac_index >= NUM_ALLOCATION_CLASSES) {
+        VALGRIND_DO_FREELIKE_BLOCK(ptr, 0);
         ba_os_free(ptr, total_size);
         return;
     }
 
     if (!BASE_ALLOC.ac[ac_index]) {
         // if creating ac failed, memory must have been allocated by os
+        VALGRIND_DO_FREELIKE_BLOCK(ptr, 0);
         ba_os_free(ptr, total_size);
         return;
     }

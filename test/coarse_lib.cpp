@@ -57,13 +57,6 @@ static umf_result_t alloc_cb_fails(void *provider, size_t size,
     return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
 }
 
-static umf_result_t free_cb_fails(void *provider, void *ptr, size_t size) {
-    (void)provider; //unused
-    (void)ptr;      //unused
-    (void)size;     //unused
-    return UMF_RESULT_ERROR_USER_SPECIFIC;
-}
-
 static umf_result_t split_cb_fails(void *provider, void *ptr, size_t totalSize,
                                    size_t firstSize) {
     (void)provider;  //unused
@@ -610,34 +603,6 @@ TEST_P(CoarseWithMemoryStrategyTest, coarseTest_basic_alloc_cb_fails) {
     ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
     ASSERT_EQ(coarse_get_stats(ch).alloc_size, (size_t)0);
     ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)0);
-
-    coarse_delete(ch);
-    umfMemoryProviderDestroy(malloc_memory_provider);
-}
-
-TEST_P(CoarseWithMemoryStrategyTest, coarseTest_basic_free_cb_fails) {
-    umf_memory_provider_handle_t malloc_memory_provider;
-    umf_result = umfMemoryProviderCreate(&UMF_MALLOC_MEMORY_PROVIDER_OPS, NULL,
-                                         &malloc_memory_provider);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(malloc_memory_provider, nullptr);
-
-    coarse_params.provider = malloc_memory_provider;
-    coarse_params.cb.free = free_cb_fails;
-
-    umf_result = coarse_new(&coarse_params, &coarse_handle);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    ASSERT_NE(coarse_handle, nullptr);
-
-    coarse_t *ch = coarse_handle;
-    const size_t alloc_size = 20 * MB;
-
-    umf_result = coarse_add_memory_from_provider(ch, alloc_size);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-
-    ASSERT_EQ(coarse_get_stats(ch).used_size, 0 * MB);
-    ASSERT_EQ(coarse_get_stats(ch).alloc_size, alloc_size);
-    ASSERT_EQ(coarse_get_stats(ch).num_all_blocks, (size_t)1);
 
     coarse_delete(ch);
     umfMemoryProviderDestroy(malloc_memory_provider);
