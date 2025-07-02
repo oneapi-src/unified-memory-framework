@@ -11,7 +11,7 @@
 #define UMF_MEMTARGET_INTERNAL_H 1
 
 #include <umf/base.h>
-#include <umf/memtarget.h>
+#include <umf/experimental/memtarget.h>
 #ifdef __cplusplus
 extern "C" {
 #endif

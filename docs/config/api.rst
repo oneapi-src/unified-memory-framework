@@ -136,9 +136,12 @@ Memspace
 
 TODO: Add general information about memspaces.
 
+.. note::
+   The memspace APIs are experimental and may change in future releases.
+
 Memspace
 ------------------------------------------
-.. doxygenfile:: memspace.h
+.. doxygenfile:: experimental/memspace.h
     :sections: define enum typedef func
 
 Mempolicy             
@@ -146,9 +149,12 @@ Mempolicy
 
 TODO: Add general information about mempolicies.
 
+.. note::
+   The mempolicy APIs are experimental and may change in future releases.
+
 Mempolicy
 ------------------------------------------
-.. doxygenfile:: mempolicy.h
+.. doxygenfile:: experimental/mempolicy.h
     :sections: define enum typedef func
 
 Memtarget
@@ -156,9 +162,12 @@ Memtarget
 
 TODO: Add general information about memtargets.
 
+.. note::
+   The memtarget APIs are experimental and may change in future releases.
+
 Memtarget
 ------------------------------------------
-.. doxygenfile:: memtarget.h
+.. doxygenfile:: experimental/memtarget.h
     :sections: define enum typedef func
 
 Inter-Process Communication

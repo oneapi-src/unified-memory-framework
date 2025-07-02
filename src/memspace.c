@@ -10,7 +10,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include <umf/memspace.h>
+#include <umf/experimental/memspace.h>
 
 #include "base_alloc_global.h"
 #include "memspace_internal.h"

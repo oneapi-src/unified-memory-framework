@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -10,7 +10,7 @@
 #ifndef UMF_MEMPOLICY_INTERNAL_H
 #define UMF_MEMPOLICY_INTERNAL_H 1
 
-#include <umf/mempolicy.h>
+#include <umf/experimental/mempolicy.h>
 
 #ifdef __cplusplus
 extern "C" {

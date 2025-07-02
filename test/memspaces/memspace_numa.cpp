@@ -8,7 +8,7 @@
 #include "memspace_internal.h"
 #include "numa_helpers.hpp"
 
-#include <umf/memspace.h>
+#include <umf/experimental/memspace.h>
 #include <umf/providers/provider_os_memory.h>
 
 struct memspaceNumaTest : ::numaNodesTest {

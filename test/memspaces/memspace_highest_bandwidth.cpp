@@ -2,7 +2,7 @@
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-#include <umf/memspace.h>
+#include <umf/experimental/memspace.h>
 
 #include "memspace_fixtures.hpp"
 #include "memspace_helpers.hpp"

@@ -12,8 +12,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <umf/mempolicy.h>
-#include <umf/memspace.h>
+#include <umf/experimental/mempolicy.h>
+#include <umf/experimental/memspace.h>
 
 #include "examples_utils.h"
 

@@ -131,6 +131,9 @@ TODO
 Memspace
 ==============================================================================
 
+.. note::
+   Memspace examples rely on experimental APIs that may change in future releases.
+
 You can find the full examples code in the `examples/memspace`_ directory
 in the UMF repository.
 

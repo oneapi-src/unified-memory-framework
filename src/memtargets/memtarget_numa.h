@@ -11,7 +11,7 @@
 #define UMF_MEMTARGET_NUMA_H 1
 
 #include <umf.h>
-#include <umf/memspace.h>
+#include <umf/experimental/memspace.h>
 
 #include "../memtarget_internal.h"
 #include "../memtarget_ops.h"

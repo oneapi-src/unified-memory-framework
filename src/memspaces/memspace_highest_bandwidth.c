@@ -12,7 +12,7 @@
 #include <stdlib.h>
 
 #include <umf.h>
-#include <umf/memspace.h>
+#include <umf/experimental/memspace.h>
 
 // UMF_MEMSPACE_HIGHEST_BANDWIDTH requires HWLOC
 // Additionally, it is currently unsupported on Win
