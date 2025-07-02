@@ -126,9 +126,9 @@ jobs:
         repository: intel/llvm
         # Note: The same ref is used in docs build (for dashboard generation)!
         #
-        # 15.04.2025
+        # 27.06.2025
         # branch: sycl
-        ref: 08d11bcae0cc2daec903f222c9b3e3af92f3b806
+        ref: 3b04aeb7d1d4ad5bbe64fb257f4ca6e5284ec5d0
         path: sc
         sparse-checkout: |
           devops/scripts/benchmarks
@@ -239,7 +239,7 @@ jobs:
             body: body
           })
 
-    - name: Commit data.json and results directory
+    - name: Commit data.json, data_archive.json, and results directory
       working-directory: results-repo
       if: inputs.compatibility == 0
       run: |
@@ -249,11 +249,12 @@ jobs:
         for attempt in {1..5}; do
           echo "Attempt #$attempt to push changes"
 
-          rm -f data.json
+          rm -f data.json data_archive.json
           cp ${{ github.workspace }}/sc/devops/scripts/benchmarks/html/data.json .
+          cp ${{ github.workspace }}/sc/devops/scripts/benchmarks/html/data_archive.json .
 
-          git add data.json results/
-          git commit -m "Add benchmark results and data.json"
+          git add data.json data_archive.json results/
+          git commit -m "Add benchmark results, data.json, and data_archive.json"
 
           results_file=$(git diff HEAD~1 --name-only -- results/ | head -n 1)
 
@@ -274,7 +275,7 @@ jobs:
             mv ${{ github.workspace }}/temp_$(basename $results_file) $new_file
           fi
 
-          echo "Regenerating data.json"
+          echo "Regenerating data.json and data_archive.json"
           (cd ${{ github.workspace }} && ${{ github.workspace }}/sc/devops/scripts/benchmarks/main.py ~/bench_workdir_umf --dry-run --results-dir ${{ github.workspace }}/results-repo --output-html remote)
 
         done
