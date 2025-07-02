@@ -47,7 +47,7 @@ typedef uint32_t umf_pool_create_flags_t;
 /// @brief Creates new memory pool.
 /// @param ops instance of umf_memory_pool_ops_t
 /// @param provider memory provider that will be used for coarse-grain allocations.
-/// @param params pointer to pool-specific parameters
+/// @param params pointer to pool-specific parameters, or NULL for defaults
 /// @param flags a combination of umf_pool_create_flag_t
 /// @param hPool [out] handle to the newly created memory pool
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.

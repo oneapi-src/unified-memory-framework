@@ -275,6 +275,7 @@ static umf_result_t tbb_pool_initialize(umf_memory_provider_handle_t provider,
                                     .keep_all_memory = false,
                                     .reserved = 0};
 
+    // If params is provided, override defaults
     if (params) {
         const umf_scalable_pool_params_t *scalable_params = params;
         policy.granularity = scalable_params->granularity;
