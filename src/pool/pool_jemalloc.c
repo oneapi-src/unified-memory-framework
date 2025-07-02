@@ -431,15 +431,19 @@ static umf_result_t op_initialize(umf_memory_provider_handle_t provider,
 
     extent_hooks_t *pHooks = &arena_extent_hooks;
     size_t unsigned_size = sizeof(unsigned);
-    int n_arenas_set_from_params = 0;
     int err;
-    const umf_jemalloc_pool_params_t *jemalloc_params = params;
+    const umf_jemalloc_pool_params_t *jemalloc_params;
 
-    size_t n_arenas = 0;
-    if (jemalloc_params) {
-        n_arenas = jemalloc_params->n_arenas;
-        n_arenas_set_from_params = 1;
+    // If params is NULL, use default values
+    umf_jemalloc_pool_params_t default_params = {}; // Will be calculated later
+
+    if (!params) {
+        jemalloc_params = &default_params;
+    } else {
+        jemalloc_params = params;
     }
+    size_t n_arenas = jemalloc_params->n_arenas;
+    int n_arenas_set_from_params = (params != NULL);
 
     if (n_arenas == 0) {
         n_arenas = utils_get_num_cores() * 4;
