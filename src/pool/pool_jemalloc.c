@@ -557,6 +557,12 @@ static umf_result_t op_get_last_allocation_error(void *pool) {
     return TLS_last_allocation_error;
 }
 
+static umf_result_t op_get_name(void *pool, const char **name) {
+    (void)pool;
+    *name = "jemalloc";
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_memory_pool_ops_t UMF_JEMALLOC_POOL_OPS = {
     .version = UMF_POOL_OPS_VERSION_CURRENT,
     .initialize = op_initialize,
@@ -568,6 +574,7 @@ static umf_memory_pool_ops_t UMF_JEMALLOC_POOL_OPS = {
     .malloc_usable_size = op_malloc_usable_size,
     .free = op_free,
     .get_last_allocation_error = op_get_last_allocation_error,
+    .get_name = op_get_name,
 };
 
 const umf_memory_pool_ops_t *umfJemallocPoolOps(void) {

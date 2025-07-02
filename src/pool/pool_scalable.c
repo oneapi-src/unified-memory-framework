@@ -449,7 +449,7 @@ static umf_memory_pool_ops_t UMF_SCALABLE_POOL_OPS = {
     .free = tbb_free,
     .get_last_allocation_error = tbb_get_last_allocation_error,
     .ext_ctl = pool_ctl,
-    .ext_get_name = scalable_get_name,
+    .get_name = scalable_get_name,
 };
 
 const umf_memory_pool_ops_t *umfScalablePoolOps(void) {

@@ -130,8 +130,21 @@ typedef struct umf_memory_pool_ops_t {
     umf_result_t (*get_last_allocation_error)(void *pool);
 
     ///
-    /// Following functions, with ext prefix, are optional and memory pool implementation
-    /// can keep them NULL.
+    /// @brief Retrieves the name of the memory pool
+    /// @param pool valid pointer to the memory pool or NULL value
+    /// @param name [out] pointer to a constant character string that will be set to the pool's name
+    /// \details
+    /// * Implementations *must* return a literal null-terminated string.
+    ///
+    /// * Implementations *must* return default pool name when NULL is provided,
+    ///   otherwise the pool's name is returned.
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+    ///
+    umf_result_t (*get_name)(void *pool, const char **name);
+
+    ///
+    /// The following function is optional and memory pool implementation
+    /// can keep it NULL.
     ///
 
     ///
@@ -152,18 +165,6 @@ typedef struct umf_memory_pool_ops_t {
                             void *arg, size_t size,
                             umf_ctl_query_type_t queryType);
 
-    ///
-    /// @brief Retrieves the name of the memory pool
-    /// @param pool valid pointer to the memory pool or NULL value
-    /// @param name [out] pointer to a constant character string that will be set to the pool's name
-    /// \details
-    /// * Implementations *must* return a literal null-terminated string.
-    ///
-    /// * Implementations *must* return default pool name when NULL is provided,
-    ///   otherwise the pool's name is returned.
-    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
-    ///
-    umf_result_t (*ext_get_name)(void *pool, const char **name);
 } umf_memory_pool_ops_t;
 
 #ifdef __cplusplus

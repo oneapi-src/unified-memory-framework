@@ -210,16 +210,10 @@ static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
     // Set default property "name" to pool if exists
     for (int i = 0; i < UMF_DEFAULT_SIZE; i++) {
         const char *pname = NULL;
-        if (ops->ext_get_name) {
-            ret = ops->ext_get_name(NULL, &pname);
-            if (ret != UMF_RESULT_SUCCESS) {
-                LOG_ERR("Failed to get pool name");
-                goto err_pool_init;
-            }
-        } else {
-            LOG_INFO("Pool name getter is not implemented, CTL defaults "
-                     "settings are not supported for this pool");
-            break;
+        ret = ops->get_name(NULL, &pname);
+        if (ret != UMF_RESULT_SUCCESS) {
+            LOG_ERR("Failed to get pool name");
+            goto err_pool_init;
         }
         if (CTL_DEFAULT_ENTRIES[i][0] != '\0' && pname &&
             strstr(CTL_DEFAULT_ENTRIES[i], pname)) {
@@ -314,11 +308,7 @@ umf_result_t umfPoolGetMemoryProvider(umf_memory_pool_handle_t hPool,
 umf_result_t umfPoolGetName(umf_memory_pool_handle_t pool, const char **name) {
     UMF_CHECK((pool != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
     UMF_CHECK((name != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
-    if (pool->ops.ext_get_name == NULL) {
-        *name = NULL;
-        return UMF_RESULT_ERROR_NOT_SUPPORTED;
-    }
-    return pool->ops.ext_get_name(pool->pool_priv, name);
+    return pool->ops.get_name(pool->pool_priv, name);
 }
 
 umf_result_t umfPoolCreate(const umf_memory_pool_ops_t *ops,
