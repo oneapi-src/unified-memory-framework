@@ -40,6 +40,6 @@ jobs:
     uses: ./.github/workflows/reusable_benchmarks.yml
     with:
       pr_no: ${{ inputs.pr_no }}
-      bench_script_params: ${{ inputs.bench_script_params }}
+      bench_script_params: ${{ inputs.bench_script_params }} --filter umf-benchmark
       bench_script_compare: ${{ inputs.bench_script_compare }}
       runner: ${{ inputs.runner }}

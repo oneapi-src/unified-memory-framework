@@ -416,7 +416,9 @@ jobs:
       pull-requests: write
     with:
       pr_no: '0'
-      bench_script_params: '--save Baseline_PVC'
+      bench_script_params: >
+        --save Baseline_PVC
+        --filter umf-benchmark
 
   # Run benchmarks with the latest SYCL (with the latest UMF copied into the SYCL)
   # to verify the compatibility.
