@@ -1,17 +1,18 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2025 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 #ifndef UMF_TEST_FUZZ_UTILS_HPP
 #define UMF_TEST_FUZZ_UTILS_HPP
 
-#include "umf/pools/pool_scalable.h"
-#include "umf/providers/provider_os_memory.h"
 #include <fuzzer/FuzzedDataProvider.h>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <vector>
+
+#include <umf/pools/pool_scalable.h>
+#include <umf/providers/provider_os_memory.h>
 
 namespace fuzz {
 

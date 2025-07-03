@@ -8,11 +8,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <umf/memory_pool.h>
+#include <umf/memory_provider.h>
+
 #include "pool_null.h"
 #include "pool_trace.h"
 #include "provider_null.h"
-#include "umf/memory_pool.h"
-#include "umf/memory_provider.h"
 
 #include "test_helpers.h"
 
