@@ -5,6 +5,7 @@
 #ifndef UMF_TEST_POOL_FIXTURES_HPP
 #define UMF_TEST_POOL_FIXTURES_HPP 1
 
+#include <algorithm>
 #include <array>
 #include <cstring>
 #include <functional>
@@ -84,13 +85,15 @@ struct umfPoolTest : umf_test::test,
         test::SetUp();
 
         pool = poolCreateExtUnique(this->GetParam());
+#undef max
+        numThreads = std::max(5, (int)utils_get_num_cores());
     }
 
     void TearDown() override { test::TearDown(); }
 
     umf_test::pool_unique_handle_t pool;
 
-    static constexpr int NTHREADS = 5;
+    int numThreads;
     static constexpr std::array<int, 7> nonAlignedAllocSizes = {5,  7,   23, 55,
                                                                 80, 119, 247};
 };
@@ -283,7 +286,7 @@ TEST_P(umfPoolTest, multiThreadedMallocFree) {
     };
 
     std::vector<std::thread> threads;
-    for (int i = 0; i < NTHREADS; i++) {
+    for (int i = 0; i < numThreads; i++) {
         threads.emplace_back(poolMalloc, allocSize, pool.get());
     }
 
@@ -302,7 +305,7 @@ TEST_P(umfPoolTest, multiThreadedpow2AlignedAlloc) {
     };
 
     std::vector<std::thread> threads;
-    for (int i = 0; i < NTHREADS; i++) {
+    for (int i = 0; i < numThreads; i++) {
         threads.emplace_back(poolpow2AlignedAlloc, pool.get());
     }
 
@@ -337,7 +340,7 @@ TEST_P(umfPoolTest, multiThreadedReallocFree) {
     };
 
     std::vector<std::thread> threads;
-    for (int i = 0; i < NTHREADS; i++) {
+    for (int i = 0; i < numThreads; i++) {
         threads.emplace_back(poolRealloc, allocSize, multiplier, pool.get());
     }
 
@@ -368,7 +371,7 @@ TEST_P(umfPoolTest, multiThreadedCallocFree) {
     };
 
     std::vector<std::thread> threads;
-    for (int i = 0; i < NTHREADS; i++) {
+    for (int i = 0; i < numThreads; i++) {
         threads.emplace_back(poolCalloc, num, sizeof(int), pool.get());
     }
 
@@ -394,7 +397,7 @@ TEST_P(umfPoolTest, multiThreadedMallocFreeRandomSizes) {
     };
 
     std::vector<std::thread> threads;
-    for (int i = 0; i < NTHREADS; i++) {
+    for (int i = 0; i < numThreads; i++) {
         threads.emplace_back(poolMalloc, (rand() % 16) * 8, pool.get());
     }
 
