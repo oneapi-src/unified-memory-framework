@@ -2,8 +2,8 @@
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-#include "umf/pools/pool_jemalloc.h"
-#include "umf/providers/provider_os_memory.h"
+#include <umf/pools/pool_jemalloc.h>
+#include <umf/providers/provider_os_memory.h>
 
 #include "pool.hpp"
 #include "poolFixtures.hpp"

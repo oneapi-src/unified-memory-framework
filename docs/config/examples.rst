@@ -29,7 +29,7 @@ First, let's create a memory provider object for coarse-grained allocations.
 You have to include the `provider_os_memory.h`_ header with
 the OS Memory Provider API::
 
-    #include "umf/providers/provider_os_memory.h"
+    #include <umf/providers/provider_os_memory.h>
 
 Get a pointer to the OS memory provider operations struct::
 
@@ -74,7 +74,7 @@ Having created a memory ``provider``, you can create a Scalable Memory ``pool``
 to be used for fine-grained allocations. You have to include
 the `pool_scalable.h`_ header with the Scalable Memory Pool API::
 
-    #include "umf/pools/pool_scalable.h"
+    #include <umf/pools/pool_scalable.h>
 
 Use the default set of operations for the Scalable memory pool
 by retrieving an address of the default ops struct::

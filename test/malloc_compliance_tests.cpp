@@ -11,9 +11,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <umf/memory_pool.h>
+
 #include "malloc_compliance_tests.hpp"
 #include "test_helpers.h"
-#include "umf/memory_pool.h"
 
 #include "base.hpp"
 using umf_test::test;

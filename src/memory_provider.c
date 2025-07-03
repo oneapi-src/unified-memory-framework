@@ -12,13 +12,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <umf/base.h>
 #include <umf/memory_provider.h>
 
 #include "base_alloc.h"
 #include "base_alloc_global.h"
 #include "libumf.h"
 #include "memory_provider_internal.h"
-#include "umf/base.h"
 #include "utils_assert.h"
 
 static umf_result_t CTL_SUBTREE_HANDLER(by_handle_provider)(
