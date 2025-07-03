@@ -148,7 +148,7 @@ TEST_F(test, test_if_mapped_with_MAP_SYNC) {
 
     size_t size = atol(size_str);
     umf_devdax_memory_provider_params_handle_t params = NULL;
-    umf_result = umfDevDaxMemoryProviderParamsCreate(&params, path, size);
+    umf_result = umfDevDaxMemoryProviderParamsCreate(path, size, &params);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(params, nullptr);
 
@@ -190,7 +190,7 @@ devdax_params_unique_handle_t create_devdax_params() {
 
     umf_devdax_memory_provider_params_handle_t params = NULL;
     umf_result_t res =
-        umfDevDaxMemoryProviderParamsCreate(&params, path, atol(size));
+        umfDevDaxMemoryProviderParamsCreate(path, atol(size), &params);
     if (res != UMF_RESULT_SUCCESS) {
         throw std::runtime_error(
             "Failed to create DevDax Memory Provider params");
@@ -343,7 +343,7 @@ TEST_P(umfProviderTest, purge_force_INVALID_POINTER) {
 TEST_F(test, params_protection_flag) {
     umf_devdax_memory_provider_params_handle_t params = nullptr;
     umf_result_t ret =
-        umfDevDaxMemoryProviderParamsCreate(&params, "/dev/dax0.0", 4096);
+        umfDevDaxMemoryProviderParamsCreate("/dev/dax0.0", 4096, &params);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
     ASSERT_NE(params, nullptr);
 
@@ -362,7 +362,7 @@ TEST_F(test, params_protection_flag) {
 TEST_F(test, params_invalid_protection_flag) {
     umf_devdax_memory_provider_params_handle_t params = nullptr;
     umf_result_t ret =
-        umfDevDaxMemoryProviderParamsCreate(&params, "/dev/dax0.0", 4096);
+        umfDevDaxMemoryProviderParamsCreate("/dev/dax0.0", 4096, &params);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
     ASSERT_NE(params, nullptr);
 
@@ -382,7 +382,7 @@ TEST_F(test, params_invalid_protection_flag) {
 
 TEST_F(test, params_null_handle) {
     auto ret =
-        umfDevDaxMemoryProviderParamsCreate(nullptr, "/dev/dax0.0", 4096);
+        umfDevDaxMemoryProviderParamsCreate("/dev/dax0.0", 4096, nullptr);
     ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 
     ret = umfDevDaxMemoryProviderParamsDestroy(nullptr);
@@ -399,7 +399,7 @@ TEST_F(test, params_null_handle) {
 TEST_F(test, create_empty_path) {
     const char *path = "";
     umf_devdax_memory_provider_params_handle_t wrong_params = NULL;
-    auto ret = umfDevDaxMemoryProviderParamsCreate(&wrong_params, path, 4096);
+    auto ret = umfDevDaxMemoryProviderParamsCreate(path, 4096, &wrong_params);
     ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
     ASSERT_EQ(wrong_params, nullptr);
 }
@@ -407,7 +407,7 @@ TEST_F(test, create_empty_path) {
 TEST_F(test, create_null_path) {
     const char *path = nullptr;
     umf_devdax_memory_provider_params_handle_t wrong_params = NULL;
-    auto ret = umfDevDaxMemoryProviderParamsCreate(&wrong_params, path, 4096);
+    auto ret = umfDevDaxMemoryProviderParamsCreate(path, 4096, &wrong_params);
     ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
     ASSERT_EQ(wrong_params, nullptr);
 }
@@ -416,7 +416,7 @@ TEST_F(test, set_empty_path) {
     const char *path = "tmp";
     const char *empty_path = "";
     umf_devdax_memory_provider_params_handle_t params = NULL;
-    auto ret = umfDevDaxMemoryProviderParamsCreate(&params, path, 4096);
+    auto ret = umfDevDaxMemoryProviderParamsCreate(path, 4096, &params);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
     ASSERT_NE(params, nullptr);
 
@@ -431,7 +431,7 @@ TEST_F(test, set_null_path) {
     const char *path = "tmp";
     const char *null_path = nullptr;
     umf_devdax_memory_provider_params_handle_t params = NULL;
-    auto ret = umfDevDaxMemoryProviderParamsCreate(&params, path, 4096);
+    auto ret = umfDevDaxMemoryProviderParamsCreate(path, 4096, &params);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
     ASSERT_NE(params, nullptr);
 
@@ -447,7 +447,7 @@ TEST_F(test, create_wrong_path) {
     const char *path = "/tmp/dev/dax0.0";
     umf_devdax_memory_provider_params_handle_t wrong_params = nullptr;
 
-    auto ret = umfDevDaxMemoryProviderParamsCreate(&wrong_params, path, 4096);
+    auto ret = umfDevDaxMemoryProviderParamsCreate(path, 4096, &wrong_params);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
     ASSERT_NE(wrong_params, nullptr);
 
@@ -465,7 +465,7 @@ TEST_F(test, create_wrong_path_not_exist) {
     const char *path = "/dev/dax1.1";
     umf_devdax_memory_provider_params_handle_t wrong_params = nullptr;
 
-    auto ret = umfDevDaxMemoryProviderParamsCreate(&wrong_params, path, 4096);
+    auto ret = umfDevDaxMemoryProviderParamsCreate(path, 4096, &wrong_params);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
     ASSERT_NE(wrong_params, nullptr);
 
@@ -483,7 +483,7 @@ TEST_F(test, create_wrong_size_0) {
     const char *path = "/dev/dax0.0";
     umf_devdax_memory_provider_params_handle_t wrong_params = nullptr;
 
-    auto ret = umfDevDaxMemoryProviderParamsCreate(&wrong_params, path, 0);
+    auto ret = umfDevDaxMemoryProviderParamsCreate(path, 0, &wrong_params);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
     ASSERT_NE(wrong_params, nullptr);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
 
     umf_file_memory_provider_params_handle_t file_params = NULL;
     umf_result_t umf_result =
-        umfFileMemoryProviderParamsCreate(&file_params, file_name);
+        umfFileMemoryProviderParamsCreate(file_name, &file_params);
     if (umf_result != UMF_RESULT_SUCCESS) {
         fprintf(
             stderr,

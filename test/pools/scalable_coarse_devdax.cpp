@@ -23,7 +23,7 @@ void *createDevDaxParams() {
 
     umf_devdax_memory_provider_params_handle_t params = NULL;
     umf_result_t res =
-        umfDevDaxMemoryProviderParamsCreate(&params, path, atol(size));
+        umfDevDaxMemoryProviderParamsCreate(path, atol(size), &params);
     if (res != UMF_RESULT_SUCCESS) {
         throw std::runtime_error(
             "Failed to create DevDax Memory Provider params");

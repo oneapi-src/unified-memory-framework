@@ -8,7 +8,7 @@
 #ifndef UMF_DEVDAX_MEMORY_PROVIDER_H
 #define UMF_DEVDAX_MEMORY_PROVIDER_H
 
-#include <umf/providers/provider_os_memory.h>
+#include <umf/memory_provider.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,13 +24,13 @@ typedef struct umf_devdax_memory_provider_params_t
     *umf_devdax_memory_provider_params_handle_t;
 
 /// @brief  Create a struct to store parameters of the Devdax Memory Provider.
-/// @param  hParams [out] handle to the newly created parameters struct.
 /// @param  path [in] path of the device DAX.
 /// @param  size [in] size of the device DAX in bytes.
+/// @param  hParams [out] handle to the newly created parameters struct.
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 umf_result_t umfDevDaxMemoryProviderParamsCreate(
-    umf_devdax_memory_provider_params_handle_t *hParams, const char *path,
-    size_t size);
+    const char *path, size_t size,
+    umf_devdax_memory_provider_params_handle_t *hParams);
 
 /// @brief  Destroy parameters struct.
 /// @param  hParams [in] handle to the parameters of the Devdax Memory Provider.

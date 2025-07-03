@@ -229,7 +229,7 @@ struct fixed_provider : public provider_interface {
     provider_interface::params_ptr
     getParams(::benchmark::State &state) override {
         umf_fixed_memory_provider_params_handle_t raw_params = nullptr;
-        umfFixedMemoryProviderParamsCreate(&raw_params, mem, size);
+        umfFixedMemoryProviderParamsCreate(mem, size, &raw_params);
         if (!raw_params) {
             state.SkipWithError("Failed to create fixed provider params");
             return {nullptr, [](void *) {}};
@@ -351,8 +351,8 @@ struct disjoint_pool_stack : public disjoint_pool<Provider> {
         pools.push_back(rootPool); // root pool
 
         umf_fixed_memory_provider_params_handle_t params_fixed = nullptr;
-        umf_result = umfFixedMemoryProviderParamsCreate(
-            &params_fixed, (void *)0x1, 0x1); // dummy
+        umf_result = umfFixedMemoryProviderParamsCreate((void *)0x1, 0x1,
+                                                        &params_fixed); // dummy
 
         size_t poolSize = firstPoolSize;
         size_t level_start = 0;

@@ -40,8 +40,8 @@ void *createFixedMemoryProviderParams() {
     }
 
     umf_fixed_memory_provider_params_handle_t params = nullptr;
-    umf_result_t res = umfFixedMemoryProviderParamsCreate(
-        &params, memory_buffer.get(), memory_size);
+    umf_result_t res = umfFixedMemoryProviderParamsCreate(memory_buffer.get(),
+                                                          memory_size, &params);
     if (res != UMF_RESULT_SUCCESS) {
         throw std::runtime_error(
             "Failed to create Fixed memory provider params");

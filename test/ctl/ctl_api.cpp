@@ -164,7 +164,7 @@ class Pool {
 
         data = malloc(1024 * 1024);
         int ret =
-            umfFixedMemoryProviderParamsCreate(&params, data, 1024 * 1024);
+            umfFixedMemoryProviderParamsCreate(data, 1024 * 1024, &params);
         if (ret != UMF_RESULT_SUCCESS) {
             return 0;
         }

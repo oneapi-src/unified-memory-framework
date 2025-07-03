@@ -11,7 +11,7 @@ using umf_test::test;
 TEST_F(test, devdax_provider_not_implemented) {
     umf_devdax_memory_provider_params_handle_t params = nullptr;
     umf_result_t umf_result =
-        umfDevDaxMemoryProviderParamsCreate(&params, "path", 4096);
+        umfDevDaxMemoryProviderParamsCreate("path", 4096, &params);
     EXPECT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
     EXPECT_EQ(params, nullptr);
 
