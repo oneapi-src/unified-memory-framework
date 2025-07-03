@@ -7,7 +7,9 @@
  *
  */
 
-#pragma once
+#ifndef UMF_DISJOINT_MEMORY_POOL_H
+#define UMF_DISJOINT_MEMORY_POOL_H 1
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -118,3 +120,5 @@ const umf_memory_pool_ops_t *umfDisjointPoolOps(void);
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* UMF_DISJOINT_MEMORY_POOL_H */
