@@ -204,7 +204,7 @@ jobs:
         ~/bench_workdir_umf
         --results-dir ${{ github.workspace }}/results-repo
         --output-markdown
-        ${{ (inputs.compatibility == 0) && format('--umf {0} --timeout 3000 --output-html remote', env.BUILD_DIR) || '' }}
+        ${{ (inputs.compatibility == 0) && format('--umf {0}/ --timeout 3000 --output-html remote', env.BUILD_DIR) || '' }}
         ${{ (inputs.compatibility == 1) && format('--sycl {0} --timeout 7200', env.SYCL_DIR) || '' }}
         ${{ env.bench_params }}
 
