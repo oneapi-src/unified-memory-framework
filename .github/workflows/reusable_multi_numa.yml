@@ -18,7 +18,8 @@ jobs:
     if: github.repository == 'oneapi-src/unified-memory-framework'
     strategy:
       matrix:
-        os: [ubuntu-22.04, rhel-9.1, sles-15]
+        # TODO: bring back SLES-15 when the machine is ready
+        os: [ubuntu-22.04, rhel-9.1]
         build_type: [Debug, Release]
         shared_library: ['ON', 'OFF']
     name: Multi NUMA (${{matrix.os}}, build_type=${{matrix.build_type}}, shared=${{matrix.shared_library}})
