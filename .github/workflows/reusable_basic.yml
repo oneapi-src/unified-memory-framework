@@ -195,6 +195,8 @@ jobs:
         ${{ matrix.compiler.cxx == 'icpx' && '. /opt/intel/oneapi/setvars.sh' || true }}
         cmake --build ${{env.BUILD_DIR}} -j $(nproc)
 
+    # UMF_LOG="level:debug;flush:debug;output:stderr;pid:no" 
+    # -R "test_provider_os_memory"
     - name: Run tests
       working-directory: ${{env.BUILD_DIR}}
       run: |

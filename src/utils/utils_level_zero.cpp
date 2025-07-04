@@ -752,6 +752,18 @@ ze_memory_type_t utils_ze_get_mem_type(ze_context_handle_t context, void *ptr) {
     return alloc_props.type;
 }
 
+void utils_ze_get_mem_props(ze_context_handle_t context, void *ptr,
+                            ze_memory_allocation_properties_t *alloc_props,
+                            ze_device_handle_t *device) {
+    alloc_props->stype = ZE_STRUCTURE_TYPE_MEMORY_ALLOCATION_PROPERTIES;
+    alloc_props->pNext = NULL;
+    alloc_props->type = ZE_MEMORY_TYPE_UNKNOWN;
+    alloc_props->id = 0;
+    alloc_props->pageSize = 0;
+
+    libze_ops.zeMemGetAllocProperties(context, ptr, alloc_props, device);
+}
+
 int64_t utils_ze_get_num_memory_properties(ze_device_handle_t device) {
     uint32_t pCount = 0;
     ze_result_t ze_result =

@@ -5,8 +5,10 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include "provider_null.h"
+#include <umf/memory_props.h>
 #include <umf/memory_provider_ops.h>
+
+#include "provider_null.h"
 
 static umf_result_t nullInitialize(const void *params, void **pool) {
     (void)params;
@@ -133,6 +135,18 @@ static umf_result_t nullCloseIpcHandle(void *provider, void *ptr, size_t size) {
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t
+nullGetAllocationProperties(void *provider, const void *ptr,
+                            umf_memory_property_id_t propertyId,
+                            size_t max_property_size, void *value) {
+    (void)provider;
+    (void)ptr;
+    (void)propertyId;
+    (void)max_property_size;
+    (void)value;
+    return UMF_RESULT_SUCCESS;
+}
+
 umf_memory_provider_ops_t UMF_NULL_PROVIDER_OPS = {
     .version = UMF_PROVIDER_OPS_VERSION_CURRENT,
     .initialize = nullInitialize,
@@ -152,4 +166,5 @@ umf_memory_provider_ops_t UMF_NULL_PROVIDER_OPS = {
     .ext_put_ipc_handle = nullPutIpcHandle,
     .ext_open_ipc_handle = nullOpenIpcHandle,
     .ext_close_ipc_handle = nullCloseIpcHandle,
+    .ext_get_allocation_properties = nullGetAllocationProperties,
 };

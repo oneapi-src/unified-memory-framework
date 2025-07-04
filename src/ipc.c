@@ -58,14 +58,19 @@ umf_result_t umfGetIPCHandle(const void *ptr, umf_ipc_handle_t *umfIPCHandle,
     }
 
     size_t ipcHandleSize = 0;
-    umf_alloc_info_t allocInfo;
-    umf_result_t ret = umfMemoryTrackerGetAllocInfo(ptr, &allocInfo);
+    umf_memory_properties_handle_t props = NULL;
+    umf_result_t ret = umfGetMemoryPropertiesHandle(ptr, &props);
     if (ret != UMF_RESULT_SUCCESS) {
-        LOG_ERR("cannot get alloc info for ptr = %p.", ptr);
+        LOG_ERR("cannot get alloc props for ptr = %p.", ptr);
         return ret;
     }
 
-    ret = umfPoolGetIPCHandleSize(allocInfo.pool, &ipcHandleSize);
+    if (props == NULL || props->pool == NULL) {
+        LOG_ERR("cannot get pool from alloc info for ptr = %p.", ptr);
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
+
+    ret = umfPoolGetIPCHandleSize(props->pool, &ipcHandleSize);
     if (ret != UMF_RESULT_SUCCESS) {
         LOG_ERR("cannot get IPC handle size.");
         return ret;
@@ -79,11 +84,14 @@ umf_result_t umfGetIPCHandle(const void *ptr, umf_ipc_handle_t *umfIPCHandle,
 
     // We cannot use umfPoolGetMemoryProvider function because it returns
     // upstream provider but we need tracking one
-    umf_memory_provider_handle_t provider = allocInfo.pool->provider;
-    assert(provider);
+    if (props == NULL || props->pool == NULL || props->pool->provider == NULL) {
+        LOG_ERR("cannot get memory provider from pool");
+        umf_ba_global_free(ipcData);
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
+    umf_memory_provider_handle_t provider = props->pool->provider;
 
-    ret = umfMemoryProviderGetIPCHandle(provider, allocInfo.base,
-                                        allocInfo.baseSize,
+    ret = umfMemoryProviderGetIPCHandle(provider, props->base, props->base_size,
                                         (void *)ipcData->providerIpcData);
     if (ret != UMF_RESULT_SUCCESS) {
         LOG_ERR("failed to get IPC handle.");
@@ -92,10 +100,10 @@ umf_result_t umfGetIPCHandle(const void *ptr, umf_ipc_handle_t *umfIPCHandle,
     }
 
     // ipcData->handle_id is filled by tracking provider
-    ipcData->base = allocInfo.base;
+    ipcData->base = props->base;
     ipcData->pid = utils_getpid();
-    ipcData->baseSize = allocInfo.baseSize;
-    ipcData->offset = (uintptr_t)ptr - (uintptr_t)allocInfo.base;
+    ipcData->baseSize = props->base_size;
+    ipcData->offset = (uintptr_t)ptr - (uintptr_t)props->base;
 
     *umfIPCHandle = ipcData;
     *size = ipcHandleSize;

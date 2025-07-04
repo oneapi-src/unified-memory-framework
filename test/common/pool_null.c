@@ -5,8 +5,9 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include "pool_null.h"
 #include <umf/memory_pool_ops.h>
+
+#include "pool_null.h"
 
 static umf_result_t nullInitialize(umf_memory_provider_handle_t provider,
                                    const void *params, void **pool) {
