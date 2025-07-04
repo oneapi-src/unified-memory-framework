@@ -8,8 +8,8 @@
  */
 
 #include "../common/base.hpp"
-#include "ctl/ctl.h"
 #include "ctl/ctl_debug.h"
+#include "ctl/ctl_internal.h"
 
 using namespace umf_test;
 

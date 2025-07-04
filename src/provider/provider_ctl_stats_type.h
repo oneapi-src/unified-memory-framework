@@ -22,4 +22,5 @@ typedef struct ctl_stats_t {
 #ifdef __cplusplus
 }
 #endif
-#endif
+
+#endif /* UMF_PROVIDER_CTL_STATS_TYPE_H */
