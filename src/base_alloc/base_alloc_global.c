@@ -191,6 +191,8 @@ void *umf_ba_global_aligned_alloc(size_t size, size_t alignment) {
             return NULL;
         }
         VALGRIND_DO_MALLOCLIKE_BLOCK(ptr, size, 0, 0);
+        // utils_annotate_memory_undefined(ptr, size); is redundant here,
+        // as mmap() in ba_os_alloc() already marked the memory as undefined
         return add_metadata_and_align(ptr, size, alignment);
     }
 
@@ -203,6 +205,8 @@ void *umf_ba_global_aligned_alloc(size_t size, size_t alignment) {
             return NULL;
         }
         VALGRIND_DO_MALLOCLIKE_BLOCK(ptr, size, 0, 0);
+        // utils_annotate_memory_undefined(ptr, size); is redundant here,
+        // as mmap() in ba_os_alloc() already marked the memory as undefined
         return add_metadata_and_align(ptr, size, alignment);
     }
 
@@ -231,6 +235,8 @@ void umf_ba_global_free(void *ptr) {
     int ac_index = size_to_idx(total_size);
     if (ac_index >= NUM_ALLOCATION_CLASSES) {
         VALGRIND_DO_FREELIKE_BLOCK(ptr, 0);
+        // utils_annotate_memory_inaccessible(ptr, total_size); is redundant here,
+        // as munmap() in ba_os_free() will make it inaccessible anyway
         ba_os_free(ptr, total_size);
         return;
     }
@@ -238,6 +244,8 @@ void umf_ba_global_free(void *ptr) {
     if (!BASE_ALLOC.ac[ac_index]) {
         // if creating ac failed, memory must have been allocated by os
         VALGRIND_DO_FREELIKE_BLOCK(ptr, 0);
+        // utils_annotate_memory_inaccessible(ptr, total_size); is redundant here,
+        // as munmap() in ba_os_free() will make it inaccessible anyway
         ba_os_free(ptr, total_size);
         return;
     }
