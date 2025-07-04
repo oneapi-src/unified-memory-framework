@@ -644,20 +644,29 @@ static void free_slab(void *unused, void *slab) {
     }
 }
 
+static const umf_disjoint_pool_params_t default_params = {
+    .slab_min_size = 64 * 1024,           // 64KB default
+    .max_poolable_size = 2 * 1024 * 1024, // 2MB default
+    .capacity = 4,                        // default
+    .min_bucket_size = 8,                 // default
+    .cur_pool_size = 0,
+    .pool_trace = 0,
+    .shared_limits = NULL,
+    .name = "disjoint"};
+
 umf_result_t disjoint_pool_initialize(umf_memory_provider_handle_t provider,
                                       const void *params, void **ppPool) {
-    // TODO set defaults when user pass the NULL as params
-    if (!provider || !params || !ppPool) {
+    if (!provider || !ppPool) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    const umf_disjoint_pool_params_t *dp_params = params;
+    const umf_disjoint_pool_params_t *dp_params;
 
-    // min_bucket_size parameter must be a power of 2 for bucket sizes
-    // to generate correctly.
-    if (!dp_params->min_bucket_size ||
-        !IS_POWER_OF_2(dp_params->min_bucket_size)) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    // If params is NULL, use default values
+    if (!params) {
+        dp_params = &default_params;
+    } else {
+        dp_params = params;
     }
 
     disjoint_pool_t *disjoint_pool =
@@ -1102,18 +1111,7 @@ umfDisjointPoolParamsCreate(umf_disjoint_pool_params_handle_t *hParams) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    *params = (umf_disjoint_pool_params_t){
-        .slab_min_size = 64 * 1024,           // 64K
-        .max_poolable_size = 2 * 1024 * 1024, // 2MB
-        .capacity = 4,
-        .min_bucket_size = UMF_DISJOINT_POOL_MIN_BUCKET_DEFAULT_SIZE,
-        .cur_pool_size = 0,
-        .pool_trace = 0,
-        .shared_limits = NULL,
-    };
-
-    strncpy(params->name, DEFAULT_NAME, sizeof(params->name) - 1);
-    params->name[sizeof(params->name) - 1] = '\0';
+    *params = default_params;
 
     *hParams = params;
     return UMF_RESULT_SUCCESS;

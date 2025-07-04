@@ -37,7 +37,7 @@ typedef struct umf_memory_pool_ops_t {
     /// @param providers array of memory providers that will be used for coarse-grain allocations.
     ///        Should contain at least one memory provider.
     /// @param numProvider number of elements in the providers array
-    /// @param params pool-specific params
+    /// @param params pool-specific params, or NULL for defaults
     /// @param pool [out] returns pointer to the pool
     /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
     ///
