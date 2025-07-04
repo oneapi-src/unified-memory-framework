@@ -14,7 +14,7 @@
 
 #include <umf/memory_provider.h>
 
-#include "ctl/ctl.h"
+#include "ctl/ctl_internal.h"
 
 #ifdef __cplusplus
 extern "C" {

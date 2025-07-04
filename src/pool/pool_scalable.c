@@ -19,7 +19,7 @@
 #include <umf/pools/pool_scalable.h>
 
 #include "base_alloc_global.h"
-#include "ctl/ctl.h"
+#include "ctl/ctl_internal.h"
 #include "libumf.h"
 #include "memory_pool_internal.h"
 #include "pool_scalable_internal.h"

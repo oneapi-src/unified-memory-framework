@@ -7,4 +7,9 @@
  *
  */
 
+#ifndef UMF_LEVEL_ZERO_PROVIDER_INTERNAL_H
+#define UMF_LEVEL_ZERO_PROVIDER_INTERNAL_H 1
+
 void fini_ze_global_state(void);
+
+#endif /* UMF_LEVEL_ZERO_PROVIDER_INTERNAL_H */

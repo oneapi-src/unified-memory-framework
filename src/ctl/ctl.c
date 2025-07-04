@@ -16,8 +16,6 @@
  *    the library's internal state
  */
 
-#include "ctl.h"
-
 #include <ctype.h>
 #include <limits.h>
 #include <stdint.h>
@@ -27,6 +25,7 @@
 #include <umf/base.h>
 
 #include "base_alloc/base_alloc_global.h"
+#include "ctl_internal.h"
 #include "utils/utils_common.h"
 #include "utlist.h"
 

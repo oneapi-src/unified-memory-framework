@@ -15,7 +15,7 @@
 #include <string.h>
 
 #include "base_alloc_global.h"
-#include "ctl/ctl.h"
+#include "ctl/ctl_internal.h"
 #include "libumf.h"
 #include "memory_pool_internal.h"
 #include "memory_provider_internal.h"

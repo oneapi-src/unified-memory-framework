@@ -7,4 +7,9 @@
  *
  */
 
+#ifndef UMF_POOL_SCALABLE_INTERNAL_H
+#define UMF_POOL_SCALABLE_INTERNAL_H 1
+
 void fini_tbb_global_state(void);
+
+#endif /* UMF_POOL_SCALABLE_INTERNAL_H */

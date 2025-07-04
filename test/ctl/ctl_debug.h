@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -8,13 +8,13 @@
  */
 
 /*
- * ctl_debug.h -- definitions for CTL test
+ * ctl_debug.h -- definitions for CTL tests
  */
 
-#ifndef UMF_CTL_DEBUG_H
-#define UMF_CTL_DEBUG_H 1
+#ifndef UMF_TEST_CTL_DEBUG_H
+#define UMF_TEST_CTL_DEBUG_H 1
 
-#include "../src/ctl/ctl.h"
+#include "ctl/ctl_internal.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,4 +29,4 @@ void deinitialize_debug_ctl(void);
 }
 #endif
 
-#endif
+#endif /* UMF_TEST_CTL_DEBUG_H */

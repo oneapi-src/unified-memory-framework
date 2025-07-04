@@ -18,7 +18,7 @@
 #include <umf/memory_provider.h>
 
 #include "base_alloc_global.h"
-#include "ctl/ctl.h"
+#include "ctl/ctl_internal.h"
 #include "pool_disjoint_internal.h"
 #include "provider/provider_tracking.h"
 #include "uthash/utlist.h"

@@ -12,11 +12,11 @@
 /* Copyright 2016-2020, Intel Corporation */
 
 /*
- * ctl.h -- internal declaration of statistics and control related structures
+ * ctl_internal.h -- internal declaration of statistics and control related structures
  */
 
-#ifndef UMF_CTL_H
-#define UMF_CTL_H 1
+#ifndef UMF_CTL_INTERNAL_H
+#define UMF_CTL_INTERNAL_H 1
 
 #include <errno.h>
 #include <stddef.h>
@@ -245,4 +245,4 @@ umf_result_t ctl_query(struct ctl *ctl, void *ctx,
 }
 #endif
 
-#endif
+#endif /* UMF_CTL_INTERNAL_H */
