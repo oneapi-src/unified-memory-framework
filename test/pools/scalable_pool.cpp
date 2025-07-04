@@ -28,7 +28,8 @@ INSTANTIATE_TEST_SUITE_P(
     scalablePoolTest, umfPoolTest,
     ::testing::Values(poolCreateExtParams{
         umfScalablePoolOps(), nullptr, nullptr, umfOsMemoryProviderOps(),
-        createOsMemoryProviderParams, destroyOsMemoryProviderParams}));
+        createOsMemoryProviderParams, destroyOsMemoryProviderParams}),
+    poolCreateExtParamsNameGen);
 
 using scalablePoolParams = std::tuple<size_t, bool>;
 struct umfScalablePoolParamsTest

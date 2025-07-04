@@ -41,9 +41,21 @@ static void canQueryLatency(size_t nodeId) {
 
 INSTANTIATE_TEST_SUITE_P(memspaceLowestLatencyTest, memspaceGetTest,
                          ::testing::Values(memspaceGetParams{
-                             canQueryLatency, umfMemspaceLowestLatencyGet}));
+                             canQueryLatency, umfMemspaceLowestLatencyGet}),
+                         ([](auto const &info) {
+                             const char *names[] = {
+                                 "canQueryLatency",
+                                 "umfMemspaceLowestLatencyGet"};
+                             return names[info.index];
+                         }));
 
 INSTANTIATE_TEST_SUITE_P(memspaceLowestLatencyProviderTest,
                          memspaceProviderTest,
                          ::testing::Values(memspaceGetParams{
-                             canQueryLatency, umfMemspaceLowestLatencyGet}));
+                             canQueryLatency, umfMemspaceLowestLatencyGet}),
+                         ([](auto const &info) {
+                             const char *names[] = {
+                                 "canQueryLatency",
+                                 "umfMemspaceLowestLatencyGet"};
+                             return names[info.index];
+                         }));

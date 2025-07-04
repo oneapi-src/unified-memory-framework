@@ -610,7 +610,13 @@ TEST_P(umfCUDAProviderAllocFlagsTest, reuseParams) {
 INSTANTIATE_TEST_SUITE_P(umfCUDAProviderTestSuite, umfCUDAProviderTest,
                          ::testing::Values(UMF_MEMORY_TYPE_DEVICE,
                                            UMF_MEMORY_TYPE_SHARED,
-                                           UMF_MEMORY_TYPE_HOST));
+                                           UMF_MEMORY_TYPE_HOST),
+                         ([](auto const &info) {
+                             const char *names[] = {"UMF_MEMORY_TYPE_DEVICE",
+                                                    "UMF_MEMORY_TYPE_SHARED",
+                                                    "UMF_MEMORY_TYPE_HOST"};
+                             return names[info.index];
+                         }));
 
 INSTANTIATE_TEST_SUITE_P(
     umfCUDAProviderAllocFlagsTestSuite, umfCUDAProviderAllocFlagsTest,
@@ -619,7 +625,12 @@ INSTANTIATE_TEST_SUITE_P(
         std::make_tuple(UMF_MEMORY_TYPE_SHARED, CU_MEM_ATTACH_HOST),
         std::make_tuple(UMF_MEMORY_TYPE_HOST, CU_MEMHOSTALLOC_PORTABLE),
         std::make_tuple(UMF_MEMORY_TYPE_HOST, CU_MEMHOSTALLOC_DEVICEMAP),
-        std::make_tuple(UMF_MEMORY_TYPE_HOST, CU_MEMHOSTALLOC_WRITECOMBINED)));
+        std::make_tuple(UMF_MEMORY_TYPE_HOST, CU_MEMHOSTALLOC_WRITECOMBINED)),
+    ([](auto const &info) {
+        const char *names[] = {"SHARED_GLOBAL", "SHARED_HOST", "HOST_PORTABLE",
+                               "HOST_DEVICEMAP", "HOST_WRITECOMBINED"};
+        return names[info.index];
+    }));
 
 // TODO: add IPC API
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(umfIpcTest);
