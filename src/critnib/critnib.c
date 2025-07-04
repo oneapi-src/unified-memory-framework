@@ -133,6 +133,8 @@ struct critnib_leaf {
      * to the 'c->deleted_leaf' list when the reference count drops to 0.
      */
     uint8_t pending_deleted_leaf;
+    // the 'next' pointer in the 'c->deleted_leaf' list
+    void *next;
     uint64_t ref_count;
 };
 
@@ -253,7 +255,7 @@ void critnib_delete(struct critnib *c) {
     }
 
     for (struct critnib_leaf *k = c->deleted_leaf; k;) {
-        struct critnib_leaf *kk = k->value;
+        struct critnib_leaf *kk = k->next;
         umf_ba_global_free(k);
         k = kk;
     }
@@ -317,9 +319,9 @@ static void add_to_deleted_leaf_list(struct critnib *__restrict c,
 
     utils_atomic_load_acquire_ptr((void **)&c->deleted_leaf,
                                   (void **)&deleted_leaf);
-    utils_atomic_store_release_ptr(&k->value, deleted_leaf);
+    utils_atomic_store_release_ptr(&k->next, deleted_leaf);
     while (!utils_compare_exchange_u64((uint64_t *)&c->deleted_leaf,
-                                       (uint64_t *)&k->value, (uint64_t *)&k)) {
+                                       (uint64_t *)&k->next, (uint64_t *)&k)) {
         ;
     }
 }
@@ -368,8 +370,8 @@ static struct critnib_leaf *alloc_leaf(struct critnib *__restrict c) {
         if (!k) {
             return umf_ba_global_aligned_alloc(sizeof(struct critnib_leaf), 8);
         }
-    } while (!utils_compare_exchange_u64(
-        (uint64_t *)&c->deleted_leaf, (uint64_t *)&k, (uint64_t *)&k->value));
+    } while (!utils_compare_exchange_u64((uint64_t *)&c->deleted_leaf,
+                                         (uint64_t *)&k, (uint64_t *)&k->next));
 
     utils_annotate_memory_new(k, sizeof(*k));
 
