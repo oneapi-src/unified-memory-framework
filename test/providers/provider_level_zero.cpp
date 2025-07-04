@@ -113,7 +113,13 @@ struct LevelZeroProviderInit
 INSTANTIATE_TEST_SUITE_P(, LevelZeroProviderInit,
                          ::testing::Values(UMF_MEMORY_TYPE_HOST,
                                            UMF_MEMORY_TYPE_DEVICE,
-                                           UMF_MEMORY_TYPE_SHARED));
+                                           UMF_MEMORY_TYPE_SHARED),
+                         ([](auto const &info) {
+                             const char *names[] = {"UMF_MEMORY_TYPE_HOST",
+                                                    "UMF_MEMORY_TYPE_SHARED",
+                                                    "UMF_MEMORY_TYPE_DEVICE"};
+                             return names[info.index];
+                         }));
 
 TEST_P(LevelZeroProviderInit, FailNullContext) {
     const umf_memory_provider_ops_t *ops = umfLevelZeroMemoryProviderOps();
@@ -490,7 +496,13 @@ INSTANTIATE_TEST_SUITE_P(umfLevelZeroProviderTestSuite,
                          umfLevelZeroProviderTest,
                          ::testing::Values(UMF_MEMORY_TYPE_DEVICE,
                                            UMF_MEMORY_TYPE_SHARED,
-                                           UMF_MEMORY_TYPE_HOST));
+                                           UMF_MEMORY_TYPE_HOST),
+                         ([](auto const &info) {
+                             const char *names[] = {"UMF_MEMORY_TYPE_DEVICE",
+                                                    "UMF_MEMORY_TYPE_SHARED",
+                                                    "UMF_MEMORY_TYPE_HOST"};
+                             return names[info.index];
+                         }));
 
 LevelZeroTestHelper l0TestHelper;
 

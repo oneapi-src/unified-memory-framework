@@ -238,11 +238,20 @@ struct providerConfigTestNumaMode
     }
 };
 
-INSTANTIATE_TEST_SUITE_P(numa_modes, providerConfigTestNumaMode,
-                         testing::Values(UMF_NUMA_MODE_DEFAULT,
-                                         UMF_NUMA_MODE_BIND,
-                                         UMF_NUMA_MODE_INTERLEAVE,
-                                         UMF_NUMA_MODE_LOCAL));
+INSTANTIATE_TEST_SUITE_P(
+    numa_modes, providerConfigTestNumaMode,
+    testing::Values(UMF_NUMA_MODE_DEFAULT, UMF_NUMA_MODE_BIND,
+                    UMF_NUMA_MODE_INTERLEAVE, UMF_NUMA_MODE_LOCAL),
+    ([](auto const &info) {
+        const char *names[] = {
+            "UMF_NUMA_MODE_DEFAULT",
+            "UMF_NUMA_MODE_BIND",
+            "UMF_NUMA_MODE_INTERLEAVE",
+            "UMF_NUMA_MODE_LOCAL"
+        };
+        return names[info.index];
+    }));
+
 #ifndef MPOL_LOCAL
 #define MPOL_LOCAL 4
 #endif

@@ -37,7 +37,13 @@ INSTANTIATE_TEST_SUITE_P(
     FileWithMemoryStrategyTest, FileWithMemoryStrategyTest,
     ::testing::Values(UMF_COARSE_MEMORY_STRATEGY_FASTEST,
                       UMF_COARSE_MEMORY_STRATEGY_FASTEST_BUT_ONE,
-                      UMF_COARSE_MEMORY_STRATEGY_CHECK_ALL_SIZE));
+                      UMF_COARSE_MEMORY_STRATEGY_CHECK_ALL_SIZE),
+    ([](auto const &info) {
+        const char *names[] = {"UMF_COARSE_MEMORY_STRATEGY_FASTEST",
+                               "UMF_COARSE_MEMORY_STRATEGY_FASTEST_BUT_ONE",
+                               "UMF_COARSE_MEMORY_STRATEGY_CHECK_ALL_SIZE"};
+        return names[info.index];
+    }));
 
 TEST_P(FileWithMemoryStrategyTest, disjointFileMallocPool_simple1) {
     umf_memory_provider_handle_t malloc_memory_provider = nullptr;

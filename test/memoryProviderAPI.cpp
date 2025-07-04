@@ -338,7 +338,14 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY,
                       UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC,
                       UMF_RESULT_ERROR_INVALID_ARGUMENT,
-                      UMF_RESULT_ERROR_UNKNOWN));
+                      UMF_RESULT_ERROR_UNKNOWN),
+    ([](auto const &info) {
+        const char *names[] = {"UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY",
+                               "UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC",
+                               "UMF_RESULT_ERROR_INVALID_ARGUMENT",
+                               "UMF_RESULT_ERROR_UNKNOWN"};
+        return names[info.index];
+    }));
 
 TEST_P(providerInitializeTest, errorPropagation) {
     struct provider : public umf_test::provider_base_t {
@@ -389,4 +396,14 @@ INSTANTIATE_TEST_SUITE_P(
         umf_test::withGeneratedArgs(umfMemoryProviderGetMinPageSize),
         umf_test::withGeneratedArgs(umfMemoryProviderPurgeLazy),
         umf_test::withGeneratedArgs(umfMemoryProviderPurgeForce),
-        umf_test::withGeneratedArgs(umfMemoryProviderGetName)));
+        umf_test::withGeneratedArgs(umfMemoryProviderGetName)),
+    ([](auto const &info) {
+        const char *names[] = {"umfMemoryProviderAlloc",
+                               "umfMemoryProviderFree",
+                               "umfMemoryProviderGetRecommendedPageSize",
+                               "umfMemoryProviderGetMinPageSize",
+                               "umfMemoryProviderPurgeLazy",
+                               "umfMemoryProviderPurgeForce",
+                               "umfMemoryProviderGetName"};
+        return names[info.index];
+    }));

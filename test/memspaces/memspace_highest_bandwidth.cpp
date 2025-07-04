@@ -40,16 +40,25 @@ static void canQueryBandwidth(size_t nodeId) {
     }
 }
 
-INSTANTIATE_TEST_SUITE_P(memspaceLowestLatencyTest, memspaceGetTest,
-                         ::testing::Values(memspaceGetParams{
-                             canQueryBandwidth,
-                             umfMemspaceHighestBandwidthGet}));
+INSTANTIATE_TEST_SUITE_P(
+    memspaceLowestLatencyTest, memspaceGetTest,
+    ::testing::Values(memspaceGetParams{canQueryBandwidth,
+                                        umfMemspaceHighestBandwidthGet}),
+    ([](auto const &info) {
+        const char *names[] = {"canQueryBandwidth",
+                               "umfMemspaceHighestBandwidthGet"};
+        return names[info.index];
+    }));
 
-INSTANTIATE_TEST_SUITE_P(memspaceLowestLatencyProviderTest,
-                         memspaceProviderTest,
-                         ::testing::Values(memspaceGetParams{
-                             canQueryBandwidth,
-                             umfMemspaceHighestBandwidthGet}));
+INSTANTIATE_TEST_SUITE_P(
+    memspaceLowestLatencyProviderTest, memspaceProviderTest,
+    ::testing::Values(memspaceGetParams{canQueryBandwidth,
+                                        umfMemspaceHighestBandwidthGet}),
+    ([](auto const &info) {
+        const char *names[] = {"canQueryBandwidth",
+                               "umfMemspaceHighestBandwidthGet"};
+        return names[info.index];
+    }));
 
 TEST_F(numaNodesTest, PerCoreBandwidthPlacement) {
     const size_t allocSize = 4096;

@@ -309,16 +309,22 @@ INSTANTIATE_TEST_SUITE_P(
                             &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr},
         poolCreateExtParams{umfDisjointPoolOps(), defaultDisjointPoolConfig,
                             defaultDisjointPoolConfigDestroy,
-                            &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr}));
+                            &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr}),
+    poolCreateExtParamsNameGen);
 
 INSTANTIATE_TEST_SUITE_P(mallocMultiPoolTest, umfMultiPoolTest,
                          ::testing::Values(poolCreateExtParams{
                              umfProxyPoolOps(), nullptr, nullptr,
-                             &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr}));
+                             &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr}),
+                         poolCreateExtParamsNameGen);
 
-INSTANTIATE_TEST_SUITE_P(umfPoolWithCreateFlagsTest, umfPoolWithCreateFlagsTest,
-                         ::testing::Values(0,
-                                           UMF_POOL_CREATE_FLAG_OWN_PROVIDER));
+INSTANTIATE_TEST_SUITE_P(
+    umfPoolWithCreateFlagsTest, umfPoolWithCreateFlagsTest,
+    ::testing::Values(0, UMF_POOL_CREATE_FLAG_OWN_PROVIDER),
+    ([](auto const &info) {
+        const char *names[] = {"NONE", "UMF_POOL_CREATE_FLAG_OWN_PROVIDER"};
+        return names[info.index];
+    }));
 
 ////////////////// Negative test cases /////////////////
 
@@ -382,7 +388,14 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY,
                       UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC,
                       UMF_RESULT_ERROR_INVALID_ARGUMENT,
-                      UMF_RESULT_ERROR_UNKNOWN));
+                      UMF_RESULT_ERROR_UNKNOWN),
+    ([](auto const &info) {
+        const char *names[] = {"UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY",
+                               "UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC",
+                               "UMF_RESULT_ERROR_INVALID_ARGUMENT",
+                               "UMF_RESULT_ERROR_UNKNOWN"};
+        return names[info.index];
+    }));
 
 TEST_P(poolInitializeTest, errorPropagation) {
     auto nullProvider = umf_test::wrapProviderUnique(nullProviderCreate());
@@ -554,4 +567,14 @@ INSTANTIATE_TEST_SUITE_P(
         umf_test::withGeneratedArgs(umfPoolCalloc),
         umf_test::withGeneratedArgs(umfPoolRealloc),
         umf_test::withGeneratedArgs(umfPoolMallocUsableSize),
-        umf_test::withGeneratedArgs(umfPoolGetLastAllocationError)));
+        umf_test::withGeneratedArgs(umfPoolGetLastAllocationError)),
+    ([](auto const &info) {
+        const char *names[] = {"umfPoolMalloc",
+                               "umfPoolAlignedMalloc",
+                               "umfPoolFree",
+                               "umfPoolCalloc",
+                               "umfPoolRealloc",
+                               "umfPoolMallocUsableSize",
+                               "umfPoolGetLastAllocationError"};
+        return names[info.index];
+    }));

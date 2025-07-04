@@ -41,4 +41,5 @@ static std::vector<poolCreateExtParams> poolParamsList =
         : std::vector<poolCreateExtParams>{};
 
 INSTANTIATE_TEST_SUITE_P(jemallocCoarseDevDaxTest, umfPoolTest,
-                         ::testing::ValuesIn(poolParamsList));
+                         ::testing::ValuesIn(poolParamsList),
+                         poolCreateExtParamsNameGen);
