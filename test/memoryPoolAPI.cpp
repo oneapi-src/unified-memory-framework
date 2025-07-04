@@ -554,4 +554,9 @@ INSTANTIATE_TEST_SUITE_P(
         umf_test::withGeneratedArgs(umfPoolCalloc),
         umf_test::withGeneratedArgs(umfPoolRealloc),
         umf_test::withGeneratedArgs(umfPoolMallocUsableSize),
-        umf_test::withGeneratedArgs(umfPoolGetLastAllocationError)));
+        umf_test::withGeneratedArgs(umfPoolGetLastAllocationError),
+        umf_test::withGeneratedArgs(umfPoolGetName),
+        umf_test::withGeneratedArgs(umfPoolGetMemoryProvider),
+        umf_test::withGeneratedArgs(umfPoolByPtr),
+        umf_test::withGeneratedArgs(umfPoolSetTag),
+        umf_test::withGeneratedArgs(umfPoolGetTag)));
