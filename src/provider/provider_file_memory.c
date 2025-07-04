@@ -313,7 +313,7 @@ static umf_result_t file_finalize(void *provider) {
     void *rvalue = NULL;
     umf_result_t ret = UMF_RESULT_SUCCESS;
     while (1 == critnib_find(file_provider->mmaps, key, FIND_G, &rkey, &rvalue,
-                             NULL)) {
+                             NULL, false /* weak */)) {
         utils_munmap((void *)rkey, (size_t)rvalue);
         critnib_remove(file_provider->mmaps, rkey, NULL);
         key = rkey;

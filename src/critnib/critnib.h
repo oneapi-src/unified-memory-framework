@@ -51,7 +51,7 @@ void *critnib_remove(critnib *c, uintptr_t key, void **ref);
 void *critnib_get(critnib *c, uintptr_t key, void **ref);
 void *critnib_find_le(critnib *c, uintptr_t key, void **ref);
 int critnib_find(critnib *c, uintptr_t key, enum find_dir_t dir,
-                 uintptr_t *rkey, void **rvalue, void **ref);
+                 uintptr_t *rkey, void **rvalue, void **ref, bool weak);
 int critnib_release(struct critnib *c, void *ref);
 
 #ifdef __cplusplus

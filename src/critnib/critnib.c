@@ -1009,7 +1009,7 @@ static struct critnib_leaf *find_ge(struct critnib_node *__restrict n,
  *       critnib_find() returns 0 if ref is NULL
  */
 int critnib_find(struct critnib *c, uintptr_t key, enum find_dir_t dir,
-                 uintptr_t *rkey, void **rvalue, void **ref) {
+                 uintptr_t *rkey, void **rvalue, void **ref, bool weak) {
     uint64_t wrs1, wrs2;
     struct critnib_leaf *k;
     uintptr_t _rkey = (uintptr_t)0x0;
@@ -1067,7 +1067,8 @@ int critnib_find(struct critnib *c, uintptr_t key, enum find_dir_t dir,
     } while (wrs1 + DELETED_LIFE <= wrs2);
 
     if (k) {
-        if (c->cb_free_leaf) {
+
+        if (weak == false && c->cb_free_leaf) {
             if (increment_ref_count(k)) {
                 return 0;
             }
