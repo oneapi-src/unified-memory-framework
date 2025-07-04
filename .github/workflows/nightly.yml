@@ -201,6 +201,30 @@ jobs:
         ${{ matrix.umfd_lib == 'ON' && '--umfd-lib' || ''}}
         ${{ matrix.static_hwloc == 'ON' && '--hwloc' || '' }}
 
+    - name: Set VCPKG_PATH with hwloc for the fetch_content example
+      run: echo "VCPKG_PATH=${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows" >> $env:GITHUB_ENV
+
+    - name: Configure the fetch_content example
+      working-directory: ${{github.workspace}}/examples/fetch_content
+      # Fetch_Content the UMF code from the current repository (-DUMF_REPO="${{github.workspace}}")
+      run: >
+        cmake
+        -B ${{github.workspace}}/examples/fetch_content/build
+        -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+        -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
+        -DUMF_REPO="${{github.workspace}}"
+        -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
+        -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
+        -G "${{matrix.generator}}"
+
+    - name: Build the fetch_content example
+      working-directory: ${{github.workspace}}/examples/fetch_content
+      run: cmake --build ${{github.workspace}}/examples/fetch_content/build --config ${{matrix.build_type}} -j $env:NUMBER_OF_PROCESSORS
+
+    - name: Run the fetch_content example
+      working-directory: ${{github.workspace}}/examples/fetch_content/build
+      run: ctest -V
+
   # Build and test UMF with Intel C++ Compiler (ICX) on Windows
   Windows-icx:
    env:
