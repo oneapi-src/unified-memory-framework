@@ -34,6 +34,26 @@ using poolCreateExtParams =
                pfnPoolParamsDestroy, const umf_memory_provider_ops_t *,
                pfnProviderParamsCreate, pfnProviderParamsDestroy>;
 
+std::string poolCreateExtParamsNameGen(
+    const testing::TestParamInfo<poolCreateExtParams> param) {
+
+    const umf_memory_pool_ops_t *pool_ops = std::get<0>(param.param);
+    const umf_memory_provider_ops_t *provider_ops = std::get<3>(param.param);
+
+    const char *poolName = NULL;
+    const char *providerName = NULL;
+
+    pool_ops->get_name(NULL, &poolName);
+    provider_ops->get_name(NULL, &providerName);
+
+    std::string poolParams =
+        std::get<1>(param.param)
+            ? std::string("_w_params_") + std::to_string(param.index)
+            : std::string("");
+
+    return std::string(poolName) + poolParams + "_" + providerName;
+}
+
 umf_test::pool_unique_handle_t poolCreateExtUnique(poolCreateExtParams params) {
     auto [pool_ops, poolParamsCreate, poolParamsDestroy, provider_ops,
           providerParamsCreate, providerParamsDestroy] = params;
