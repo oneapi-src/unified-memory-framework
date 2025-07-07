@@ -586,6 +586,15 @@ TEST_P(umfPoolTest, umfPoolAlignedMalloc) {
 #endif /* !_WIN32 */
 }
 
+TEST_P(umfPoolTest, umfPoolGetName) {
+    umf_memory_pool_handle_t pool_get = pool.get();
+    const char *name = nullptr;
+    umf_result_t ret = umfPoolGetName(pool_get, &name);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(name, nullptr);
+    ASSERT_GT(strlen(name), (size_t)0);
+}
+
 TEST_P(umfPoolTest, pool_from_ptr_whole_size_success) {
 #ifdef _WIN32
     // TODO: implement support for windows
