@@ -100,7 +100,6 @@ template <typename T> constexpr umf_memory_provider_ops_t providerOpsBase() {
     UMF_ASSIGN_OP(ops, T, get_last_native_error, UMF_RESULT_ERROR_UNKNOWN);
     UMF_ASSIGN_OP(ops, T, get_recommended_page_size, UMF_RESULT_ERROR_UNKNOWN);
     UMF_ASSIGN_OP(ops, T, get_min_page_size, UMF_RESULT_ERROR_UNKNOWN);
-    UMF_ASSIGN_OP(ops, T, get_name, UMF_RESULT_ERROR_UNKNOWN);
     UMF_ASSIGN_OP(ops, T, ext_purge_lazy, UMF_RESULT_ERROR_UNKNOWN);
     UMF_ASSIGN_OP(ops, T, ext_purge_force, UMF_RESULT_ERROR_UNKNOWN);
     UMF_ASSIGN_OP(ops, T, ext_allocation_merge, UMF_RESULT_ERROR_UNKNOWN);
@@ -110,6 +109,12 @@ template <typename T> constexpr umf_memory_provider_ops_t providerOpsBase() {
     UMF_ASSIGN_OP(ops, T, ext_put_ipc_handle, UMF_RESULT_ERROR_UNKNOWN);
     UMF_ASSIGN_OP(ops, T, ext_open_ipc_handle, UMF_RESULT_ERROR_UNKNOWN);
     UMF_ASSIGN_OP(ops, T, ext_close_ipc_handle, UMF_RESULT_ERROR_UNKNOWN);
+    ops.get_name = [](void *, const char **name) {
+        if (name) {
+            *name = "test_provider";
+        }
+        return UMF_RESULT_SUCCESS;
+    };
     return ops;
 }
 } // namespace detail

@@ -28,4 +28,5 @@ INSTANTIATE_TEST_SUITE_P(scalableCoarseFileTest, umfPoolTest,
                          ::testing::Values(poolCreateExtParams{
                              umfScalablePoolOps(), nullptr, nullptr,
                              umfFileMemoryProviderOps(), getFileParamsDefault,
-                             destroyFileParams}));
+                             destroyFileParams}),
+                         poolCreateExtParamsNameGen);
