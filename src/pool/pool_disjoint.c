@@ -33,6 +33,8 @@ static char *DEFAULT_NAME = "disjoint";
 struct ctl disjoint_ctl_root;
 static UTIL_ONCE_FLAG ctl_initialized = UTIL_ONCE_FLAG_INIT;
 
+// Disable name ctl for 1.0 release
+#if 0
 static umf_result_t CTL_READ_HANDLER(name)(void *ctx,
                                            umf_ctl_query_source_t source,
                                            void *arg, size_t size,
@@ -70,12 +72,88 @@ static umf_result_t CTL_WRITE_HANDLER(name)(void *ctx,
 
     return UMF_RESULT_SUCCESS;
 }
+#endif
+static umf_result_t
+CTL_READ_HANDLER(used_memory)(void *ctx, umf_ctl_query_source_t source,
+                              void *arg, size_t size,
+                              umf_ctl_index_utlist_t *indexes) {
+    (void)source, (void)indexes;
+    disjoint_pool_t *pool = (disjoint_pool_t *)ctx;
 
-static const umf_ctl_node_t CTL_NODE(disjoint)[] = {CTL_LEAF_RW(name),
-                                                    CTL_NODE_END};
+    if (arg == NULL || size != sizeof(size_t)) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    size_t used_memory = 0;
+
+    // Calculate used memory across all buckets
+    for (size_t i = 0; i < pool->buckets_num; i++) {
+        bucket_t *bucket = pool->buckets[i];
+        utils_mutex_lock(&bucket->bucket_lock);
+
+        // Count allocated chunks in available slabs
+        slab_list_item_t *it;
+        for (it = bucket->available_slabs; it != NULL; it = it->next) {
+            slab_t *slab = it->val;
+            used_memory += slab->num_chunks_allocated * bucket->size;
+        }
+
+        // Count allocated chunks in unavailable slabs (all chunks allocated)
+        for (it = bucket->unavailable_slabs; it != NULL; it = it->next) {
+            slab_t *slab = it->val;
+            used_memory += slab->num_chunks_allocated * bucket->size;
+        }
+
+        utils_mutex_unlock(&bucket->bucket_lock);
+    }
+
+    *(size_t *)arg = used_memory;
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t
+CTL_READ_HANDLER(reserved_memory)(void *ctx, umf_ctl_query_source_t source,
+                                  void *arg, size_t size,
+                                  umf_ctl_index_utlist_t *indexes) {
+    (void)source, (void)indexes;
+    disjoint_pool_t *pool = (disjoint_pool_t *)ctx;
+
+    if (arg == NULL || size != sizeof(size_t)) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    size_t reserved_memory = 0;
+
+    // Calculate reserved memory across all buckets
+    for (size_t i = 0; i < pool->buckets_num; i++) {
+        bucket_t *bucket = pool->buckets[i];
+        utils_mutex_lock(&bucket->bucket_lock);
+
+        // Count all slabs (both available and unavailable)
+        slab_list_item_t *it;
+        for (it = bucket->available_slabs; it != NULL; it = it->next) {
+            slab_t *slab = it->val;
+            reserved_memory += slab->slab_size;
+        }
+
+        for (it = bucket->unavailable_slabs; it != NULL; it = it->next) {
+            slab_t *slab = it->val;
+            reserved_memory += slab->slab_size;
+        }
+
+        utils_mutex_unlock(&bucket->bucket_lock);
+    }
+
+    *(size_t *)arg = reserved_memory;
+    return UMF_RESULT_SUCCESS;
+}
+
+static const umf_ctl_node_t CTL_NODE(stats)[] = {CTL_LEAF_RO(used_memory),
+                                                 CTL_LEAF_RO(reserved_memory)};
 
 static void initialize_disjoint_ctl(void) {
-    CTL_REGISTER_MODULE(&disjoint_ctl_root, disjoint);
+    CTL_REGISTER_MODULE(&disjoint_ctl_root, stats);
+    //    CTL_REGISTER_MODULE(&disjoint_ctl_root, name);
 }
 
 umf_result_t disjoint_pool_ctl(void *hPool,

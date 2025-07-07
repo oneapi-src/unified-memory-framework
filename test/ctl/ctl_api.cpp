@@ -288,7 +288,7 @@ TEST_F(CtlTest, ctlDefaultPoolOverwrite) {
     ASSERT_EQ(std::string(output), values.back());
 }
 
-TEST_F(CtlTest, ctlNameValidation) {
+TEST_F(CtlTest, DISABLED_ctlNameValidation) {
     std::string name = "umf.pool.default.disjoint.name";
     std::string value = "new_disjoint_pool_name";
     umf_disjoint_pool_params_handle_t params = NULL;
@@ -311,7 +311,7 @@ TEST_F(CtlTest, ctlNameValidation) {
     p.freeResources();
 }
 
-TEST_F(CtlTest, ctlSizeValidation) {
+TEST_F(CtlTest, DISABLED_ctlSizeValidation) {
     std::string name = "umf.pool.default.disjoint.name";
     std::string value = "1234567890";
     umf_disjoint_pool_params_handle_t params = NULL;
@@ -340,7 +340,7 @@ TEST_F(CtlTest, ctlSizeValidation) {
     p.freeResources();
 }
 
-TEST_F(CtlTest, ctlExecInvalidSize) {
+TEST_F(CtlTest, DISABLED_ctlExecInvalidSize) {
     std::string name = "umf.pool.default.disjoint.name";
     ASSERT_EQ(umfCtlSet(name.c_str(), (void *)"test_value", 0),
               UMF_RESULT_ERROR_INVALID_ARGUMENT);
