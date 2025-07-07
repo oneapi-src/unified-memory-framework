@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-#include "ctl/ctl.h"
+#include "ctl/ctl_internal.h"
 #include "utils/utils_assert.h"
 
 static umf_result_t CTL_READ_HANDLER(peak_memory)(
@@ -106,4 +106,5 @@ static inline void provider_ctl_stats_free(CTL_PROVIDER_TYPE *provider,
 #ifdef __cplusplus
 }
 #endif
-#endif
+
+#endif /* UMF_PROVIDER_CTL_STATS_IMPL_H */

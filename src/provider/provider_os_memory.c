@@ -19,7 +19,7 @@
 #include <umf/memory_provider_ops.h>
 #include <umf/providers/provider_os_memory.h>
 
-#include "ctl/ctl.h"
+#include "ctl/ctl_internal.h"
 #include "utils_assert.h"
 // OS Memory Provider requires HWLOC
 #if defined(UMF_NO_HWLOC)
