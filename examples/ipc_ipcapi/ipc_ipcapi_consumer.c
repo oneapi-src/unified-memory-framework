@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
                                0, &scalable_pool);
     if (umf_result != UMF_RESULT_SUCCESS) {
         fprintf(stderr,
-                "[producer] ERROR: creating jemalloc UMF pool failed\n");
+                "[producer] ERROR: creating UMF scalable pool failed\n");
         goto err_destroy_OS_memory_provider;
     }
 

@@ -125,7 +125,7 @@ int main(int argc, char *argv[]) {
                                0, &scalable_pool);
     if (umf_result != UMF_RESULT_SUCCESS) {
         fprintf(stderr,
-                "[producer] ERROR: creating the UMF jemalloc pool failed\n");
+                "[producer] ERROR: creating UMF scalable pool failed\n");
         goto err_destroy_OS_memory_provider;
     }
 
