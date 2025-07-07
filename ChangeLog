@@ -1,3 +1,33 @@
+Mon Jul 07 2025 Łukasz Stolarczuk <lukasz.stolarczuk@intel.com>
+
+	* Version 1.0.0-rc1
+
+	The Unified Memory Framework (UMF) is a library for constructing allocators and memory pools.
+	It also contains broadly useful abstractions and utilities for memory management.
+	UMF allows users to manage multiple memory pools characterized by different attributes,
+	allowing certain allocation types to be isolated from others and allocated using different
+	hardware resources as required.
+
+	While this is the first UMF release with the backward compatibility guarantee,
+	part of the library's API (at the moment: CTL, memspace, memtarget, and mempolicy)
+	is still experimental and may change in future releases.
+
+	Due to cleanup and improvements there have been some API changes made:
+	- add const qualifier to parameters, where applicable (#1257, #1266)
+	- unify return values (#1387, #1370)
+	- make pool get name an obligatory pool function (#1398)
+	- make out parameters the last functions' arguments (#1408)
+
+	This release contains also:
+	- new experimental CTL API (i.a. #913, #1073, #1206)
+	- add umfPoolGetName (#1320)
+	- use multiple arenas in Jemalloc pool (#1214)
+	- make umfInit thread-safe (#1399)
+	- add umfd debug library on Windows (#1219, #1238)
+	- deprecate UMF_DISABLE_HWLOC CMake build option (#1308)
+	- fix: numanode index retrieval (#1309)
+	- fix: reset base allocator destroy flag (#1326)
+
 Mon May 12 2025 Łukasz Stolarczuk <lukasz.stolarczuk@intel.com>
 
 	* Version 0.11.2
