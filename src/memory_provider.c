@@ -21,7 +21,7 @@
 #include "memory_provider_internal.h"
 #include "utils_assert.h"
 
-static umf_result_t CTL_SUBTREE_HANDLER(by_handle_provider)(
+static umf_result_t CTL_SUBTREE_HANDLER(by_handle)(
     void *ctx, umf_ctl_query_source_t source, void *arg, size_t size,
     umf_ctl_index_utlist_t *indexes, const char *extra_name,
     umf_ctl_query_type_t queryType) {
@@ -32,8 +32,8 @@ static umf_result_t CTL_SUBTREE_HANDLER(by_handle_provider)(
     return UMF_RESULT_SUCCESS;
 }
 
-umf_ctl_node_t CTL_NODE(provider)[] = {
-    CTL_LEAF_SUBTREE2(by_handle, by_handle_provider), CTL_NODE_END};
+umf_ctl_node_t CTL_NODE(provider)[] = {CTL_LEAF_SUBTREE(by_handle),
+                                       CTL_NODE_END};
 
 static umf_result_t umfDefaultPurgeLazy(void *provider, void *ptr,
                                         size_t size) {

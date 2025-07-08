@@ -225,13 +225,6 @@ umf_result_t ctl_query(struct ctl *ctl, void *ctx,
             NULL                                                               \
     }
 
-#define CTL_LEAF_SUBTREE2(name, fun, ...)                                      \
-    {                                                                          \
-        CTL_STR(name), CTL_NODE_SUBTREE,                                       \
-            {NULL, NULL, NULL, CTL_SUBTREE_HANDLER(fun, __VA_ARGS__)}, NULL,   \
-            NULL                                                               \
-    }
-
 /*
  * Declaration of a new read-write leaf. If used both read and write function
  * must be declared by CTL_READ_HANDLER and CTL_WRITE_HANDLER macros.
