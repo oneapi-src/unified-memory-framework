@@ -398,6 +398,27 @@ an issue or a Pull Request, please read [Contribution Guide](./CONTRIBUTING.md).
 To enable logging in UMF source files please follow the guide in the
 [web documentation](https://oneapi-src.github.io/unified-memory-framework/introduction.html#logging).
 
+## CMake integration
+
+Integration of UMF into another project via CMake's
+[FetchContent](https://cmake.org/cmake/help/latest/module/FetchContent.html),
+is possible with:
+
+```cmake
+include(FetchContent)
+
+FetchContent_Declare(
+    unified-memory-framework
+    GIT_REPOSITORY https://github.com/oneapi-src/unified-memory-framework.git
+    GIT_TAG main  # This will pull the latest (potentially unstable) changes from the main branch
+)
+FetchContent_MakeAvailable(unified-memory-framework)
+
+add_executable(some_example some_example.cpp)
+target_include_directories(some_example PRIVATE ${unified-memory-framework_SOURCE_DIR}/include)
+target_link_libraries(some_example PRIVATE umf::umf umf::headers)
+```
+
 ## Notices
 
 The contents of this repository may have been developed with support from one or more Intel-operated generative artificial intelligence solutions.
