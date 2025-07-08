@@ -239,6 +239,11 @@ add_umf_test(
     LIBS ${UMF_UTILS_FOR_TEST})
 
 add_umf_test(
+    NAME pool_null_params
+    SRCS test_pool_null_params.cpp
+    LIBS ${UMF_UTILS_FOR_TEST})
+
+add_umf_test(
     NAME c_api_disjoint_pool
     SRCS c_api/disjoint_pool.c
     LIBS ${UMF_UTILS_FOR_TEST})
