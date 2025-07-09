@@ -56,10 +56,15 @@ typedef enum umf_ctl_query_type {
     CTL_QUERY_READ,
     CTL_QUERY_WRITE,
     CTL_QUERY_RUNNABLE,
-    CTL_QUERY_SUBTREE,
-
-    MAX_CTL_QUERY_TYPE
 } umf_ctl_query_type_t;
+
+typedef enum ctl_query_source {
+    CTL_UNKNOWN_QUERY_SOURCE,
+    /* query executed directly from the program */
+    CTL_QUERY_PROGRAMMATIC,
+    /* query executed from the config file */
+    CTL_QUERY_CONFIG_INPUT
+} umf_ctl_query_source_t;
 
 #ifdef __cplusplus
 }

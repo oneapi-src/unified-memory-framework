@@ -19,6 +19,7 @@
 #define UMF_CTL_INTERNAL_H 1
 
 #include <errno.h>
+#include <stdarg.h>
 #include <stddef.h>
 
 #include <umf/memory_pool.h>
@@ -31,33 +32,25 @@ extern "C" {
 
 typedef struct ctl_index_utlist {
     const char *name;
-    long value;
+    void *arg;
+    size_t arg_size; /* size of the argument */
     struct ctl_index_utlist *next;
 } umf_ctl_index_utlist_t;
 
-typedef enum ctl_query_source {
-    CTL_UNKNOWN_QUERY_SOURCE,
-    /* query executed directly from the program */
-    CTL_QUERY_PROGRAMMATIC,
-    /* query executed from the config file */
-    CTL_QUERY_CONFIG_INPUT,
-
-    MAX_CTL_QUERY_SOURCE
-} umf_ctl_query_source_t;
-
-typedef umf_result_t (*node_callback)(void *ctx, umf_ctl_query_source_t type,
+typedef umf_result_t (*node_callback)(void *ctx, umf_ctl_query_source_t source,
                                       void *arg, size_t size,
-                                      umf_ctl_index_utlist_t *indexes,
-                                      const char *extra_name,
-                                      umf_ctl_query_type_t query_type);
+                                      umf_ctl_index_utlist_t *indexes);
+
+typedef umf_result_t (*node_callback_subtree)(
+    void *ctx, umf_ctl_query_source_t source, void *arg, size_t size,
+    umf_ctl_index_utlist_t *indexes, const char *extra_name,
+    umf_ctl_query_type_t query_type, va_list args);
 
 enum ctl_node_type {
     CTL_NODE_UNKNOWN,
     CTL_NODE_NAMED,
     CTL_NODE_LEAF,
-    CTL_NODE_INDEXED,
     CTL_NODE_SUBTREE,
-
     MAX_CTL_NODE
 };
 
@@ -68,9 +61,19 @@ struct ctl_argument_parser {
     size_t dest_size;   /* size of the field inside of the argument */
     ctl_arg_parser parser;
 };
+typedef enum ctl_arg_type {
+    CTL_ARG_TYPE_UNKNOWN = 0,
+    CTL_ARG_TYPE_BOOLEAN,
+    CTL_ARG_TYPE_STRING,
+    CTL_ARG_TYPE_INT,
+    CTL_ARG_TYPE_LONG_LONG,
+    CTL_ARG_TYPE_PTR,
+    MAX_CTL_ARG_TYPE
+} ctl_arg_type_t;
 
 struct ctl_argument {
     size_t dest_size;                     /* size of the entire argument */
+    ctl_arg_type_t type;                  /* type of the argument */
     struct ctl_argument_parser parsers[]; /* array of 'fields' in arg */
 };
 
@@ -93,7 +96,11 @@ typedef struct ctl_node {
     const char *name;
     enum ctl_node_type type;
 
-    node_callback cb[MAX_CTL_QUERY_TYPE];
+    node_callback read_cb;
+    node_callback write_cb;
+    node_callback runnable_cb;
+    node_callback_subtree subtree_cb;
+
     const struct ctl_argument *arg;
 
     const struct ctl_node *children;
@@ -128,18 +135,22 @@ void ctl_register_module_node(struct ctl *c, const char *name,
 int ctl_arg_boolean(const void *arg, void *dest, size_t dest_size);
 #define CTL_ARG_BOOLEAN                                                        \
     {                                                                          \
-        sizeof(int), { {0, sizeof(int), ctl_arg_boolean}, CTL_ARG_PARSER_END } \
+        sizeof(int), CTL_ARG_TYPE_BOOLEAN, {                                   \
+            {0, sizeof(int), ctl_arg_boolean}, CTL_ARG_PARSER_END              \
+        }                                                                      \
     }
 
 int ctl_arg_integer(const void *arg, void *dest, size_t dest_size);
 #define CTL_ARG_INT                                                            \
     {                                                                          \
-        sizeof(int), { {0, sizeof(int), ctl_arg_integer}, CTL_ARG_PARSER_END } \
+        sizeof(int), CTL_ARG_TYPE_INT, {                                       \
+            {0, sizeof(int), ctl_arg_integer}, CTL_ARG_PARSER_END              \
+        }                                                                      \
     }
 
 #define CTL_ARG_LONG_LONG                                                      \
     {                                                                          \
-        sizeof(long long), {                                                   \
+        sizeof(long long), CTL_ARG_TYPE_LONG_LONG, {                           \
             {0, sizeof(long long), ctl_arg_integer}, CTL_ARG_PARSER_END        \
         }                                                                      \
     }
@@ -147,41 +158,68 @@ int ctl_arg_integer(const void *arg, void *dest, size_t dest_size);
 int ctl_arg_string(const void *arg, void *dest, size_t dest_size);
 #define CTL_ARG_STRING(len)                                                    \
     {                                                                          \
-        len, { {0, len, ctl_arg_string}, CTL_ARG_PARSER_END }                  \
+        len, CTL_ARG_TYPE_PTR, {                                               \
+            {0, len, ctl_arg_string}, CTL_ARG_PARSER_END                       \
+        }                                                                      \
     }
 
-#define CTL_STR(name) #name
+#define CTL_ARG_PTR                                                            \
+    {                                                                          \
+        sizeof(void *), CTL_ARG_TYPE_PTR, { {0, 0, NULL}, CTL_ARG_PARSER_END } \
+    }
+
+#define _CTL_STR(name) #name
+#define CTL_STR(name) _CTL_STR(name)
+
+// this macro is only needed because Microsoft cannot implement C99 standard
+#define CTL_NONAME CTL_NAMELESS_NODE_
 
 #define CTL_NODE_END                                                           \
-    { NULL, CTL_NODE_UNKNOWN, {NULL, NULL, NULL}, NULL, NULL }
+    { NULL, CTL_NODE_UNKNOWN, NULL, NULL, NULL, NULL, NULL, NULL }
 
 #define CTL_NODE(name, ...) ctl_node_##__VA_ARGS__##_##name
 
 umf_result_t ctl_query(struct ctl *ctl, void *ctx,
                        umf_ctl_query_source_t source, const char *name,
-                       umf_ctl_query_type_t type, void *arg, size_t size);
+                       umf_ctl_query_type_t type, void *arg, size_t size,
+                       va_list args);
 
 /* Declaration of a new child node */
 #define CTL_CHILD(name, ...)                                                   \
     {                                                                          \
-        CTL_STR(name), CTL_NODE_NAMED, {NULL, NULL, NULL}, NULL,               \
+        CTL_STR(name), CTL_NODE_NAMED, NULL, NULL, NULL, NULL, NULL,           \
+            (struct ctl_node *)CTL_NODE(name, __VA_ARGS__)                     \
+    }
+
+/*
+ * Declaration of a new child node with an argument
+ * This is used to declare that the following node is an argument node, which
+ * should be parsed and provided to the handler function in argument list.
+ */
+#define CTL_CHILD_WITH_ARG(name, ...)                                          \
+    {                                                                          \
+        CTL_STR(name), CTL_NODE_NAMED, NULL, NULL, NULL, NULL, &CTL_ARG(name), \
             (struct ctl_node *)CTL_NODE(name, __VA_ARGS__)                     \
     }
 
 /* Declaration of a new indexed node */
 #define CTL_INDEXED(name, ...)                                                 \
     {                                                                          \
-        CTL_STR(name), CTL_NODE_INDEXED, {NULL, NULL, NULL}, NULL,             \
+        CTL_STR(name), CTL_NODE_INDEXED, NULL, NULL, NULL, NULL, NULL,         \
             (struct ctl_node *)CTL_NODE(name, __VA_ARGS__)                     \
     }
 
-#define CTL_READ_HANDLER(name, ...) ctl_##__VA_ARGS__##_##name##_read
+#define CTL_HANDLER_NAME(name, action, ...)                                    \
+    ctl_##__VA_ARGS__##_##name##_##action
 
-#define CTL_WRITE_HANDLER(name, ...) ctl_##__VA_ARGS__##_##name##_write
+#define CTL_READ_HANDLER(name, ...) CTL_HANDLER_NAME(name, read, __VA_ARGS__)
+#define CTL_WRITE_HANDLER(name, ...) CTL_HANDLER_NAME(name, write, __VA_ARGS__)
 
-#define CTL_RUNNABLE_HANDLER(name, ...) ctl_##__VA_ARGS__##_##name##_runnable
+#define CTL_RUNNABLE_HANDLER(name, ...)                                        \
+    CTL_HANDLER_NAME(name, runnable, __VA_ARGS__)
 
-#define CTL_SUBTREE_HANDLER(name, ...) ctl_##__VA_ARGS__##_##name##_subtree
+#define CTL_SUBTREE_HANDLER(name, ...)                                         \
+    CTL_HANDLER_NAME(name, subtree, __VA_ARGS__)
 
 #define CTL_ARG(name) ctl_arg_##name
 
@@ -191,9 +229,8 @@ umf_result_t ctl_query(struct ctl *ctl, void *ctx,
  */
 #define CTL_LEAF_RO(name, ...)                                                 \
     {                                                                          \
-        CTL_STR(name), CTL_NODE_LEAF,                                          \
-            {CTL_READ_HANDLER(name, __VA_ARGS__), NULL, NULL, NULL}, NULL,     \
-            NULL                                                               \
+        CTL_STR(name), CTL_NODE_LEAF, CTL_READ_HANDLER(name, __VA_ARGS__),     \
+            NULL, NULL, NULL, NULL, NULL                                       \
     }
 
 /*
@@ -202,9 +239,9 @@ umf_result_t ctl_query(struct ctl *ctl, void *ctx,
  */
 #define CTL_LEAF_WO(name, ...)                                                 \
     {                                                                          \
-        CTL_STR(name), CTL_NODE_LEAF,                                          \
-            {NULL, CTL_WRITE_HANDLER(name, __VA_ARGS__), NULL, NULL},          \
-            &CTL_ARG(name), NULL                                               \
+        CTL_STR(name), CTL_NODE_LEAF, NULL,                                    \
+            CTL_WRITE_HANDLER(name, __VA_ARGS__), NULL, NULL, &CTL_ARG(name),  \
+            NULL                                                               \
     }
 
 /*
@@ -213,16 +250,14 @@ umf_result_t ctl_query(struct ctl *ctl, void *ctx,
  */
 #define CTL_LEAF_RUNNABLE(name, ...)                                           \
     {                                                                          \
-        CTL_STR(name), CTL_NODE_LEAF,                                          \
-            {NULL, NULL, CTL_RUNNABLE_HANDLER(name, __VA_ARGS__), NULL}, NULL, \
-            NULL                                                               \
+        CTL_STR(name), CTL_NODE_LEAF, NULL, NULL,                              \
+            CTL_RUNNABLE_HANDLER(name, __VA_ARGS__), NULL, NULL, NULL          \
     }
 
 #define CTL_LEAF_SUBTREE(name, ...)                                            \
     {                                                                          \
-        CTL_STR(name), CTL_NODE_SUBTREE,                                       \
-            {NULL, NULL, NULL, CTL_SUBTREE_HANDLER(name, __VA_ARGS__)}, NULL,  \
-            NULL                                                               \
+        CTL_STR(name), CTL_NODE_SUBTREE, NULL, NULL, NULL,                     \
+            CTL_SUBTREE_HANDLER(name, __VA_ARGS__), NULL, NULL                 \
     }
 
 /*
@@ -231,9 +266,8 @@ umf_result_t ctl_query(struct ctl *ctl, void *ctx,
  */
 #define CTL_LEAF_RW(name)                                                      \
     {                                                                          \
-        CTL_STR(name), CTL_NODE_LEAF,                                          \
-            {CTL_READ_HANDLER(name), CTL_WRITE_HANDLER(name), NULL, NULL},     \
-            &CTL_ARG(name), NULL                                               \
+        CTL_STR(name), CTL_NODE_LEAF, CTL_READ_HANDLER(name),                  \
+            CTL_WRITE_HANDLER(name), NULL, NULL, &CTL_ARG(name), NULL          \
     }
 
 #define CTL_REGISTER_MODULE(_ctl, name)                                        \

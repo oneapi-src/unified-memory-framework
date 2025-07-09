@@ -18,6 +18,7 @@
 
 #include <ctype.h>
 #include <limits.h>
+#include <stdarg.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,6 +28,7 @@
 #include "base_alloc/base_alloc_global.h"
 #include "ctl_internal.h"
 #include "utils/utils_common.h"
+#include "utils_log.h"
 #include "utlist.h"
 
 #ifdef _WIN32
@@ -41,10 +43,16 @@
 #define CTL_NAME_VALUE_SEPARATOR "="
 #define CTL_QUERY_NODE_SEPARATOR "."
 #define CTL_VALUE_ARG_SEPARATOR ","
+#define CTL_WILDCARD "{}"
 
 /* GLOBAL TREE */
 static int ctl_global_first_free = 0;
 static umf_ctl_node_t CTL_NODE(global)[CTL_MAX_ENTRIES];
+
+typedef struct optional_umf_result_t {
+    bool is_valid;
+    umf_result_t value;
+} optional_umf_result_t;
 
 void *Zalloc(size_t sz) {
     void *ptr = umf_ba_global_alloc(sz);
@@ -63,95 +71,42 @@ char *Strdup(const char *s) {
     return p;
 }
 
-/*
- * ctl_find_node -- (internal) searches for a matching entry point in the
- *    provided nodes
- *
- * Name offset is used to return the offset of the name in the query string.
- * The caller is responsible for freeing all of the allocated indexes,
- * regardless of the return value.
- */
-static const umf_ctl_node_t *ctl_find_node(const umf_ctl_node_t *nodes,
-                                           const char *name,
-                                           umf_ctl_index_utlist_t *indexes,
-                                           size_t *name_offset) {
-    assert(nodes != NULL);
-    assert(name != NULL);
-    assert(name_offset != NULL);
-    const umf_ctl_node_t *n = NULL;
-    char *sptr = NULL;
-    char *parse_str = Strdup(name);
-    if (parse_str == NULL) {
-        return NULL;
-    }
-
-    char *node_name = strtok_r(parse_str, CTL_QUERY_NODE_SEPARATOR, &sptr);
-
-    /*
-     * Go through the string and separate tokens that correspond to nodes
-     * in the main ctl tree.
-     */
-    while (node_name != NULL) {
-        char *next_node = strtok_r(NULL, CTL_QUERY_NODE_SEPARATOR, &sptr);
-        *name_offset = node_name - parse_str;
-        if (n != NULL && n->type == CTL_NODE_SUBTREE) {
-            // if a subtree occurs, the subtree handler should be called
-            break;
-        }
-        char *endptr;
-        /*
-         * Ignore errno from strtol: FreeBSD returns EINVAL if no
-         * conversion is performed. Linux does not, but endptr
-         * check is valid in both cases.
-         */
-        int tmp_errno = errno;
-        long index_value = strtol(node_name, &endptr, 0);
-        errno = tmp_errno;
-        umf_ctl_index_utlist_t *index_entry = NULL;
-        if (endptr != node_name) { /* a valid index */
-            index_entry = umf_ba_global_alloc(sizeof(*index_entry));
-            if (index_entry == NULL) {
-                goto error;
-            }
-            index_entry->value = index_value;
-            LL_PREPEND(indexes, index_entry);
-        }
-
-        for (n = &nodes[0]; n->name != NULL; ++n) {
-            if (index_entry && n->type == CTL_NODE_INDEXED) {
-                break;
-            } else if (strcmp(n->name, node_name) == 0) {
-                if (n->type == CTL_NODE_LEAF && next_node != NULL) {
-                    // this is not the last node in the query, so it couldn't be leaf
-                    continue;
-                }
-                if (n->type != CTL_NODE_LEAF && next_node == NULL) {
-                    // this is the last node in the query, so it must be a leaf
-                    continue;
-                }
-                break;
-            }
-        }
-
-        if (n->name == NULL) {
-            goto error;
-        }
-
-        if (index_entry) {
-            index_entry->name = n->name;
-        }
-
-        nodes = n->children;
-        node_name = next_node;
-    }
-
-    umf_ba_global_free(parse_str);
-    return n;
-
-error:
-    umf_ba_global_free(parse_str);
-    return NULL;
-}
+// this must be a macro as passing a va_list to a function makes the va_list
+// in the original function indeterminate if the function invokes the va_arg macro.
+// Ref 7.15/3 of C99 standard
+#define pop_va_list(va, ctl_argument, output)                                  \
+    do {                                                                       \
+        switch (ctl_argument->type) {                                          \
+        case CTL_ARG_TYPE_BOOLEAN: {                                           \
+            int b = va_arg(va, int);                                           \
+            *(bool *)output = b ? true : false;                                \
+            break;                                                             \
+        }                                                                      \
+        case CTL_ARG_TYPE_STRING: {                                            \
+            char *str = va_arg(va, char *);                                    \
+            memcpy(output, str, ctl_argument->dest_size);                      \
+            break;                                                             \
+        }                                                                      \
+        case CTL_ARG_TYPE_INT: {                                               \
+            int i = va_arg(va, int);                                           \
+            *(int *)output = i;                                                \
+            break;                                                             \
+        }                                                                      \
+        case CTL_ARG_TYPE_LONG_LONG: {                                         \
+            long long ll = va_arg(va, long long);                              \
+            *(long long *)output = ll;                                         \
+            break;                                                             \
+        }                                                                      \
+        case CTL_ARG_TYPE_PTR: {                                               \
+            void *p = va_arg(va, void *);                                      \
+            *(uintptr_t *)output = (uintptr_t)p;                               \
+            break;                                                             \
+        }                                                                      \
+        default:                                                               \
+            LOG_FATAL("Unknown ctl argument type %d", ctl_argument->type);     \
+            abort();                                                           \
+        }                                                                      \
+    } while (false)
 
 /*
  * ctl_delete_indexes --
@@ -165,8 +120,31 @@ static void ctl_delete_indexes(umf_ctl_index_utlist_t *indexes) {
     LL_FOREACH_SAFE(indexes, elem, tmp) {
         LL_DELETE(indexes, elem);
         if (elem) {
+            if (elem->arg) {
+                umf_ba_global_free(elem->arg);
+            }
             umf_ba_global_free(elem);
         }
+    }
+}
+
+/*
+ * ctl_query_cleanup_real_args -- (internal) cleanups relevant argument
+ *    structures allocated as a result of the get_real_args call
+ */
+static void ctl_query_cleanup_real_args(const umf_ctl_node_t *n, void *real_arg,
+                                        umf_ctl_query_source_t source) {
+    /* suppress unused-parameter errors */
+    (void)n;
+
+    switch (source) {
+    case CTL_QUERY_CONFIG_INPUT:
+        umf_ba_global_free(real_arg);
+        break;
+    case CTL_QUERY_PROGRAMMATIC:
+        break;
+    default:
+        break;
     }
 }
 
@@ -224,44 +202,23 @@ static void *ctl_query_get_real_args(const umf_ctl_node_t *n, void *write_arg,
 }
 
 /*
- * ctl_query_cleanup_real_args -- (internal) cleanups relevant argument
- *    structures allocated as a result of the get_real_args call
- */
-static void ctl_query_cleanup_real_args(const umf_ctl_node_t *n, void *real_arg,
-                                        umf_ctl_query_source_t source) {
-    /* suppress unused-parameter errors */
-    (void)n;
-
-    switch (source) {
-    case CTL_QUERY_CONFIG_INPUT:
-        umf_ba_global_free(real_arg);
-        break;
-    case CTL_QUERY_PROGRAMMATIC:
-        break;
-    default:
-        break;
-    }
-}
-
-/*
  * ctl_exec_query_read -- (internal) calls the read callback of a node
  */
 static umf_result_t ctl_exec_query_read(void *ctx, const umf_ctl_node_t *n,
                                         umf_ctl_query_source_t source,
                                         void *arg, size_t size,
-                                        umf_ctl_index_utlist_t *indexes,
-                                        const char *extra_name,
-                                        umf_ctl_query_type_t query_type) {
-    (void)query_type;
+                                        umf_ctl_index_utlist_t *indexes) {
     assert(n != NULL);
-    assert(n->cb[CTL_QUERY_READ] != NULL);
-    assert(MAX_CTL_QUERY_TYPE != query_type);
+
+    if (n->read_cb == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
 
     if (arg == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
-    return n->cb[CTL_QUERY_READ](ctx, source, arg, size, indexes, extra_name,
-                                 MAX_CTL_QUERY_TYPE);
+
+    return n->read_cb(ctx, source, arg, size, indexes);
 }
 
 /*
@@ -270,13 +227,12 @@ static umf_result_t ctl_exec_query_read(void *ctx, const umf_ctl_node_t *n,
 static umf_result_t ctl_exec_query_write(void *ctx, const umf_ctl_node_t *n,
                                          umf_ctl_query_source_t source,
                                          void *arg, size_t size,
-                                         umf_ctl_index_utlist_t *indexes,
-                                         const char *extra_name,
-                                         umf_ctl_query_type_t query_type) {
-    (void)query_type;
+                                         umf_ctl_index_utlist_t *indexes) {
     assert(n != NULL);
-    assert(n->cb[CTL_QUERY_WRITE] != NULL);
-    assert(MAX_CTL_QUERY_TYPE != query_type);
+
+    if (n->write_cb == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
 
     if (arg == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
@@ -287,8 +243,7 @@ static umf_result_t ctl_exec_query_write(void *ctx, const umf_ctl_node_t *n,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    umf_result_t ret = n->cb[CTL_QUERY_WRITE](
-        ctx, source, real_arg, size, indexes, extra_name, MAX_CTL_QUERY_TYPE);
+    umf_result_t ret = n->write_cb(ctx, source, real_arg, size, indexes);
     ctl_query_cleanup_real_args(n, real_arg, source);
 
     return ret;
@@ -300,43 +255,223 @@ static umf_result_t ctl_exec_query_write(void *ctx, const umf_ctl_node_t *n,
 static umf_result_t ctl_exec_query_runnable(void *ctx, const umf_ctl_node_t *n,
                                             umf_ctl_query_source_t source,
                                             void *arg, size_t size,
-                                            umf_ctl_index_utlist_t *indexes,
-                                            const char *extra_name,
-                                            umf_ctl_query_type_t query_type) {
-    (void)query_type;
+                                            umf_ctl_index_utlist_t *indexes) {
     assert(n != NULL);
-    assert(n->cb[CTL_QUERY_RUNNABLE] != NULL);
-    assert(MAX_CTL_QUERY_TYPE != query_type);
-    return n->cb[CTL_QUERY_RUNNABLE](ctx, source, arg, size, indexes,
-                                     extra_name, MAX_CTL_QUERY_TYPE);
+
+    if (n->runnable_cb == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    return n->runnable_cb(ctx, source, arg, size, indexes);
 }
 
-static umf_result_t ctl_exec_query_subtree(void *ctx, const umf_ctl_node_t *n,
-                                           umf_ctl_query_source_t source,
-                                           void *arg, size_t size,
-                                           umf_ctl_index_utlist_t *indexes,
-                                           const char *extra_name,
-                                           umf_ctl_query_type_t query_type) {
+static umf_result_t
+ctl_exec_query_subtree(void *ctx, const umf_ctl_node_t *n,
+                       umf_ctl_query_source_t source, void *arg, size_t size,
+                       umf_ctl_index_utlist_t *indexes, const char *extra_name,
+                       umf_ctl_query_type_t query_type, va_list args) {
     assert(n != NULL);
-    assert(n->cb[CTL_QUERY_SUBTREE] != NULL);
-    assert(MAX_CTL_QUERY_TYPE != query_type);
-    return n->cb[CTL_QUERY_SUBTREE](ctx, source, arg, size, indexes, extra_name,
-                                    query_type);
+
+    if (n->subtree_cb == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    return n->subtree_cb(ctx, source, arg, size, indexes, extra_name,
+                         query_type, args);
 }
 
-typedef umf_result_t (*umf_ctl_exec_query_t)(void *ctx, const umf_ctl_node_t *n,
-                                             umf_ctl_query_source_t source,
-                                             void *arg, size_t size,
-                                             umf_ctl_index_utlist_t *indexes,
-                                             const char *extra_name,
-                                             umf_ctl_query_type_t query_type);
+/*
+ * ctl_find_and_execulte_node -- (internal) searches for a matching entry point in the
+ *    provided nodes
+ *
+ * Name offset is used to return the offset of the name in the query string.
+ * The caller is responsible for freeing all of the allocated indexes,
+ * regardless of the return value.
+ */
 
-static umf_ctl_exec_query_t ctl_exec_query[MAX_CTL_QUERY_TYPE] = {
-    ctl_exec_query_read,
-    ctl_exec_query_write,
-    ctl_exec_query_runnable,
-    ctl_exec_query_subtree,
-};
+static optional_umf_result_t
+ctl_find_and_execute_node(const umf_ctl_node_t *nodes, void *ctx,
+                          umf_ctl_query_source_t source, const char *name,
+                          umf_ctl_query_type_t type, void *arg, size_t size,
+                          va_list args) {
+    assert(nodes != NULL);
+    assert(name != NULL);
+
+    const umf_ctl_node_t *n = NULL;
+    optional_umf_result_t ret;
+    size_t name_offset = 0;
+    ret.is_valid = true;
+    ret.value = UMF_RESULT_SUCCESS;
+    char *sptr = NULL;
+    char *parse_str = Strdup(name);
+    if (parse_str == NULL) {
+        ret.is_valid = false;
+        return ret;
+    }
+
+    umf_ctl_index_utlist_t *indexes = Zalloc(sizeof(*indexes));
+    if (!indexes) {
+        ret.value = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+        return ret;
+    }
+    char *node_name = strtok_r(parse_str, CTL_QUERY_NODE_SEPARATOR, &sptr);
+
+    /*
+     * Go through the string and separate tokens that correspond to nodes
+     * in the main ctl tree.
+     */
+    while (node_name != NULL) {
+        char *next_node = strtok_r(NULL, CTL_QUERY_NODE_SEPARATOR, &sptr);
+        name_offset = node_name - parse_str;
+        if (n != NULL && n->type == CTL_NODE_SUBTREE) {
+            // if a subtree occurs, the subtree handler should be called
+            break;
+        }
+
+        if (strcmp(node_name, CTL_WILDCARD) == 0) {
+            if (source == CTL_QUERY_CONFIG_INPUT) {
+                LOG_ERR("ctl {} wildcard is not supported for config input");
+                goto error;
+            }
+            // node is wildcard - we are expecting standard node name here, so lets
+            // pop next node_name from the va_list
+            node_name = va_arg(args, char *);
+        }
+
+        if (!nodes) {
+            goto error;
+        }
+
+        for (n = &nodes[0]; n->type != CTL_NODE_UNKNOWN; ++n) {
+            if (n->name && strcmp(n->name, node_name) == 0) {
+                if (n->type == CTL_NODE_LEAF && next_node != NULL) {
+                    // this is not the last node in the query, so it couldn't be leaf
+                    continue;
+                }
+                if (n->type != CTL_NODE_LEAF && next_node == NULL) {
+                    // this is the last node in the query, so it must be a leaf
+                    continue;
+                }
+                break;
+            }
+        }
+
+        if (n->type == CTL_NODE_UNKNOWN) {
+            goto error;
+        }
+
+        if (n->arg != NULL && n->type == CTL_NODE_NAMED) {
+            if (next_node == NULL) {
+                // if the node has an argument, but no next node, then it is an error
+                goto error;
+            }
+            void *node_arg;
+            if (strcmp(next_node, CTL_WILDCARD) == 0) {
+                if (source == CTL_QUERY_CONFIG_INPUT) {
+                    LOG_ERR(
+                        "ctl {} wildcard is not supported for config input");
+                    goto error;
+                }
+                // argument is a wildcard so we need to allocate it from va_list
+                node_arg = umf_ba_global_alloc(n->arg->dest_size);
+                if (node_arg == NULL) {
+                    goto error;
+                }
+                pop_va_list(args, n->arg, node_arg);
+            } else {
+                node_arg = ctl_parse_args(n->arg, next_node);
+
+                if (node_arg == NULL) {
+                    goto error;
+                }
+            }
+
+            umf_ctl_index_utlist_t *entry = NULL;
+            entry = umf_ba_global_alloc(sizeof(*entry));
+            if (entry == NULL) {
+                umf_ba_global_free(arg);
+                goto error;
+            }
+
+            entry->arg = node_arg;
+            entry->name = node_name;
+            entry->arg_size = n->arg->dest_size;
+
+            LL_APPEND(indexes, entry);
+            // we parsed next_node as an argument so we next one
+            next_node = strtok_r(NULL, CTL_QUERY_NODE_SEPARATOR, &sptr);
+            if (next_node == NULL) {
+                // last node was a node with arg, but there is no next mode.
+                // check if there is nameless leaf on next level
+                for (n = n->children; n->type != CTL_NODE_UNKNOWN; ++n) {
+                    if (n->type == CTL_NODE_LEAF &&
+                        strcmp(n->name, CTL_STR(CTL_NONAME)) == 0) {
+                        // found a nameless leaf, so we can return it
+                        break;
+                    }
+                }
+
+                if (n->type == CTL_NODE_UNKNOWN) {
+                    goto error;
+                }
+            } else if (n->children) {
+                // if there is nameless subtree in the next node we should also stop here.
+                // This is the HACK which forbids mixing subtree and normal nodes as a child of the
+                // node with an argument. Probably no one will ever need to do so, so this is fine.
+                for (const umf_ctl_node_t *m = n->children;
+                     m->type != CTL_NODE_UNKNOWN; ++m) {
+                    if (m->type == CTL_NODE_SUBTREE &&
+                        strcmp(m->name, CTL_STR(CTL_NONAME)) == 0) {
+                        // found a nameless subtree, so lets assign it as a current node
+                        n = m;
+                        break;
+                    }
+                }
+            }
+        }
+
+        nodes = n->children;
+        node_name = next_node;
+    }
+
+    // if the appropriate node (leaf or subtree) is not found, then return error
+    if (n == NULL ||
+        (n->type != CTL_NODE_LEAF && n->type != CTL_NODE_SUBTREE)) {
+        ret.value = UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        goto out;
+    }
+
+    if (n->type == CTL_NODE_SUBTREE) {
+        // if the node is a subtree, then we need to call the subtree handler
+        ret.value =
+            ctl_exec_query_subtree(ctx, n, source, arg, size, indexes->next,
+                                   name + name_offset, type, args);
+    } else {
+        switch (type) {
+        case CTL_QUERY_READ:
+            ret.value =
+                ctl_exec_query_read(ctx, n, source, arg, size, indexes->next);
+            break;
+        case CTL_QUERY_WRITE:
+            ret.value =
+                ctl_exec_query_write(ctx, n, source, arg, size, indexes->next);
+            break;
+        case CTL_QUERY_RUNNABLE:
+            ret.value = ctl_exec_query_runnable(ctx, n, source, arg, size,
+                                                indexes->next);
+            break;
+        }
+    }
+out:
+    umf_ba_global_free(parse_str);
+    ctl_delete_indexes(indexes);
+    return ret;
+
+error:
+    ctl_delete_indexes(indexes);
+    umf_ba_global_free(parse_str);
+    ret.is_valid = false;
+    return ret;
+}
 
 /*
  * ctl_query -- (internal) parses the name and calls the appropriate methods
@@ -344,49 +479,26 @@ static umf_ctl_exec_query_t ctl_exec_query[MAX_CTL_QUERY_TYPE] = {
  */
 umf_result_t ctl_query(struct ctl *ctl, void *ctx,
                        umf_ctl_query_source_t source, const char *name,
-                       umf_ctl_query_type_t type, void *arg, size_t size) {
+                       umf_ctl_query_type_t type, void *arg, size_t size,
+                       va_list args) {
     if (name == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    /*
-     * All of the indexes are put on this list so that the handlers can
-     * easily retrieve the index values. The list is cleared once the ctl
-     * query has been handled.
-     */
-    umf_ctl_index_utlist_t *indexes = NULL;
-    indexes = Zalloc(sizeof(*indexes));
-    if (!indexes) {
-        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    va_list args_copy;
+    va_copy(args_copy, args);
+
+    optional_umf_result_t ret = ctl_find_and_execute_node(
+        CTL_NODE(global), ctx, source, name, type, arg, size, args_copy);
+
+    if (ret.is_valid == false && ctl) {
+        ret = ctl_find_and_execute_node(ctl->root, ctx, source, name, type, arg,
+                                        size, args);
     }
 
-    umf_result_t ret = UMF_RESULT_ERROR_UNKNOWN;
-    size_t name_offset = 0;
+    va_end(args_copy);
 
-    const umf_ctl_node_t *n =
-        ctl_find_node(CTL_NODE(global), name, indexes, &name_offset);
-
-    if (n == NULL && ctl) {
-        ctl_delete_indexes(indexes);
-        indexes = NULL;
-        n = ctl_find_node(ctl->root, name, indexes, &name_offset);
-    }
-
-    // if the appropriate node (leaf or subtree) is not found, then return error
-    if (n == NULL ||
-        (n->type != CTL_NODE_LEAF && n->type != CTL_NODE_SUBTREE) ||
-        n->cb[n->type == CTL_NODE_SUBTREE ? CTL_QUERY_SUBTREE : type] == NULL) {
-        ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
-        goto out;
-    }
-
-    ret =
-        ctl_exec_query[n->type == CTL_NODE_SUBTREE ? CTL_QUERY_SUBTREE : type](
-            ctx, n, source, arg, size, indexes, name + name_offset, type);
-out:
-    ctl_delete_indexes(indexes);
-
-    return ret;
+    return ret.is_valid ? ret.value : UMF_RESULT_ERROR_INVALID_ARGUMENT;
 }
 
 /*
@@ -433,32 +545,46 @@ static int ctl_parse_query(char *qbuf, char **name, char **value) {
 }
 
 /*
- * ctl_load_config -- executes the entire query collection from a provider
+ * ctl_load_config_helper -- windows do not allow to use uninitialized va_list,
+ * so this function allows us to initialize empty one
  */
-static umf_result_t ctl_load_config(struct ctl *ctl, void *ctx, char *buf) {
+static umf_result_t ctl_load_config_helper(struct ctl *ctl, void *ctx,
+                                           char *buf, ...) {
     umf_result_t ret = UMF_RESULT_SUCCESS;
     char *sptr = NULL; /* for internal use of strtok */
     char *name;
     char *value;
     char *qbuf = strtok_r(buf, CTL_STRING_QUERY_SEPARATOR, &sptr);
-
+    va_list empty_args;
+    va_start(empty_args, buf);
     while (qbuf != NULL) {
         int parse_res = ctl_parse_query(qbuf, &name, &value);
         if (parse_res != 0) {
-            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+            ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
+            goto end;
         }
-
+        // we do not need to copy va_list before call as we know that for query_config_input
+        // ctl_query will not call va_arg on it. Ref 7.15/3 of C99 standard
         ret = ctl_query(ctl, ctx, CTL_QUERY_CONFIG_INPUT, name, CTL_QUERY_WRITE,
-                        value, 0);
+                        value, 0, empty_args);
 
         if (ret != UMF_RESULT_SUCCESS && ctx != NULL) {
-            return ret;
+            goto end;
         }
 
         qbuf = strtok_r(NULL, CTL_STRING_QUERY_SEPARATOR, &sptr);
     }
 
-    return 0;
+end:
+    va_end(empty_args);
+    return ret;
+}
+
+/*
+ * ctl_load_config -- executes the entire query collection from a provider
+ */
+static umf_result_t ctl_load_config(struct ctl *ctl, void *ctx, char *buf) {
+    return ctl_load_config_helper(ctl, ctx, buf);
 }
 
 /*

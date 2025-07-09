@@ -21,12 +21,12 @@ extern "C" {
 #include "ctl/ctl_internal.h"
 #include "utils/utils_assert.h"
 
-static umf_result_t CTL_READ_HANDLER(peak_memory)(
-    void *ctx, umf_ctl_query_source_t source, void *arg, size_t size,
-    umf_ctl_index_utlist_t *indexes, const char *extra_name,
-    umf_ctl_query_type_t query_type) {
+static umf_result_t
+CTL_READ_HANDLER(peak_memory)(void *ctx, umf_ctl_query_source_t source,
+                              void *arg, size_t size,
+                              umf_ctl_index_utlist_t *indexes) {
     /* suppress unused-parameter errors */
-    (void)source, (void)size, (void)indexes, (void)extra_name, (void)query_type;
+    (void)source, (void)size, (void)indexes;
 
     size_t *arg_out = arg;
     CTL_PROVIDER_TYPE *provider = (CTL_PROVIDER_TYPE *)ctx;
@@ -34,12 +34,12 @@ static umf_result_t CTL_READ_HANDLER(peak_memory)(
     return UMF_RESULT_SUCCESS;
 }
 
-static umf_result_t CTL_READ_HANDLER(allocated_memory)(
-    void *ctx, umf_ctl_query_source_t source, void *arg, size_t size,
-    umf_ctl_index_utlist_t *indexes, const char *extra_name,
-    umf_ctl_query_type_t query_type) {
+static umf_result_t
+CTL_READ_HANDLER(allocated_memory)(void *ctx, umf_ctl_query_source_t source,
+                                   void *arg, size_t size,
+                                   umf_ctl_index_utlist_t *indexes) {
     /* suppress unused-parameter errors */
-    (void)source, (void)size, (void)indexes, (void)extra_name, (void)query_type;
+    (void)source, (void)size, (void)indexes;
 
     size_t *arg_out = arg;
     CTL_PROVIDER_TYPE *provider = (CTL_PROVIDER_TYPE *)ctx;
@@ -50,12 +50,9 @@ static umf_result_t CTL_READ_HANDLER(allocated_memory)(
 
 static umf_result_t
 CTL_RUNNABLE_HANDLER(reset)(void *ctx, umf_ctl_query_source_t source, void *arg,
-                            size_t size, umf_ctl_index_utlist_t *indexes,
-                            const char *extra_name,
-                            umf_ctl_query_type_t query_type) {
+                            size_t size, umf_ctl_index_utlist_t *indexes) {
     /* suppress unused-parameter errors */
-    (void)source, (void)indexes, (void)arg, (void)size, (void)extra_name,
-        (void)query_type;
+    (void)source, (void)indexes, (void)arg, (void)size;
 
     CTL_PROVIDER_TYPE *provider = (CTL_PROVIDER_TYPE *)ctx;
     size_t allocated;

@@ -7,12 +7,13 @@
  *
  */
 
+#include <assert.h>
+#include <stdint.h>
+#include <string.h>
+
 #include <umf/base.h>
 #include <umf/memory_pool.h>
 #include <umf/memory_pool_ops.h>
-
-#include <assert.h>
-#include <string.h>
 
 #include "base_alloc_global.h"
 #include "ctl/ctl_internal.h"
@@ -37,18 +38,24 @@ static struct ctl umf_pool_ctl_root;
 
 static void ctl_init(void);
 
-static umf_result_t CTL_SUBTREE_HANDLER(by_handle)(
+static umf_result_t CTL_SUBTREE_HANDLER(CTL_NONAME, by_handle)(
     void *ctx, umf_ctl_query_source_t source, void *arg, size_t size,
     umf_ctl_index_utlist_t *indexes, const char *extra_name,
-    umf_ctl_query_type_t queryType) {
-    (void)indexes, (void)source;
-    umf_memory_pool_handle_t hPool = (umf_memory_pool_handle_t)ctx;
+    umf_ctl_query_type_t queryType, va_list args) {
+    (void)source, (void)ctx;
+
+    umf_memory_pool_handle_t hPool = *(umf_memory_pool_handle_t *)indexes->arg;
+    va_list args2;
+    va_copy(args2, args);
+
     umf_result_t ret = ctl_query(&umf_pool_ctl_root, hPool, source, extra_name,
-                                 queryType, arg, size);
+                                 queryType, arg, size, args2);
+    va_end(args2);
+
     if (ret == UMF_RESULT_ERROR_INVALID_ARGUMENT) {
         // Node was not found in pool_ctl_root, try to query the specific pool
         ret = hPool->ops.ext_ctl(hPool->pool_priv, source, extra_name, arg,
-                                 size, queryType);
+                                 size, queryType, args);
     }
 
     return ret;
@@ -57,9 +64,19 @@ static umf_result_t CTL_SUBTREE_HANDLER(by_handle)(
 static umf_result_t CTL_SUBTREE_HANDLER(default)(
     void *ctx, umf_ctl_query_source_t source, void *arg, size_t size,
     umf_ctl_index_utlist_t *indexes, const char *extra_name,
-    umf_ctl_query_type_t queryType) {
-    (void)indexes, (void)source, (void)ctx;
+    umf_ctl_query_type_t queryType, va_list args) {
+    (void)indexes, (void)source, (void)ctx, (void)args;
     utils_init_once(&mem_pool_ctl_initialized, ctl_init);
+
+    if (strstr(extra_name, "{}") != NULL) {
+        // We might implement it in future - it requires store copy of va_list
+        // in defaults entries array, which according to C standard is possible,
+        // but quite insane.
+        LOG_ERR("%s, default setting do not support wildcard parameters {}",
+                extra_name);
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
+
     utils_mutex_lock(&ctl_mtx);
 
     if (queryType == CTL_QUERY_WRITE) {
@@ -99,12 +116,12 @@ static umf_result_t CTL_SUBTREE_HANDLER(default)(
     return UMF_RESULT_SUCCESS;
 }
 
-static umf_result_t CTL_READ_HANDLER(alloc_count)(
-    void *ctx, umf_ctl_query_source_t source, void *arg, size_t size,
-    umf_ctl_index_utlist_t *indexes, const char *extra_name,
-    umf_ctl_query_type_t query_type) {
+static umf_result_t
+CTL_READ_HANDLER(alloc_count)(void *ctx, umf_ctl_query_source_t source,
+                              void *arg, size_t size,
+                              umf_ctl_index_utlist_t *indexes) {
     /* suppress unused-parameter errors */
-    (void)source, (void)size, (void)indexes, (void)extra_name, (void)query_type;
+    (void)source, (void)size, (void)indexes;
 
     size_t *arg_out = arg;
     if (ctx == NULL || arg_out == NULL) {
@@ -121,7 +138,14 @@ static umf_result_t CTL_READ_HANDLER(alloc_count)(
 static const umf_ctl_node_t CTL_NODE(stats)[] = {CTL_LEAF_RO(alloc_count),
                                                  CTL_NODE_END};
 
-umf_ctl_node_t CTL_NODE(pool)[] = {CTL_LEAF_SUBTREE(by_handle),
+static umf_ctl_node_t CTL_NODE(by_handle)[] = {
+    CTL_LEAF_SUBTREE(CTL_NONAME, by_handle),
+    CTL_NODE_END,
+};
+
+static const struct ctl_argument CTL_ARG(by_handle) = CTL_ARG_PTR;
+
+umf_ctl_node_t CTL_NODE(pool)[] = {CTL_CHILD_WITH_ARG(by_handle),
                                    CTL_LEAF_SUBTREE(default), CTL_NODE_END};
 
 static void ctl_init(void) {
@@ -129,22 +153,36 @@ static void ctl_init(void) {
     CTL_REGISTER_MODULE(&umf_pool_ctl_root, stats);
 }
 
-static umf_result_t umfDefaultCtlPoolHandle(void *hPool, int operationType,
-                                            const char *name, void *arg,
-                                            size_t size,
-                                            umf_ctl_query_type_t queryType) {
+static umf_result_t
+umfDefaultCtlPoolHandle(void *hPool, umf_ctl_query_source_t operationType,
+                        const char *name, void *arg, size_t size,
+                        umf_ctl_query_type_t queryType, va_list args) {
     (void)hPool;
     (void)operationType;
     (void)name;
     (void)arg;
     (void)size;
     (void)queryType;
+    (void)args;
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
 // logical sum (OR) of all umf_pool_create_flags_t flags
 static const umf_pool_create_flags_t UMF_POOL_CREATE_FLAG_ALL =
     UMF_POOL_CREATE_FLAG_OWN_PROVIDER | UMF_POOL_CREATE_FLAG_DISABLE_TRACKING;
+
+// windows do not allow to use uninitialized va_list so this function help us to initialize it.
+static umf_result_t default_ctl_helper(const umf_memory_pool_ops_t *ops,
+                                       void *ctl, const char *name, void *arg,
+                                       ...) {
+    va_list empty_args;
+    va_start(empty_args, arg);
+    umf_result_t ret =
+        ops->ext_ctl(ctl, CTL_QUERY_PROGRAMMATIC, name, arg, UMF_DEFAULT_LEN,
+                     CTL_QUERY_WRITE, empty_args);
+    va_end(empty_args);
+    return ret;
+}
 
 static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
                                           umf_memory_provider_handle_t provider,
@@ -217,9 +255,9 @@ static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
         }
         if (CTL_DEFAULT_ENTRIES[i][0] != '\0' && pname &&
             strstr(CTL_DEFAULT_ENTRIES[i], pname)) {
-            ops->ext_ctl(pool->pool_priv, CTL_QUERY_PROGRAMMATIC,
-                         CTL_DEFAULT_ENTRIES[i], CTL_DEFAULT_VALUES[i],
-                         UMF_DEFAULT_LEN, CTL_QUERY_WRITE);
+
+            default_ctl_helper(ops, pool->pool_priv, CTL_DEFAULT_ENTRIES[i],
+                               CTL_DEFAULT_VALUES[i]);
         }
     }
 

@@ -21,6 +21,7 @@
 #include "coarse.h"
 #include "libumf.h"
 #include "provider_ctl_stats_type.h"
+#include "umf/base.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
 #include "utils_log.h"
@@ -282,12 +283,13 @@ static umf_result_t fixed_free(void *provider, void *ptr, size_t size) {
     return ret;
 }
 
-static umf_result_t fixed_ctl(void *provider, int operationType,
+static umf_result_t fixed_ctl(void *provider,
+                              umf_ctl_query_source_t operationType,
                               const char *name, void *arg, size_t size,
-                              umf_ctl_query_type_t query_type) {
+                              umf_ctl_query_type_t query_type, va_list args) {
     utils_init_once(&ctl_initialized, initialize_fixed_ctl);
     return ctl_query(&fixed_memory_ctl_root, provider, operationType, name,
-                     query_type, arg, size);
+                     query_type, arg, size, args);
 }
 
 static umf_memory_provider_ops_t UMF_FIXED_MEMORY_PROVIDER_OPS = {

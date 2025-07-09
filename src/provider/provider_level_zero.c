@@ -810,12 +810,13 @@ ze_memory_provider_close_ipc_handle(void *provider, void *ptr, size_t size) {
     return UMF_RESULT_SUCCESS;
 }
 
-static umf_result_t ze_ctl(void *provider, int operationType, const char *name,
-                           void *arg, size_t size,
-                           umf_ctl_query_type_t query_type) {
+static umf_result_t ze_ctl(void *hProvider,
+                           umf_ctl_query_source_t operationType,
+                           const char *name, void *arg, size_t size,
+                           umf_ctl_query_type_t query_type, va_list args) {
     utils_init_once(&ctl_initialized, initialize_ze_ctl);
-    return ctl_query(&ze_memory_ctl_root, provider, operationType, name,
-                     query_type, arg, size);
+    return ctl_query(&ze_memory_ctl_root, hProvider, operationType, name,
+                     query_type, arg, size, args);
 }
 
 static umf_memory_provider_ops_t UMF_LEVEL_ZERO_MEMORY_PROVIDER_OPS = {

@@ -10,6 +10,8 @@
 #ifndef UMF_MEMORY_PROVIDER_OPS_H
 #define UMF_MEMORY_PROVIDER_OPS_H 1
 
+#include <stdarg.h>
+
 #include <umf/base.h>
 
 #ifdef __cplusplus
@@ -263,17 +265,18 @@ typedef struct umf_memory_provider_ops_t {
     ///   Backward compatibility is not guaranteed.
     ///
     /// @param provider handle to the memory provider.
-    /// @param operationType type of the operation to be performed.
+    /// @param source source of the ctl operation.
     /// @param name name associated with the operation.
     /// @param arg argument for the operation.
     /// @param size size of the argument [optional - check name requirements]
     /// @param queryType type of the query to be performed.
+    /// @param args variable arguments for the operation.
     ///
     /// @return umf_result_t result of the control operation.
     ///
-    umf_result_t (*ext_ctl)(void *provider, int operationType, const char *name,
-                            void *arg, size_t size,
-                            umf_ctl_query_type_t queryType);
+    umf_result_t (*ext_ctl)(void *provider, umf_ctl_query_source_t source,
+                            const char *name, void *arg, size_t size,
+                            umf_ctl_query_type_t queryType, va_list args);
 
 } umf_memory_provider_ops_t;
 
