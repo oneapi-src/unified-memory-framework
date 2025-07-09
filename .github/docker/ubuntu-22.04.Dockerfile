@@ -11,10 +11,10 @@
 FROM registry.hub.docker.com/library/ubuntu@sha256:e6173d4dc55e76b87c4af8db8821b1feae4146dd47341e4d431118c7dd060a74
 
 # Set environment variables
-ENV OS ubuntu
-ENV OS_VER 22.04
-ENV NOTTY 1
-ENV DEBIAN_FRONTEND noninteractive
+ENV OS=ubuntu
+ENV OS_VER=22.04
+ENV NOTTY=1
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Base development packages
 # It seems that libtool is not directly needed
@@ -66,7 +66,7 @@ COPY third_party/requirements.txt /opt/umf/requirements.txt
 RUN pip3 install --no-cache-dir -r /opt/umf/requirements.txt
 
 # Add a new (non-root) 'test_user'
-ENV USER test_user
-ENV USERPASS pass
+ENV USER=test_user
+ENV USERPASS=pass
 RUN useradd -m -u 1001 "${USER}" -g sudo -p "$(mkpasswd ${USERPASS})"
 USER test_user

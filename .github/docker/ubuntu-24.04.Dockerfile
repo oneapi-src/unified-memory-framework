@@ -11,10 +11,10 @@
 FROM registry.hub.docker.com/library/ubuntu@sha256:72297848456d5d37d1262630108ab308d3e9ec7ed1c3286a32fe09856619a782
 
 # Set environment variables
-ENV OS ubuntu
-ENV OS_VER 24.04
-ENV NOTTY 1
-ENV DEBIAN_FRONTEND noninteractive
+ENV OS=ubuntu
+ENV OS_VER=24.04
+ENV NOTTY=1
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Base development packages
 ARG BASE_DEPS="\
@@ -60,7 +60,7 @@ COPY third_party/requirements.txt /opt/umf/requirements.txt
 RUN pip3 install --no-cache-dir --break-system-packages -r /opt/umf/requirements.txt
 
 # Add a new (non-root) 'test_user'
-ENV USER test_user
-ENV USERPASS pass
+ENV USER=test_user
+ENV USERPASS=pass
 RUN useradd -m "${USER}" -g sudo -p "$(mkpasswd ${USERPASS})"
 USER test_user
