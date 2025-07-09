@@ -37,10 +37,13 @@ ARG TEST_DEPS="\
 	valgrind"
 
 # Miscellaneous for our builds/CI (optional)
+# 'pkg-config' is added only on one Ubuntu image to test both:
+# 	find_library and pkg-config methods of finding libraries.
 ARG MISC_DEPS="\
 	automake \
 	clang \
 	lcov \
+	pkg-config \
 	python3-pip \
 	sudo \
 	whois"
