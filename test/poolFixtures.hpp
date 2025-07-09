@@ -715,15 +715,15 @@ TEST_P(umfPoolTest, ctl_stat_alloc_count) {
     const size_t max_allocs = 10;
     std::list<void *> ptrs;
     size_t alloc_count = 0;
-    auto ret = umfCtlGet("umf.pool.by_handle.stats.alloc_count", pool_get,
-                         &alloc_count, sizeof(alloc_count));
+    auto ret = umfCtlGet("umf.pool.by_handle.{}.stats.alloc_count",
+                         &alloc_count, sizeof(alloc_count), pool_get);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
     ASSERT_EQ(alloc_count, 0ull);
     for (size_t i = 1; i <= max_allocs; i++) {
         void *ptr = umfPoolMalloc(pool_get, size);
         ASSERT_NE(ptr, nullptr);
-        ret = umfCtlGet("umf.pool.by_handle.stats.alloc_count", pool_get,
-                        &alloc_count, sizeof(alloc_count));
+        ret = umfCtlGet("umf.pool.by_handle.{}.stats.alloc_count", &alloc_count,
+                        sizeof(alloc_count), pool_get);
         ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
         ASSERT_EQ(alloc_count, i);
         ptrs.push_back(ptr);
@@ -735,8 +735,8 @@ TEST_P(umfPoolTest, ctl_stat_alloc_count) {
     }
 
     ptrs.clear();
-    ret = umfCtlGet("umf.pool.by_handle.stats.alloc_count", pool_get,
-                    &alloc_count, sizeof(alloc_count));
+    ret = umfCtlGet("umf.pool.by_handle.{}.stats.alloc_count", &alloc_count,
+                    sizeof(alloc_count), pool_get);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
     ASSERT_EQ(alloc_count, 0ull);
 
@@ -749,8 +749,8 @@ TEST_P(umfPoolTest, ctl_stat_alloc_count) {
                 ptr = umfPoolRealloc(pool_get, nullptr, size);
             }
             ASSERT_NE(ptr, nullptr);
-            ret = umfCtlGet("umf.pool.by_handle.stats.alloc_count", pool_get,
-                            &alloc_count, sizeof(alloc_count));
+            ret = umfCtlGet("umf.pool.by_handle.{}.stats.alloc_count",
+                            &alloc_count, sizeof(alloc_count), pool_get);
             ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
             ASSERT_EQ(alloc_count, i);
             ptrs.push_back(ptr);
@@ -759,8 +759,8 @@ TEST_P(umfPoolTest, ctl_stat_alloc_count) {
             ptr = umfPoolRealloc(pool_get, ptr, size * 2);
             ASSERT_NE(ptr, nullptr);
         }
-        ret = umfCtlGet("umf.pool.by_handle.stats.alloc_count", pool_get,
-                        &alloc_count, sizeof(alloc_count));
+        ret = umfCtlGet("umf.pool.by_handle.{}.stats.alloc_count", &alloc_count,
+                        sizeof(alloc_count), pool_get);
         ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
         ASSERT_EQ(alloc_count, max_allocs);
         size_t allocs = ptrs.size();
@@ -774,8 +774,8 @@ TEST_P(umfPoolTest, ctl_stat_alloc_count) {
             }
         }
         ptrs.clear();
-        ret = umfCtlGet("umf.pool.by_handle.stats.alloc_count", pool_get,
-                        &alloc_count, sizeof(alloc_count));
+        ret = umfCtlGet("umf.pool.by_handle.{}.stats.alloc_count", &alloc_count,
+                        sizeof(alloc_count), pool_get);
         ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
         ASSERT_EQ(alloc_count, 0ull);
     }
@@ -784,8 +784,8 @@ TEST_P(umfPoolTest, ctl_stat_alloc_count) {
         for (size_t i = 1; i <= max_allocs; i++) {
             void *ptr = umfPoolCalloc(pool_get, 1, size);
             ASSERT_NE(ptr, nullptr);
-            ret = umfCtlGet("umf.pool.by_handle.stats.alloc_count", pool_get,
-                            &alloc_count, sizeof(alloc_count));
+            ret = umfCtlGet("umf.pool.by_handle.{}.stats.alloc_count",
+                            &alloc_count, sizeof(alloc_count), pool_get);
             ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
             ASSERT_EQ(alloc_count, i);
             ptrs.push_back(ptr);
@@ -796,8 +796,8 @@ TEST_P(umfPoolTest, ctl_stat_alloc_count) {
             ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
         }
         ptrs.clear();
-        ret = umfCtlGet("umf.pool.by_handle.stats.alloc_count", pool_get,
-                        &alloc_count, sizeof(alloc_count));
+        ret = umfCtlGet("umf.pool.by_handle.{}.stats.alloc_count", &alloc_count,
+                        sizeof(alloc_count), pool_get);
         ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
         ASSERT_EQ(alloc_count, 0ull);
     }
@@ -806,8 +806,8 @@ TEST_P(umfPoolTest, ctl_stat_alloc_count) {
         for (size_t i = 1; i <= max_allocs; i++) {
             void *ptr = umfPoolAlignedMalloc(pool_get, size, 4096);
             ASSERT_NE(ptr, nullptr);
-            ret = umfCtlGet("umf.pool.by_handle.stats.alloc_count", pool_get,
-                            &alloc_count, sizeof(alloc_count));
+            ret = umfCtlGet("umf.pool.by_handle.{}.stats.alloc_count",
+                            &alloc_count, sizeof(alloc_count), pool_get);
             ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
             ASSERT_EQ(alloc_count, i);
             ptrs.push_back(ptr);
@@ -819,8 +819,8 @@ TEST_P(umfPoolTest, ctl_stat_alloc_count) {
         }
 
         ptrs.clear();
-        ret = umfCtlGet("umf.pool.by_handle.stats.alloc_count", pool_get,
-                        &alloc_count, sizeof(alloc_count));
+        ret = umfCtlGet("umf.pool.by_handle.{}.stats.alloc_count", &alloc_count,
+                        sizeof(alloc_count), pool_get);
         ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
         ASSERT_EQ(alloc_count, 0ull);
     }
