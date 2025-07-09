@@ -127,11 +127,15 @@ void ctl_register_module_node(struct ctl *c, const char *name,
 
 int ctl_arg_boolean(const void *arg, void *dest, size_t dest_size);
 #define CTL_ARG_BOOLEAN                                                        \
-    {sizeof(int), {{0, sizeof(int), ctl_arg_boolean}, CTL_ARG_PARSER_END}};
+    {                                                                          \
+        sizeof(int), { {0, sizeof(int), ctl_arg_boolean}, CTL_ARG_PARSER_END } \
+    }
 
 int ctl_arg_integer(const void *arg, void *dest, size_t dest_size);
 #define CTL_ARG_INT                                                            \
-    {sizeof(int), {{0, sizeof(int), ctl_arg_integer}, CTL_ARG_PARSER_END}};
+    {                                                                          \
+        sizeof(int), { {0, sizeof(int), ctl_arg_integer}, CTL_ARG_PARSER_END } \
+    }
 
 #define CTL_ARG_LONG_LONG                                                      \
     {                                                                          \
@@ -142,7 +146,9 @@ int ctl_arg_integer(const void *arg, void *dest, size_t dest_size);
 
 int ctl_arg_string(const void *arg, void *dest, size_t dest_size);
 #define CTL_ARG_STRING(len)                                                    \
-    {len, {{0, len, ctl_arg_string}, CTL_ARG_PARSER_END}};
+    {                                                                          \
+        len, { {0, len, ctl_arg_string}, CTL_ARG_PARSER_END }                  \
+    }
 
 #define CTL_STR(name) #name
 
