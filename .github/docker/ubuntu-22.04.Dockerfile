@@ -17,8 +17,7 @@ ENV NOTTY=1
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Base development packages
-# It seems that libtool is not directly needed
-# but it is still required when Building UMF
+# 'libtool' is required when hwloc is statically linked and built from source
 ARG BASE_DEPS="\
 	build-essential \
 	cmake \

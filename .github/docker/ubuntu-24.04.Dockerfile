@@ -17,10 +17,12 @@ ENV NOTTY=1
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Base development packages
+# 'libtool' is required when hwloc is statically linked and built from source
 ARG BASE_DEPS="\
 	build-essential \
 	cmake \
 	git \
+	libtool \
 	wget"
 
 # UMF's dependencies
