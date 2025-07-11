@@ -11,10 +11,10 @@
 FROM registry.hub.docker.com/library/ubuntu@sha256:f2034e7195f61334e6caff6ecf2e965f92d11e888309065da85ff50c617732b8
 
 # Set environment variables
-ENV OS ubuntu
-ENV OS_VER 20.04
-ENV NOTTY 1
-ENV DEBIAN_FRONTEND noninteractive
+ENV OS=ubuntu
+ENV OS_VER=20.04
+ENV NOTTY=1
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Base development packages
 ARG BASE_DEPS="\
@@ -65,7 +65,7 @@ RUN mkdir -p --mode 777 /opt/umf/
 COPY third_party/requirements.txt /opt/umf/requirements.txt
 
 # Add a new (non-root) 'test_user'
-ENV USER test_user
-ENV USERPASS pass
+ENV USER=test_user
+ENV USERPASS=pass
 RUN useradd -m -u 1001 "${USER}" -g sudo -p "$(mkpasswd ${USERPASS})"
 USER test_user
