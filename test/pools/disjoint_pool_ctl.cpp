@@ -10,7 +10,10 @@
 #include <umf/pools/pool_disjoint.h>
 #include <umf/providers/provider_os_memory.h>
 
+#include <vector>
+
 #include "base.hpp"
+#include "utils_assert.h"
 #include "utils_log.h"
 
 using umf_test::test;
@@ -147,6 +150,272 @@ TEST_F(test, disjointCtlChangeNameTwice) {
     const char *name = NULL;
     ASSERT_SUCCESS(umfPoolGetName(poolWrapper.get(), &name));
     ASSERT_STREQ(name, val2);
+
+    // Clean up
+    ASSERT_SUCCESS(umfDisjointPoolParamsDestroy(params));
+    ASSERT_SUCCESS(umfOsMemoryProviderParamsDestroy(os_memory_provider_params));
+}
+
+TEST_F(test, disjointCtlUsedMemory) {
+    umf_os_memory_provider_params_handle_t os_memory_provider_params = nullptr;
+    if (UMF_RESULT_ERROR_NOT_SUPPORTED ==
+        umfOsMemoryProviderParamsCreate(&os_memory_provider_params)) {
+        GTEST_SKIP() << "OS memory provider is not supported!";
+    }
+
+    ProviderWrapper providerWrapper(umfOsMemoryProviderOps(),
+                                    os_memory_provider_params);
+    if (providerWrapper.get() == NULL) {
+        GTEST_SKIP() << "OS memory provider is not supported!";
+    }
+
+    umf_disjoint_pool_params_handle_t params = nullptr;
+    ASSERT_SUCCESS(umfDisjointPoolParamsCreate(&params));
+
+    const size_t slab_min_size = 64 * 1024;
+    umfDisjointPoolParamsSetMinBucketSize(params, slab_min_size);
+
+    PoolWrapper poolWrapper(providerWrapper.get(), umfDisjointPoolOps(),
+                            params);
+
+    // Initially, used memory should be 0
+    size_t used_memory = 0;
+    ASSERT_SUCCESS(umfCtlGet("umf.pool.by_handle.disjoint.used_memory",
+                             poolWrapper.get(), &used_memory,
+                             sizeof(used_memory)));
+    ASSERT_EQ(used_memory, 0ull);
+
+    // Allocate some memory
+    void *ptr1 = umfPoolMalloc(poolWrapper.get(), 1024ull);
+    ASSERT_NE(ptr1, nullptr);
+
+    // Check that used memory increased
+    ASSERT_SUCCESS(umfCtlGet("umf.pool.by_handle.disjoint.used_memory",
+                             poolWrapper.get(), &used_memory,
+                             sizeof(used_memory)));
+    ASSERT_GE(used_memory, 1024ull);
+
+    // Allocate more memory
+    void *ptr2 = umfPoolMalloc(poolWrapper.get(), 2048ull);
+    ASSERT_NE(ptr2, nullptr);
+
+    size_t used_memory2 = 0;
+    ASSERT_SUCCESS(umfCtlGet("umf.pool.by_handle.disjoint.used_memory",
+                             poolWrapper.get(), &used_memory2,
+                             sizeof(used_memory2)));
+    ASSERT_GE(used_memory2, used_memory + 2048ull);
+
+    // Free memory
+    ASSERT_SUCCESS(umfPoolFree(poolWrapper.get(), ptr1));
+    ASSERT_SUCCESS(umfPoolFree(poolWrapper.get(), ptr2));
+
+    // Check that used memory is equal to 0
+    size_t used_memory3 = 0;
+    ASSERT_SUCCESS(umfCtlGet("umf.pool.by_handle.disjoint.used_memory",
+                             poolWrapper.get(), &used_memory3,
+                             sizeof(used_memory3)));
+    ASSERT_EQ(used_memory3, 0ull);
+
+    // Allocate again at least slab_min_size
+    void *ptr3 = umfPoolMalloc(poolWrapper.get(), slab_min_size);
+    ASSERT_NE(ptr3, nullptr);
+
+    // Check that used memory increased
+    size_t used_memory4 = 0;
+    ASSERT_SUCCESS(umfCtlGet("umf.pool.by_handle.disjoint.used_memory",
+                             poolWrapper.get(), &used_memory4,
+                             sizeof(used_memory4)));
+    ASSERT_EQ(used_memory4, slab_min_size);
+
+    // Clean up
+    ASSERT_SUCCESS(umfDisjointPoolParamsDestroy(params));
+    ASSERT_SUCCESS(umfOsMemoryProviderParamsDestroy(os_memory_provider_params));
+}
+
+TEST_F(test, disjointCtlReservedMemory) {
+    umf_os_memory_provider_params_handle_t os_memory_provider_params = nullptr;
+    const size_t slab_min_size = 64 * 1024;
+
+    if (UMF_RESULT_ERROR_NOT_SUPPORTED ==
+        umfOsMemoryProviderParamsCreate(&os_memory_provider_params)) {
+        GTEST_SKIP() << "OS memory provider is not supported!";
+    }
+
+    ProviderWrapper providerWrapper(umfOsMemoryProviderOps(),
+                                    os_memory_provider_params);
+    if (providerWrapper.get() == NULL) {
+        GTEST_SKIP() << "OS memory provider is not supported!";
+    }
+
+    umf_disjoint_pool_params_handle_t params = nullptr;
+    ASSERT_SUCCESS(umfDisjointPoolParamsCreate(&params));
+
+    // Set minimum slab size
+    umfDisjointPoolParamsSetSlabMinSize(params, slab_min_size);
+
+    PoolWrapper poolWrapper(providerWrapper.get(), umfDisjointPoolOps(),
+                            params);
+
+    // Initially, reserved memory should be 0
+    size_t reserved_memory = 0;
+    ASSERT_SUCCESS(umfCtlGet("umf.pool.by_handle.disjoint.reserved_memory",
+                             poolWrapper.get(), &reserved_memory,
+                             sizeof(reserved_memory)));
+    ASSERT_EQ(reserved_memory, 0ull);
+
+    // Allocate some memory
+    void *ptr1 = umfPoolMalloc(poolWrapper.get(), 1024ull);
+    ASSERT_NE(ptr1, nullptr);
+
+    // Check that reserved memory increased (should be at least slab_min_size)
+    ASSERT_SUCCESS(umfCtlGet("umf.pool.by_handle.disjoint.reserved_memory",
+                             poolWrapper.get(), &reserved_memory,
+                             sizeof(reserved_memory)));
+    ASSERT_GE(reserved_memory, slab_min_size);
+
+    void *ptr2 = umfPoolMalloc(poolWrapper.get(), 1024ull);
+    ASSERT_NE(ptr2, nullptr);
+
+    size_t reserved_memory2 = 0;
+    ASSERT_SUCCESS(umfCtlGet("umf.pool.by_handle.disjoint.reserved_memory",
+                             poolWrapper.get(), &reserved_memory2,
+                             sizeof(reserved_memory2)));
+    size_t used_memory = 0;
+    ASSERT_SUCCESS(umfCtlGet("umf.pool.by_handle.disjoint.used_memory",
+                             poolWrapper.get(), &used_memory,
+                             sizeof(used_memory)));
+
+    ASSERT_GE(reserved_memory2, slab_min_size);
+
+    // Free memory - reserved memory should stay the same
+    ASSERT_SUCCESS(umfPoolFree(poolWrapper.get(), ptr1));
+    ASSERT_SUCCESS(umfPoolFree(poolWrapper.get(), ptr2));
+
+    size_t reserved_memory3 = 0;
+    ASSERT_SUCCESS(umfCtlGet("umf.pool.by_handle.disjoint.reserved_memory",
+                             poolWrapper.get(), &reserved_memory3,
+                             sizeof(reserved_memory3)));
+    ASSERT_EQ(reserved_memory3, slab_min_size);
+
+    // Clean up
+    ASSERT_SUCCESS(umfDisjointPoolParamsDestroy(params));
+    ASSERT_SUCCESS(umfOsMemoryProviderParamsDestroy(os_memory_provider_params));
+}
+
+TEST_F(test, disjointCtlMemoryMetricsConsistency) {
+    umf_os_memory_provider_params_handle_t os_memory_provider_params = nullptr;
+    if (UMF_RESULT_ERROR_NOT_SUPPORTED ==
+        umfOsMemoryProviderParamsCreate(&os_memory_provider_params)) {
+        GTEST_SKIP() << "OS memory provider is not supported!";
+    }
+
+    ProviderWrapper providerWrapper(umfOsMemoryProviderOps(),
+                                    os_memory_provider_params);
+    if (providerWrapper.get() == NULL) {
+        GTEST_SKIP() << "OS memory provider is not supported!";
+    }
+
+    umf_disjoint_pool_params_handle_t params = nullptr;
+    ASSERT_SUCCESS(umfDisjointPoolParamsCreate(&params));
+
+    // Set minimum slab size
+    size_t slab_min_size = 64 * 1024;
+    ASSERT_SUCCESS(umfDisjointPoolParamsSetSlabMinSize(params, slab_min_size));
+    ASSERT_SUCCESS(umfDisjointPoolParamsSetCapacity(params, 4));
+
+    PoolWrapper poolWrapper(providerWrapper.get(), umfDisjointPoolOps(),
+                            params);
+
+    const size_t n_allocations = 10; // Number of allocations
+ 
+    // Allocate memory
+    std::vector<void *> ptrs;
+    for (size_t i = 0; i < n_allocations; i++) {
+        void *ptr = umfPoolMalloc(poolWrapper.get(), slab_min_size);
+        ASSERT_NE(ptr, nullptr);
+        ptrs.push_back(ptr);
+    }
+
+    // Get memory metrics
+    size_t used_memory = 0;
+    size_t reserved_memory = 0;
+    ASSERT_SUCCESS(umfCtlGet("umf.pool.by_handle.disjoint.used_memory",
+                             poolWrapper.get(), &used_memory,
+                             sizeof(used_memory)));
+    ASSERT_SUCCESS(umfCtlGet("umf.pool.by_handle.disjoint.reserved_memory",
+                             poolWrapper.get(), &reserved_memory,
+                             sizeof(reserved_memory)));
+
+    // Used memory should be at least the total allocated
+    ASSERT_GE(used_memory, n_allocations * slab_min_size);
+
+    // Reserved memory should be at least the used memory
+    ASSERT_GE(reserved_memory, 4 * slab_min_size);
+
+    // Free all memory
+    for (void *ptr : ptrs) {
+        ASSERT_SUCCESS(umfPoolFree(poolWrapper.get(), ptr));
+    }
+
+    // Check metrics after free
+    size_t used_memory_after = 0;
+    size_t reserved_memory_after = 0;
+    ASSERT_SUCCESS(umfCtlGet("umf.pool.by_handle.disjoint.used_memory",
+                             poolWrapper.get(), &used_memory_after,
+                             sizeof(used_memory_after)));
+    ASSERT_SUCCESS(umfCtlGet("umf.pool.by_handle.disjoint.reserved_memory",
+                             poolWrapper.get(), &reserved_memory_after,
+                             sizeof(reserved_memory_after)));
+
+    // Used memory should be 0 after freeing
+    ASSERT_EQ(used_memory_after, 0ull);
+    // Reserved memory should remain the same (pooling)
+    ASSERT_EQ(reserved_memory_after, 4 * slab_min_size);
+
+    // Clean up
+    ASSERT_SUCCESS(umfDisjointPoolParamsDestroy(params));
+    ASSERT_SUCCESS(umfOsMemoryProviderParamsDestroy(os_memory_provider_params));
+}
+
+TEST_F(test, disjointCtlMemoryMetricsInvalidArgs) {
+    umf_os_memory_provider_params_handle_t os_memory_provider_params = nullptr;
+    if (UMF_RESULT_ERROR_NOT_SUPPORTED ==
+        umfOsMemoryProviderParamsCreate(&os_memory_provider_params)) {
+        GTEST_SKIP() << "OS memory provider is not supported!";
+    }
+
+    ProviderWrapper providerWrapper(umfOsMemoryProviderOps(),
+                                    os_memory_provider_params);
+    if (providerWrapper.get() == NULL) {
+        GTEST_SKIP() << "OS memory provider is not supported!";
+    }
+
+    umf_disjoint_pool_params_handle_t params = nullptr;
+    ASSERT_SUCCESS(umfDisjointPoolParamsCreate(&params));
+    PoolWrapper poolWrapper(providerWrapper.get(), umfDisjointPoolOps(),
+                            params);
+
+    // Test invalid arguments
+    size_t value = 0;
+
+    // NULL arg pointer
+    ASSERT_EQ(umfCtlGet("umf.pool.by_handle.disjoint.used_memory",
+                        poolWrapper.get(), NULL, sizeof(value)),
+              UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    // Size too small
+    ASSERT_EQ(umfCtlGet("umf.pool.by_handle.disjoint.used_memory",
+                        poolWrapper.get(), &value, sizeof(size_t) / 2),
+              UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    // Same tests for reserved_memory
+    ASSERT_EQ(umfCtlGet("umf.pool.by_handle.disjoint.reserved_memory",
+                        poolWrapper.get(), NULL, sizeof(value)),
+              UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    ASSERT_EQ(umfCtlGet("umf.pool.by_handle.disjoint.reserved_memory",
+                        poolWrapper.get(), &value, sizeof(size_t) / 2),
+              UMF_RESULT_ERROR_INVALID_ARGUMENT);
 
     // Clean up
     ASSERT_SUCCESS(umfDisjointPoolParamsDestroy(params));
