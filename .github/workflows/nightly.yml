@@ -109,6 +109,9 @@ jobs:
 
   # Build and test UMF with different CMake generators on Windows
   Windows-generators:
+    env:
+      VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
+      VCPKG_PATH_NO_HWLOC: "${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
     strategy:
       matrix:
         build_type: [Debug, Release]
@@ -127,18 +130,12 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Set VCPKG_PATH with hwloc
-      if: matrix.static_hwloc == 'OFF'
-      run: echo "VCPKG_PATH=${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows" >> $env:GITHUB_ENV
-
     - name: Set VCPKG_PATH without hwloc
       if: matrix.static_hwloc == 'ON'
-      run: echo "VCPKG_PATH=${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows" >> $env:GITHUB_ENV
+      run: echo "VCPKG_PATH=${{env.VCPKG_PATH_NO_HWLOC}}" >> $env:GITHUB_ENV
 
     - name: Initialize vcpkg
       uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
-      env: 
-        VCPKG_PATH: ${{env.VCPKG_PATH}}
       with:
         vcpkgGitCommitId: ea2a964f9303270322cf3f2d51c265ba146c422d # 1.04.2025
         vcpkgDirectory: ${{env.BUILD_DIR}}/vcpkg
@@ -200,6 +197,30 @@ jobs:
         ${{ matrix.shared_library == 'ON' && '--proxy --shared-library' || '' }}
         ${{ matrix.umfd_lib == 'ON' && '--umfd-lib' || ''}}
         ${{ matrix.static_hwloc == 'ON' && '--hwloc' || '' }}
+
+    - name: Configure the fetch_content example
+      if: matrix.static_hwloc == 'OFF'
+      working-directory: ${{github.workspace}}/examples/fetch_content
+      # Fetch_Content the UMF code from the current repository (-DUMF_REPO="${{github.workspace}}")
+      run: >
+        cmake
+        -B build
+        -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+        -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
+        -DUMF_REPO="${{github.workspace}}"
+        -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
+        -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
+        -G "${{matrix.generator}}"
+
+    - name: Build the fetch_content example
+      if: matrix.static_hwloc == 'OFF'
+      working-directory: ${{github.workspace}}/examples/fetch_content
+      run: cmake --build build --config ${{matrix.build_type}} -j $env:NUMBER_OF_PROCESSORS
+
+    - name: Run the fetch_content example
+      if: matrix.static_hwloc == 'OFF'
+      working-directory: ${{github.workspace}}/examples/fetch_content/build
+      run: ctest -V
 
   # Build and test UMF with Intel C++ Compiler (ICX) on Windows
   Windows-icx:

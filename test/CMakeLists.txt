@@ -677,11 +677,11 @@ if(LINUX
     set(EXAMPLES "")
 
     if(UMF_POOL_SCALABLE_ENABLED)
-        set(EXAMPLES ${EXAMPLES} basic custom_file_provider)
+        set(EXAMPLES ${EXAMPLES} basic fetch_content custom_file_provider)
     else()
         message(
             STATUS
-                "The basic and custom_file_provider examples require TBB to be installed and added to the default library search path - skipping"
+                "The basic, fetch_content, and custom_file_provider examples require TBB to be installed and added to the default library search path - skipping"
         )
     endif()
 
