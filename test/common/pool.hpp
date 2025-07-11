@@ -122,16 +122,25 @@ typedef struct pool_base_t {
     umf_result_t get_last_allocation_error() noexcept {
         return UMF_RESULT_SUCCESS;
     }
+    umf_result_t get_name(const char **name) noexcept {
+        if (name) {
+            *name = "pool_base";
+        }
+        return UMF_RESULT_SUCCESS;
+    }
 } pool_base_t;
 
 struct malloc_pool : public pool_base_t {
     void *malloc(size_t size) noexcept { return ::malloc(size); }
+
     void *calloc(size_t num, size_t size) noexcept {
         return ::calloc(num, size);
     }
+
     void *realloc(void *ptr, size_t size) noexcept {
         return ::realloc(ptr, size);
     }
+
     void *aligned_malloc(size_t size, size_t alignment) noexcept {
 #ifdef _WIN32
         (void)size;      // unused
@@ -143,6 +152,7 @@ struct malloc_pool : public pool_base_t {
         return ::aligned_alloc(alignment, size);
 #endif
     }
+
     umf_result_t malloc_usable_size(const void *ptr, size_t *size) noexcept {
         if (size) {
 #ifdef _WIN32
@@ -155,8 +165,16 @@ struct malloc_pool : public pool_base_t {
         }
         return UMF_RESULT_SUCCESS;
     }
+
     umf_result_t free(void *ptr) noexcept {
         ::free(ptr);
+        return UMF_RESULT_SUCCESS;
+    }
+
+    umf_result_t get_name(const char **name) noexcept {
+        if (name) {
+            *name = "malloc_pool";
+        }
         return UMF_RESULT_SUCCESS;
     }
 };

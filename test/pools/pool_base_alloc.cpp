@@ -44,6 +44,12 @@ struct base_alloc_pool : public umf_test::pool_base_t {
     umf_result_t get_last_allocation_error() {
         return umf_test::getPoolLastStatusRef<base_alloc_pool>();
     }
+    umf_result_t get_name(const char **name) noexcept {
+        if (name) {
+            *name = "base_alloc_pool";
+        }
+        return UMF_RESULT_SUCCESS;
+    }
 };
 
 umf_memory_pool_ops_t BA_POOL_OPS =
