@@ -22,6 +22,7 @@ extern "C" {
 #endif
 
 #include "base_alloc.h"
+#include "ctl/ctl_internal.h"
 #include "utils_concurrency.h"
 
 typedef struct umf_pool_stats {
@@ -43,6 +44,8 @@ typedef struct umf_memory_pool_t {
     // ops should be the last due to possible change size in the future
     umf_memory_pool_ops_t ops;
 } umf_memory_pool_t;
+
+extern umf_ctl_node_t CTL_NODE(pool)[];
 
 #ifdef __cplusplus
 }

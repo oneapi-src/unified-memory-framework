@@ -56,9 +56,6 @@ typedef enum umf_ctl_query_type {
     CTL_QUERY_READ,
     CTL_QUERY_WRITE,
     CTL_QUERY_RUNNABLE,
-    CTL_QUERY_SUBTREE,
-
-    MAX_CTL_QUERY_TYPE
 } umf_ctl_query_type_t;
 
 #ifdef __cplusplus
