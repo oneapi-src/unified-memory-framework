@@ -14,6 +14,7 @@
 #include <umf/memory_provider_ops.h>
 #include <umf/providers/provider_level_zero.h>
 
+#include "provider_ctl_stats_type.h"
 #include "provider_level_zero_internal.h"
 #include "utils_load_library.h"
 #include "utils_log.h"
@@ -73,6 +74,8 @@ typedef struct ze_memory_provider_t {
     size_t min_page_size;
 
     uint32_t device_ordinal;
+
+    ctl_stats_t stats;
 } ze_memory_provider_t;
 
 typedef struct ze_ops_t {
@@ -113,6 +116,16 @@ static __TLS ze_result_t TLS_last_native_error;
 
 static void store_last_native_error(int32_t native_error) {
     TLS_last_native_error = native_error;
+}
+
+#define CTL_PROVIDER_TYPE ze_memory_provider_t
+#include "provider_ctl_stats_impl.h"
+
+struct ctl ze_memory_ctl_root;
+static UTIL_ONCE_FLAG ctl_initialized = UTIL_ONCE_FLAG_INIT;
+
+static void initialize_ze_ctl(void) {
+    CTL_REGISTER_MODULE(&ze_memory_ctl_root, stats);
 }
 
 static umf_result_t ze2umf_result(ze_result_t result) {
@@ -429,13 +442,13 @@ static umf_result_t ze_memory_provider_alloc(void *provider, size_t size,
         }
     }
 
-    return ze2umf_result(ze_result);
+    provider_ctl_stats_alloc(ze_provider, size);
+
+    return UMF_RESULT_SUCCESS;
 }
 
 static umf_result_t ze_memory_provider_free(void *provider, void *ptr,
                                             size_t bytes) {
-    (void)bytes;
-
     if (ptr == NULL) {
         return UMF_RESULT_SUCCESS;
     }
@@ -451,8 +464,15 @@ static umf_result_t ze_memory_provider_free(void *provider, void *ptr,
         .pNext = NULL,
         .freePolicy = ze_provider->freePolicyFlags};
 
-    return ze2umf_result(
-        g_ze_ops.zeMemFreeExt(ze_provider->context, &desc, ptr));
+    umf_result_t ret =
+        ze2umf_result(g_ze_ops.zeMemFreeExt(ze_provider->context, &desc, ptr));
+    if (ret != UMF_RESULT_SUCCESS) {
+        return ret;
+    }
+
+    provider_ctl_stats_free(ze_provider, bytes);
+
+    return UMF_RESULT_SUCCESS;
 }
 
 static umf_result_t query_min_page_size(ze_memory_provider_t *ze_provider,
@@ -790,6 +810,14 @@ ze_memory_provider_close_ipc_handle(void *provider, void *ptr, size_t size) {
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t ze_ctl(void *provider, int operationType, const char *name,
+                           void *arg, size_t size,
+                           umf_ctl_query_type_t query_type) {
+    utils_init_once(&ctl_initialized, initialize_ze_ctl);
+    return ctl_query(&ze_memory_ctl_root, provider, operationType, name,
+                     query_type, arg, size);
+}
+
 static umf_memory_provider_ops_t UMF_LEVEL_ZERO_MEMORY_PROVIDER_OPS = {
     .version = UMF_PROVIDER_OPS_VERSION_CURRENT,
     .initialize = ze_memory_provider_initialize,
@@ -809,6 +837,7 @@ static umf_memory_provider_ops_t UMF_LEVEL_ZERO_MEMORY_PROVIDER_OPS = {
     .ext_put_ipc_handle = ze_memory_provider_put_ipc_handle,
     .ext_open_ipc_handle = ze_memory_provider_open_ipc_handle,
     .ext_close_ipc_handle = ze_memory_provider_close_ipc_handle,
+    .ext_ctl = ze_ctl,
 };
 
 const umf_memory_provider_ops_t *umfLevelZeroMemoryProviderOps(void) {
