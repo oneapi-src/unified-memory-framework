@@ -12,7 +12,6 @@ EXPORTS
     DllMain
     umfInit
     umfTearDown
-    umfGetCurrentVersion
     umfCloseIPCHandle
     umfCUDAMemoryProviderOps
     umfCUDAMemoryProviderParamsCreate
@@ -32,6 +31,7 @@ EXPORTS
     umfFileMemoryProviderParamsSetProtection
     umfFileMemoryProviderParamsSetVisibility
     umfFree
+    umfGetCurrentVersion
     umfGetIPCHandle
     umfGetLastFailedMemoryProvider
     umfJemallocPoolOps
@@ -86,13 +86,13 @@ EXPORTS
     umfOsMemoryProviderOps
     umfOsMemoryProviderParamsCreate
     umfOsMemoryProviderParamsDestroy
-    umfOsMemoryProviderParamsSetProtection
-    umfOsMemoryProviderParamsSetVisibility
-    umfOsMemoryProviderParamsSetShmName
     umfOsMemoryProviderParamsSetNumaList
     umfOsMemoryProviderParamsSetNumaMode
-    umfOsMemoryProviderParamsSetPartSize
     umfOsMemoryProviderParamsSetPartitions
+    umfOsMemoryProviderParamsSetPartSize
+    umfOsMemoryProviderParamsSetProtection
+    umfOsMemoryProviderParamsSetShmName
+    umfOsMemoryProviderParamsSetVisibility
     umfPoolAlignedMalloc
     umfPoolByPtr
     umfPoolCalloc
@@ -134,8 +134,8 @@ EXPORTS
     umfFixedMemoryProviderParamsCreate
     umfFixedMemoryProviderParamsDestroy
     umfFixedMemoryProviderParamsSetMemory
-    umfLevelZeroMemoryProviderParamsSetFreePolicy
     umfLevelZeroMemoryProviderParamsSetDeviceOrdinal
+    umfLevelZeroMemoryProviderParamsSetFreePolicy
 ; Added in UMF_1.0
     umfCtlExec
     umfCtlGet
