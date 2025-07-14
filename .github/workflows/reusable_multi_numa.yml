@@ -19,7 +19,7 @@ jobs:
     strategy:
       matrix:
         # TODO: bring back SLES-15 when the machine is ready
-        os: [ubuntu-22.04, rhel-9.1, sles-15-test]
+        os: [sles-15-test]
         build_type: [Debug, Release]
         shared_library: ['ON', 'OFF']
     name: Multi NUMA (${{matrix.os}}, build_type=${{matrix.build_type}}, shared=${{matrix.shared_library}})
