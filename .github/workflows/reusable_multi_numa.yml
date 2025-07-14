@@ -23,7 +23,7 @@ jobs:
         build_type: [Debug, Release]
         shared_library: ['ON', 'OFF']
     name: Multi NUMA (${{matrix.os}}, build_type=${{matrix.build_type}}, shared=${{matrix.shared_library}})
-    runs-on:  ["DSS-MULTI-NUMA", "DSS-${{matrix.os}}"]
+    runs-on:  ["DSS-SLES-15-TEST"]
 
     steps:
       - name: Checkout
