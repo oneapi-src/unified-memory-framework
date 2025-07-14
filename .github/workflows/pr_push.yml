@@ -95,6 +95,8 @@ jobs:
       security-events: write
     uses: ./.github/workflows/reusable_trivy.yml
   Compatibility:
+    # TODO: bring back when new UMF version is ready
+    if: false
     needs: [Build]
     uses: ./.github/workflows/reusable_compatibility.yml
     strategy:
