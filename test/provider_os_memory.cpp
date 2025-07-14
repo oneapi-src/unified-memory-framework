@@ -2,18 +2,18 @@
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-#include "base.hpp"
-
-#include "ipcFixtures.hpp"
-#include "test_helpers.h"
-#include "utils/cpp_helpers.hpp"
-
 #include <umf/memory_provider.h>
 #include <umf/pools/pool_disjoint.h>
 #include <umf/providers/provider_os_memory.h>
 #ifdef UMF_POOL_JEMALLOC_ENABLED
 #include <umf/pools/pool_jemalloc.h>
 #endif
+
+#include "base.hpp"
+#include "ipcFixtures.hpp"
+#include "provider.hpp"
+#include "test_helpers.h"
+#include "utils/cpp_helpers.hpp"
 
 using umf_test::test;
 

@@ -1,10 +1,6 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2025 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-
-#include "base.hpp"
-#include "numa_helpers.hpp"
-#include "test_helpers.h"
 
 #include <algorithm>
 #include <numa.h>
@@ -13,6 +9,10 @@
 #include <sched.h>
 
 #include <umf/providers/provider_os_memory.h>
+
+#include "base.hpp"
+#include "numa_helpers.hpp"
+#include "test_helpers.h"
 
 std::vector<unsigned> get_available_numa_nodes() {
     if (numa_available() == -1 || numa_all_nodes_ptr == nullptr) {

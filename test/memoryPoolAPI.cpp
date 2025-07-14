@@ -3,13 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // This file contains tests for UMF pool API
 
-#include "base.hpp"
-#include "pool.hpp"
-#include "poolFixtures.hpp"
-#include "provider.hpp"
-#include "provider_null.h"
-#include "provider_trace.h"
-#include "test_helpers.h"
+#include <array>
+#include <string>
+#include <thread>
+#include <type_traits>
+#include <unordered_map>
+#include <variant>
 
 #include <umf/memory_provider.h>
 #include <umf/pools/pool_disjoint.h>
@@ -19,12 +18,13 @@
 #include <umf/proxy_lib_new_delete.h>
 #endif
 
-#include <array>
-#include <string>
-#include <thread>
-#include <type_traits>
-#include <unordered_map>
-#include <variant>
+#include "base.hpp"
+#include "pool.hpp"
+#include "poolFixtures.hpp"
+#include "provider.hpp"
+#include "provider_null.h"
+#include "provider_trace.h"
+#include "test_helpers.h"
 
 using umf_test::test;
 using namespace umf_test;

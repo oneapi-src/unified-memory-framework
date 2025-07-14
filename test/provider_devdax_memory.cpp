@@ -3,19 +3,21 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 #ifndef _WIN32
-#include "test_helpers_linux.h"
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #endif
 
-#include "base.hpp"
-
-#include "test_helpers.h"
-#include "utils/cpp_helpers.hpp"
-
 #include <umf/memory_provider.h>
 #include <umf/providers/provider_devdax_memory.h>
+
+#include "base.hpp"
+#include "provider.hpp"
+#include "test_helpers.h"
+#include "utils/cpp_helpers.hpp"
+#ifndef _WIN32
+#include "test_helpers_linux.h"
+#endif
 
 using umf_test::test;
 

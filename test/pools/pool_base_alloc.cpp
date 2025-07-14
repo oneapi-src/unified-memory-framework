@@ -7,11 +7,10 @@
 #include <umf/pools/pool_scalable.h>
 #include <umf/providers/provider_os_memory.h>
 
+#include "base_alloc_global.h"
 #include "pool.hpp"
 #include "poolFixtures.hpp"
 #include "provider.hpp"
-
-#include "base_alloc_global.h"
 
 struct base_alloc_pool : public umf_test::pool_base_t {
 

@@ -10,17 +10,17 @@
 #ifndef UMF_TEST_HELPERS_HPP
 #define UMF_TEST_HELPERS_HPP 1
 
-#include <umf/memory_pool.h>
-#include <umf/memory_pool_ops.h>
-#include <umf/memory_provider.h>
-#include <umf/memory_provider_ops.h>
-
 #include <array>
 #include <functional>
 #include <memory>
 #include <stdexcept>
 #include <tuple>
 #include <utility>
+
+#include <umf/memory_pool.h>
+#include <umf/memory_pool_ops.h>
+#include <umf/memory_provider.h>
+#include <umf/memory_provider_ops.h>
 
 namespace umf_test {
 

@@ -2,16 +2,16 @@
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-#include "base.hpp"
+#include <umf/memory_provider.h>
+#include <umf/providers/provider_file_memory.h>
 
+#include "base.hpp"
+#include "provider.hpp"
 #include "test_helpers.h"
 #include "utils/cpp_helpers.hpp"
 #ifndef _WIN32
 #include "test_helpers_linux.h"
 #endif
-
-#include <umf/memory_provider.h>
-#include <umf/providers/provider_file_memory.h>
 
 using umf_test::test;
 
