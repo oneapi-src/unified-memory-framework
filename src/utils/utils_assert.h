@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2024 Intel Corporation
+ * Copyright (C) 2023-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -10,10 +10,12 @@
 #ifndef UMF_ASSERT_H
 #define UMF_ASSERT_H 1
 
-#include "utils_log.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "utils_common.h"
+#include "utils_log.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,7 +52,7 @@ extern "C" {
 
 #define UMF_CHECK(condition, errorStatus)                                      \
     do {                                                                       \
-        if (!(condition)) {                                                    \
+        if (UNLIKELY(!(condition))) {                                          \
             LOG_FATAL("UMF check failed: " #condition " in %s", __func__);     \
             return errorStatus;                                                \
         }                                                                      \
