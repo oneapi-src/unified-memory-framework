@@ -7,11 +7,13 @@
  *
  */
 
+#include <stdarg.h>
 #include <stddef.h>
 #include <string.h>
 
 #include "base_alloc_global.h"
 #include "ipc_cache.h"
+#include "memory_pool_internal.h"
 #include "memory_provider_internal.h"
 #include "memspace_internal.h"
 #include "pool/pool_scalable_internal.h"
@@ -124,26 +126,34 @@ umf_result_t umfTearDown(void) {
 
 int umfGetCurrentVersion(void) { return UMF_VERSION_CURRENT; }
 
-umf_result_t umfCtlGet(const char *name, void *ctx, void *arg, size_t size) {
+umf_result_t umfCtlGet(const char *name, void *arg, size_t size, ...) {
     // ctx can be NULL when getting defaults
     if (name == NULL || arg == NULL || size == 0) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
-    return ctl_query(NULL, ctx, CTL_QUERY_PROGRAMMATIC, name, CTL_QUERY_READ,
-                     arg, size);
+    va_list args;
+    va_start(args, size);
+
+    umf_result_t ret = ctl_query(NULL, NULL, CTL_QUERY_PROGRAMMATIC, name,
+                                 CTL_QUERY_READ, arg, size, args);
+    va_end(args);
+    return ret;
 }
 
-umf_result_t umfCtlSet(const char *name, void *ctx, void *arg, size_t size) {
+umf_result_t umfCtlSet(const char *name, void *arg, size_t size, ...) {
     // ctx can be NULL when setting defaults
     if (name == NULL || arg == NULL || size == 0) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
-
-    return ctl_query(NULL, ctx, CTL_QUERY_PROGRAMMATIC, name, CTL_QUERY_WRITE,
-                     arg, size);
+    va_list args;
+    va_start(args, size);
+    umf_result_t ret = ctl_query(NULL, NULL, CTL_QUERY_PROGRAMMATIC, name,
+                                 CTL_QUERY_WRITE, arg, size, args);
+    va_end(args);
+    return ret;
 }
 
-umf_result_t umfCtlExec(const char *name, void *ctx, void *arg, size_t size) {
+umf_result_t umfCtlExec(const char *name, void *arg, size_t size, ...) {
     // arg can be NULL when executing a command
     // ctx can be NULL when executing defaults
     // size can depends on the arg
@@ -154,7 +164,11 @@ umf_result_t umfCtlExec(const char *name, void *ctx, void *arg, size_t size) {
     if ((arg == NULL && size != 0) || (arg != NULL && size == 0)) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
+    va_list args;
+    va_start(args, size);
 
-    return ctl_query(NULL, ctx, CTL_QUERY_PROGRAMMATIC, name,
-                     CTL_QUERY_RUNNABLE, arg, size);
+    umf_result_t ret = ctl_query(NULL, NULL, CTL_QUERY_PROGRAMMATIC, name,
+                                 CTL_QUERY_RUNNABLE, arg, size, args);
+    va_end(args);
+    return ret;
 }

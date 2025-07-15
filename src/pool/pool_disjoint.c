@@ -33,11 +33,12 @@ static char *DEFAULT_NAME = "disjoint";
 struct ctl disjoint_ctl_root;
 static UTIL_ONCE_FLAG ctl_initialized = UTIL_ONCE_FLAG_INIT;
 
-static umf_result_t
-CTL_READ_HANDLER(name)(void *ctx, umf_ctl_query_source_t source, void *arg,
-                       size_t size, umf_ctl_index_utlist_t *indexes,
-                       const char *extra_name, umf_ctl_query_type_t queryType) {
-    (void)source, (void)indexes, (void)queryType, (void)extra_name;
+static umf_result_t CTL_READ_HANDLER(name)(void *ctx,
+                                           umf_ctl_query_source_t source,
+                                           void *arg, size_t size,
+                                           umf_ctl_index_utlist_t *indexes) {
+    (void)source, (void)indexes;
+
     disjoint_pool_t *pool = (disjoint_pool_t *)ctx;
 
     if (arg == NULL) {
@@ -57,10 +58,8 @@ static const struct ctl_argument CTL_ARG(name) = CTL_ARG_STRING(255);
 static umf_result_t CTL_WRITE_HANDLER(name)(void *ctx,
                                             umf_ctl_query_source_t source,
                                             void *arg, size_t size,
-                                            umf_ctl_index_utlist_t *indexes,
-                                            const char *extra_name,
-                                            umf_ctl_query_type_t queryType) {
-    (void)source, (void)indexes, (void)queryType, (void)size, (void)extra_name;
+                                            umf_ctl_index_utlist_t *indexes) {
+    (void)source, (void)indexes, (void)size;
     disjoint_pool_t *pool = (disjoint_pool_t *)ctx;
     if (arg == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
@@ -79,14 +78,15 @@ static void initialize_disjoint_ctl(void) {
     CTL_REGISTER_MODULE(&disjoint_ctl_root, disjoint);
 }
 
-umf_result_t disjoint_pool_ctl(void *hPool, int operationType, const char *name,
-                               void *arg, size_t size,
-                               umf_ctl_query_type_t queryType) {
+umf_result_t disjoint_pool_ctl(void *hPool,
+                               umf_ctl_query_source_t operationType,
+                               const char *name, void *arg, size_t size,
+                               umf_ctl_query_type_t queryType, va_list args) {
     (void)operationType;
     utils_init_once(&ctl_initialized, initialize_disjoint_ctl);
 
     return ctl_query(&disjoint_ctl_root, hPool, CTL_QUERY_PROGRAMMATIC, name,
-                     queryType, arg, size);
+                     queryType, arg, size, args);
 }
 
 // Temporary solution for disabling memory poisoning. This is needed because

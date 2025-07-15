@@ -101,8 +101,8 @@ TEST_F(test, disjointCtlName) {
 
     // Set default name
     const char *val = "disjoint_new_name";
-    ASSERT_SUCCESS(umfCtlSet("umf.pool.default.disjoint.name", NULL,
-                             (void *)val, strlen(val)));
+    ASSERT_SUCCESS(
+        umfCtlSet("umf.pool.default.disjoint.name", (void *)val, strlen(val)));
 
     umf_disjoint_pool_params_handle_t params = nullptr;
     ASSERT_SUCCESS(umfDisjointPoolParamsCreate(&params));
@@ -133,10 +133,10 @@ TEST_F(test, disjointCtlChangeNameTwice) {
     // Set default name
     const char *val = "disjoint_new_name";
     const char *val2 = "another_name";
-    ASSERT_SUCCESS(umfCtlSet("umf.pool.default.disjoint.name", NULL,
-                             (void *)val, strlen(val)));
-    ASSERT_SUCCESS(umfCtlSet("umf.pool.default.disjoint.name", NULL,
-                             (void *)val2, strlen(val2)));
+    ASSERT_SUCCESS(
+        umfCtlSet("umf.pool.default.disjoint.name", (void *)val, strlen(val)));
+    ASSERT_SUCCESS(umfCtlSet("umf.pool.default.disjoint.name", (void *)val2,
+                             strlen(val2)));
 
     umf_disjoint_pool_params_handle_t params = nullptr;
     ASSERT_SUCCESS(umfDisjointPoolParamsCreate(&params));
