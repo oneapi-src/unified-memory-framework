@@ -21,6 +21,9 @@
 
 struct provider_from_pool : public umf_test::provider_base_t {
     umf_memory_pool_handle_t pool;
+
+    provider_from_pool() : pool(nullptr) {}
+
     umf_result_t initialize(const umf_memory_pool_t *_pool) noexcept {
         if (!_pool) {
             return UMF_RESULT_ERROR_INVALID_ARGUMENT;
@@ -29,14 +32,17 @@ struct provider_from_pool : public umf_test::provider_base_t {
         pool = (umf_memory_pool_handle_t)_pool;
         return UMF_RESULT_SUCCESS;
     }
+
     umf_result_t alloc(size_t size, size_t align, void **ptr) noexcept {
         *ptr = umfPoolAlignedMalloc(pool, size, align);
         return (*ptr) ? UMF_RESULT_SUCCESS
                       : UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
+
     umf_result_t free(void *ptr, size_t) noexcept {
         return umfPoolFree(pool, ptr);
     }
+
     umf_result_t get_name(const char **name) noexcept {
         *name = "provider_from_pool";
         return UMF_RESULT_SUCCESS;
