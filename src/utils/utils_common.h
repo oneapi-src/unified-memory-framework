@@ -57,11 +57,17 @@ typedef enum umf_purge_advise_t {
 
 #define __TLS __declspec(thread)
 
+#define LIKELY(x) (x)
+#define UNLIKELY(x) (x)
+
 #else /* Linux */
 
 #define __TLS __thread
 
-#endif /* _WIN32 */
+#define LIKELY(x) __builtin_expect(!!(x), 1)
+#define UNLIKELY(x) __builtin_expect(!!(x), 0)
+
+#endif /* !_WIN32 */
 
 // get the address of the given string in the environment variable (or NULL)
 char *utils_env_var_get_str(const char *envvar, const char *str);
