@@ -110,8 +110,8 @@ void ctl_helper(struct ctl *ctl_handler, const char *name, int *out, ...) {
     va_start(args, out);
     umf_result_t ret = ctl_query(ctl_handler, NULL, CTL_QUERY_PROGRAMMATIC,
                                  name, CTL_QUERY_READ, out, sizeof(*out), args);
-    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
     va_end(args);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 }
 
 TEST_F(test, ctl_debug_node_arg) {
