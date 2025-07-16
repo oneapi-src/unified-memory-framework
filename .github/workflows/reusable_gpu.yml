@@ -17,10 +17,6 @@ on:
         description: A list of OSes
         type: string
         default: "['Ubuntu', 'Windows']"
-      build_type:
-        description: A list of build types
-        type: string
-        default: "['Debug', 'Release']"
       shared_lib:
         description: A list of options for building shared library
         type: string
@@ -30,14 +26,16 @@ permissions:
   contents: read
 
 env:
-  BUILD_DIR : "${{github.workspace}}/build"
-  INSTL_DIR : "${{github.workspace}}/install-dir"
+  BUILD_DEBUG_DIR : "${{github.workspace}}/debug/build"
+  BUILD_RELEASE_DIR : "${{github.workspace}}/release/build"
+  INSTL_DEBUG_DIR : "${{github.workspace}}/debug/install-dir"
+  INSTL_RELEASE_DIR : "${{github.workspace}}/release/install-dir"
   COVERAGE_DIR : "${{github.workspace}}/coverage"
 
 jobs:
   gpu:
     env:
-      VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows;"
+      VCPKG_PATH: "${{github.workspace}}/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/vcpkg/packages/jemalloc_x64-windows;"
       COVERAGE_NAME : "exports-coverage-${{inputs.provider}}-${{inputs.runner}}"
     # run only on upstream; forks will not have the HW
     if: github.repository == 'oneapi-src/unified-memory-framework'
@@ -46,8 +44,7 @@ jobs:
       matrix:
         shared_library: ${{ fromJSON(inputs.shared_lib)}}
         os: ${{ fromJSON(inputs.os)}}
-        build_type: ${{ fromJSON(inputs.build_type)}}
-    name: GPU (${{matrix.os}}, build_type=${{matrix.build_type}}, shared=${{matrix.shared_library}})
+    name: GPU (${{matrix.os}}, shared=${{matrix.shared_library}})
     runs-on: ["DSS-${{inputs.runner}}", "DSS-${{matrix.os}}"]
 
     steps:
@@ -72,7 +69,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Get information about platform
+      - name: "[Lin] Get information about platform"
         if: matrix.os == 'Ubuntu'
         run: .github/scripts/get_system_info.sh
 
@@ -81,7 +78,7 @@ jobs:
         uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
         with:
           vcpkgGitCommitId: ea2a964f9303270322cf3f2d51c265ba146c422d # 1.04.2025
-          vcpkgDirectory: ${{env.BUILD_DIR}}/vcpkg
+          vcpkgDirectory: ${{github.workspace}}/vcpkg
           vcpkgJsonGlob: '**/vcpkg.json'
 
       - name: "[Win] Install dependencies"
@@ -90,13 +87,13 @@ jobs:
 
       # note: disable all providers except the one being tested
       # '-DCMAKE_SUPPRESS_REGENERATION=ON' is the WA for the error: "CUSTOMBUILD : CMake error : Cannot restore timestamp"
-      - name: Configure build
+      - name: Configure build (Debug)
         run: >
           cmake
           -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}};${{env.EXTRA_CMAKE_PATH}}"
-          -B ${{env.BUILD_DIR}}
-          -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
-          -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+          -B ${{env.BUILD_DEBUG_DIR}}
+          -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DEBUG_DIR}}"
+          -DCMAKE_BUILD_TYPE=Debug
           -DCMAKE_C_COMPILER=${{env.C_COMPILER}}
           -DCMAKE_CXX_COMPILER=${{env.CXX_COMPILER}}
           -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
@@ -111,37 +108,71 @@ jobs:
           -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
           -DUMF_BUILD_${{inputs.provider}}_PROVIDER=ON
           -DUMF_TESTS_FAIL_ON_SKIP=ON
-          ${{ matrix.os == 'Ubuntu' && matrix.build_type == 'Debug' && '-DUMF_USE_COVERAGE=ON' || '' }}
+          ${{ matrix.os == 'Ubuntu' && '-DUMF_USE_COVERAGE=ON' || '' }}
           ${{ matrix.os == 'Windows' && '-DCMAKE_SUPPRESS_REGENERATION=ON' || '' }}
 
-      - name: Build UMF
-        run: cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j ${{env.PROCS}}
+      - name: Build UMF (Debug)
+        run: cmake --build ${{env.BUILD_DEBUG_DIR}} --config Debug -j ${{env.PROCS}}
 
-      - name: Run tests
-        working-directory: ${{env.BUILD_DIR}}
-        run: ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
+      - name: Run tests (Debug)
+        working-directory: ${{env.BUILD_DEBUG_DIR}}
+        run: ctest -C Debug --output-on-failure --test-dir test
 
-      - name: Run examples
-        working-directory: ${{env.BUILD_DIR}}
-        run: ctest --output-on-failure --test-dir examples -C ${{matrix.build_type}}
+      - name: Run examples (Debug)
+        working-directory: ${{env.BUILD_DEBUG_DIR}}
+        run: ctest --output-on-failure --test-dir examples -C Debug
 
-      - name: Run benchmarks
-        if: matrix.build_type == 'Release'
-        working-directory: ${{env.BUILD_DIR}}
-        run: ctest --output-on-failure --test-dir benchmark -C ${{matrix.build_type}} --exclude-regex umf-multithreaded
+      - name: Configure build (Release)
+        run: >
+          cmake
+          -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}};${{env.EXTRA_CMAKE_PATH}}"
+          -B ${{env.BUILD_RELEASE_DIR}}
+          -DCMAKE_INSTALL_PREFIX="${{env.INSTL_RELEASE_DIR}}"
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_C_COMPILER=${{env.C_COMPILER}}
+          -DCMAKE_CXX_COMPILER=${{env.CXX_COMPILER}}
+          -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
+          -DUMF_BUILD_BENCHMARKS=ON
+          -DUMF_BUILD_BENCHMARKS_MT=ON
+          -DUMF_BUILD_TESTS=ON
+          -DUMF_BUILD_GPU_TESTS=ON
+          -DUMF_BUILD_GPU_EXAMPLES=ON
+          -DUMF_DEVELOPER_MODE=ON
+          -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
+          -DUMF_BUILD_CUDA_PROVIDER=OFF
+          -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
+          -DUMF_BUILD_${{inputs.provider}}_PROVIDER=ON
+          -DUMF_TESTS_FAIL_ON_SKIP=ON
+          ${{ matrix.os == 'Windows' && '-DCMAKE_SUPPRESS_REGENERATION=ON' || '' }}
 
-      - name: Check coverage
-        if: ${{ matrix.build_type == 'Debug' && matrix.os == 'Ubuntu' }}
-        working-directory: ${{env.BUILD_DIR}}
+      - name: Build UMF (Release)
+        run: cmake --build ${{env.BUILD_RELEASE_DIR}} --config Release -j ${{env.PROCS}}
+
+      - name: Run tests (Release)
+        working-directory: ${{env.BUILD_RELEASE_DIR}}
+        run: ctest -C Release --output-on-failure --test-dir test
+
+      - name: Run examples (Release)
+        working-directory: ${{env.BUILD_RELEASE_DIR}}
+        run: ctest --output-on-failure --test-dir examples -C Release
+
+      - name: Run benchmarks (Release)
+        working-directory: ${{env.BUILD_RELEASE_DIR}}
+        run: ctest --output-on-failure --test-dir benchmark -C Release --exclude-regex umf-multithreaded
+
+      - name: "[Lin] Check coverage (Debug)"
+        if: ${{ matrix.os == 'Ubuntu' }}
+        working-directory: ${{env.BUILD_DEBUG_DIR}}
         run: |
           export COVERAGE_FILE_NAME=${{env.COVERAGE_NAME}}-shared-${{matrix.shared_library}}
           echo "COVERAGE_FILE_NAME: $COVERAGE_FILE_NAME"
-          ../scripts/coverage/coverage_capture.sh $COVERAGE_FILE_NAME
+          ${{github.workspace}}/scripts/coverage/coverage_capture.sh $COVERAGE_FILE_NAME
           mkdir -p ${{env.COVERAGE_DIR}}
           mv ./$COVERAGE_FILE_NAME ${{env.COVERAGE_DIR}}
 
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        if: ${{ matrix.build_type == 'Debug' && matrix.os == 'Ubuntu' }}
+      - name: "[Lin] Upload coverage"
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: ${{ matrix.os == 'Ubuntu' }}
         with:
           name: ${{env.COVERAGE_NAME}}-shared-${{matrix.shared_library}}
           path: ${{env.COVERAGE_DIR}}
