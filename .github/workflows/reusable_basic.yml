@@ -492,11 +492,11 @@ jobs:
         python3 -m pip install -r third_party/requirements.txt
 
     - name: Install dependencies
-      run: brew install jemalloc tbb automake libtool
+      run: brew install --quiet jemalloc tbb automake libtool
 
     - name: Install hwloc
       if: ${{ matrix.static_hwloc == 'OFF' }}
-      run: brew install hwloc
+      run: brew install --quiet hwloc
 
     - name: Get UMF version
       run: |
