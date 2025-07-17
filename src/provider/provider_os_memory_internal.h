@@ -70,6 +70,8 @@ typedef struct os_memory_provider_t {
 
     hwloc_topology_t topo;
 
+    char name[64];
+
     ctl_stats_t stats;
 } os_memory_provider_t;
 

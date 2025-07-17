@@ -278,6 +278,32 @@ TEST_P(umfCUDAProviderTest, getName) {
     umfMemoryProviderDestroy(provider);
 }
 
+TEST_P(umfCUDAProviderTest, custom_name) {
+    const char *custom = "my_cuda";
+    ASSERT_EQ(umfCUDAMemoryProviderParamsSetName(params, custom),
+              UMF_RESULT_SUCCESS);
+
+    umf_memory_provider_handle_t provider = nullptr;
+    umf_result_t res =
+        umfMemoryProviderCreate(umfCUDAMemoryProviderOps(), params, &provider);
+    ASSERT_EQ(res, UMF_RESULT_SUCCESS);
+    ASSERT_NE(provider, nullptr);
+
+    const char *name = nullptr;
+    res = umfMemoryProviderGetName(provider, &name);
+    ASSERT_EQ(res, UMF_RESULT_SUCCESS);
+    EXPECT_STREQ(name, custom);
+
+    umfMemoryProviderDestroy(provider);
+}
+
+TEST(umfCUDAProviderOps, default_name_null_handle) {
+    const char *name = nullptr;
+    auto ret = umfCUDAMemoryProviderOps()->get_name(nullptr, &name);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+    EXPECT_STREQ(name, "CUDA");
+}
+
 TEST_P(umfCUDAProviderTest, allocInvalidSize) {
     CUcontext expected_current_context = get_current_context();
     // create CUDA provider

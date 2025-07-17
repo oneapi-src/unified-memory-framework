@@ -109,7 +109,8 @@ umf_result_t umfDisjointPoolParamsSetSharedLimits(
 
 /// @brief Set custom name of the disjoint pool to be used in the traces.
 /// @param hParams handle to the parameters of the disjoint pool.
-/// @param name custom name of the pool. Name longer than 64 characters will be truncated.
+/// @param name custom name of the pool. Must not be NULL. Name longer than 64
+///        characters will be truncated.
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 umf_result_t
 umfDisjointPoolParamsSetName(umf_disjoint_pool_params_handle_t hParams,
