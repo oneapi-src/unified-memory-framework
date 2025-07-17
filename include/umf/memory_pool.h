@@ -196,6 +196,15 @@ umf_result_t umfPoolSetTag(umf_memory_pool_handle_t hPool, void *tag,
 /// @return UMF_RESULT_SUCCESS on success.
 umf_result_t umfPoolGetTag(umf_memory_pool_handle_t hPool, void **tag);
 
+///
+/// @brief Trims memory pool to keep at least \p minBytesToKeep bytes of memory
+///        if possible.
+/// @param hPool specified memory pool
+/// @param minBytesToKeep minimum number of bytes to keep in the pool
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+umf_result_t umfPoolTrimMemory(umf_memory_pool_handle_t hPool,
+                               size_t minBytesToKeep);
+
 #ifdef __cplusplus
 }
 #endif
