@@ -378,3 +378,57 @@ TEST_F(CtlTest, ctlDefaultMultithreadedProvider) {
     }
 }
 #endif
+
+TEST_F(test, ctl_logger_basic_rw) {
+    bool ts_set = true;
+    ASSERT_EQ(umfCtlSet("umf.logger.timestamp", &ts_set, sizeof(ts_set)),
+              UMF_RESULT_SUCCESS);
+    bool ts_get = false;
+    ASSERT_EQ(umfCtlGet("umf.logger.timestamp", &ts_get, sizeof(ts_get)),
+              UMF_RESULT_SUCCESS);
+    EXPECT_TRUE(ts_get);
+
+    bool pid_set = 1;
+    ASSERT_EQ(umfCtlSet("umf.logger.pid", &pid_set, sizeof(pid_set)),
+              UMF_RESULT_SUCCESS);
+    bool pid_get = 0;
+    ASSERT_EQ(umfCtlGet("umf.logger.pid", &pid_get, sizeof(pid_get)),
+              UMF_RESULT_SUCCESS);
+    EXPECT_EQ(pid_get, 1);
+
+    int level_set = 1;
+    ASSERT_EQ(umfCtlSet("umf.logger.level", &level_set, sizeof(level_set)),
+              UMF_RESULT_SUCCESS);
+    int level_get = 0;
+    ASSERT_EQ(umfCtlGet("umf.logger.level", &level_get, sizeof(level_get)),
+              UMF_RESULT_SUCCESS);
+    EXPECT_EQ(level_get, 1);
+
+    int flush_set = 2;
+    ASSERT_EQ(
+        umfCtlSet("umf.logger.flush_level", &flush_set, sizeof(flush_set)),
+        UMF_RESULT_SUCCESS);
+    int flush_get = 0;
+    ASSERT_EQ(
+        umfCtlGet("umf.logger.flush_level", &flush_get, sizeof(flush_get)),
+        UMF_RESULT_SUCCESS);
+    EXPECT_EQ(flush_get, 2);
+
+    const char *out_name = "stdout";
+    ASSERT_EQ(umfCtlSet("umf.logger.output", &out_name, sizeof(out_name)),
+              UMF_RESULT_SUCCESS);
+    const char *out_get = NULL;
+    ASSERT_EQ(umfCtlGet("umf.logger.output", &out_get, sizeof(out_get)),
+              UMF_RESULT_SUCCESS);
+    EXPECT_STREQ(out_get, "stdout");
+}
+
+TEST_F(test, ctl_logger_output_file) {
+    const char *file_name = "ctl_log.txt";
+    ASSERT_EQ(umfCtlSet("umf.logger.output", &file_name, sizeof(file_name)),
+              UMF_RESULT_SUCCESS);
+    const char *out_get = NULL;
+    ASSERT_EQ(umfCtlGet("umf.logger.output", &out_get, sizeof(out_get)),
+              UMF_RESULT_SUCCESS);
+    EXPECT_STREQ(out_get, file_name);
+}

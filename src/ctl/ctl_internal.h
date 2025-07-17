@@ -122,6 +122,7 @@ struct ctl {
 };
 
 void initialize_global_ctl(void);
+void ctl_init(void *(*Malloc)(size_t), void (*Free)(void *));
 
 umf_result_t ctl_load_config_from_string(struct ctl *ctl, void *ctx,
                                          const char *cfg_string);

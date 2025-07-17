@@ -11,6 +11,7 @@
  * ctl_debug.c -- implementation of the debug CTL namespace
  */
 
+#include <stdlib.h>
 #include <string.h>
 
 #include "ctl/ctl_internal.h"
@@ -183,4 +184,7 @@ static const umf_ctl_node_t CTL_NODE(debug)[] = {
  */
 void debug_ctl_register(struct ctl *ctl) { CTL_REGISTER_MODULE(ctl, debug); }
 
-void initialize_debug_ctl(void) { debug_ctl_register(&ctl_debug); }
+void initialize_debug_ctl(void) {
+    debug_ctl_register(&ctl_debug);
+    ctl_init(malloc, free);
+}
