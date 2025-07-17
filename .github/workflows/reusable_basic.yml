@@ -232,12 +232,15 @@ jobs:
 
   windows-build:
     env:
-      VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
-      VCPKG_PATH_BIN: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows/bin;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows/bin;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows/bin"
+      BUILD_DEBUG_DIR : "${{github.workspace}}/debug/build"
+      INSTL_DEBUG_DIR : "${{github.workspace}}/debug/install-dir"
+      BUILD_RELEASE_DIR : "${{github.workspace}}/release/build"
+      INSTL_RELEASE_DIR : "${{github.workspace}}/release/install-dir"
+      VCPKG_PATH: "${{github.workspace}}/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/vcpkg/packages/jemalloc_x64-windows"
+      VCPKG_PATH_BIN: "${{github.workspace}}/vcpkg/packages/hwloc_x64-windows/bin;${{github.workspace}}/vcpkg/packages/tbb_x64-windows/bin;${{github.workspace}}/vcpkg/packages/jemalloc_x64-windows/bin"
     strategy:
       matrix:
         os: ['windows-2022', 'windows-2025']
-        build_type: [Debug, Release]
         compiler: [{c: cl, cxx: cl}]
         shared_library: ['ON', 'OFF']
         level_zero_provider: ['ON']
@@ -246,8 +249,7 @@ jobs:
           # extra job: Custom (old) CMake, clang-cl compiler
           # Note: This CMake uses NMake generator as VS paths are probably messed up (by CMake?)
           - os: 'windows-2025'
-            build_type: Release
-            extra_build_options: '-DCMAKE_BUILD_TYPE=Release' # NMake generator requires this
+            extra_release_build_type: '-DCMAKE_BUILD_TYPE=Release' # NMake generator requires this
             compiler: {c: clang-cl, cxx: clang-cl}
             shared_library: 'ON'
             level_zero_provider: 'ON'
@@ -255,7 +257,6 @@ jobs:
             cmake_ver: '3.14.0-win64-x64'
           # extra job: Custom CMake, L0/CUDA providers disabled
           - os: 'windows-2025'
-            build_type: Release
             compiler: {c: cl, cxx: cl}
             shared_library: 'ON'
             level_zero_provider: 'OFF'
@@ -263,13 +264,19 @@ jobs:
             cmake_ver: '3.28.0-windows-x86_64'
           # umfd enabled (this job will replace one from matrix)
           - os: 'windows-2022'
-            build_type: Release
             compiler: {c: cl, cxx: cl}
             shared_library: 'ON'
             level_zero_provider: 'ON'
             cuda_provider: 'ON'
             umfd_lib: 'ON'
-    name: Basic (${{matrix.os}}, build_type=${{matrix.build_type}}, compilers=${{matrix.compiler.c}}/${{matrix.compiler.cxx}}, shared_library=${{matrix.shared_library}}, level_zero_provider=${{matrix.level_zero_provider}}, cuda_provider=${{matrix.cuda_provider}}, cmake_ver=${{matrix.cmake_ver || 'default'}}, umfd=${{matrix.umfd_lib || 'OFF'}})
+    name: Basic (${{matrix.os}}, 
+          compilers=${{matrix.compiler.c}}/${{matrix.compiler.cxx}}, 
+          shared_library=${{matrix.shared_library}}, 
+          level_zero_provider=${{matrix.level_zero_provider}}, 
+          cuda_provider=${{matrix.cuda_provider}}, 
+          cmake_ver=${{matrix.cmake_ver || 'default'}}, 
+          umfd=${{matrix.umfd_lib || 'OFF'}})
+          extra=${{matrix.extra_release_build_type || ''}}
     runs-on: ${{matrix.os}}
 
     steps:
@@ -308,7 +315,7 @@ jobs:
       uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
       with:
         vcpkgGitCommitId: ea2a964f9303270322cf3f2d51c265ba146c422d # 1.04.2025
-        vcpkgDirectory: ${{env.BUILD_DIR}}/vcpkg
+        vcpkgDirectory: ${{github.workspace}}/vcpkg
         vcpkgJsonGlob: '**/vcpkg.json'
 
     # Install the dependencies and add the bin folders to the PATH for older
@@ -326,12 +333,11 @@ jobs:
         echo "UMF_VERSION=$version" >> $env:GITHUB_ENV
       shell: pwsh
 
-    - name: Configure build
+    - name: Configure build (Debug)
       run: >
         cmake
-        -B ${{env.BUILD_DIR}}
-        ${{matrix.extra_build_options || ''}}
-        -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
+        -B ${{env.BUILD_DEBUG_DIR}}
+        -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DEBUG_DIR}}"
         -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
         -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
         -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
@@ -344,11 +350,11 @@ jobs:
         -DUMF_TESTS_FAIL_ON_SKIP=ON
         -DUMF_USE_DEBUG_POSTFIX=${{matrix.umfd_lib || 'OFF'}}
 
-    - name: Build UMF
-      run: cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j $Env:NUMBER_OF_PROCESSORS
+    - name: Build UMF (Debug)
+      run: cmake --build ${{env.BUILD_DEBUG_DIR}} --config Debug -j $Env:NUMBER_OF_PROCESSORS
 
-    - name: Run tests
-      working-directory: ${{env.BUILD_DIR}}
+    - name: Run tests (Debug)
+      working-directory: ${{env.BUILD_DEBUG_DIR}}
       # For CMake versions < 3.22 we have to add the build directory to the PATH manually
       # Extra paths without 'build_type' are set for NMake generator
       run: |
@@ -357,33 +363,83 @@ jobs:
           $major = [int]$m.groups[1].Value
           $minor = [int]$m.groups[2].Value
           if ($major -lt 3 -or ($major -eq 3 -and $minor -lt 22)) {
-            $env:Path = "${{env.BUILD_DIR}}/bin/${{matrix.build_type}};${{env.BUILD_DIR}}/src/proxy_lib/${{matrix.build_type}};$env:Path"
-            $env:Path = "${{env.BUILD_DIR}}/bin/;${{env.BUILD_DIR}}/src/proxy_lib/;$env:Path"
+            $env:Path = "${{env.BUILD_DEBUG_DIR}}/bin/Debug;${{env.BUILD_DEBUG_DIR}}/src/proxy_lib/Debug;$env:Path"
+            $env:Path = "${{env.BUILD_DEBUG_DIR}}/bin/;${{env.BUILD_DEBUG_DIR}}/src/proxy_lib/;$env:Path"
             echo "PATH=$env:Path" >> $env:GITHUB_ENV
           }
         }
-        ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
+        ctest -C Debug --output-on-failure --test-dir test
       shell: pwsh
 
-    - name: Test UMF installation and uninstallation
+    - name: Test UMF installation and uninstallation (Debug)
       run: >
         python3 ${{github.workspace}}/test/test_installation.py
-        --build-dir ${{env.BUILD_DIR}}
-        --install-dir ${{env.INSTL_DIR}}
-        --build-type ${{matrix.build_type}}
+        --build-dir ${{env.BUILD_DEBUG_DIR}}
+        --install-dir ${{env.INSTL_DEBUG_DIR}}
+        --build-type Debug
         ${{matrix.shared_library == 'ON' && '--proxy' || '' }}
         --umf-version ${{env.UMF_VERSION}}
         ${{ matrix.shared_library == 'ON' && '--shared-library' || ''}}
         ${{ matrix.umfd_lib == 'ON' && '--umfd-lib' || ''}}
 
-    - name: check /DEPENDENTLOADFLAG in umf.dll
-      if: ${{matrix.shared_library == 'ON' && matrix.compiler.cxx == 'cl'}}
-      run: ${{github.workspace}}/.github/scripts/check_dll_flags.ps1 ${{env.BUILD_DIR}}/bin/${{matrix.build_type}}/umf.dll
+    - name: Configure build (Release)
+      run: >
+        cmake
+        -B ${{env.BUILD_RELEASE_DIR}}
+        ${{matrix.extra_release_build_type || ''}}
+        -DCMAKE_INSTALL_PREFIX="${{env.INSTL_RELEASE_DIR}}"
+        -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
+        -DCMAKE_C_COMPILER=${{matrix.compiler.c}}
+        -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}}
+        -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
+        -DUMF_FORMAT_CODE_STYLE=OFF
+        -DUMF_DEVELOPER_MODE=ON
+        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=${{matrix.level_zero_provider}}
+        -DUMF_BUILD_CUDA_PROVIDER=${{matrix.cuda_provider}}
+        -DUMF_TESTS_FAIL_ON_SKIP=ON
+        -DUMF_USE_DEBUG_POSTFIX=${{matrix.umfd_lib || 'OFF'}}
+
+    - name: Build UMF (Release)
+      run: cmake --build ${{env.BUILD_RELEASE_DIR}} --config Release -j $Env:NUMBER_OF_PROCESSORS
+
+    - name: Run tests (Release)
+      working-directory: ${{env.BUILD_RELEASE_DIR}}
+      # For CMake versions < 3.22 we have to add the build directory to the PATH manually
+      # Extra paths without 'build_type' are set for NMake generator
+      run: |
+        $m = [regex]::Matches((cmake --version), "cmake version (\d+)\.(\d+)\.(\d+)")
+        if ($m) {
+          $major = [int]$m.groups[1].Value
+          $minor = [int]$m.groups[2].Value
+          if ($major -lt 3 -or ($major -eq 3 -and $minor -lt 22)) {
+            $env:Path = "${{env.BUILD_RELEASE_DIR}}/bin/Release;${{env.BUILD_RELEASE_DIR}}/src/proxy_lib/Release;$env:Path"
+            $env:Path = "${{env.BUILD_RELEASE_DIR}}/bin/;${{env.BUILD_RELEASE_DIR}}/src/proxy_lib/;$env:Path"
+            echo "PATH=$env:Path" >> $env:GITHUB_ENV
+          }
+        }
+        ctest -C Release --output-on-failure --test-dir test
       shell: pwsh
 
-    - name: check /DEPENDENTLOADFLAG in umf_proxy.dll
+    - name: Test UMF installation and uninstallation (Release)
+      run: >
+        python3 ${{github.workspace}}/test/test_installation.py
+        --build-dir ${{env.BUILD_RELEASE_DIR}}
+        --install-dir ${{env.INSTL_RELEASE_DIR}}
+        --build-type Release
+        ${{matrix.shared_library == 'ON' && '--proxy' || '' }}
+        --umf-version ${{env.UMF_VERSION}}
+        ${{ matrix.shared_library == 'ON' && '--shared-library' || ''}}
+        ${{ matrix.umfd_lib == 'ON' && '--umfd-lib' || ''}}
+
+    - name: check /DEPENDENTLOADFLAG in umf.dll (Release)
       if: ${{matrix.shared_library == 'ON' && matrix.compiler.cxx == 'cl'}}
-      run: ${{github.workspace}}/.github/scripts/check_dll_flags.ps1 ${{env.BUILD_DIR}}/src/proxy_lib/${{matrix.build_type}}/umf_proxy.dll
+      run: ${{github.workspace}}/.github/scripts/check_dll_flags.ps1 ${{env.BUILD_RELEASE_DIR}}/bin/Release/umf.dll
+      shell: pwsh
+
+    - name: check /DEPENDENTLOADFLAG in umf_proxy.dll (Release)
+      if: ${{matrix.shared_library == 'ON' && matrix.compiler.cxx == 'cl'}}
+      run: ${{github.workspace}}/.github/scripts/check_dll_flags.ps1 ${{env.BUILD_RELEASE_DIR}}/src/proxy_lib/Release/umf_proxy.dll
       shell: pwsh
 
   windows-dynamic_build_hwloc:
