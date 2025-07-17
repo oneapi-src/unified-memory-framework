@@ -73,8 +73,21 @@ jobs:
         if: matrix.os == 'Ubuntu'
         run: .github/scripts/get_system_info.sh
 
-      - name: "[Win] Initialize vcpkg"
+      - name: "[Win] Restore vcpkg cache"
         if: matrix.os == 'Windows'
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        id: cache
+        with:
+          path: vcpkg_pkgs_cache.zip
+          key: vcpkg-gpu-${{inputs.runner}}-windows-${{ hashFiles('vcpkg.json') }}
+
+      - name: "[Win] Unpack vcpkg cache"
+        if: matrix.os == 'Windows' && steps.cache.outputs.cache-hit == 'true'
+        run: |
+          Expand-Archive -Path ${{github.workspace}}/vcpkg_pkgs_cache.zip -DestinationPath ${{github.workspace}}/vcpkg -Force
+
+      - name: "[Win] Initialize vcpkg"
+        if: matrix.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
         uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
         with:
           vcpkgGitCommitId: ea2a964f9303270322cf3f2d51c265ba146c422d # 1.04.2025
@@ -82,7 +95,7 @@ jobs:
           vcpkgJsonGlob: '**/vcpkg.json'
 
       - name: "[Win] Install dependencies"
-        if: matrix.os == 'Windows'
+        if: matrix.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
         run: vcpkg install --triplet x64-windows
 
       # note: disable all providers except the one being tested
@@ -176,3 +189,15 @@ jobs:
         with:
           name: ${{env.COVERAGE_NAME}}-shared-${{matrix.shared_library}}
           path: ${{env.COVERAGE_DIR}}
+
+      - name: "[Win] Prepare vcpkg cache"
+        if: matrix.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
+        run: |
+          Compress-Archive -Path ${{github.workspace}}/vcpkg/packages -DestinationPath ${{github.workspace}}/vcpkg_pkgs_cache.zip -Force -CompressionLevel Fastest
+
+      - name: "[Win] Save vcpkg cache"
+        if: matrix.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: ${{github.workspace}}/vcpkg_pkgs_cache.zip
+          key: ${{ steps.cache.outputs.cache-primary-key }}
