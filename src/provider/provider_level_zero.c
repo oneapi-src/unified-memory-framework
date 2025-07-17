@@ -376,9 +376,10 @@ static ze_relaxed_allocation_limits_exp_desc_t relaxed_device_allocation_desc =
      .pNext = NULL,
      .flags = ZE_RELAXED_ALLOCATION_LIMITS_EXP_FLAG_MAX_SIZE};
 
-static umf_result_t ze_memory_provider_alloc(void *provider, size_t size,
-                                             size_t alignment,
-                                             void **resultPtr) {
+static umf_result_t ze_memory_provider_alloc_helper(void *provider, size_t size,
+                                                    size_t alignment,
+                                                    int update_stats,
+                                                    void **resultPtr) {
     ze_memory_provider_t *ze_provider = (ze_memory_provider_t *)provider;
 
     ze_result_t ze_result = ZE_RESULT_SUCCESS;
@@ -442,37 +443,54 @@ static umf_result_t ze_memory_provider_alloc(void *provider, size_t size,
         }
     }
 
-    provider_ctl_stats_alloc(ze_provider, size);
+    if (update_stats) {
+        provider_ctl_stats_alloc(ze_provider, size);
+    }
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t ze_memory_provider_alloc(void *provider, size_t size,
+                                             size_t alignment,
+                                             void **resultPtr) {
+    return ze_memory_provider_alloc_helper(provider, size, alignment, 1,
+                                           resultPtr);
+}
+
+static umf_result_t ze_memory_provider_free_helper(void *provider, void *ptr,
+                                                   size_t bytes,
+                                                   int update_stats) {
+    if (ptr == NULL) {
+        return UMF_RESULT_SUCCESS;
+    }
+
+    ze_memory_provider_t *ze_provider = (ze_memory_provider_t *)provider;
+    umf_result_t ret;
+    if (ze_provider->freePolicyFlags == 0) {
+        ret = ze2umf_result(g_ze_ops.zeMemFree(ze_provider->context, ptr));
+    } else {
+        ze_memory_free_ext_desc_t desc = {
+            .stype = ZE_STRUCTURE_TYPE_MEMORY_FREE_EXT_DESC,
+            .pNext = NULL,
+            .freePolicy = ze_provider->freePolicyFlags};
+
+        ret = ze2umf_result(
+            g_ze_ops.zeMemFreeExt(ze_provider->context, &desc, ptr));
+    }
+
+    if (ret != UMF_RESULT_SUCCESS) {
+        return ret;
+    }
+
+    if (update_stats) {
+        provider_ctl_stats_free(ze_provider, bytes);
+    }
 
     return UMF_RESULT_SUCCESS;
 }
 
 static umf_result_t ze_memory_provider_free(void *provider, void *ptr,
                                             size_t bytes) {
-    if (ptr == NULL) {
-        return UMF_RESULT_SUCCESS;
-    }
-
-    ze_memory_provider_t *ze_provider = (ze_memory_provider_t *)provider;
-
-    if (ze_provider->freePolicyFlags == 0) {
-        return ze2umf_result(g_ze_ops.zeMemFree(ze_provider->context, ptr));
-    }
-
-    ze_memory_free_ext_desc_t desc = {
-        .stype = ZE_STRUCTURE_TYPE_MEMORY_FREE_EXT_DESC,
-        .pNext = NULL,
-        .freePolicy = ze_provider->freePolicyFlags};
-
-    umf_result_t ret =
-        ze2umf_result(g_ze_ops.zeMemFreeExt(ze_provider->context, &desc, ptr));
-    if (ret != UMF_RESULT_SUCCESS) {
-        return ret;
-    }
-
-    provider_ctl_stats_free(ze_provider, bytes);
-
-    return UMF_RESULT_SUCCESS;
+    return ze_memory_provider_free_helper(provider, ptr, bytes, 1);
 }
 
 static umf_result_t query_min_page_size(ze_memory_provider_t *ze_provider,
@@ -482,7 +500,8 @@ static umf_result_t query_min_page_size(ze_memory_provider_t *ze_provider,
     LOG_DEBUG("Querying minimum page size");
 
     void *ptr;
-    umf_result_t result = ze_memory_provider_alloc(ze_provider, 1, 0, &ptr);
+    umf_result_t result =
+        ze_memory_provider_alloc_helper(ze_provider, 1, 0, 0, &ptr);
     if (result != UMF_RESULT_SUCCESS) {
         return result;
     }
@@ -494,7 +513,7 @@ static umf_result_t query_min_page_size(ze_memory_provider_t *ze_provider,
 
     *min_page_size = properties.pageSize;
 
-    ze_memory_provider_free(ze_provider, ptr, 1);
+    ze_memory_provider_free_helper(ze_provider, ptr, 1, 0);
 
     return ze2umf_result(ze_result);
 }

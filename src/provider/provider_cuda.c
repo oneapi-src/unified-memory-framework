@@ -12,6 +12,7 @@
 #include <umf.h>
 #include <umf/providers/provider_cuda.h>
 
+#include "provider_ctl_stats_type.h"
 #include "provider_cuda_internal.h"
 #include "utils_load_library.h"
 #include "utils_log.h"
@@ -53,7 +54,11 @@ typedef struct cu_memory_provider_t {
     umf_usm_memory_type_t memory_type;
     size_t min_alignment;
     unsigned int alloc_flags;
+    ctl_stats_t stats;
 } cu_memory_provider_t;
+
+#define CTL_PROVIDER_TYPE cu_memory_provider_t
+#include "provider_ctl_stats_impl.h"
 
 // CUDA Memory Provider settings struct
 typedef struct umf_cuda_memory_provider_params_t {
@@ -98,6 +103,9 @@ static cu_ops_t g_cu_ops;
 static UTIL_ONCE_FLAG cu_is_initialized = UTIL_ONCE_FLAG_INIT;
 static bool Init_cu_global_state_failed;
 
+struct ctl cu_memory_ctl_root;
+static UTIL_ONCE_FLAG ctl_initialized = UTIL_ONCE_FLAG_INIT;
+
 // forward decl needed for alloc
 static umf_result_t cu_memory_provider_free(void *provider, void *ptr,
                                             size_t bytes);
@@ -131,6 +139,10 @@ static umf_result_t cu2umf_result(CUresult result) {
         cu_store_last_native_error(result);
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
+}
+
+static void initialize_cu_ctl(void) {
+    CTL_REGISTER_MODULE(&cu_memory_ctl_root, stats);
 }
 
 static void init_cu_global_state(void) {
@@ -333,6 +345,7 @@ static umf_result_t cu_memory_provider_initialize(const void *params,
     if (!cu_provider) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
+    memset(cu_provider, 0, sizeof(cu_memory_provider_t));
 
     // CUDA alloc functions doesn't allow to provide user alignment - get the
     // minimum one from the driver
@@ -460,6 +473,8 @@ static umf_result_t cu_memory_provider_alloc(void *provider, size_t size,
         LOG_ERR("unsupported alignment size");
         return UMF_RESULT_ERROR_INVALID_ALIGNMENT;
     }
+
+    provider_ctl_stats_alloc(cu_provider, size);
     return umf_result;
 }
 
@@ -504,7 +519,11 @@ static umf_result_t cu_memory_provider_free(void *provider, void *ptr,
         LOG_ERR("Failed to restore CUDA context, ret = %d", umf_result);
     }
 
-    return cu2umf_result(cu_result);
+    umf_result_t ret = cu2umf_result(cu_result);
+    if (ret == UMF_RESULT_SUCCESS) {
+        provider_ctl_stats_free(cu_provider, bytes);
+    }
+    return ret;
 }
 
 static umf_result_t
@@ -685,6 +704,14 @@ cu_memory_provider_close_ipc_handle(void *provider, void *ptr, size_t size) {
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t cu_ctl(void *provider, umf_ctl_query_source_t operationType,
+                           const char *name, void *arg, size_t size,
+                           umf_ctl_query_type_t query_type, va_list args) {
+    utils_init_once(&ctl_initialized, initialize_cu_ctl);
+    return ctl_query(&cu_memory_ctl_root, provider, operationType, name,
+                     query_type, arg, size, args);
+}
+
 static umf_memory_provider_ops_t UMF_CUDA_MEMORY_PROVIDER_OPS = {
     .version = UMF_PROVIDER_OPS_VERSION_CURRENT,
     .initialize = cu_memory_provider_initialize,
@@ -707,6 +734,7 @@ static umf_memory_provider_ops_t UMF_CUDA_MEMORY_PROVIDER_OPS = {
     .ext_put_ipc_handle = cu_memory_provider_put_ipc_handle,
     .ext_open_ipc_handle = cu_memory_provider_open_ipc_handle,
     .ext_close_ipc_handle = cu_memory_provider_close_ipc_handle,
+    .ext_ctl = cu_ctl,
 };
 
 const umf_memory_provider_ops_t *umfCUDAMemoryProviderOps(void) {
