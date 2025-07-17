@@ -307,6 +307,7 @@ typedef struct umf_memory_provider_ops_t {
         void *provider, const void *ptr,
         umf_memory_property_id_t memory_property_id, void *property_value);
 
+    ///
     /// @brief Retrieve size of the provider-specific properties of the memory
     ///        allocation.
     /// \details
@@ -321,6 +322,24 @@ typedef struct umf_memory_provider_ops_t {
     umf_result_t (*ext_get_allocation_properties_size)(
         void *provider, umf_memory_property_id_t memory_property_id,
         size_t *size);
+
+    ///
+    /// @brief Post-initialization hook for a deferred setup.
+    ///
+    /// \details
+    /// * Called by UMF **after** @ref initialize during umfMemoryProviderCreate().
+    /// * Between @ref initialize and @ref ext_post_initialize there **may** be
+    ///   multiple calls to @ref ext_ctl for early configuration.
+    /// * Failure handling: If this function returns an error, the
+    ///   implementation **must** free any resources acquired during
+    ///   initialization and leave no leaks (UMF will not call @ref finalize
+    ///   after a failed post-initialize).
+    ///
+    /// @param provider Provider handle.
+    ///
+    /// @return UMF_RESULT_SUCCESS on success; an appropriate error code on failure.
+    ///
+    umf_result_t (*ext_post_initialize)(void *provider);
 
 } umf_memory_provider_ops_t;
 

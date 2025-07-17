@@ -102,8 +102,16 @@ jobs:
         UMF_LOG: level:warning;flush:debug;output:stderr;pid:no
         LD_LIBRARY_PATH: ${{github.workspace}}/latest_version/build/lib/
       run: |
-        ctest --verbose -E "test_memoryProvider"
+        ctest --verbose -E "test_memoryProvider|test_disjoint_pool"
+
+    - name: Run disabled tests individually with latest UMF libs (warnings enabled)
+      working-directory: ${{github.workspace}}/tag_version/build
+      env:
+        UMF_LOG: level:warning;flush:debug;output:stderr;pid:no
+        LD_LIBRARY_PATH: ${{github.workspace}}/latest_version/build/lib/
+      run: |
         test/test_memoryProvider --gtest_filter="-*Trace"
+        test/test_disjoint_pool --gtest_filter="-test.internals"
 
     # Browse all folders in the examples directory, build them using the 
     # latest UMF version, and run them, excluding those in the exclude list.
@@ -228,10 +236,12 @@ jobs:
       env:
         UMF_LOG: level:warning;flush:debug;output:stderr;pid:no
       run: |
+        $env:UMF_LOG="level:warning;flush:debug;output:stderr;pid:no"
         cp ${{github.workspace}}/latest_version/build/bin/Debug/umf.dll ${{github.workspace}}/tag_version/build/bin/Debug/umf.dll
-        ctest -C Debug --verbose -E "test_memoryProvider"
+        ctest -C Debug --verbose -E "test_memoryProvider|test_disjoint_pool"
         $env:Path = "${{github.workspace}}/tag_version/build/bin/Debug;${{env.VCPKG_BIN_PATH}};$env:Path"
         test/Debug/test_memoryProvider.exe --gtest_filter="-*Trace"
+        test/Debug/test_disjoint_pool.exe --gtest_filter="-test.internals"
 
     # Browse all folders in the examples directory, build them using the 
     # latest UMF version, and run them, excluding those in the exclude list.
@@ -373,8 +383,16 @@ jobs:
         UMF_LOG: level:warning;flush:debug;output:stderr;pid:no
         LD_LIBRARY_PATH: ${{github.workspace}}/latest_version/build/lib/
       run: |
-        ctest --verbose -E "test_memoryProvider"
+        ctest --verbose -E "test_memoryProvider|test_disjoint_pool"
+
+    - name: Run disabled tests individually with latest UMF libs (warnings enabled)
+      working-directory: ${{github.workspace}}/tag_version/build
+      env:
+        UMF_LOG: level:warning;flush:debug;output:stderr;pid:no
+        LD_LIBRARY_PATH: ${{github.workspace}}/latest_version/build/lib/
+      run: |
         test/test_memoryProvider --gtest_filter="-*Trace"
+        test/test_disjoint_pool --gtest_filter="-test.internals"
 
     # Browse all folders in the examples directory, build them using the 
     # latest UMF version, and run them, excluding those in the exclude list.

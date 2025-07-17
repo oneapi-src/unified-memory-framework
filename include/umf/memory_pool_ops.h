@@ -191,6 +191,25 @@ typedef struct umf_memory_pool_ops_t {
     ///         failure.
     ///
     umf_result_t (*ext_trim_memory)(void *pool, size_t minBytesToKeep);
+
+    ///
+    /// @brief Post-initialization hook for deferred setup.
+    ///
+    /// \details
+    /// * Called by UMF **after** @ref initialize during umfPoolCreate().
+    /// * Between @ref initialize and @ref ext_post_initialize there **may** be
+    ///   multiple calls to @ref ext_ctl for early configuration.
+    /// * Failure handling: If this function returns an error, the
+    ///   implementation **must** free any resources acquired during
+    ///   initialization and leave no leaks (UMF will not call @ref finalize
+    ///   after a failed post-initialize).
+    ///
+    /// @param pool Pool handle.
+    ///
+    /// @return UMF_RESULT_SUCCESS on success; an appropriate error code on failure.
+    ///
+    umf_result_t (*ext_post_initialize)(void *pool);
+
 } umf_memory_pool_ops_t;
 
 #ifdef __cplusplus

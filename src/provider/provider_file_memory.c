@@ -295,6 +295,22 @@ static umf_result_t file_initialize(const void *params, void **provider) {
 
     file_provider->coarse = coarse;
 
+    *provider = file_provider;
+    return UMF_RESULT_SUCCESS;
+
+err_close_fd:
+    utils_close_fd(file_provider->fd);
+err_free_file_provider:
+    umf_ba_global_free(file_provider);
+    return ret;
+}
+
+static umf_result_t file_post_initialize(void *provider) {
+    umf_result_t ret = UMF_RESULT_SUCCESS;
+    file_memory_provider_t *file_provider = provider;
+
+    assert(provider);
+
     if (utils_mutex_init(&file_provider->lock) == NULL) {
         LOG_ERR("lock init failed");
         ret = UMF_RESULT_ERROR_UNKNOWN;
@@ -315,8 +331,6 @@ static umf_result_t file_initialize(const void *params, void **provider) {
         goto err_delete_fd_offset_map;
     }
 
-    *provider = file_provider;
-
     return UMF_RESULT_SUCCESS;
 
 err_delete_fd_offset_map:
@@ -325,9 +339,9 @@ err_mutex_destroy_not_free:
     utils_mutex_destroy_not_free(&file_provider->lock);
 err_coarse_delete:
     coarse_delete(file_provider->coarse);
-err_close_fd:
-    utils_close_fd(file_provider->fd);
-err_free_file_provider:
+    if (utils_close_fd(file_provider->fd)) {
+        LOG_PERR("closing file descriptor %d failed", file_provider->fd);
+    }
     umf_ba_global_free(file_provider);
     return ret;
 }
@@ -935,7 +949,8 @@ static umf_memory_provider_ops_t UMF_FILE_MEMORY_PROVIDER_OPS = {
     .ext_put_ipc_handle = file_put_ipc_handle,
     .ext_open_ipc_handle = file_open_ipc_handle,
     .ext_close_ipc_handle = file_close_ipc_handle,
-    .ext_ctl = file_ctl};
+    .ext_ctl = file_ctl,
+    .ext_post_initialize = file_post_initialize};
 
 const umf_memory_provider_ops_t *umfFileMemoryProviderOps(void) {
     return &UMF_FILE_MEMORY_PROVIDER_OPS;

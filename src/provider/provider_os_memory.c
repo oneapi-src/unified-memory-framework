@@ -595,20 +595,6 @@ static umf_result_t os_initialize(const void *params, void **provider) {
         }
     }
 
-    os_provider->nodeset_str_buf = umf_ba_global_alloc(NODESET_STR_BUF_LEN);
-    if (!os_provider->nodeset_str_buf) {
-        LOG_INFO("allocating memory for printing NUMA nodes failed");
-    } else {
-        LOG_INFO("OS provider initialized with NUMA nodes:");
-        for (unsigned i = 0; i < os_provider->nodeset_len; i++) {
-            if (hwloc_bitmap_list_snprintf(os_provider->nodeset_str_buf,
-                                           NODESET_STR_BUF_LEN,
-                                           os_provider->nodeset[i])) {
-                LOG_INFO("%s", os_provider->nodeset_str_buf);
-            }
-        }
-    }
-
     *provider = os_provider;
 
     return UMF_RESULT_SUCCESS;
@@ -1382,6 +1368,26 @@ static umf_result_t os_ctl(void *hProvider,
                      query_type, arg, size, args);
 }
 
+static umf_result_t os_post_initialize(void *provider) {
+    os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
+    assert(provider);
+
+    os_provider->nodeset_str_buf = umf_ba_global_alloc(NODESET_STR_BUF_LEN);
+    if (!os_provider->nodeset_str_buf) {
+        LOG_INFO("allocating memory for printing NUMA nodes failed");
+    } else {
+        LOG_INFO("OS provider initialized with NUMA nodes:");
+        for (unsigned i = 0; i < os_provider->nodeset_len; i++) {
+            if (hwloc_bitmap_list_snprintf(os_provider->nodeset_str_buf,
+                                           NODESET_STR_BUF_LEN,
+                                           os_provider->nodeset[i])) {
+                LOG_INFO("%s", os_provider->nodeset_str_buf);
+            }
+        }
+    }
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_memory_provider_ops_t UMF_OS_MEMORY_PROVIDER_OPS = {
     .version = UMF_PROVIDER_OPS_VERSION_CURRENT,
     .initialize = os_initialize,
@@ -1402,6 +1408,7 @@ static umf_memory_provider_ops_t UMF_OS_MEMORY_PROVIDER_OPS = {
     .ext_open_ipc_handle = os_open_ipc_handle,
     .ext_close_ipc_handle = os_close_ipc_handle,
     .ext_ctl = os_ctl,
+    .ext_post_initialize = os_post_initialize,
 };
 
 const umf_memory_provider_ops_t *umfOsMemoryProviderOps(void) {
