@@ -36,6 +36,7 @@ static __TLS umf_result_t TLS_last_allocation_error;
 static __TLS umf_result_t TLS_last_free_error;
 
 static const size_t DEFAULT_GRANULARITY = 2 * 1024 * 1024; // 2MB
+static const char *DEFAULT_NAME = "scalable";
 
 typedef struct tbb_mem_pool_policy_t {
     raw_alloc_tbb_type pAlloc;
@@ -48,6 +49,7 @@ typedef struct tbb_mem_pool_policy_t {
 typedef struct umf_scalable_pool_params_t {
     size_t granularity;
     bool keep_all_memory;
+    char name[64];
 } umf_scalable_pool_params_t;
 
 typedef struct tbb_callbacks_t {
@@ -70,6 +72,7 @@ typedef struct tbb_callbacks_t {
 typedef struct tbb_memory_pool_t {
     umf_memory_provider_handle_t mem_provider;
     void *tbb_pool;
+    char name[64];
 } tbb_memory_pool_t;
 
 typedef enum tbb_enums_t {
@@ -216,6 +219,8 @@ umfScalablePoolParamsCreate(umf_scalable_pool_params_handle_t *hParams) {
 
     params_data->granularity = DEFAULT_GRANULARITY;
     params_data->keep_all_memory = false;
+    strncpy(params_data->name, DEFAULT_NAME, sizeof(params_data->name) - 1);
+    params_data->name[sizeof(params_data->name) - 1] = '\0';
 
     *hParams = (umf_scalable_pool_params_handle_t)params_data;
 
@@ -265,6 +270,25 @@ umfScalablePoolParamsSetKeepAllMemory(umf_scalable_pool_params_handle_t hParams,
     return UMF_RESULT_SUCCESS;
 }
 
+umf_result_t
+umfScalablePoolParamsSetName(umf_scalable_pool_params_handle_t hParams,
+                             const char *name) {
+    if (!hParams) {
+        LOG_ERR("scalable pool params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (!name) {
+        LOG_ERR("name is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    strncpy(hParams->name, name, sizeof(hParams->name) - 1);
+    hParams->name[sizeof(hParams->name) - 1] = '\0';
+
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_result_t tbb_pool_initialize(umf_memory_provider_handle_t provider,
                                         const void *params, void **pool) {
     tbb_mem_pool_policy_t policy = {.pAlloc = tbb_raw_alloc_wrapper,
@@ -275,11 +299,13 @@ static umf_result_t tbb_pool_initialize(umf_memory_provider_handle_t provider,
                                     .keep_all_memory = false,
                                     .reserved = 0};
 
+    const char *pool_name = DEFAULT_NAME;
     // If params is provided, override defaults
     if (params) {
         const umf_scalable_pool_params_t *scalable_params = params;
         policy.granularity = scalable_params->granularity;
         policy.keep_all_memory = scalable_params->keep_all_memory;
+        pool_name = scalable_params->name;
     }
 
     tbb_memory_pool_t *pool_data =
@@ -288,6 +314,8 @@ static umf_result_t tbb_pool_initialize(umf_memory_provider_handle_t provider,
         LOG_ERR("cannot allocate memory for metadata");
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
+    memset(pool_data, 0, sizeof(*pool_data));
+    snprintf(pool_data->name, sizeof(pool_data->name), "%s", pool_name);
 
     umf_result_t res = UMF_RESULT_SUCCESS;
     int ret = init_tbb_callbacks();
@@ -433,8 +461,15 @@ static umf_result_t pool_ctl(void *hPool, umf_ctl_query_source_t operationType,
 }
 
 static umf_result_t scalable_get_name(void *pool, const char **name) {
-    (void)pool; // unused
-    *name = "scalable";
+    if (!name) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    if (pool == NULL) {
+        *name = DEFAULT_NAME;
+        return UMF_RESULT_SUCCESS;
+    }
+    tbb_memory_pool_t *pool_data = (tbb_memory_pool_t *)pool;
+    *name = pool_data->name;
     return UMF_RESULT_SUCCESS;
 }
 

@@ -354,6 +354,32 @@ TEST_P(FileProviderParamsDefault, get_name) {
     ASSERT_STREQ(name, "FILE");
 }
 
+TEST(FileProviderName, custom_name) {
+    auto params = get_file_params_default(FILE_PATH);
+    ASSERT_NE(params.get(), nullptr);
+
+    const char *custom = "my_file";
+    auto ret = umfFileMemoryProviderParamsSetName(params.get(), custom);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    umf_memory_provider_handle_t prov = nullptr;
+    ret = umfMemoryProviderCreate(umfFileMemoryProviderOps(), params.get(),
+                                  &prov);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    const char *name = nullptr;
+    ret = umfMemoryProviderGetName(prov, &name);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+    EXPECT_STREQ(name, custom);
+    umfMemoryProviderDestroy(prov);
+}
+
+TEST(FileProviderName, default_name_null_handle) {
+    const char *name = nullptr;
+    auto ret = umfFileMemoryProviderOps()->get_name(nullptr, &name);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+    EXPECT_STREQ(name, "FILE");
+}
+
 TEST_P(FileProviderParamsDefault, free_size_0_ptr_not_null) {
     umf_result_t umf_result =
         umfMemoryProviderFree(provider.get(), INVALID_PTR, 0);

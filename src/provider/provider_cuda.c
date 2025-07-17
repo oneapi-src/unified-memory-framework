@@ -55,6 +55,7 @@ typedef struct cu_memory_provider_t {
     size_t min_alignment;
     unsigned int alloc_flags;
     ctl_stats_t stats;
+    char name[64];
 } cu_memory_provider_t;
 
 #define CTL_PROVIDER_TYPE cu_memory_provider_t
@@ -73,6 +74,7 @@ typedef struct umf_cuda_memory_provider_params_t {
 
     // Allocation flags for cuMemHostAlloc/cuMemAllocManaged
     unsigned int alloc_flags;
+    char name[64];
 } umf_cuda_memory_provider_params_t;
 
 typedef struct cu_ops_t {
@@ -111,6 +113,8 @@ static umf_result_t cu_memory_provider_free(void *provider, void *ptr,
                                             size_t bytes);
 
 #define TLS_MSG_BUF_LEN 1024
+
+static const char *DEFAULT_NAME = "CUDA";
 
 typedef struct cu_last_native_error_t {
     CUresult native_error;
@@ -248,6 +252,8 @@ umf_result_t umfCUDAMemoryProviderParamsCreate(
 
     params_data->memory_type = UMF_MEMORY_TYPE_UNKNOWN;
     params_data->alloc_flags = 0;
+    strncpy(params_data->name, DEFAULT_NAME, sizeof(params_data->name) - 1);
+    params_data->name[sizeof(params_data->name) - 1] = '\0';
 
     *hParams = params_data;
 
@@ -310,6 +316,24 @@ umf_result_t umfCUDAMemoryProviderParamsSetAllocFlags(
     return UMF_RESULT_SUCCESS;
 }
 
+umf_result_t umfCUDAMemoryProviderParamsSetName(
+    umf_cuda_memory_provider_params_handle_t hParams, const char *name) {
+    if (!hParams) {
+        LOG_ERR("CUDA Memory Provider params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (!name) {
+        LOG_ERR("name is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    strncpy(hParams->name, name, sizeof(hParams->name) - 1);
+    hParams->name[sizeof(hParams->name) - 1] = '\0';
+
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_result_t cu_memory_provider_initialize(const void *params,
                                                   void **provider) {
     if (params == NULL) {
@@ -345,7 +369,10 @@ static umf_result_t cu_memory_provider_initialize(const void *params,
     if (!cu_provider) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
-    memset(cu_provider, 0, sizeof(cu_memory_provider_t));
+
+    memset(cu_provider, 0, sizeof(*cu_provider));
+    snprintf(cu_provider->name, sizeof(cu_provider->name), "%s",
+             cu_params->name);
 
     // CUDA alloc functions doesn't allow to provide user alignment - get the
     // minimum one from the driver
@@ -620,8 +647,15 @@ cu_memory_provider_get_recommended_page_size(void *provider, size_t size,
 
 static umf_result_t cu_memory_provider_get_name(void *provider,
                                                 const char **name) {
-    (void)provider;
-    *name = "CUDA";
+    if (!name) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    if (provider == NULL) {
+        *name = DEFAULT_NAME;
+        return UMF_RESULT_SUCCESS;
+    }
+    cu_memory_provider_t *cu_provider = (cu_memory_provider_t *)provider;
+    *name = cu_provider->name;
     return UMF_RESULT_SUCCESS;
 }
 
@@ -786,6 +820,14 @@ umf_result_t umfCUDAMemoryProviderParamsSetAllocFlags(
     umf_cuda_memory_provider_params_handle_t hParams, unsigned int flags) {
     (void)hParams;
     (void)flags;
+    LOG_ERR("CUDA provider is disabled (UMF_BUILD_CUDA_PROVIDER is OFF)!");
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+umf_result_t umfCUDAMemoryProviderParamsSetName(
+    umf_cuda_memory_provider_params_handle_t hParams, const char *name) {
+    (void)hParams;
+    (void)name;
     LOG_ERR("CUDA provider is disabled (UMF_BUILD_CUDA_PROVIDER is OFF)!");
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }

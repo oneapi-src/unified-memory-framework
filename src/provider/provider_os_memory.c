@@ -36,6 +36,8 @@
 
 #define TLS_MSG_BUF_LEN 1024
 
+static const char *DEFAULT_NAME = "OS";
+
 typedef struct umf_os_memory_provider_params_t {
     // Combination of 'umf_mem_protection_flags_t' flags
     unsigned protection;
@@ -60,6 +62,7 @@ typedef struct umf_os_memory_provider_params_t {
     umf_numa_split_partition_t *partitions;
     /// len of the partitions array
     unsigned partitions_len;
+    char name[64];
 } umf_os_memory_provider_params_t;
 
 typedef struct os_last_native_error_t {
@@ -555,6 +558,8 @@ static umf_result_t os_initialize(const void *params, void **provider) {
     }
 
     memset(os_provider, 0, sizeof(*os_provider));
+    snprintf(os_provider->name, sizeof(os_provider->name), "%s",
+             in_params->name);
 
     int r = hwloc_topology_init(&os_provider->topo);
     if (r) {
@@ -1157,8 +1162,15 @@ static umf_result_t os_purge_force(void *provider, void *ptr, size_t size) {
 }
 
 static umf_result_t os_get_name(void *provider, const char **name) {
-    (void)provider; // unused
-    *name = "OS";
+    if (!name) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    if (provider == NULL) {
+        *name = DEFAULT_NAME;
+        return UMF_RESULT_SUCCESS;
+    }
+    os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
+    *name = os_provider->name;
     return UMF_RESULT_SUCCESS;
 }
 
@@ -1428,6 +1440,8 @@ umf_result_t umfOsMemoryProviderParamsCreate(
     params->part_size = 0;
     params->partitions = NULL;
     params->partitions_len = 0;
+    strncpy(params->name, DEFAULT_NAME, sizeof(params->name) - 1);
+    params->name[sizeof(params->name) - 1] = '\0';
 
     *hParams = params;
 
@@ -1580,6 +1594,25 @@ umf_result_t umfOsMemoryProviderParamsSetPartitions(
     umf_ba_global_free(hParams->partitions);
     hParams->partitions = new_partitions;
     hParams->partitions_len = partitions_len;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t
+umfOsMemoryProviderParamsSetName(umf_os_memory_provider_params_handle_t hParams,
+                                 const char *name) {
+    if (hParams == NULL) {
+        LOG_ERR("OS memory provider params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (name == NULL) {
+        LOG_ERR("name is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    strncpy(hParams->name, name, sizeof(hParams->name) - 1);
+    hParams->name[sizeof(hParams->name) - 1] = '\0';
 
     return UMF_RESULT_SUCCESS;
 }

@@ -202,9 +202,9 @@ TEST_F(test, create_ZERO_WEIGHT_PARTITION) {
         os_memory_provider_params, &p, 1);
     EXPECT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
-    umf_result = umfMemoryProviderCreate(umfOsMemoryProviderOps(),
-                                         &os_memory_provider_params,
-                                         &os_memory_provider);
+    umf_result =
+        umfMemoryProviderCreate(umfOsMemoryProviderOps(),
+                                os_memory_provider_params, &os_memory_provider);
 
     umfOsMemoryProviderParamsDestroy(os_memory_provider_params);
 
@@ -317,6 +317,32 @@ TEST_P(umfProviderTest, get_name) {
     umf_result_t ret = umfMemoryProviderGetName(provider.get(), &name);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
     ASSERT_STREQ(name, "OS");
+}
+
+TEST(OsProviderName, custom_name) {
+    auto params = createOsMemoryProviderParams();
+    ASSERT_NE(params.get(), nullptr);
+    const char *custom = "my_os";
+    auto ret = umfOsMemoryProviderParamsSetName(params.get(), custom);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    umf_memory_provider_handle_t prov = nullptr;
+    ret =
+        umfMemoryProviderCreate(umfOsMemoryProviderOps(), params.get(), &prov);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    const char *name = nullptr;
+    ret = umfMemoryProviderGetName(prov, &name);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+    EXPECT_STREQ(name, custom);
+    umfMemoryProviderDestroy(prov);
+}
+
+TEST(OsProviderName, default_name_null_handle) {
+    const char *name = nullptr;
+    auto ret = umfOsMemoryProviderOps()->get_name(nullptr, &name);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+    EXPECT_STREQ(name, "OS");
 }
 
 TEST_P(umfProviderTest, free_size_0_ptr_not_null) {

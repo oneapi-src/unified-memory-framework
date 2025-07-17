@@ -454,8 +454,33 @@ TEST_P(umfLevelZeroProviderTest, ctl_stats) {
                     sizeof(peak), provider);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
     ASSERT_EQ(peak, 0u);
-
     umfMemoryProviderDestroy(provider);
+}
+
+TEST_P(umfLevelZeroProviderTest, custom_name) {
+    const char *custom = "my_level_zero";
+    ASSERT_EQ(umfLevelZeroMemoryProviderParamsSetName(params, custom),
+              UMF_RESULT_SUCCESS);
+
+    umf_memory_provider_handle_t provider = nullptr;
+    umf_result_t res = umfMemoryProviderCreate(umfLevelZeroMemoryProviderOps(),
+                                               params, &provider);
+    ASSERT_EQ(res, UMF_RESULT_SUCCESS);
+    ASSERT_NE(provider, nullptr);
+
+    const char *name = nullptr;
+    res = umfMemoryProviderGetName(provider, &name);
+    ASSERT_EQ(res, UMF_RESULT_SUCCESS);
+    EXPECT_STREQ(name, custom);
+    umfMemoryProviderDestroy(provider);
+}
+
+TEST(umfLevelZeroProviderOps, default_name_null_handle) {
+    const char *name = nullptr;
+    auto ret = umfLevelZeroMemoryProviderOps()->get_name(nullptr, &name);
+
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+    EXPECT_STREQ(name, "LEVEL_ZERO");
 }
 
 TEST_P(umfLevelZeroProviderTest, allocInvalidSize) {

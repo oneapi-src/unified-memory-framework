@@ -28,17 +28,21 @@
 
 #define TLS_MSG_BUF_LEN 1024
 
+static const char *DEFAULT_NAME = "FIXED";
+
 typedef struct fixed_memory_provider_t {
     void *base;       // base address of memory
     size_t size;      // size of the memory region
     coarse_t *coarse; // coarse library handle
     ctl_stats_t stats;
+    char name[64];
 } fixed_memory_provider_t;
 
 // Fixed Memory provider settings struct
 typedef struct umf_fixed_memory_provider_params_t {
     void *ptr;
     size_t size;
+    char name[64];
 } umf_fixed_memory_provider_params_t;
 
 typedef struct fixed_last_native_error_t {
@@ -110,6 +114,8 @@ static umf_result_t fixed_initialize(const void *params, void **provider) {
     }
 
     memset(fixed_provider, 0, sizeof(*fixed_provider));
+    snprintf(fixed_provider->name, sizeof(fixed_provider->name), "%s",
+             in_params->name);
 
     coarse_params_t coarse_params = {0};
     coarse_params.provider = fixed_provider;
@@ -251,8 +257,16 @@ static umf_result_t fixed_purge_force(void *provider, void *ptr, size_t size) {
 }
 
 static umf_result_t fixed_get_name(void *provider, const char **name) {
-    (void)provider; // unused
-    *name = "FIXED";
+    if (!name) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    if (provider == NULL) {
+        *name = DEFAULT_NAME;
+        return UMF_RESULT_SUCCESS;
+    }
+    fixed_memory_provider_t *fixed_provider =
+        (fixed_memory_provider_t *)provider;
+    *name = fixed_provider->name;
     return UMF_RESULT_SUCCESS;
 }
 
@@ -333,6 +347,9 @@ umf_result_t umfFixedMemoryProviderParamsCreate(
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
+    strncpy(params->name, DEFAULT_NAME, sizeof(params->name) - 1);
+    params->name[sizeof(params->name) - 1] = '\0';
+
     umf_result_t ret = umfFixedMemoryProviderParamsSetMemory(params, ptr, size);
     if (ret != UMF_RESULT_SUCCESS) {
         umf_ba_global_free(params);
@@ -373,5 +390,23 @@ umf_result_t umfFixedMemoryProviderParamsSetMemory(
 
     hParams->ptr = ptr;
     hParams->size = size;
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t umfFixedMemoryProviderParamsSetName(
+    umf_fixed_memory_provider_params_handle_t hParams, const char *name) {
+    if (hParams == NULL) {
+        LOG_ERR("Memory Provider params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (name == NULL) {
+        LOG_ERR("name is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    strncpy(hParams->name, name, sizeof(hParams->name) - 1);
+    hParams->name[sizeof(hParams->name) - 1] = '\0';
+
     return UMF_RESULT_SUCCESS;
 }

@@ -195,3 +195,40 @@ TEST(scalablePoolTest, scalablePoolName) {
     umfMemoryProviderDestroy(provider);
     umfOsMemoryProviderParamsDestroy(provider_params);
 }
+
+TEST(scalablePoolTest, scalablePoolCustomName) {
+    umf_memory_pool_handle_t pool = nullptr;
+    umf_os_memory_provider_params_handle_t provider_params = nullptr;
+    umf_memory_provider_handle_t provider = nullptr;
+
+    auto ret = umfOsMemoryProviderParamsCreate(&provider_params);
+    ret = umfMemoryProviderCreate(umfOsMemoryProviderOps(), provider_params,
+                                  &provider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    umf_scalable_pool_params_handle_t params = nullptr;
+    ret = umfScalablePoolParamsCreate(&params);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(umfScalablePoolParamsSetName(params, "custom_scalable"),
+              UMF_RESULT_SUCCESS);
+
+    ret = umfPoolCreate(umfScalablePoolOps(), provider, params, 0, &pool);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    const char *name = nullptr;
+    ret = umfPoolGetName(pool, &name);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    EXPECT_STREQ(name, "custom_scalable");
+
+    umfPoolDestroy(pool);
+    umfScalablePoolParamsDestroy(params);
+    umfMemoryProviderDestroy(provider);
+    umfOsMemoryProviderParamsDestroy(provider_params);
+}
+
+TEST(scalablePoolTest, default_name_null_handle) {
+    const char *name = nullptr;
+    EXPECT_EQ(umfScalablePoolOps()->get_name(nullptr, &name),
+              UMF_RESULT_SUCCESS);
+    EXPECT_STREQ(name, "scalable");
+}
