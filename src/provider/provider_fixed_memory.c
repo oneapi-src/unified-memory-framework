@@ -297,6 +297,13 @@ static umf_result_t fixed_free(void *provider, void *ptr, size_t size) {
     return ret;
 }
 
+static umf_result_t fixed_post_initialize(const void *params, void *provider) {
+    (void)params;
+    (void)provider;
+    // For initial version, just return success
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_result_t fixed_ctl(void *provider,
                               umf_ctl_query_source_t operationType,
                               const char *name, void *arg, size_t size,
@@ -325,7 +332,8 @@ static umf_memory_provider_ops_t UMF_FIXED_MEMORY_PROVIDER_OPS = {
     .ext_put_ipc_handle = NULL,
     .ext_open_ipc_handle = NULL,
     .ext_close_ipc_handle = NULL,
-    .ext_ctl = fixed_ctl};
+    .ext_ctl = fixed_ctl,
+    .ext_post_initialize = fixed_post_initialize};
 
 const umf_memory_provider_ops_t *umfFixedMemoryProviderOps(void) {
     return &UMF_FIXED_MEMORY_PROVIDER_OPS;

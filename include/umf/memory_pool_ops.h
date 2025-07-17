@@ -22,7 +22,7 @@ extern "C" {
 /// @brief Version of the Memory Pool ops structure.
 /// NOTE: This is equal to the latest UMF version, in which the ops structure
 /// has been modified.
-#define UMF_POOL_OPS_VERSION_CURRENT UMF_MAKE_VERSION(1, 0)
+#define UMF_POOL_OPS_VERSION_CURRENT UMF_MAKE_VERSION(1, 1)
 
 ///
 /// @brief This structure comprises function pointers used by corresponding umfPool*
@@ -165,6 +165,18 @@ typedef struct umf_memory_pool_ops_t {
     umf_result_t (*ext_ctl)(void *hPool, umf_ctl_query_source_t source,
                             const char *name, void *arg, size_t size,
                             umf_ctl_query_type_t queryType, va_list args);
+
+    ///
+    /// @brief Post-initializes memory pool.
+    /// @param provider memory provider that will be used for coarse-grain allocations.
+    ///        Should contain at least one memory provider.
+    /// @param numProvider number of elements in the providers array
+    /// @param params pool-specific params, or NULL for defaults
+    /// @param pool [out] returns pointer to the pool
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+    ///
+    umf_result_t (*ext_post_initialize)(umf_memory_provider_handle_t provider,
+                                        const void *params, void *pool);
 
 } umf_memory_pool_ops_t;
 

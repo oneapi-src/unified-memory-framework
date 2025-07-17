@@ -200,11 +200,26 @@ static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
     }
 
     umf_result_t ret = UMF_RESULT_SUCCESS;
-
+    umf_memory_pool_ops_t compatible_ops;
     if (ops->version != UMF_POOL_OPS_VERSION_CURRENT) {
         LOG_WARN("Memory Pool ops version \"%d\" is different than the current "
                  "version \"%d\"",
                  ops->version, UMF_POOL_OPS_VERSION_CURRENT);
+
+        // Create a new ops compatible structure with the current version
+        memset(&compatible_ops, 0, sizeof(compatible_ops));
+        if (UMF_MINOR_VERSION(ops->version) == 0) {
+            LOG_INFO("Detected 1.0 version of Memory Pool ops, "
+                     "upgrading to current version");
+            memcpy(&compatible_ops, ops,
+                   offsetof(umf_memory_pool_ops_t, ext_post_initialize));
+        } else {
+            LOG_ERR("Memory Pool ops unknown version, which \"%d\" is not "
+                    "supported",
+                    ops->version);
+            return UMF_RESULT_ERROR_NOT_SUPPORTED;
+        }
+        ops = &compatible_ops;
     }
 
     umf_memory_pool_handle_t pool =
@@ -261,7 +276,16 @@ static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
         }
     }
 
+    if (ops->ext_post_initialize != NULL) {
+        ret = ops->ext_post_initialize(pool->provider, params, pool->pool_priv);
+        if (ret != UMF_RESULT_SUCCESS) {
+            LOG_ERR("Failed to post-initialize pool");
+            goto err_pool_init;
+        }
+    }
+
     *hPool = pool;
+
     LOG_INFO("Memory pool created: %p", (void *)pool);
     return UMF_RESULT_SUCCESS;
 
