@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <umf/base.h>
 #include <umf/memory_provider.h>
@@ -134,6 +135,25 @@ umfDefaultCtlHandle(void *provider, umf_ctl_query_source_t operationType,
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
+static umf_result_t
+umfDefaultGetAllocationProperties(void *provider, const void *ptr,
+                                  umf_memory_property_id_t propertyId,
+                                  void *propertyValue) {
+    (void)provider;
+    (void)ptr;
+    (void)propertyId;
+    (void)propertyValue;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+static umf_result_t umfDefaultGetAllocationPropertiesSize(
+    void *provider, umf_memory_property_id_t propertyId, size_t *size) {
+    (void)provider;
+    (void)propertyId;
+    (void)size;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
 void assignOpsExtDefaults(umf_memory_provider_ops_t *ops) {
     if (!ops->ext_purge_lazy) {
         ops->ext_purge_lazy = umfDefaultPurgeLazy;
@@ -153,6 +173,15 @@ void assignOpsExtDefaults(umf_memory_provider_ops_t *ops) {
 
     if (!ops->ext_ctl) {
         ops->ext_ctl = umfDefaultCtlHandle;
+    }
+
+    if (!ops->ext_get_allocation_properties) {
+        ops->ext_get_allocation_properties = umfDefaultGetAllocationProperties;
+    }
+
+    if (!ops->ext_get_allocation_properties_size) {
+        ops->ext_get_allocation_properties_size =
+            umfDefaultGetAllocationPropertiesSize;
     }
 }
 
@@ -214,6 +243,14 @@ static bool validateOps(const umf_memory_provider_ops_t *ops) {
         return false;
     }
 
+    if ((ops->ext_get_allocation_properties == NULL) !=
+        (ops->ext_get_allocation_properties_size == NULL)) {
+        LOG_ERR("ext_get_allocation_properties and "
+                "ext_get_allocation_properties_size must be "
+                "both set or both NULL\n");
+        return false;
+    }
+
     return true;
 }
 
@@ -221,14 +258,36 @@ umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
                                      const void *params,
                                      umf_memory_provider_handle_t *hProvider) {
     libumfInit();
-    if (!ops || !hProvider || !validateOps(ops)) {
+    if (!ops || !hProvider) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
+    umf_memory_provider_ops_t compatible_ops;
     if (ops->version != UMF_PROVIDER_OPS_VERSION_CURRENT) {
         LOG_WARN("Memory Provider ops version \"%d\" is different than the "
                  "current version \"%d\"",
                  ops->version, UMF_PROVIDER_OPS_VERSION_CURRENT);
+
+        // Create a new ops compatible structure with the current version
+        memset(&compatible_ops, 0, sizeof(compatible_ops));
+
+        if (UMF_MINOR_VERSION(ops->version) == 0) {
+            LOG_INFO("Detected 1.0 version of Memory Provider ops, "
+                     "upgrading to current version");
+            memcpy(&compatible_ops, ops,
+                   offsetof(umf_memory_provider_ops_t,
+                            ext_get_allocation_properties));
+        } else {
+            LOG_ERR("Unsupported Memory Provider ops version: %d",
+                    ops->version);
+            return UMF_RESULT_ERROR_NOT_SUPPORTED;
+        }
+
+        ops = &compatible_ops;
+    }
+
+    if (!validateOps(ops)) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
     umf_memory_provider_handle_t provider =
@@ -503,6 +562,46 @@ umfMemoryProviderCloseIPCHandle(umf_memory_provider_handle_t hProvider,
     ASSERT(hProvider->ops.ext_close_ipc_handle);
     umf_result_t res = hProvider->ops.ext_close_ipc_handle(
         hProvider->provider_priv, ptr, size);
+
+    checkErrorAndSetLastProvider(res, hProvider);
+    return res;
+}
+
+umf_result_t umfMemoryProviderGetAllocationProperties(
+    umf_memory_provider_handle_t hProvider, const void *ptr,
+    umf_memory_property_id_t propertyId, void *property_value) {
+
+    UMF_CHECK((hProvider != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    UMF_CHECK((property_value != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    UMF_CHECK((propertyId != UMF_MEMORY_PROPERTY_INVALID),
+              UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    // NOTE: we do not check if the propertyId is below
+    // UMF_MEMORY_PROPERTY_MAX_RESERVED value, as the user could use a custom
+    // property ID that is above the reserved range
+
+    umf_result_t res = hProvider->ops.ext_get_allocation_properties(
+        hProvider->provider_priv, ptr, propertyId, property_value);
+
+    checkErrorAndSetLastProvider(res, hProvider);
+    return res;
+}
+
+umf_result_t umfMemoryProviderGetAllocationPropertiesSize(
+    umf_memory_provider_handle_t hProvider, umf_memory_property_id_t propertyId,
+    size_t *size) {
+
+    UMF_CHECK((hProvider != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    UMF_CHECK((size != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    UMF_CHECK((propertyId != UMF_MEMORY_PROPERTY_INVALID),
+              UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    // NOTE: we do not check if the propertyId is below
+    // UMF_MEMORY_PROPERTY_MAX_RESERVED value, as the user could use a custom
+    // property ID that is above the reserved range
+
+    umf_result_t res = hProvider->ops.ext_get_allocation_properties_size(
+        hProvider->provider_priv, propertyId, size);
 
     checkErrorAndSetLastProvider(res, hProvider);
     return res;

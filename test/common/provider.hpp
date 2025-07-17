@@ -130,6 +130,29 @@ typedef struct provider_base_t {
                                       [[maybe_unused]] size_t size) noexcept {
         return UMF_RESULT_ERROR_UNKNOWN;
     }
+
+    umf_result_t ext_ctl([[maybe_unused]] umf_ctl_query_source_t source,
+                         [[maybe_unused]] const char *name,
+                         [[maybe_unused]] void *arg,
+                         [[maybe_unused]] size_t size,
+                         [[maybe_unused]] umf_ctl_query_type_t queryType,
+                         [[maybe_unused]] va_list args) noexcept {
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
+
+    umf_result_t ext_get_allocation_properties(
+        [[maybe_unused]] const void *ptr,
+        [[maybe_unused]] umf_memory_property_id_t memory_property_id,
+        [[maybe_unused]] void *value) noexcept {
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
+
+    umf_result_t ext_get_allocation_properties_size(
+        [[maybe_unused]] umf_memory_property_id_t memory_property_id,
+        [[maybe_unused]] size_t *size) noexcept {
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
+
     virtual ~provider_base_t() = default;
 } provider_base_t;
 

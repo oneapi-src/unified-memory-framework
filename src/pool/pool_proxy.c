@@ -100,11 +100,22 @@ static umf_result_t proxy_free(void *pool, void *ptr) {
     struct proxy_memory_pool *hPool = (struct proxy_memory_pool *)pool;
 
     if (ptr) {
-        umf_alloc_info_t allocInfo = {NULL, 0, NULL};
-        umf_result_t umf_result = umfMemoryTrackerGetAllocInfo(ptr, &allocInfo);
-        if (umf_result == UMF_RESULT_SUCCESS) {
-            size = allocInfo.baseSize;
+        umf_memory_properties_handle_t props = NULL;
+        umf_result_t umf_result = umfGetMemoryPropertiesHandle(ptr, &props);
+
+        if (umf_result != UMF_RESULT_SUCCESS) {
+            TLS_last_allocation_error = umf_result;
+            LOG_ERR("failed to get allocation info from the memory tracker");
+            return umf_result;
         }
+
+        if (props == NULL) {
+            TLS_last_allocation_error = UMF_RESULT_ERROR_UNKNOWN;
+            LOG_ERR("failed to get allocation info from the memory tracker");
+            return UMF_RESULT_ERROR_UNKNOWN;
+        }
+
+        size = props->base_size;
     }
 
     return umfMemoryProviderFree(hPool->hProvider, ptr, size);

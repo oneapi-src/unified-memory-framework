@@ -170,6 +170,26 @@ Memtarget
 .. doxygenfile:: experimental/memtarget.h
     :sections: define enum typedef func
 
+Memory Properties
+==========================================
+
+Memory properties in UMF describe the characteristics and capabilities of 
+different memory regions or allocations. These properties can include 
+information such as memory type, allocation size, context and device used for 
+allocation, and other attributes that are relevant for memory management.
+
+The Memory Properties API allows users to retrieve and interpret these 
+attributes for memory managed by UMF, enabling advanced memory management 
+strategies and improved interoperability with heterogeneous systems.
+
+.. note::
+   The memory properties APIs are experimental and may change in future releases.
+
+Memory Properties
+------------------------------------------
+.. doxygenfile::  experimental/memory_properties.h
+    :sections: define enum typedef func var
+
 Inter-Process Communication
 ==========================================
 

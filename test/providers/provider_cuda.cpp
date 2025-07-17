@@ -10,6 +10,7 @@
 #include <mutex>
 
 #include <umf/experimental/ctl.h>
+#include <umf/experimental/memory_properties.h>
 #include <umf/providers/provider_cuda.h>
 
 #include "cuda_helpers.h"
@@ -580,6 +581,87 @@ TEST_P(umfCUDAProviderTest, multiContext) {
     ASSERT_EQ(ret, 0);
     ret = destroy_context(ctx2);
     ASSERT_EQ(ret, 0);
+}
+
+TEST_P(umfCUDAProviderTest, memProps) {
+    umf_memory_provider_handle_t provider = nullptr;
+    umf_result_t umf_result =
+        umfMemoryProviderCreate(umfCUDAMemoryProviderOps(), params, &provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(provider, nullptr);
+
+    umf_memory_pool_handle_t pool = NULL;
+    umf_result = umfPoolCreate(umfProxyPoolOps(), provider, NULL, 0, &pool);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    size_t size = 1024;
+    void *ptr = umfPoolMalloc(pool, size);
+    ASSERT_NE(ptr, nullptr);
+
+    umf_memory_properties_handle_t props_handle = NULL;
+    umf_result_t result = umfGetMemoryPropertiesHandle(ptr, &props_handle);
+    ASSERT_EQ(result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(props_handle, nullptr);
+
+    umf_usm_memory_type_t type = UMF_MEMORY_TYPE_UNKNOWN;
+    result = umfGetMemoryProperty(
+        props_handle, UMF_MEMORY_PROPERTY_POINTER_TYPE, &type, sizeof(type));
+    ASSERT_EQ(result, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(type, expected_memory_type);
+
+    void *baseAddress = nullptr;
+    result =
+        umfGetMemoryProperty(props_handle, UMF_MEMORY_PROPERTY_BASE_ADDRESS,
+                             &baseAddress, sizeof(baseAddress));
+    ASSERT_EQ(result, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(baseAddress, ptr);
+
+    size_t baseSize = 0;
+    result = umfGetMemoryProperty(props_handle, UMF_MEMORY_PROPERTY_BASE_SIZE,
+                                  &baseSize, sizeof(baseSize));
+    ASSERT_EQ(result, UMF_RESULT_SUCCESS);
+    ASSERT_GE(baseSize, size);
+
+    int64_t bufferId = 0;
+    result = umfGetMemoryProperty(props_handle, UMF_MEMORY_PROPERTY_BUFFER_ID,
+                                  &bufferId, sizeof(bufferId));
+    ASSERT_EQ(result, UMF_RESULT_SUCCESS);
+    ASSERT_GE(bufferId, 0);
+
+    if (expected_memory_type != UMF_MEMORY_TYPE_HOST) {
+        CUdevice device = -1;
+        result = umfGetMemoryProperty(props_handle, UMF_MEMORY_PROPERTY_DEVICE,
+                                      &device, sizeof(device));
+        ASSERT_EQ(result, UMF_RESULT_SUCCESS);
+        ASSERT_EQ(device, cudaTestHelper.get_test_device());
+    }
+
+    CUcontext context = nullptr;
+    result = umfGetMemoryProperty(props_handle, UMF_MEMORY_PROPERTY_CONTEXT,
+                                  &context, sizeof(context));
+    ASSERT_EQ(result, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(context, cudaTestHelper.get_test_context());
+
+    // check the props of pointer from the middle of alloc
+    void *midPtr = static_cast<char *>(ptr) + size / 2;
+    result = umfGetMemoryPropertiesHandle(midPtr, &props_handle);
+    ASSERT_EQ(result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(props_handle, nullptr);
+    result = umfGetMemoryProperty(
+        props_handle, UMF_MEMORY_PROPERTY_POINTER_TYPE, &type, sizeof(type));
+    ASSERT_EQ(result, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(type, expected_memory_type);
+
+    result =
+        umfGetMemoryProperty(props_handle, UMF_MEMORY_PROPERTY_BASE_ADDRESS,
+                             &baseAddress, sizeof(baseAddress));
+    ASSERT_EQ(result, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(baseAddress, ptr);
+
+    umfFree(ptr);
+
+    umfPoolDestroy(pool);
+    umfMemoryProviderDestroy(provider);
 }
 
 struct umfCUDAProviderAllocFlagsTest
