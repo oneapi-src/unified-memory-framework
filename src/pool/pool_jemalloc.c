@@ -21,6 +21,7 @@
 #include <umf/memory_pool_ops.h>
 #include <umf/pools/pool_jemalloc.h>
 
+#define UMF_POOL_JEMALLOC_ENABLED
 #ifndef UMF_POOL_JEMALLOC_ENABLED
 
 const umf_memory_pool_ops_t *umfJemallocPoolOps(void) { return NULL; }
