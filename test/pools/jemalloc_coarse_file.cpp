@@ -28,4 +28,5 @@ INSTANTIATE_TEST_SUITE_P(jemallocCoarseFileTest, umfPoolTest,
                          ::testing::Values(poolCreateExtParams{
                              umfJemallocPoolOps(), nullptr, nullptr,
                              umfFileMemoryProviderOps(), getFileParamsDefault,
-                             destroyFileParams}));
+                             destroyFileParams}),
+                         poolCreateExtParamsNameGen);

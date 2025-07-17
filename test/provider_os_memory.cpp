@@ -2,18 +2,18 @@
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-#include "base.hpp"
-
-#include "ipcFixtures.hpp"
-#include "test_helpers.h"
-#include "utils/cpp_helpers.hpp"
-
 #include <umf/memory_provider.h>
 #include <umf/pools/pool_disjoint.h>
 #include <umf/providers/provider_os_memory.h>
 #ifdef UMF_POOL_JEMALLOC_ENABLED
 #include <umf/pools/pool_jemalloc.h>
 #endif
+
+#include "base.hpp"
+#include "ipcFixtures.hpp"
+#include "provider.hpp"
+#include "test_helpers.h"
+#include "utils/cpp_helpers.hpp"
 
 using umf_test::test;
 
@@ -42,23 +42,6 @@ static int compare_native_error_str(const char *message, int error) {
     const char *error_str = Native_error_str[error - UMF_OS_RESULT_SUCCESS];
     size_t len = strlen(error_str);
     return strncmp(message, error_str, len);
-}
-
-using providerCreateExtParams =
-    std::tuple<const umf_memory_provider_ops_t *, void *>;
-
-static void providerCreateExt(providerCreateExtParams params,
-                              umf_test::provider_unique_handle_t *handle) {
-    umf_memory_provider_handle_t hProvider = nullptr;
-    auto [provider_ops, provider_params] = params;
-
-    auto ret =
-        umfMemoryProviderCreate(provider_ops, provider_params, &hProvider);
-    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
-    ASSERT_NE(hProvider, nullptr);
-
-    *handle = umf_test::provider_unique_handle_t(hProvider,
-                                                 &umfMemoryProviderDestroy);
 }
 
 struct umfProviderTest
@@ -247,7 +230,8 @@ auto defaultParams = createOsMemoryProviderParams();
 
 INSTANTIATE_TEST_SUITE_P(osProviderTest, umfProviderTest,
                          ::testing::Values(providerCreateExtParams{
-                             umfOsMemoryProviderOps(), defaultParams.get()}));
+                             umfOsMemoryProviderOps(), defaultParams.get()}),
+                         providerCreateExtParamsNameGen);
 
 TEST_P(umfProviderTest, create_destroy) {}
 
@@ -504,4 +488,5 @@ static std::vector<ipcTestParams> ipcTestParamsList = {
 };
 
 INSTANTIATE_TEST_SUITE_P(osProviderTest, umfIpcTest,
-                         ::testing::ValuesIn(ipcTestParamsList));
+                         ::testing::ValuesIn(ipcTestParamsList),
+                         ipcTestParamsNameGen);

@@ -499,7 +499,8 @@ INSTANTIATE_TEST_SUITE_P(disjointPoolTests, umfPoolTest,
                          ::testing::Values(poolCreateExtParams{
                              umfDisjointPoolOps(), defaultDisjointPoolConfig,
                              defaultDisjointPoolConfigDestroy,
-                             &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr}));
+                             &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr}),
+                         poolCreateExtParamsNameGen);
 
 void *memProviderParams() { return (void *)&DEFAULT_DISJOINT_CAPACITY; }
 
@@ -510,10 +511,15 @@ INSTANTIATE_TEST_SUITE_P(
                             defaultDisjointPoolConfigDestroy,
                             &MOCK_OUT_OF_MEM_PROVIDER_OPS, memProviderParams,
                             nullptr},
-        static_cast<int>(DEFAULT_DISJOINT_CAPACITY) / 2)));
+        static_cast<int>(DEFAULT_DISJOINT_CAPACITY) / 2)),
+    ([](auto) {
+        return std::string("disjoint_out_of_mem_capacity_") +
+               std::to_string(static_cast<int>(DEFAULT_DISJOINT_CAPACITY) / 2);
+    }));
 
 INSTANTIATE_TEST_SUITE_P(disjointMultiPoolTests, umfMultiPoolTest,
                          ::testing::Values(poolCreateExtParams{
                              umfDisjointPoolOps(), defaultDisjointPoolConfig,
                              defaultDisjointPoolConfigDestroy,
-                             &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr}));
+                             &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr}),
+                         poolCreateExtParamsNameGen);

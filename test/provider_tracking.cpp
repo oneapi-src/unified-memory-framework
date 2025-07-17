@@ -2,39 +2,22 @@
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-#include "base.hpp"
+#include <umf/memory_provider.h>
+#include <umf/pools/pool_proxy.h>
+#include <umf/providers/provider_fixed_memory.h>
 
+#include "base.hpp"
+#include "provider.hpp"
 #include "test_helpers.h"
 #include "utils/cpp_helpers.hpp"
 #ifndef _WIN32
 #include "test_helpers_linux.h"
 #endif
 
-#include <umf/memory_provider.h>
-#include <umf/pools/pool_proxy.h>
-#include <umf/providers/provider_fixed_memory.h>
-
 using umf_test::test;
 
 #define FIXED_BUFFER_SIZE (512 * utils_get_page_size())
 #define INVALID_PTR ((void *)0x01)
-
-using providerCreateExtParams =
-    std::tuple<const umf_memory_provider_ops_t *, void *>;
-
-static void providerCreateExt(providerCreateExtParams params,
-                              umf_test::provider_unique_handle_t *handle) {
-    umf_memory_provider_handle_t hProvider = nullptr;
-    auto [provider_ops, provider_params] = params;
-
-    auto ret =
-        umfMemoryProviderCreate(provider_ops, provider_params, &hProvider);
-    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
-    ASSERT_NE(hProvider, nullptr);
-
-    *handle = umf_test::provider_unique_handle_t(hProvider,
-                                                 &umfMemoryProviderDestroy);
-}
 
 struct TrackingProviderTest
     : umf_test::test,
@@ -121,7 +104,8 @@ createPoolFromAllocation(void *ptr0, size_t size1,
 
 INSTANTIATE_TEST_SUITE_P(trackingProviderTest, TrackingProviderTest,
                          ::testing::Values(providerCreateExtParams{
-                             umfFixedMemoryProviderOps(), nullptr}));
+                             umfFixedMemoryProviderOps(), nullptr}),
+                         providerCreateExtParamsNameGen);
 
 TEST_P(TrackingProviderTest, create_destroy) {
     // Creation and destruction are handled in SetUp and TearDown

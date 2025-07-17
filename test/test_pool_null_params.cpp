@@ -55,7 +55,22 @@ const PoolOpsFn poolOpsList[] = {
     &umfProxyPoolOps
 #endif
         &umfDisjointPoolOps};
+
+static const char *poolOpsNames[] = {
+#if defined(UMF_POOL_SCALABLE_ENABLED)
+    "umfScalablePoolOps",
+#endif
+#if defined(UMF_POOL_JEMALLOC_ENABLED)
+    "umfJemallocPoolOps",
+#endif
+#if defined(UMF_POOL_PROXY_ENABLED)
+    "umfProxyPoolOps",
+#endif
+    "umfDisjointPoolOps"};
 } // namespace
 
 INSTANTIATE_TEST_SUITE_P(poolNullParamsTest, PoolNullParamsTest,
-                         ::testing::ValuesIn(poolOpsList));
+                         ::testing::ValuesIn(poolOpsList),
+                         ([](auto const &info) -> std::string {
+                             return poolOpsNames[info.index];
+                         }));

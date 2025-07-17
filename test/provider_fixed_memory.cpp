@@ -2,17 +2,17 @@
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-#include "base.hpp"
+#include <umf/memory_provider.h>
+#include <umf/pools/pool_proxy.h>
+#include <umf/providers/provider_fixed_memory.h>
 
+#include "base.hpp"
+#include "provider.hpp"
 #include "test_helpers.h"
 #include "utils/cpp_helpers.hpp"
 #ifndef _WIN32
 #include "test_helpers_linux.h"
 #endif
-
-#include <umf/memory_provider.h>
-#include <umf/pools/pool_proxy.h>
-#include <umf/providers/provider_fixed_memory.h>
 
 using umf_test::test;
 
@@ -36,23 +36,6 @@ static int compare_native_error_str(const char *message, int error) {
     const char *error_str = Native_error_str[error - UMF_FIXED_RESULT_SUCCESS];
     size_t len = strlen(error_str);
     return strncmp(message, error_str, len);
-}
-
-using providerCreateExtParams =
-    std::tuple<const umf_memory_provider_ops_t *, void *>;
-
-static void providerCreateExt(providerCreateExtParams params,
-                              umf_test::provider_unique_handle_t *handle) {
-    umf_memory_provider_handle_t hProvider = nullptr;
-    auto [provider_ops, provider_params] = params;
-
-    auto ret =
-        umfMemoryProviderCreate(provider_ops, provider_params, &hProvider);
-    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
-    ASSERT_NE(hProvider, nullptr);
-
-    *handle = umf_test::provider_unique_handle_t(hProvider,
-                                                 &umfMemoryProviderDestroy);
 }
 
 struct FixedProviderTest
@@ -154,7 +137,8 @@ struct FixedProviderTest
 
 INSTANTIATE_TEST_SUITE_P(fixedProviderTest, FixedProviderTest,
                          ::testing::Values(providerCreateExtParams{
-                             umfFixedMemoryProviderOps(), nullptr}));
+                             umfFixedMemoryProviderOps(), nullptr}),
+                         providerCreateExtParamsNameGen);
 
 TEST_P(FixedProviderTest, create_destroy) {
     // Creation and destruction are handled in SetUp and TearDown

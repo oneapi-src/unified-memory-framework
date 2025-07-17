@@ -5,21 +5,21 @@
 #ifndef UMF_TEST_IPC_FIXTURES_HPP
 #define UMF_TEST_IPC_FIXTURES_HPP
 
-#include "base.hpp"
-#include "multithread_helpers.hpp"
-#include "pool.hpp"
-#include "test_helpers.h"
+#include <algorithm>
+#include <cstring>
+#include <numeric>
+#include <random>
+#include <tuple>
 
 #include <umf/ipc.h>
 #include <umf/memory_pool.h>
 #include <umf/memory_provider.h>
 #include <umf/pools/pool_proxy.h>
 
-#include <algorithm>
-#include <cstring>
-#include <numeric>
-#include <random>
-#include <tuple>
+#include "base.hpp"
+#include "multithread_helpers.hpp"
+#include "pool.hpp"
+#include "test_helpers.h"
 
 class MemoryAccessor {
   public:
@@ -27,6 +27,7 @@ class MemoryAccessor {
     virtual void fill(void *ptr, size_t size, const void *pattern,
                       size_t pattern_size) = 0;
     virtual void copy(void *dst_ptr, void *src_ptr, size_t size) = 0;
+    virtual const char *getName() = 0;
 };
 
 class HostMemoryAccessor : public MemoryAccessor {
@@ -47,6 +48,8 @@ class HostMemoryAccessor : public MemoryAccessor {
     void copy(void *dst_ptr, void *src_ptr, size_t size) override {
         std::memcpy(dst_ptr, src_ptr, size);
     }
+
+    const char *getName() override { return "HostMemoryAccessor"; }
 };
 
 typedef void *(*pfnPoolParamsCreate)();
@@ -64,6 +67,29 @@ using ipcTestParams =
                pfnPoolParamsDestroy, const umf_memory_provider_ops_t *,
                pfnProviderParamsCreate, pfnProviderParamsDestroy,
                MemoryAccessor *>;
+
+std::string
+ipcTestParamsNameGen(const ::testing::TestParamInfo<ipcTestParams> &info) {
+    const umf_memory_pool_ops_t *pool_ops = std::get<0>(info.param);
+    const umf_memory_provider_ops_t *provider_ops = std::get<3>(info.param);
+
+    const char *poolName = NULL;
+    pool_ops->get_name(NULL, &poolName);
+
+    const char *providerName = NULL;
+    provider_ops->get_name(NULL, &providerName);
+
+    // if there are multiple cases with the same pool and provider combination,
+    // add index to the name
+    std::string poolParams = std::get<1>(info.param)
+                                 ? "_w_params_" + std::to_string(info.index)
+                                 : "";
+
+    MemoryAccessor *memAccessor = std::get<6>(info.param);
+
+    return std::string(poolName) + poolParams + "_" + providerName + "_" +
+           memAccessor->getName();
+}
 
 struct umfIpcTest : umf_test::test,
                     ::testing::WithParamInterface<ipcTestParams> {

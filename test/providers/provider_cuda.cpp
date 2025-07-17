@@ -106,7 +106,7 @@ class CUDAMemoryAccessor : public MemoryAccessor {
         : hDevice_(hDevice), hContext_(hContext) {}
 
     void fill(void *ptr, size_t size, const void *pattern,
-              size_t pattern_size) {
+              size_t pattern_size) override {
         ASSERT_NE(hContext_, nullptr);
         ASSERT_GE(hDevice_, -1);
         ASSERT_NE(ptr, nullptr);
@@ -116,7 +116,7 @@ class CUDAMemoryAccessor : public MemoryAccessor {
         ASSERT_EQ(ret, 0);
     }
 
-    void copy(void *dst_ptr, void *src_ptr, size_t size) {
+    void copy(void *dst_ptr, void *src_ptr, size_t size) override {
         ASSERT_NE(hContext_, nullptr);
         ASSERT_GE(hDevice_, -1);
         ASSERT_NE(dst_ptr, nullptr);
@@ -125,6 +125,8 @@ class CUDAMemoryAccessor : public MemoryAccessor {
         int ret = cuda_copy(hContext_, hDevice_, dst_ptr, src_ptr, size);
         ASSERT_EQ(ret, 0);
     }
+
+    const char *getName() override { return "CUDAMemoryAccessor"; }
 
   private:
     CUdevice hDevice_;
@@ -608,9 +610,16 @@ TEST_P(umfCUDAProviderAllocFlagsTest, reuseParams) {
 // TODO add tests that mixes CUDA Memory Provider and Disjoint Pool
 
 INSTANTIATE_TEST_SUITE_P(umfCUDAProviderTestSuite, umfCUDAProviderTest,
-                         ::testing::Values(UMF_MEMORY_TYPE_DEVICE,
+                         ::testing::Values(UMF_MEMORY_TYPE_HOST,
                                            UMF_MEMORY_TYPE_SHARED,
-                                           UMF_MEMORY_TYPE_HOST));
+                                           UMF_MEMORY_TYPE_DEVICE),
+                         ([](auto const &info) -> std::string {
+                             static const char *names[] = {
+                                 "UMF_MEMORY_TYPE_HOST",
+                                 "UMF_MEMORY_TYPE_SHARED",
+                                 "UMF_MEMORY_TYPE_DEVICE"};
+                             return names[info.index];
+                         }));
 
 INSTANTIATE_TEST_SUITE_P(
     umfCUDAProviderAllocFlagsTestSuite, umfCUDAProviderAllocFlagsTest,
@@ -619,7 +628,13 @@ INSTANTIATE_TEST_SUITE_P(
         std::make_tuple(UMF_MEMORY_TYPE_SHARED, CU_MEM_ATTACH_HOST),
         std::make_tuple(UMF_MEMORY_TYPE_HOST, CU_MEMHOSTALLOC_PORTABLE),
         std::make_tuple(UMF_MEMORY_TYPE_HOST, CU_MEMHOSTALLOC_DEVICEMAP),
-        std::make_tuple(UMF_MEMORY_TYPE_HOST, CU_MEMHOSTALLOC_WRITECOMBINED)));
+        std::make_tuple(UMF_MEMORY_TYPE_HOST, CU_MEMHOSTALLOC_WRITECOMBINED)),
+    ([](auto const &info) -> std::string {
+        static const char *names[] = {"SHARED_GLOBAL", "SHARED_HOST",
+                                      "HOST_PORTABLE", "HOST_DEVICEMAP",
+                                      "HOST_WRITECOMBINED"};
+        return names[info.index];
+    }));
 
 // TODO: add IPC API
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(umfIpcTest);

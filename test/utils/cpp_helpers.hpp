@@ -10,11 +10,6 @@
 #ifndef UMF_TEST_HELPERS_HPP
 #define UMF_TEST_HELPERS_HPP 1
 
-#include <umf/memory_pool.h>
-#include <umf/memory_pool_ops.h>
-#include <umf/memory_provider.h>
-#include <umf/memory_provider_ops.h>
-
 #include <array>
 #include <functional>
 #include <memory>
@@ -22,11 +17,17 @@
 #include <tuple>
 #include <utility>
 
+#include <umf/memory_pool.h>
+#include <umf/memory_pool_ops.h>
+#include <umf/memory_provider.h>
+#include <umf/memory_provider_ops.h>
+
 namespace umf_test {
 
 using pool_unique_handle_t =
     std::unique_ptr<umf_memory_pool_t,
                     std::function<void(umf_memory_pool_handle_t)>>;
+
 using provider_unique_handle_t =
     std::unique_ptr<umf_memory_provider_t,
                     std::function<void(umf_memory_provider_handle_t)>>;

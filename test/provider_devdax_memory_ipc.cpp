@@ -77,4 +77,5 @@ static std::vector<ipcTestParams> getIpcProxyPoolTestParamsList(void) {
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(umfIpcTest);
 
 INSTANTIATE_TEST_SUITE_P(DevDaxProviderDifferentPoolsTest, umfIpcTest,
-                         ::testing::ValuesIn(getIpcProxyPoolTestParamsList()));
+                         ::testing::ValuesIn(getIpcProxyPoolTestParamsList()),
+                         ipcTestParamsNameGen);

@@ -113,7 +113,14 @@ struct LevelZeroProviderInit
 INSTANTIATE_TEST_SUITE_P(, LevelZeroProviderInit,
                          ::testing::Values(UMF_MEMORY_TYPE_HOST,
                                            UMF_MEMORY_TYPE_DEVICE,
-                                           UMF_MEMORY_TYPE_SHARED));
+                                           UMF_MEMORY_TYPE_SHARED),
+                         ([](auto const &info) -> std::string {
+                             static const char *names[] = {
+                                 "UMF_MEMORY_TYPE_HOST",
+                                 "UMF_MEMORY_TYPE_DEVICE",
+                                 "UMF_MEMORY_TYPE_SHARED"};
+                             return names[info.index];
+                         }));
 
 TEST_P(LevelZeroProviderInit, FailNullContext) {
     const umf_memory_provider_ops_t *ops = umfLevelZeroMemoryProviderOps();
@@ -216,7 +223,7 @@ class LevelZeroMemoryAccessor : public MemoryAccessor {
                             ze_device_handle_t hDevice)
         : hDevice_(hDevice), hContext_(hContext) {}
     void fill(void *ptr, size_t size, const void *pattern,
-              size_t pattern_size) {
+              size_t pattern_size) override {
         ASSERT_NE(ptr, nullptr);
 
         int ret = utils_ze_level_zero_fill(hContext_, hDevice_, ptr, size,
@@ -224,7 +231,7 @@ class LevelZeroMemoryAccessor : public MemoryAccessor {
         ASSERT_EQ(ret, 0);
     }
 
-    void copy(void *dst_ptr, void *src_ptr, size_t size) {
+    void copy(void *dst_ptr, void *src_ptr, size_t size) override {
         ASSERT_NE(dst_ptr, nullptr);
         ASSERT_NE(src_ptr, nullptr);
 
@@ -232,6 +239,8 @@ class LevelZeroMemoryAccessor : public MemoryAccessor {
                                            src_ptr, size);
         ASSERT_EQ(ret, 0);
     }
+
+    const char *getName() override { return "LevelZeroMemoryAccessor"; }
 
   private:
     ze_device_handle_t hDevice_;
@@ -486,11 +495,16 @@ TEST_P(umfLevelZeroProviderTest, setDeviceOrdinalValid) {
 
 // TODO add tests that mixes Level Zero Memory Provider and Disjoint Pool
 
-INSTANTIATE_TEST_SUITE_P(umfLevelZeroProviderTestSuite,
-                         umfLevelZeroProviderTest,
-                         ::testing::Values(UMF_MEMORY_TYPE_DEVICE,
-                                           UMF_MEMORY_TYPE_SHARED,
-                                           UMF_MEMORY_TYPE_HOST));
+INSTANTIATE_TEST_SUITE_P(
+    umfLevelZeroProviderTestSuite, umfLevelZeroProviderTest,
+    ::testing::Values(UMF_MEMORY_TYPE_HOST, UMF_MEMORY_TYPE_SHARED,
+                      UMF_MEMORY_TYPE_DEVICE),
+    ([](auto const &info) -> std::string {
+        static const char *names[] = {"UMF_MEMORY_TYPE_HOST",
+                                      "UMF_MEMORY_TYPE_SHARED",
+                                      "UMF_MEMORY_TYPE_DEVICE"};
+        return names[info.index];
+    }));
 
 LevelZeroTestHelper l0TestHelper;
 
@@ -512,5 +526,6 @@ INSTANTIATE_TEST_SUITE_P(
     umfLevelZeroProviderTestSuite, umfIpcTest,
     ::testing::Values(ipcTestParams{
         umfProxyPoolOps(), nullptr, nullptr, umfLevelZeroMemoryProviderOps(),
-        createL0ParamsDeviceMemory, destroyL0Params, &l0Accessor}));
+        createL0ParamsDeviceMemory, destroyL0Params, &l0Accessor}),
+    ipcTestParamsNameGen);
 #endif

@@ -1,10 +1,6 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2025 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-
-#include "base.hpp"
-#include "numa_helpers.hpp"
-#include "test_helpers.h"
 
 #include <algorithm>
 #include <numa.h>
@@ -13,6 +9,10 @@
 #include <sched.h>
 
 #include <umf/providers/provider_os_memory.h>
+
+#include "base.hpp"
+#include "numa_helpers.hpp"
+#include "test_helpers.h"
 
 std::vector<unsigned> get_available_numa_nodes() {
     if (numa_available() == -1 || numa_all_nodes_ptr == nullptr) {
@@ -147,7 +147,10 @@ using the macro)
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(testNumaOnEachNode);
 
 INSTANTIATE_TEST_SUITE_P(testNumaNodesAllocations, testNumaOnEachNode,
-                         ::testing::ValuesIn(get_available_numa_nodes()));
+                         ::testing::ValuesIn(get_available_numa_nodes()),
+                         ([](auto const &info) -> std::string {
+                             return "numa_" + std::to_string(info.param);
+                         }));
 
 // Test for allocations on numa nodes. It will be executed on each of
 // the available numa nodes.
@@ -293,7 +296,10 @@ struct testNumaOnEachCpu : testNuma, testing::WithParamInterface<int> {
 };
 
 INSTANTIATE_TEST_SUITE_P(testNumaNodesAllocationsAllCpus, testNumaOnEachCpu,
-                         ::testing::ValuesIn(get_available_cpus()));
+                         ::testing::ValuesIn(get_available_cpus()),
+                         ([](auto const &info) -> std::string {
+                             return "cpu_" + std::to_string(info.param);
+                         }));
 
 // Test for allocation on numa node with mode preferred and an empty nodeset.
 // For the empty nodeset the memory is allocated on the node of the CPU that

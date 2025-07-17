@@ -3,13 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // This file contains tests for UMF pool API
 
-#include "base.hpp"
-#include "pool.hpp"
-#include "poolFixtures.hpp"
-#include "provider.hpp"
-#include "provider_null.h"
-#include "provider_trace.h"
-#include "test_helpers.h"
+#include <array>
+#include <string>
+#include <thread>
+#include <type_traits>
+#include <unordered_map>
+#include <variant>
 
 #include <umf/memory_provider.h>
 #include <umf/pools/pool_disjoint.h>
@@ -19,12 +18,13 @@
 #include <umf/proxy_lib_new_delete.h>
 #endif
 
-#include <array>
-#include <string>
-#include <thread>
-#include <type_traits>
-#include <unordered_map>
-#include <variant>
+#include "base.hpp"
+#include "pool.hpp"
+#include "poolFixtures.hpp"
+#include "provider.hpp"
+#include "provider_null.h"
+#include "provider_trace.h"
+#include "test_helpers.h"
 
 using umf_test::test;
 using namespace umf_test;
@@ -309,16 +309,23 @@ INSTANTIATE_TEST_SUITE_P(
                             &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr},
         poolCreateExtParams{umfDisjointPoolOps(), defaultDisjointPoolConfig,
                             defaultDisjointPoolConfigDestroy,
-                            &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr}));
+                            &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr}),
+    poolCreateExtParamsNameGen);
 
 INSTANTIATE_TEST_SUITE_P(mallocMultiPoolTest, umfMultiPoolTest,
                          ::testing::Values(poolCreateExtParams{
                              umfProxyPoolOps(), nullptr, nullptr,
-                             &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr}));
+                             &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr}),
+                         poolCreateExtParamsNameGen);
 
 INSTANTIATE_TEST_SUITE_P(umfPoolWithCreateFlagsTest, umfPoolWithCreateFlagsTest,
                          ::testing::Values(0,
-                                           UMF_POOL_CREATE_FLAG_OWN_PROVIDER));
+                                           UMF_POOL_CREATE_FLAG_OWN_PROVIDER),
+                         ([](auto const &info) -> std::string {
+                             static const char *names[] = {
+                                 "NONE", "UMF_POOL_CREATE_FLAG_OWN_PROVIDER"};
+                             return names[info.index];
+                         }));
 
 ////////////////// Negative test cases /////////////////
 
@@ -382,7 +389,14 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY,
                       UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC,
                       UMF_RESULT_ERROR_INVALID_ARGUMENT,
-                      UMF_RESULT_ERROR_UNKNOWN));
+                      UMF_RESULT_ERROR_UNKNOWN),
+    ([](auto const &info) -> std::string {
+        static const char *names[] = {
+            "UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY",
+            "UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC",
+            "UMF_RESULT_ERROR_INVALID_ARGUMENT", "UMF_RESULT_ERROR_UNKNOWN"};
+        return names[info.index];
+    }));
 
 TEST_P(poolInitializeTest, errorPropagation) {
     auto nullProvider = umf_test::wrapProviderUnique(nullProviderCreate());
@@ -559,4 +573,19 @@ INSTANTIATE_TEST_SUITE_P(
         umf_test::withGeneratedArgs(umfPoolGetMemoryProvider),
         umf_test::withGeneratedArgs(umfPoolByPtr),
         umf_test::withGeneratedArgs(umfPoolSetTag),
-        umf_test::withGeneratedArgs(umfPoolGetTag)));
+        umf_test::withGeneratedArgs(umfPoolGetTag)),
+    ([](auto const &info) -> std::string {
+        static const char *names[] = {"umfPoolMalloc",
+                                      "umfPoolAlignedMalloc",
+                                      "umfPoolFree",
+                                      "umfPoolCalloc",
+                                      "umfPoolRealloc",
+                                      "umfPoolMallocUsableSize",
+                                      "umfPoolGetLastAllocationError",
+                                      "umfPoolGetName",
+                                      "umfPoolGetMemoryProvider",
+                                      "umfPoolByPtr",
+                                      "umfPoolSetTag",
+                                      "umfPoolGetTag"};
+        return names[info.index];
+    }));

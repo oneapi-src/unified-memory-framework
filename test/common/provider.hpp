@@ -18,6 +18,36 @@
 #include "test_helpers.h"
 #include "utils/cpp_helpers.hpp"
 
+typedef void *(*pfnProviderParamsCreate)();
+typedef umf_result_t (*pfnProviderParamsDestroy)(void *);
+
+using providerCreateExtParams =
+    std::tuple<const umf_memory_provider_ops_t *, void *>;
+
+std::string providerCreateExtParamsNameGen(
+    const testing::TestParamInfo<providerCreateExtParams> param) {
+    const umf_memory_provider_ops_t *provider_ops = std::get<0>(param.param);
+
+    const char *providerName = NULL;
+    provider_ops->get_name(NULL, &providerName);
+
+    return providerName;
+}
+
+void providerCreateExt(providerCreateExtParams params,
+                       umf_test::provider_unique_handle_t *handle) {
+    umf_memory_provider_handle_t hProvider = nullptr;
+    auto [provider_ops, provider_params] = params;
+
+    auto ret =
+        umfMemoryProviderCreate(provider_ops, provider_params, &hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(hProvider, nullptr);
+
+    *handle = umf_test::provider_unique_handle_t(hProvider,
+                                                 &umfMemoryProviderDestroy);
+}
+
 namespace umf_test {
 
 umf_memory_provider_handle_t

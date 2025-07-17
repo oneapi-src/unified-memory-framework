@@ -1,19 +1,19 @@
 /*
  *
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 
+#include <numa.h>
+#include <numaif.h>
+
 #include "base.hpp"
 
 #include <umf/memory_provider.h>
 #include <umf/providers/provider_os_memory.h>
-
-#include <numa.h>
-#include <numaif.h>
 
 static constexpr size_t allocSize = 4096;
 
@@ -238,11 +238,17 @@ struct providerConfigTestNumaMode
     }
 };
 
-INSTANTIATE_TEST_SUITE_P(numa_modes, providerConfigTestNumaMode,
-                         testing::Values(UMF_NUMA_MODE_DEFAULT,
-                                         UMF_NUMA_MODE_BIND,
-                                         UMF_NUMA_MODE_INTERLEAVE,
-                                         UMF_NUMA_MODE_LOCAL));
+INSTANTIATE_TEST_SUITE_P(
+    numa_modes, providerConfigTestNumaMode,
+    testing::Values(UMF_NUMA_MODE_DEFAULT, UMF_NUMA_MODE_BIND,
+                    UMF_NUMA_MODE_INTERLEAVE, UMF_NUMA_MODE_LOCAL),
+    ([](auto const &info) -> std::string {
+        static const char *names[] = {
+            "UMF_NUMA_MODE_DEFAULT", "UMF_NUMA_MODE_BIND",
+            "UMF_NUMA_MODE_INTERLEAVE", "UMF_NUMA_MODE_LOCAL"};
+        return names[info.index];
+    }));
+
 #ifndef MPOL_LOCAL
 #define MPOL_LOCAL 4
 #endif
