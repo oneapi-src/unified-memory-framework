@@ -25,6 +25,38 @@
 #include "provider.hpp"
 #include "utils/cpp_helpers.hpp"
 
+typedef void *(*pfnPoolParamsCreate)();
+typedef umf_result_t (*pfnPoolParamsDestroy)(void *);
+
+typedef void *(*pfnProviderParamsCreate)();
+typedef umf_result_t (*pfnProviderParamsDestroy)(void *);
+
+using poolCreateExtParams =
+    std::tuple<const umf_memory_pool_ops_t *, pfnPoolParamsCreate,
+               pfnPoolParamsDestroy, const umf_memory_provider_ops_t *,
+               pfnProviderParamsCreate, pfnProviderParamsDestroy>;
+
+std::string poolCreateExtParamsNameGen(
+    const testing::TestParamInfo<poolCreateExtParams> &info) {
+
+    const umf_memory_pool_ops_t *pool_ops = std::get<0>(info.param);
+    const umf_memory_provider_ops_t *provider_ops = std::get<3>(info.param);
+
+    const char *poolName = NULL;
+    pool_ops->get_name(NULL, &poolName);
+
+    const char *providerName = NULL;
+    provider_ops->get_name(NULL, &providerName);
+
+    // if there are multiple cases with the same pool and provider combination,
+    // add the index to the name
+    std::string poolParams = std::get<1>(info.param)
+                                 ? "_w_params_" + std::to_string(info.index)
+                                 : "";
+
+    return std::string(poolName) + poolParams + "_" + providerName;
+}
+
 namespace umf_test {
 
 umf_memory_pool_handle_t

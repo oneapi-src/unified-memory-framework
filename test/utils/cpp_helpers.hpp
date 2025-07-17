@@ -27,6 +27,7 @@ namespace umf_test {
 using pool_unique_handle_t =
     std::unique_ptr<umf_memory_pool_t,
                     std::function<void(umf_memory_pool_handle_t)>>;
+
 using provider_unique_handle_t =
     std::unique_ptr<umf_memory_provider_t,
                     std::function<void(umf_memory_provider_handle_t)>>;

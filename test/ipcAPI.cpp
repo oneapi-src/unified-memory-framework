@@ -128,4 +128,5 @@ INSTANTIATE_TEST_SUITE_P(umfIpcTestSuite, umfIpcTest,
                          ::testing::Values(ipcTestParams{
                              umfProxyPoolOps(), nullptr, nullptr,
                              &IPC_MOCK_PROVIDER_OPS, nullptr, nullptr,
-                             &hostMemoryAccessor}));
+                             &hostMemoryAccessor}),
+                         ipcTestParamsNameGen);

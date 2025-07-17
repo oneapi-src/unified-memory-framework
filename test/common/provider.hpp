@@ -24,6 +24,15 @@ typedef umf_result_t (*pfnProviderParamsDestroy)(void *);
 using providerCreateExtParams =
     std::tuple<const umf_memory_provider_ops_t *, void *>;
 
+std::string providerCreateExtParamsNameGen(
+    const testing::TestParamInfo<providerCreateExtParams> param) {
+    const umf_memory_provider_ops_t *provider_ops = std::get<0>(param.param);
+
+    const char *providerName = NULL;
+    provider_ops->get_name(NULL, &providerName);
+
+    return providerName;
+}
 
 void providerCreateExt(providerCreateExtParams params,
                        umf_test::provider_unique_handle_t *handle) {

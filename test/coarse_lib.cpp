@@ -114,7 +114,14 @@ INSTANTIATE_TEST_SUITE_P(
     CoarseWithMemoryStrategyTest, CoarseWithMemoryStrategyTest,
     ::testing::Values(UMF_COARSE_MEMORY_STRATEGY_FASTEST,
                       UMF_COARSE_MEMORY_STRATEGY_FASTEST_BUT_ONE,
-                      UMF_COARSE_MEMORY_STRATEGY_CHECK_ALL_SIZE));
+                      UMF_COARSE_MEMORY_STRATEGY_CHECK_ALL_SIZE),
+    ([](auto const &info) -> std::string {
+        static const char *names[] = {
+            "UMF_COARSE_MEMORY_STRATEGY_FASTEST",
+            "UMF_COARSE_MEMORY_STRATEGY_FASTEST_BUT_ONE",
+            "UMF_COARSE_MEMORY_STRATEGY_CHECK_ALL_SIZE"};
+        return names[info.index];
+    }));
 
 TEST_P(CoarseWithMemoryStrategyTest, coarseTest_basic_provider) {
     umf_memory_provider_handle_t malloc_memory_provider;

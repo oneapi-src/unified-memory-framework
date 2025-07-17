@@ -201,7 +201,8 @@ file_params_unique_handle_t file_params_shared =
 INSTANTIATE_TEST_SUITE_P(fileProviderTest, FileProviderParamsDefault,
                          ::testing::Values(providerCreateExtParams{
                              umfFileMemoryProviderOps(),
-                             file_params_default.get()}));
+                             file_params_default.get()}),
+                         providerCreateExtParamsNameGen);
 
 TEST_P(FileProviderParamsDefault, create_destroy) {}
 
@@ -461,7 +462,8 @@ TEST_P(FileProviderParamsDefault, purge_force_INVALID_POINTER) {
 INSTANTIATE_TEST_SUITE_P(fileProviderTest, FileProviderParamsShared,
                          ::testing::Values(providerCreateExtParams{
                              umfFileMemoryProviderOps(),
-                             file_params_shared.get()}));
+                             file_params_shared.get()}),
+                         providerCreateExtParamsNameGen);
 
 TEST_P(FileProviderParamsShared, IPC_base_success_test) {
     umf_result_t umf_result;

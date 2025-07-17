@@ -104,7 +104,8 @@ createPoolFromAllocation(void *ptr0, size_t size1,
 
 INSTANTIATE_TEST_SUITE_P(trackingProviderTest, TrackingProviderTest,
                          ::testing::Values(providerCreateExtParams{
-                             umfFixedMemoryProviderOps(), nullptr}));
+                             umfFixedMemoryProviderOps(), nullptr}),
+                         providerCreateExtParamsNameGen);
 
 TEST_P(TrackingProviderTest, create_destroy) {
     // Creation and destruction are handled in SetUp and TearDown

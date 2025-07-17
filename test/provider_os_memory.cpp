@@ -230,7 +230,8 @@ auto defaultParams = createOsMemoryProviderParams();
 
 INSTANTIATE_TEST_SUITE_P(osProviderTest, umfProviderTest,
                          ::testing::Values(providerCreateExtParams{
-                             umfOsMemoryProviderOps(), defaultParams.get()}));
+                             umfOsMemoryProviderOps(), defaultParams.get()}),
+                         providerCreateExtParamsNameGen);
 
 TEST_P(umfProviderTest, create_destroy) {}
 
@@ -487,4 +488,5 @@ static std::vector<ipcTestParams> ipcTestParamsList = {
 };
 
 INSTANTIATE_TEST_SUITE_P(osProviderTest, umfIpcTest,
-                         ::testing::ValuesIn(ipcTestParamsList));
+                         ::testing::ValuesIn(ipcTestParamsList),
+                         ipcTestParamsNameGen);

@@ -68,6 +68,29 @@ using ipcTestParams =
                pfnProviderParamsCreate, pfnProviderParamsDestroy,
                MemoryAccessor *>;
 
+std::string
+ipcTestParamsNameGen(const ::testing::TestParamInfo<ipcTestParams> &info) {
+    const umf_memory_pool_ops_t *pool_ops = std::get<0>(info.param);
+    const umf_memory_provider_ops_t *provider_ops = std::get<3>(info.param);
+
+    const char *poolName = NULL;
+    pool_ops->get_name(NULL, &poolName);
+
+    const char *providerName = NULL;
+    provider_ops->get_name(NULL, &providerName);
+
+    // if there are multiple cases with the same pool and provider combination,
+    // add index to the name
+    std::string poolParams = std::get<1>(info.param)
+                                 ? "_w_params_" + std::to_string(info.index)
+                                 : "";
+
+    MemoryAccessor *memAccessor = std::get<6>(info.param);
+
+    return std::string(poolName) + poolParams + "_" + providerName + "_" +
+           memAccessor->getName();
+}
+
 struct umfIpcTest : umf_test::test,
                     ::testing::WithParamInterface<ipcTestParams> {
     umfIpcTest() {}

@@ -137,7 +137,8 @@ struct FixedProviderTest
 
 INSTANTIATE_TEST_SUITE_P(fixedProviderTest, FixedProviderTest,
                          ::testing::Values(providerCreateExtParams{
-                             umfFixedMemoryProviderOps(), nullptr}));
+                             umfFixedMemoryProviderOps(), nullptr}),
+                         providerCreateExtParamsNameGen);
 
 TEST_P(FixedProviderTest, create_destroy) {
     // Creation and destruction are handled in SetUp and TearDown

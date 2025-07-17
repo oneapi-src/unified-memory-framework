@@ -140,7 +140,9 @@ static std::vector<ipcTestParams> getIpcFsDaxTestParamsList(void) {
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(umfIpcTest);
 
 INSTANTIATE_TEST_SUITE_P(FileProviderDifferentPoolsTest, umfIpcTest,
-                         ::testing::ValuesIn(ipcManyPoolsTestParamsList));
+                         ::testing::ValuesIn(ipcManyPoolsTestParamsList),
+                         ipcTestParamsNameGen);
 
 INSTANTIATE_TEST_SUITE_P(FileProviderDifferentPoolsFSDAXTest, umfIpcTest,
-                         ::testing::ValuesIn(getIpcFsDaxTestParamsList()));
+                         ::testing::ValuesIn(getIpcFsDaxTestParamsList()),
+                         ipcTestParamsNameGen);

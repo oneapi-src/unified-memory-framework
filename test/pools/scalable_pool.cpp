@@ -28,7 +28,8 @@ INSTANTIATE_TEST_SUITE_P(
     scalablePoolTest, umfPoolTest,
     ::testing::Values(poolCreateExtParams{
         umfScalablePoolOps(), nullptr, nullptr, umfOsMemoryProviderOps(),
-        createOsMemoryProviderParams, destroyOsMemoryProviderParams}));
+        createOsMemoryProviderParams, destroyOsMemoryProviderParams}),
+    poolCreateExtParamsNameGen);
 
 using scalablePoolParams = std::tuple<size_t, bool>;
 struct umfScalablePoolParamsTest
@@ -165,7 +166,12 @@ INSTANTIATE_TEST_SUITE_P(
     scalablePoolTest, umfScalablePoolParamsTest,
     testing::Combine(testing::Values(2 * 1024 * 1024, 3 * 1024 * 1024,
                                      4 * 1024 * 1024, 5 * 1024 * 1024),
-                     testing::Values(false, true)));
+                     testing::Values(false, true)),
+    ([](auto const &info) -> std::string {
+        return "scalable_granularity_" +
+               std::to_string(std::get<0>(info.param)) + "_keep_all_memory" +
+               (std::get<1>(info.param) ? "_true" : "_false");
+    }));
 
 TEST(scalablePoolTest, scalablePoolName) {
     umf_memory_pool_handle_t pool = nullptr;

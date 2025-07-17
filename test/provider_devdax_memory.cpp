@@ -196,7 +196,8 @@ static std::vector<providerCreateExtParams> devdaxProviderTestParamsList =
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(umfProviderTest);
 
 INSTANTIATE_TEST_SUITE_P(devdaxProviderTest, umfProviderTest,
-                         ::testing::ValuesIn(devdaxProviderTestParamsList));
+                         ::testing::ValuesIn(devdaxProviderTestParamsList),
+                         providerCreateExtParamsNameGen);
 
 TEST_P(umfProviderTest, create_destroy) {}
 
