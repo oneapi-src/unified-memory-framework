@@ -55,11 +55,13 @@ function(build_umf_test)
     if(UMF_CUDA_ENABLED)
         set(INC_DIRS ${INC_DIRS} ${CUDA_INCLUDE_DIRS})
         set(LIB_DIRS ${LIB_DIRS} ${CUDA_LIBRARY_DIRS})
+        set(CPL_DEFS ${CPL_DEFS} UMF_CUDA_ENABLED=1)
     endif()
 
     if(UMF_LEVEL_ZERO_ENABLED)
         set(INC_DIRS ${INC_DIRS} ${LEVEL_ZERO_INCLUDE_DIRS})
         set(LIB_DIRS ${LIB_DIRS} ${ZE_LOADER_LIBRARY_DIRS})
+        set(CPL_DEFS ${CPL_DEFS} UMF_LEVEL_ZERO_ENABLED=1)
     endif()
 
     if(UMF_POOL_JEMALLOC_ENABLED)
@@ -358,6 +360,10 @@ if(LINUX) # OS-specific functions are implemented
         NAME provider_tracking_fixture_tests
         SRCS provider_tracking_fixture_tests.cpp malloc_compliance_tests.cpp
         LIBS ${UMF_UTILS_FOR_TEST} ${UMF_BA_FOR_TEST})
+    add_umf_test(
+        NAME provider_props
+        SRCS props/provider_props.cpp
+        LIBS ${UMF_UTILS_FOR_TEST} ${UMF_BA_FOR_TEST})
 
     # This test requires Linux-only file memory provider
     if(UMF_POOL_JEMALLOC_ENABLED)
@@ -422,6 +428,12 @@ if(UMF_BUILD_GPU_TESTS AND UMF_LEVEL_ZERO_ENABLED)
         LIBS ${UMF_UTILS_FOR_TEST} ${UMF_BA_FOR_TEST})
     target_compile_definitions(test_provider_level_zero_dlopen_local
                                PUBLIC USE_DLOPEN=1 OPEN_ZE_LIBRARY_GLOBAL=0)
+
+    add_umf_test(
+        NAME provider_props_level_zero
+        SRCS props/provider_props_level_zero.cpp
+             ${UMF_UTILS_DIR}/utils_level_zero.cpp
+        LIBS ${UMF_UTILS_FOR_TEST} ${UMF_BA_FOR_TEST} ze_loader)
 endif()
 
 if(NOT UMF_BUILD_LEVEL_ZERO_PROVIDER)
@@ -454,6 +466,11 @@ if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_CUDA_PROVIDER)
             LIBS ${UMF_UTILS_FOR_TEST} ${UMF_BA_FOR_TEST})
         target_compile_definitions(test_provider_cuda_dlopen_local
                                    PUBLIC USE_DLOPEN=1 OPEN_CU_LIBRARY_GLOBAL=0)
+
+        add_umf_test(
+            NAME provider_props_cuda
+            SRCS props/provider_props_cuda.cpp providers/cuda_helpers.cpp
+            LIBS ${UMF_UTILS_FOR_TEST} ${UMF_BA_FOR_TEST} cuda)
     else()
         message(
             STATUS

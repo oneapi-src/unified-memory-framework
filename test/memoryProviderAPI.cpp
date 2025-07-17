@@ -3,14 +3,15 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // This file contains tests for UMF provider API
 
-#include "provider.hpp"
-#include "provider_null.h"
-#include "test_helpers.h"
-
 #include <gtest/gtest.h>
 #include <string>
 #include <unordered_map>
 #include <variant>
+
+#include "memory_props_internal.h"
+#include "provider.hpp"
+#include "provider_null.h"
+#include "test_helpers.h"
 
 using umf_test::test;
 

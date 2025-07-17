@@ -311,7 +311,9 @@ static umf_memory_provider_ops_t UMF_FIXED_MEMORY_PROVIDER_OPS = {
     .ext_put_ipc_handle = NULL,
     .ext_open_ipc_handle = NULL,
     .ext_close_ipc_handle = NULL,
-    .ext_ctl = fixed_ctl};
+    .ext_ctl = fixed_ctl,
+    .ext_get_allocation_properties = NULL,
+};
 
 const umf_memory_provider_ops_t *umfFixedMemoryProviderOps(void) {
     return &UMF_FIXED_MEMORY_PROVIDER_OPS;
