@@ -322,6 +322,15 @@ typedef struct umf_memory_provider_ops_t {
         void *provider, umf_memory_property_id_t memory_property_id,
         size_t *size);
 
+    /// @brief Post-initializes memory provider.
+    /// Post-construction hook for memory pools, enabling advanced or deferred setup that cannot
+    /// be done in the initial allocation phase (e.g. setting defaults from CTL).
+    ///
+    /// @param provider pointer to the provider
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+    ///
+    umf_result_t (*ext_post_initialize)(void *provider);
+
 } umf_memory_provider_ops_t;
 
 #ifdef __cplusplus

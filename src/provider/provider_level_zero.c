@@ -649,6 +649,12 @@ static umf_result_t ze_memory_provider_initialize(const void *params,
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t ze_memory_provider_post_initialize(void *provider) {
+    (void)provider;
+    // For initial version, just return success
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_result_t
 ze_memory_provider_get_last_native_error(void *provider, const char **ppMessage,
                                          int32_t *pError) {
@@ -954,6 +960,7 @@ static umf_memory_provider_ops_t UMF_LEVEL_ZERO_MEMORY_PROVIDER_OPS = {
         ze_memory_provider_get_allocation_properties,
     .ext_get_allocation_properties_size =
         ze_memory_provider_get_allocation_properties_size,
+    .ext_post_initialize = ze_memory_provider_post_initialize,
 };
 
 const umf_memory_provider_ops_t *umfLevelZeroMemoryProviderOps(void) {

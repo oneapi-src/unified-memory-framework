@@ -36,6 +36,9 @@ typedef struct umf_memory_pool_ops_t {
 
     ///
     /// @brief Initializes memory pool.
+    /// /details
+    /// * The memory pool implementation *must* allocate the memory pool structure
+    ///        and return it by the \p pool parameter.
     /// @param provider memory provider that will be used for coarse-grain allocations.
     /// @param params pool-specific params, or NULL for defaults
     /// @param pool [out] returns pointer to the pool
@@ -191,6 +194,25 @@ typedef struct umf_memory_pool_ops_t {
     ///         failure.
     ///
     umf_result_t (*ext_trim_memory)(void *pool, size_t minBytesToKeep);
+
+    ///
+    /// @brief Post-initializes and set up memory pool.
+    /// Post-construction hook for memory pools, enabling advanced or deferred setup that cannot
+    /// be done in the initial allocation phase (e.g. setting defaults from CTL).
+    ///
+    /// \details
+    /// * This function *must* be implemented if the pool/provider supports CTL that overrides defaults.
+    /// * This function *must* free any resources allocated in the function.
+    /// * This function *must* be called after the memory pool has been allocated in initialize function
+    ///        and is used to perform any additional setup required by the memory pool.
+    /// * This function *may* be used to set up any additional resources required by the memory pool.
+    /// * This function *may* be used to set up default values for the memory pool parameters set up by CTL.
+    ///
+    /// @param pool pointer to the pool
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure
+    ///
+    umf_result_t (*ext_post_initialize)(void *pool);
+
 } umf_memory_pool_ops_t;
 
 #ifdef __cplusplus

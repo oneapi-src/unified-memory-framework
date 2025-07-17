@@ -916,6 +916,12 @@ static umf_result_t file_free(void *provider, void *ptr, size_t size) {
     return ret;
 }
 
+static umf_result_t file_post_initialize(void *provider) {
+    (void)provider;
+    // For initial version, just return success
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_memory_provider_ops_t UMF_FILE_MEMORY_PROVIDER_OPS = {
     .version = UMF_PROVIDER_OPS_VERSION_CURRENT,
     .initialize = file_initialize,
@@ -935,7 +941,8 @@ static umf_memory_provider_ops_t UMF_FILE_MEMORY_PROVIDER_OPS = {
     .ext_put_ipc_handle = file_put_ipc_handle,
     .ext_open_ipc_handle = file_open_ipc_handle,
     .ext_close_ipc_handle = file_close_ipc_handle,
-    .ext_ctl = file_ctl};
+    .ext_ctl = file_ctl,
+    .ext_post_initialize = file_post_initialize};
 
 const umf_memory_provider_ops_t *umfFileMemoryProviderOps(void) {
     return &UMF_FILE_MEMORY_PROVIDER_OPS;

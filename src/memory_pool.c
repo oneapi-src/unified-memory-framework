@@ -463,6 +463,11 @@ static umf_result_t umfDefaultTrimMemory(void *provider,
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
+static umf_result_t umfDefaultExtPostInitialize(void *pool) {
+    (void)pool;
+    return UMF_RESULT_SUCCESS;
+}
+
 // logical sum (OR) of all umf_pool_create_flags_t flags
 static const umf_pool_create_flags_t UMF_POOL_CREATE_FLAG_ALL =
     UMF_POOL_CREATE_FLAG_OWN_PROVIDER | UMF_POOL_CREATE_FLAG_DISABLE_TRACKING;
@@ -495,7 +500,6 @@ static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
     }
 
     umf_result_t ret = UMF_RESULT_SUCCESS;
-
     umf_memory_pool_ops_t compatible_ops;
     if (ops->version != UMF_POOL_OPS_VERSION_CURRENT) {
         LOG_WARN("Memory Pool ops version \"%d\" is different than the current "
@@ -504,8 +508,8 @@ static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
 
         // Create a new ops compatible structure with the current version
         memset(&compatible_ops, 0, sizeof(compatible_ops));
-        if (UMF_MINOR_VERSION(ops->version) == 0) {
-            LOG_INFO("Detected 1.0 version of Memory Pool ops, "
+        if (ops->version < UMF_MAKE_VERSION(1, 1)) {
+            LOG_INFO("Detected 1.0 version or below of Memory Pool ops, "
                      "upgrading to current version");
             memcpy(&compatible_ops, ops,
                    offsetof(umf_memory_pool_ops_t, ext_trim_memory));
@@ -547,13 +551,17 @@ static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
         pool->ops.ext_trim_memory = umfDefaultTrimMemory;
     }
 
+    if (NULL == pool->ops.ext_post_initialize) {
+        pool->ops.ext_post_initialize = umfDefaultExtPostInitialize;
+    }
+
     if (NULL == utils_mutex_init(&pool->lock)) {
         LOG_ERR("Failed to initialize mutex for pool");
         ret = UMF_RESULT_ERROR_UNKNOWN;
         goto err_lock_init;
     }
 
-    ret = ops->initialize(pool->provider, params, &pool->pool_priv);
+    ret = pool->ops.initialize(pool->provider, params, &pool->pool_priv);
     if (ret != UMF_RESULT_SUCCESS) {
         goto err_pool_init;
     }
@@ -577,6 +585,12 @@ static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
             default_ctl_helper(ops, pool->pool_priv, ctl_name, it->value,
                                it->value_size);
         }
+    }
+
+    ret = pool->ops.ext_post_initialize(pool->pool_priv);
+    if (ret != UMF_RESULT_SUCCESS) {
+        LOG_ERR("Failed to post-initialize pool");
+        goto err_pool_init;
     }
 
     *hPool = pool;

@@ -39,6 +39,11 @@ proxy_pool_initialize(umf_memory_provider_handle_t hProvider,
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t proxy_pool_post_initialize(void *ppPool) {
+    (void)ppPool;
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_result_t proxy_pool_finalize(void *pool) {
     umf_ba_global_free(pool);
     return UMF_RESULT_SUCCESS;
@@ -160,6 +165,7 @@ static umf_memory_pool_ops_t UMF_PROXY_POOL_OPS = {
     .get_last_allocation_error = proxy_get_last_allocation_error,
     .get_name = proxy_get_name,
     .ext_trim_memory = NULL, // not supported
+    .ext_post_initialize = proxy_pool_post_initialize,
 };
 
 const umf_memory_pool_ops_t *umfProxyPoolOps(void) {
