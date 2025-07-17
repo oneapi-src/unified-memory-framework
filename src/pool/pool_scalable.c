@@ -71,6 +71,7 @@ typedef struct tbb_callbacks_t {
 
 typedef struct tbb_memory_pool_t {
     umf_memory_provider_handle_t mem_provider;
+    umf_scalable_pool_params_t params;
     void *tbb_pool;
     char name[64];
 } tbb_memory_pool_t;
@@ -291,6 +292,33 @@ umfScalablePoolParamsSetName(umf_scalable_pool_params_handle_t hParams,
 
 static umf_result_t tbb_pool_initialize(umf_memory_provider_handle_t provider,
                                         const void *params, void **pool) {
+    tbb_memory_pool_t *pool_data =
+        umf_ba_global_alloc(sizeof(tbb_memory_pool_t));
+    if (!pool_data) {
+        LOG_ERR("cannot allocate memory for metadata");
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    memset(pool_data, 0, sizeof(*pool_data));
+    pool_data->mem_provider = provider;
+
+    if (params) {
+        pool_data->params = *(const umf_scalable_pool_params_t *)params;
+    } else {
+        // Set default values
+        memset(&pool_data->params, 0, sizeof(pool_data->params));
+        pool_data->params.granularity = DEFAULT_GRANULARITY;
+        pool_data->params.keep_all_memory = false;
+        strncpy(pool_data->params.name, DEFAULT_NAME,
+                sizeof(pool_data->params.name) - 1);
+    }
+
+    *pool = (void *)pool_data;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t tbb_pool_post_initialize(void *pool) {
     tbb_mem_pool_policy_t policy = {.pAlloc = tbb_raw_alloc_wrapper,
                                     .pFree = tbb_raw_free_wrapper,
                                     .granularity = DEFAULT_GRANULARITY,
@@ -299,22 +327,16 @@ static umf_result_t tbb_pool_initialize(umf_memory_provider_handle_t provider,
                                     .keep_all_memory = false,
                                     .reserved = 0};
 
-    const char *pool_name = DEFAULT_NAME;
-    // If params is provided, override defaults
-    if (params) {
-        const umf_scalable_pool_params_t *scalable_params = params;
-        policy.granularity = scalable_params->granularity;
-        policy.keep_all_memory = scalable_params->keep_all_memory;
-        pool_name = scalable_params->name;
-    }
+    assert(pool);
+    tbb_memory_pool_t *pool_data = (tbb_memory_pool_t *)pool;
 
-    tbb_memory_pool_t *pool_data =
-        umf_ba_global_alloc(sizeof(tbb_memory_pool_t));
-    if (!pool_data) {
-        LOG_ERR("cannot allocate memory for metadata");
-        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-    }
-    memset(pool_data, 0, sizeof(*pool_data));
+    const umf_scalable_pool_params_t *scalable_params = &pool_data->params;
+    const char *pool_name = scalable_params->name;
+
+    // Use stored params
+    policy.granularity = scalable_params->granularity;
+    policy.keep_all_memory = scalable_params->keep_all_memory;
+
     snprintf(pool_data->name, sizeof(pool_data->name), "%s", pool_name);
 
     umf_result_t res = UMF_RESULT_SUCCESS;
@@ -325,15 +347,12 @@ static umf_result_t tbb_pool_initialize(umf_memory_provider_handle_t provider,
         goto err_tbb_init;
     }
 
-    pool_data->mem_provider = provider;
     ret = tbb_callbacks.pool_create_v1((intptr_t)pool_data, &policy,
                                        &(pool_data->tbb_pool));
     if (ret != 0 /* TBBMALLOC_OK */) {
         res = UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
         goto err_tbb_init;
     }
-
-    *pool = (void *)pool_data;
 
     return res;
 
@@ -450,7 +469,24 @@ static umf_result_t tbb_get_last_allocation_error(void *pool) {
     return TLS_last_allocation_error;
 }
 
-static void initialize_pool_ctl(void) {}
+static umf_result_t CTL_RUNNABLE_HANDLER(post_initialize)(
+    void *ctx, umf_ctl_query_source_t source, void *arg, size_t size,
+    umf_ctl_index_utlist_t *indexes) {
+    (void)source;
+    (void)arg;
+    (void)size;
+    (void)indexes;
+    return tbb_pool_post_initialize(ctx);
+}
+
+static void initialize_pool_ctl(void) {
+    pool_scallable_ctl_root.root[pool_scallable_ctl_root.first_free++] =
+        (umf_ctl_node_t){
+            .name = "post_initialize",
+            .type = CTL_NODE_LEAF,
+            .runnable_cb = CTL_RUNNABLE_HANDLER(post_initialize),
+        };
+}
 
 static umf_result_t pool_ctl(void *hPool, umf_ctl_query_source_t operationType,
                              const char *name, void *arg, size_t size,

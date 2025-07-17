@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include <umf/base.h>
 #include <umf/memory_provider.h>
@@ -205,6 +206,7 @@ void assignOpsExtDefaults(umf_memory_provider_ops_t *ops) {
         ops->ext_get_allocation_properties_size =
             umfDefaultGetAllocationPropertiesSize;
     }
+
 }
 
 void assignOpsIpcDefaults(umf_memory_provider_ops_t *ops) {
@@ -227,6 +229,20 @@ void assignOpsIpcDefaults(umf_memory_provider_ops_t *ops) {
     if (!ops->ext_close_ipc_handle) {
         ops->ext_close_ipc_handle = umfDefaultCloseIPCHandle;
     }
+}
+
+static umf_result_t umfProviderPostInitialize(umf_memory_provider_ops_t *ops,
+                                              void *provider_priv, ...) {
+    va_list args;
+    va_start(args, provider_priv);
+    umf_result_t ret = ops->ext_ctl(provider_priv, CTL_QUERY_PROGRAMMATIC,
+                                    "post_initialize", NULL, 0,
+                                    CTL_QUERY_RUNNABLE, args);
+    va_end(args);
+    if (ret == UMF_RESULT_ERROR_INVALID_ARGUMENT) {
+        ret = UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
+    return ret;
 }
 
 #define CHECK_OP(ops, fn)                                                      \
@@ -337,6 +353,12 @@ umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
     if (provider->ops.get_name(NULL, &pname) == UMF_RESULT_SUCCESS && pname) {
         ctl_default_apply(provider_default_list, pname, provider->ops.ext_ctl,
                           provider->provider_priv);
+    }
+    ret = umfProviderPostInitialize(&provider->ops, provider_priv);
+    if (ret != UMF_RESULT_SUCCESS && ret != UMF_RESULT_ERROR_NOT_SUPPORTED) {
+        LOG_ERR("Failed to post-initialize provider");
+        umf_ba_global_free(provider);
+        return ret;
     }
 
     *hProvider = provider;

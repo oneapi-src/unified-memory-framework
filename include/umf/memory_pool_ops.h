@@ -191,6 +191,7 @@ typedef struct umf_memory_pool_ops_t {
     ///         failure.
     ///
     umf_result_t (*ext_trim_memory)(void *pool, size_t minBytesToKeep);
+
 } umf_memory_pool_ops_t;
 
 #ifdef __cplusplus

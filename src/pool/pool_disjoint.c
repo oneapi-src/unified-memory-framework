@@ -33,6 +33,17 @@ static char *DEFAULT_NAME = "disjoint";
 struct ctl disjoint_ctl_root;
 static UTIL_ONCE_FLAG ctl_initialized = UTIL_ONCE_FLAG_INIT;
 
+umf_result_t disjoint_pool_post_initialize(void *ppPool);
+static umf_result_t CTL_RUNNABLE_HANDLER(post_initialize)(
+    void *ctx, umf_ctl_query_source_t source, void *arg, size_t size,
+    umf_ctl_index_utlist_t *indexes) {
+    (void)source;
+    (void)arg;
+    (void)size;
+    (void)indexes;
+    return disjoint_pool_post_initialize(ctx);
+}
+
 // Disable name ctl for 1.0 release
 #if 0
 static umf_result_t CTL_READ_HANDLER(name)(void *ctx,
@@ -326,6 +337,13 @@ static void initialize_disjoint_ctl(void) {
     // TODO: this is hack. Need some way to register module as node with argument
     disjoint_ctl_root.root[disjoint_ctl_root.first_free - 1].arg =
         &CTL_ARG(buckets);
+    disjoint_ctl_root.root[disjoint_ctl_root.first_free++] =
+        (umf_ctl_node_t){
+            .name = "post_initialize",
+            .type = CTL_NODE_LEAF,
+            .runnable_cb =
+                CTL_RUNNABLE_HANDLER(post_initialize),
+        };
 }
 
 umf_result_t disjoint_pool_ctl(void *hPool,
@@ -930,6 +948,14 @@ umf_result_t disjoint_pool_initialize(umf_memory_provider_handle_t provider,
     disjoint_pool->provider = provider;
     disjoint_pool->params = *dp_params;
 
+    *ppPool = (void *)disjoint_pool;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t disjoint_pool_post_initialize(void *ppPool) {
+    disjoint_pool_t *disjoint_pool = (disjoint_pool_t *)ppPool;
+
     disjoint_pool->known_slabs = critnib_new(free_slab, NULL);
     if (disjoint_pool->known_slabs == NULL) {
         goto err_free_disjoint_pool;
@@ -988,12 +1014,10 @@ umf_result_t disjoint_pool_initialize(umf_memory_provider_handle_t provider,
     }
 
     umf_result_t ret = umfMemoryProviderGetMinPageSize(
-        provider, NULL, &disjoint_pool->provider_min_page_size);
+        disjoint_pool->provider, NULL, &disjoint_pool->provider_min_page_size);
     if (ret != UMF_RESULT_SUCCESS) {
         disjoint_pool->provider_min_page_size = 0;
     }
-
-    *ppPool = (void *)disjoint_pool;
 
     return UMF_RESULT_SUCCESS;
 
@@ -1013,7 +1037,6 @@ err_free_known_slabs:
 
 err_free_disjoint_pool:
     umf_ba_global_free(disjoint_pool);
-
     return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
 }
 

@@ -307,6 +307,7 @@ typedef struct umf_memory_provider_ops_t {
         void *provider, const void *ptr,
         umf_memory_property_id_t memory_property_id, void *property_value);
 
+    ///
     /// @brief Retrieve size of the provider-specific properties of the memory
     ///        allocation.
     /// \details
