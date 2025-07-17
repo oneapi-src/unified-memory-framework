@@ -262,6 +262,15 @@ static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
     }
 
     *hPool = pool;
+
+    if (ops->ext.post_initialize != NULL) {
+        ret = ops->ext.post_initialize(pool->provider, params, &pool->pool_priv);
+        if (ret != UMF_RESULT_SUCCESS) {
+            LOG_ERR("Failed to post-initialize pool");
+            goto err_pool_init;
+        }
+    }
+
     LOG_INFO("Memory pool created: %p", (void *)pool);
     return UMF_RESULT_SUCCESS;
 
