@@ -10,6 +10,7 @@
 #include "test_helpers_linux.h"
 #endif
 
+#include <umf/experimental/ctl.h>
 #include <umf/memory_provider.h>
 #include <umf/providers/provider_file_memory.h>
 
@@ -378,6 +379,58 @@ TEST_P(FileProviderParamsDefault, free_size_0_ptr_not_null) {
 TEST_P(FileProviderParamsDefault, free_NULL) {
     umf_result_t umf_result = umfMemoryProviderFree(provider.get(), nullptr, 0);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+}
+
+TEST_P(FileProviderParamsDefault, ctl_stats) {
+    size_t allocated = 0, peak = 0;
+    umf_result_t ret =
+        umfCtlGet("umf.provider.by_handle.{}.stats.allocated_memory",
+                  &allocated, sizeof(allocated), provider.get());
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(allocated, 0u);
+
+    ret = umfCtlGet("umf.provider.by_handle.{}.stats.peak_memory", &peak,
+                    sizeof(peak), provider.get());
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(peak, 0u);
+
+    void *ptr = nullptr;
+    size_t size = page_size;
+    ret = umfMemoryProviderAlloc(provider.get(), size, page_size, &ptr);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(ptr, nullptr);
+
+    ret = umfCtlGet("umf.provider.by_handle.{}.stats.allocated_memory",
+                    &allocated, sizeof(allocated), provider.get());
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(allocated, size);
+
+    ret = umfCtlGet("umf.provider.by_handle.{}.stats.peak_memory", &peak,
+                    sizeof(peak), provider.get());
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(peak, size);
+
+    ret = umfMemoryProviderFree(provider.get(), ptr, size);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfCtlGet("umf.provider.by_handle.{}.stats.allocated_memory",
+                    &allocated, sizeof(allocated), provider.get());
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(allocated, 0u);
+
+    ret = umfCtlGet("umf.provider.by_handle.{}.stats.peak_memory", &peak,
+                    sizeof(peak), provider.get());
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(peak, size);
+
+    ret = umfCtlExec("umf.provider.by_handle.{}.stats.peak_memory.reset", NULL,
+                     0, provider.get());
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfCtlGet("umf.provider.by_handle.{}.stats.peak_memory", &peak,
+                    sizeof(peak), provider.get());
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(peak, 0u);
 }
 
 // other negative tests
