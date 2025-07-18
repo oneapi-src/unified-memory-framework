@@ -267,6 +267,31 @@ umfScalablePoolParamsSetKeepAllMemory(umf_scalable_pool_params_handle_t hParams,
 
 static umf_result_t tbb_pool_initialize(umf_memory_provider_handle_t provider,
                                         const void *params, void **pool) {
+    (void)params;
+    (void)provider;
+    tbb_memory_pool_t *pool_data =
+        umf_ba_global_alloc(sizeof(tbb_memory_pool_t));
+    if (!pool_data) {
+        LOG_ERR("cannot allocate memory for metadata");
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    *pool = (void *)pool_data;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t tbb_pool_post_initialize(umf_memory_provider_handle_t provider,
+                                        const void *params, void *pool) {
+    umf_result_t res = UMF_RESULT_SUCCESS;
+    int ret = init_tbb_callbacks();
+    if (ret != 0) {
+        LOG_FATAL("loading TBB symbols failed");
+        res = UMF_RESULT_ERROR_DEPENDENCY_UNAVAILABLE;
+        goto err_tbb_init;
+    }
+
+    // Set up TBB memory pool policy
     tbb_mem_pool_policy_t policy = {.pAlloc = tbb_raw_alloc_wrapper,
                                     .pFree = tbb_raw_free_wrapper,
                                     .granularity = DEFAULT_GRANULARITY,
@@ -282,21 +307,7 @@ static umf_result_t tbb_pool_initialize(umf_memory_provider_handle_t provider,
         policy.keep_all_memory = scalable_params->keep_all_memory;
     }
 
-    tbb_memory_pool_t *pool_data =
-        umf_ba_global_alloc(sizeof(tbb_memory_pool_t));
-    if (!pool_data) {
-        LOG_ERR("cannot allocate memory for metadata");
-        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-    }
-
-    umf_result_t res = UMF_RESULT_SUCCESS;
-    int ret = init_tbb_callbacks();
-    if (ret != 0) {
-        LOG_FATAL("loading TBB symbols failed");
-        res = UMF_RESULT_ERROR_DEPENDENCY_UNAVAILABLE;
-        goto err_tbb_init;
-    }
-
+    tbb_memory_pool_t *pool_data = (tbb_memory_pool_t *)pool;
     pool_data->mem_provider = provider;
     ret = tbb_callbacks.pool_create_v1((intptr_t)pool_data, &policy,
                                        &(pool_data->tbb_pool));
@@ -305,7 +316,7 @@ static umf_result_t tbb_pool_initialize(umf_memory_provider_handle_t provider,
         goto err_tbb_init;
     }
 
-    *pool = (void *)pool_data;
+    pool = (void *)pool_data;
 
     return res;
 
@@ -451,6 +462,7 @@ static umf_memory_pool_ops_t UMF_SCALABLE_POOL_OPS = {
     .get_last_allocation_error = tbb_get_last_allocation_error,
     .ext_ctl = pool_ctl,
     .get_name = scalable_get_name,
+    .ext_post_initialize = tbb_pool_post_initialize,
 };
 
 const umf_memory_pool_ops_t *umfScalablePoolOps(void) {

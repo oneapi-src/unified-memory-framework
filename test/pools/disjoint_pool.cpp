@@ -63,6 +63,7 @@ TEST_F(test, internals) {
 
     disjoint_pool_t *pool;
     umf_result_t res = ops->initialize(provider_handle, params, (void **)&pool);
+    res = ops->ext_post_initialize(provider_handle, params, (void *)pool);
     EXPECT_EQ(res, UMF_RESULT_SUCCESS);
     EXPECT_NE(pool, nullptr);
     EXPECT_EQ(pool->provider_min_page_size, (size_t)1024);

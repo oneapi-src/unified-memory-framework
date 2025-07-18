@@ -57,7 +57,7 @@ typedef struct umf_jemalloc_pool_params_t {
 typedef struct jemalloc_memory_pool_t {
     umf_memory_provider_handle_t provider;
     size_t n_arenas;
-    unsigned int arena_index[];
+    unsigned int *arena_index;
 } jemalloc_memory_pool_t;
 
 static __TLS umf_result_t TLS_last_allocation_error;
@@ -426,13 +426,28 @@ static void *op_aligned_alloc(void *pool, size_t size, size_t alignment) {
 
 static umf_result_t op_initialize(umf_memory_provider_handle_t provider,
                                   const void *params, void **out_pool) {
+    (void)params;
     assert(provider);
     assert(out_pool);
 
-    extent_hooks_t *pHooks = &arena_extent_hooks;
-    size_t unsigned_size = sizeof(unsigned);
-    int n_arenas_set_from_params = 0;
+    jemalloc_memory_pool_t* pool = umf_ba_global_alloc(sizeof(*pool));
+    if (!pool) {
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+    *out_pool = pool;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t op_post_initialize(umf_memory_provider_handle_t provider,
+                                  const void *params, void *pool) {
+    assert(provider);
+
     int err;
+    int n_arenas_set_from_params = 0;
+    size_t unsigned_size = sizeof(unsigned);
+    extent_hooks_t *pHooks = &arena_extent_hooks;
+    jemalloc_memory_pool_t *je_pool = (jemalloc_memory_pool_t *)pool;
     const umf_jemalloc_pool_params_t *jemalloc_params = params;
 
     size_t n_arenas = 0;
@@ -443,25 +458,25 @@ static umf_result_t op_initialize(umf_memory_provider_handle_t provider,
 
     if (n_arenas == 0) {
         n_arenas = utils_get_num_cores() * 4;
-        if (n_arenas > MALLOCX_ARENA_MAX) {
-            n_arenas = MALLOCX_ARENA_MAX;
-        }
+        utils_min(n_arenas, (size_t)MALLOCX_ARENA_MAX);
     }
 
     if (n_arenas > MALLOCX_ARENA_MAX) {
         LOG_ERR("Number of arenas %zu exceeds the limit (%i).", n_arenas,
                 MALLOCX_ARENA_MAX);
+                umf_ba_global_free(je_pool);
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    jemalloc_memory_pool_t *pool = umf_ba_global_alloc(
-        sizeof(*pool) + n_arenas * sizeof(*pool->arena_index));
-    if (!pool) {
+    je_pool->arena_index = umf_ba_global_alloc(n_arenas * sizeof(unsigned));
+    if (!je_pool->arena_index) {
+        LOG_ERR("Could not allocate memory for arena indices.");
+        umf_ba_global_free(je_pool);
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    pool->provider = provider;
-    pool->n_arenas = n_arenas;
+    je_pool->provider = provider;
+    je_pool->n_arenas = n_arenas;
 
     size_t num_created = 0;
     for (size_t i = 0; i < n_arenas; i++) {
@@ -486,13 +501,13 @@ static umf_result_t op_initialize(umf_memory_provider_handle_t provider,
             break;
         }
 
-        pool->arena_index[num_created++] = arena_index;
+        je_pool->arena_index[num_created++] = arena_index;
         if (arena_index >= MALLOCX_ARENA_MAX) {
             LOG_ERR("Number of arenas exceeds the limit.");
             goto err_cleanup;
         }
 
-        pool_by_arena_index[arena_index] = pool;
+        pool_by_arena_index[arena_index] = je_pool;
 
         // Setup extent_hooks for the newly created arena.
         char cmd[64];
@@ -503,9 +518,8 @@ static umf_result_t op_initialize(umf_memory_provider_handle_t provider,
             goto err_cleanup;
         }
     }
-    *out_pool = (umf_memory_pool_handle_t)pool;
 
-    VALGRIND_DO_CREATE_MEMPOOL(pool, 0, 0);
+    VALGRIND_DO_CREATE_MEMPOOL(je_pool, 0, 0);
 
     return UMF_RESULT_SUCCESS;
 
@@ -513,11 +527,15 @@ err_cleanup:
     // Destroy any arenas that were successfully created.
     for (size_t i = 0; i < num_created; i++) {
         char cmd[64];
-        unsigned arena = pool->arena_index[i];
+        unsigned arena = je_pool->arena_index[i];
         snprintf(cmd, sizeof(cmd), "arena.%u.destroy", arena);
         (void)je_mallctl(cmd, NULL, 0, NULL, 0);
     }
-    umf_ba_global_free(pool);
+    if (je_pool->arena_index) {
+        umf_ba_global_free(je_pool->arena_index);
+        je_pool->arena_index = NULL;
+    }
+    umf_ba_global_free(je_pool);
     return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
 }
 
@@ -533,6 +551,9 @@ static umf_result_t op_finalize(void *pool) {
             LOG_ERR("Could not destroy jemalloc arena %u", arena);
             ret = UMF_RESULT_ERROR_UNKNOWN;
         }
+    }
+    if (je_pool->arena_index) {
+        umf_ba_global_free(je_pool->arena_index);
     }
     umf_ba_global_free(je_pool);
 
@@ -575,6 +596,7 @@ static umf_memory_pool_ops_t UMF_JEMALLOC_POOL_OPS = {
     .free = op_free,
     .get_last_allocation_error = op_get_last_allocation_error,
     .get_name = op_get_name,
+    .ext_post_initialize = op_post_initialize,
 };
 
 const umf_memory_pool_ops_t *umfJemallocPoolOps(void) {

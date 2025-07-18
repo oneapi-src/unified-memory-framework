@@ -765,9 +765,19 @@ umf_result_t disjoint_pool_initialize(umf_memory_provider_handle_t provider,
     disjoint_pool->provider = provider;
     disjoint_pool->params = *dp_params;
 
+    *ppPool = (void*)disjoint_pool;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t disjoint_pool_post_initialize(umf_memory_provider_handle_t provider, const void* params, void* ppPool) {
+    (void)params;
+    disjoint_pool_t* disjoint_pool = (disjoint_pool_t*)ppPool;
+
     disjoint_pool->known_slabs = critnib_new(free_slab, NULL);
     if (disjoint_pool->known_slabs == NULL) {
-        goto err_free_disjoint_pool;
+        umf_ba_global_free(disjoint_pool);
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
     // Generate buckets sized such as: 64, 96, 128, 192, ..., CutOff.
@@ -828,8 +838,6 @@ umf_result_t disjoint_pool_initialize(umf_memory_provider_handle_t provider,
         disjoint_pool->provider_min_page_size = 0;
     }
 
-    *ppPool = (void*)disjoint_pool;
-
     return UMF_RESULT_SUCCESS;
 
 err_free_buckets:
@@ -845,19 +853,7 @@ err_free_shared_limits:
 
 err_free_known_slabs:
     critnib_delete(disjoint_pool->known_slabs);
-
-err_free_disjoint_pool:
-    umf_ba_global_free(disjoint_pool);
-
     return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-}
-
-umf_result_t disjoint_pool_post_initialize(umf_memory_provider_handle_t provider, const void* params, void** ppPool) {
-    (void)provider;
-    (void)params;
-    (void)ppPool;
-
-    return UMF_RESULT_SUCCESS;
 }
 
 void* disjoint_pool_malloc(void* pool, size_t size) {
@@ -1162,6 +1158,7 @@ static umf_memory_pool_ops_t UMF_DISJOINT_POOL_OPS = {
     .get_last_allocation_error = disjoint_pool_get_last_allocation_error,
     .get_name = disjoint_pool_get_name,
     .ext_ctl = disjoint_pool_ctl,
+    .ext_post_initialize = disjoint_pool_post_initialize
 };
 
 const umf_memory_pool_ops_t* umfDisjointPoolOps(void) {

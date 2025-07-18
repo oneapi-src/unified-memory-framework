@@ -168,6 +168,18 @@ typedef struct umf_memory_pool_ops_t {
                             const char *name, void *arg, size_t size,
                             umf_ctl_query_type_t queryType, va_list args);
 
+    ///
+    /// @brief Post-initializes memory pool.
+    /// @param provider memory provider that will be used for coarse-grain allocations.
+    ///        Should contain at least one memory provider.
+    /// @param numProvider number of elements in the providers array
+    /// @param params pool-specific params, or NULL for defaults
+    /// @param pool [out] returns pointer to the pool
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+    ///
+    umf_result_t (*ext_post_initialize)(umf_memory_provider_handle_t provider,
+                               const void *params, void *pool);
+
 } umf_memory_pool_ops_t;
 
 #ifdef __cplusplus

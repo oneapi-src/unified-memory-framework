@@ -24,7 +24,7 @@ void fini_cu_global_state(void) {
         cu_lib_handle = NULL;
     }
 }
-
+#define UMF_BUILD_CUDA_PROVIDER 1
 #if UMF_BUILD_CUDA_PROVIDER
 
 // disable warning 4201: nonstandard extension used: nameless struct/union
