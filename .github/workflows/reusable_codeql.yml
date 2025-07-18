@@ -44,6 +44,7 @@ jobs:
       uses: github/codeql-action/init@181d5eefc20863364f96762470ba6f862bdef56b # v3.29.2
       with:
         languages: cpp
+        trap-caching: false
 
     - name: "[Win] Initialize vcpkg"
       if: matrix.os == 'windows-latest'
