@@ -324,8 +324,17 @@ umf_result_t umfFree(void *ptr) {
 
 umf_result_t umfPoolByPtr(const void *ptr, umf_memory_pool_handle_t *pool) {
     UMF_CHECK((pool != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
-    *pool = umfMemoryTrackerGetPool(ptr);
-    return *pool ? UMF_RESULT_SUCCESS : UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    UMF_CHECK((ptr != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    umf_memory_properties_handle_t props = NULL;
+    umf_result_t ret = umfGetMemoryPropertiesHandle(ptr, &props);
+    if (ret != UMF_RESULT_SUCCESS || props == NULL || props->pool == NULL) {
+        *pool = NULL;
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    *pool = props->pool;
+    return UMF_RESULT_SUCCESS;
 }
 
 umf_result_t umfPoolGetMemoryProvider(umf_memory_pool_handle_t hPool,

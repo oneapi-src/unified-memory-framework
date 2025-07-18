@@ -94,6 +94,14 @@ TEST_F(test, memoryProviderTrace) {
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
     ASSERT_EQ(calls["allocation_split"], 1UL);
     ASSERT_EQ(calls.size(), ++call_count);
+
+    umf_memory_provider_handle_t provider = nullptr;
+    ret = umfMemoryProviderGetAllocationProperties(
+        tracingProvider.get(), ptr, UMF_MEMORY_PROPERTY_PROVIDER_HANDLE,
+        &provider, sizeof(void *));
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(calls["get_allocation_properties"], 1UL);
+    ASSERT_EQ(calls.size(), ++call_count);
 }
 
 TEST_F(test, memoryProviderOpsNullPurgeLazyField) {
@@ -330,6 +338,21 @@ TEST_F(test, memoryProviderOpsNullAllocationSplitAllocationMergeNegative) {
     umfMemoryProviderDestroy(hProvider);
 }
 
+TEST_F(test, memoryProviderOpsNullGetAllocationProperties) {
+    umf_memory_provider_ops_t provider_ops = UMF_NULL_PROVIDER_OPS;
+    umf_memory_provider_handle_t hProvider;
+
+    umf_result_t ret =
+        umfMemoryProviderCreate(&provider_ops, nullptr, &hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfMemoryProviderGetAllocationProperties(
+        hProvider, nullptr, UMF_MEMORY_PROPERTY_PROVIDER_HANDLE, nullptr, 0);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    umfMemoryProviderDestroy(hProvider);
+}
+
 struct providerInitializeTest : umf_test::test,
                                 ::testing::WithParamInterface<umf_result_t> {};
 
@@ -396,14 +419,17 @@ INSTANTIATE_TEST_SUITE_P(
         umf_test::withGeneratedArgs(umfMemoryProviderGetMinPageSize),
         umf_test::withGeneratedArgs(umfMemoryProviderPurgeLazy),
         umf_test::withGeneratedArgs(umfMemoryProviderPurgeForce),
-        umf_test::withGeneratedArgs(umfMemoryProviderGetName)),
+        umf_test::withGeneratedArgs(umfMemoryProviderGetName),
+        umf_test::withGeneratedArgs(umfMemoryProviderGetAllocationProperties)),
     ([](auto const &info) -> std::string {
-        static const char *names[] = {"umfMemoryProviderAlloc",
-                                      "umfMemoryProviderFree",
-                                      "umfMemoryProviderGetRecommendedPageSize",
-                                      "umfMemoryProviderGetMinPageSize",
-                                      "umfMemoryProviderPurgeLazy",
-                                      "umfMemoryProviderPurgeForce",
-                                      "umfMemoryProviderGetName"};
+        static const char *names[] = {
+            "umfMemoryProviderAlloc",
+            "umfMemoryProviderFree",
+            "umfMemoryProviderGetRecommendedPageSize",
+            "umfMemoryProviderGetMinPageSize",
+            "umfMemoryProviderPurgeLazy",
+            "umfMemoryProviderPurgeForce",
+            "umfMemoryProviderGetName",
+            "umfMemoryProviderGetAllocationProperties"};
         return names[info.index];
     }));

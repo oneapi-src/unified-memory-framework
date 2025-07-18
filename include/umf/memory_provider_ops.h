@@ -278,6 +278,21 @@ typedef struct umf_memory_provider_ops_t {
                             const char *name, void *arg, size_t size,
                             umf_ctl_query_type_t queryType, va_list args);
 
+    ///
+    /// @brief Retrieve properties of the memory allocation.
+    /// @param provider pointer to the memory provider
+    /// @param ptr pointer to the allocated memory
+    /// @param memory_property_id identifier of the memory property to retrieve
+    /// @param property_value [out] pointer to the value of the memory property
+    ///         which will be filled
+    /// @param max_property_size size of the property value buffer
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure
+    ///
+    umf_result_t (*ext_get_allocation_properties)(
+        void *provider, const void *ptr,
+        umf_memory_property_id_t memory_property_id, void *value,
+        size_t max_property_size);
+
 } umf_memory_provider_ops_t;
 
 #ifdef __cplusplus

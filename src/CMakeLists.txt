@@ -42,6 +42,7 @@ set(UMF_SOURCES
     ipc.c
     ipc_cache.c
     memory_pool.c
+    memory_props.c
     memory_provider.c
     memory_provider_get_last_failed.c
     memtarget.c

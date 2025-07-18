@@ -14,6 +14,7 @@
 #include <umf/memory_provider_ops.h>
 #include <umf/providers/provider_level_zero.h>
 
+#include "memory_provider_internal.h"
 #include "provider_ctl_stats_type.h"
 #include "provider_level_zero_internal.h"
 #include "utils_load_library.h"
@@ -32,6 +33,7 @@ void fini_ze_global_state(void) {
 
 #include "base_alloc_global.h"
 #include "libumf.h"
+#include "provider_level_zero_internal.h"
 #include "utils_assert.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
@@ -819,6 +821,45 @@ static umf_result_t ze_ctl(void *hProvider,
                      query_type, arg, size, args);
 }
 
+static umf_result_t ze_memory_provider_get_allocation_properties(
+    void *provider, const void *ptr,
+    umf_memory_property_id_t memory_property_id, void *value,
+    size_t max_property_size) {
+    (void)ptr;
+
+    struct ze_memory_provider_t *ze_provider =
+        (struct ze_memory_provider_t *)provider;
+
+    switch (memory_property_id) {
+    case UMF_MEMORY_PROPERTY_POINTER_TYPE:
+        if (UNLIKELY(max_property_size < sizeof(umf_usm_memory_type_t))) {
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        }
+        *(umf_usm_memory_type_t *)value =
+            ze2umf_memory_type(ze_provider->memory_type);
+        return UMF_RESULT_SUCCESS;
+
+    case UMF_MEMORY_PROPERTY_CONTEXT:
+        if (UNLIKELY(max_property_size < sizeof(ze_context_handle_t))) {
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        }
+        *(ze_context_handle_t *)value = ze_provider->context;
+        return UMF_RESULT_SUCCESS;
+
+    case UMF_MEMORY_PROPERTY_DEVICE:
+        if (UNLIKELY(max_property_size < sizeof(ze_device_handle_t))) {
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        }
+        *(ze_device_handle_t *)value = ze_provider->device;
+        return UMF_RESULT_SUCCESS;
+
+    default:
+        break;
+    }
+
+    return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+}
+
 static umf_memory_provider_ops_t UMF_LEVEL_ZERO_MEMORY_PROVIDER_OPS = {
     .version = UMF_PROVIDER_OPS_VERSION_CURRENT,
     .initialize = ze_memory_provider_initialize,
@@ -839,6 +880,8 @@ static umf_memory_provider_ops_t UMF_LEVEL_ZERO_MEMORY_PROVIDER_OPS = {
     .ext_open_ipc_handle = ze_memory_provider_open_ipc_handle,
     .ext_close_ipc_handle = ze_memory_provider_close_ipc_handle,
     .ext_ctl = ze_ctl,
+    .ext_get_allocation_properties =
+        ze_memory_provider_get_allocation_properties,
 };
 
 const umf_memory_provider_ops_t *umfLevelZeroMemoryProviderOps(void) {

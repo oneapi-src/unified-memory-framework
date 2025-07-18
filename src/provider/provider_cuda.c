@@ -12,6 +12,7 @@
 #include <umf.h>
 #include <umf/providers/provider_cuda.h>
 
+#include "memory_provider_internal.h"
 #include "provider_cuda_internal.h"
 #include "utils_load_library.h"
 #include "utils_log.h"
@@ -685,6 +686,45 @@ cu_memory_provider_close_ipc_handle(void *provider, void *ptr, size_t size) {
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t cu_memory_provider_get_allocation_properties(
+    void *provider, const void *ptr,
+    umf_memory_property_id_t memory_property_id, void *value,
+    size_t max_property_size) {
+
+    // unused
+    (void)ptr;
+
+    cu_memory_provider_t *cuda_provider = (cu_memory_provider_t *)provider;
+
+    switch (memory_property_id) {
+    case UMF_MEMORY_PROPERTY_POINTER_TYPE:
+        if (UNLIKELY(max_property_size < sizeof(umf_usm_memory_type_t))) {
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        }
+        *(umf_usm_memory_type_t *)value = cuda_provider->memory_type;
+        return UMF_RESULT_SUCCESS;
+
+    case UMF_MEMORY_PROPERTY_CONTEXT:
+        if (UNLIKELY(max_property_size < sizeof(CUcontext))) {
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        }
+        *(CUcontext *)value = cuda_provider->context;
+        return UMF_RESULT_SUCCESS;
+
+    case UMF_MEMORY_PROPERTY_DEVICE:
+        if (UNLIKELY(max_property_size < sizeof(CUdevice))) {
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        }
+        *(CUdevice *)value = cuda_provider->device;
+        return UMF_RESULT_SUCCESS;
+
+    default:
+        break;
+    };
+
+    return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+}
+
 static umf_memory_provider_ops_t UMF_CUDA_MEMORY_PROVIDER_OPS = {
     .version = UMF_PROVIDER_OPS_VERSION_CURRENT,
     .initialize = cu_memory_provider_initialize,
@@ -707,6 +747,9 @@ static umf_memory_provider_ops_t UMF_CUDA_MEMORY_PROVIDER_OPS = {
     .ext_put_ipc_handle = cu_memory_provider_put_ipc_handle,
     .ext_open_ipc_handle = cu_memory_provider_open_ipc_handle,
     .ext_close_ipc_handle = cu_memory_provider_close_ipc_handle,
+    .ext_ctl = NULL,
+    .ext_get_allocation_properties =
+        cu_memory_provider_get_allocation_properties,
 };
 
 const umf_memory_provider_ops_t *umfCUDAMemoryProviderOps(void) {

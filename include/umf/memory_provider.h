@@ -265,6 +265,21 @@ umf_result_t
 umfMemoryProviderAllocationMerge(umf_memory_provider_handle_t hProvider,
                                  void *lowPtr, void *highPtr, size_t totalSize);
 
+///
+/// @brief Retrieve properties of the memory allocation.
+/// @param hProvider pointer to the memory provider
+/// @param ptr pointer to the allocated memory
+/// @param propertyId identifier of the memory property to retrieve
+/// @param property_value [out] pointer to the value of the memory property
+///         which will be filled
+/// @param max_property_size size of the property value buffer
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure
+///
+umf_result_t umfMemoryProviderGetAllocationProperties(
+    umf_memory_provider_handle_t hProvider, const void *ptr,
+    umf_memory_property_id_t propertyId, void *property_value,
+    size_t max_property_size);
+
 #ifdef __cplusplus
 }
 #endif
