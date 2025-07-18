@@ -14,16 +14,15 @@
 #include <umf.h>
 #include <umf/experimental/memspace.h>
 
-// UMF_MEMSPACE_LOWEST_LATENCY requires HWLOC
-// Additionally, it is currently unsupported on Win
-#if defined(_WIN32) || defined(UMF_NO_HWLOC)
+// UMF_MEMSPACE_LOWEST_LATENCY is currently unsupported on Win
+#if defined(_WIN32)
 
 umf_const_memspace_handle_t umfMemspaceLowestLatencyGet(void) {
     // not supported
     return NULL;
 }
 
-#else // !defined(_WIN32) && !defined(UMF_NO_HWLOC)
+#else // !defined(_WIN32)
 
 #include "base_alloc_global.h"
 #include "memspace_internal.h"
@@ -119,4 +118,4 @@ umf_const_memspace_handle_t umfMemspaceLowestLatencyGet(void) {
     return UMF_MEMSPACE_LOWEST_LATENCY;
 }
 
-#endif // !defined(_WIN32) && !defined(UMF_NO_HWLOC)
+#endif // !defined(_WIN32)
