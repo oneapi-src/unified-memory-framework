@@ -34,7 +34,7 @@ static UTIL_ONCE_FLAG initMutexOnce = UTIL_ONCE_FLAG_INIT;
 static void initialize_init_mutex(void) { utils_mutex_init(&initMutex); }
 
 static umf_ctl_node_t CTL_NODE(umf)[] = {CTL_CHILD(provider), CTL_CHILD(pool),
-                                         CTL_NODE_END};
+                                         CTL_CHILD(logger), CTL_NODE_END};
 
 void initialize_global_ctl(void) { CTL_REGISTER_MODULE(NULL, umf); }
 

@@ -28,6 +28,7 @@
 
 #include <umf.h>
 
+#include "ctl/ctl_internal.h"
 #include "utils_assert.h"
 #include "utils_common.h"
 #include "utils_log.h"
@@ -61,14 +62,15 @@ char const __umf_str_1__all_cmake_vars[] =
 #define MAX_ENV_LEN 2048
 
 typedef struct {
-    int timestamp;
-    int pid;
+    bool timestamp;
+    bool pid;
     utils_log_level_t level;
     utils_log_level_t flushLevel;
     FILE *output;
+    const char *file_name;
 } utils_log_config_t;
 
-utils_log_config_t loggerConfig = {0, 0, LOG_ERROR, LOG_ERROR, NULL};
+utils_log_config_t loggerConfig = {0, 0, LOG_ERROR, LOG_ERROR, NULL, NULL};
 
 static const char *level_to_str(utils_log_level_t l) {
     switch (l) {
@@ -254,8 +256,10 @@ void utils_log_init(void) {
     const char *arg;
     if (utils_parse_var(envVar, "output:stdout", NULL)) {
         loggerConfig.output = stdout;
+        loggerConfig.file_name = "stdout";
     } else if (utils_parse_var(envVar, "output:stderr", NULL)) {
         loggerConfig.output = stderr;
+        loggerConfig.file_name = "stderr";
     } else if (utils_parse_var(envVar, "output:file", &arg)) {
         loggerConfig.output = NULL;
         const char *argEnd = strstr(arg, ";");
@@ -284,6 +288,7 @@ void utils_log_init(void) {
             loggerConfig.output = NULL;
             return;
         }
+        loggerConfig.file_name = file;
     } else {
         loggerConfig.output = stderr;
         LOG_ERR("Logging output not set - logging disabled (UMF_LOG = \"%s\")",
@@ -334,3 +339,249 @@ void utils_log_init(void) {
         level_to_str(loggerConfig.level), level_to_str(loggerConfig.flushLevel),
         bool_to_str(loggerConfig.pid), bool_to_str(loggerConfig.timestamp));
 }
+
+// this is needed for logger unit test
+#ifndef DISABLE_CTL_LOGGER
+static umf_result_t
+CTL_READ_HANDLER(timestamp)(void *ctx, umf_ctl_query_source_t source, void *arg,
+                            size_t size, umf_ctl_index_utlist_t *indexes) {
+    /* suppress unused-parameter errors */
+    (void)source, (void)indexes, (void)ctx;
+
+    bool *arg_out = (bool *)arg;
+
+    if (arg_out == NULL || size < sizeof(bool)) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    *arg_out = loggerConfig.timestamp;
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t
+CTL_WRITE_HANDLER(timestamp)(void *ctx, umf_ctl_query_source_t source,
+                             void *arg, size_t size,
+                             umf_ctl_index_utlist_t *indexes) {
+    /* suppress unused-parameter errors */
+    (void)source, (void)indexes, (void)ctx;
+
+    bool arg_in = *(bool *)arg;
+
+    if (size < sizeof(bool)) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    loggerConfig.timestamp = arg_in;
+    LOG_INFO("Logger print timestamp set to %s",
+             bool_to_str(loggerConfig.timestamp));
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t CTL_READ_HANDLER(pid)(void *ctx,
+                                          umf_ctl_query_source_t source,
+                                          void *arg, size_t size,
+                                          umf_ctl_index_utlist_t *indexes) {
+    /* suppress unused-parameter errors */
+    (void)source, (void)indexes, (void)ctx;
+
+    bool *arg_out = (bool *)arg;
+
+    if (arg_out == NULL || size < sizeof(bool)) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    *arg_out = loggerConfig.pid;
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t CTL_WRITE_HANDLER(pid)(void *ctx,
+                                           umf_ctl_query_source_t source,
+                                           void *arg, size_t size,
+                                           umf_ctl_index_utlist_t *indexes) {
+    /* suppress unused-parameter errors */
+    (void)source, (void)indexes, (void)ctx;
+
+    bool arg_in = *(bool *)arg;
+
+    if (size < sizeof(bool)) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    loggerConfig.pid = arg_in;
+    LOG_INFO("Logger print pid %s set to", bool_to_str(loggerConfig.pid));
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t CTL_READ_HANDLER(level)(void *ctx,
+                                            umf_ctl_query_source_t source,
+                                            void *arg, size_t size,
+                                            umf_ctl_index_utlist_t *indexes) {
+    /* suppress unused-parameter errors */
+    (void)source, (void)indexes, (void)ctx;
+
+    bool *arg_out = (bool *)arg;
+
+    if (arg_out == NULL || size < sizeof(utils_log_level_t)) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    *arg_out = loggerConfig.level;
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t CTL_WRITE_HANDLER(level)(void *ctx,
+                                             umf_ctl_query_source_t source,
+                                             void *arg, size_t size,
+                                             umf_ctl_index_utlist_t *indexes) {
+    /* suppress unused-parameter errors */
+    (void)source, (void)indexes, (void)ctx;
+
+    utils_log_level_t *arg_in = (utils_log_level_t *)arg;
+
+    if (arg_in == NULL || *arg_in < LOG_DEBUG || *arg_in > LOG_FATAL ||
+        size < sizeof(int)) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    utils_log_level_t old = loggerConfig.level;
+
+    // if new log level is higher then LOG_INFO print log before changing log level
+    // so if user changes from LOG_INFO to higher log level, it will get information about change anyway
+    if (*arg_in > LOG_INFO) {
+        LOG_INFO("Logger level changed from %s to %s", level_to_str(old),
+                 level_to_str(*arg_in));
+        loggerConfig.level = *arg_in;
+    } else {
+        loggerConfig.level = *arg_in;
+        LOG_INFO("Logger level changed from %s to %s", level_to_str(old),
+                 level_to_str(loggerConfig.level));
+    }
+
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t
+CTL_READ_HANDLER(flush_level)(void *ctx, umf_ctl_query_source_t source,
+                              void *arg, size_t size,
+                              umf_ctl_index_utlist_t *indexes) {
+    /* suppress unused-parameter errors */
+    (void)source, (void)indexes, (void)ctx;
+
+    utils_log_level_t *arg_out = (utils_log_level_t *)arg;
+
+    if (arg_out == NULL || size < sizeof(utils_log_level_t)) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    *arg_out = loggerConfig.flushLevel;
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t
+CTL_WRITE_HANDLER(flush_level)(void *ctx, umf_ctl_query_source_t source,
+                               void *arg, size_t size,
+                               umf_ctl_index_utlist_t *indexes) {
+    /* suppress unused-parameter errors */
+    (void)source, (void)indexes, (void)ctx;
+
+    utils_log_level_t *arg_in = (utils_log_level_t *)arg;
+
+    if (arg_in == NULL || *arg_in < LOG_DEBUG || *arg_in > LOG_FATAL ||
+        size < sizeof(int)) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    loggerConfig.flushLevel = *arg_in;
+    LOG_INFO("Logger flush level set to %s",
+             level_to_str(loggerConfig.flushLevel));
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t CTL_READ_HANDLER(output)(void *ctx,
+                                             umf_ctl_query_source_t source,
+                                             void *arg, size_t size,
+                                             umf_ctl_index_utlist_t *indexes) {
+    /* suppress unused-parameter errors */
+    (void)source, (void)indexes, (void)ctx;
+
+    const char **arg_out = (const char **)arg;
+    if (arg_out == NULL || size < sizeof(const char *)) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (loggerConfig.output == NULL) {
+        *arg_out = "logger_disabled";
+        return UMF_RESULT_SUCCESS;
+    }
+
+    *arg_out = loggerConfig.file_name;
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t CTL_WRITE_HANDLER(output)(void *ctx,
+                                              umf_ctl_query_source_t source,
+                                              void *arg, size_t size,
+                                              umf_ctl_index_utlist_t *indexes) {
+    /* suppress unused-parameter errors */
+    (void)source, (void)indexes, (void)ctx;
+
+    const char *arg_in = *(const char **)arg;
+    if (size < sizeof(const char *)) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    FILE *oldHandle = loggerConfig.output;
+    const char *oldName =
+        loggerConfig.file_name ? loggerConfig.file_name : "disabled";
+
+    if (arg_in == NULL) {
+        if (loggerConfig.output) {
+            LOG_INFO("Logger disabled");
+            if (oldHandle != stdout && oldHandle != stderr) {
+                fclose(oldHandle);
+            }
+            loggerConfig.output = NULL;
+            loggerConfig.file_name = NULL;
+        }
+        return UMF_RESULT_SUCCESS;
+    }
+
+    FILE *newHandle = NULL;
+
+    if (strcmp(arg_in, "stdout") == 0) {
+        newHandle = stdout;
+        loggerConfig.file_name = "stdout";
+    } else if (strcmp(arg_in, "stderr") == 0) {
+        newHandle = stderr;
+        loggerConfig.file_name = "stderr";
+    } else {
+        newHandle = fopen(arg_in, "a");
+        if (!newHandle) {
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        }
+        loggerConfig.file_name = arg_in;
+    }
+
+    loggerConfig.output = newHandle;
+    LOG_INFO("Logger output changed from %s to %s", oldName,
+             loggerConfig.file_name);
+
+    if (oldHandle && oldHandle != stdout && oldHandle != stderr) {
+        fclose(oldHandle);
+    }
+
+    return UMF_RESULT_SUCCESS;
+}
+
+static const struct ctl_argument CTL_ARG(timestamp) = CTL_ARG_BOOLEAN;
+static const struct ctl_argument CTL_ARG(pid) = CTL_ARG_BOOLEAN;
+static const struct ctl_argument CTL_ARG(level) = CTL_ARG_INT;
+static const struct ctl_argument CTL_ARG(flush_level) = CTL_ARG_INT;
+static const struct ctl_argument
+    CTL_ARG(output) = CTL_ARG_STRING(MAX_FILE_PATH);
+
+const umf_ctl_node_t CTL_NODE(logger)[] = {
+    CTL_LEAF_RW(timestamp),   CTL_LEAF_RW(pid),    CTL_LEAF_RW(level),
+    CTL_LEAF_RW(flush_level), CTL_LEAF_RW(output), CTL_NODE_END,
+};
+#endif
