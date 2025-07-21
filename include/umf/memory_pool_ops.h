@@ -22,7 +22,7 @@ extern "C" {
 /// @brief Version of the Memory Pool ops structure.
 /// NOTE: This is equal to the latest UMF version, in which the ops structure
 /// has been modified.
-#define UMF_POOL_OPS_VERSION_CURRENT UMF_MAKE_VERSION(1, 0)
+#define UMF_POOL_OPS_VERSION_CURRENT UMF_MAKE_VERSION(1, 1)
 
 ///
 /// @brief This structure comprises function pointers used by corresponding umfPool*
@@ -168,6 +168,16 @@ typedef struct umf_memory_pool_ops_t {
                             const char *name, void *arg, size_t size,
                             umf_ctl_query_type_t queryType, va_list args);
 
+    ///
+    /// @brief Trims memory of the pool, removing resources that are not needed
+    ///        to keep the pool operational.
+    /// @param pool pointer to the memory pool
+    /// @param minBytesToKeep minimum number of bytes to keep in the pool (if
+    ///        possible)
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on
+    ///         failure.
+    ///
+    umf_result_t (*ext_trim_memory)(void *pool, size_t minBytesToKeep);
 } umf_memory_pool_ops_t;
 
 #ifdef __cplusplus

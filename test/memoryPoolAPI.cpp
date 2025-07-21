@@ -12,7 +12,9 @@
 
 #include <umf/memory_provider.h>
 #include <umf/pools/pool_disjoint.h>
+#include <umf/pools/pool_jemalloc.h>
 #include <umf/pools/pool_proxy.h>
+#include <umf/pools/pool_scalable.h>
 
 #ifdef UMF_PROXY_LIB_ENABLED
 #include <umf/proxy_lib_new_delete.h>
@@ -112,6 +114,11 @@ TEST_P(umfPoolWithCreateFlagsTest, memoryPoolTrace) {
     ASSERT_EQ(poolCalls["get_last_native_error"], 1UL);
     ASSERT_EQ(poolCalls.size(), ++pool_call_count);
 
+    ret = umfPoolTrimMemory(tracingPool.get(), 0);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(poolCalls["trim_memory"], 1UL);
+    ASSERT_EQ(poolCalls.size(), ++pool_call_count);
+
     if (manuallyDestroyProvider) {
         umfMemoryProviderDestroy(provider);
     }
@@ -124,6 +131,13 @@ TEST_P(umfPoolWithCreateFlagsTest, memoryPoolWithCustomProvider) {
         umf_result_t
         initialize(umf_memory_provider_handle_t provider) noexcept {
             EXPECT_NE_NOEXCEPT(provider, nullptr);
+            return UMF_RESULT_SUCCESS;
+        }
+
+        umf_result_t get_name(const char **name) noexcept {
+            if (name) {
+                *name = "pool";
+            }
             return UMF_RESULT_SUCCESS;
         }
     };
@@ -311,6 +325,14 @@ INSTANTIATE_TEST_SUITE_P(
                             defaultDisjointPoolConfigDestroy,
                             &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr}),
     poolCreateExtParamsNameGen);
+
+#ifdef UMF_POOL_SCALABLE_ENABLED
+INSTANTIATE_TEST_SUITE_P(mallocPoolTestScalable, umfPoolTest,
+                         ::testing::Values(poolCreateExtParams{
+                             umfScalablePoolOps(), nullptr, nullptr,
+                             &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr}),
+                         poolCreateExtParamsNameGen);
+#endif
 
 INSTANTIATE_TEST_SUITE_P(mallocMultiPoolTest, umfMultiPoolTest,
                          ::testing::Values(poolCreateExtParams{

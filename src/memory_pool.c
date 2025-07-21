@@ -167,6 +167,13 @@ umfDefaultCtlPoolHandle(void *hPool, umf_ctl_query_source_t operationType,
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
+static umf_result_t umfDefaultTrimMemory(void *provider,
+                                         size_t minBytesToKeep) {
+    (void)provider;
+    (void)minBytesToKeep;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
 // logical sum (OR) of all umf_pool_create_flags_t flags
 static const umf_pool_create_flags_t UMF_POOL_CREATE_FLAG_ALL =
     UMF_POOL_CREATE_FLAG_OWN_PROVIDER | UMF_POOL_CREATE_FLAG_DISABLE_TRACKING;
@@ -189,9 +196,9 @@ static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
                                           const void *params,
                                           umf_pool_create_flags_t flags,
                                           umf_memory_pool_handle_t *hPool) {
-    if (!ops || !provider || !hPool) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
+    UMF_CHECK((ops != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    UMF_CHECK((provider != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    UMF_CHECK((hPool != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
 
     // validate flags
     if (flags & ~UMF_POOL_CREATE_FLAG_ALL) {
@@ -232,6 +239,10 @@ static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
 
     if (NULL == pool->ops.ext_ctl) {
         pool->ops.ext_ctl = umfDefaultCtlPoolHandle;
+    }
+
+    if (NULL == pool->ops.ext_trim_memory) {
+        pool->ops.ext_trim_memory = umfDefaultTrimMemory;
     }
 
     if (NULL == utils_mutex_init(&pool->lock)) {
@@ -277,6 +288,8 @@ err_provider_create:
 }
 
 umf_result_t umfPoolDestroy(umf_memory_pool_handle_t hPool) {
+    UMF_CHECK((hPool != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
     if (umf_ba_global_is_destroyed()) {
         return UMF_RESULT_ERROR_UNKNOWN;
     }
@@ -453,4 +466,11 @@ umf_result_t umfPoolGetTag(umf_memory_pool_handle_t hPool, void **tag) {
     *tag = hPool->tag;
     utils_mutex_unlock(&hPool->lock);
     return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t umfPoolTrimMemory(umf_memory_pool_handle_t hPool,
+                               size_t minBytesToKeep) {
+    UMF_CHECK((hPool != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    return hPool->ops.ext_trim_memory(hPool->pool_priv, minBytesToKeep);
 }

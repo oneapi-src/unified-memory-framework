@@ -136,6 +136,13 @@ static umf_result_t proxy_get_name(void *pool, const char **name) {
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t proxy_trim_memory(void *pool, size_t minBytesToKeep) {
+    (void)pool;
+    (void)minBytesToKeep;
+
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_memory_pool_ops_t UMF_PROXY_POOL_OPS = {
     .version = UMF_POOL_OPS_VERSION_CURRENT,
     .initialize = proxy_pool_initialize,
@@ -147,7 +154,9 @@ static umf_memory_pool_ops_t UMF_PROXY_POOL_OPS = {
     .malloc_usable_size = proxy_malloc_usable_size,
     .free = proxy_free,
     .get_last_allocation_error = proxy_get_last_allocation_error,
-    .get_name = proxy_get_name};
+    .get_name = proxy_get_name,
+    .ext_trim_memory = proxy_trim_memory,
+};
 
 const umf_memory_pool_ops_t *umfProxyPoolOps(void) {
     return &UMF_PROXY_POOL_OPS;

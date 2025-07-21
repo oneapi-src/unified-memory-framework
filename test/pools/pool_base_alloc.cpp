@@ -49,6 +49,10 @@ struct base_alloc_pool : public umf_test::pool_base_t {
         }
         return UMF_RESULT_SUCCESS;
     }
+    umf_result_t ext_trim_memory(size_t) noexcept {
+        // TODO base_alloc_global does not support trimming
+        return UMF_RESULT_SUCCESS;
+    }
 };
 
 umf_memory_pool_ops_t BA_POOL_OPS =
