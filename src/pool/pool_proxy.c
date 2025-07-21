@@ -147,7 +147,9 @@ static umf_memory_pool_ops_t UMF_PROXY_POOL_OPS = {
     .malloc_usable_size = proxy_malloc_usable_size,
     .free = proxy_free,
     .get_last_allocation_error = proxy_get_last_allocation_error,
-    .get_name = proxy_get_name};
+    .get_name = proxy_get_name,
+    .ext_trim_memory = NULL, // not supported
+};
 
 const umf_memory_pool_ops_t *umfProxyPoolOps(void) {
     return &UMF_PROXY_POOL_OPS;

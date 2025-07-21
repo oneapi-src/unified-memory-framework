@@ -12,7 +12,9 @@
 
 #include <umf/memory_provider.h>
 #include <umf/pools/pool_disjoint.h>
+#include <umf/pools/pool_jemalloc.h>
 #include <umf/pools/pool_proxy.h>
+#include <umf/pools/pool_scalable.h>
 
 #ifdef UMF_POOL_JEMALLOC_ENABLED
 #include <umf/pools/pool_jemalloc.h>
@@ -84,7 +86,8 @@ TEST_P(umfPoolWithCreateFlagsTest, memoryPoolTrace) {
 
     size_t tmpSize;
     umfPoolMallocUsableSize(tracingPool.get(), nullptr, &tmpSize);
-    // we ignore return value of poolMallocUsabeSize(), as it might be not supported
+    // we ignore return value of umfPoolMallocUsableSize(), as it might be not
+    // supported
     ASSERT_EQ(poolCalls["malloc_usable_size"], 1UL);
     ASSERT_EQ(poolCalls.size(), ++pool_call_count);
 
@@ -117,6 +120,12 @@ TEST_P(umfPoolWithCreateFlagsTest, memoryPoolTrace) {
     ASSERT_EQ(poolCalls["get_last_native_error"], 1UL);
     ASSERT_EQ(poolCalls.size(), ++pool_call_count);
 
+    umfPoolTrimMemory(tracingPool.get(), 0);
+    // we ignore return value of umfPoolTrimMemory(), as it might be not
+    // supported
+    ASSERT_EQ(poolCalls["trim_memory"], 1UL);
+    ASSERT_EQ(poolCalls.size(), ++pool_call_count);
+
     if (manuallyDestroyProvider) {
         umfMemoryProviderDestroy(provider);
     }
@@ -129,6 +138,13 @@ TEST_P(umfPoolWithCreateFlagsTest, memoryPoolWithCustomProvider) {
         umf_result_t
         initialize(umf_memory_provider_handle_t provider) noexcept {
             EXPECT_NE_NOEXCEPT(provider, nullptr);
+            return UMF_RESULT_SUCCESS;
+        }
+
+        umf_result_t get_name(const char **name) noexcept {
+            if (name) {
+                *name = "pool";
+            }
             return UMF_RESULT_SUCCESS;
         }
     };
@@ -341,6 +357,14 @@ INSTANTIATE_TEST_SUITE_P(
                             defaultDisjointPoolConfigDestroy,
                             &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr}),
     poolCreateExtParamsNameGen);
+
+#ifdef UMF_POOL_SCALABLE_ENABLED
+INSTANTIATE_TEST_SUITE_P(mallocPoolTestScalable, umfPoolTest,
+                         ::testing::Values(poolCreateExtParams{
+                             umfScalablePoolOps(), nullptr, nullptr,
+                             &BA_GLOBAL_PROVIDER_OPS, nullptr, nullptr}),
+                         poolCreateExtParamsNameGen);
+#endif
 
 INSTANTIATE_TEST_SUITE_P(mallocMultiPoolTest, umfMultiPoolTest,
                          ::testing::Values(poolCreateExtParams{
