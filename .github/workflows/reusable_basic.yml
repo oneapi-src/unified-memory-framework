@@ -311,27 +311,40 @@ jobs:
       with:
         arch: x64
 
+    - name: Restore vcpkg cache
+      uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+      id: cache
+      with:
+        path: vcpkg_pkgs_cache.zip
+        key: vcpkg-basic-${{matrix.os}}-${{ hashFiles('vcpkg.json') }}
+
+    - name: Unpack vcpkg cache
+      if: steps.cache.outputs.cache-hit == 'true'
+      run: |
+        Expand-Archive -Path ${{github.workspace}}/vcpkg_pkgs_cache.zip -DestinationPath ${{github.workspace}}/vcpkg -Force
+
     - name: Initialize vcpkg
+      if: steps.cache.outputs.cache-hit != 'true'
       uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
       with:
         vcpkgGitCommitId: ea2a964f9303270322cf3f2d51c265ba146c422d # 1.04.2025
         vcpkgDirectory: ${{github.workspace}}/vcpkg
         vcpkgJsonGlob: '**/vcpkg.json'
 
-    # Install the dependencies and add the bin folders to the PATH for older
-    # versions of CMake to correctly locate the libraries
     - name: Install dependencies
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: vcpkg install --triplet x64-windows
+
+    # Older versions of CMake require this step to correctly locate dependencies
+    - name: Add vcpkg bin dirs to PATH
       run: |
-        vcpkg install --triplet x64-windows
         $env:Path = "${{env.VCPKG_PATH_BIN}};$env:Path"
         echo "PATH=$env:Path" >> $env:GITHUB_ENV
-      shell: pwsh
 
     - name: Get UMF version
       run: |
         $version = (git describe --tags --abbrev=0 | Select-String -Pattern '\d+\.\d+\.\d+').Matches.Value
         echo "UMF_VERSION=$version" >> $env:GITHUB_ENV
-      shell: pwsh
 
     - name: Configure build (Debug)
       run: >
@@ -441,6 +454,18 @@ jobs:
       if: ${{matrix.shared_library == 'ON' && matrix.compiler.cxx == 'cl'}}
       run: ${{github.workspace}}/.github/scripts/check_dll_flags.ps1 ${{env.BUILD_RELEASE_DIR}}/src/proxy_lib/Release/umf_proxy.dll
       shell: pwsh
+
+    - name: Prepare vcpkg cache
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: |
+        Compress-Archive -Path ${{github.workspace}}/vcpkg/packages -DestinationPath ${{github.workspace}}/vcpkg_pkgs_cache.zip -Force -CompressionLevel Fastest
+
+    - name: Save vcpkg cache
+      if: steps.cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+      with:
+        path: ${{github.workspace}}/vcpkg_pkgs_cache.zip
+        key: ${{ steps.cache.outputs.cache-primary-key }}
 
   windows-dynamic_build_hwloc:
     name: "Windows dynamic UMF + static hwloc"
