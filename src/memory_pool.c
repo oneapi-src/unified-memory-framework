@@ -24,15 +24,20 @@
 #include "utils_assert.h"
 #include "utils_concurrency.h"
 #include "utils_log.h"
+#include "utlist.h"
 
-#define UMF_DEFAULT_SIZE 100
-#define UMF_DEFAULT_LEN 100
+typedef struct ctl_default_entry_t {
+    char *name;
+    void *value;
+    size_t value_size;
+    umf_ctl_query_source_t source;
+    struct ctl_default_entry_t *next;
+} ctl_default_entry_t;
+
+static ctl_default_entry_t *ctl_default_list = NULL;
 
 utils_mutex_t ctl_mtx;
 static UTIL_ONCE_FLAG mem_pool_ctl_initialized = UTIL_ONCE_FLAG_INIT;
-
-char CTL_DEFAULT_ENTRIES[UMF_DEFAULT_SIZE][UMF_DEFAULT_LEN] = {0};
-char CTL_DEFAULT_VALUES[UMF_DEFAULT_SIZE][UMF_DEFAULT_LEN] = {0};
 
 static struct ctl umf_pool_ctl_root;
 
@@ -79,36 +84,76 @@ static umf_result_t CTL_SUBTREE_HANDLER(default)(
 
     utils_mutex_lock(&ctl_mtx);
 
-    if (queryType == CTL_QUERY_WRITE) {
-        int i = 0;
-        for (; i < UMF_DEFAULT_SIZE; i++) {
-            if (CTL_DEFAULT_ENTRIES[i][0] == '\0' ||
-                strcmp(CTL_DEFAULT_ENTRIES[i], extra_name) == 0) {
-                strncpy(CTL_DEFAULT_ENTRIES[i], extra_name, UMF_DEFAULT_LEN);
-                CTL_DEFAULT_ENTRIES[i][UMF_DEFAULT_LEN - 1] = '\0';
-                strncpy(CTL_DEFAULT_VALUES[i], arg, UMF_DEFAULT_LEN);
-                CTL_DEFAULT_VALUES[i][UMF_DEFAULT_LEN - 1] = '\0';
-                break;
-            }
+    ctl_default_entry_t *entry = NULL;
+    LL_FOREACH(ctl_default_list, entry) {
+        if (strcmp(entry->name, extra_name) == 0) {
+            break;
         }
-        if (UMF_DEFAULT_SIZE == i) {
-            LOG_ERR("Default entries array is full");
+    }
+
+    if (queryType == CTL_QUERY_WRITE) {
+        bool is_new_entry = false;
+        if (entry == NULL) {
+            entry = umf_ba_global_alloc(sizeof(*entry));
+            if (entry == NULL) {
+                utils_mutex_unlock(&ctl_mtx);
+                return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+            }
+
+            entry->name = NULL;
+            entry->value = NULL;
+            entry->next = NULL;
+            is_new_entry = true;
+        }
+
+        size_t name_len = strlen(extra_name) + 1;
+        char *new_name = umf_ba_global_alloc(name_len);
+        if (new_name == NULL) {
             utils_mutex_unlock(&ctl_mtx);
-            return UMF_RESULT_ERROR_OUT_OF_RESOURCES;
+            return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+        }
+
+        memcpy(new_name, extra_name, name_len);
+        if (entry->name) {
+            umf_ba_global_free(entry->name);
+        }
+        entry->name = new_name;
+
+        void *new_value = NULL;
+        if (size > 0) {
+            new_value = umf_ba_global_alloc(size);
+            if (new_value == NULL) {
+                utils_mutex_unlock(&ctl_mtx);
+                return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+            }
+            memcpy(new_value, arg, size);
+        }
+
+        if (entry->value) {
+            umf_ba_global_free(entry->value);
+        }
+
+        entry->value = new_value;
+        entry->value_size = size;
+        entry->source = source;
+
+        if (is_new_entry) {
+            LL_APPEND(ctl_default_list, entry);
         }
     } else if (queryType == CTL_QUERY_READ) {
-        int i = 0;
-        for (; i < UMF_DEFAULT_SIZE; i++) {
-            if (strcmp(CTL_DEFAULT_ENTRIES[i], extra_name) == 0) {
-                strncpy(arg, CTL_DEFAULT_VALUES[i], size);
-                break;
-            }
-        }
-        if (UMF_DEFAULT_SIZE == i) {
+        if (entry == NULL) {
             LOG_WARN("Wrong path name: %s", extra_name);
             utils_mutex_unlock(&ctl_mtx);
             return UMF_RESULT_ERROR_INVALID_ARGUMENT;
         }
+
+        if (entry->value_size > size) {
+            LOG_ERR("Provided buffer size %zu is smaller than field size %zu",
+                    size, entry->value_size);
+            utils_mutex_unlock(&ctl_mtx);
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        }
+        memcpy(arg, entry->value, entry->value_size);
     }
 
     utils_mutex_unlock(&ctl_mtx);
@@ -174,12 +219,11 @@ static const umf_pool_create_flags_t UMF_POOL_CREATE_FLAG_ALL =
 // windows do not allow to use uninitialized va_list so this function help us to initialize it.
 static umf_result_t default_ctl_helper(const umf_memory_pool_ops_t *ops,
                                        void *ctl, const char *name, void *arg,
-                                       ...) {
+                                       size_t size, ...) {
     va_list empty_args;
-    va_start(empty_args, arg);
-    umf_result_t ret =
-        ops->ext_ctl(ctl, CTL_QUERY_PROGRAMMATIC, name, arg, UMF_DEFAULT_LEN,
-                     CTL_QUERY_WRITE, empty_args);
+    va_start(empty_args, size);
+    umf_result_t ret = ops->ext_ctl(ctl, CTL_QUERY_PROGRAMMATIC, name, arg,
+                                    size, CTL_QUERY_WRITE, empty_args);
     va_end(empty_args);
     return ret;
 }
@@ -246,18 +290,23 @@ static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
     }
 
     // Set default property "name" to pool if exists
-    for (int i = 0; i < UMF_DEFAULT_SIZE; i++) {
-        const char *pname = NULL;
-        ret = ops->get_name(NULL, &pname);
-        if (ret != UMF_RESULT_SUCCESS) {
-            LOG_ERR("Failed to get pool name");
-            goto err_pool_init;
-        }
-        if (CTL_DEFAULT_ENTRIES[i][0] != '\0' && pname &&
-            strstr(CTL_DEFAULT_ENTRIES[i], pname)) {
+    const char *pname = NULL;
+    ret = ops->get_name(NULL, &pname);
+    if (ret != UMF_RESULT_SUCCESS) {
+        LOG_ERR("Failed to get pool name");
+        goto err_pool_init;
+    }
+    assert(pname != NULL);
 
-            default_ctl_helper(ops, pool->pool_priv, CTL_DEFAULT_ENTRIES[i],
-                               CTL_DEFAULT_VALUES[i]);
+    size_t pname_len = strlen(pname);
+    ctl_default_entry_t *it = NULL;
+    LL_FOREACH(ctl_default_list, it) {
+        if (strlen(it->name) > pname_len + 1 &&
+            strncmp(it->name, pname, pname_len) == 0 &&
+            it->name[pname_len] == '.') {
+            const char *ctl_name = it->name + pname_len + 1;
+            default_ctl_helper(ops, pool->pool_priv, ctl_name, it->value,
+                               it->value_size);
         }
     }
 
@@ -453,4 +502,24 @@ umf_result_t umfPoolGetTag(umf_memory_pool_handle_t hPool, void **tag) {
     *tag = hPool->tag;
     utils_mutex_unlock(&hPool->lock);
     return UMF_RESULT_SUCCESS;
+}
+
+void umfPoolCtlDefaultsDestroy(void) {
+    utils_init_once(&mem_pool_ctl_initialized, pool_ctl_init);
+
+    utils_mutex_lock(&ctl_mtx);
+
+    ctl_default_entry_t *entry = NULL, *tmp = NULL;
+    LL_FOREACH_SAFE(ctl_default_list, entry, tmp) {
+        LL_DELETE(ctl_default_list, entry);
+        if (entry->name) {
+            umf_ba_global_free(entry->name);
+        }
+        if (entry->value) {
+            umf_ba_global_free(entry->value);
+        }
+        umf_ba_global_free(entry);
+    }
+
+    utils_mutex_unlock(&ctl_mtx);
 }
