@@ -130,11 +130,20 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Set VCPKG_PATH without hwloc
-      if: matrix.static_hwloc == 'ON'
-      run: echo "VCPKG_PATH=${{env.VCPKG_PATH_NO_HWLOC}}" >> $env:GITHUB_ENV
+    - name: Restore vcpkg cache
+      uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+      id: cache
+      with:
+        path: vcpkg_pkgs_cache.zip
+        key: vcpkg-generators-windows-latest-${{ hashFiles('vcpkg.json') }}
+
+    - name: Unpack vcpkg cache
+      if: steps.cache.outputs.cache-hit == 'true'
+      run: |
+        Expand-Archive -Path ${{github.workspace}}/vcpkg_pkgs_cache.zip -DestinationPath ${{env.BUILD_DIR}}/vcpkg -Force
 
     - name: Initialize vcpkg
+      if: steps.cache.outputs.cache-hit != 'true'
       uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
       with:
         vcpkgGitCommitId: ea2a964f9303270322cf3f2d51c265ba146c422d # 1.04.2025
@@ -142,7 +151,12 @@ jobs:
         vcpkgJsonGlob: '**/vcpkg.json'
 
     - name: Install dependencies
+      if: steps.cache.outputs.cache-hit != 'true'
       run: vcpkg install --triplet x64-windows
+
+    - name: Set VCPKG_PATH without hwloc
+      if: matrix.static_hwloc == 'ON'
+      run: echo "VCPKG_PATH=${{env.VCPKG_PATH_NO_HWLOC}}" >> $env:GITHUB_ENV
 
     - name: Install Ninja
       if: matrix.generator == 'Ninja'
@@ -222,6 +236,18 @@ jobs:
       working-directory: ${{github.workspace}}/examples/fetch_content/build
       run: ctest -V
 
+    - name: Prepare vcpkg cache
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: |
+        Compress-Archive -Path ${{env.BUILD_DIR}}/vcpkg/packages -DestinationPath ${{github.workspace}}/vcpkg_pkgs_cache.zip -Force -CompressionLevel Fastest
+
+    - name: Save vcpkg cache
+      if: steps.cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+      with:
+        path: ${{github.workspace}}/vcpkg_pkgs_cache.zip
+        key: ${{ steps.cache.outputs.cache-primary-key }}
+
   # Build and test UMF with Intel C++ Compiler (ICX) on Windows
   Windows-icx:
    env:
@@ -241,71 +267,97 @@ jobs:
    runs-on: ${{matrix.os}}
 
    steps:
-   - name: Checkout
-     uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-     with:
-       fetch-depth: 0
+    - name: Checkout
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        fetch-depth: 0
 
-   - name: Initialize vcpkg
-     uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
-     with:
-       vcpkgGitCommitId: ea2a964f9303270322cf3f2d51c265ba146c422d # 1.04.2025
-       vcpkgDirectory: ${{env.BUILD_DIR}}/vcpkg
-       vcpkgJsonGlob: '**/vcpkg.json'
+    - name: Restore vcpkg cache
+      uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+      id: cache
+      with:
+        path: vcpkg_pkgs_cache.zip
+        key: vcpkg-icx-${{matrix.os}}-${{ hashFiles('vcpkg.json') }}
 
-   - name: Install dependencies
-     run: vcpkg install --triplet x64-windows
+    - name: Unpack vcpkg cache
+      if: steps.cache.outputs.cache-hit == 'true'
+      run: |
+        Expand-Archive -Path ${{github.workspace}}/vcpkg_pkgs_cache.zip -DestinationPath ${{env.BUILD_DIR}}/vcpkg -Force
 
-   - name: Install Ninja
-     uses: seanmiddleditch/gha-setup-ninja@3b1f8f94a2f8254bd26914c4ab9474d4f0015f67 # v6
+    - name: Initialize vcpkg
+      if: steps.cache.outputs.cache-hit != 'true'
+      uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
+      with:
+        vcpkgGitCommitId: ea2a964f9303270322cf3f2d51c265ba146c422d # 1.04.2025
+        vcpkgDirectory: ${{env.BUILD_DIR}}/vcpkg
+        vcpkgJsonGlob: '**/vcpkg.json'
 
-   - name: Download icx compiler
-     env:
-       # Link source: https://www.intel.com/content/www/us/en/developer/tools/oneapi/dpc-compiler-download.html
-       CMPLR_LINK: "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/15a35578-2f9a-4f39-804b-3906e0a5f8fc/w_dpcpp-cpp-compiler_p_2024.2.1.83_offline.exe"
-     run: |
-       Invoke-WebRequest -Uri "${{ env.CMPLR_LINK }}" -OutFile compiler_install.exe
+    - name: Install dependencies
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: vcpkg install --triplet x64-windows
 
-   - name: Install icx compiler
-     shell: cmd
-     run: |
-       start /b /wait .\compiler_install.exe -s -x -f extracted --log extract.log
-       extracted\bootstrapper.exe -s --action install --eula=accept -p=NEED_VS2017_INTEGRATION=0 ^
-         -p=NEED_VS2019_INTEGRATION=0 -p=NEED_VS2022_INTEGRATION=0 --log-dir=.
+    - name: Install Ninja
+      uses: seanmiddleditch/gha-setup-ninja@3b1f8f94a2f8254bd26914c4ab9474d4f0015f67 # v6
 
-   - name: Configure build
-     shell: cmd
-     run: |
-       call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
-       call "C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat"
-       cmake ^
-         -B ${{env.BUILD_DIR}} ^
-         -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}" ^
-         -DCMAKE_C_COMPILER=${{matrix.compiler.c}} ^
-         -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}} ^
-         -G Ninja ^
-         -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}} ^
-         -DUMF_FORMAT_CODE_STYLE=OFF ^
-         -DUMF_DEVELOPER_MODE=ON ^
-         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON ^
-         -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON ^
-         -DUMF_BUILD_CUDA_PROVIDER=ON ^
-         -DUMF_TESTS_FAIL_ON_SKIP=ON
+    - name: Download icx compiler
+      env:
+        # Link source: https://www.intel.com/content/www/us/en/developer/tools/oneapi/dpc-compiler-download.html
+        CMPLR_LINK: "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/15a35578-2f9a-4f39-804b-3906e0a5f8fc/w_dpcpp-cpp-compiler_p_2024.2.1.83_offline.exe"
+      run: |
+        Invoke-WebRequest -Uri "${{ env.CMPLR_LINK }}" -OutFile compiler_install.exe
 
-   - name: Build UMF
-     shell: cmd
-     run: |
-       call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
-       call "C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat"
-       cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j %NUMBER_OF_PROCESSORS%
+    - name: Install icx compiler
+      shell: cmd
+      run: |
+        start /b /wait .\compiler_install.exe -s -x -f extracted --log extract.log
+        extracted\bootstrapper.exe -s --action install --eula=accept -p=NEED_VS2017_INTEGRATION=0 ^
+          -p=NEED_VS2019_INTEGRATION=0 -p=NEED_VS2022_INTEGRATION=0 --log-dir=.
 
-   - name: Run tests
-     shell: cmd
-     working-directory: ${{env.BUILD_DIR}}
-     run: |
-       call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
-       call "C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat"
-       ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
+    - name: Configure build
+      shell: cmd
+      run: |
+        call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
+        call "C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat"
+        cmake ^
+          -B ${{env.BUILD_DIR}} ^
+          -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}" ^
+          -DCMAKE_C_COMPILER=${{matrix.compiler.c}} ^
+          -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}} ^
+          -G Ninja ^
+          -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}} ^
+          -DUMF_FORMAT_CODE_STYLE=OFF ^
+          -DUMF_DEVELOPER_MODE=ON ^
+          -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON ^
+          -DUMF_BUILD_LEVEL_ZERO_PROVIDER=ON ^
+          -DUMF_BUILD_CUDA_PROVIDER=ON ^
+          -DUMF_TESTS_FAIL_ON_SKIP=ON
+
+    - name: Build UMF
+      shell: cmd
+      run: |
+        call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
+        call "C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat"
+        cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j %NUMBER_OF_PROCESSORS%
+
+    - name: Run tests
+      shell: cmd
+      working-directory: ${{env.BUILD_DIR}}
+      run: |
+        call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
+        call "C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat"
+        ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
+
+    - name: Prepare vcpkg cache
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: |
+        Compress-Archive -Path ${{env.BUILD_DIR}}/vcpkg/packages -DestinationPath ${{github.workspace}}/vcpkg_pkgs_cache.zip -Force -CompressionLevel Fastest
+
+    - name: Save vcpkg cache
+      if: steps.cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+      with:
+        path: ${{github.workspace}}/vcpkg_pkgs_cache.zip
+        key: ${{ steps.cache.outputs.cache-primary-key }}
 
   # Scenarios where UMF_LINK_HWLOC_STATICALLY is set to OFF and hwloc is not installed in the system
   # The hwloc library is fetched implicitly

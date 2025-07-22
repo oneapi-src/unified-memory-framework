@@ -67,6 +67,7 @@ umf_result_t umfDevDaxMemoryProviderParamsSetProtection(
 #include "base_alloc_global.h"
 #include "coarse.h"
 #include "libumf.h"
+#include "provider_ctl_stats_type.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
 #include "utils_log.h"
@@ -83,7 +84,11 @@ typedef struct devdax_memory_provider_t {
     utils_mutex_t lock;  // lock of ptr and offset
     unsigned protection; // combination of OS-specific protection flags
     coarse_t *coarse;    // coarse library handle
+    ctl_stats_t stats;
 } devdax_memory_provider_t;
+
+#define CTL_PROVIDER_TYPE devdax_memory_provider_t
+#include "provider_ctl_stats_impl.h"
 
 // DevDax Memory provider settings struct
 typedef struct umf_devdax_memory_provider_params_t {
@@ -112,6 +117,9 @@ static __TLS devdax_last_native_error_t TLS_last_native_error;
 #define _UMF_DEVDAX_RESULT_ERROR_PURGE_FORCE_FAILED                            \
     (UMF_DEVDAX_RESULT_ERROR_PURGE_FORCE_FAILED - UMF_DEVDAX_RESULT_SUCCESS)
 
+struct ctl devdax_memory_ctl_root;
+static UTIL_ONCE_FLAG ctl_initialized = UTIL_ONCE_FLAG_INIT;
+
 static const char *Native_error_str[] = {
     [_UMF_DEVDAX_RESULT_SUCCESS] = "success",
     [_UMF_DEVDAX_RESULT_ERROR_ALLOC_FAILED] = "memory allocation failed",
@@ -125,6 +133,10 @@ static void devdax_store_last_native_error(int32_t native_error,
                                            int errno_value) {
     TLS_last_native_error.native_error = native_error;
     TLS_last_native_error.errno_value = errno_value;
+}
+
+static void initialize_devdax_ctl(void) {
+    CTL_REGISTER_MODULE(&devdax_memory_ctl_root, stats);
 }
 
 static umf_result_t
@@ -284,7 +296,12 @@ static umf_result_t devdax_alloc(void *provider, size_t size, size_t alignment,
                                  void **resultPtr) {
     devdax_memory_provider_t *devdax_provider =
         (devdax_memory_provider_t *)provider;
-    return coarse_alloc(devdax_provider->coarse, size, alignment, resultPtr);
+    umf_result_t ret =
+        coarse_alloc(devdax_provider->coarse, size, alignment, resultPtr);
+    if (ret == UMF_RESULT_SUCCESS) {
+        provider_ctl_stats_alloc(devdax_provider, size);
+    }
+    return ret;
 }
 
 static umf_result_t devdax_get_last_native_error(void *provider,
@@ -531,10 +548,23 @@ static umf_result_t devdax_close_ipc_handle(void *provider, void *ptr,
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t devdax_ctl(void *provider,
+                               umf_ctl_query_source_t operationType,
+                               const char *name, void *arg, size_t size,
+                               umf_ctl_query_type_t query_type, va_list args) {
+    utils_init_once(&ctl_initialized, initialize_devdax_ctl);
+    return ctl_query(&devdax_memory_ctl_root, provider, operationType, name,
+                     query_type, arg, size, args);
+}
+
 static umf_result_t devdax_free(void *provider, void *ptr, size_t size) {
     devdax_memory_provider_t *devdax_provider =
         (devdax_memory_provider_t *)provider;
-    return coarse_free(devdax_provider->coarse, ptr, size);
+    umf_result_t ret = coarse_free(devdax_provider->coarse, ptr, size);
+    if (ret == UMF_RESULT_SUCCESS) {
+        provider_ctl_stats_free(devdax_provider, size);
+    }
+    return ret;
 }
 
 static umf_memory_provider_ops_t UMF_DEVDAX_MEMORY_PROVIDER_OPS = {
@@ -555,7 +585,8 @@ static umf_memory_provider_ops_t UMF_DEVDAX_MEMORY_PROVIDER_OPS = {
     .ext_get_ipc_handle = devdax_get_ipc_handle,
     .ext_put_ipc_handle = devdax_put_ipc_handle,
     .ext_open_ipc_handle = devdax_open_ipc_handle,
-    .ext_close_ipc_handle = devdax_close_ipc_handle};
+    .ext_close_ipc_handle = devdax_close_ipc_handle,
+    .ext_ctl = devdax_ctl};
 
 const umf_memory_provider_ops_t *umfDevDaxMemoryProviderOps(void) {
     return &UMF_DEVDAX_MEMORY_PROVIDER_OPS;

@@ -74,7 +74,8 @@ jobs:
       run: |
         ctest --output-on-failure
 
-  # TODO restore ASAN tests on Windows
+  # TODO: restore ASAN tests on Windows
+  # TODO: ... and when restored - add cache support for vcpkg packages !!!
   #windows-build:
   #  env:
   #    VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
