@@ -74,6 +74,7 @@ umf_result_t umfFileMemoryProviderParamsSetVisibility(
 #include "coarse.h"
 #include "critnib.h"
 #include "libumf.h"
+#include "provider_ctl_stats_type.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
 #include "utils_log.h"
@@ -112,7 +113,11 @@ typedef struct file_memory_provider_t {
     critnib *fd_offset_map;
 
     coarse_t *coarse; // coarse library handle
+    ctl_stats_t stats;
 } file_memory_provider_t;
+
+#define CTL_PROVIDER_TYPE file_memory_provider_t
+#include "provider_ctl_stats_impl.h"
 
 // File Memory Provider settings struct
 typedef struct umf_file_memory_provider_params_t {
@@ -139,6 +144,9 @@ static __TLS file_last_native_error_t TLS_last_native_error;
 #define _UMF_FILE_RESULT_ERROR_PURGE_FORCE_FAILED                              \
     (UMF_FILE_RESULT_ERROR_PURGE_FORCE_FAILED - UMF_FILE_RESULT_SUCCESS)
 
+struct ctl file_memory_ctl_root;
+static UTIL_ONCE_FLAG ctl_initialized = UTIL_ONCE_FLAG_INIT;
+
 static const char *Native_error_str[] = {
     [_UMF_FILE_RESULT_SUCCESS] = "success",
     [_UMF_FILE_RESULT_ERROR_ALLOC_FAILED] = "memory allocation failed",
@@ -150,6 +158,10 @@ static void file_store_last_native_error(int32_t native_error,
                                          int errno_value) {
     TLS_last_native_error.native_error = native_error;
     TLS_last_native_error.errno_value = errno_value;
+}
+
+static void initialize_file_ctl(void) {
+    CTL_REGISTER_MODULE(&file_memory_ctl_root, stats);
 }
 
 static umf_result_t
@@ -496,7 +508,12 @@ static umf_result_t file_alloc_aligned(file_memory_provider_t *file_provider,
 static umf_result_t file_alloc(void *provider, size_t size, size_t alignment,
                                void **resultPtr) {
     file_memory_provider_t *file_provider = (file_memory_provider_t *)provider;
-    return coarse_alloc(file_provider->coarse, size, alignment, resultPtr);
+    umf_result_t ret =
+        coarse_alloc(file_provider->coarse, size, alignment, resultPtr);
+    if (ret == UMF_RESULT_SUCCESS) {
+        provider_ctl_stats_alloc(file_provider, size);
+    }
+    return ret;
 }
 
 static umf_result_t file_alloc_cb(void *provider, size_t size, size_t alignment,
@@ -859,9 +876,22 @@ static umf_result_t file_close_ipc_handle(void *provider, void *ptr,
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t file_ctl(void *provider,
+                             umf_ctl_query_source_t operationType,
+                             const char *name, void *arg, size_t size,
+                             umf_ctl_query_type_t query_type, va_list args) {
+    utils_init_once(&ctl_initialized, initialize_file_ctl);
+    return ctl_query(&file_memory_ctl_root, provider, operationType, name,
+                     query_type, arg, size, args);
+}
+
 static umf_result_t file_free(void *provider, void *ptr, size_t size) {
     file_memory_provider_t *file_provider = (file_memory_provider_t *)provider;
-    return coarse_free(file_provider->coarse, ptr, size);
+    umf_result_t ret = coarse_free(file_provider->coarse, ptr, size);
+    if (ret == UMF_RESULT_SUCCESS) {
+        provider_ctl_stats_free(file_provider, size);
+    }
+    return ret;
 }
 
 static umf_memory_provider_ops_t UMF_FILE_MEMORY_PROVIDER_OPS = {
@@ -882,7 +912,8 @@ static umf_memory_provider_ops_t UMF_FILE_MEMORY_PROVIDER_OPS = {
     .ext_get_ipc_handle = file_get_ipc_handle,
     .ext_put_ipc_handle = file_put_ipc_handle,
     .ext_open_ipc_handle = file_open_ipc_handle,
-    .ext_close_ipc_handle = file_close_ipc_handle};
+    .ext_close_ipc_handle = file_close_ipc_handle,
+    .ext_ctl = file_ctl};
 
 const umf_memory_provider_ops_t *umfFileMemoryProviderOps(void) {
     return &UMF_FILE_MEMORY_PROVIDER_OPS;

@@ -2,6 +2,7 @@
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
+#include <umf/experimental/ctl.h>
 #include <umf/memory_provider.h>
 #include <umf/pools/pool_disjoint.h>
 #include <umf/providers/provider_os_memory.h>
@@ -390,6 +391,58 @@ TEST_P(umfProviderTest, close_ipc_handle_wrong_visibility) {
     umf_result_t umf_result =
         umfMemoryProviderCloseIPCHandle(provider.get(), INVALID_PTR, 1);
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_P(umfProviderTest, ctl_stats) {
+    size_t allocated = 0, peak = 0;
+    umf_result_t ret =
+        umfCtlGet("umf.provider.by_handle.{}.stats.allocated_memory",
+                  &allocated, sizeof(allocated), provider.get());
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(allocated, 0u);
+
+    ret = umfCtlGet("umf.provider.by_handle.{}.stats.peak_memory", &peak,
+                    sizeof(peak), provider.get());
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(peak, 0u);
+
+    void *ptr = nullptr;
+    size_t size = page_size;
+    ret = umfMemoryProviderAlloc(provider.get(), size, 0, &ptr);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(ptr, nullptr);
+
+    ret = umfCtlGet("umf.provider.by_handle.{}.stats.allocated_memory",
+                    &allocated, sizeof(allocated), provider.get());
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(allocated, size);
+
+    ret = umfCtlGet("umf.provider.by_handle.{}.stats.peak_memory", &peak,
+                    sizeof(peak), provider.get());
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(peak, size);
+
+    ret = umfMemoryProviderFree(provider.get(), ptr, size);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfCtlGet("umf.provider.by_handle.{}.stats.allocated_memory",
+                    &allocated, sizeof(allocated), provider.get());
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(allocated, 0u);
+
+    ret = umfCtlGet("umf.provider.by_handle.{}.stats.peak_memory", &peak,
+                    sizeof(peak), provider.get());
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(peak, size);
+
+    ret = umfCtlExec("umf.provider.by_handle.{}.stats.peak_memory.reset", NULL,
+                     0, provider.get());
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfCtlGet("umf.provider.by_handle.{}.stats.peak_memory", &peak,
+                    sizeof(peak), provider.get());
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(peak, 0u);
 }
 
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(umfIpcTest);

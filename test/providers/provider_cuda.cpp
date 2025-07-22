@@ -9,6 +9,7 @@
 
 #include <mutex>
 
+#include <umf/experimental/ctl.h>
 #include <umf/providers/provider_cuda.h>
 
 #include "cuda_helpers.h"
@@ -274,6 +275,65 @@ TEST_P(umfCUDAProviderTest, getName) {
     umf_result = umfMemoryProviderGetName(provider, &name);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_STREQ(name, "CUDA");
+
+    umfMemoryProviderDestroy(provider);
+}
+
+TEST_P(umfCUDAProviderTest, ctl_stats) {
+    umf_memory_provider_handle_t provider = nullptr;
+    umf_result_t ret =
+        umfMemoryProviderCreate(umfCUDAMemoryProviderOps(), params, &provider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(provider, nullptr);
+
+    size_t allocated = 0, peak = 0;
+    ret = umfCtlGet("umf.provider.by_handle.{}.stats.allocated_memory",
+                    &allocated, sizeof(allocated), provider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(allocated, 0u);
+
+    ret = umfCtlGet("umf.provider.by_handle.{}.stats.peak_memory", &peak,
+                    sizeof(peak), provider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(peak, 0u);
+
+    void *ptr = nullptr;
+    const size_t size = 1024 * 8;
+    ret = umfMemoryProviderAlloc(provider, size, 0, &ptr);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(ptr, nullptr);
+
+    ret = umfCtlGet("umf.provider.by_handle.{}.stats.allocated_memory",
+                    &allocated, sizeof(allocated), provider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(allocated, size);
+
+    ret = umfCtlGet("umf.provider.by_handle.{}.stats.peak_memory", &peak,
+                    sizeof(peak), provider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(peak, size);
+
+    ret = umfMemoryProviderFree(provider, ptr, size);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfCtlGet("umf.provider.by_handle.{}.stats.allocated_memory",
+                    &allocated, sizeof(allocated), provider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(allocated, 0u);
+
+    ret = umfCtlGet("umf.provider.by_handle.{}.stats.peak_memory", &peak,
+                    sizeof(peak), provider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(peak, size);
+
+    ret = umfCtlExec("umf.provider.by_handle.{}.stats.peak_memory.reset", NULL,
+                     0, provider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfCtlGet("umf.provider.by_handle.{}.stats.peak_memory", &peak,
+                    sizeof(peak), provider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(peak, 0u);
 
     umfMemoryProviderDestroy(provider);
 }
