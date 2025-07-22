@@ -221,6 +221,26 @@ if(LINUX)
         LIBS ${UMF_UTILS_FOR_TEST})
 endif()
 
+build_umf_test(
+    NAME ctl_env_app
+    SRCS ctl/ctl_env_app.cpp
+    LIBS ${UMF_UTILS_FOR_TEST} umf)
+
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/ctl/ctl_env_config1.cfg
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/ctl)
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/ctl/ctl_env_config2.cfg
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/ctl)
+
+add_umf_test(
+    NAME ctl_env_driver
+    SRCS ctl/ctl_env_driver.cpp
+    LIBS ${UMF_UTILS_FOR_TEST})
+
+target_compile_definitions(
+    test_ctl_env_driver
+    PRIVATE CTL_ENV_APP="$<TARGET_FILE:test_ctl_env_app>"
+            CTL_CONF_FILE_DIR="${CMAKE_CURRENT_BINARY_DIR}/ctl")
+
 add_umf_test(
     NAME coarse_lib
     SRCS coarse_lib.cpp
