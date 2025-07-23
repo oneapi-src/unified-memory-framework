@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2024 Intel Corporation
+ * Copyright (C) 2024-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -13,6 +13,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "ctl/ctl_internal.h"
 
 typedef enum {
     LOG_DEBUG,
@@ -46,6 +48,8 @@ void utils_log(utils_log_level_t level, const char *func, const char *format,
 void utils_plog(utils_log_level_t level, const char *func, const char *format,
                 ...) __attribute__((format(printf, 3, 4)));
 #endif
+
+extern const umf_ctl_node_t CTL_NODE(logger)[];
 
 #ifdef __cplusplus
 }

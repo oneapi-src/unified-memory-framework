@@ -192,10 +192,12 @@ add_umf_test(
     SRCS memoryProviderAPI.cpp
     LIBS ${UMF_UTILS_FOR_TEST} ${UMF_BA_FOR_TEST})
 
-add_umf_test(
-    NAME logger
-    SRCS utils/utils_log.cpp ${UMF_UTILS_SOURCES}
-    LIBS ${UMF_LOGGER_LIBS})
+if(NOT UMF_BUILD_SHARED_LIBRARY)
+    add_umf_test(
+        NAME logger
+        SRCS utils/utils_log.cpp ${UMF_UTILS_SOURCES} ../src/ctl/ctl.c
+        LIBS ${UMF_LOGGER_LIBS} ${UMF_BA_FOR_TEST})
+endif()
 
 add_umf_test(
     NAME ctl_unittest

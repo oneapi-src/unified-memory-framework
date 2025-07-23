@@ -36,7 +36,7 @@ char CTL_DEFAULT_VALUES[UMF_DEFAULT_SIZE][UMF_DEFAULT_LEN] = {0};
 
 static struct ctl umf_pool_ctl_root;
 
-static void ctl_init(void);
+static void pool_ctl_init(void);
 
 static umf_result_t CTL_SUBTREE_HANDLER(CTL_NONAME, by_handle)(
     void *ctx, umf_ctl_query_source_t source, void *arg, size_t size,
@@ -66,7 +66,7 @@ static umf_result_t CTL_SUBTREE_HANDLER(default)(
     umf_ctl_index_utlist_t *indexes, const char *extra_name,
     umf_ctl_query_type_t queryType, va_list args) {
     (void)indexes, (void)source, (void)ctx, (void)args;
-    utils_init_once(&mem_pool_ctl_initialized, ctl_init);
+    utils_init_once(&mem_pool_ctl_initialized, pool_ctl_init);
 
     if (strstr(extra_name, "{}") != NULL) {
         // We might implement it in future - it requires store copy of va_list
@@ -148,7 +148,7 @@ static const struct ctl_argument CTL_ARG(by_handle) = CTL_ARG_PTR;
 umf_ctl_node_t CTL_NODE(pool)[] = {CTL_CHILD_WITH_ARG(by_handle),
                                    CTL_LEAF_SUBTREE(default), CTL_NODE_END};
 
-static void ctl_init(void) {
+static void pool_ctl_init(void) {
     utils_mutex_init(&ctl_mtx);
     CTL_REGISTER_MODULE(&umf_pool_ctl_root, stats);
 }
@@ -223,7 +223,7 @@ static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
         pool->provider = provider;
     }
 
-    utils_init_once(&mem_pool_ctl_initialized, ctl_init);
+    utils_init_once(&mem_pool_ctl_initialized, pool_ctl_init);
 
     pool->flags = flags;
     pool->ops = *ops;

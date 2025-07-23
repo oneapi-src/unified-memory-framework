@@ -27,9 +27,9 @@
 
 #include "base_alloc/base_alloc_global.h"
 #include "ctl_internal.h"
+#include "uthash/utlist.h"
 #include "utils/utils_common.h"
 #include "utils_log.h"
-#include "utlist.h"
 
 #ifdef _WIN32
 #define strtok_r strtok_s
@@ -49,13 +49,25 @@
 static int ctl_global_first_free = 0;
 static umf_ctl_node_t CTL_NODE(global)[CTL_MAX_ENTRIES];
 
+static void *(*ctl_malloc_fn)(size_t) = NULL;
+static void (*ctl_free_fn)(void *) = NULL;
+
+void ctl_init(void *(*Malloc)(size_t), void (*Free)(void *)) {
+    if (Malloc) {
+        ctl_malloc_fn = Malloc;
+    }
+    if (Free) {
+        ctl_free_fn = Free;
+    }
+}
+
 typedef struct optional_umf_result_t {
     bool is_valid;
     umf_result_t value;
 } optional_umf_result_t;
 
 void *Zalloc(size_t sz) {
-    void *ptr = umf_ba_global_alloc(sz);
+    void *ptr = ctl_malloc_fn(sz);
     if (ptr) {
         memset(ptr, 0, sz);
     }
@@ -64,7 +76,7 @@ void *Zalloc(size_t sz) {
 
 char *Strdup(const char *s) {
     size_t len = strlen(s) + 1;
-    char *p = umf_ba_global_alloc(len);
+    char *p = ctl_malloc_fn(len);
     if (p) {
         memcpy(p, s, len);
     }
@@ -121,9 +133,9 @@ static void ctl_delete_indexes(umf_ctl_index_utlist_t *indexes) {
         LL_DELETE(indexes, elem);
         if (elem) {
             if (elem->arg) {
-                umf_ba_global_free(elem->arg);
+                ctl_free_fn(elem->arg);
             }
-            umf_ba_global_free(elem);
+            ctl_free_fn(elem);
         }
     }
 }
@@ -139,7 +151,7 @@ static void ctl_query_cleanup_real_args(const umf_ctl_node_t *n, void *real_arg,
 
     switch (source) {
     case CTL_QUERY_CONFIG_INPUT:
-        umf_ba_global_free(real_arg);
+        ctl_free_fn(real_arg);
         break;
     case CTL_QUERY_PROGRAMMATIC:
         break;
@@ -153,7 +165,7 @@ static void ctl_query_cleanup_real_args(const umf_ctl_node_t *n, void *real_arg,
  *    structure
  */
 static void *ctl_parse_args(const struct ctl_argument *arg_proto, char *arg) {
-    char *dest_arg = umf_ba_global_alloc(arg_proto->dest_size);
+    char *dest_arg = ctl_malloc_fn(arg_proto->dest_size);
     if (dest_arg == NULL) {
         return NULL;
     }
@@ -176,7 +188,7 @@ static void *ctl_parse_args(const struct ctl_argument *arg_proto, char *arg) {
     return dest_arg;
 
 error_parsing:
-    umf_ba_global_free(dest_arg);
+    ctl_free_fn(dest_arg);
     return NULL;
 }
 
@@ -372,7 +384,7 @@ ctl_find_and_execute_node(const umf_ctl_node_t *nodes, void *ctx,
                     goto error;
                 }
                 // argument is a wildcard so we need to allocate it from va_list
-                node_arg = umf_ba_global_alloc(n->arg->dest_size);
+                node_arg = ctl_malloc_fn(n->arg->dest_size);
                 if (node_arg == NULL) {
                     goto error;
                 }
@@ -386,9 +398,9 @@ ctl_find_and_execute_node(const umf_ctl_node_t *nodes, void *ctx,
             }
 
             umf_ctl_index_utlist_t *entry = NULL;
-            entry = umf_ba_global_alloc(sizeof(*entry));
+            entry = ctl_malloc_fn(sizeof(*entry));
             if (entry == NULL) {
-                umf_ba_global_free(arg);
+                ctl_free_fn(arg);
                 goto error;
             }
 
@@ -462,13 +474,13 @@ ctl_find_and_execute_node(const umf_ctl_node_t *nodes, void *ctx,
         }
     }
 out:
-    umf_ba_global_free(parse_str);
+    ctl_free_fn(parse_str);
     ctl_delete_indexes(indexes);
     return ret;
 
 error:
     ctl_delete_indexes(indexes);
-    umf_ba_global_free(parse_str);
+    ctl_free_fn(parse_str);
     ret.is_valid = false;
     return ret;
 }
@@ -599,7 +611,7 @@ umf_result_t ctl_load_config_from_string(struct ctl *ctl, void *ctx,
 
     umf_result_t ret = ctl_load_config(ctl, ctx, buf);
 
-    umf_ba_global_free(buf);
+    ctl_free_fn(buf);
     return ret;
 }
 
@@ -661,7 +673,7 @@ umf_result_t ctl_load_config_from_file(struct ctl *ctl, void *ctx,
 
     ret = ctl_load_config(ctl, ctx, buf);
 
-    umf_ba_global_free(buf);
+    ctl_free_fn(buf);
 
 error_file_parse:
     (void)fclose(fp);

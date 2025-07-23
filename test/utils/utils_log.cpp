@@ -1,8 +1,11 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2025 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
+#include <umf/experimental/ctl.h>
+
 #include "base.hpp"
+#include "ctl/ctl_internal.h"
 #include "test_helpers.h"
 
 #define MOCK_FILE_PTR (FILE *)0xBADBEEF
@@ -93,7 +96,7 @@ int mock_strerror_windows(char *buff, size_t s, int errnum) {
 }
 
 extern "C" {
-
+#define DISABLE_CTL_LOGGER 1
 const char *env_variable = "";
 #define fopen(A, B) mock_fopen(A, B)
 #define fputs(A, B) mock_fputs(A, B)
@@ -135,13 +138,13 @@ void helper_checkConfig(utils_log_config_t *expected, utils_log_config_t *is) {
     EXPECT_EQ(expected->level, is->level);
     EXPECT_EQ(expected->flushLevel, is->flushLevel);
     EXPECT_EQ(expected->output, is->output);
-    EXPECT_EQ(expected->timestamp, is->timestamp);
-    EXPECT_EQ(expected->pid, is->pid);
+    EXPECT_EQ(expected->enableTimestamp, is->enableTimestamp);
+    EXPECT_EQ(expected->enamblePid, is->enamblePid);
 }
 
 TEST_F(test, parseEnv_errors) {
     expected_message = "";
-    loggerConfig = {0, 0, LOG_ERROR, LOG_ERROR, NULL};
+    loggerConfig = {false, false, LOG_ERROR, LOG_ERROR, NULL, ""};
 
     expect_fput_count = 0;
     expected_stream = stderr;
@@ -195,14 +198,16 @@ TEST_F(test, parseEnv) {
         {"output:file," + std::string(256, 'x'), MOCK_FILE_PTR},
         {"output:file," + std::string(257, 'x'), NULL},
     };
-    std::vector<std::pair<std::string, int>> timestamps = {
-        {"timestamp:yes", 1},
-        {"timestamp:invalid", 0},
-        {"timestamp:no", 0},
-        {"", 0}};
+    std::vector<std::pair<std::string, bool>> timestamps = {
+        {"timestamp:yes", true},
+        {"timestamp:invalid", false},
+        {"timestamp:no", false},
+        {"", false}};
 
-    std::vector<std::pair<std::string, int>> pids = {
-        {"pid:yes", 1}, {"pid:invalid", 0}, {"pid:no", 0}, {"", 0}};
+    std::vector<std::pair<std::string, int>> pids = {{"pid:yes", true},
+                                                     {"pid:invalid", false},
+                                                     {"pid:no", false},
+                                                     {"", false}};
     for (const auto &logLevel : logLevels) {
         for (const auto &flushLevel : flushLevels) {
             for (const auto &output : outputs) {
@@ -212,7 +217,8 @@ TEST_F(test, parseEnv) {
                                              flushLevel.first + ";" +
                                              output.first + ";" +
                                              timestamp.first + ";" + pid.first;
-                        b = loggerConfig = {0, 0, LOG_ERROR, LOG_ERROR, NULL};
+                        b = loggerConfig = {false,     false, LOG_ERROR,
+                                            LOG_ERROR, NULL,  ""};
                         expect_fput_count = 0;
                         expect_fopen_count = 0;
                         expected_stream = stderr;
@@ -229,8 +235,8 @@ TEST_F(test, parseEnv) {
                                 expect_fopen_count = 1;
                             }
                             expected_stream = output.second;
-                            b.timestamp = timestamp.second;
-                            b.pid = pid.second;
+                            b.enableTimestamp = timestamp.second;
+                            b.enamblePid = pid.second;
                             b.flushLevel = (utils_log_level_t)flushLevel.second;
 
                             b.level = (utils_log_level_t)logLevel.second;
@@ -284,7 +290,8 @@ TEST_F(test, log_levels) {
     expected_stream = stderr;
     for (int i = LOG_DEBUG; i <= LOG_ERROR; i++) {
         for (int j = LOG_DEBUG; j <= LOG_ERROR; j++) {
-            loggerConfig = {0, 0, (utils_log_level_t)i, LOG_DEBUG, stderr};
+            loggerConfig = {false,     false,  (utils_log_level_t)i,
+                            LOG_DEBUG, stderr, ""};
             if (i > j) {
                 expect_fput_count = 0;
                 expect_fflush_count = 0;
@@ -307,7 +314,7 @@ TEST_F(test, log_outputs) {
     expect_fflush_count = 1;
     expected_message = "[DEBUG UMF] " + MOCK_FN_NAME + ": example log\n";
     for (auto o : outs) {
-        loggerConfig = {0, 0, LOG_DEBUG, LOG_DEBUG, o};
+        loggerConfig = {false, false, LOG_DEBUG, LOG_DEBUG, o, ""};
         expected_stream = o;
         helper_test_log(LOG_DEBUG, MOCK_FN_NAME.c_str(), "%s", "example log");
     }
@@ -318,7 +325,8 @@ TEST_F(test, flush_levels) {
     expect_fput_count = 1;
     for (int i = LOG_DEBUG; i <= LOG_ERROR; i++) {
         for (int j = LOG_DEBUG; j <= LOG_ERROR; j++) {
-            loggerConfig = {0, 0, LOG_DEBUG, (utils_log_level_t)i, stderr};
+            loggerConfig = {false,  false, LOG_DEBUG, (utils_log_level_t)i,
+                            stderr, ""};
             if (i > j) {
                 expect_fflush_count = 0;
             } else {
@@ -335,7 +343,7 @@ TEST_F(test, flush_levels) {
 TEST_F(test, long_log) {
     expect_fput_count = 1;
     expect_fflush_count = 1;
-    loggerConfig = {0, 0, LOG_DEBUG, LOG_DEBUG, stderr};
+    loggerConfig = {false, false, LOG_DEBUG, LOG_DEBUG, stderr, ""};
     expected_message = "[DEBUG UMF] " + MOCK_FN_NAME + ": " +
                        std::string(8189 - MOCK_FN_NAME.size(), 'x') + "\n";
     helper_test_log(LOG_DEBUG, MOCK_FN_NAME.c_str(), "%s",
@@ -350,7 +358,7 @@ TEST_F(test, long_log) {
 TEST_F(test, timestamp_log) {
     expect_fput_count = 1;
     expect_fflush_count = 1;
-    loggerConfig = {1, 0, LOG_DEBUG, LOG_DEBUG, stderr};
+    loggerConfig = {true, false, LOG_DEBUG, LOG_DEBUG, stderr, ""};
     // TODO: for now we do not check output message,
     // as it requires more sophisticated message validation (a.k.a regrex)
     expected_message = "";
@@ -360,7 +368,7 @@ TEST_F(test, timestamp_log) {
 TEST_F(test, pid_log) {
     expect_fput_count = 1;
     expect_fflush_count = 1;
-    loggerConfig = {0, 1, LOG_DEBUG, LOG_DEBUG, stderr};
+    loggerConfig = {false, true, LOG_DEBUG, LOG_DEBUG, stderr, ""};
     // TODO: for now we do not check output message,
     // as it requires more sophisticated message validation (a.k.a regrex)
     expected_message = "";
@@ -368,7 +376,7 @@ TEST_F(test, pid_log) {
 }
 
 TEST_F(test, log_fatal) {
-    loggerConfig = {0, 0, LOG_DEBUG, LOG_DEBUG, NULL};
+    loggerConfig = {false, false, LOG_DEBUG, LOG_DEBUG, NULL, ""};
     expected_stream = stderr;
     expect_fput_count = 1;
     expect_fflush_count = 1;
@@ -382,7 +390,7 @@ TEST_F(test, log_macros) {
     expected_stream = stderr;
     expect_fput_count = 1;
     expect_fflush_count = 1;
-    loggerConfig = {0, 0, LOG_DEBUG, LOG_DEBUG, stderr};
+    loggerConfig = {false, false, LOG_DEBUG, LOG_DEBUG, stderr, ""};
 
     expected_message = "[DEBUG UMF] TestBody: example log\n";
     fput_count = 0;
@@ -429,7 +437,7 @@ template <typename... Args> void helper_test_plog(Args... args) {
 }
 
 TEST_F(test, plog_basic) {
-    loggerConfig = {0, 0, LOG_DEBUG, LOG_DEBUG, stderr};
+    loggerConfig = {false, false, LOG_DEBUG, LOG_DEBUG, stderr, ""};
     expected_stream = stderr;
     errno = 1;
     strerr = "test error";
@@ -445,7 +453,7 @@ TEST_F(test, plog_basic) {
 }
 
 TEST_F(test, plog_invalid) {
-    loggerConfig = {0, 0, LOG_DEBUG, LOG_DEBUG, stderr};
+    loggerConfig = {false, false, LOG_DEBUG, LOG_DEBUG, stderr, ""};
     expected_stream = stderr;
     errno = INVALID_ERRNO;
     strerr = "test error";
@@ -461,7 +469,7 @@ TEST_F(test, plog_invalid) {
 }
 
 TEST_F(test, plog_long_message) {
-    loggerConfig = {0, 0, LOG_DEBUG, LOG_DEBUG, stderr};
+    loggerConfig = {false, false, LOG_DEBUG, LOG_DEBUG, stderr, ""};
     expected_stream = stderr;
     expect_fput_count = 1;
     expect_fflush_count = 1;
@@ -482,7 +490,7 @@ TEST_F(test, plog_long_message) {
 }
 
 TEST_F(test, plog_long_error) {
-    loggerConfig = {0, 0, LOG_DEBUG, LOG_DEBUG, stderr};
+    loggerConfig = {false, false, LOG_DEBUG, LOG_DEBUG, stderr, ""};
     expected_stream = stderr;
     expect_fput_count = 1;
     expect_fflush_count = 1;
@@ -508,7 +516,7 @@ TEST_F(test, log_pmacros) {
     expected_stream = stderr;
     expect_fput_count = 1;
     expect_fflush_count = 1;
-    loggerConfig = {0, 0, LOG_DEBUG, LOG_DEBUG, stderr};
+    loggerConfig = {false, false, LOG_DEBUG, LOG_DEBUG, stderr, ""};
     errno = 1;
     strerr = "test error";
 
