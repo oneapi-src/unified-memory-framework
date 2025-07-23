@@ -14,6 +14,11 @@
 #include <umf/pools/pool_disjoint.h>
 #include <umf/pools/pool_proxy.h>
 
+#ifdef UMF_POOL_JEMALLOC_ENABLED
+#include <umf/pools/pool_jemalloc.h>
+#include <umf/providers/provider_os_memory.h>
+#endif
+
 #ifdef UMF_PROXY_LIB_ENABLED
 #include <umf/proxy_lib_new_delete.h>
 #endif
@@ -299,6 +304,31 @@ TEST_F(tagTest, SetAndGetInvalidPool) {
     ret = umfPoolGetTag(nullptr, &tag);
     ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 }
+
+#ifdef UMF_POOL_JEMALLOC_ENABLED
+static void *createOsMemoryProviderParams() {
+    umf_os_memory_provider_params_handle_t params = nullptr;
+    umf_result_t res = umfOsMemoryProviderParamsCreate(&params);
+    if (res != UMF_RESULT_SUCCESS) {
+        throw std::runtime_error("Failed to create os memory provider params");
+    }
+
+    return params;
+}
+
+static umf_result_t destroyOsMemoryProviderParams(void *params) {
+    return umfOsMemoryProviderParamsDestroy(
+        (umf_os_memory_provider_params_handle_t)params);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    jemallocPoolTest, umfPoolTest,
+    ::testing::Values(poolCreateExtParams{
+        umfJemallocPoolOps(), nullptr, nullptr, umfOsMemoryProviderOps(),
+        createOsMemoryProviderParams, destroyOsMemoryProviderParams}),
+    poolCreateExtParamsNameGen);
+
+#endif /* UMF_POOL_JEMALLOC_ENABLED */
 
 INSTANTIATE_TEST_SUITE_P(
     mallocPoolTest, umfPoolTest,
