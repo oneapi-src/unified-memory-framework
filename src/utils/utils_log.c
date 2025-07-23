@@ -63,7 +63,7 @@ char const __umf_str_1__all_cmake_vars[] =
 
 typedef struct {
     bool enableTimestamp;
-    bool enamblePid;
+    bool enablePid;
     utils_log_level_t level;
     utils_log_level_t flushLevel;
     FILE *output;
@@ -203,7 +203,7 @@ static void utils_log_internal(utils_log_level_t level, int perror,
         h_size -= tmp;
     }
 
-    if (loggerConfig.enamblePid) {
+    if (loggerConfig.enablePid) {
         ASSERT(h_size > 0);
         tmp = snprintf(h_pos, h_size, "PID:%-6lu TID:%-6lu ",
                        (unsigned long)pid, (unsigned long)tid);
@@ -305,9 +305,9 @@ void utils_log_init(void) {
     }
 
     if (utils_parse_var(envVar, "pid:yes", NULL)) {
-        loggerConfig.enamblePid = 1;
+        loggerConfig.enablePid = 1;
     } else if (utils_parse_var(envVar, "pid:no", NULL)) {
-        loggerConfig.enamblePid = 0;
+        loggerConfig.enablePid = 0;
     }
 
     if (utils_parse_var(envVar, "level:debug", NULL)) {
@@ -338,7 +338,7 @@ void utils_log_init(void) {
              "level: %s, flush: %s, pid: %s, timestamp: %s)",
              level_to_str(loggerConfig.level),
              level_to_str(loggerConfig.flushLevel),
-             bool_to_str(loggerConfig.enamblePid),
+             bool_to_str(loggerConfig.enablePid),
              bool_to_str(loggerConfig.enableTimestamp));
 }
 
@@ -392,7 +392,7 @@ static umf_result_t CTL_READ_HANDLER(pid)(void *ctx,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    *arg_out = loggerConfig.enamblePid;
+    *arg_out = loggerConfig.enablePid;
     return UMF_RESULT_SUCCESS;
 }
 
@@ -409,9 +409,8 @@ static umf_result_t CTL_WRITE_HANDLER(pid)(void *ctx,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    loggerConfig.enamblePid = arg_in;
-    LOG_INFO("Logger print pid %s set to",
-             bool_to_str(loggerConfig.enamblePid));
+    loggerConfig.enablePid = arg_in;
+    LOG_INFO("Logger print pid %s set to", bool_to_str(loggerConfig.enablePid));
     return UMF_RESULT_SUCCESS;
 }
 
