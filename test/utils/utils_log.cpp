@@ -139,7 +139,7 @@ void helper_checkConfig(utils_log_config_t *expected, utils_log_config_t *is) {
     EXPECT_EQ(expected->flushLevel, is->flushLevel);
     EXPECT_EQ(expected->output, is->output);
     EXPECT_EQ(expected->enableTimestamp, is->enableTimestamp);
-    EXPECT_EQ(expected->enamblePid, is->enamblePid);
+    EXPECT_EQ(expected->enablePid, is->enablePid);
 }
 
 TEST_F(test, parseEnv_errors) {
@@ -236,7 +236,7 @@ TEST_F(test, parseEnv) {
                             }
                             expected_stream = output.second;
                             b.enableTimestamp = timestamp.second;
-                            b.enamblePid = pid.second;
+                            b.enablePid = pid.second;
                             b.flushLevel = (utils_log_level_t)flushLevel.second;
 
                             b.level = (utils_log_level_t)logLevel.second;
