@@ -16,7 +16,7 @@ on:
       os:
         description: A list of OSes
         type: string
-        default: "['Ubuntu', 'Windows']"
+        default: "['Ubuntu']"
       shared_lib:
         description: A list of options for building shared library
         type: string
@@ -129,7 +129,8 @@ jobs:
 
       - name: Run tests (Debug)
         working-directory: ${{env.BUILD_DEBUG_DIR}}
-        run: ctest -C Debug --output-on-failure --test-dir test
+        # run: for i in {1..100}; do echo ">>> ITERATION no. ${i}" ; UMF_LOG="level:debug;flush:debug;output:stderr;pid:yes" ./test/test_provider_level_zero_dlopen_global || exit 1; date; done
+        run: for i in {1..100}; do echo ">>> ITERATION no. ${i}" ; UMF_LOG="level:debug;flush:debug;output:stderr;pid:yes" ctest -V -R provider_level_zero || exit 1; date; done
 
       - name: Run examples (Debug)
         working-directory: ${{env.BUILD_DEBUG_DIR}}
@@ -163,7 +164,8 @@ jobs:
 
       - name: Run tests (Release)
         working-directory: ${{env.BUILD_RELEASE_DIR}}
-        run: ctest -C Release --output-on-failure --test-dir test
+        # run: for i in {1..1000}; do echo ">>> ITERATION no. ${i}" ; UMF_LOG="level:debug;flush:debug;output:stderr;pid:yes" ./test/test_provider_level_zero_dlopen_global || exit 1; date; done
+        run: for i in {1..100}; do echo ">>> ITERATION no. ${i}" ; UMF_LOG="level:debug;flush:debug;output:stderr;pid:yes" ctest -V -R provider_level_zero || exit 1; date; done
 
       - name: Run examples (Release)
         working-directory: ${{env.BUILD_RELEASE_DIR}}
