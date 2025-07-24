@@ -45,6 +45,8 @@ umf_result_t umfInit(void) {
     utils_mutex_lock(&initMutex);
 
     if (umfRefCount == 0) {
+        LOG_FATAL("umfInit");
+
         utils_log_init();
         umf_result_t umf_result = umfMemoryTrackerCreate(&TRACKER);
         if (umf_result != UMF_RESULT_SUCCESS) {

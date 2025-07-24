@@ -188,6 +188,8 @@ size_t utils_max(size_t a, size_t b);
 
 size_t utils_min(size_t a, size_t b);
 
+int utils_get_complete_nodeset(size_t *ids, size_t size, size_t *);
+
 #ifdef __cplusplus
 }
 #endif

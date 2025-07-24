@@ -1,15 +1,18 @@
 /*
  *
- * Copyright (C) 2023-2024 Intel Corporation
+ * Copyright (C) 2023-2025 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 
+#include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
@@ -239,4 +242,26 @@ int utils_create_anonymous_fd(void) {
 #endif /* !(defined __NR_memfd_secret) && !(defined __NR_memfd_create) */
 
     return fd;
+}
+
+int utils_get_complete_nodeset(size_t *nodes, size_t nodes_size, size_t *num) {
+    DIR *dir = opendir("/sys/devices/system/node/");
+    if (!dir) {
+        return -1;
+    }
+
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL) {
+        if (strncmp(entry->d_name, "node", 4) == 0) {
+            char *endptr;
+            long node_id = strtol(entry->d_name + 4, &endptr, 10);
+            if (*endptr == '\0' && node_id >= 0 && *num < nodes_size) {
+                nodes[*num] = (size_t)node_id;
+                (*num)++;
+            }
+        }
+    }
+
+    closedir(dir);
+    return 0;
 }

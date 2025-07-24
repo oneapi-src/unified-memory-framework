@@ -68,7 +68,15 @@ typedef struct os_memory_provider_t {
     unsigned partitions_len;
     size_t partitions_weight_sum;
 
+#ifndef _WIN32
+    // NOTE: on linux we don't want to use hwloc_topology_t directly because
+    // of its long initialization time
+    umf_numa_mode_t umf_numa_mode;
+    int dedicated;
+
+#else
     hwloc_topology_t topo;
+#endif
 
     char name[64];
 
