@@ -133,6 +133,17 @@ umfDefaultCtlHandle(void *provider, umf_ctl_query_source_t operationType,
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
+static umf_result_t umfDefaultGetAllocationProperties(
+    void *provider, const void *ptr, umf_memory_property_id_t propertyId,
+    void *property_value, size_t max_property_size) {
+    (void)provider;
+    (void)ptr;
+    (void)propertyId;
+    (void)property_value;
+    (void)max_property_size;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
 void assignOpsExtDefaults(umf_memory_provider_ops_t *ops) {
     if (!ops->ext_purge_lazy) {
         ops->ext_purge_lazy = umfDefaultPurgeLazy;
@@ -152,6 +163,10 @@ void assignOpsExtDefaults(umf_memory_provider_ops_t *ops) {
 
     if (!ops->ext_ctl) {
         ops->ext_ctl = umfDefaultCtlHandle;
+    }
+
+    if (!ops->ext_get_allocation_properties) {
+        ops->ext_get_allocation_properties = umfDefaultGetAllocationProperties;
     }
 }
 
@@ -495,6 +510,29 @@ umfMemoryProviderCloseIPCHandle(umf_memory_provider_handle_t hProvider,
     ASSERT(hProvider->ops.ext_close_ipc_handle);
     umf_result_t res = hProvider->ops.ext_close_ipc_handle(
         hProvider->provider_priv, ptr, size);
+
+    checkErrorAndSetLastProvider(res, hProvider);
+    return res;
+}
+
+umf_result_t umfMemoryProviderGetAllocationProperties(
+    umf_memory_provider_handle_t hProvider, const void *ptr,
+    umf_memory_property_id_t propertyId, void *property_value,
+    size_t max_property_size) {
+
+    UMF_CHECK((hProvider != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    UMF_CHECK((property_value != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    UMF_CHECK((max_property_size != 0), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    UMF_CHECK((propertyId != UMF_MEMORY_PROPERTY_INVALID),
+              UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    // NOTE: we do not check if the propertyId is below
+    // UMF_MEMORY_PROPERTY_MAX_RESERVED value, as the user could use a custom
+    // property ID that is above the reserved range
+
+    umf_result_t res = hProvider->ops.ext_get_allocation_properties(
+        hProvider->provider_priv, ptr, propertyId, property_value,
+        max_property_size);
 
     checkErrorAndSetLastProvider(res, hProvider);
     return res;

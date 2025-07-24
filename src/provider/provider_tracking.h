@@ -20,6 +20,7 @@
 
 #include "base_alloc.h"
 #include "critnib.h"
+#include "memory_props_internal.h"
 #include "utils_concurrency.h"
 
 #ifdef __cplusplus
@@ -34,18 +35,23 @@ extern umf_memory_tracker_handle_t TRACKER;
 umf_result_t umfMemoryTrackerCreate(umf_memory_tracker_handle_t *handle);
 void umfMemoryTrackerDestroy(umf_memory_tracker_handle_t handle);
 
-umf_memory_pool_handle_t umfMemoryTrackerGetPool(const void *ptr);
+typedef struct tracker_alloc_info_t {
+    umf_memory_properties_t props;
 
-typedef struct umf_alloc_info_t {
-    void *base;
-    size_t baseSize;
-    umf_memory_pool_handle_t pool;
-} umf_alloc_info_t;
+    // number of overlapping memory regions in the next level of map falling
+    // within the current range
+    size_t n_children;
+#if !defined(NDEBUG) && defined(UMF_DEVELOPER_MODE)
+    uint64_t is_freed;
+#endif
+} tracker_alloc_info_t;
 
 umf_result_t umfMemoryTrackerGetAllocInfo(const void *ptr,
-                                          umf_alloc_info_t *pAllocInfo);
+                                          tracker_alloc_info_t **info);
 
 typedef struct umf_ipc_info_t {
+    umf_memory_properties_handle_t props;
+
     void *base;
     size_t baseSize;
     umf_memory_provider_handle_t provider;

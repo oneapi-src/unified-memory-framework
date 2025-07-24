@@ -44,6 +44,10 @@ int utils_ze_destroy_context(ze_context_handle_t context);
 
 ze_memory_type_t utils_ze_get_mem_type(ze_context_handle_t context, void *ptr);
 
+void utils_ze_get_mem_props(ze_context_handle_t context, void *ptr,
+                            ze_memory_allocation_properties_t *alloc_props,
+                            ze_device_handle_t *device);
+
 int64_t utils_ze_get_num_memory_properties(ze_device_handle_t device);
 
 #ifdef __cplusplus

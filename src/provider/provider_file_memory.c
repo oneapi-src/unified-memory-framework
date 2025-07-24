@@ -913,7 +913,9 @@ static umf_memory_provider_ops_t UMF_FILE_MEMORY_PROVIDER_OPS = {
     .ext_put_ipc_handle = file_put_ipc_handle,
     .ext_open_ipc_handle = file_open_ipc_handle,
     .ext_close_ipc_handle = file_close_ipc_handle,
-    .ext_ctl = file_ctl};
+    .ext_ctl = file_ctl,
+    .ext_get_allocation_properties = NULL,
+};
 
 const umf_memory_provider_ops_t *umfFileMemoryProviderOps(void) {
     return &UMF_FILE_MEMORY_PROVIDER_OPS;

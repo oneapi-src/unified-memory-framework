@@ -1339,7 +1339,8 @@ static umf_result_t os_open_ipc_handle(void *provider, void *providerIpcData,
                       os_ipc_data->visibility, fd, os_ipc_data->fd_offset);
     if (*ptr == NULL) {
         os_store_last_native_error(UMF_OS_RESULT_ERROR_ALLOC_FAILED, errno);
-        LOG_PERR("memory mapping failed");
+        LOG_PERR("memory mapping failed: %zu bytes at fd=%d, offset=%zu",
+                 os_ipc_data->size, fd, os_ipc_data->fd_offset);
         ret = UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
 
@@ -1398,6 +1399,7 @@ static umf_memory_provider_ops_t UMF_OS_MEMORY_PROVIDER_OPS = {
     .ext_open_ipc_handle = os_open_ipc_handle,
     .ext_close_ipc_handle = os_close_ipc_handle,
     .ext_ctl = os_ctl,
+    .ext_get_allocation_properties = NULL,
 };
 
 const umf_memory_provider_ops_t *umfOsMemoryProviderOps(void) {
