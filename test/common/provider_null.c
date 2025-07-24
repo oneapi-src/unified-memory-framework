@@ -5,8 +5,10 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include "provider_null.h"
 #include <umf/memory_provider_ops.h>
+
+#include "provider_null.h"
+#include "utils_common.h"
 
 static umf_result_t nullInitialize(const void *params, void **pool) {
     (void)params;
@@ -22,9 +24,18 @@ static umf_result_t nullFinalize(void *pool) {
 static umf_result_t nullAlloc(void *provider, size_t size, size_t alignment,
                               void **ptr) {
     (void)provider;
-    (void)size;
-    (void)alignment;
-    *ptr = NULL;
+
+    if (ptr == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (size == 0) {
+        *ptr = NULL;
+        return UMF_RESULT_SUCCESS;
+    }
+
+    *ptr = (void *)ALIGN_UP_SAFE(0xDEADBEAF, alignment); // any not-NULL value
+
     return UMF_RESULT_SUCCESS;
 }
 
