@@ -10,7 +10,6 @@
 #ifdef _WIN32
 #include <windows.h>
 #else
-#define _GNU_SOURCE 1
 #include <sys/syscall.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -156,13 +155,21 @@ static void utils_log_internal(utils_log_level_t level, int perror,
             }
             errno = saveno;
 #else
-            char err_buff[1024]; // max size according to manpage.
             int saveno = errno;
             errno = 0;
+#if (_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && !_GNU_SOURCE
+            char err[1024];
+            int err_ret = strerror_r(saveno, err, sizeof(err));
+            if (err_ret == ERANGE) {
+                postfix = "[truncated...]";
+            }
+#else
+            char err_buff[1024]; // max size according to manpage.
             const char *err = strerror_r(saveno, err_buff, sizeof(err_buff));
             if (errno == ERANGE) {
                 postfix = "[truncated...]";
             }
+#endif
             errno = saveno;
 #endif
             strncpy(b_pos, err, b_size);
