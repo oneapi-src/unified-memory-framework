@@ -8,11 +8,16 @@
 #include <assert.h>
 #include <errno.h>
 #include <limits.h>
-
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifndef _WIN32
+#include <numaif.h>
+#include <sys/syscall.h>
+#endif
+
 #include <umf.h>
 #include <umf/base.h>
 #include <umf/memory_provider.h>
@@ -32,8 +37,8 @@
 #define CTL_PROVIDER_TYPE os_memory_provider_t
 #include "provider_ctl_stats_impl.h"
 
+#define MAX_NUMNODES 1024
 #define NODESET_STR_BUF_LEN 1024
-
 #define TLS_MSG_BUF_LEN 1024
 
 static const char *DEFAULT_NAME = "OS";
@@ -152,8 +157,33 @@ static umf_result_t initialize_nodeset(os_memory_provider_t *os_provider,
         // Hwloc_set_area_membind fails if empty nodeset is passed so
         // if no node is specified, just pass all available nodes.
         // For modes where no node is needed, they will be ignored anyway.
+
+#ifdef _WIN32
         out_nodeset[0] = hwloc_bitmap_dup(
             hwloc_topology_get_complete_nodeset(os_provider->topo));
+#else
+        size_t *nodes = umf_ba_global_alloc(sizeof(size_t) * MAX_NUMNODES);
+        if (!nodes) {
+            umf_ba_global_free(out_nodeset);
+            os_provider->nodeset_len = 0;
+            return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+        }
+
+        size_t num = 0;
+        int ret = utils_get_complete_nodeset(nodes, MAX_NUMNODES, &num);
+        if (ret < 0) {
+            umf_ba_global_free(out_nodeset);
+            os_provider->nodeset_len = 0;
+            umf_ba_global_free(nodes);
+            return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+        }
+
+        for (size_t i = 0; i < num; i++) {
+            hwloc_bitmap_set(out_nodeset[0], (int)nodes[i]);
+        }
+        umf_ba_global_free(nodes);
+#endif
+
         if (!out_nodeset[0]) {
             goto err_free_list;
         }
@@ -518,6 +548,12 @@ translate_params(const umf_os_memory_provider_params_t *in_params,
 
     provider->numa_flags =
         getHwlocMembindFlags(in_params->numa_mode, is_dedicated_node_bind);
+
+#ifndef _WIN32
+    provider->umf_numa_mode = in_params->numa_mode;
+    provider->dedicated = is_dedicated_node_bind;
+#endif
+
     provider->mode = in_params->numa_mode;
     provider->part_size = in_params->part_size;
 
@@ -561,21 +597,34 @@ static umf_result_t os_initialize(const void *params, void **provider) {
     snprintf(os_provider->name, sizeof(os_provider->name), "%s",
              in_params->name);
 
-    int r = hwloc_topology_init(&os_provider->topo);
-    if (r) {
-        LOG_ERR("HWLOC topology init failed");
-        ret = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-        goto err_free_os_provider;
-    }
+    //struct timespec ts_init_start, ts_init_end;
+    //clock_gettime(CLOCK_MONOTONIC, &ts_init_start);
 
-    r = hwloc_topology_load(os_provider->topo);
-    if (r) {
-        os_store_last_native_error(UMF_OS_RESULT_ERROR_TOPO_DISCOVERY_FAILED,
-                                   0);
-        LOG_ERR("HWLOC topology discovery failed");
-        ret = UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
-        goto err_destroy_hwloc_topology;
-    }
+    //int r = hwloc_topology_init(&os_provider->topo);
+    //if (r) {
+    //    LOG_ERR("HWLOC topology init failed");
+    //    ret = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    //    goto err_free_os_provider;
+    //}
+
+    //hwloc_topology_set_all_types_filter(os_provider->topo,
+    //                                    HWLOC_TYPE_FILTER_KEEP_NONE);
+    //hwloc_topology_set_type_filter(os_provider->topo, HWLOC_OBJ_CORE,
+    //                               HWLOC_TYPE_FILTER_KEEP_ALL);
+
+    //r = hwloc_topology_load(os_provider->topo);
+    //if (r) {
+    //    os_store_last_native_error(UMF_OS_RESULT_ERROR_TOPO_DISCOVERY_FAILED,
+    //                               0);
+    //    LOG_ERR("HWLOC topology discovery failed");
+    //    ret = UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
+    //    goto err_destroy_hwloc_topology;
+    //}
+
+    //clock_gettime(CLOCK_MONOTONIC, &ts_init_end);
+    //LOG_FATAL("HWLOC topology initialized in %ld.%09ld seconds",
+    //          ts_init_end.tv_sec - ts_init_start.tv_sec,
+    //          ts_init_end.tv_nsec - ts_init_start.tv_nsec);
 
     os_provider->fd_offset_map = critnib_new(NULL, NULL);
     if (!os_provider->fd_offset_map) {
@@ -625,8 +674,10 @@ err_destroy_bitmaps:
 err_destroy_critnib:
     critnib_delete(os_provider->fd_offset_map);
 err_destroy_hwloc_topology:
+#ifdef _WIN32
     hwloc_topology_destroy(os_provider->topo);
 err_free_os_provider:
+#endif
     umf_ba_global_free(os_provider);
     return ret;
 }
@@ -649,7 +700,9 @@ static umf_result_t os_finalize(void *provider) {
     if (os_provider->nodeset_str_buf) {
         umf_ba_global_free(os_provider->nodeset_str_buf);
     }
+#ifdef _WIN32
     hwloc_topology_destroy(os_provider->topo);
+#endif
     umf_ba_global_free(os_provider);
     return UMF_RESULT_SUCCESS;
 }
@@ -1012,10 +1065,50 @@ static umf_result_t os_alloc(void *provider, size_t size, size_t alignment,
 
         do {
             errno = 0;
+            ret = 0;
+
+#ifdef _WIN32
             ret = hwloc_set_area_membind(os_provider->topo, membind.addr,
                                          membind.bind_size, membind.bitmap,
                                          os_provider->numa_policy,
                                          os_provider->numa_flags);
+#else  // !_WIN32
+
+            // on Linux, use mbind syscall directly instead of hwloc
+            unsigned long nodemask = 0;
+            int maxnode = 8 * sizeof(nodemask); // up to 64 nodes
+            if (membind.bitmap) {
+                for (int i = 0; i < maxnode; ++i) {
+                    if (hwloc_bitmap_isset(membind.bitmap, i)) {
+                        nodemask |= (1UL << i);
+                    }
+                }
+            }
+
+            int mbind_mode = MPOL_DEFAULT;
+            if (os_provider->umf_numa_mode == UMF_NUMA_MODE_INTERLEAVE &&
+                os_provider->dedicated == 0) {
+                mbind_mode = MPOL_INTERLEAVE;
+            } else if (os_provider->umf_numa_mode == UMF_NUMA_MODE_SPLIT) {
+                mbind_mode = MPOL_BIND;
+            } else if (os_provider->umf_numa_mode == UMF_NUMA_MODE_LOCAL) {
+                mbind_mode = MPOL_LOCAL;
+                nodemask = 0;
+            } else if (os_provider->umf_numa_mode == UMF_NUMA_MODE_PREFERRED) {
+                mbind_mode = MPOL_BIND;
+            } else if (os_provider->umf_numa_mode == UMF_NUMA_MODE_BIND ||
+                       os_provider->dedicated) {
+                mbind_mode = MPOL_BIND;
+            }
+
+            unsigned long mbind_flags = 0;
+            if (os_provider->dedicated) {
+                mbind_flags |= MPOL_MF_STRICT;
+            }
+
+            ret = syscall(__NR_mbind, membind.addr, membind.bind_size,
+                          mbind_mode, &nodemask, maxnode, mbind_flags);
+#endif // !_WIN32
 
             if (ret) {
                 os_store_last_native_error(UMF_OS_RESULT_ERROR_BIND_FAILED,
