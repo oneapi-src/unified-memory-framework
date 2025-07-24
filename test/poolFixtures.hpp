@@ -392,6 +392,36 @@ TEST_P(umfPoolTest, multiThreadedMallocFreeRandomSizes) {
     }
 }
 
+TEST_P(umfPoolTest, trimMemory) {
+    constexpr size_t size = 1024;
+
+    umf_memory_pool_handle_t hPool = pool.get();
+    void *ptr = umfPoolMalloc(hPool, size);
+    ASSERT_NE(ptr, nullptr);
+
+    umf_result_t ret = umfPoolFree(hPool, ptr);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    // use CTL to get the current memory pool size (if supported)
+    size_t reserved_memory1 = 0;
+    ret = umfCtlGet("umf.pool.by_handle.{}.stats.reserved_memory",
+                    &reserved_memory1, sizeof(size_t), hPool);
+    if (ret == UMF_RESULT_SUCCESS) {
+        ASSERT_GE(reserved_memory1, 0ull);
+    }
+
+    // Call to umfPoolTrimMemory should purge the whole memory pool
+    ret = umfPoolTrimMemory(hPool, 0);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    size_t reserved_memory2 = 0;
+    ret = umfCtlGet("umf.pool.by_handle.{}.stats.reserved_memory",
+                    &reserved_memory2, sizeof(size_t), hPool);
+    if (ret == UMF_RESULT_SUCCESS) {
+        ASSERT_EQ(reserved_memory2, 0ull);
+    }
+}
+
 TEST_P(umfMemTest, outOfMem) {
     static constexpr size_t allocSize = 4096;
     auto hPool = pool.get();
