@@ -122,6 +122,11 @@ GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(umfMemTest);
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(umfPoolTest);
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(umfMultiPoolTest);
 
+TEST_P(umfPoolTest, destroyNullptr) {
+    auto ret = umfPoolDestroy(nullptr);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
 TEST_P(umfPoolTest, allocFree) {
     static constexpr size_t allocSize = 64;
     auto *ptr = umfPoolMalloc(pool.get(), allocSize);
