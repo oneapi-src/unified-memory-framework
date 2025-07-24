@@ -40,6 +40,10 @@ umf_test::pool_unique_handle_t poolCreateExtUnique(poolCreateExtParams params) {
                                   &upstream_provider);
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
     EXPECT_NE(upstream_provider, nullptr);
+    if (ret != UMF_RESULT_SUCCESS || upstream_provider == nullptr) {
+        assert(false && "Failed to create a memory provider");
+        return umf_test::pool_unique_handle_t(nullptr, nullptr);
+    }
 
     provider = upstream_provider;
 
@@ -54,6 +58,10 @@ umf_test::pool_unique_handle_t poolCreateExtUnique(poolCreateExtParams params) {
                         UMF_POOL_CREATE_FLAG_OWN_PROVIDER, &hPool);
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
     EXPECT_NE(hPool, nullptr);
+    if (ret != UMF_RESULT_SUCCESS || hPool == nullptr) {
+        assert(false && "Failed to create a memory pool");
+        return umf_test::pool_unique_handle_t(nullptr, nullptr);
+    }
 
     // we do not need params anymore
     if (poolParamsDestroy) {
