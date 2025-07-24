@@ -193,18 +193,10 @@ TEST_F(test, jemallocPoolName) {
     umf_jemalloc_pool_params_handle_t params = nullptr;
     umf_result_t res = umfJemallocPoolParamsCreate(&params);
     EXPECT_EQ(res, UMF_RESULT_SUCCESS);
-    umf_memory_provider_handle_t provider_handle = nullptr;
     umf_memory_pool_handle_t pool = NULL;
 
-    struct memory_provider : public umf_test::provider_base_t {};
-    umf_memory_provider_ops_t provider_ops =
-        umf_test::providerMakeCOps<memory_provider, void>();
-    auto providerUnique =
-        wrapProviderUnique(createProviderChecked(&provider_ops, nullptr));
-    provider_handle = providerUnique.get();
-
-    res =
-        umfPoolCreate(umfJemallocPoolOps(), provider_handle, params, 0, &pool);
+    auto nullProvider = nullProviderCreate();
+    res = umfPoolCreate(umfJemallocPoolOps(), nullProvider, params, 0, &pool);
     EXPECT_EQ(res, UMF_RESULT_SUCCESS);
     const char *name = nullptr;
     res = umfPoolGetName(pool, &name);
@@ -212,5 +204,36 @@ TEST_F(test, jemallocPoolName) {
     EXPECT_STREQ(name, "jemalloc");
 
     umfPoolDestroy(pool);
+    umfMemoryProviderDestroy(nullProvider);
     umfJemallocPoolParamsDestroy(params);
+}
+
+TEST_F(test, jemallocPoolCustomName) {
+    umf_jemalloc_pool_params_handle_t params = nullptr;
+    umf_result_t res = umfJemallocPoolParamsCreate(&params);
+    EXPECT_EQ(res, UMF_RESULT_SUCCESS);
+
+    res = umfJemallocPoolParamsSetName(params, "my_jemalloc");
+    EXPECT_EQ(res, UMF_RESULT_SUCCESS);
+
+    auto nullProvider = nullProviderCreate();
+
+    umf_memory_pool_handle_t pool = NULL;
+    res = umfPoolCreate(umfJemallocPoolOps(), nullProvider, params, 0, &pool);
+    EXPECT_EQ(res, UMF_RESULT_SUCCESS);
+    const char *name = nullptr;
+    res = umfPoolGetName(pool, &name);
+    EXPECT_EQ(res, UMF_RESULT_SUCCESS);
+    EXPECT_STREQ(name, "my_jemalloc");
+
+    umfPoolDestroy(pool);
+    umfMemoryProviderDestroy(nullProvider);
+    umfJemallocPoolParamsDestroy(params);
+}
+
+TEST(JemallocPoolOps, default_name_null_handle) {
+    const char *name = nullptr;
+    EXPECT_EQ(umfJemallocPoolOps()->get_name(nullptr, &name),
+              UMF_RESULT_SUCCESS);
+    EXPECT_STREQ(name, "jemalloc");
 }

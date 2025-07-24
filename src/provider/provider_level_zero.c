@@ -57,6 +57,7 @@ typedef struct umf_level_zero_memory_provider_params_t {
         freePolicy; ///< Memory free policy
 
     uint32_t device_ordinal;
+    char name[64];
 } umf_level_zero_memory_provider_params_t;
 
 typedef struct ze_memory_provider_t {
@@ -74,6 +75,7 @@ typedef struct ze_memory_provider_t {
     size_t min_page_size;
 
     uint32_t device_ordinal;
+    char name[64];
 
     ctl_stats_t stats;
 } ze_memory_provider_t;
@@ -113,6 +115,7 @@ static ze_ops_t g_ze_ops;
 static UTIL_ONCE_FLAG ze_is_initialized = UTIL_ONCE_FLAG_INIT;
 static bool Init_ze_global_state_failed;
 static __TLS ze_result_t TLS_last_native_error;
+static const char *DEFAULT_NAME = "LEVEL_ZERO";
 
 static void store_last_native_error(int32_t native_error) {
     TLS_last_native_error = native_error;
@@ -249,6 +252,8 @@ umf_result_t umfLevelZeroMemoryProviderParamsCreate(
     params->resident_device_count = 0;
     params->freePolicy = UMF_LEVEL_ZERO_MEMORY_PROVIDER_FREE_POLICY_DEFAULT;
     params->device_ordinal = 0;
+    strncpy(params->name, DEFAULT_NAME, sizeof(params->name) - 1);
+    params->name[sizeof(params->name) - 1] = '\0';
 
     *hParams = params;
 
@@ -314,6 +319,24 @@ umf_result_t umfLevelZeroMemoryProviderParamsSetDeviceOrdinal(
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
     hParams->device_ordinal = deviceOrdinal;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t umfLevelZeroMemoryProviderParamsSetName(
+    umf_level_zero_memory_provider_params_handle_t hParams, const char *name) {
+    if (!hParams) {
+        LOG_ERR("Level Zero memory provider params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (!name) {
+        LOG_ERR("name is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    strncpy(hParams->name, name, sizeof(hParams->name) - 1);
+    hParams->name[sizeof(hParams->name) - 1] = '\0';
 
     return UMF_RESULT_SUCCESS;
 }
@@ -565,6 +588,9 @@ static umf_result_t ze_memory_provider_initialize(const void *params,
         LOG_ERR("Cannot allocate memory for Level Zero Memory Provider");
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
+    memset(ze_provider, 0, sizeof(*ze_provider));
+    snprintf(ze_provider->name, sizeof(ze_provider->name), "%s",
+             ze_params->name);
 
     ze_provider->context = ze_params->level_zero_context_handle;
     ze_provider->device = ze_params->level_zero_device_handle;
@@ -687,8 +713,15 @@ ze_memory_provider_get_recommended_page_size(void *provider, size_t size,
 
 static umf_result_t ze_memory_provider_get_name(void *provider,
                                                 const char **name) {
-    (void)provider;
-    *name = "LEVEL_ZERO";
+    if (!name) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    if (provider == NULL) {
+        *name = DEFAULT_NAME;
+        return UMF_RESULT_SUCCESS;
+    }
+    ze_memory_provider_t *ze_provider = (ze_memory_provider_t *)provider;
+    *name = ze_provider->name;
     return UMF_RESULT_SUCCESS;
 }
 
@@ -936,6 +969,13 @@ umf_result_t umfLevelZeroMemoryProviderParamsSetDeviceOrdinal(
     uint32_t deviceOrdinal) {
     (void)hParams;
     (void)deviceOrdinal;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+umf_result_t umfLevelZeroMemoryProviderParamsSetName(
+    umf_level_zero_memory_provider_params_handle_t hParams, const char *name) {
+    (void)hParams;
+    (void)name;
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 

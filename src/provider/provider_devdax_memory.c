@@ -62,6 +62,14 @@ umf_result_t umfDevDaxMemoryProviderParamsSetProtection(
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
+umf_result_t umfDevDaxMemoryProviderParamsSetName(
+    umf_devdax_memory_provider_params_handle_t hParams, const char *name) {
+    (void)hParams;
+    (void)name;
+    LOG_ERR("DevDax memory provider is disabled!");
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
 #else // !defined(_WIN32)
 
 #include "base_alloc_global.h"
@@ -76,6 +84,8 @@ umf_result_t umfDevDaxMemoryProviderParamsSetProtection(
 
 #define TLS_MSG_BUF_LEN 1024
 
+static const char *DEFAULT_NAME = "DEVDAX";
+
 typedef struct devdax_memory_provider_t {
     char path[PATH_MAX]; // a path to the device DAX
     size_t size;         // size of the file used for memory mapping
@@ -85,6 +95,7 @@ typedef struct devdax_memory_provider_t {
     unsigned protection; // combination of OS-specific protection flags
     coarse_t *coarse;    // coarse library handle
     ctl_stats_t stats;
+    char name[64];
 } devdax_memory_provider_t;
 
 #define CTL_PROVIDER_TYPE devdax_memory_provider_t
@@ -95,6 +106,7 @@ typedef struct umf_devdax_memory_provider_params_t {
     char *path;
     size_t size;
     unsigned protection;
+    char name[64];
 } umf_devdax_memory_provider_params_t;
 
 typedef struct devdax_last_native_error_t {
@@ -186,6 +198,8 @@ static umf_result_t devdax_initialize(const void *params, void **provider) {
     }
 
     memset(devdax_provider, 0, sizeof(*devdax_provider));
+    snprintf(devdax_provider->name, sizeof(devdax_provider->name), "%s",
+             in_params->name);
 
     coarse_params_t coarse_params = {0};
     coarse_params.provider = devdax_provider;
@@ -381,8 +395,16 @@ static umf_result_t devdax_purge_force(void *provider, void *ptr, size_t size) {
 }
 
 static umf_result_t devdax_get_name(void *provider, const char **name) {
-    (void)provider; // unused
-    *name = "DEVDAX";
+    if (!name) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    if (provider == NULL) {
+        *name = DEFAULT_NAME;
+        return UMF_RESULT_SUCCESS;
+    }
+    devdax_memory_provider_t *devdax_provider =
+        (devdax_memory_provider_t *)provider;
+    *name = devdax_provider->name;
     return UMF_RESULT_SUCCESS;
 }
 
@@ -614,6 +636,9 @@ umf_result_t umfDevDaxMemoryProviderParamsCreate(
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
+    strncpy(params->name, DEFAULT_NAME, sizeof(params->name) - 1);
+    params->name[sizeof(params->name) - 1] = '\0';
+
     params->path = NULL;
     params->size = 0;
     params->protection = UMF_PROTECTION_READ | UMF_PROTECTION_WRITE;
@@ -694,6 +719,24 @@ umf_result_t umfDevDaxMemoryProviderParamsSetProtection(
     }
 
     hParams->protection = protection;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t umfDevDaxMemoryProviderParamsSetName(
+    umf_devdax_memory_provider_params_handle_t hParams, const char *name) {
+    if (hParams == NULL) {
+        LOG_ERR("DevDax Memory Provider params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (name == NULL) {
+        LOG_ERR("name is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    strncpy(hParams->name, name, sizeof(hParams->name) - 1);
+    hParams->name[sizeof(hParams->name) - 1] = '\0';
 
     return UMF_RESULT_SUCCESS;
 }

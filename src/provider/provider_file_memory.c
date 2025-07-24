@@ -68,6 +68,14 @@ umf_result_t umfFileMemoryProviderParamsSetVisibility(
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
+umf_result_t umfFileMemoryProviderParamsSetName(
+    umf_file_memory_provider_params_handle_t hParams, const char *name) {
+    (void)hParams;
+    (void)name;
+    LOG_ERR("File memory provider is disabled!");
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
 #else // !defined(_WIN32)
 
 #include "base_alloc_global.h"
@@ -82,6 +90,8 @@ umf_result_t umfFileMemoryProviderParamsSetVisibility(
 #define FSDAX_PAGE_SIZE_2MB ((size_t)(2 * 1024 * 1024)) // == 2 MB
 
 #define TLS_MSG_BUF_LEN 1024
+
+static const char *DEFAULT_NAME = "FILE";
 
 typedef struct file_memory_provider_t {
     utils_mutex_t lock; // lock for file parameters (size and offsets)
@@ -113,7 +123,9 @@ typedef struct file_memory_provider_t {
     critnib *fd_offset_map;
 
     coarse_t *coarse; // coarse library handle
+
     ctl_stats_t stats;
+    char name[64];
 } file_memory_provider_t;
 
 #define CTL_PROVIDER_TYPE file_memory_provider_t
@@ -124,6 +136,7 @@ typedef struct umf_file_memory_provider_params_t {
     char *path;
     unsigned protection;
     umf_memory_visibility_t visibility;
+    char name[64];
 } umf_file_memory_provider_params_t;
 
 typedef struct file_last_native_error_t {
@@ -218,6 +231,8 @@ static umf_result_t file_initialize(const void *params, void **provider) {
     }
 
     memset(file_provider, 0, sizeof(*file_provider));
+    snprintf(file_provider->name, sizeof(file_provider->name), "%s",
+             in_params->name);
 
     ret = file_translate_params(in_params, file_provider);
     if (ret != UMF_RESULT_SUCCESS) {
@@ -649,8 +664,15 @@ static umf_result_t file_purge_force(void *provider, void *ptr, size_t size) {
 }
 
 static umf_result_t file_get_name(void *provider, const char **name) {
-    (void)provider; // unused
-    *name = "FILE";
+    if (!name) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    if (provider == NULL) {
+        *name = DEFAULT_NAME;
+        return UMF_RESULT_SUCCESS;
+    }
+    file_memory_provider_t *file_provider = (file_memory_provider_t *)provider;
+    *name = file_provider->name;
     return UMF_RESULT_SUCCESS;
 }
 
@@ -942,6 +964,8 @@ umf_result_t umfFileMemoryProviderParamsCreate(
     params->path = NULL;
     params->protection = UMF_PROTECTION_READ | UMF_PROTECTION_WRITE;
     params->visibility = UMF_MEM_MAP_PRIVATE;
+    strncpy(params->name, DEFAULT_NAME, sizeof(params->name) - 1);
+    params->name[sizeof(params->name) - 1] = '\0';
 
     umf_result_t res = umfFileMemoryProviderParamsSetPath(params, path);
     if (res != UMF_RESULT_SUCCESS) {
@@ -1019,6 +1043,24 @@ umf_result_t umfFileMemoryProviderParamsSetVisibility(
     }
 
     hParams->visibility = visibility;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t umfFileMemoryProviderParamsSetName(
+    umf_file_memory_provider_params_handle_t hParams, const char *name) {
+    if (hParams == NULL) {
+        LOG_ERR("File Memory Provider params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (name == NULL) {
+        LOG_ERR("name is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    strncpy(hParams->name, name, sizeof(hParams->name) - 1);
+    hParams->name[sizeof(hParams->name) - 1] = '\0';
 
     return UMF_RESULT_SUCCESS;
 }

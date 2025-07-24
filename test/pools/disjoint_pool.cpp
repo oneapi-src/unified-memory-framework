@@ -14,6 +14,7 @@
 #include "provider.hpp"
 #include "provider_null.h"
 #include "provider_trace.h"
+#include "umf/memory_provider.h"
 
 using umf_test::test;
 using namespace umf_test;
@@ -336,21 +337,12 @@ TEST_F(test, disjointPoolName) {
     umf_disjoint_pool_params_handle_t params = nullptr;
     umf_result_t res = umfDisjointPoolParamsCreate(&params);
     EXPECT_EQ(res, UMF_RESULT_SUCCESS);
-    umf_memory_provider_handle_t provider_handle = nullptr;
     umf_memory_pool_handle_t pool = NULL;
 
-    struct memory_provider : public umf_test::provider_base_t {};
+    auto nullProvider = nullProviderCreate();
 
-    umf_memory_provider_ops_t provider_ops =
-        umf_test::providerMakeCOps<memory_provider, void>();
+    res = umfPoolCreate(umfDisjointPoolOps(), nullProvider, params, 0, &pool);
 
-    auto providerUnique =
-        wrapProviderUnique(createProviderChecked(&provider_ops, nullptr));
-
-    provider_handle = providerUnique.get();
-
-    res =
-        umfPoolCreate(umfDisjointPoolOps(), provider_handle, params, 0, &pool);
     EXPECT_EQ(res, UMF_RESULT_SUCCESS);
     const char *name = nullptr;
     res = umfPoolGetName(pool, &name);
@@ -358,7 +350,41 @@ TEST_F(test, disjointPoolName) {
     EXPECT_STREQ(name, "disjoint");
 
     umfPoolDestroy(pool);
+    umfMemoryProviderDestroy(nullProvider);
     umfDisjointPoolParamsDestroy(params);
+}
+
+TEST_F(test, disjointPoolCustomName) {
+    umf_disjoint_pool_params_handle_t params = nullptr;
+    umf_result_t res = umfDisjointPoolParamsCreate(&params);
+    EXPECT_EQ(res, UMF_RESULT_SUCCESS);
+
+    res = umfDisjointPoolParamsSetName(params, "my_disjoint");
+    EXPECT_EQ(res, UMF_RESULT_SUCCESS);
+
+    struct memory_provider : public umf_test::provider_base_t {};
+
+    auto nullProvider = nullProviderCreate();
+    umf_memory_pool_handle_t pool = NULL;
+
+    res = umfPoolCreate(umfDisjointPoolOps(), nullProvider, params, 0, &pool);
+    EXPECT_EQ(res, UMF_RESULT_SUCCESS);
+
+    const char *name = nullptr;
+    res = umfPoolGetName(pool, &name);
+    EXPECT_EQ(res, UMF_RESULT_SUCCESS);
+    EXPECT_STREQ(name, "my_disjoint");
+
+    umfPoolDestroy(pool);
+    umfMemoryProviderDestroy(nullProvider);
+    umfDisjointPoolParamsDestroy(params);
+}
+
+TEST(DisjointPoolOps, default_name_null_handle) {
+    const char *name = nullptr;
+    EXPECT_EQ(umfDisjointPoolOps()->get_name(nullptr, &name),
+              UMF_RESULT_SUCCESS);
+    EXPECT_STREQ(name, "disjoint");
 }
 
 TEST_F(test, disjointPoolDefaultParams) {
