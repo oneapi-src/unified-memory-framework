@@ -277,6 +277,11 @@ err_provider_create:
 }
 
 umf_result_t umfPoolDestroy(umf_memory_pool_handle_t hPool) {
+    if (hPool == NULL) {
+        LOG_ERR("memory pool handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     if (umf_ba_global_is_destroyed()) {
         return UMF_RESULT_ERROR_UNKNOWN;
     }
