@@ -119,6 +119,12 @@ static umf_result_t umfDefaultCloseIPCHandle(void *provider, void *ptr,
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
+static umf_result_t umfDefaultPostInitialize(const void *params, void *provider) {
+    (void)params;
+    (void)provider;
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_result_t
 umfDefaultCtlHandle(void *provider, umf_ctl_query_source_t operationType,
                     const char *name, void *arg, size_t size,
@@ -152,6 +158,10 @@ void assignOpsExtDefaults(umf_memory_provider_ops_t *ops) {
 
     if (!ops->ext_ctl) {
         ops->ext_ctl = umfDefaultCtlHandle;
+    }
+
+    if (!ops->ext_post_initialize) {
+        ops->ext_post_initialize = umfDefaultPostInitialize;
     }
 }
 
@@ -249,6 +259,16 @@ umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
     }
 
     provider->provider_priv = provider_priv;
+
+    if (provider->ops.ext_post_initialize != NULL) {
+        ret = provider->ops.ext_post_initialize(params, provider_priv);
+        if (ret != UMF_RESULT_SUCCESS) {
+            LOG_ERR("Failed to post-initialize provider");
+            provider->ops.finalize(provider_priv);
+            umf_ba_global_free(provider);
+            return ret;
+        }
+    }
 
     *hProvider = provider;
 

@@ -602,6 +602,13 @@ static umf_result_t ze_memory_provider_initialize(const void *params,
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t ze_memory_provider_post_initialize(const void *params, void *provider) {
+    (void)params;
+    (void)provider;
+    // For initial version, just return success
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_result_t
 ze_memory_provider_get_last_native_error(void *provider, const char **ppMessage,
                                          int32_t *pError) {
@@ -839,6 +846,7 @@ static umf_memory_provider_ops_t UMF_LEVEL_ZERO_MEMORY_PROVIDER_OPS = {
     .ext_open_ipc_handle = ze_memory_provider_open_ipc_handle,
     .ext_close_ipc_handle = ze_memory_provider_close_ipc_handle,
     .ext_ctl = ze_ctl,
+    .ext_post_initialize = ze_memory_provider_post_initialize,
 };
 
 const umf_memory_provider_ops_t *umfLevelZeroMemoryProviderOps(void) {

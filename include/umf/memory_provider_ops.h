@@ -278,6 +278,14 @@ typedef struct umf_memory_provider_ops_t {
                             const char *name, void *arg, size_t size,
                             umf_ctl_query_type_t queryType, va_list args);
 
+    ///
+    /// @brief Post-initializes memory provider.
+    /// @param params provider-specific params, or NULL for defaults
+    /// @param provider pointer to the provider
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+    ///
+    umf_result_t (*ext_post_initialize)(const void *params, void *provider);
+
 } umf_memory_provider_ops_t;
 
 #ifdef __cplusplus
