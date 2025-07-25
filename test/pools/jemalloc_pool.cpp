@@ -192,18 +192,10 @@ TEST_F(test, jemallocPoolName) {
     umf_jemalloc_pool_params_handle_t params = nullptr;
     umf_result_t res = umfJemallocPoolParamsCreate(&params);
     EXPECT_EQ(res, UMF_RESULT_SUCCESS);
-    umf_memory_provider_handle_t provider_handle = nullptr;
     umf_memory_pool_handle_t pool = NULL;
 
-    struct memory_provider : public umf_test::provider_base_t {};
-    umf_memory_provider_ops_t provider_ops =
-        umf_test::providerMakeCOps<memory_provider, void>();
-    auto providerUnique =
-        wrapProviderUnique(createProviderChecked(&provider_ops, nullptr));
-    provider_handle = providerUnique.get();
-
-    res =
-        umfPoolCreate(umfJemallocPoolOps(), provider_handle, params, 0, &pool);
+    auto nullProvider = nullProviderCreate();
+    res = umfPoolCreate(umfJemallocPoolOps(), nullProvider, params, 0, &pool);
     EXPECT_EQ(res, UMF_RESULT_SUCCESS);
     const char *name = nullptr;
     res = umfPoolGetName(pool, &name);
@@ -211,5 +203,25 @@ TEST_F(test, jemallocPoolName) {
     EXPECT_STREQ(name, "jemalloc");
 
     umfPoolDestroy(pool);
+    umfMemoryProviderDestroy(nullProvider);
+    umfJemallocPoolParamsDestroy(params);
+}
+
+TEST_F(test, jemallocProviderDoesNotSupportSplit) {
+    umf_jemalloc_pool_params_handle_t params = nullptr;
+    umf_result_t res = umfJemallocPoolParamsCreate(&params);
+    EXPECT_EQ(res, UMF_RESULT_SUCCESS);
+
+    umf_memory_provider_handle_t ba_provider;
+    umf_result_t ret =
+        umfMemoryProviderCreate(&BA_GLOBAL_PROVIDER_OPS, nullptr, &ba_provider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    umf_memory_pool_handle_t pool = nullptr;
+    res = umfPoolCreate(umfJemallocPoolOps(), ba_provider, params, 0, &pool);
+    EXPECT_EQ(res, UMF_RESULT_ERROR_NOT_SUPPORTED);
+    EXPECT_EQ(pool, nullptr);
+
+    umfMemoryProviderDestroy(ba_provider);
     umfJemallocPoolParamsDestroy(params);
 }
