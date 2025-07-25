@@ -495,7 +495,13 @@ jobs:
 
   # Run benchmarks with the latest SYCL (with the latest UMF copied into the SYCL)
   # to verify the compatibility.
+  #
+  # TODO: re-enable this job, when nightly sycl builds are again available;
+  #   the last one available (as of 24.07.2025) is not working properly with
+  #   compute benchmarks. Now, we could only build sycl from sources, or find a
+  #   matching version of compute benchmarks with last nightly package.
   Benchmarks-sycl:
+    if: false
     uses: ./.github/workflows/reusable_benchmarks.yml
     permissions:
       contents: write
