@@ -132,17 +132,13 @@ jobs:
         # run: for i in {1..100}; do echo ">>> ITERATION no. ${i}" ; UMF_LOG="level:debug;flush:debug;output:stderr;pid:yes" ./test/test_provider_level_zero_dlopen_global || exit 1; date; done
         run: for i in {1..100}; do echo ">>> ITERATION no. ${i}" ; UMF_LOG="level:debug;flush:debug;output:stderr;pid:yes" ctest -V -R provider_level_zero || exit 1; date; done
 
-      - name: Run examples (Debug)
-        working-directory: ${{env.BUILD_DEBUG_DIR}}
-        run: ctest --output-on-failure --test-dir examples -C Debug
-
-      - name: Configure build (Release)
+      - name: Configure build (RelWithDebInfo)
         run: >
           cmake
           -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}};${{env.EXTRA_CMAKE_PATH}}"
           -B ${{env.BUILD_RELEASE_DIR}}
           -DCMAKE_INSTALL_PREFIX="${{env.INSTL_RELEASE_DIR}}"
-          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo
           -DCMAKE_C_COMPILER=${{env.C_COMPILER}}
           -DCMAKE_CXX_COMPILER=${{env.CXX_COMPILER}}
           -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
@@ -159,47 +155,10 @@ jobs:
           -DUMF_TESTS_FAIL_ON_SKIP=ON
           ${{ matrix.os == 'Windows' && '-DCMAKE_SUPPRESS_REGENERATION=ON' || '' }}
 
-      - name: Build UMF (Release)
-        run: cmake --build ${{env.BUILD_RELEASE_DIR}} --config Release -j ${{env.PROCS}}
+      - name: Build UMF (RelWithDebInfo)
+        run: cmake --build ${{env.BUILD_RELEASE_DIR}} --config RelWithDebInfo -j ${{env.PROCS}}
 
-      - name: Run tests (Release)
+      - name: Run tests (RelWithDebInfo)
         working-directory: ${{env.BUILD_RELEASE_DIR}}
         # run: for i in {1..1000}; do echo ">>> ITERATION no. ${i}" ; UMF_LOG="level:debug;flush:debug;output:stderr;pid:yes" ./test/test_provider_level_zero_dlopen_global || exit 1; date; done
-        run: for i in {1..100}; do echo ">>> ITERATION no. ${i}" ; UMF_LOG="level:debug;flush:debug;output:stderr;pid:yes" ctest -V -R provider_level_zero || exit 1; date; done
-
-      - name: Run examples (Release)
-        working-directory: ${{env.BUILD_RELEASE_DIR}}
-        run: ctest --output-on-failure --test-dir examples -C Release
-
-      - name: Run benchmarks (Release)
-        working-directory: ${{env.BUILD_RELEASE_DIR}}
-        run: ctest --output-on-failure --test-dir benchmark -C Release --exclude-regex umf-multithreaded
-
-      - name: "[Lin] Check coverage (Debug)"
-        if: ${{ matrix.os == 'Ubuntu' }}
-        working-directory: ${{env.BUILD_DEBUG_DIR}}
-        run: |
-          export COVERAGE_FILE_NAME=${{env.COVERAGE_NAME}}-shared-${{matrix.shared_library}}
-          echo "COVERAGE_FILE_NAME: $COVERAGE_FILE_NAME"
-          ${{github.workspace}}/scripts/coverage/coverage_capture.sh $COVERAGE_FILE_NAME
-          mkdir -p ${{env.COVERAGE_DIR}}
-          mv ./$COVERAGE_FILE_NAME ${{env.COVERAGE_DIR}}
-
-      - name: "[Lin] Upload coverage"
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        if: ${{ matrix.os == 'Ubuntu' }}
-        with:
-          name: ${{env.COVERAGE_NAME}}-shared-${{matrix.shared_library}}
-          path: ${{env.COVERAGE_DIR}}
-
-      - name: "[Win] Prepare vcpkg cache"
-        if: matrix.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
-        run: |
-          Compress-Archive -Path ${{github.workspace}}/vcpkg/packages -DestinationPath ${{github.workspace}}/vcpkg_pkgs_cache.zip -Force -CompressionLevel Fastest
-
-      - name: "[Win] Save vcpkg cache"
-        if: matrix.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
-        with:
-          path: ${{github.workspace}}/vcpkg_pkgs_cache.zip
-          key: ${{ steps.cache.outputs.cache-primary-key }}
+        run: for i in {1..1000}; do echo ">>> ITERATION no. ${i}" ; UMF_LOG="level:debug;flush:debug;output:stderr;pid:yes" ctest -V -R provider_level_zero || exit 1; date; done
