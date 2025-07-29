@@ -4,6 +4,2040 @@
       "results": [
         {
           "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 glibc",
+          "value": 183.645,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 glibc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 glibc",
+          "value": 223.749,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 glibc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 glibc",
+          "value": 449.096,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 glibc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 glibc",
+          "value": 511.209,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 glibc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 glibc",
+          "value": 138.035,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 glibc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 glibc",
+          "value": 163.725,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 glibc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:50000/threads:1 proxy_pool<os_provider>",
+          "value": 17810.8,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:50000/threads:1 proxy_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:50000/threads:1 proxy_pool<os_provider>",
+          "value": 0.0,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "%",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:50000/threads:1 proxy_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:50000/threads:1 os_provider",
+          "value": 14049.5,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:50000/threads:1 os_provider",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:50000/threads:1 os_provider",
+          "value": 0.0,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "%",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:50000/threads:1 os_provider",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 disjoint_pool<os_provider>",
+          "value": 4925.68,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 disjoint_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 disjoint_pool<os_provider>",
+          "value": 0.0649491,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "%",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 disjoint_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 disjoint_pool<os_provider>",
+          "value": 37032.1,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 disjoint_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 disjoint_pool<os_provider>",
+          "value": 0.0162452,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "%",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 disjoint_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 disjoint_pool<os_provider>",
+          "value": 2800.8,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 disjoint_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 disjoint_pool<os_provider>",
+          "value": 26.0026,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "%",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 disjoint_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 disjoint_pool<os_provider>",
+          "value": 25232.9,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 disjoint_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 disjoint_pool<os_provider>",
+          "value": 25.3206,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "%",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 disjoint_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 disjoint_pool<os_provider>",
+          "value": 386.872,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 disjoint_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 disjoint_pool<os_provider>",
+          "value": 23.6367,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "%",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 disjoint_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 disjoint_pool<os_provider>",
+          "value": 7093.38,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 disjoint_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 disjoint_pool<os_provider>",
+          "value": 21.275,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "%",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 disjoint_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 jemalloc_pool<os_provider>",
+          "value": 1087.97,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 jemalloc_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 jemalloc_pool<os_provider>",
+          "value": 30.5969,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "%",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 jemalloc_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 jemalloc_pool<os_provider>",
+          "value": 2571.5,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 jemalloc_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 jemalloc_pool<os_provider>",
+          "value": 34.7262,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "%",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 jemalloc_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 jemalloc_pool<os_provider>",
+          "value": 631.589,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 jemalloc_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 jemalloc_pool<os_provider>",
+          "value": 69.4152,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "%",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 jemalloc_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 jemalloc_pool<os_provider>",
+          "value": 1782.68,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 jemalloc_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 jemalloc_pool<os_provider>",
+          "value": 56.8708,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "%",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 jemalloc_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 jemalloc_pool<os_provider>",
+          "value": 402.427,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 jemalloc_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 jemalloc_pool<os_provider>",
+          "value": 85.0853,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "%",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 jemalloc_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 jemalloc_pool<os_provider>",
+          "value": 2264.74,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 jemalloc_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 jemalloc_pool<os_provider>",
+          "value": 84.1405,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "%",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 jemalloc_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 scalable_pool<os_provider>",
+          "value": 365.606,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 scalable_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 scalable_pool<os_provider>",
+          "value": 60.8016,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "%",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 scalable_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 scalable_pool<os_provider>",
+          "value": 1173.55,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 scalable_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 scalable_pool<os_provider>",
+          "value": 56.0213,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "%",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 scalable_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 scalable_pool<os_provider>",
+          "value": 362.778,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 scalable_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 scalable_pool<os_provider>",
+          "value": 62.4111,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "%",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 scalable_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 scalable_pool<os_provider>",
+          "value": 1387.18,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 scalable_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 scalable_pool<os_provider>",
+          "value": 54.8934,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "%",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 scalable_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 scalable_pool<os_provider>",
+          "value": 232.738,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 scalable_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 scalable_pool<os_provider>",
+          "value": 85.0853,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "%",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 scalable_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 scalable_pool<os_provider>",
+          "value": 1170.26,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 scalable_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 scalable_pool<os_provider>",
+          "value": 88.0682,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "%",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 scalable_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:50000/threads:1 proxy_pool<fixed_provider>",
+          "value": 2060.08,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:50000/threads:1 proxy_pool<fixed_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:50000/threads:1 proxy_pool<fixed_provider>",
+          "value": 0.0,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "%",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:50000/threads:1 proxy_pool<fixed_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:50000/threads:1 fixed_provider",
+          "value": 1183.31,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:50000/threads:1 fixed_provider",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:50000/threads:1 fixed_provider",
+          "value": 0.0,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "%",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "FRAGMENTATION_multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:50000/threads:1 fixed_provider",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 glibc",
+          "value": 187.0,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 glibc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 glibc",
+          "value": 242.569,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 glibc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 glibc",
+          "value": 460.739,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 glibc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 glibc",
+          "value": 512.206,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 glibc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 glibc",
+          "value": 135.317,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 glibc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 glibc",
+          "value": 156.926,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 glibc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 disjoint_pool<os_provider>",
+          "value": 4769.73,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 disjoint_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 disjoint_pool<os_provider>",
+          "value": 37729.2,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 disjoint_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 disjoint_pool<os_provider>",
+          "value": 2722.19,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 disjoint_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 disjoint_pool<os_provider>",
+          "value": 25906.7,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 disjoint_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 disjoint_pool<os_provider>",
+          "value": 350.022,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 disjoint_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 disjoint_pool<os_provider>",
+          "value": 6630.37,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 disjoint_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 jemalloc_pool<os_provider>",
+          "value": 1058.81,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 jemalloc_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 jemalloc_pool<os_provider>",
+          "value": 2352.89,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 jemalloc_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 jemalloc_pool<os_provider>",
+          "value": 630.122,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 jemalloc_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 jemalloc_pool<os_provider>",
+          "value": 2214.29,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 jemalloc_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 jemalloc_pool<os_provider>",
+          "value": 396.889,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 jemalloc_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 jemalloc_pool<os_provider>",
+          "value": 2447.71,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 jemalloc_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 scalable_pool<os_provider>",
+          "value": 505.428,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 scalable_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 scalable_pool<os_provider>",
+          "value": 1106.18,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 scalable_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 scalable_pool<os_provider>",
+          "value": 359.2,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 scalable_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 scalable_pool<os_provider>",
+          "value": 1325.51,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 scalable_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 scalable_pool<os_provider>",
+          "value": 232.346,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 scalable_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 scalable_pool<os_provider>",
+          "value": 1098.67,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 scalable_pool<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 disjoint_pool_stacked<os_provider>",
+          "value": 2488.55,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 disjoint_pool_stacked<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 disjoint_pool_stacked<os_provider>",
+          "value": 7262.95,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 disjoint_pool_stacked<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 disjoint_pool_stacked<os_provider>",
+          "value": 2604.88,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 disjoint_pool_stacked<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 disjoint_pool_stacked<os_provider>",
+          "value": 6630.07,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 disjoint_pool_stacked<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 disjoint_pool_stacked<os_provider>",
+          "value": 1224.33,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 disjoint_pool_stacked<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 disjoint_pool_stacked<os_provider>",
+          "value": 3479.82,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 disjoint_pool_stacked<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 disjoint_pool_stacked<os_provider>",
+          "value": 2477.42,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 disjoint_pool_stacked<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 disjoint_pool_stacked<os_provider>",
+          "value": 7285.03,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 disjoint_pool_stacked<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 disjoint_pool_stacked<os_provider>",
+          "value": 2544.01,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 disjoint_pool_stacked<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 disjoint_pool_stacked<os_provider>",
+          "value": 6561.19,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 disjoint_pool_stacked<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 disjoint_pool_stacked<os_provider>",
+          "value": 1189.84,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 disjoint_pool_stacked<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 disjoint_pool_stacked<os_provider>",
+          "value": 3579.32,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {},
+          "unit": "ns",
+          "stddev": 0.0,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 disjoint_pool_stacked<os_provider>",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 umfProxy",
+          "value": 1711.8,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 28.75905422645187,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 umfProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 umfProxy",
+          "value": 12715.0,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 580.7374966368202,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 umfProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 umfProxy",
+          "value": 1719.88,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 31.824485856019717,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 umfProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 umfProxy",
+          "value": 12656.5,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 493.4527468089857,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 umfProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 umfProxy",
+          "value": 1596.7,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 36.94980784794423,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 umfProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 umfProxy",
+          "value": 13113.3,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 732.5876762090207,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 umfProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 umfProxy",
+          "value": 1677.52,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 29.59359784367787,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 umfProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 umfProxy",
+          "value": 13269.7,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 408.8120635858651,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 umfProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 umfProxy",
+          "value": 1747.73,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 48.2497015534811,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 umfProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 umfProxy",
+          "value": 13303.0,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 312.09878777933966,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 umfProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 umfProxy",
+          "value": 1560.12,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 23.89621797133038,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 umfProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 umfProxy",
+          "value": 12670.9,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 555.4060256545055,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 umfProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 jemalloc",
+          "value": 190.726,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libjemalloc.so"
+          },
+          "unit": "ns",
+          "stddev": 1.0305226829138703,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 jemalloc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 jemalloc",
+          "value": 204.997,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libjemalloc.so"
+          },
+          "unit": "ns",
+          "stddev": 3.671211289660841,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 jemalloc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 jemalloc",
+          "value": 160.916,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libjemalloc.so"
+          },
+          "unit": "ns",
+          "stddev": 1.2467666180965973,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 jemalloc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 jemalloc",
+          "value": 172.447,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libjemalloc.so"
+          },
+          "unit": "ns",
+          "stddev": 1.7127595667031965,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 jemalloc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 jemalloc",
+          "value": 93.9399,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libjemalloc.so"
+          },
+          "unit": "ns",
+          "stddev": 1.5266736815704904,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 jemalloc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 jemalloc",
+          "value": 104.014,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libjemalloc.so"
+          },
+          "unit": "ns",
+          "stddev": 1.3158150832595439,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 jemalloc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 jemalloc",
+          "value": 197.905,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libjemalloc.so"
+          },
+          "unit": "ns",
+          "stddev": 4.044672174602042,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 jemalloc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 jemalloc",
+          "value": 208.645,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libjemalloc.so"
+          },
+          "unit": "ns",
+          "stddev": 2.5666891124559728,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 jemalloc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 jemalloc",
+          "value": 161.609,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libjemalloc.so"
+          },
+          "unit": "ns",
+          "stddev": 1.7078205409234337,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 jemalloc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 jemalloc",
+          "value": 169.763,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libjemalloc.so"
+          },
+          "unit": "ns",
+          "stddev": 1.9104523024666091,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 jemalloc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 jemalloc",
+          "value": 93.3074,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libjemalloc.so"
+          },
+          "unit": "ns",
+          "stddev": 0.6658949091260543,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 jemalloc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 jemalloc",
+          "value": 101.08,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libjemalloc.so"
+          },
+          "unit": "ns",
+          "stddev": 0.7709282283931046,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 jemalloc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 tbbProxy",
+          "value": 336.229,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libtbbmalloc_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 6.9585412264353,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 tbbProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 tbbProxy",
+          "value": 384.943,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libtbbmalloc_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 2.7454781611466714,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 tbbProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 tbbProxy",
+          "value": 333.807,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libtbbmalloc_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 1.311120513148969,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 tbbProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 tbbProxy",
+          "value": 372.668,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libtbbmalloc_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 0.9507071052642817,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 tbbProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 tbbProxy",
+          "value": 212.553,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libtbbmalloc_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 0.4286739242516747,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 tbbProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 tbbProxy",
+          "value": 230.279,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libtbbmalloc_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 0.6986453559090794,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 tbbProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 tbbProxy",
+          "value": 322.794,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libtbbmalloc_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 63.5883700766107,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 tbbProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 tbbProxy",
+          "value": 397.523,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libtbbmalloc_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 2.003395700637617,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 tbbProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 tbbProxy",
+          "value": 325.65,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libtbbmalloc_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 2.435182197153502,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 tbbProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 tbbProxy",
+          "value": 362.049,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libtbbmalloc_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 2.170006989236071,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 tbbProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 tbbProxy",
+          "value": 206.537,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libtbbmalloc_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 0.4503809498635583,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 tbbProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 tbbProxy",
+          "value": 221.638,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libtbbmalloc_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 0.9571525479253655,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 tbbProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        }
+      ],
+      "name": "Baseline_PVC",
+      "hostname": "dnp_intel_06_02",
+      "git_hash": "3d8e0490d",
+      "github_repo": "intel/llvm",
+      "date": "2025-07-29T04:35:35.910162+00:00",
+      "compute_runtime": "unknown"
+    },
+    {
+      "results": [
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 glibc",
           "value": 182.485,
           "command": [
             "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
@@ -50024,6 +52058,278 @@
       "display_name": null,
       "explicit_group": null
     },
+    "SubmitKernel in order long kernel": {
+      "type": "group",
+      "description": "Measures CPU time overhead of submitting in order kernels with longer execution times through different APIs.",
+      "notes": "Each layer builds on top of the previous layer, adding functionality and overhead.\nThe first layer is the Level Zero API, the second is the Unified Runtime API, and the third is the SYCL API.\nThe UR v2 adapter noticeably reduces UR layer overhead, also improving SYCL performance.\nWork is ongoing to reduce the overhead of the SYCL API\n",
+      "unstable": null,
+      "tags": [
+        "submit",
+        "micro",
+        "SYCL",
+        "UR",
+        "L0"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": null,
+      "explicit_group": null
+    },
+    "SubmitKernel in order long kernel, CPU count": {
+      "type": "group",
+      "description": "Measures CPU time overhead of submitting in order kernels with longer execution times through different APIs.",
+      "notes": "Each layer builds on top of the previous layer, adding functionality and overhead.\nThe first layer is the Level Zero API, the second is the Unified Runtime API, and the third is the SYCL API.\nThe UR v2 adapter noticeably reduces UR layer overhead, also improving SYCL performance.\nWork is ongoing to reduce the overhead of the SYCL API\n",
+      "unstable": null,
+      "tags": [
+        "submit",
+        "micro",
+        "SYCL",
+        "UR",
+        "L0"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": null,
+      "explicit_group": null
+    },
+    "SubmitKernel in order using events long kernel": {
+      "type": "group",
+      "description": "Measures CPU time overhead of submitting in order kernels with longer execution times through different APIs.",
+      "notes": "Each layer builds on top of the previous layer, adding functionality and overhead.\nThe first layer is the Level Zero API, the second is the Unified Runtime API, and the third is the SYCL API.\nThe UR v2 adapter noticeably reduces UR layer overhead, also improving SYCL performance.\nWork is ongoing to reduce the overhead of the SYCL API\n",
+      "unstable": null,
+      "tags": [
+        "submit",
+        "micro",
+        "SYCL",
+        "UR",
+        "L0"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": null,
+      "explicit_group": null
+    },
+    "SubmitKernel in order using events long kernel, CPU count": {
+      "type": "group",
+      "description": "Measures CPU time overhead of submitting in order kernels with longer execution times through different APIs.",
+      "notes": "Each layer builds on top of the previous layer, adding functionality and overhead.\nThe first layer is the Level Zero API, the second is the Unified Runtime API, and the third is the SYCL API.\nThe UR v2 adapter noticeably reduces UR layer overhead, also improving SYCL performance.\nWork is ongoing to reduce the overhead of the SYCL API\n",
+      "unstable": null,
+      "tags": [
+        "submit",
+        "micro",
+        "SYCL",
+        "UR",
+        "L0"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": null,
+      "explicit_group": null
+    },
+    "SubmitKernel in order with completion long kernel": {
+      "type": "group",
+      "description": "Measures CPU time overhead of submitting in order kernels with longer execution times through different APIs.",
+      "notes": "Each layer builds on top of the previous layer, adding functionality and overhead.\nThe first layer is the Level Zero API, the second is the Unified Runtime API, and the third is the SYCL API.\nThe UR v2 adapter noticeably reduces UR layer overhead, also improving SYCL performance.\nWork is ongoing to reduce the overhead of the SYCL API\n",
+      "unstable": null,
+      "tags": [
+        "submit",
+        "micro",
+        "SYCL",
+        "UR",
+        "L0"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": null,
+      "explicit_group": null
+    },
+    "SubmitKernel in order with completion long kernel, CPU count": {
+      "type": "group",
+      "description": "Measures CPU time overhead of submitting in order kernels with longer execution times through different APIs.",
+      "notes": "Each layer builds on top of the previous layer, adding functionality and overhead.\nThe first layer is the Level Zero API, the second is the Unified Runtime API, and the third is the SYCL API.\nThe UR v2 adapter noticeably reduces UR layer overhead, also improving SYCL performance.\nWork is ongoing to reduce the overhead of the SYCL API\n",
+      "unstable": null,
+      "tags": [
+        "submit",
+        "micro",
+        "SYCL",
+        "UR",
+        "L0"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": null,
+      "explicit_group": null
+    },
+    "SubmitKernel in order with completion using events long kernel": {
+      "type": "group",
+      "description": "Measures CPU time overhead of submitting in order kernels with longer execution times through different APIs.",
+      "notes": "Each layer builds on top of the previous layer, adding functionality and overhead.\nThe first layer is the Level Zero API, the second is the Unified Runtime API, and the third is the SYCL API.\nThe UR v2 adapter noticeably reduces UR layer overhead, also improving SYCL performance.\nWork is ongoing to reduce the overhead of the SYCL API\n",
+      "unstable": null,
+      "tags": [
+        "submit",
+        "micro",
+        "SYCL",
+        "UR",
+        "L0"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": null,
+      "explicit_group": null
+    },
+    "SubmitKernel in order with completion using events long kernel, CPU count": {
+      "type": "group",
+      "description": "Measures CPU time overhead of submitting in order kernels with longer execution times through different APIs.",
+      "notes": "Each layer builds on top of the previous layer, adding functionality and overhead.\nThe first layer is the Level Zero API, the second is the Unified Runtime API, and the third is the SYCL API.\nThe UR v2 adapter noticeably reduces UR layer overhead, also improving SYCL performance.\nWork is ongoing to reduce the overhead of the SYCL API\n",
+      "unstable": null,
+      "tags": [
+        "submit",
+        "micro",
+        "SYCL",
+        "UR",
+        "L0"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": null,
+      "explicit_group": null
+    },
+    "SubmitKernel out of order long kernel": {
+      "type": "group",
+      "description": "Measures CPU time overhead of submitting out of order kernels with longer execution times through different APIs.",
+      "notes": "Each layer builds on top of the previous layer, adding functionality and overhead.\nThe first layer is the Level Zero API, the second is the Unified Runtime API, and the third is the SYCL API.\nThe UR v2 adapter noticeably reduces UR layer overhead, also improving SYCL performance.\nWork is ongoing to reduce the overhead of the SYCL API\n",
+      "unstable": null,
+      "tags": [
+        "submit",
+        "micro",
+        "SYCL",
+        "UR",
+        "L0"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": null,
+      "explicit_group": null
+    },
+    "SubmitKernel out of order long kernel, CPU count": {
+      "type": "group",
+      "description": "Measures CPU time overhead of submitting out of order kernels with longer execution times through different APIs.",
+      "notes": "Each layer builds on top of the previous layer, adding functionality and overhead.\nThe first layer is the Level Zero API, the second is the Unified Runtime API, and the third is the SYCL API.\nThe UR v2 adapter noticeably reduces UR layer overhead, also improving SYCL performance.\nWork is ongoing to reduce the overhead of the SYCL API\n",
+      "unstable": null,
+      "tags": [
+        "submit",
+        "micro",
+        "SYCL",
+        "UR",
+        "L0"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": null,
+      "explicit_group": null
+    },
+    "SubmitKernel out of order using events long kernel": {
+      "type": "group",
+      "description": "Measures CPU time overhead of submitting out of order kernels with longer execution times through different APIs.",
+      "notes": "Each layer builds on top of the previous layer, adding functionality and overhead.\nThe first layer is the Level Zero API, the second is the Unified Runtime API, and the third is the SYCL API.\nThe UR v2 adapter noticeably reduces UR layer overhead, also improving SYCL performance.\nWork is ongoing to reduce the overhead of the SYCL API\n",
+      "unstable": null,
+      "tags": [
+        "submit",
+        "micro",
+        "SYCL",
+        "UR",
+        "L0"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": null,
+      "explicit_group": null
+    },
+    "SubmitKernel out of order using events long kernel, CPU count": {
+      "type": "group",
+      "description": "Measures CPU time overhead of submitting out of order kernels with longer execution times through different APIs.",
+      "notes": "Each layer builds on top of the previous layer, adding functionality and overhead.\nThe first layer is the Level Zero API, the second is the Unified Runtime API, and the third is the SYCL API.\nThe UR v2 adapter noticeably reduces UR layer overhead, also improving SYCL performance.\nWork is ongoing to reduce the overhead of the SYCL API\n",
+      "unstable": null,
+      "tags": [
+        "submit",
+        "micro",
+        "SYCL",
+        "UR",
+        "L0"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": null,
+      "explicit_group": null
+    },
+    "SubmitKernel out of order with completion long kernel": {
+      "type": "group",
+      "description": "Measures CPU time overhead of submitting out of order kernels with longer execution times through different APIs.",
+      "notes": "Each layer builds on top of the previous layer, adding functionality and overhead.\nThe first layer is the Level Zero API, the second is the Unified Runtime API, and the third is the SYCL API.\nThe UR v2 adapter noticeably reduces UR layer overhead, also improving SYCL performance.\nWork is ongoing to reduce the overhead of the SYCL API\n",
+      "unstable": null,
+      "tags": [
+        "submit",
+        "micro",
+        "SYCL",
+        "UR",
+        "L0"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": null,
+      "explicit_group": null
+    },
+    "SubmitKernel out of order with completion long kernel, CPU count": {
+      "type": "group",
+      "description": "Measures CPU time overhead of submitting out of order kernels with longer execution times through different APIs.",
+      "notes": "Each layer builds on top of the previous layer, adding functionality and overhead.\nThe first layer is the Level Zero API, the second is the Unified Runtime API, and the third is the SYCL API.\nThe UR v2 adapter noticeably reduces UR layer overhead, also improving SYCL performance.\nWork is ongoing to reduce the overhead of the SYCL API\n",
+      "unstable": null,
+      "tags": [
+        "submit",
+        "micro",
+        "SYCL",
+        "UR",
+        "L0"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": null,
+      "explicit_group": null
+    },
+    "SubmitKernel out of order with completion using events long kernel": {
+      "type": "group",
+      "description": "Measures CPU time overhead of submitting out of order kernels with longer execution times through different APIs.",
+      "notes": "Each layer builds on top of the previous layer, adding functionality and overhead.\nThe first layer is the Level Zero API, the second is the Unified Runtime API, and the third is the SYCL API.\nThe UR v2 adapter noticeably reduces UR layer overhead, also improving SYCL performance.\nWork is ongoing to reduce the overhead of the SYCL API\n",
+      "unstable": null,
+      "tags": [
+        "submit",
+        "micro",
+        "SYCL",
+        "UR",
+        "L0"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": null,
+      "explicit_group": null
+    },
+    "SubmitKernel out of order with completion using events long kernel, CPU count": {
+      "type": "group",
+      "description": "Measures CPU time overhead of submitting out of order kernels with longer execution times through different APIs.",
+      "notes": "Each layer builds on top of the previous layer, adding functionality and overhead.\nThe first layer is the Level Zero API, the second is the Unified Runtime API, and the third is the SYCL API.\nThe UR v2 adapter noticeably reduces UR layer overhead, also improving SYCL performance.\nWork is ongoing to reduce the overhead of the SYCL API\n",
+      "unstable": null,
+      "tags": [
+        "submit",
+        "micro",
+        "SYCL",
+        "UR",
+        "L0"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": null,
+      "explicit_group": null
+    },
     "api_overhead_benchmark_syclpreview SubmitKernel out of order not using events": {
       "type": "benchmark",
       "description": "Measures CPU time overhead of submitting out-of-order kernels through SYCL Preview API, excluding kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 1 micro seconds.",
@@ -50070,7 +52376,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "SYCLPREVIEW SubmitKernel out of order KernelExecTime=20, NumKernels 10",
-      "explicit_group": "SubmitKernel out of order KernelExecTime=20"
+      "explicit_group": "SubmitKernel out of order long kernel"
     },
     "api_overhead_benchmark_syclpreview SubmitKernel out of order not using events KernelExecTime=20 CPU count": {
       "type": "benchmark",
@@ -50086,7 +52392,39 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "SYCLPREVIEW SubmitKernel out of order KernelExecTime=20, NumKernels 10, CPU count",
-      "explicit_group": "SubmitKernel out of order KernelExecTime=20, CPU count"
+      "explicit_group": "SubmitKernel out of order long kernel, CPU count"
+    },
+    "api_overhead_benchmark_syclpreview SubmitKernel out of order not using events KernelExecTime=200": {
+      "type": "benchmark",
+      "description": "Measures CPU time overhead of submitting out-of-order kernels through SYCL Preview API, excluding kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 200 micro seconds.",
+      "notes": null,
+      "unstable": null,
+      "tags": [
+        "submit",
+        "latency",
+        "SYCL",
+        "micro"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": "SYCLPREVIEW SubmitKernel out of order KernelExecTime=200, NumKernels 10",
+      "explicit_group": "SubmitKernel out of order long kernel"
+    },
+    "api_overhead_benchmark_syclpreview SubmitKernel out of order not using events KernelExecTime=200 CPU count": {
+      "type": "benchmark",
+      "description": "Measures CPU time overhead of submitting out-of-order kernels through SYCL Preview API, excluding kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 200 micro seconds.",
+      "notes": null,
+      "unstable": null,
+      "tags": [
+        "submit",
+        "latency",
+        "SYCL",
+        "micro"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": "SYCLPREVIEW SubmitKernel out of order KernelExecTime=200, NumKernels 10, CPU count",
+      "explicit_group": "SubmitKernel out of order long kernel, CPU count"
     },
     "api_overhead_benchmark_syclpreview SubmitKernel out of order": {
       "type": "benchmark",
@@ -50134,7 +52472,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "SYCLPREVIEW SubmitKernel out of order using events KernelExecTime=20, NumKernels 10",
-      "explicit_group": "SubmitKernel out of order using events KernelExecTime=20"
+      "explicit_group": "SubmitKernel out of order using events long kernel"
     },
     "api_overhead_benchmark_syclpreview SubmitKernel out of order KernelExecTime=20 CPU count": {
       "type": "benchmark",
@@ -50150,7 +52488,39 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "SYCLPREVIEW SubmitKernel out of order using events KernelExecTime=20, NumKernels 10, CPU count",
-      "explicit_group": "SubmitKernel out of order using events KernelExecTime=20, CPU count"
+      "explicit_group": "SubmitKernel out of order using events long kernel, CPU count"
+    },
+    "api_overhead_benchmark_syclpreview SubmitKernel out of order KernelExecTime=200": {
+      "type": "benchmark",
+      "description": "Measures CPU time overhead of submitting out-of-order kernels through SYCL Preview API, excluding kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 200 micro seconds.",
+      "notes": null,
+      "unstable": null,
+      "tags": [
+        "submit",
+        "latency",
+        "SYCL",
+        "micro"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": "SYCLPREVIEW SubmitKernel out of order using events KernelExecTime=200, NumKernels 10",
+      "explicit_group": "SubmitKernel out of order using events long kernel"
+    },
+    "api_overhead_benchmark_syclpreview SubmitKernel out of order KernelExecTime=200 CPU count": {
+      "type": "benchmark",
+      "description": "Measures CPU time overhead of submitting out-of-order kernels through SYCL Preview API, excluding kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 200 micro seconds.",
+      "notes": null,
+      "unstable": null,
+      "tags": [
+        "submit",
+        "latency",
+        "SYCL",
+        "micro"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": "SYCLPREVIEW SubmitKernel out of order using events KernelExecTime=200, NumKernels 10, CPU count",
+      "explicit_group": "SubmitKernel out of order using events long kernel, CPU count"
     },
     "api_overhead_benchmark_syclpreview SubmitKernel out of order with measure completion not using events": {
       "type": "benchmark",
@@ -50198,7 +52568,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "SYCLPREVIEW SubmitKernel out of order with measure completion KernelExecTime=20, NumKernels 10",
-      "explicit_group": "SubmitKernel out of order with completion KernelExecTime=20"
+      "explicit_group": "SubmitKernel out of order with completion long kernel"
     },
     "api_overhead_benchmark_syclpreview SubmitKernel out of order with measure completion not using events KernelExecTime=20 CPU count": {
       "type": "benchmark",
@@ -50214,7 +52584,39 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "SYCLPREVIEW SubmitKernel out of order with measure completion KernelExecTime=20, NumKernels 10, CPU count",
-      "explicit_group": "SubmitKernel out of order with completion KernelExecTime=20, CPU count"
+      "explicit_group": "SubmitKernel out of order with completion long kernel, CPU count"
+    },
+    "api_overhead_benchmark_syclpreview SubmitKernel out of order with measure completion not using events KernelExecTime=200": {
+      "type": "benchmark",
+      "description": "Measures CPU time overhead of submitting out-of-order kernels through SYCL Preview API, including kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 200 micro seconds.",
+      "notes": null,
+      "unstable": null,
+      "tags": [
+        "submit",
+        "latency",
+        "SYCL",
+        "micro"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": "SYCLPREVIEW SubmitKernel out of order with measure completion KernelExecTime=200, NumKernels 10",
+      "explicit_group": "SubmitKernel out of order with completion long kernel"
+    },
+    "api_overhead_benchmark_syclpreview SubmitKernel out of order with measure completion not using events KernelExecTime=200 CPU count": {
+      "type": "benchmark",
+      "description": "Measures CPU time overhead of submitting out-of-order kernels through SYCL Preview API, including kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 200 micro seconds.",
+      "notes": null,
+      "unstable": null,
+      "tags": [
+        "submit",
+        "latency",
+        "SYCL",
+        "micro"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": "SYCLPREVIEW SubmitKernel out of order with measure completion KernelExecTime=200, NumKernels 10, CPU count",
+      "explicit_group": "SubmitKernel out of order with completion long kernel, CPU count"
     },
     "api_overhead_benchmark_syclpreview SubmitKernel out of order with measure completion": {
       "type": "benchmark",
@@ -50262,7 +52664,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "SYCLPREVIEW SubmitKernel out of order with measure completion using events KernelExecTime=20, NumKernels 10",
-      "explicit_group": "SubmitKernel out of order with completion using events KernelExecTime=20"
+      "explicit_group": "SubmitKernel out of order with completion using events long kernel"
     },
     "api_overhead_benchmark_syclpreview SubmitKernel out of order with measure completion KernelExecTime=20 CPU count": {
       "type": "benchmark",
@@ -50278,7 +52680,39 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "SYCLPREVIEW SubmitKernel out of order with measure completion using events KernelExecTime=20, NumKernels 10, CPU count",
-      "explicit_group": "SubmitKernel out of order with completion using events KernelExecTime=20, CPU count"
+      "explicit_group": "SubmitKernel out of order with completion using events long kernel, CPU count"
+    },
+    "api_overhead_benchmark_syclpreview SubmitKernel out of order with measure completion KernelExecTime=200": {
+      "type": "benchmark",
+      "description": "Measures CPU time overhead of submitting out-of-order kernels through SYCL Preview API, including kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 200 micro seconds.",
+      "notes": null,
+      "unstable": null,
+      "tags": [
+        "submit",
+        "latency",
+        "SYCL",
+        "micro"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": "SYCLPREVIEW SubmitKernel out of order with measure completion using events KernelExecTime=200, NumKernels 10",
+      "explicit_group": "SubmitKernel out of order with completion using events long kernel"
+    },
+    "api_overhead_benchmark_syclpreview SubmitKernel out of order with measure completion KernelExecTime=200 CPU count": {
+      "type": "benchmark",
+      "description": "Measures CPU time overhead of submitting out-of-order kernels through SYCL Preview API, including kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 200 micro seconds.",
+      "notes": null,
+      "unstable": null,
+      "tags": [
+        "submit",
+        "latency",
+        "SYCL",
+        "micro"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": "SYCLPREVIEW SubmitKernel out of order with measure completion using events KernelExecTime=200, NumKernels 10, CPU count",
+      "explicit_group": "SubmitKernel out of order with completion using events long kernel, CPU count"
     },
     "api_overhead_benchmark_syclpreview SubmitKernel in order not using events": {
       "type": "benchmark",
@@ -50326,7 +52760,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "SYCLPREVIEW SubmitKernel in order KernelExecTime=20, NumKernels 10",
-      "explicit_group": "SubmitKernel in order KernelExecTime=20"
+      "explicit_group": "SubmitKernel in order long kernel"
     },
     "api_overhead_benchmark_syclpreview SubmitKernel in order not using events KernelExecTime=20 CPU count": {
       "type": "benchmark",
@@ -50342,7 +52776,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "SYCLPREVIEW SubmitKernel in order KernelExecTime=20, NumKernels 10, CPU count",
-      "explicit_group": "SubmitKernel in order KernelExecTime=20, CPU count"
+      "explicit_group": "SubmitKernel in order long kernel, CPU count"
     },
     "api_overhead_benchmark_syclpreview SubmitKernel in order": {
       "type": "benchmark",
@@ -50390,7 +52824,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "SYCLPREVIEW SubmitKernel in order using events KernelExecTime=20, NumKernels 10",
-      "explicit_group": "SubmitKernel in order using events KernelExecTime=20"
+      "explicit_group": "SubmitKernel in order using events long kernel"
     },
     "api_overhead_benchmark_syclpreview SubmitKernel in order KernelExecTime=20 CPU count": {
       "type": "benchmark",
@@ -50406,7 +52840,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "SYCLPREVIEW SubmitKernel in order using events KernelExecTime=20, NumKernels 10, CPU count",
-      "explicit_group": "SubmitKernel in order using events KernelExecTime=20, CPU count"
+      "explicit_group": "SubmitKernel in order using events long kernel, CPU count"
     },
     "api_overhead_benchmark_syclpreview SubmitKernel in order with measure completion not using events": {
       "type": "benchmark",
@@ -50454,7 +52888,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "SYCLPREVIEW SubmitKernel in order with measure completion KernelExecTime=20, NumKernels 10",
-      "explicit_group": "SubmitKernel in order with completion KernelExecTime=20"
+      "explicit_group": "SubmitKernel in order with completion long kernel"
     },
     "api_overhead_benchmark_syclpreview SubmitKernel in order with measure completion not using events KernelExecTime=20 CPU count": {
       "type": "benchmark",
@@ -50470,7 +52904,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "SYCLPREVIEW SubmitKernel in order with measure completion KernelExecTime=20, NumKernels 10, CPU count",
-      "explicit_group": "SubmitKernel in order with completion KernelExecTime=20, CPU count"
+      "explicit_group": "SubmitKernel in order with completion long kernel, CPU count"
     },
     "api_overhead_benchmark_syclpreview SubmitKernel in order with measure completion": {
       "type": "benchmark",
@@ -50518,7 +52952,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "SYCLPREVIEW SubmitKernel in order with measure completion using events KernelExecTime=20, NumKernels 10",
-      "explicit_group": "SubmitKernel in order with completion using events KernelExecTime=20"
+      "explicit_group": "SubmitKernel in order with completion using events long kernel"
     },
     "api_overhead_benchmark_syclpreview SubmitKernel in order with measure completion KernelExecTime=20 CPU count": {
       "type": "benchmark",
@@ -50534,7 +52968,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "SYCLPREVIEW SubmitKernel in order with measure completion using events KernelExecTime=20, NumKernels 10, CPU count",
-      "explicit_group": "SubmitKernel in order with completion using events KernelExecTime=20, CPU count"
+      "explicit_group": "SubmitKernel in order with completion using events long kernel, CPU count"
     },
     "graph_api_benchmark_syclpreview SinKernelGraph graphs:0, numKernels:5": {
       "type": "benchmark",
@@ -50890,7 +53324,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "SYCL SubmitKernel out of order KernelExecTime=20, NumKernels 10",
-      "explicit_group": "SubmitKernel out of order KernelExecTime=20"
+      "explicit_group": "SubmitKernel out of order long kernel"
     },
     "api_overhead_benchmark_sycl SubmitKernel out of order not using events KernelExecTime=20 CPU count": {
       "type": "benchmark",
@@ -50906,7 +53340,39 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "SYCL SubmitKernel out of order KernelExecTime=20, NumKernels 10, CPU count",
-      "explicit_group": "SubmitKernel out of order KernelExecTime=20, CPU count"
+      "explicit_group": "SubmitKernel out of order long kernel, CPU count"
+    },
+    "api_overhead_benchmark_sycl SubmitKernel out of order not using events KernelExecTime=200": {
+      "type": "benchmark",
+      "description": "Measures CPU time overhead of submitting out-of-order kernels through SYCL API, excluding kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 200 micro seconds.",
+      "notes": null,
+      "unstable": null,
+      "tags": [
+        "submit",
+        "latency",
+        "SYCL",
+        "micro"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": "SYCL SubmitKernel out of order KernelExecTime=200, NumKernels 10",
+      "explicit_group": "SubmitKernel out of order long kernel"
+    },
+    "api_overhead_benchmark_sycl SubmitKernel out of order not using events KernelExecTime=200 CPU count": {
+      "type": "benchmark",
+      "description": "Measures CPU time overhead of submitting out-of-order kernels through SYCL API, excluding kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 200 micro seconds.",
+      "notes": null,
+      "unstable": null,
+      "tags": [
+        "submit",
+        "latency",
+        "SYCL",
+        "micro"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": "SYCL SubmitKernel out of order KernelExecTime=200, NumKernels 10, CPU count",
+      "explicit_group": "SubmitKernel out of order long kernel, CPU count"
     },
     "api_overhead_benchmark_sycl SubmitKernel out of order": {
       "type": "benchmark",
@@ -50954,7 +53420,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "SYCL SubmitKernel out of order using events KernelExecTime=20, NumKernels 10",
-      "explicit_group": "SubmitKernel out of order using events KernelExecTime=20"
+      "explicit_group": "SubmitKernel out of order using events long kernel"
     },
     "api_overhead_benchmark_sycl SubmitKernel out of order KernelExecTime=20 CPU count": {
       "type": "benchmark",
@@ -50970,7 +53436,39 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "SYCL SubmitKernel out of order using events KernelExecTime=20, NumKernels 10, CPU count",
-      "explicit_group": "SubmitKernel out of order using events KernelExecTime=20, CPU count"
+      "explicit_group": "SubmitKernel out of order using events long kernel, CPU count"
+    },
+    "api_overhead_benchmark_sycl SubmitKernel out of order KernelExecTime=200": {
+      "type": "benchmark",
+      "description": "Measures CPU time overhead of submitting out-of-order kernels through SYCL API, excluding kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 200 micro seconds.",
+      "notes": null,
+      "unstable": null,
+      "tags": [
+        "submit",
+        "latency",
+        "SYCL",
+        "micro"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": "SYCL SubmitKernel out of order using events KernelExecTime=200, NumKernels 10",
+      "explicit_group": "SubmitKernel out of order using events long kernel"
+    },
+    "api_overhead_benchmark_sycl SubmitKernel out of order KernelExecTime=200 CPU count": {
+      "type": "benchmark",
+      "description": "Measures CPU time overhead of submitting out-of-order kernels through SYCL API, excluding kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 200 micro seconds.",
+      "notes": null,
+      "unstable": null,
+      "tags": [
+        "submit",
+        "latency",
+        "SYCL",
+        "micro"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": "SYCL SubmitKernel out of order using events KernelExecTime=200, NumKernels 10, CPU count",
+      "explicit_group": "SubmitKernel out of order using events long kernel, CPU count"
     },
     "api_overhead_benchmark_sycl SubmitKernel out of order with measure completion not using events": {
       "type": "benchmark",
@@ -51018,7 +53516,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "SYCL SubmitKernel out of order with measure completion KernelExecTime=20, NumKernels 10",
-      "explicit_group": "SubmitKernel out of order with completion KernelExecTime=20"
+      "explicit_group": "SubmitKernel out of order with completion long kernel"
     },
     "api_overhead_benchmark_sycl SubmitKernel out of order with measure completion not using events KernelExecTime=20 CPU count": {
       "type": "benchmark",
@@ -51034,7 +53532,39 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "SYCL SubmitKernel out of order with measure completion KernelExecTime=20, NumKernels 10, CPU count",
-      "explicit_group": "SubmitKernel out of order with completion KernelExecTime=20, CPU count"
+      "explicit_group": "SubmitKernel out of order with completion long kernel, CPU count"
+    },
+    "api_overhead_benchmark_sycl SubmitKernel out of order with measure completion not using events KernelExecTime=200": {
+      "type": "benchmark",
+      "description": "Measures CPU time overhead of submitting out-of-order kernels through SYCL API, including kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 200 micro seconds.",
+      "notes": null,
+      "unstable": null,
+      "tags": [
+        "submit",
+        "latency",
+        "SYCL",
+        "micro"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": "SYCL SubmitKernel out of order with measure completion KernelExecTime=200, NumKernels 10",
+      "explicit_group": "SubmitKernel out of order with completion long kernel"
+    },
+    "api_overhead_benchmark_sycl SubmitKernel out of order with measure completion not using events KernelExecTime=200 CPU count": {
+      "type": "benchmark",
+      "description": "Measures CPU time overhead of submitting out-of-order kernels through SYCL API, including kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 200 micro seconds.",
+      "notes": null,
+      "unstable": null,
+      "tags": [
+        "submit",
+        "latency",
+        "SYCL",
+        "micro"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": "SYCL SubmitKernel out of order with measure completion KernelExecTime=200, NumKernels 10, CPU count",
+      "explicit_group": "SubmitKernel out of order with completion long kernel, CPU count"
     },
     "api_overhead_benchmark_sycl SubmitKernel out of order with measure completion": {
       "type": "benchmark",
@@ -51082,7 +53612,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "SYCL SubmitKernel out of order with measure completion using events KernelExecTime=20, NumKernels 10",
-      "explicit_group": "SubmitKernel out of order with completion using events KernelExecTime=20"
+      "explicit_group": "SubmitKernel out of order with completion using events long kernel"
     },
     "api_overhead_benchmark_sycl SubmitKernel out of order with measure completion KernelExecTime=20 CPU count": {
       "type": "benchmark",
@@ -51098,7 +53628,39 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "SYCL SubmitKernel out of order with measure completion using events KernelExecTime=20, NumKernels 10, CPU count",
-      "explicit_group": "SubmitKernel out of order with completion using events KernelExecTime=20, CPU count"
+      "explicit_group": "SubmitKernel out of order with completion using events long kernel, CPU count"
+    },
+    "api_overhead_benchmark_sycl SubmitKernel out of order with measure completion KernelExecTime=200": {
+      "type": "benchmark",
+      "description": "Measures CPU time overhead of submitting out-of-order kernels through SYCL API, including kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 200 micro seconds.",
+      "notes": null,
+      "unstable": null,
+      "tags": [
+        "submit",
+        "latency",
+        "SYCL",
+        "micro"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": "SYCL SubmitKernel out of order with measure completion using events KernelExecTime=200, NumKernels 10",
+      "explicit_group": "SubmitKernel out of order with completion using events long kernel"
+    },
+    "api_overhead_benchmark_sycl SubmitKernel out of order with measure completion KernelExecTime=200 CPU count": {
+      "type": "benchmark",
+      "description": "Measures CPU time overhead of submitting out-of-order kernels through SYCL API, including kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 200 micro seconds.",
+      "notes": null,
+      "unstable": null,
+      "tags": [
+        "submit",
+        "latency",
+        "SYCL",
+        "micro"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": "SYCL SubmitKernel out of order with measure completion using events KernelExecTime=200, NumKernels 10, CPU count",
+      "explicit_group": "SubmitKernel out of order with completion using events long kernel, CPU count"
     },
     "api_overhead_benchmark_sycl SubmitKernel in order not using events": {
       "type": "benchmark",
@@ -51146,7 +53708,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "SYCL SubmitKernel in order KernelExecTime=20, NumKernels 10",
-      "explicit_group": "SubmitKernel in order KernelExecTime=20"
+      "explicit_group": "SubmitKernel in order long kernel"
     },
     "api_overhead_benchmark_sycl SubmitKernel in order not using events KernelExecTime=20 CPU count": {
       "type": "benchmark",
@@ -51162,7 +53724,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "SYCL SubmitKernel in order KernelExecTime=20, NumKernels 10, CPU count",
-      "explicit_group": "SubmitKernel in order KernelExecTime=20, CPU count"
+      "explicit_group": "SubmitKernel in order long kernel, CPU count"
     },
     "api_overhead_benchmark_sycl SubmitKernel in order": {
       "type": "benchmark",
@@ -51210,7 +53772,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "SYCL SubmitKernel in order using events KernelExecTime=20, NumKernels 10",
-      "explicit_group": "SubmitKernel in order using events KernelExecTime=20"
+      "explicit_group": "SubmitKernel in order using events long kernel"
     },
     "api_overhead_benchmark_sycl SubmitKernel in order KernelExecTime=20 CPU count": {
       "type": "benchmark",
@@ -51226,7 +53788,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "SYCL SubmitKernel in order using events KernelExecTime=20, NumKernels 10, CPU count",
-      "explicit_group": "SubmitKernel in order using events KernelExecTime=20, CPU count"
+      "explicit_group": "SubmitKernel in order using events long kernel, CPU count"
     },
     "api_overhead_benchmark_sycl SubmitKernel in order with measure completion not using events": {
       "type": "benchmark",
@@ -51274,7 +53836,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "SYCL SubmitKernel in order with measure completion KernelExecTime=20, NumKernels 10",
-      "explicit_group": "SubmitKernel in order with completion KernelExecTime=20"
+      "explicit_group": "SubmitKernel in order with completion long kernel"
     },
     "api_overhead_benchmark_sycl SubmitKernel in order with measure completion not using events KernelExecTime=20 CPU count": {
       "type": "benchmark",
@@ -51290,7 +53852,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "SYCL SubmitKernel in order with measure completion KernelExecTime=20, NumKernels 10, CPU count",
-      "explicit_group": "SubmitKernel in order with completion KernelExecTime=20, CPU count"
+      "explicit_group": "SubmitKernel in order with completion long kernel, CPU count"
     },
     "api_overhead_benchmark_sycl SubmitKernel in order with measure completion": {
       "type": "benchmark",
@@ -51338,7 +53900,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "SYCL SubmitKernel in order with measure completion using events KernelExecTime=20, NumKernels 10",
-      "explicit_group": "SubmitKernel in order with completion using events KernelExecTime=20"
+      "explicit_group": "SubmitKernel in order with completion using events long kernel"
     },
     "api_overhead_benchmark_sycl SubmitKernel in order with measure completion KernelExecTime=20 CPU count": {
       "type": "benchmark",
@@ -51354,7 +53916,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "SYCL SubmitKernel in order with measure completion using events KernelExecTime=20, NumKernels 10, CPU count",
-      "explicit_group": "SubmitKernel in order with completion using events KernelExecTime=20, CPU count"
+      "explicit_group": "SubmitKernel in order with completion using events long kernel, CPU count"
     },
     "graph_api_benchmark_sycl SinKernelGraph graphs:0, numKernels:5": {
       "type": "benchmark",
@@ -51710,7 +54272,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "L0 SubmitKernel out of order KernelExecTime=20, NumKernels 10",
-      "explicit_group": "SubmitKernel out of order KernelExecTime=20"
+      "explicit_group": "SubmitKernel out of order long kernel"
     },
     "api_overhead_benchmark_l0 SubmitKernel out of order not using events KernelExecTime=20 CPU count": {
       "type": "benchmark",
@@ -51726,7 +54288,39 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "L0 SubmitKernel out of order KernelExecTime=20, NumKernels 10, CPU count",
-      "explicit_group": "SubmitKernel out of order KernelExecTime=20, CPU count"
+      "explicit_group": "SubmitKernel out of order long kernel, CPU count"
+    },
+    "api_overhead_benchmark_l0 SubmitKernel out of order not using events KernelExecTime=200": {
+      "type": "benchmark",
+      "description": "Measures CPU time overhead of submitting out-of-order kernels through Level Zero API, excluding kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 200 micro seconds.",
+      "notes": null,
+      "unstable": null,
+      "tags": [
+        "submit",
+        "latency",
+        "L0",
+        "micro"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": "L0 SubmitKernel out of order KernelExecTime=200, NumKernels 10",
+      "explicit_group": "SubmitKernel out of order long kernel"
+    },
+    "api_overhead_benchmark_l0 SubmitKernel out of order not using events KernelExecTime=200 CPU count": {
+      "type": "benchmark",
+      "description": "Measures CPU time overhead of submitting out-of-order kernels through Level Zero API, excluding kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 200 micro seconds.",
+      "notes": null,
+      "unstable": null,
+      "tags": [
+        "submit",
+        "latency",
+        "L0",
+        "micro"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": "L0 SubmitKernel out of order KernelExecTime=200, NumKernels 10, CPU count",
+      "explicit_group": "SubmitKernel out of order long kernel, CPU count"
     },
     "api_overhead_benchmark_l0 SubmitKernel out of order": {
       "type": "benchmark",
@@ -51774,7 +54368,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "L0 SubmitKernel out of order using events KernelExecTime=20, NumKernels 10",
-      "explicit_group": "SubmitKernel out of order using events KernelExecTime=20"
+      "explicit_group": "SubmitKernel out of order using events long kernel"
     },
     "api_overhead_benchmark_l0 SubmitKernel out of order KernelExecTime=20 CPU count": {
       "type": "benchmark",
@@ -51790,7 +54384,39 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "L0 SubmitKernel out of order using events KernelExecTime=20, NumKernels 10, CPU count",
-      "explicit_group": "SubmitKernel out of order using events KernelExecTime=20, CPU count"
+      "explicit_group": "SubmitKernel out of order using events long kernel, CPU count"
+    },
+    "api_overhead_benchmark_l0 SubmitKernel out of order KernelExecTime=200": {
+      "type": "benchmark",
+      "description": "Measures CPU time overhead of submitting out-of-order kernels through Level Zero API, excluding kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 200 micro seconds.",
+      "notes": null,
+      "unstable": null,
+      "tags": [
+        "submit",
+        "latency",
+        "L0",
+        "micro"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": "L0 SubmitKernel out of order using events KernelExecTime=200, NumKernels 10",
+      "explicit_group": "SubmitKernel out of order using events long kernel"
+    },
+    "api_overhead_benchmark_l0 SubmitKernel out of order KernelExecTime=200 CPU count": {
+      "type": "benchmark",
+      "description": "Measures CPU time overhead of submitting out-of-order kernels through Level Zero API, excluding kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 200 micro seconds.",
+      "notes": null,
+      "unstable": null,
+      "tags": [
+        "submit",
+        "latency",
+        "L0",
+        "micro"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": "L0 SubmitKernel out of order using events KernelExecTime=200, NumKernels 10, CPU count",
+      "explicit_group": "SubmitKernel out of order using events long kernel, CPU count"
     },
     "api_overhead_benchmark_l0 SubmitKernel out of order with measure completion not using events": {
       "type": "benchmark",
@@ -51838,7 +54464,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "L0 SubmitKernel out of order with measure completion KernelExecTime=20, NumKernels 10",
-      "explicit_group": "SubmitKernel out of order with completion KernelExecTime=20"
+      "explicit_group": "SubmitKernel out of order with completion long kernel"
     },
     "api_overhead_benchmark_l0 SubmitKernel out of order with measure completion not using events KernelExecTime=20 CPU count": {
       "type": "benchmark",
@@ -51854,7 +54480,39 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "L0 SubmitKernel out of order with measure completion KernelExecTime=20, NumKernels 10, CPU count",
-      "explicit_group": "SubmitKernel out of order with completion KernelExecTime=20, CPU count"
+      "explicit_group": "SubmitKernel out of order with completion long kernel, CPU count"
+    },
+    "api_overhead_benchmark_l0 SubmitKernel out of order with measure completion not using events KernelExecTime=200": {
+      "type": "benchmark",
+      "description": "Measures CPU time overhead of submitting out-of-order kernels through Level Zero API, including kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 200 micro seconds.",
+      "notes": null,
+      "unstable": null,
+      "tags": [
+        "submit",
+        "latency",
+        "L0",
+        "micro"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": "L0 SubmitKernel out of order with measure completion KernelExecTime=200, NumKernels 10",
+      "explicit_group": "SubmitKernel out of order with completion long kernel"
+    },
+    "api_overhead_benchmark_l0 SubmitKernel out of order with measure completion not using events KernelExecTime=200 CPU count": {
+      "type": "benchmark",
+      "description": "Measures CPU time overhead of submitting out-of-order kernels through Level Zero API, including kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 200 micro seconds.",
+      "notes": null,
+      "unstable": null,
+      "tags": [
+        "submit",
+        "latency",
+        "L0",
+        "micro"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": "L0 SubmitKernel out of order with measure completion KernelExecTime=200, NumKernels 10, CPU count",
+      "explicit_group": "SubmitKernel out of order with completion long kernel, CPU count"
     },
     "api_overhead_benchmark_l0 SubmitKernel out of order with measure completion": {
       "type": "benchmark",
@@ -51902,7 +54560,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "L0 SubmitKernel out of order with measure completion using events KernelExecTime=20, NumKernels 10",
-      "explicit_group": "SubmitKernel out of order with completion using events KernelExecTime=20"
+      "explicit_group": "SubmitKernel out of order with completion using events long kernel"
     },
     "api_overhead_benchmark_l0 SubmitKernel out of order with measure completion KernelExecTime=20 CPU count": {
       "type": "benchmark",
@@ -51918,7 +54576,39 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "L0 SubmitKernel out of order with measure completion using events KernelExecTime=20, NumKernels 10, CPU count",
-      "explicit_group": "SubmitKernel out of order with completion using events KernelExecTime=20, CPU count"
+      "explicit_group": "SubmitKernel out of order with completion using events long kernel, CPU count"
+    },
+    "api_overhead_benchmark_l0 SubmitKernel out of order with measure completion KernelExecTime=200": {
+      "type": "benchmark",
+      "description": "Measures CPU time overhead of submitting out-of-order kernels through Level Zero API, including kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 200 micro seconds.",
+      "notes": null,
+      "unstable": null,
+      "tags": [
+        "submit",
+        "latency",
+        "L0",
+        "micro"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": "L0 SubmitKernel out of order with measure completion using events KernelExecTime=200, NumKernels 10",
+      "explicit_group": "SubmitKernel out of order with completion using events long kernel"
+    },
+    "api_overhead_benchmark_l0 SubmitKernel out of order with measure completion KernelExecTime=200 CPU count": {
+      "type": "benchmark",
+      "description": "Measures CPU time overhead of submitting out-of-order kernels through Level Zero API, including kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 200 micro seconds.",
+      "notes": null,
+      "unstable": null,
+      "tags": [
+        "submit",
+        "latency",
+        "L0",
+        "micro"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": "L0 SubmitKernel out of order with measure completion using events KernelExecTime=200, NumKernels 10, CPU count",
+      "explicit_group": "SubmitKernel out of order with completion using events long kernel, CPU count"
     },
     "api_overhead_benchmark_l0 SubmitKernel in order not using events": {
       "type": "benchmark",
@@ -51966,7 +54656,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "L0 SubmitKernel in order KernelExecTime=20, NumKernels 10",
-      "explicit_group": "SubmitKernel in order KernelExecTime=20"
+      "explicit_group": "SubmitKernel in order long kernel"
     },
     "api_overhead_benchmark_l0 SubmitKernel in order not using events KernelExecTime=20 CPU count": {
       "type": "benchmark",
@@ -51982,7 +54672,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "L0 SubmitKernel in order KernelExecTime=20, NumKernels 10, CPU count",
-      "explicit_group": "SubmitKernel in order KernelExecTime=20, CPU count"
+      "explicit_group": "SubmitKernel in order long kernel, CPU count"
     },
     "api_overhead_benchmark_l0 SubmitKernel in order": {
       "type": "benchmark",
@@ -52030,7 +54720,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "L0 SubmitKernel in order using events KernelExecTime=20, NumKernels 10",
-      "explicit_group": "SubmitKernel in order using events KernelExecTime=20"
+      "explicit_group": "SubmitKernel in order using events long kernel"
     },
     "api_overhead_benchmark_l0 SubmitKernel in order KernelExecTime=20 CPU count": {
       "type": "benchmark",
@@ -52046,7 +54736,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "L0 SubmitKernel in order using events KernelExecTime=20, NumKernels 10, CPU count",
-      "explicit_group": "SubmitKernel in order using events KernelExecTime=20, CPU count"
+      "explicit_group": "SubmitKernel in order using events long kernel, CPU count"
     },
     "api_overhead_benchmark_l0 SubmitKernel in order with measure completion not using events": {
       "type": "benchmark",
@@ -52094,7 +54784,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "L0 SubmitKernel in order with measure completion KernelExecTime=20, NumKernels 10",
-      "explicit_group": "SubmitKernel in order with completion KernelExecTime=20"
+      "explicit_group": "SubmitKernel in order with completion long kernel"
     },
     "api_overhead_benchmark_l0 SubmitKernel in order with measure completion not using events KernelExecTime=20 CPU count": {
       "type": "benchmark",
@@ -52110,7 +54800,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "L0 SubmitKernel in order with measure completion KernelExecTime=20, NumKernels 10, CPU count",
-      "explicit_group": "SubmitKernel in order with completion KernelExecTime=20, CPU count"
+      "explicit_group": "SubmitKernel in order with completion long kernel, CPU count"
     },
     "api_overhead_benchmark_l0 SubmitKernel in order with measure completion": {
       "type": "benchmark",
@@ -52158,7 +54848,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "L0 SubmitKernel in order with measure completion using events KernelExecTime=20, NumKernels 10",
-      "explicit_group": "SubmitKernel in order with completion using events KernelExecTime=20"
+      "explicit_group": "SubmitKernel in order with completion using events long kernel"
     },
     "api_overhead_benchmark_l0 SubmitKernel in order with measure completion KernelExecTime=20 CPU count": {
       "type": "benchmark",
@@ -52174,7 +54864,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "L0 SubmitKernel in order with measure completion using events KernelExecTime=20, NumKernels 10, CPU count",
-      "explicit_group": "SubmitKernel in order with completion using events KernelExecTime=20, CPU count"
+      "explicit_group": "SubmitKernel in order with completion using events long kernel, CPU count"
     },
     "graph_api_benchmark_l0 SinKernelGraph graphs:0, numKernels:5": {
       "type": "benchmark",
@@ -52530,7 +55220,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "UR SubmitKernel out of order KernelExecTime=20, NumKernels 10",
-      "explicit_group": "SubmitKernel out of order KernelExecTime=20"
+      "explicit_group": "SubmitKernel out of order long kernel"
     },
     "api_overhead_benchmark_ur SubmitKernel out of order not using events KernelExecTime=20 CPU count": {
       "type": "benchmark",
@@ -52546,7 +55236,39 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "UR SubmitKernel out of order KernelExecTime=20, NumKernels 10, CPU count",
-      "explicit_group": "SubmitKernel out of order KernelExecTime=20, CPU count"
+      "explicit_group": "SubmitKernel out of order long kernel, CPU count"
+    },
+    "api_overhead_benchmark_ur SubmitKernel out of order not using events KernelExecTime=200": {
+      "type": "benchmark",
+      "description": "Measures CPU time overhead of submitting out-of-order kernels through Unified Runtime API, excluding kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 200 micro seconds.",
+      "notes": null,
+      "unstable": null,
+      "tags": [
+        "submit",
+        "latency",
+        "UR",
+        "micro"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": "UR SubmitKernel out of order KernelExecTime=200, NumKernels 10",
+      "explicit_group": "SubmitKernel out of order long kernel"
+    },
+    "api_overhead_benchmark_ur SubmitKernel out of order not using events KernelExecTime=200 CPU count": {
+      "type": "benchmark",
+      "description": "Measures CPU time overhead of submitting out-of-order kernels through Unified Runtime API, excluding kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 200 micro seconds.",
+      "notes": null,
+      "unstable": null,
+      "tags": [
+        "submit",
+        "latency",
+        "UR",
+        "micro"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": "UR SubmitKernel out of order KernelExecTime=200, NumKernels 10, CPU count",
+      "explicit_group": "SubmitKernel out of order long kernel, CPU count"
     },
     "api_overhead_benchmark_ur SubmitKernel out of order": {
       "type": "benchmark",
@@ -52594,7 +55316,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "UR SubmitKernel out of order using events KernelExecTime=20, NumKernels 10",
-      "explicit_group": "SubmitKernel out of order using events KernelExecTime=20"
+      "explicit_group": "SubmitKernel out of order using events long kernel"
     },
     "api_overhead_benchmark_ur SubmitKernel out of order KernelExecTime=20 CPU count": {
       "type": "benchmark",
@@ -52610,7 +55332,39 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "UR SubmitKernel out of order using events KernelExecTime=20, NumKernels 10, CPU count",
-      "explicit_group": "SubmitKernel out of order using events KernelExecTime=20, CPU count"
+      "explicit_group": "SubmitKernel out of order using events long kernel, CPU count"
+    },
+    "api_overhead_benchmark_ur SubmitKernel out of order KernelExecTime=200": {
+      "type": "benchmark",
+      "description": "Measures CPU time overhead of submitting out-of-order kernels through Unified Runtime API, excluding kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 200 micro seconds.",
+      "notes": null,
+      "unstable": null,
+      "tags": [
+        "submit",
+        "latency",
+        "UR",
+        "micro"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": "UR SubmitKernel out of order using events KernelExecTime=200, NumKernels 10",
+      "explicit_group": "SubmitKernel out of order using events long kernel"
+    },
+    "api_overhead_benchmark_ur SubmitKernel out of order KernelExecTime=200 CPU count": {
+      "type": "benchmark",
+      "description": "Measures CPU time overhead of submitting out-of-order kernels through Unified Runtime API, excluding kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 200 micro seconds.",
+      "notes": null,
+      "unstable": null,
+      "tags": [
+        "submit",
+        "latency",
+        "UR",
+        "micro"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": "UR SubmitKernel out of order using events KernelExecTime=200, NumKernels 10, CPU count",
+      "explicit_group": "SubmitKernel out of order using events long kernel, CPU count"
     },
     "api_overhead_benchmark_ur SubmitKernel out of order with measure completion not using events": {
       "type": "benchmark",
@@ -52658,7 +55412,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "UR SubmitKernel out of order with measure completion KernelExecTime=20, NumKernels 10",
-      "explicit_group": "SubmitKernel out of order with completion KernelExecTime=20"
+      "explicit_group": "SubmitKernel out of order with completion long kernel"
     },
     "api_overhead_benchmark_ur SubmitKernel out of order with measure completion not using events KernelExecTime=20 CPU count": {
       "type": "benchmark",
@@ -52674,7 +55428,39 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "UR SubmitKernel out of order with measure completion KernelExecTime=20, NumKernels 10, CPU count",
-      "explicit_group": "SubmitKernel out of order with completion KernelExecTime=20, CPU count"
+      "explicit_group": "SubmitKernel out of order with completion long kernel, CPU count"
+    },
+    "api_overhead_benchmark_ur SubmitKernel out of order with measure completion not using events KernelExecTime=200": {
+      "type": "benchmark",
+      "description": "Measures CPU time overhead of submitting out-of-order kernels through Unified Runtime API, including kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 200 micro seconds.",
+      "notes": null,
+      "unstable": null,
+      "tags": [
+        "submit",
+        "latency",
+        "UR",
+        "micro"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": "UR SubmitKernel out of order with measure completion KernelExecTime=200, NumKernels 10",
+      "explicit_group": "SubmitKernel out of order with completion long kernel"
+    },
+    "api_overhead_benchmark_ur SubmitKernel out of order with measure completion not using events KernelExecTime=200 CPU count": {
+      "type": "benchmark",
+      "description": "Measures CPU time overhead of submitting out-of-order kernels through Unified Runtime API, including kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 200 micro seconds.",
+      "notes": null,
+      "unstable": null,
+      "tags": [
+        "submit",
+        "latency",
+        "UR",
+        "micro"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": "UR SubmitKernel out of order with measure completion KernelExecTime=200, NumKernels 10, CPU count",
+      "explicit_group": "SubmitKernel out of order with completion long kernel, CPU count"
     },
     "api_overhead_benchmark_ur SubmitKernel out of order with measure completion": {
       "type": "benchmark",
@@ -52722,7 +55508,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "UR SubmitKernel out of order with measure completion using events KernelExecTime=20, NumKernels 10",
-      "explicit_group": "SubmitKernel out of order with completion using events KernelExecTime=20"
+      "explicit_group": "SubmitKernel out of order with completion using events long kernel"
     },
     "api_overhead_benchmark_ur SubmitKernel out of order with measure completion KernelExecTime=20 CPU count": {
       "type": "benchmark",
@@ -52738,7 +55524,39 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "UR SubmitKernel out of order with measure completion using events KernelExecTime=20, NumKernels 10, CPU count",
-      "explicit_group": "SubmitKernel out of order with completion using events KernelExecTime=20, CPU count"
+      "explicit_group": "SubmitKernel out of order with completion using events long kernel, CPU count"
+    },
+    "api_overhead_benchmark_ur SubmitKernel out of order with measure completion KernelExecTime=200": {
+      "type": "benchmark",
+      "description": "Measures CPU time overhead of submitting out-of-order kernels through Unified Runtime API, including kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 200 micro seconds.",
+      "notes": null,
+      "unstable": null,
+      "tags": [
+        "submit",
+        "latency",
+        "UR",
+        "micro"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": "UR SubmitKernel out of order with measure completion using events KernelExecTime=200, NumKernels 10",
+      "explicit_group": "SubmitKernel out of order with completion using events long kernel"
+    },
+    "api_overhead_benchmark_ur SubmitKernel out of order with measure completion KernelExecTime=200 CPU count": {
+      "type": "benchmark",
+      "description": "Measures CPU time overhead of submitting out-of-order kernels through Unified Runtime API, including kernel completion time. Runs 10 simple kernels with minimal execution time to isolate API overhead from kernel execution time.Each kernel executes for approximately 200 micro seconds.",
+      "notes": null,
+      "unstable": null,
+      "tags": [
+        "submit",
+        "latency",
+        "UR",
+        "micro"
+      ],
+      "range_min": 0.0,
+      "range_max": null,
+      "display_name": "UR SubmitKernel out of order with measure completion using events KernelExecTime=200, NumKernels 10, CPU count",
+      "explicit_group": "SubmitKernel out of order with completion using events long kernel, CPU count"
     },
     "api_overhead_benchmark_ur SubmitKernel in order not using events": {
       "type": "benchmark",
@@ -52786,7 +55604,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "UR SubmitKernel in order KernelExecTime=20, NumKernels 10",
-      "explicit_group": "SubmitKernel in order KernelExecTime=20"
+      "explicit_group": "SubmitKernel in order long kernel"
     },
     "api_overhead_benchmark_ur SubmitKernel in order not using events KernelExecTime=20 CPU count": {
       "type": "benchmark",
@@ -52802,7 +55620,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "UR SubmitKernel in order KernelExecTime=20, NumKernels 10, CPU count",
-      "explicit_group": "SubmitKernel in order KernelExecTime=20, CPU count"
+      "explicit_group": "SubmitKernel in order long kernel, CPU count"
     },
     "api_overhead_benchmark_ur SubmitKernel in order": {
       "type": "benchmark",
@@ -52850,7 +55668,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "UR SubmitKernel in order using events KernelExecTime=20, NumKernels 10",
-      "explicit_group": "SubmitKernel in order using events KernelExecTime=20"
+      "explicit_group": "SubmitKernel in order using events long kernel"
     },
     "api_overhead_benchmark_ur SubmitKernel in order KernelExecTime=20 CPU count": {
       "type": "benchmark",
@@ -52866,7 +55684,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "UR SubmitKernel in order using events KernelExecTime=20, NumKernels 10, CPU count",
-      "explicit_group": "SubmitKernel in order using events KernelExecTime=20, CPU count"
+      "explicit_group": "SubmitKernel in order using events long kernel, CPU count"
     },
     "api_overhead_benchmark_ur SubmitKernel in order with measure completion not using events": {
       "type": "benchmark",
@@ -52914,7 +55732,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "UR SubmitKernel in order with measure completion KernelExecTime=20, NumKernels 10",
-      "explicit_group": "SubmitKernel in order with completion KernelExecTime=20"
+      "explicit_group": "SubmitKernel in order with completion long kernel"
     },
     "api_overhead_benchmark_ur SubmitKernel in order with measure completion not using events KernelExecTime=20 CPU count": {
       "type": "benchmark",
@@ -52930,7 +55748,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "UR SubmitKernel in order with measure completion KernelExecTime=20, NumKernels 10, CPU count",
-      "explicit_group": "SubmitKernel in order with completion KernelExecTime=20, CPU count"
+      "explicit_group": "SubmitKernel in order with completion long kernel, CPU count"
     },
     "api_overhead_benchmark_ur SubmitKernel in order with measure completion": {
       "type": "benchmark",
@@ -52978,7 +55796,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "UR SubmitKernel in order with measure completion using events KernelExecTime=20, NumKernels 10",
-      "explicit_group": "SubmitKernel in order with completion using events KernelExecTime=20"
+      "explicit_group": "SubmitKernel in order with completion using events long kernel"
     },
     "api_overhead_benchmark_ur SubmitKernel in order with measure completion KernelExecTime=20 CPU count": {
       "type": "benchmark",
@@ -52994,7 +55812,7 @@
       "range_min": 0.0,
       "range_max": null,
       "display_name": "UR SubmitKernel in order with measure completion using events KernelExecTime=20, NumKernels 10, CPU count",
-      "explicit_group": "SubmitKernel in order with completion using events KernelExecTime=20, CPU count"
+      "explicit_group": "SubmitKernel in order with completion using events long kernel, CPU count"
     },
     "graph_api_benchmark_ur SinKernelGraph graphs:0, numKernels:5": {
       "type": "benchmark",
