@@ -74,7 +74,11 @@ umf_result_t umfInit(void) {
     if (TRACKER) {
         LOG_DEBUG("UMF library initialized");
     }
-
+#if !defined(UMF_NO_HWLOC)
+    // some benchmarks uses multiple forks, and topology initialization is very slow
+    // so if we initialize topology before the first fork, we can get significant performance gain.
+    umfGetTopologyReduced();
+#endif
     return UMF_RESULT_SUCCESS;
 }
 
