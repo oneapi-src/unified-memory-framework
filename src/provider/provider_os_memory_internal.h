@@ -68,7 +68,13 @@ typedef struct os_memory_provider_t {
     unsigned partitions_len;
     size_t partitions_weight_sum;
 
+#if defined(_WIN32) || defined(__APPLE__)
     hwloc_topology_t topo;
+#else
+    // NOTE: on linux we don't want to use hwloc_topology_t directly because
+    // of its long initialization time
+    int dedicated;
+#endif
 
     char name[64];
 
