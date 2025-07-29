@@ -46,6 +46,7 @@ typedef enum umf_numa_mode_t {
     /// umf_numa_split_partition_t can be passed in umf_os_memory_provider_params_t structure
     /// to specify other distribution.
     UMF_NUMA_MODE_SPLIT,
+
     /// The memory is allocated on the node of the CPU that triggered the
     /// allocation. If this mode is specified, nodemask must be NULL and
     /// maxnode must be 0.
@@ -58,6 +59,7 @@ typedef struct umf_numa_split_partition_t {
     /// The weight of the partition, representing the proportion of
     /// the allocation that should be assigned to this NUMA node.
     unsigned weight;
+
     /// The NUMA node where the pages assigned to this partition will be bound.
     unsigned target;
 } umf_numa_split_partition_t;

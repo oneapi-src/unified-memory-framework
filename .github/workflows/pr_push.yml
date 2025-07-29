@@ -19,19 +19,15 @@ permissions:
 jobs:
   CodeChecks:
     uses: ./.github/workflows/reusable_checks.yml
-  FastBuild:
-    name: Fast builds
-    needs: [CodeChecks]
-    uses: ./.github/workflows/reusable_fast.yml
   Build:
     name: Basic builds
-    needs: [FastBuild]
+
     uses: ./.github/workflows/reusable_basic.yml
   DevDax:
-    needs: [FastBuild]
+
     uses: ./.github/workflows/reusable_dax.yml
   MultiNuma:
-    needs: [FastBuild]
+
     uses: ./.github/workflows/reusable_multi_numa.yml
   L0:
     needs: [Build]
@@ -56,10 +52,10 @@ jobs:
       runner: "CUDA"
       shared_lib: "['ON']"
   Sanitizers:
-    needs: [FastBuild]
+
     uses: ./.github/workflows/reusable_sanitizers.yml
   QEMU:
-    needs: [FastBuild]
+
     uses: ./.github/workflows/reusable_qemu.yml
     with:
       short_run: true

@@ -218,6 +218,8 @@ static umf_result_t numa_get_capacity(void *memTarget, size_t *capacity) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
+#if defined(_WIN32) || defined(__APPLE__)
+
     hwloc_topology_t topology = umfGetTopology();
     if (!topology) {
         return UMF_RESULT_ERROR_NOT_SUPPORTED;
@@ -234,6 +236,44 @@ static umf_result_t numa_get_capacity(void *memTarget, size_t *capacity) {
     }
 
     *capacity = numaNode->attr->numanode.local_memory;
+
+#else // Linux
+
+    struct numa_memtarget_t *numaTarget = (struct numa_memtarget_t *)memTarget;
+    unsigned node = numaTarget->physical_id;
+
+    char path[256];
+    snprintf(path, sizeof(path), "/sys/devices/system/node/node%u/meminfo",
+             node);
+    FILE *file = fopen(path, "r");
+    if (!file) {
+        LOG_PDEBUG("Opening sysfs file %s failed", path);
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    char line[256];
+    size_t node_size = 0;
+    while (fgets(line, sizeof(line), file)) {
+        // search for the MemTotal line
+        if (strncmp(line, "Node ", 5) == 0 &&
+            sscanf(line, "Node %u MemTotal: %zu kB", &node, &node_size) == 2 &&
+            node == numaTarget->physical_id) {
+            // convert kB to bytes
+            node_size *= 1024;
+            break;
+        }
+    }
+    fclose(file);
+
+    if (node_size == 0) {
+        LOG_ERR("Failed to find MemTotal for node %u", numaTarget->physical_id);
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    *capacity = (size_t)node_size;
+
+#endif
+
     return UMF_RESULT_SUCCESS;
 }
 
@@ -254,9 +294,28 @@ static size_t memattr_get_worst_value(memattr_type_t type) {
     }
 }
 
+#if !defined(_WIN32) && !defined(__APPLE__)
+
+static size_t memattr_get_best_value(memattr_type_t type) {
+    switch (type) {
+    case MEMATTR_TYPE_BANDWIDTH:
+        return SIZE_MAX;
+    case MEMATTR_TYPE_LATENCY:
+        return 0;
+    default:
+        assert(0); // Should not be reachable
+        return 0;
+    }
+}
+
+#endif // !defined(_WIN32) && !defined(__APPLE__)
+
 static umf_result_t query_attribute_value(void *srcMemoryTarget,
                                           void *dstMemoryTarget, size_t *value,
                                           memattr_type_t type) {
+
+#if defined(_WIN32) || defined(__APPLE__)
+
     hwloc_topology_t topology = umfGetTopology();
     if (!topology) {
         LOG_PERR("Retrieving cached topology failed");
@@ -314,6 +373,60 @@ static umf_result_t query_attribute_value(void *srcMemoryTarget,
     }
 
     *value = memAttrValue;
+
+#else
+
+    struct numa_memtarget_t *srcNumaTarget =
+        (struct numa_memtarget_t *)srcMemoryTarget;
+    struct numa_memtarget_t *dstNumaTarget =
+        (struct numa_memtarget_t *)dstMemoryTarget;
+
+    if (srcNumaTarget->physical_id == dstNumaTarget->physical_id) {
+        // If both targets are the same, we return the best possible value.
+        *value = memattr_get_best_value(type);
+        return UMF_RESULT_SUCCESS;
+    }
+
+    // For Linux, we use sysfs to query the bandwidth and latency.
+    char path[256];
+    if (type == MEMATTR_TYPE_BANDWIDTH) {
+        snprintf(path, sizeof(path),
+                 "/sys/devices/system/node/node%u/node%u/memory_bandwidth",
+                 srcNumaTarget->physical_id, dstNumaTarget->physical_id);
+    } else if (type == MEMATTR_TYPE_LATENCY) {
+        snprintf(path, sizeof(path),
+                 "/sys/devices/system/node/node%u/node%u/memory_latency",
+                 srcNumaTarget->physical_id, dstNumaTarget->physical_id);
+    } else {
+        assert(0); // Shouldn't be reachable.
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    FILE *file = fopen(path, "r");
+    if (!file) {
+        LOG_PDEBUG("Opening sysfs file %s failed", path);
+        *value = memattr_get_worst_value(type);
+        return UMF_RESULT_SUCCESS;
+    }
+
+    char line[64];
+    if (!fgets(line, sizeof(line), file)) {
+        LOG_PDEBUG("Reading sysfs file %s failed", path);
+        fclose(file);
+        *value = memattr_get_worst_value(type);
+        return UMF_RESULT_SUCCESS;
+    }
+    fclose(file);
+    char *endptr;
+    long long val = strtoll(line, &endptr, 10);
+    if (endptr == line || *endptr != '\n' || val < 0) {
+        LOG_PDEBUG("Parsing sysfs file %s failed", path);
+        *value = memattr_get_worst_value(type);
+        return UMF_RESULT_SUCCESS;
+    }
+
+    *value = (size_t)val;
+
+#endif // _WIN32 || _APPLE_
 
     return UMF_RESULT_SUCCESS;
 }
