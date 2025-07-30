@@ -131,7 +131,8 @@ bool isAlignedAllocSupported([[maybe_unused]] umf_memory_pool_handle_t hPool) {
                UMF_RESULT_ERROR_NOT_SUPPORTED) {
         return false;
     } else {
-        throw std::runtime_error("AlignedMalloc failed with unexpected error");
+        // throw std::runtime_error("AlignedMalloc failed with unexpected error");
+        return false;
     }
 #endif
 }
