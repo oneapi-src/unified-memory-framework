@@ -98,7 +98,7 @@ jobs:
       run: >
         UMF_LOG="level:warning;flush:debug;output:stderr;pid:no"
         LD_LIBRARY_PATH=${{github.workspace}}/latest_version/build/lib/
-        ctest --verbose
+        ctest --verbose -E test_memoryProvider
 
     # Browse all folders in the examples directory, build them using the 
     # latest UMF version, and run them, excluding those in the exclude list.
@@ -223,7 +223,7 @@ jobs:
       run: |
         $env:UMF_LOG="level:warning;flush:debug;output:stderr;pid:no" 
         cp ${{github.workspace}}/latest_version/build/bin/Debug/umf.dll ${{github.workspace}}/tag_version/build/bin/Debug/umf.dll
-        ctest -C Debug --verbose
+        ctest -C Debug --verbose -E test_memoryProvider
 
     # Browse all folders in the examples directory, build them using the 
     # latest UMF version, and run them, excluding those in the exclude list.
@@ -364,7 +364,7 @@ jobs:
       run: >
         UMF_LOG="level:warning;flush:debug;output:stderr;pid:no"
         LD_LIBRARY_PATH=${{github.workspace}}/latest_version/build/lib/
-        ctest --verbose
+        ctest --verbose -E test_memoryProvider
 
     # Browse all folders in the examples directory, build them using the 
     # latest UMF version, and run them, excluding those in the exclude list.

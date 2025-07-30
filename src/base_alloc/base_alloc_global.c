@@ -265,3 +265,19 @@ size_t umf_ba_global_malloc_usable_size(const void *ptr) {
 
     return usable_size;
 }
+
+char *umf_ba_global_strdup(const char *s) {
+    if (!s) {
+        return NULL;
+    }
+
+    size_t len = strlen(s);
+
+    char *ptr = umf_ba_global_alloc(len + 1);
+    if (!ptr) {
+        return NULL;
+    }
+
+    memcpy(ptr, s, len + 1);
+    return ptr;
+}
