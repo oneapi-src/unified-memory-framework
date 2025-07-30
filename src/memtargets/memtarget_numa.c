@@ -218,7 +218,7 @@ static umf_result_t numa_get_capacity(void *memTarget, size_t *capacity) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    hwloc_topology_t topology = umfGetTopology();
+    hwloc_topology_t topology = umfGetTopologyReduced();
     if (!topology) {
         return UMF_RESULT_ERROR_NOT_SUPPORTED;
     }
