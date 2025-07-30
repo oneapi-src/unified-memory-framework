@@ -432,3 +432,191 @@ TEST_F(test, ctl_logger_output_file) {
               UMF_RESULT_SUCCESS);
     EXPECT_STREQ(out_get, file_name);
 }
+
+TEST_F(test, ctl_by_name) {
+    umf_memory_provider_handle_t hProvider = NULL;
+    umf_os_memory_provider_params_handle_t os_memory_provider_params = NULL;
+    const umf_memory_provider_ops_t *os_provider_ops = umfOsMemoryProviderOps();
+    if (os_provider_ops == NULL) {
+        GTEST_SKIP() << "OS memory provider is not supported!";
+    }
+
+    int ret = umfOsMemoryProviderParamsCreate(&os_memory_provider_params);
+    ret = umfMemoryProviderCreate(os_provider_ops, os_memory_provider_params,
+                                  &hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    umfOsMemoryProviderParamsDestroy(os_memory_provider_params);
+
+    umf_disjoint_pool_params_handle_t disjoint_pool_params = NULL;
+    ret = umfDisjointPoolParamsCreate(&disjoint_pool_params);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    const char *pool_name = "test_disjoint_pool";
+    ret = umfDisjointPoolParamsSetName(disjoint_pool_params, pool_name);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    umf_memory_pool_handle_t hPool = NULL;
+    ret = umfPoolCreate(umfDisjointPoolOps(), hProvider, disjoint_pool_params,
+                        0, &hPool);
+
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    const char *pool_name2 = "test_disjoint_pool2";
+    ret = umfDisjointPoolParamsSetName(disjoint_pool_params, pool_name2);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    umf_memory_pool_handle_t hPool2 = NULL;
+    ret = umfPoolCreate(umfDisjointPoolOps(), hProvider, disjoint_pool_params,
+                        0, &hPool2);
+    umfDisjointPoolParamsDestroy(disjoint_pool_params);
+
+    size_t pool_count;
+
+    ret = umfCtlGet("umf.pool.by_name.test_disjoint_pool.count", &pool_count,
+                    sizeof(pool_count));
+
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(pool_count, 1ull);
+
+    ret = umfCtlGet("umf.pool.by_name.test_disjoint_pool2.count", &pool_count,
+                    sizeof(pool_count));
+
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(pool_count, 1ull);
+
+    size_t alloc_count;
+    ret = umfCtlGet("umf.pool.by_name.{}.stats.alloc_count", &alloc_count,
+                    sizeof(alloc_count), pool_name);
+
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(alloc_count, 0ull);
+
+    ret = umfCtlGet("umf.pool.by_name.{}.stats.alloc_count", &alloc_count,
+                    sizeof(alloc_count), pool_name2);
+
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(alloc_count, 0ull);
+
+    // allocate from pool1
+    void *ptr1 = umfPoolMalloc(hPool, 1024);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(ptr1, nullptr);
+
+    // we can use pool name in the string without {} too
+    ret = umfCtlGet("umf.pool.by_name.test_disjoint_pool.stats.alloc_count",
+                    &alloc_count, sizeof(alloc_count));
+
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(alloc_count, 1ull);
+
+    ret = umfCtlGet("umf.pool.by_name.test_disjoint_pool2.stats.alloc_count",
+                    &alloc_count, sizeof(alloc_count));
+
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(alloc_count, 0ull);
+
+    ret = umfPoolFree(hPool, ptr1);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    // we can use index parameter too
+    ret = umfCtlGet("umf.pool.by_name.test_disjoint_pool.0.stats.alloc_count",
+                    &alloc_count, sizeof(alloc_count));
+
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(alloc_count, 0ull);
+
+    ret = umfCtlGet("umf.pool.by_name.test_disjoint_pool2.{}.stats.alloc_count",
+                    &alloc_count, sizeof(alloc_count), 0);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(alloc_count, 0ull);
+
+    // test too big pool index
+    ret = umfCtlGet("umf.pool.by_name.test_disjoint_pool2.10.stats.alloc_count",
+                    &alloc_count, sizeof(alloc_count));
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    ret = umfPoolDestroy(hPool);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ret = umfPoolDestroy(hPool2);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ret = umfMemoryProviderDestroy(hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+}
+
+TEST_F(test, ctl_by_name_collision) {
+    umf_memory_provider_handle_t hProvider = NULL;
+    umf_os_memory_provider_params_handle_t os_memory_provider_params = NULL;
+    const umf_memory_provider_ops_t *os_provider_ops = umfOsMemoryProviderOps();
+    if (os_provider_ops == NULL) {
+        GTEST_SKIP() << "OS memory provider is not supported!";
+    }
+
+    int ret = umfOsMemoryProviderParamsCreate(&os_memory_provider_params);
+    ret = umfMemoryProviderCreate(os_provider_ops, os_memory_provider_params,
+                                  &hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    umfOsMemoryProviderParamsDestroy(os_memory_provider_params);
+
+    umf_disjoint_pool_params_handle_t disjoint_pool_params = NULL;
+    ret = umfDisjointPoolParamsCreate(&disjoint_pool_params);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    const char *pool_name = "test_disjoint_pool";
+    ret = umfDisjointPoolParamsSetName(disjoint_pool_params, pool_name);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    umf_memory_pool_handle_t hPool = NULL;
+    ret = umfPoolCreate(umfDisjointPoolOps(), hProvider, disjoint_pool_params,
+                        0, &hPool);
+
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    umf_memory_pool_handle_t hPool2 = NULL;
+    ret = umfPoolCreate(umfDisjointPoolOps(), hProvider, disjoint_pool_params,
+                        0, &hPool2);
+    umfDisjointPoolParamsDestroy(disjoint_pool_params);
+
+    // allocate from pool1
+    void *ptr1 = umfPoolMalloc(hPool, 1024);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(ptr1, nullptr);
+
+    size_t pool_count;
+    ret = umfCtlGet("umf.pool.by_name.test_disjoint_pool.count", &pool_count,
+                    sizeof(pool_count));
+
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(pool_count, 2ull);
+
+    // If there is more than one pool with the same name,
+    // CtlGet by_name will return an error
+    size_t alloc_count;
+    ret = umfCtlGet("umf.pool.by_name.{}.stats.alloc_count", &alloc_count,
+                    sizeof(alloc_count), pool_name);
+
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    // ctl set and exec will still work. But there is no CTL entry for now to test it
+
+    // todo: add test when ctl entries will be extended
+
+    // we can read from specific pool with index argument
+    ret = umfCtlGet("umf.pool.by_name.test_disjoint_pool.0.stats.alloc_count",
+                    &alloc_count, sizeof(alloc_count), pool_name, 0);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(alloc_count, 1ull);
+
+    ret = umfCtlGet("umf.pool.by_name.{}.1.stats.alloc_count", &alloc_count,
+                    sizeof(alloc_count), pool_name);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(alloc_count, 0ull);
+
+    ret = umfPoolFree(hPool, ptr1);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ret = umfPoolDestroy(hPool);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ret = umfPoolDestroy(hPool2);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ret = umfMemoryProviderDestroy(hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+}

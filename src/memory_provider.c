@@ -21,6 +21,7 @@
 #include "libumf.h"
 #include "memory_provider_internal.h"
 #include "utils_assert.h"
+#include "utils_name.h"
 
 static umf_result_t CTL_SUBTREE_HANDLER(CTL_NONAME, by_handle)(
     void *ctx, umf_ctl_query_source_t source, void *arg, size_t size,
@@ -251,6 +252,13 @@ umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
     provider->provider_priv = provider_priv;
 
     *hProvider = provider;
+
+    const char *provider_name = NULL;
+    if (provider->ops.get_name(provider->provider_priv, &provider_name) ==
+            UMF_RESULT_SUCCESS &&
+        provider_name) {
+        utils_warn_invalid_name("Memory provider", provider_name);
+    }
 
     return UMF_RESULT_SUCCESS;
 }
