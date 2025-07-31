@@ -14,6 +14,7 @@
 #include "base_alloc_global.h"
 #include "ctl/ctl_internal.h"
 #include "ipc_cache.h"
+#include "libumf.h"
 #include "memory_pool_internal.h"
 #include "memory_provider_internal.h"
 #include "memspace_internal.h"
@@ -37,7 +38,23 @@ static void initialize_init_mutex(void) { utils_mutex_init(&initMutex); }
 static umf_ctl_node_t CTL_NODE(umf)[] = {CTL_CHILD(provider), CTL_CHILD(pool),
                                          CTL_CHILD(logger), CTL_NODE_END};
 
-void initialize_global_ctl(void) { CTL_REGISTER_MODULE(NULL, umf); }
+void initialize_ctl(void) {
+    ctl_init(umf_ba_global_alloc, umf_ba_global_free);
+
+    CTL_REGISTER_MODULE(NULL, umf);
+    const char *env_var = getenv("UMF_CONF");
+    if (env_var && env_var[0] != '\0') {
+        LOG_INFO("Loading UMF configuration from environment variable: %s",
+                 env_var);
+        ctl_load_config_from_string(NULL, NULL, env_var);
+    }
+
+    const char *file_var = getenv("UMF_CONF_FILE");
+    if (file_var && file_var[0] != '\0') {
+        LOG_INFO("Loading UMF configuration from file: %s", file_var);
+        ctl_load_config_from_file(NULL, NULL, file_var);
+    }
+}
 
 umf_result_t umfInit(void) {
     utils_init_once(&initMutexOnce, initialize_init_mutex);
@@ -46,6 +63,8 @@ umf_result_t umfInit(void) {
 
     if (umfRefCount == 0) {
         utils_log_init();
+        initialize_ctl();
+
         umf_result_t umf_result = umfMemoryTrackerCreate(&TRACKER);
         if (umf_result != UMF_RESULT_SUCCESS) {
             LOG_ERR("Failed to create memory tracker");
@@ -64,8 +83,6 @@ umf_result_t umfInit(void) {
         }
 
         LOG_DEBUG("UMF IPC cache initialized");
-        ctl_init(umf_ba_global_alloc, umf_ba_global_free);
-        initialize_global_ctl();
     }
 
     umfRefCount++;
@@ -111,6 +128,8 @@ umf_result_t umfTearDown(void) {
         umfMemoryTrackerDestroy(t);
         LOG_DEBUG("UMF tracker destroyed");
 
+        umfPoolCtlDefaultsDestroy();
+
         umf_ba_destroy_global();
         LOG_DEBUG("UMF base allocator destroyed");
 
@@ -127,6 +146,7 @@ umf_result_t umfTearDown(void) {
 int umfGetCurrentVersion(void) { return UMF_VERSION_CURRENT; }
 
 umf_result_t umfCtlGet(const char *name, void *arg, size_t size, ...) {
+    libumfInit();
     // ctx can be NULL when getting defaults
     if (name == NULL || arg == NULL || size == 0) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
@@ -141,6 +161,7 @@ umf_result_t umfCtlGet(const char *name, void *arg, size_t size, ...) {
 }
 
 umf_result_t umfCtlSet(const char *name, void *arg, size_t size, ...) {
+    libumfInit();
     // ctx can be NULL when setting defaults
     if (name == NULL || arg == NULL || size == 0) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
@@ -154,6 +175,7 @@ umf_result_t umfCtlSet(const char *name, void *arg, size_t size, ...) {
 }
 
 umf_result_t umfCtlExec(const char *name, void *arg, size_t size, ...) {
+    libumfInit();
     // arg can be NULL when executing a command
     // ctx can be NULL when executing defaults
     // size can depends on the arg

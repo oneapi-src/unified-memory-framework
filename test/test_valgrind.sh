@@ -128,6 +128,9 @@ for test in $TESTS; do
 		echo "- SKIPPED"
 		continue; # skip testing helper binaries used by the ipc_file_prov_* tests
 		;;
+	./test/test_ctl_env_app)
+		continue; # this is not a standalone test
+		;;
 	./test/test_memspace_host_all)
 		FILTER='--gtest_filter="-*allocsSpreadAcrossAllNumaNodes"'
 		;;

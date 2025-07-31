@@ -47,6 +47,8 @@ typedef struct umf_memory_pool_t {
 
 extern umf_ctl_node_t CTL_NODE(pool)[];
 
+void umfPoolCtlDefaultsDestroy(void);
+
 #ifdef __cplusplus
 }
 #endif

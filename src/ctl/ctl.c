@@ -20,6 +20,7 @@
 #include <limits.h>
 #include <stdarg.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -33,8 +34,6 @@
 
 #ifdef _WIN32
 #define strtok_r strtok_s
-#else
-#include <stdio.h>
 #endif
 
 #define MAX_CONFIG_FILE_LEN (1 << 20) /* 1 megabyte */
@@ -578,7 +577,7 @@ static umf_result_t ctl_load_config_helper(struct ctl *ctl, void *ctx,
         // we do not need to copy va_list before call as we know that for query_config_input
         // ctl_query will not call va_arg on it. Ref 7.15/3 of C99 standard
         ret = ctl_query(ctl, ctx, CTL_QUERY_CONFIG_INPUT, name, CTL_QUERY_WRITE,
-                        value, 0, empty_args);
+                        value, strlen(value) + 1, empty_args);
 
         if (ret != UMF_RESULT_SUCCESS && ctx != NULL) {
             goto end;
@@ -621,7 +620,6 @@ umf_result_t ctl_load_config_from_string(struct ctl *ctl, void *ctx,
  * This function opens up the config file, allocates a buffer of size equal to
  * the size of the file, reads its content and sanitizes it for ctl_load_config.
  */
-#ifndef _WIN32 // TODO: implement for Windows
 umf_result_t ctl_load_config_from_file(struct ctl *ctl, void *ctx,
                                        const char *cfg_file) {
     umf_result_t ret = UMF_RESULT_ERROR_UNKNOWN;
@@ -679,7 +677,6 @@ error_file_parse:
     (void)fclose(fp);
     return ret;
 }
-#endif
 
 /*
  * ctl_parse_ll -- (internal) parses and returns a long long signed integer
