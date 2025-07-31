@@ -519,3 +519,28 @@ jobs:
 
   SYCL:
     uses: ./.github/workflows/reusable_sycl.yml
+
+  alpine:
+    name: Alpine
+    env:
+      HOST_WORKDIR: ${{github.workspace}}
+      WORKDIR: /unified-memory-framework
+    strategy:
+      matrix:
+          build_type: [Debug, Release]
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        fetch-depth: 0
+
+    - name: Build Alpine image
+      run: |
+        docker build . -f .github/docker/alpine-3.21.Dockerfile -t umf-alpine-3.21
+
+    - name: Run UMF build on Alpine image
+      run: |
+        docker run --rm -i -v $HOST_WORKDIR:$WORKDIR \
+        umf-alpine-3.21 $WORKDIR/.github/scripts/alpine_build.sh ${{matrix.build_type}} $WORKDIR
