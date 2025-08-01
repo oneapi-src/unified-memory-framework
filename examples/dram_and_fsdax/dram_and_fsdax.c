@@ -96,7 +96,7 @@ int main(void) {
     // - the UMF_TESTS_FSDAX_PATH environment variable to contain
     //   a path to a file on this FSDAX device.
     char *path = getenv("UMF_TESTS_FSDAX_PATH");
-    if (path == NULL || path[0] == 0) {
+    if (path == NULL || path[0] == '\0') {
         fprintf(
             stderr,
             "Warning: UMF_TESTS_FSDAX_PATH is not set, skipping testing ...\n");

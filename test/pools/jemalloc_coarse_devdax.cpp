@@ -10,7 +10,8 @@
 bool devDaxEnvSet() {
     char *path = getenv("UMF_TESTS_DEVDAX_PATH");
     char *size = getenv("UMF_TESTS_DEVDAX_SIZE");
-    if (path == nullptr || path[0] == 0 || size == nullptr || size[0] == 0) {
+    if (path == nullptr || path[0] == '\0' || size == nullptr ||
+        size[0] == '\0') {
         return false;
     }
 
@@ -20,6 +21,10 @@ bool devDaxEnvSet() {
 void *createDevDaxParams() {
     char *path = getenv("UMF_TESTS_DEVDAX_PATH");
     char *size = getenv("UMF_TESTS_DEVDAX_SIZE");
+    if (path == nullptr || path[0] == '\0' || size == nullptr ||
+        size[0] == '\0') {
+        return nullptr;
+    }
 
     umf_devdax_memory_provider_params_handle_t params = NULL;
     umf_result_t res =
