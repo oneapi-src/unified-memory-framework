@@ -22,6 +22,7 @@ void umf_ba_destroy_global(void);
 bool umf_ba_global_is_destroyed(void);
 size_t umf_ba_global_malloc_usable_size(const void *ptr);
 void *umf_ba_global_aligned_alloc(size_t size, size_t alignment);
+char *umf_ba_global_strdup(const char *s);
 
 #ifdef __cplusplus
 }
