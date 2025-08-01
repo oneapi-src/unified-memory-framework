@@ -119,7 +119,7 @@ TEST_F(test, test_if_mapped_with_MAP_SYNC) {
     umf_result_t umf_result;
 
     char *path = getenv("UMF_TESTS_FSDAX_PATH");
-    if (path == nullptr || path[0] == 0) {
+    if (path == nullptr || path[0] == '\0') {
         GTEST_SKIP() << "Test skipped, UMF_TESTS_FSDAX_PATH is not set";
     }
 

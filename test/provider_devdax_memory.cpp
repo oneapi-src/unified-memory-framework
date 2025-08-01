@@ -123,7 +123,7 @@ TEST_F(test, test_if_mapped_with_MAP_SYNC) {
     umf_result_t umf_result;
 
     char *path = getenv("UMF_TESTS_DEVDAX_PATH");
-    if (path == nullptr || path[0] == 0) {
+    if (path == nullptr || path[0] == '\0') {
         GTEST_SKIP() << "Test skipped, UMF_TESTS_DEVDAX_PATH is not set";
     }
 
@@ -169,7 +169,8 @@ using devdax_params_unique_handle_t =
 devdax_params_unique_handle_t create_devdax_params() {
     char *path = getenv("UMF_TESTS_DEVDAX_PATH");
     char *size = getenv("UMF_TESTS_DEVDAX_SIZE");
-    if (path == nullptr || path[0] == 0 || size == nullptr || size[0] == 0) {
+    if (path == nullptr || path[0] == '\0' || size == nullptr ||
+        size[0] == '\0') {
         return devdax_params_unique_handle_t(
             nullptr, &umfDevDaxMemoryProviderParamsDestroy);
     }
