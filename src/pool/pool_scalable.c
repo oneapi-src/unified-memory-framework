@@ -291,6 +291,23 @@ umfScalablePoolParamsSetName(umf_scalable_pool_params_handle_t hParams,
 
 static umf_result_t tbb_pool_initialize(umf_memory_provider_handle_t provider,
                                         const void *params, void **pool) {
+    (void)params;
+    (void)provider;
+    tbb_memory_pool_t *pool_data =
+        umf_ba_global_alloc(sizeof(tbb_memory_pool_t));
+    if (!pool_data) {
+        LOG_ERR("cannot allocate memory for metadata");
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    *pool = (void *)pool_data;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t
+tbb_pool_post_initialize(umf_memory_provider_handle_t provider,
+                         const void *params, void *pool) {
     tbb_mem_pool_policy_t policy = {.pAlloc = tbb_raw_alloc_wrapper,
                                     .pFree = tbb_raw_free_wrapper,
                                     .granularity = DEFAULT_GRANULARITY,
@@ -308,12 +325,12 @@ static umf_result_t tbb_pool_initialize(umf_memory_provider_handle_t provider,
         pool_name = scalable_params->name;
     }
 
-    tbb_memory_pool_t *pool_data =
-        umf_ba_global_alloc(sizeof(tbb_memory_pool_t));
+    tbb_memory_pool_t *pool_data = (tbb_memory_pool_t *)pool;
     if (!pool_data) {
         LOG_ERR("cannot allocate memory for metadata");
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
+
     memset(pool_data, 0, sizeof(*pool_data));
     snprintf(pool_data->name, sizeof(pool_data->name), "%s", pool_name);
 
@@ -332,8 +349,6 @@ static umf_result_t tbb_pool_initialize(umf_memory_provider_handle_t provider,
         res = UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
         goto err_tbb_init;
     }
-
-    *pool = (void *)pool_data;
 
     return res;
 
@@ -486,6 +501,7 @@ static umf_memory_pool_ops_t UMF_SCALABLE_POOL_OPS = {
     .get_last_allocation_error = tbb_get_last_allocation_error,
     .ext_ctl = pool_ctl,
     .get_name = scalable_get_name,
+    .ext_post_initialize = tbb_pool_post_initialize,
 };
 
 const umf_memory_pool_ops_t *umfScalablePoolOps(void) {

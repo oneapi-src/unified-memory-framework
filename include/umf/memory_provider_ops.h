@@ -21,7 +21,7 @@ extern "C" {
 /// @brief Version of the Memory Provider ops structure.
 /// NOTE: This is equal to the latest UMF version, in which the ops structure
 /// has been modified.
-#define UMF_PROVIDER_OPS_VERSION_CURRENT UMF_MAKE_VERSION(1, 0)
+#define UMF_PROVIDER_OPS_VERSION_CURRENT UMF_MAKE_VERSION(1, 1)
 
 ///
 /// @brief This structure comprises function pointers used by corresponding
@@ -277,6 +277,14 @@ typedef struct umf_memory_provider_ops_t {
     umf_result_t (*ext_ctl)(void *provider, umf_ctl_query_source_t source,
                             const char *name, void *arg, size_t size,
                             umf_ctl_query_type_t queryType, va_list args);
+
+    ///
+    /// @brief Post-initializes memory provider.
+    /// @param params provider-specific params, or NULL for defaults
+    /// @param provider pointer to the provider
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+    ///
+    umf_result_t (*ext_post_initialize)(const void *params, void *provider);
 
 } umf_memory_provider_ops_t;
 

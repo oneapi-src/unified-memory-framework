@@ -161,7 +161,7 @@ TEST_F(test, jemallocPoolParams) {
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
 }
 
-TEST_F(test, jemallocPoolParamsInvalid) {
+TEST_F(test, jemallocPoolParamsInvalid) { // TODO FIX THIS
     umf_jemalloc_pool_params_handle_t params = nullptr;
     auto ret = umfJemallocPoolParamsCreate(&params);
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);

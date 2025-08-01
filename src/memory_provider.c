@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <umf/base.h>
 #include <umf/memory_provider.h>
@@ -119,6 +120,13 @@ static umf_result_t umfDefaultCloseIPCHandle(void *provider, void *ptr,
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
+static umf_result_t umfDefaultPostInitialize(const void *params,
+                                             void *provider) {
+    (void)params;
+    (void)provider;
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_result_t
 umfDefaultCtlHandle(void *provider, umf_ctl_query_source_t operationType,
                     const char *name, void *arg, size_t size,
@@ -152,6 +160,10 @@ void assignOpsExtDefaults(umf_memory_provider_ops_t *ops) {
 
     if (!ops->ext_ctl) {
         ops->ext_ctl = umfDefaultCtlHandle;
+    }
+
+    if (!ops->ext_post_initialize) {
+        ops->ext_post_initialize = umfDefaultPostInitialize;
     }
 }
 
@@ -224,10 +236,24 @@ umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
+    umf_memory_provider_ops_t compatible_ops;
     if (ops->version != UMF_PROVIDER_OPS_VERSION_CURRENT) {
         LOG_WARN("Memory Provider ops version \"%d\" is different than the "
                  "current version \"%d\"",
                  ops->version, UMF_PROVIDER_OPS_VERSION_CURRENT);
+        memset(&compatible_ops, 0, sizeof(compatible_ops));
+        if (UMF_MINOR_VERSION(ops->version) == 0) {
+            LOG_INFO("Detected 1.0 version of Memory Pool ops, "
+                     "upgrading to current version");
+            memcpy(&compatible_ops, ops,
+                   offsetof(umf_memory_provider_ops_t, ext_post_initialize));
+        } else {
+            LOG_ERR("Memory Provider ops unknown version, which \"%d\" is not "
+                    "supported",
+                    ops->version);
+            return UMF_RESULT_ERROR_NOT_SUPPORTED;
+        }
+        ops = &compatible_ops;
     }
 
     umf_memory_provider_handle_t provider =
@@ -249,6 +275,16 @@ umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
     }
 
     provider->provider_priv = provider_priv;
+
+    if (provider->ops.ext_post_initialize != NULL) {
+        ret = provider->ops.ext_post_initialize(params, provider_priv);
+        if (ret != UMF_RESULT_SUCCESS) {
+            LOG_ERR("Failed to post-initialize provider");
+            provider->ops.finalize(provider_priv);
+            umf_ba_global_free(provider);
+            return ret;
+        }
+    }
 
     *hProvider = provider;
 
