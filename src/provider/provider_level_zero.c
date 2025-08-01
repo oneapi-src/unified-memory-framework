@@ -755,20 +755,8 @@ static umf_result_t ze_memory_provider_allocation_split(void *provider,
 typedef struct ze_ipc_data_t {
     int pid;
     uint64_t id; // Unique identifier for the IPC handle
-    uint64_t checksum;
     ze_ipc_mem_handle_t ze_handle;
 } ze_ipc_data_t;
-
-// Compute a simple checksum of the ze_handle field in ze_ipc_data_t
-static uint64_t ze_ipc_handle_checksum(const ze_ipc_data_t *ipc_data) {
-    // Interpret the ze_handle as a byte array
-    const uint8_t *bytes = (const uint8_t *)&ipc_data->ze_handle;
-    uint64_t checksum = 0;
-    for (size_t i = 0; i < sizeof(ipc_data->ze_handle); ++i) {
-        checksum += bytes[i];
-    }
-    return checksum;
-}
 
 static umf_result_t ze_memory_provider_get_ipc_handle_size(void *provider,
                                                            size_t *size) {
@@ -799,11 +787,10 @@ static umf_result_t ze_memory_provider_get_ipc_handle(void *provider,
     }
 
     ze_ipc_data->pid = utils_getpid();
-    ze_ipc_data->checksum = ze_ipc_handle_checksum(ze_ipc_data);
     ze_ipc_data->id = id++;
 
-    LOG_DEBUG("GET handle(): pid = %d, id = %lu, checksum = %lu", ze_ipc_data->pid,
-              ze_ipc_data->id, ze_ipc_data->checksum);
+    LOG_DEBUG("GET handle(): pid = %d, id = %lu", ze_ipc_data->pid,
+              ze_ipc_data->id);
 
     return UMF_RESULT_SUCCESS;
 }
@@ -822,15 +809,8 @@ static umf_result_t ze_memory_provider_put_ipc_handle(void *provider,
         return UMF_RESULT_SUCCESS;
     }
 
-    if (ze_ipc_data->checksum != ze_ipc_handle_checksum(ze_ipc_data)) {
-        LOG_FATAL(
-            "Checksum mismatch for IPC handle data: pid = %d, checksum = %lu",
-            ze_ipc_data->pid, ze_ipc_data->checksum);
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
-
-    LOG_DEBUG("PUT handle(): pid = %d, id = %lu, checksum = %lu", ze_ipc_data->pid,
-              ze_ipc_data->id, ze_ipc_data->checksum);
+    LOG_DEBUG("PUT handle(): pid = %d, id = %lu", ze_ipc_data->pid,
+              ze_ipc_data->id);
 
     ze_result = g_ze_ops.zeMemPutIpcHandle(ze_provider->context,
                                            ze_ipc_data->ze_handle);
