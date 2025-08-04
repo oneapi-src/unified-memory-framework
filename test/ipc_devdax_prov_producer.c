@@ -23,13 +23,13 @@ int main(int argc, char *argv[]) {
     int port = atoi(argv[1]);
 
     char *path = getenv("UMF_TESTS_DEVDAX_PATH");
-    if (path == NULL || path[0] == 0) {
+    if (path == NULL || path[0] == '\0') {
         fprintf(stderr, "Test skipped, UMF_TESTS_DEVDAX_PATH is not set\n");
         return 0;
     }
 
     char *size = getenv("UMF_TESTS_DEVDAX_SIZE");
-    if (size == NULL || size[0] == 0) {
+    if (size == NULL || size[0] == '\0') {
         fprintf(stderr, "Test skipped, UMF_TESTS_DEVDAX_SIZE is not set\n");
         return 0;
     }

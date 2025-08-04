@@ -18,7 +18,8 @@ using umf_test::test;
 bool devDaxEnvSet() {
     char *path = getenv("UMF_TESTS_DEVDAX_PATH");
     char *size = getenv("UMF_TESTS_DEVDAX_SIZE");
-    if (path == nullptr || path[0] == 0 || size == nullptr || size[0] == 0) {
+    if (path == nullptr || path[0] == '\0' || size == nullptr ||
+        size[0] == '\0') {
         return false;
     }
 
@@ -28,7 +29,8 @@ bool devDaxEnvSet() {
 void *defaultDevDaxParamsCreate() {
     char *path = getenv("UMF_TESTS_DEVDAX_PATH");
     char *size = getenv("UMF_TESTS_DEVDAX_SIZE");
-    if (path == nullptr || path[0] == 0 || size == nullptr || size[0] == 0) {
+    if (path == nullptr || path[0] == '\0' || size == nullptr ||
+        size[0] == '\0') {
         return nullptr;
     }
 

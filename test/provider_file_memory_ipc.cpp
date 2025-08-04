@@ -114,7 +114,7 @@ static std::vector<ipcTestParams> getIpcFsDaxTestParamsList(void) {
     std::vector<ipcTestParams> ipcFsDaxTestParamsList = {};
 
     char *path = getenv("UMF_TESTS_FSDAX_PATH");
-    if (path == nullptr || path[0] == 0) {
+    if (path == nullptr || path[0] == '\0') {
         // skipping the test, UMF_TESTS_FSDAX_PATH is not set
         return ipcFsDaxTestParamsList;
     }
