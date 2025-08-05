@@ -15,10 +15,9 @@ jobs:
     name: ${{matrix.llvm_tag}} llvm build
     runs-on: ["DSS-LEVEL_ZERO", "DSS-UBUNTU"]
 
-    # TODO: update to use the nightly tag with UMF v1.0.0
     strategy:
       matrix:
-        llvm_tag: ["latest", "nightly-2025-07-18"] # "latest" or llvm with UMF v1.0.0-rc2
+        llvm_tag: ["latest", "nightly-2025-07-31"] # "latest" or llvm with UMF v1.0.0
 
     steps:
     # 1. Install sycl
