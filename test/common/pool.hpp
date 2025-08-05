@@ -140,25 +140,26 @@ typedef struct pool_base_t {
     umf_result_t initialize(umf_memory_provider_handle_t) noexcept {
         return UMF_RESULT_SUCCESS;
     };
-    void *malloc([[maybe_unused]] size_t size) noexcept { return nullptr; }
+    void *malloc(size_t) noexcept { return nullptr; }
     void *calloc(size_t, size_t) noexcept { return nullptr; }
     void *realloc(void *, size_t) noexcept { return nullptr; }
     void *aligned_malloc(size_t, size_t) noexcept { return nullptr; }
-    umf_result_t malloc_usable_size(const void *, size_t *size) noexcept {
-        if (size) {
-            *size = 0;
-        }
-        return UMF_RESULT_SUCCESS;
+    umf_result_t malloc_usable_size(const void *, size_t *) noexcept {
+        return UMF_RESULT_ERROR_UNKNOWN;
     }
-    umf_result_t free(void *) noexcept { return UMF_RESULT_SUCCESS; }
+    umf_result_t free(void *) noexcept { return UMF_RESULT_ERROR_UNKNOWN; }
     umf_result_t get_last_allocation_error() noexcept {
-        return UMF_RESULT_SUCCESS;
+        return UMF_RESULT_ERROR_UNKNOWN;
     }
-    umf_result_t get_name(const char **name) noexcept {
-        if (name) {
-            *name = "pool_base";
-        }
-        return UMF_RESULT_SUCCESS;
+    umf_result_t get_name(const char **) noexcept {
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
+    umf_result_t ext_ctl(umf_ctl_query_source_t, const char *, void *, size_t,
+                         umf_ctl_query_type_t, va_list) noexcept {
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
+    umf_result_t ext_trim_memory(size_t) noexcept {
+        return UMF_RESULT_ERROR_UNKNOWN;
     }
 } pool_base_t;
 
@@ -207,6 +208,11 @@ struct malloc_pool : public pool_base_t {
         if (name) {
             *name = "malloc_pool";
         }
+        return UMF_RESULT_SUCCESS;
+    }
+
+    umf_result_t ext_trim_memory(size_t) noexcept {
+        // malloc_pool frees all memory immediately, so we have nothing to trim
         return UMF_RESULT_SUCCESS;
     }
 };

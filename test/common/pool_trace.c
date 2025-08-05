@@ -99,6 +99,14 @@ static umf_result_t traceGetName(void *pool, const char **name) {
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t traceTrimMemory(void *pool, size_t minBytesToKeep) {
+    trace_pool_t *trace_pool = (trace_pool_t *)pool;
+
+    trace_pool->params.trace_handler(trace_pool->params.trace_context,
+                                     "trim_memory");
+    return umfPoolTrimMemory(trace_pool->params.hUpstreamPool, minBytesToKeep);
+}
+
 umf_memory_pool_ops_t UMF_TRACE_POOL_OPS = {
     .version = UMF_POOL_OPS_VERSION_CURRENT,
     .initialize = traceInitialize,
@@ -111,4 +119,5 @@ umf_memory_pool_ops_t UMF_TRACE_POOL_OPS = {
     .free = traceFree,
     .get_last_allocation_error = traceGetLastStatus,
     .get_name = traceGetName,
+    .ext_trim_memory = traceTrimMemory,
 };

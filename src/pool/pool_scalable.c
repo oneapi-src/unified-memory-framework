@@ -450,12 +450,14 @@ static umf_result_t tbb_get_last_allocation_error(void *pool) {
     return TLS_last_allocation_error;
 }
 
+static void initialize_pool_ctl(void) {}
+
 static umf_result_t pool_ctl(void *hPool, umf_ctl_query_source_t operationType,
                              const char *name, void *arg, size_t size,
                              umf_ctl_query_type_t query_type, va_list args) {
     (void)operationType; // unused
     umf_memory_pool_handle_t pool_provider = (umf_memory_pool_handle_t)hPool;
-    utils_init_once(&ctl_initialized, NULL);
+    utils_init_once(&ctl_initialized, initialize_pool_ctl);
     return ctl_query(&pool_scallable_ctl_root, pool_provider->pool_priv,
                      CTL_QUERY_PROGRAMMATIC, name, query_type, arg, size, args);
 }
@@ -486,6 +488,7 @@ static umf_memory_pool_ops_t UMF_SCALABLE_POOL_OPS = {
     .get_last_allocation_error = tbb_get_last_allocation_error,
     .ext_ctl = pool_ctl,
     .get_name = scalable_get_name,
+    .ext_trim_memory = NULL, // not supported
 };
 
 const umf_memory_pool_ops_t *umfScalablePoolOps(void) {
