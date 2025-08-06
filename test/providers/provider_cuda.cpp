@@ -276,6 +276,10 @@ TEST_P(umfCUDAProviderTest, getName) {
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_STREQ(name, "CUDA");
 
+    // negative case - pass NULL as a name pointer
+    umf_result = umfMemoryProviderGetName(provider, nullptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
     umfMemoryProviderDestroy(provider);
 }
 
@@ -468,6 +472,12 @@ TEST_P(umfCUDAProviderTest, cudaProviderNullParams) {
 
     res =
         umfCUDAMemoryProviderParamsSetMemoryType(nullptr, expected_memory_type);
+    EXPECT_EQ(res, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    res = umfCUDAMemoryProviderParamsSetAllocFlags(nullptr, 0);
+    EXPECT_EQ(res, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    res = umfCUDAMemoryProviderParamsSetName(nullptr, "test");
     EXPECT_EQ(res, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 }
 

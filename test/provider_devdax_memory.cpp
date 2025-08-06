@@ -565,3 +565,49 @@ TEST_F(test, create_wrong_size_0) {
     ret = umfDevDaxMemoryProviderParamsDestroy(wrong_params);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
 }
+
+TEST_F(test, create_NULL_params) {
+    umf_memory_provider_handle_t hProvider = nullptr;
+    auto ret = umfMemoryProviderCreate(umfDevDaxMemoryProviderOps(), nullptr,
+                                       &hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    ASSERT_EQ(hProvider, nullptr);
+}
+
+TEST_F(test, params_NULL_name) {
+    umf_devdax_memory_provider_params_handle_t params = nullptr;
+    auto ret =
+        umfDevDaxMemoryProviderParamsCreate("/dev/dax0.0", 4096, &params);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(params, nullptr);
+
+    ret = umfDevDaxMemoryProviderParamsSetName(params, nullptr);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    ret = umfDevDaxMemoryProviderParamsDestroy(params);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfDevDaxMemoryProviderParamsSetName(nullptr, "test");
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, get_NULL_name) {
+    umf_devdax_memory_provider_params_handle_t params =
+        defaultDevDaxParams.get();
+    ASSERT_NE(params, nullptr);
+
+    umf_memory_provider_handle_t hProvider = nullptr;
+    umf_result_t ret = umfMemoryProviderCreate(umfDevDaxMemoryProviderOps(),
+                                               params, &hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(hProvider, nullptr);
+
+    ret = umfMemoryProviderGetName(hProvider, NULL);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    ret = umfMemoryProviderDestroy(hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfDevDaxMemoryProviderParamsDestroy(params);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+}
