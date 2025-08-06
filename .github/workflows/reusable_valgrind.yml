@@ -34,6 +34,7 @@ jobs:
         -DUMF_BUILD_CUDA_PROVIDER=OFF
         -DUMF_USE_VALGRIND=1
         -DUMF_TESTS_FAIL_ON_SKIP=ON
+        -DUMF_PROXY_LIB_BASED_ON_POOL=JEMALLOC
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config Debug -j$(nproc)
@@ -41,8 +42,8 @@ jobs:
     - name: Run tests with 'memcheck'
       run: ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{github.workspace}}/build memcheck
 
-    - name: Run tests with 'drd' ("drdshort" - very long lasting tests are disabled)
-      run: ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{github.workspace}}/build drdshort
+    - name: Run tests with 'drd'
+      run: ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{github.workspace}}/build drd
 
     - name: Run tests with 'helgrind'
       run: ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{github.workspace}}/build helgrind
