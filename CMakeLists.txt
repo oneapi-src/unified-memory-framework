@@ -214,7 +214,14 @@ else()
         DEPENDS ${jemalloc_targ_SOURCE_DIR}/configure)
 
     if(NOT UMF_QEMU_BUILD)
-        set(MAKE_ARGUMENTS "-j$(nproc)")
+        if(CMAKE_GENERATOR STREQUAL "Ninja")
+            # While CMake is supposed to escape this in the generated build
+            # files, for some reason, it doesn't do so here. Until it's fixed,
+            # we just manually escape it for ninja.
+            set(MAKE_ARGUMENTS "-j$$(nproc)")
+        else()
+            set(MAKE_ARGUMENTS "-j$(nproc)")
+        endif()
     endif()
 
     add_custom_command(
