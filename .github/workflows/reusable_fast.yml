@@ -26,6 +26,10 @@ jobs:
             build_tests: 'ON'
             extra_build_options: ' -DUMF_BUILD_BENCHMARKS=ON -DUMF_BUILD_BENCHMARKS_MT=ON'
             simple_cmake: 'OFF'
+          - os: ubuntu-24.04
+            build_tests: 'ON'
+            extra_build_options: ' -DUMF_BUILD_BENCHMARKS=OFF -DUMF_BUILD_BENCHMARKS_MT=OFF -DUMF_PROXY_LIB_BASED_ON_POOL=JEMALLOC'
+            simple_cmake: 'OFF'
           # pure C build
           - os: ubuntu-24.04
             # Tests' building is off for a pure C build
