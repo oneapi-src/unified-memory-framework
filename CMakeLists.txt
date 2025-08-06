@@ -155,79 +155,81 @@ if(NOT UMF_BUILD_LIBUMF_POOL_JEMALLOC)
     set(UMF_POOL_JEMALLOC_ENABLED FALSE)
     set(JEMALLOC_FOUND FALSE)
     set(JEMALLOC_LIBRARIES FALSE)
-elseif(WINDOWS)
-    pkg_check_modules(JEMALLOC jemalloc)
-    if(NOT JEMALLOC_FOUND)
-        find_package(JEMALLOC REQUIRED jemalloc)
-    endif()
 else()
-    if(NOT DEFINED UMF_JEMALLOC_REPO)
-        set(UMF_JEMALLOC_REPO "https://github.com/jemalloc/jemalloc.git")
+    set(JEMALLOC_VER 5.3.0)
+    pkg_check_modules(JEMALLOC QUIET jemalloc)
+    if(NOT JEMALLOC_FOUND)
+        find_package(JEMALLOC ${JEMALLOC_VER} QUIET)
     endif()
+    if(NOT JEMALLOC_FOUND AND NOT WINDOWS) # Cannot build from source on Windows
+        if(NOT DEFINED UMF_JEMALLOC_REPO)
+            set(UMF_JEMALLOC_REPO "https://github.com/jemalloc/jemalloc.git")
+        endif()
 
-    if(NOT DEFINED UMF_JEMALLOC_TAG)
-        set(UMF_JEMALLOC_TAG 5.3.0)
+        if(NOT DEFINED UMF_JEMALLOC_TAG)
+            set(UMF_JEMALLOC_TAG ${JEMALLOC_VER})
+        endif()
+
+        message(
+            STATUS
+                "Will fetch jemalloc from ${UMF_JEMALLOC_REPO} (tag: ${UMF_JEMALLOC_TAG})"
+        )
+
+        FetchContent_Declare(
+            jemalloc_targ
+            GIT_REPOSITORY ${UMF_JEMALLOC_REPO}
+            GIT_TAG ${UMF_JEMALLOC_TAG})
+        FetchContent_MakeAvailable(jemalloc_targ)
+
+        add_custom_command(
+            COMMAND ./autogen.sh
+            WORKING_DIRECTORY ${jemalloc_targ_SOURCE_DIR}
+            OUTPUT ${jemalloc_targ_SOURCE_DIR}/configure)
+        add_custom_command(
+            # Custom jemalloc build. Non-default options used:
+            # --with-jemalloc-prefix=je_ - add je_ prefix to all public APIs
+            # --disable-cxx - Disable C++ integration. This will cause new and
+            # delete operators implementations to be omitted.
+            # --disable-initial-exec-tls - Disable the initial-exec TLS model
+            # for jemalloc's internal thread-local storage (on those platforms
+            # that support explicit settings). This can allow jemalloc to be
+            # dynamically loaded after program startup (e.g. using dlopen).
+            # --disable-doc - Disable building and installing the documentation.
+            COMMAND
+                ./configure --prefix=${jemalloc_targ_BINARY_DIR}
+                --with-jemalloc-prefix=je_ --disable-cxx
+                --disable-initial-exec-tls --disable-doc CFLAGS=-fPIC
+            WORKING_DIRECTORY ${jemalloc_targ_SOURCE_DIR}
+            OUTPUT ${jemalloc_targ_SOURCE_DIR}/Makefile
+            DEPENDS ${jemalloc_targ_SOURCE_DIR}/configure)
+
+        if(NOT UMF_QEMU_BUILD)
+            set(MAKE_ARGUMENTS "-j$(nproc)")
+        endif()
+
+        add_custom_command(
+            COMMAND make ${MAKE_ARGUMENTS}
+            WORKING_DIRECTORY ${jemalloc_targ_SOURCE_DIR}
+            OUTPUT ${jemalloc_targ_SOURCE_DIR}/lib/libjemalloc.a
+            DEPENDS ${jemalloc_targ_SOURCE_DIR}/Makefile)
+        add_custom_command(
+            COMMAND make install
+            WORKING_DIRECTORY ${jemalloc_targ_SOURCE_DIR}
+            OUTPUT ${jemalloc_targ_BINARY_DIR}/lib/libjemalloc.a
+            DEPENDS ${jemalloc_targ_SOURCE_DIR}/lib/libjemalloc.a)
+
+        add_custom_target(jemalloc_prod
+                          DEPENDS ${jemalloc_targ_BINARY_DIR}/lib/libjemalloc.a)
+        add_library(jemalloc INTERFACE)
+        target_link_libraries(
+            jemalloc INTERFACE ${jemalloc_targ_BINARY_DIR}/lib/libjemalloc.a)
+        add_dependencies(jemalloc jemalloc_prod)
+
+        set(JEMALLOC_FOUND TRUE)
+        set(JEMALLOC_LIBRARY_DIRS ${jemalloc_targ_BINARY_DIR}/lib)
+        set(JEMALLOC_INCLUDE_DIRS ${jemalloc_targ_BINARY_DIR}/include)
+        set(JEMALLOC_LIBRARIES ${jemalloc_targ_BINARY_DIR}/lib/libjemalloc.a)
     endif()
-
-    message(
-        STATUS
-            "Will fetch jemalloc from ${UMF_JEMALLOC_REPO} (tag: ${UMF_JEMALLOC_TAG})"
-    )
-
-    FetchContent_Declare(
-        jemalloc_targ
-        GIT_REPOSITORY ${UMF_JEMALLOC_REPO}
-        GIT_TAG ${UMF_JEMALLOC_TAG})
-    FetchContent_MakeAvailable(jemalloc_targ)
-
-    add_custom_command(
-        COMMAND ./autogen.sh
-        WORKING_DIRECTORY ${jemalloc_targ_SOURCE_DIR}
-        OUTPUT ${jemalloc_targ_SOURCE_DIR}/configure)
-    add_custom_command(
-        # Custom jemalloc build. Non-default options used:
-        # --with-jemalloc-prefix=je_ - add je_ prefix to all public APIs
-        # --disable-cxx - Disable C++ integration. This will cause new and
-        # delete operators implementations to be omitted.
-        # --disable-initial-exec-tls - Disable the initial-exec TLS model for
-        # jemalloc's internal thread-local storage (on those platforms that
-        # support explicit settings). This can allow jemalloc to be dynamically
-        # loaded after program startup (e.g. using dlopen). --disable-doc -
-        # Disable building and installing the documentation.
-        COMMAND
-            ./configure --prefix=${jemalloc_targ_BINARY_DIR}
-            --with-jemalloc-prefix=je_ --disable-cxx --disable-initial-exec-tls
-            --disable-doc CFLAGS=-fPIC
-        WORKING_DIRECTORY ${jemalloc_targ_SOURCE_DIR}
-        OUTPUT ${jemalloc_targ_SOURCE_DIR}/Makefile
-        DEPENDS ${jemalloc_targ_SOURCE_DIR}/configure)
-
-    if(NOT UMF_QEMU_BUILD)
-        set(MAKE_ARGUMENTS "-j$(nproc)")
-    endif()
-
-    add_custom_command(
-        COMMAND make ${MAKE_ARGUMENTS}
-        WORKING_DIRECTORY ${jemalloc_targ_SOURCE_DIR}
-        OUTPUT ${jemalloc_targ_SOURCE_DIR}/lib/libjemalloc.a
-        DEPENDS ${jemalloc_targ_SOURCE_DIR}/Makefile)
-    add_custom_command(
-        COMMAND make install
-        WORKING_DIRECTORY ${jemalloc_targ_SOURCE_DIR}
-        OUTPUT ${jemalloc_targ_BINARY_DIR}/lib/libjemalloc.a
-        DEPENDS ${jemalloc_targ_SOURCE_DIR}/lib/libjemalloc.a)
-
-    add_custom_target(jemalloc_prod
-                      DEPENDS ${jemalloc_targ_BINARY_DIR}/lib/libjemalloc.a)
-    add_library(jemalloc INTERFACE)
-    target_link_libraries(
-        jemalloc INTERFACE ${jemalloc_targ_BINARY_DIR}/lib/libjemalloc.a)
-    add_dependencies(jemalloc jemalloc_prod)
-
-    set(JEMALLOC_FOUND TRUE)
-    set(JEMALLOC_LIBRARY_DIRS ${jemalloc_targ_BINARY_DIR}/lib)
-    set(JEMALLOC_INCLUDE_DIRS ${jemalloc_targ_BINARY_DIR}/include)
-    set(JEMALLOC_LIBRARIES ${jemalloc_targ_BINARY_DIR}/lib/libjemalloc.a)
 endif()
 
 if(JEMALLOC_FOUND)
