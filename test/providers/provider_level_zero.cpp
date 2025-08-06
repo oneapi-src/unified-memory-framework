@@ -445,6 +445,10 @@ TEST_P(umfLevelZeroProviderTest, getName) {
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_STREQ(name, "LEVEL_ZERO");
 
+    // negative case - pass NULL as a name pointer
+    umf_result = umfMemoryProviderGetName(provider, nullptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
     umfMemoryProviderDestroy(provider);
 }
 
@@ -567,6 +571,24 @@ TEST(umfLevelZeroProviderOps, default_name_null_handle) {
     EXPECT_STREQ(name, "LEVEL_ZERO");
 }
 
+TEST(umfLevelZeroProviderOps, null_name) {
+    auto ret = umfLevelZeroMemoryProviderOps()->get_name(nullptr, nullptr);
+    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, levelZeroProviderNullName) {
+    umf_level_zero_memory_provider_params_handle_t params = nullptr;
+    auto ret = umfLevelZeroMemoryProviderParamsCreate(&params);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(params, nullptr);
+
+    ret = umfLevelZeroMemoryProviderParamsSetName(params, nullptr);
+    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    ret = umfLevelZeroMemoryProviderParamsDestroy(params);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+}
+
 TEST_P(umfLevelZeroProviderTest, allocInvalidSize) {
     if (GetParam() == UMF_MEMORY_TYPE_HOST) {
         // For host memory, even with relaxed limits, the allocation may
@@ -637,6 +659,9 @@ TEST_P(umfLevelZeroProviderTest, levelZeroProviderNullParams) {
     EXPECT_EQ(res, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 
     res = umfLevelZeroMemoryProviderParamsSetDeviceOrdinal(nullptr, 0);
+    EXPECT_EQ(res, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    res = umfLevelZeroMemoryProviderParamsSetName(nullptr, "test");
     EXPECT_EQ(res, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 }
 
