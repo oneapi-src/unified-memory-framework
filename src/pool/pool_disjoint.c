@@ -758,6 +758,14 @@ umf_result_t disjoint_pool_initialize(umf_memory_provider_handle_t provider,
     disjoint_pool->provider = provider;
     disjoint_pool->params = *dp_params;
 
+    *ppPool = (void *)disjoint_pool;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t disjoint_pool_post_initialize(void *ppPool) {
+    disjoint_pool_t *disjoint_pool = (disjoint_pool_t *)ppPool;
+
     disjoint_pool->known_slabs = critnib_new(free_slab, NULL);
     if (disjoint_pool->known_slabs == NULL) {
         goto err_free_disjoint_pool;
@@ -816,12 +824,10 @@ umf_result_t disjoint_pool_initialize(umf_memory_provider_handle_t provider,
     }
 
     umf_result_t ret = umfMemoryProviderGetMinPageSize(
-        provider, NULL, &disjoint_pool->provider_min_page_size);
+        disjoint_pool->provider, NULL, &disjoint_pool->provider_min_page_size);
     if (ret != UMF_RESULT_SUCCESS) {
         disjoint_pool->provider_min_page_size = 0;
     }
-
-    *ppPool = (void *)disjoint_pool;
 
     return UMF_RESULT_SUCCESS;
 
@@ -841,7 +847,6 @@ err_free_known_slabs:
 
 err_free_disjoint_pool:
     umf_ba_global_free(disjoint_pool);
-
     return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
 }
 
@@ -1199,7 +1204,7 @@ static umf_memory_pool_ops_t UMF_DISJOINT_POOL_OPS = {
     .get_name = disjoint_pool_get_name,
     .ext_ctl = disjoint_pool_ctl,
     .ext_trim_memory = disjoint_pool_trim_memory,
-};
+    .ext_post_initialize = disjoint_pool_post_initialize};
 
 const umf_memory_pool_ops_t *umfDisjointPoolOps(void) {
     return &UMF_DISJOINT_POOL_OPS;
