@@ -2,22 +2,28 @@
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-include(FetchContent)
-FetchContent_Declare(
-    googlebenchmark
-    GIT_REPOSITORY https://github.com/google/benchmark.git
-    GIT_TAG v1.9.0)
+set(GBENCH_VERSION 1.9.0)
 
-set(BENCHMARK_ENABLE_GTEST_TESTS
-    OFF
-    CACHE BOOL "" FORCE)
-set(BENCHMARK_ENABLE_TESTING
-    OFF
-    CACHE BOOL "" FORCE)
-set(BENCHMARK_ENABLE_INSTALL
-    OFF
-    CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googlebenchmark)
+find_package(benchmark ${GBENCH_VERSION} QUIET)
+
+if(NOT benchmark_FOUND)
+    include(FetchContent)
+    FetchContent_Declare(
+        googlebenchmark
+        GIT_REPOSITORY https://github.com/google/benchmark.git
+        GIT_TAG v${GBENCH_VERSION})
+
+    set(BENCHMARK_ENABLE_GTEST_TESTS
+        OFF
+        CACHE BOOL "" FORCE)
+    set(BENCHMARK_ENABLE_TESTING
+        OFF
+        CACHE BOOL "" FORCE)
+    set(BENCHMARK_ENABLE_INSTALL
+        OFF
+        CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(googlebenchmark)
+endif()
 
 # In MSVC builds, there is no way to determine the actual build type during the
 # CMake configuration step. Therefore, this message is printed in all MSVC
