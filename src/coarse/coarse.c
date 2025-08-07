@@ -599,11 +599,33 @@ static bool debug_check(coarse_t *provider) {
     // verify the all_blocks list
     ravl_foreach(provider->all_blocks, debug_verify_all_blocks_cb, &cb_args);
 
-    assert(cb_args.num_all_blocks == stats.num_all_blocks);
-    assert(cb_args.num_free_blocks == stats.num_free_blocks);
-    assert(cb_args.sum_used == provider->used_size);
-    assert(cb_args.sum_blocks_size == provider->alloc_size);
-    assert(provider->alloc_size >= provider->used_size);
+    // assert(cb_args.num_all_blocks == stats.num_all_blocks);
+    if (cb_args.num_all_blocks != stats.num_all_blocks) {
+        LOG_ERR("coarse->all_blocks: expected %zu, got %zu",
+                stats.num_all_blocks, cb_args.num_all_blocks);
+        return false;
+    }
+
+    // assert(cb_args.num_free_blocks == stats.num_free_blocks);
+    if (cb_args.num_free_blocks != stats.num_free_blocks) {
+        LOG_ERR("coarse->free_blocks: expected %zu, got %zu",
+                stats.num_free_blocks, cb_args.num_free_blocks);
+        return false;
+    }
+
+    // assert(cb_args.sum_used == provider->used_size);
+    if (cb_args.sum_used != provider->used_size) {
+        LOG_ERR("coarse->used_size: expected %zu, got %zu", provider->used_size,
+                cb_args.sum_used);
+        return false;
+    }
+
+    // assert(cb_args.sum_blocks_size == provider->alloc_size);
+    if (cb_args.sum_blocks_size != provider->alloc_size) {
+        LOG_ERR("coarse->alloc_size: expected %zu, got %zu",
+                provider->alloc_size, cb_args.sum_blocks_size);
+        return false;
+    }
 
     return true;
 }
