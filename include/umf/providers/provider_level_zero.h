@@ -95,6 +95,8 @@ umf_result_t umfLevelZeroMemoryProviderParamsSetDeviceOrdinal(
 /// @param  hParams handle to the parameters of the Level Zero Memory Provider.
 /// @param  name custom name. Must not be NULL. Name longer than 63 characters
 ///         will be truncated.
+/// \details Name should contain only [a-zA-Z0-9_-] characters.
+/// Other names are deprecated and may limit CTL functionality.
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 umf_result_t umfLevelZeroMemoryProviderParamsSetName(
     umf_level_zero_memory_provider_params_handle_t hParams, const char *name);

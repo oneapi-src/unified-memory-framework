@@ -138,8 +138,13 @@ typedef struct umf_memory_pool_ops_t {
     ///
     /// * Implementations *must* return default pool name when NULL is provided,
     ///   otherwise the pool's name is returned.
-    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
     ///
+    /// * The returned name should not exceed 64 characters including null character and may contain
+    ///   only [a-zA-Z0-9_-] characters. Names violating these rules are deprecated
+    ///   and will not be supported in the next major API release.
+    ///   CTL functionality may be limited if other characters are returned.
+    ///
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
     umf_result_t (*get_name)(void *pool, const char **name);
 
     ///

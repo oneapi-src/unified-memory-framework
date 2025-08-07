@@ -123,8 +123,18 @@ typedef struct umf_memory_provider_ops_t {
     /// @brief Retrieve name of a given memory \p provider.
     /// @param provider pointer to the memory provider
     /// @param name [out] pointer to a string containing the name of the \p provider
-    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+    /// \details
+    /// * Implementations *must* return a literal null-terminated string.
     ///
+    /// * Implementations *must* return default pool name when NULL is provided,
+    ///   otherwise the pool's name is returned.
+    ///
+    /// * The returned name should not exceed 64 characters and may contain
+    ///   only [a-zA-Z0-9_-] characters. Names violating these rules are deprecated
+    ///   and will not be supported in the next major API release.
+    ///   CTL functionality may be limited if other characters are returned.
+    ///
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
     umf_result_t (*get_name)(void *provider, const char **name);
 
     ///

@@ -56,37 +56,39 @@ enum ctl_node_type {
 
 typedef int (*ctl_arg_parser)(const void *arg, void *dest, size_t dest_size);
 
-struct ctl_argument_parser {
-    size_t dest_offset; /* offset of the field inside of the argument */
-    size_t dest_size;   /* size of the field inside of the argument */
-    ctl_arg_parser parser;
-};
 typedef enum ctl_arg_type {
     CTL_ARG_TYPE_UNKNOWN = 0,
     CTL_ARG_TYPE_BOOLEAN,
     CTL_ARG_TYPE_STRING,
     CTL_ARG_TYPE_INT,
     CTL_ARG_TYPE_LONG_LONG,
+    CTL_ARG_TYPE_UNSIGNED_LONG_LONG,
     CTL_ARG_TYPE_PTR,
     MAX_CTL_ARG_TYPE
 } ctl_arg_type_t;
 
+struct ctl_argument_parser {
+    size_t dest_offset;  /* offset of the field inside of the argument */
+    size_t dest_size;    /* size of the field inside of the argument */
+    ctl_arg_type_t type; /* type of the argument */
+    ctl_arg_parser parser;
+};
+
 struct ctl_argument {
     size_t dest_size;                     /* size of the entire argument */
-    ctl_arg_type_t type;                  /* type of the argument */
     struct ctl_argument_parser parsers[]; /* array of 'fields' in arg */
 };
 
-#define sizeof_member(t, m) sizeof(((t *)0)->m)
+#define sizeof_member(type, member) sizeof(((type *)0)->member)
 
-#define CTL_ARG_PARSER(t, p)                                                   \
-    { 0, sizeof(t), p }
+#define CTL_ARG_PARSER(type, vaarg_type, parser)                               \
+    { 0, sizeof(type), vaarg_type, parser }
 
-#define CTL_ARG_PARSER_STRUCT(t, m, p)                                         \
-    { offsetof(t, m), sizeof_member(t, m), p }
+#define CTL_ARG_PARSER_STRUCT(type, member, vaarg_type, parser)                \
+    { offsetof(type, member), sizeof_member(type, member), vaarg_type, parser }
 
 #define CTL_ARG_PARSER_END                                                     \
-    { 0, 0, NULL }
+    { 0, 0, 0, NULL }
 
 /*
  * CTL Tree node structure, do not use directly. All the necessary functionality
@@ -133,39 +135,55 @@ void ctl_register_module_node(struct ctl *c, const char *name,
                               struct ctl_node *n);
 
 int ctl_arg_boolean(const void *arg, void *dest, size_t dest_size);
+int ctl_arg_integer(const void *arg, void *dest, size_t dest_size);
+int ctl_arg_unsigned(const void *arg, void *dest, size_t dest_size);
+int ctl_arg_string(const void *arg, void *dest, size_t dest_size);
+
 #define CTL_ARG_BOOLEAN                                                        \
     {                                                                          \
-        sizeof(int), CTL_ARG_TYPE_BOOLEAN, {                                   \
-            {0, sizeof(int), ctl_arg_boolean}, CTL_ARG_PARSER_END              \
+        sizeof(int), {                                                         \
+            {0, sizeof(int), CTL_ARG_TYPE_BOOLEAN, ctl_arg_boolean},           \
+                CTL_ARG_PARSER_END                                             \
         }                                                                      \
     }
 
-int ctl_arg_integer(const void *arg, void *dest, size_t dest_size);
 #define CTL_ARG_INT                                                            \
     {                                                                          \
-        sizeof(int), CTL_ARG_TYPE_INT, {                                       \
-            {0, sizeof(int), ctl_arg_integer}, CTL_ARG_PARSER_END              \
+        sizeof(int), {                                                         \
+            {0, sizeof(int), CTL_ARG_TYPE_INT, ctl_arg_integer},               \
+                CTL_ARG_PARSER_END                                             \
         }                                                                      \
     }
 
 #define CTL_ARG_LONG_LONG                                                      \
     {                                                                          \
-        sizeof(long long), CTL_ARG_TYPE_LONG_LONG, {                           \
-            {0, sizeof(long long), ctl_arg_integer}, CTL_ARG_PARSER_END        \
+        sizeof(long long), {                                                   \
+            {0, sizeof(long long), CTL_ARG_TYPE_LONG_LONG, ctl_arg_integer},   \
+                CTL_ARG_PARSER_END                                             \
         }                                                                      \
     }
 
-int ctl_arg_string(const void *arg, void *dest, size_t dest_size);
+#define CTL_ARG_UNSIGNED_LONG_LONG                                             \
+    {                                                                          \
+        sizeof(unsigned long long), {                                          \
+            {0, sizeof(unsigned long long), CTL_ARG_TYPE_UNSIGNED_LONG_LONG,   \
+             ctl_arg_unsigned},                                                \
+                CTL_ARG_PARSER_END                                             \
+        }                                                                      \
+    }
+
 #define CTL_ARG_STRING(len)                                                    \
     {                                                                          \
-        len, CTL_ARG_TYPE_PTR, {                                               \
-            {0, len, ctl_arg_string}, CTL_ARG_PARSER_END                       \
+        len, {                                                                 \
+            {0, len, CTL_ARG_TYPE_STRING, ctl_arg_string}, CTL_ARG_PARSER_END  \
         }                                                                      \
     }
 
 #define CTL_ARG_PTR                                                            \
     {                                                                          \
-        sizeof(void *), CTL_ARG_TYPE_PTR, { {0, 0, NULL}, CTL_ARG_PARSER_END } \
+        sizeof(void *), {                                                      \
+            {0, sizeof(void *), CTL_ARG_TYPE_PTR, NULL}, CTL_ARG_PARSER_END    \
+        }                                                                      \
     }
 
 #define _CTL_STR(name) #name

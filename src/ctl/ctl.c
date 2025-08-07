@@ -95,7 +95,7 @@ char *Strdup(const char *s) {
         }                                                                      \
         case CTL_ARG_TYPE_STRING: {                                            \
             char *str = va_arg(va, char *);                                    \
-            memcpy(output, str, ctl_argument->dest_size);                      \
+            snprintf((char *)output, ctl_argument->dest_size, "%s", str);      \
             break;                                                             \
         }                                                                      \
         case CTL_ARG_TYPE_INT: {                                               \
@@ -108,9 +108,14 @@ char *Strdup(const char *s) {
             *(long long *)output = ll;                                         \
             break;                                                             \
         }                                                                      \
+        case CTL_ARG_TYPE_UNSIGNED_LONG_LONG: {                                \
+            unsigned long long ll = va_arg(va, unsigned long long);            \
+            *(unsigned long long *)output = ll;                                \
+            break;                                                             \
+        }                                                                      \
         case CTL_ARG_TYPE_PTR: {                                               \
-            void *p = va_arg(va, void *);                                      \
-            *(uintptr_t *)output = (uintptr_t)p;                               \
+            void *ptr = va_arg(va, void *);                                    \
+            *(uintptr_t *)output = (uintptr_t)ptr;                             \
             break;                                                             \
         }                                                                      \
         default:                                                               \
@@ -173,9 +178,6 @@ static void *ctl_parse_args(const struct ctl_argument *arg_proto, char *arg) {
     char *arg_sep = strtok_r(arg, CTL_VALUE_ARG_SEPARATOR, &sptr);
     for (const struct ctl_argument_parser *p = arg_proto->parsers;
          p->parser != NULL; ++p) {
-        if (arg_sep == NULL) {
-            goto error_parsing;
-        }
 
         if (p->parser(arg_sep, dest_arg + p->dest_offset, p->dest_size) != 0) {
             goto error_parsing;
@@ -375,31 +377,73 @@ ctl_find_and_execute_node(const umf_ctl_node_t *nodes, void *ctx,
                 // if the node has an argument, but no next node, then it is an error
                 goto error;
             }
-            void *node_arg;
-            if (strcmp(next_node, CTL_WILDCARD) == 0) {
-                if (source == CTL_QUERY_CONFIG_INPUT) {
-                    LOG_ERR(
-                        "ctl {} wildcard is not supported for config input");
-                    goto error;
-                }
-                // argument is a wildcard so we need to allocate it from va_list
-                node_arg = ctl_malloc_fn(n->arg->dest_size);
-                if (node_arg == NULL) {
-                    goto error;
-                }
-                pop_va_list(args, n->arg, node_arg);
-            } else {
-                node_arg = ctl_parse_args(n->arg, next_node);
 
-                if (node_arg == NULL) {
-                    goto error;
+            char *node_arg = ctl_malloc_fn(n->arg->dest_size);
+            if (node_arg == NULL) {
+                goto error;
+            }
+
+            // Parse this argument. It might contain "struct" which is series of fields separated by comma.
+            // each field contains separate parser in the parsers array.
+            for (const struct ctl_argument_parser *p = n->arg->parsers;
+                 p->dest_size != 0; ++p) {
+
+                if (next_node && strcmp(next_node, CTL_WILDCARD) == 0) {
+                    if (source == CTL_QUERY_CONFIG_INPUT) {
+                        ctl_free_fn(node_arg);
+                        LOG_ERR("ctl {} wildcard is not supported for config "
+                                "input");
+                        goto error;
+                    }
+
+                    if (p->type == CTL_ARG_TYPE_UNKNOWN) {
+                        ctl_free_fn(node_arg);
+                        LOG_ERR("ctl {} wildcard is not supported for node: %s",
+                                node_name);
+                        goto error;
+                    }
+                    char *output = node_arg + p->dest_offset;
+                    pop_va_list(args, p, output);
+                } else {
+                    if (!p->parser) {
+                        LOG_ERR(
+                            "this node can be passed only as {} wildcard: %s",
+                            next_node);
+                        ctl_free_fn(node_arg);
+                        goto error;
+                    }
+                    int r = p->parser(next_node, node_arg + p->dest_offset,
+                                      p->dest_size);
+                    if (r < 0) {
+                        // Parsing failed — cleanup and propagate error
+                        ctl_free_fn(node_arg);
+                        goto error;
+                    } else if (r > 0) {
+                        // Parser did not consume next_node, which means this argument is optional
+                        // and not present. Optional arguments are always at the end of the expected
+                        // sequence, so we can safely stop parsing here.
+                        //
+                        // Example:
+                        // Given two paths:
+                        // "umf.pool.by_name.name.stats.allocs"
+                        // "umf.pool.by_name.name.1.stats.allocs"
+                        // The parser for 'by_name' expects the next node is string followed by optional
+                        // integer index, if its sees "stats" instead of integer, like in second example
+                        // it will return >0 to signal that the optional
+                        // integer argument is not present.
+                        // This allows the remaining nodes ("stats.allocs") to be parsed normally
+                        // without treating "stats" as part of 'by_name'.
+                        break;
+                    }
                 }
+                // we parsed next_node as an argument so we next one
+                next_node = strtok_r(NULL, CTL_QUERY_NODE_SEPARATOR, &sptr);
             }
 
             umf_ctl_index_utlist_t *entry = NULL;
             entry = ctl_malloc_fn(sizeof(*entry));
             if (entry == NULL) {
-                ctl_free_fn(arg);
+                ctl_free_fn(node_arg);
                 goto error;
             }
 
@@ -408,8 +452,7 @@ ctl_find_and_execute_node(const umf_ctl_node_t *nodes, void *ctx,
             entry->arg_size = n->arg->dest_size;
 
             LL_APPEND(indexes, entry);
-            // we parsed next_node as an argument so we next one
-            next_node = strtok_r(NULL, CTL_QUERY_NODE_SEPARATOR, &sptr);
+
             if (next_node == NULL) {
                 // last node was a node with arg, but there is no next mode.
                 // check if there is nameless leaf on next level
@@ -679,6 +722,22 @@ error_file_parse:
 }
 
 /*
+ * ctl_parse_ull -- (internal) parses and returns an unsigned long long
+ */
+static unsigned long long ctl_parse_ull(const char *str) {
+    char *endptr;
+    int olderrno = errno;
+    errno = 0;
+    unsigned long long val = strtoull(str, &endptr, 0);
+    if (endptr == str || errno != 0) {
+        return ULLONG_MAX;
+    }
+    errno = olderrno;
+
+    return val;
+}
+
+/*
  * ctl_parse_ll -- (internal) parses and returns a long long signed integer
  */
 static long long ctl_parse_ll(const char *str) {
@@ -701,6 +760,9 @@ static long long ctl_parse_ll(const char *str) {
 int ctl_arg_boolean(const void *arg, void *dest, size_t dest_size) {
     /* suppress unused-parameter errors */
     (void)dest_size;
+    if (!arg) {
+        return -1;
+    }
 
     int *intp = dest;
     char in = ((const char *)arg)[0];
@@ -717,9 +779,48 @@ int ctl_arg_boolean(const void *arg, void *dest, size_t dest_size) {
 }
 
 /*
+ * ctl_arg_unsigned -- parses unsigned integer argument
+ */
+int ctl_arg_unsigned(const void *arg, void *dest, size_t dest_size) {
+    if (!arg) {
+        return -1;
+    }
+
+    unsigned long long val = ctl_parse_ull(arg);
+    if (val == ULLONG_MAX) {
+        return -1;
+    }
+
+    switch (dest_size) {
+    case sizeof(unsigned int):
+        if (val > UINT_MAX) {
+            return -1;
+        }
+        *(unsigned int *)dest = (unsigned int)val;
+        break;
+    case sizeof(unsigned long long):
+        *(unsigned long long *)dest = val;
+        break;
+    case sizeof(uint8_t):
+        if (val > UINT8_MAX) {
+            return -1;
+        }
+        *(uint8_t *)dest = (uint8_t)val;
+        break;
+    default:
+        return -1;
+    }
+
+    return 0;
+}
+
+/*
  * ctl_arg_integer -- parses signed integer argument
  */
 int ctl_arg_integer(const void *arg, void *dest, size_t dest_size) {
+    if (!arg) {
+        return -1;
+    }
     long long val = ctl_parse_ll(arg);
     if (val == LLONG_MIN) {
         return -1;
@@ -735,12 +836,6 @@ int ctl_arg_integer(const void *arg, void *dest, size_t dest_size) {
     case sizeof(long long):
         *(long long *)dest = val;
         break;
-    case sizeof(uint8_t):
-        if (val > UINT8_MAX || val < 0) {
-            return -1;
-        }
-        *(uint8_t *)dest = (uint8_t)val;
-        break;
     default:
         return -1;
     }
@@ -753,6 +848,10 @@ int ctl_arg_integer(const void *arg, void *dest, size_t dest_size) {
  *    buffer
  */
 int ctl_arg_string(const void *arg, void *dest, size_t dest_size) {
+    if (!arg) {
+        return -1;
+    }
+
     /* check if the incoming string is longer or equal to dest_size */
     if (strnlen(arg, dest_size) == dest_size) {
         return -1;

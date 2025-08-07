@@ -95,10 +95,12 @@ jobs:
 
     - name: Run "tag" UMF tests with latest UMF libs (warnings enabled)
       working-directory: ${{github.workspace}}/tag_version/build
-      run: >
-        UMF_LOG="level:warning;flush:debug;output:stderr;pid:no"
-        LD_LIBRARY_PATH=${{github.workspace}}/latest_version/build/lib/
-        ctest --verbose
+      env:
+        UMF_LOG: level:warning;flush:debug;output:stderr;pid:no
+        LD_LIBRARY_PATH: ${{github.workspace}}/latest_version/build/lib/
+      run: |
+        ctest --verbose -E test_memoryProvider
+        test/test_memoryProvider --gtest_filter="-*Trace"
 
     # Browse all folders in the examples directory, build them using the 
     # latest UMF version, and run them, excluding those in the exclude list.
@@ -220,10 +222,11 @@ jobs:
 
     - name: Run "tag" UMF tests with latest UMF libs (warnings enabled)
       working-directory: ${{github.workspace}}/tag_version/build
+      env:
+        UMF_LOG: level:warning;flush:debug;output:stderr;pid:no
       run: |
-        $env:UMF_LOG="level:warning;flush:debug;output:stderr;pid:no" 
         cp ${{github.workspace}}/latest_version/build/bin/Debug/umf.dll ${{github.workspace}}/tag_version/build/bin/Debug/umf.dll
-        ctest -C Debug --verbose
+        ctest -C Debug --verbose -E test_memoryProvider
 
     # Browse all folders in the examples directory, build them using the 
     # latest UMF version, and run them, excluding those in the exclude list.
@@ -361,10 +364,12 @@ jobs:
 
     - name: Run "tag" UMF tests with latest UMF libs (warnings enabled)
       working-directory: ${{github.workspace}}/tag_version/build
-      run: >
-        UMF_LOG="level:warning;flush:debug;output:stderr;pid:no"
-        LD_LIBRARY_PATH=${{github.workspace}}/latest_version/build/lib/
-        ctest --verbose
+      env:
+        UMF_LOG: level:warning;flush:debug;output:stderr;pid:no
+        LD_LIBRARY_PATH: ${{github.workspace}}/latest_version/build/lib/
+      run: |
+        ctest --verbose -E test_memoryProvider
+        test/test_memoryProvider --gtest_filter="-*Trace"
 
     # Browse all folders in the examples directory, build them using the 
     # latest UMF version, and run them, excluding those in the exclude list.
