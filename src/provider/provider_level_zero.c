@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 
 #include <umf.h>
@@ -753,6 +754,7 @@ static umf_result_t ze_memory_provider_allocation_split(void *provider,
 
 typedef struct ze_ipc_data_t {
     int pid;
+    uint64_t id; // Unique identifier for the IPC handle
     ze_ipc_mem_handle_t ze_handle;
 } ze_ipc_data_t;
 
@@ -770,6 +772,8 @@ static umf_result_t ze_memory_provider_get_ipc_handle(void *provider,
                                                       void *providerIpcData) {
     (void)size;
 
+    static uint64_t id = 0;
+
     ze_result_t ze_result;
     ze_ipc_data_t *ze_ipc_data = (ze_ipc_data_t *)providerIpcData;
     struct ze_memory_provider_t *ze_provider =
@@ -783,6 +787,10 @@ static umf_result_t ze_memory_provider_get_ipc_handle(void *provider,
     }
 
     ze_ipc_data->pid = utils_getpid();
+    ze_ipc_data->id = id++;
+
+    LOG_DEBUG("GET handle(): pid = %d, id = %lu", ze_ipc_data->pid,
+              ze_ipc_data->id);
 
     return UMF_RESULT_SUCCESS;
 }
@@ -800,6 +808,9 @@ static umf_result_t ze_memory_provider_put_ipc_handle(void *provider,
         // is released automatically when corresponding memory buffer is freed.
         return UMF_RESULT_SUCCESS;
     }
+
+    LOG_DEBUG("PUT handle(): pid = %d, id = %lu", ze_ipc_data->pid,
+              ze_ipc_data->id);
 
     ze_result = g_ze_ops.zeMemPutIpcHandle(ze_provider->context,
                                            ze_ipc_data->ze_handle);
