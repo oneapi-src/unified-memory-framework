@@ -114,6 +114,10 @@ template <typename T> constexpr umf_memory_provider_ops_t providerOpsBase() {
     UMF_ASSIGN_OP(ops, T, ext_put_ipc_handle, UMF_RESULT_ERROR_UNKNOWN);
     UMF_ASSIGN_OP(ops, T, ext_open_ipc_handle, UMF_RESULT_ERROR_UNKNOWN);
     UMF_ASSIGN_OP(ops, T, ext_close_ipc_handle, UMF_RESULT_ERROR_UNKNOWN);
+    UMF_ASSIGN_OP(ops, T, ext_get_allocation_properties,
+                  UMF_RESULT_ERROR_UNKNOWN);
+    UMF_ASSIGN_OP(ops, T, ext_get_allocation_properties_size,
+                  UMF_RESULT_ERROR_UNKNOWN);
     return ops;
 }
 } // namespace detail

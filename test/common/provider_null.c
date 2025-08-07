@@ -144,6 +144,24 @@ static umf_result_t nullCloseIpcHandle(void *provider, void *ptr, size_t size) {
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t
+nullGetAllocationProperties(void *provider, const void *ptr,
+                            umf_memory_property_id_t propertyId, void *value) {
+    (void)provider;
+    (void)ptr;
+    (void)propertyId;
+    (void)value;
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t nullGetAllocationPropertiesSize(
+    void *provider, umf_memory_property_id_t propertyId, size_t *size) {
+    (void)provider;
+    (void)propertyId;
+    (void)size;
+    return UMF_RESULT_SUCCESS;
+}
+
 umf_memory_provider_ops_t UMF_NULL_PROVIDER_OPS = {
     .version = UMF_PROVIDER_OPS_VERSION_CURRENT,
     .initialize = nullInitialize,
@@ -163,4 +181,6 @@ umf_memory_provider_ops_t UMF_NULL_PROVIDER_OPS = {
     .ext_put_ipc_handle = nullPutIpcHandle,
     .ext_open_ipc_handle = nullOpenIpcHandle,
     .ext_close_ipc_handle = nullCloseIpcHandle,
+    .ext_get_allocation_properties = nullGetAllocationProperties,
+    .ext_get_allocation_properties_size = nullGetAllocationPropertiesSize,
 };

@@ -5,9 +5,11 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include "provider_trace.h"
 #include <umf/memory_provider.h>
 #include <umf/memory_provider_ops.h>
+
+#include "memory_properties_internal.h"
+#include "provider_trace.h"
 
 static umf_result_t traceInitialize(const void *params, void **pool) {
     umf_provider_trace_params_t *trace_pool =
@@ -214,4 +216,6 @@ umf_memory_provider_ops_t UMF_TRACE_PROVIDER_OPS = {
     .ext_put_ipc_handle = tracePutIpcHandle,
     .ext_open_ipc_handle = traceOpenIpcHandle,
     .ext_close_ipc_handle = traceCloseIpcHandle,
+    .ext_ctl = NULL,
+    .ext_get_allocation_properties = NULL,
 };
