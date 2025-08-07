@@ -602,20 +602,6 @@ static umf_result_t os_initialize(const void *params, void **provider) {
         }
     }
 
-    os_provider->nodeset_str_buf = umf_ba_global_alloc(NODESET_STR_BUF_LEN);
-    if (!os_provider->nodeset_str_buf) {
-        LOG_INFO("allocating memory for printing NUMA nodes failed");
-    } else {
-        LOG_INFO("OS provider initialized with NUMA nodes:");
-        for (unsigned i = 0; i < os_provider->nodeset_len; i++) {
-            if (hwloc_bitmap_list_snprintf(os_provider->nodeset_str_buf,
-                                           NODESET_STR_BUF_LEN,
-                                           os_provider->nodeset[i])) {
-                LOG_INFO("%s", os_provider->nodeset_str_buf);
-            }
-        }
-    }
-
     *provider = os_provider;
 
     return UMF_RESULT_SUCCESS;
@@ -1392,8 +1378,21 @@ static umf_result_t os_ctl(void *hProvider,
 }
 
 static umf_result_t os_post_initialize(void *provider) {
-    (void)provider;
-    // For initial version, just return success
+    os_memory_provider_t *os_provider = (os_memory_provider_t *)provider;
+
+    os_provider->nodeset_str_buf = umf_ba_global_alloc(NODESET_STR_BUF_LEN);
+    if (!os_provider->nodeset_str_buf) {
+        LOG_INFO("allocating memory for printing NUMA nodes failed");
+    } else {
+        LOG_INFO("OS provider initialized with NUMA nodes:");
+        for (unsigned i = 0; i < os_provider->nodeset_len; i++) {
+            if (hwloc_bitmap_list_snprintf(os_provider->nodeset_str_buf,
+                                           NODESET_STR_BUF_LEN,
+                                           os_provider->nodeset[i])) {
+                LOG_INFO("%s", os_provider->nodeset_str_buf);
+            }
+        }
+    }
     return UMF_RESULT_SUCCESS;
 }
 
