@@ -208,6 +208,25 @@ TEST_F(test, jemallocPoolName) {
     umfJemallocPoolParamsDestroy(params);
 }
 
+TEST_F(test, jemallocProviderDoesNotSupportSplit) {
+    umf_jemalloc_pool_params_handle_t params = nullptr;
+    umf_result_t res = umfJemallocPoolParamsCreate(&params);
+    EXPECT_EQ(res, UMF_RESULT_SUCCESS);
+
+    umf_memory_provider_handle_t ba_provider;
+    umf_result_t ret =
+        umfMemoryProviderCreate(&BA_GLOBAL_PROVIDER_OPS, nullptr, &ba_provider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    umf_memory_pool_handle_t pool = nullptr;
+    res = umfPoolCreate(umfJemallocPoolOps(), ba_provider, params, 0, &pool);
+    EXPECT_EQ(res, UMF_RESULT_ERROR_NOT_SUPPORTED);
+    EXPECT_EQ(pool, nullptr);
+
+    umfMemoryProviderDestroy(ba_provider);
+    umfJemallocPoolParamsDestroy(params);
+}
+
 TEST_F(test, jemallocPoolCustomName) {
     umf_jemalloc_pool_params_handle_t params = nullptr;
     umf_result_t res = umfJemallocPoolParamsCreate(&params);
