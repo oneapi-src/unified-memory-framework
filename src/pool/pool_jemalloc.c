@@ -12,6 +12,8 @@
 #include <string.h>
 
 #include "base_alloc_global.h"
+#include "memory_provider_internal.h"
+#include "provider_tracking.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
 #include "utils_log.h"
@@ -283,8 +285,15 @@ static bool arena_extent_split(extent_hooks_t *extent_hooks, void *addr,
 
     jemalloc_memory_pool_t *pool = get_pool_by_arena_index(arena_ind);
     assert(pool);
-    return umfMemoryProviderAllocationSplit(pool->provider, addr, size,
-                                            size_a) != UMF_RESULT_SUCCESS;
+
+    umf_result_t ret =
+        umfMemoryProviderAllocationSplit(pool->provider, addr, size, size_a);
+    if (ret != UMF_RESULT_SUCCESS) {
+        LOG_ERR("memory provider failed to split a memory region, while "
+                "jemalloc requires that");
+    }
+
+    return ret != UMF_RESULT_SUCCESS;
 }
 
 // arena_extent_merge - an extent merge function conforms to the extent_merge_t type and optionally
@@ -435,10 +444,44 @@ static void *op_aligned_alloc(void *pool, size_t size, size_t alignment) {
     return ptr;
 }
 
+// Verify if the memory provider supports the split() operation,
+// because jemalloc pool requires that.
+static umf_result_t verify_split(umf_memory_provider_handle_t provider) {
+    // Retrieve the upstream memory provider
+    umf_memory_provider_handle_t upstream_provider = NULL;
+    umfTrackingMemoryProviderGetUpstreamProvider(
+        umfMemoryProviderGetPriv(provider), &upstream_provider);
+
+    size_t page_size = 0;
+    umf_result_t ret =
+        umfMemoryProviderGetMinPageSize(upstream_provider, NULL, &page_size);
+    if (ret != UMF_RESULT_SUCCESS) {
+        return ret;
+    }
+
+    size_t size = 2 * page_size; // use double the page size for the split test
+    if (UMF_RESULT_ERROR_NOT_SUPPORTED ==
+        umfMemoryProviderAllocationSplit(upstream_provider, (void *)size, size,
+                                         page_size)) {
+        LOG_ERR("memory provider does not support the split operation, while "
+                "jemalloc pool requires that");
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
+
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_result_t op_initialize(umf_memory_provider_handle_t provider,
                                   const void *params, void **out_pool) {
     assert(provider);
     assert(out_pool);
+
+    // Verify if the memory provider supports the split() operation,
+    // because jemalloc pool requires that.
+    umf_result_t ret = verify_split(provider);
+    if (ret != UMF_RESULT_SUCCESS) {
+        return ret;
+    }
 
     extent_hooks_t *pHooks = &arena_extent_hooks;
     size_t unsigned_size = sizeof(unsigned);

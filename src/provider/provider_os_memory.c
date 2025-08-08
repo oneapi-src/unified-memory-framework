@@ -24,6 +24,7 @@
 #include "ctl/ctl_internal.h"
 #include "libumf.h"
 #include "provider_os_memory_internal.h"
+#include "topology.h"
 #include "utils_assert.h"
 #include "utils_common.h"
 #include "utils_concurrency.h"
@@ -561,27 +562,19 @@ static umf_result_t os_initialize(const void *params, void **provider) {
     snprintf(os_provider->name, sizeof(os_provider->name), "%s",
              in_params->name);
 
-    int r = hwloc_topology_init(&os_provider->topo);
-    if (r) {
-        LOG_ERR("HWLOC topology init failed");
-        ret = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-        goto err_free_os_provider;
-    }
-
-    r = hwloc_topology_load(os_provider->topo);
-    if (r) {
+    os_provider->topo = umfGetTopologyReduced();
+    if (!os_provider->topo) {
         os_store_last_native_error(UMF_OS_RESULT_ERROR_TOPO_DISCOVERY_FAILED,
                                    0);
         LOG_ERR("HWLOC topology discovery failed");
         ret = UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
-        goto err_destroy_hwloc_topology;
     }
 
     os_provider->fd_offset_map = critnib_new(NULL, NULL);
     if (!os_provider->fd_offset_map) {
         LOG_ERR("creating file descriptor offset map failed");
         ret = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-        goto err_destroy_hwloc_topology;
+        goto err_free_os_provider;
     }
 
     ret = translate_params(in_params, os_provider);
@@ -624,8 +617,6 @@ err_destroy_bitmaps:
     free_bitmaps(os_provider);
 err_destroy_critnib:
     critnib_delete(os_provider->fd_offset_map);
-err_destroy_hwloc_topology:
-    hwloc_topology_destroy(os_provider->topo);
 err_free_os_provider:
     umf_ba_global_free(os_provider);
     return ret;
@@ -649,7 +640,7 @@ static umf_result_t os_finalize(void *provider) {
     if (os_provider->nodeset_str_buf) {
         umf_ba_global_free(os_provider->nodeset_str_buf);
     }
-    hwloc_topology_destroy(os_provider->topo);
+
     umf_ba_global_free(os_provider);
     return UMF_RESULT_SUCCESS;
 }

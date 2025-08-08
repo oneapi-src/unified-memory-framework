@@ -93,14 +93,17 @@ jobs:
       run: |
         LD_LIBRARY_PATH=${{github.workspace}}/tag_version/build/lib/ ctest --output-on-failure
 
+    # Exclude the test_jemalloc_pool test -
+    # TODO: add fix for that in v1.0.1
     - name: Run "tag" UMF tests with latest UMF libs (warnings enabled)
       working-directory: ${{github.workspace}}/tag_version/build
       env:
         UMF_LOG: level:warning;flush:debug;output:stderr;pid:no
         LD_LIBRARY_PATH: ${{github.workspace}}/latest_version/build/lib/
       run: |
-        ctest --verbose -E test_memoryProvider
+        ctest --verbose -E "test_memoryProvider|test_jemalloc_pool"
         test/test_memoryProvider --gtest_filter="-*Trace"
+        test/test_jemalloc_pool --gtest_filter="-*jemallocPoolName*"
 
     # Browse all folders in the examples directory, build them using the 
     # latest UMF version, and run them, excluding those in the exclude list.
@@ -220,13 +223,18 @@ jobs:
       working-directory: "${{github.workspace}}/tag_version/build"
       run: ctest -C Debug --output-on-failure --test-dir test
 
+    # Exclude the test_jemalloc_pool test -
+    # TODO: add fix for that in v1.0.1
     - name: Run "tag" UMF tests with latest UMF libs (warnings enabled)
       working-directory: ${{github.workspace}}/tag_version/build
       env:
         UMF_LOG: level:warning;flush:debug;output:stderr;pid:no
       run: |
         cp ${{github.workspace}}/latest_version/build/bin/Debug/umf.dll ${{github.workspace}}/tag_version/build/bin/Debug/umf.dll
-        ctest -C Debug --verbose -E test_memoryProvider
+        ctest -C Debug --verbose -E "test_memoryProvider|test_jemalloc_pool"
+        $env:Path = "${{github.workspace}}/tag_version/build/bin/Debug;${{env.VCPKG_BIN_PATH}};$env:Path"
+        test/Debug/test_memoryProvider.exe --gtest_filter="-*Trace"
+        test/Debug/test_jemalloc_pool.exe --gtest_filter="-*jemallocPoolName*"
 
     # Browse all folders in the examples directory, build them using the 
     # latest UMF version, and run them, excluding those in the exclude list.
@@ -362,14 +370,17 @@ jobs:
         LD_LIBRARY_PATH=${{github.workspace}}/tag_version/build/lib/
         ctest --output-on-failure
 
+    # Exclude the test_jemalloc_pool test -
+    # TODO: add fix for that in v1.0.1
     - name: Run "tag" UMF tests with latest UMF libs (warnings enabled)
       working-directory: ${{github.workspace}}/tag_version/build
       env:
         UMF_LOG: level:warning;flush:debug;output:stderr;pid:no
         LD_LIBRARY_PATH: ${{github.workspace}}/latest_version/build/lib/
       run: |
-        ctest --verbose -E test_memoryProvider
+        ctest --verbose -E "test_memoryProvider|test_jemalloc_pool"
         test/test_memoryProvider --gtest_filter="-*Trace"
+        test/test_jemalloc_pool --gtest_filter="-*jemallocPoolName*"
 
     # Browse all folders in the examples directory, build them using the 
     # latest UMF version, and run them, excluding those in the exclude list.
