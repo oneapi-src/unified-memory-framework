@@ -35,7 +35,7 @@ static umf_result_t umfMemspaceHostAllCreate(umf_memspace_handle_t *hMemspace) {
 
     umf_result_t umf_ret = UMF_RESULT_SUCCESS;
 
-    hwloc_topology_t topology = umfGetTopology();
+    hwloc_topology_t topology = umfGetTopologyReduced();
     if (!topology) {
         // TODO: What would be an approrpiate err?
         return UMF_RESULT_ERROR_UNKNOWN;
