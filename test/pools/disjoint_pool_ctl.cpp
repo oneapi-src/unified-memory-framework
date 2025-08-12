@@ -421,3 +421,148 @@ TEST_F(test, disjointCtlMemoryMetricsInvalidArgs) {
     ASSERT_SUCCESS(umfDisjointPoolParamsDestroy(params));
     ASSERT_SUCCESS(umfOsMemoryProviderParamsDestroy(os_memory_provider_params));
 }
+
+TEST_F(test, disjointCtlBucketStats) {
+    umf_os_memory_provider_params_handle_t os_memory_provider_params = nullptr;
+    if (UMF_RESULT_ERROR_NOT_SUPPORTED ==
+        umfOsMemoryProviderParamsCreate(&os_memory_provider_params)) {
+        GTEST_SKIP() << "OS memory provider is not supported!";
+    }
+
+    ProviderWrapper providerWrapper(umfOsMemoryProviderOps(),
+                                    os_memory_provider_params);
+    if (providerWrapper.get() == NULL) {
+        GTEST_SKIP() << "OS memory provider is not supported!";
+    }
+
+    umf_disjoint_pool_params_handle_t params = nullptr;
+    ASSERT_SUCCESS(umfDisjointPoolParamsCreate(&params));
+
+    // Set minimum slab size
+    size_t slab_min_size = 64 * 1024;
+    ASSERT_SUCCESS(umfDisjointPoolParamsSetSlabMinSize(params, slab_min_size));
+    ASSERT_SUCCESS(umfDisjointPoolParamsSetCapacity(params, 4));
+    ASSERT_SUCCESS(umfDisjointPoolParamsSetTrace(params, 3));
+
+    PoolWrapper poolWrapper(providerWrapper.get(), umfDisjointPoolOps(),
+                            params);
+
+    size_t arg = 0;
+    size_t count = 0;
+    const size_t alloc_size = 128;
+    size_t used_bucket = SIZE_MAX;
+    ASSERT_SUCCESS(umfCtlGet("umf.pool.by_handle.{}.buckets.count", &count,
+                             sizeof(count), poolWrapper.get()));
+    EXPECT_EQ(count, 57ull);
+
+    auto expected_bucket_size = [](size_t i) -> size_t {
+        // Even indexes: 8 << (i/2)  => 8,16,32,64,...
+        // Odd  indexes: 12 << (i/2) => 12,24,48,96,...
+        return (i % 2 == 0) ? (size_t(8) << (i / 2)) : (size_t(12) << (i / 2));
+    };
+
+    for (size_t i = 0; i < count; i++) {
+        ASSERT_SUCCESS(umfCtlGet("umf.pool.by_handle.{}.buckets.{}.size", &arg,
+                                 sizeof(arg), poolWrapper.get(), i));
+        EXPECT_EQ(arg, expected_bucket_size(i)) << "Failed for bucket: " << i;
+        if (arg >= alloc_size && used_bucket == SIZE_MAX) {
+            used_bucket = i; // Find the bucket that matches alloc_size
+        }
+    }
+
+    std::unordered_map<std::string, size_t> stats = {
+        {"alloc_nr", 0ull},
+        {"alloc_pool_nr", 0ull},
+        {"free_nr", 0ull},
+        {"curr_slabs_in_use", 0ull},
+        {"curr_slabs_in_pool", 0ull},
+        {"max_slabs_in_use", 0ull},
+        {"max_slabs_in_pool", 0ull},
+    };
+
+    for (const auto &s : stats) {
+        ASSERT_SUCCESS(umfCtlGet("umf.pool.by_handle.{}.stats.{}", &arg,
+                                 sizeof(arg), poolWrapper.get(),
+                                 s.first.c_str()));
+        EXPECT_EQ(arg, s.second) << "Failed for stat: " << s.first;
+    }
+
+    for (size_t i = 0; i < count; i++) {
+        for (const auto &s : stats) {
+            ASSERT_SUCCESS(
+                umfCtlGet("umf.pool.by_handle.{}.buckets.{}.stats.{}", &arg,
+                          sizeof(arg), poolWrapper.get(), i, s.first.c_str()));
+            EXPECT_EQ(arg, i == used_bucket ? s.second : 0)
+                << "Failed for stat: " << s.first << "bucket: " << i;
+        }
+    }
+
+    const size_t n_allocations = 10; // Number of allocations
+
+    // Allocate memory
+    std::vector<void *> ptrs;
+    for (size_t i = 0; i < n_allocations; i++) {
+        void *ptr = umfPoolMalloc(poolWrapper.get(), alloc_size);
+        ASSERT_NE(ptr, nullptr);
+        ptrs.push_back(ptr);
+    }
+
+    stats = {
+        {"alloc_nr", 10ull},
+        {"alloc_pool_nr", 9ull},
+        {"free_nr", 0ull},
+        {"curr_slabs_in_use", 1ull},
+        {"curr_slabs_in_pool", 0ull},
+        {"max_slabs_in_use", 1ull},
+        {"max_slabs_in_pool", 0ull},
+    };
+
+    for (const auto &s : stats) {
+        ASSERT_SUCCESS(umfCtlGet("umf.pool.by_handle.{}.stats.{}", &arg,
+                                 sizeof(arg), poolWrapper.get(),
+                                 s.first.c_str()));
+        EXPECT_EQ(arg, s.second) << "Failed for stat: " << s.first;
+    }
+    for (size_t i = 0; i < count; i++) {
+        for (const auto &s : stats) {
+            ASSERT_SUCCESS(
+                umfCtlGet("umf.pool.by_handle.{}.buckets.{}.stats.{}", &arg,
+                          sizeof(arg), poolWrapper.get(), i, s.first.c_str()));
+            EXPECT_EQ(arg, i == used_bucket ? s.second : 0)
+                << "Failed for stat: " << s.first << "bucket: " << i;
+        }
+    }
+
+    // Free all memory
+    for (void *ptr : ptrs) {
+        ASSERT_SUCCESS(umfPoolFree(poolWrapper.get(), ptr));
+    }
+
+    stats = {
+        {"alloc_nr", 10ull},          {"alloc_pool_nr", 9ull},
+        {"free_nr", 10ull},           {"curr_slabs_in_use", 0ull},
+        {"curr_slabs_in_pool", 1ull}, {"max_slabs_in_use", 1ull},
+        {"max_slabs_in_pool", 1ull},
+    };
+
+    for (const auto &s : stats) {
+        ASSERT_SUCCESS(umfCtlGet("umf.pool.by_handle.{}.stats.{}", &arg,
+                                 sizeof(arg), poolWrapper.get(),
+                                 s.first.c_str()));
+        EXPECT_EQ(arg, s.second) << "Failed for stat: " << s.first;
+    }
+
+    for (size_t i = 0; i < count; i++) {
+        for (const auto &s : stats) {
+            ASSERT_SUCCESS(
+                umfCtlGet("umf.pool.by_handle.{}.buckets.{}.stats.{}", &arg,
+                          sizeof(arg), poolWrapper.get(), i, s.first.c_str()));
+            EXPECT_EQ(arg, i == used_bucket ? s.second : 0)
+                << "Failed for stat: " << s.first << "bucket: " << i;
+        }
+    }
+
+    // Clean up
+    ASSERT_SUCCESS(umfDisjointPoolParamsDestroy(params));
+    ASSERT_SUCCESS(umfOsMemoryProviderParamsDestroy(os_memory_provider_params));
+}
