@@ -568,6 +568,7 @@ static umf_result_t os_initialize(const void *params, void **provider) {
                                    0);
         LOG_ERR("HWLOC topology discovery failed");
         ret = UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
+        goto err_free_os_provider;
     }
 
     os_provider->fd_offset_map = critnib_new(NULL, NULL);
