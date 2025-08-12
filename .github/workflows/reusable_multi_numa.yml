@@ -15,7 +15,7 @@ env:
 jobs:
   multi_numa:
     # run only on upstream; forks will not have the HW
-    if: github.repository == 'oneapi-src/unified-memory-framework'
+    # if: github.repository == 'oneapi-src/unified-memory-framework'
     strategy:
       matrix:
         os: [ubuntu-22.04, rhel-9.1, sles-15]
