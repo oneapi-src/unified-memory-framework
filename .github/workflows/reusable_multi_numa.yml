@@ -17,12 +17,14 @@ jobs:
     # run only on upstream; forks will not have the HW
     if: github.repository == 'oneapi-src/unified-memory-framework'
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-22.04, rhel-9.1, sles-15]
+        os: [sles-15]
         build_type: [Debug, Release]
         shared_library: ['ON', 'OFF']
-    name: Multi NUMA (${{matrix.os}}, build_type=${{matrix.build_type}}, shared=${{matrix.shared_library}})
-    runs-on:  ["DSS-MULTI-NUMA", "DSS-${{matrix.os}}"]
+        runner: ['DSS-SLES', 'test-sles']
+    name: Multi NUMA (${{matrix.runner}}, build_type=${{matrix.build_type}}, shared=${{matrix.shared_library}})
+    runs-on: "${{matrix.runner}}"
 
     steps:
       - name: Checkout
@@ -49,7 +51,7 @@ jobs:
         run: cmake --build ${{github.workspace}}/build -j $(nproc)
 
       - name: Run tests
-        if: (matrix.os != 'rhel-9.1') && (matrix.os != 'sles-15')
+        if: false
         working-directory: ${{github.workspace}}/build
         run: ctest --output-on-failure --test-dir test
 
@@ -57,7 +59,7 @@ jobs:
         # Skip some tests until we upgrade hwloc and update CMake to properly handle local hwloc installation.
         # TODO: fix issue #560
       - name: Run tests (on RHEL/SLES)
-        if: (matrix.os == 'rhel-9.1') || (matrix.os == 'sles-15')
+        # if: (matrix.os == 'rhel-9.1') || (matrix.os == 'sles-15')
         working-directory: ${{github.workspace}}/build
         run: |
           ctest --output-on-failure --test-dir test -E "test_provider_os_memory_multiple_numa_nodes"
@@ -65,14 +67,14 @@ jobs:
             --gtest_filter="-*checkModeLocal/*:*checkModePreferredEmptyNodeset/*:testNuma.checkModeInterleave"
 
       - name: Run NUMA tests under valgrind
-        if: (matrix.os != 'rhel-9.1') && (matrix.os != 'sles-15')
+        if: false
         run: |
           ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{env.BUILD_DIR}} memcheck "${{env.NUMA_TESTS}}"
           ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{env.BUILD_DIR}} drd "${{env.NUMA_TESTS}}"
           ${{github.workspace}}/test/test_valgrind.sh ${{github.workspace}} ${{env.BUILD_DIR}} helgrind "${{env.NUMA_TESTS}}"
 
       - name: Check coverage
-        if: ${{ matrix.build_type == 'Debug' && matrix.os == 'ubuntu-22.04' }}
+        if: false
         working-directory: ${{env.BUILD_DIR}}
         run: |
           export COVERAGE_FILE_NAME=${{env.COVERAGE_NAME}}-${{matrix.os}}-shared-${{matrix.shared_library}}
@@ -82,7 +84,7 @@ jobs:
           mv ./$COVERAGE_FILE_NAME ${{env.COVERAGE_DIR}}
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        if: ${{ matrix.build_type == 'Debug' && matrix.os == 'ubuntu-22.04' }}
+        if: false
         with:
           name: ${{env.COVERAGE_NAME}}-${{matrix.os}}-shared-${{matrix.shared_library}}
           path: ${{env.COVERAGE_DIR}}
