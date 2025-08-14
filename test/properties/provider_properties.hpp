@@ -30,8 +30,8 @@ struct ProviderPropsTest : umf_test::test,
         test::SetUp();
 
         auto [create_fun, destroy_fun, name] = this->GetParam();
-        provider_create = create_fun;
-        provider_destroy = destroy_fun;
+        provider_create = std::move(create_fun);
+        provider_destroy = std::move(destroy_fun);
         (void)name; // unused
 
         provider_create(&provider, &data);
