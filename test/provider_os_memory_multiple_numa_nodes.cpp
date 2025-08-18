@@ -255,6 +255,7 @@ TEST_P(testNumaOnEachNode, checkModeInterleaveSingleNode) {
 
     constexpr int pages_num = 1024;
     size_t page_size = sysconf(_SC_PAGE_SIZE);
+    ASSERT_GT(page_size, 0);
     umf_result_t umf_result;
     umf_os_memory_provider_params_handle_t os_memory_provider_params = nullptr;
 
@@ -427,6 +428,7 @@ TEST_F(testNuma, checkModeDefault) {
 TEST_F(testNuma, checkModeInterleave) {
     constexpr int pages_num = 1024;
     size_t page_size = sysconf(_SC_PAGE_SIZE);
+    ASSERT_GT(page_size, 0);
     umf_result_t umf_result;
     umf_os_memory_provider_params_handle_t os_memory_provider_params = nullptr;
 
