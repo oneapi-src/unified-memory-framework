@@ -44,6 +44,7 @@ static umf_result_t CTL_READ_HANDLER(name)(void *ctx,
     disjoint_pool_t *pool = (disjoint_pool_t *)ctx;
 
     if (arg == NULL) {
+        LOG_ERR("arg is NULL");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -64,6 +65,7 @@ static umf_result_t CTL_WRITE_HANDLER(name)(void *ctx,
     (void)source, (void)indexes, (void)size;
     disjoint_pool_t *pool = (disjoint_pool_t *)ctx;
     if (arg == NULL) {
+        LOG_ERR("arg is NULL");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -81,6 +83,7 @@ CTL_READ_HANDLER(used_memory)(void *ctx, umf_ctl_query_source_t source,
     disjoint_pool_t *pool = (disjoint_pool_t *)ctx;
 
     if (arg == NULL || size != sizeof(size_t)) {
+        LOG_ERR("arg is NULL or size is not sizeof(size_t)");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -119,6 +122,7 @@ CTL_READ_HANDLER(reserved_memory)(void *ctx, umf_ctl_query_source_t source,
     disjoint_pool_t *pool = (disjoint_pool_t *)ctx;
 
     if (arg == NULL || size != sizeof(size_t)) {
+        LOG_ERR("arg is NULL or size is not sizeof(size_t)");
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -148,12 +152,178 @@ CTL_READ_HANDLER(reserved_memory)(void *ctx, umf_ctl_query_source_t source,
     return UMF_RESULT_SUCCESS;
 }
 
-static const umf_ctl_node_t CTL_NODE(stats)[] = {CTL_LEAF_RO(used_memory),
-                                                 CTL_LEAF_RO(reserved_memory)};
+static umf_result_t CTL_READ_HANDLER(count)(void *ctx,
+                                            umf_ctl_query_source_t source,
+                                            void *arg, size_t size,
+                                            umf_ctl_index_utlist_t *indexes) {
+    (void)source;
+
+    disjoint_pool_t *pool = (disjoint_pool_t *)ctx;
+    if (arg == NULL || size != sizeof(size_t)) {
+        LOG_ERR("arg is NULL or size is not sizeof(size_t)");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (*(size_t *)indexes->arg != SIZE_MAX) {
+        LOG_ERR("to read buckets' count, you must call it without bucket id");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    assert(pool);
+    *(size_t *)arg = pool->buckets_num;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+#define DEFINE_STATS_HANDLER(NAME, MEMBER)                                     \
+    static umf_result_t CTL_READ_HANDLER(NAME)(                                \
+        void *ctx, umf_ctl_query_source_t source, void *arg, size_t size,      \
+        umf_ctl_index_utlist_t *indexes) {                                     \
+        (void)source;                                                          \
+        (void)indexes;                                                         \
+        disjoint_pool_t *pool = (disjoint_pool_t *)ctx;                        \
+                                                                               \
+        if (arg == NULL || size != sizeof(size_t)) {                           \
+            LOG_ERR("arg is NULL or size is not sizeof(size_t)");              \
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;                          \
+        }                                                                      \
+                                                                               \
+        if (!pool->params.pool_trace) {                                        \
+            LOG_ERR("pool trace is disabled, cannot read " #NAME);             \
+            return UMF_RESULT_ERROR_NOT_SUPPORTED;                             \
+        }                                                                      \
+                                                                               \
+        size_t total = 0;                                                      \
+        for (size_t i = 0; i < pool->buckets_num; ++i) {                       \
+            bucket_t *bucket = pool->buckets[i];                               \
+            utils_mutex_lock(&bucket->bucket_lock);                            \
+            total += bucket->MEMBER;                                           \
+            utils_mutex_unlock(&bucket->bucket_lock);                          \
+        }                                                                      \
+                                                                               \
+        *(size_t *)arg = total;                                                \
+        return UMF_RESULT_SUCCESS;                                             \
+    }
+
+DEFINE_STATS_HANDLER(alloc_num, alloc_count)
+DEFINE_STATS_HANDLER(alloc_pool_num, alloc_pool_count)
+DEFINE_STATS_HANDLER(free_num, free_count)
+DEFINE_STATS_HANDLER(curr_slabs_in_use, curr_slabs_in_use)
+DEFINE_STATS_HANDLER(curr_slabs_in_pool, curr_slabs_in_pool)
+DEFINE_STATS_HANDLER(max_slabs_in_use, max_slabs_in_use)
+DEFINE_STATS_HANDLER(max_slabs_in_pool, max_slabs_in_pool)
+
+static const umf_ctl_node_t CTL_NODE(stats)[] = {
+    CTL_LEAF_RO(used_memory),        CTL_LEAF_RO(reserved_memory),
+    CTL_LEAF_RO(alloc_num),          CTL_LEAF_RO(alloc_pool_num),
+    CTL_LEAF_RO(free_num),           CTL_LEAF_RO(curr_slabs_in_use),
+    CTL_LEAF_RO(curr_slabs_in_pool), CTL_LEAF_RO(max_slabs_in_use),
+    CTL_LEAF_RO(max_slabs_in_pool),  CTL_NODE_END,
+};
+
+#undef DEFINE_STATS_HANDLER
+
+#ifdef UMF_DEVELOPER_MODE
+#define VALIDATE_BUCKETS_NAME(indexes)                                         \
+    if (strcmp("buckets", indexes->name) != 0) {                               \
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;                              \
+    }
+#else
+#define VALIDATE_BUCKETS_NAME(indexes)                                         \
+    do {                                                                       \
+    } while (0);
+#endif
+
+#define DEFINE_BUCKET_STATS_HANDLER(NAME, MEMBER)                              \
+    static umf_result_t CTL_READ_HANDLER(NAME, perBucket)(                     \
+        void *ctx, umf_ctl_query_source_t source, void *arg, size_t size,      \
+        umf_ctl_index_utlist_t *indexes) {                                     \
+        (void)source;                                                          \
+                                                                               \
+        disjoint_pool_t *pool = (disjoint_pool_t *)ctx;                        \
+        if (arg == NULL || size != sizeof(size_t)) {                           \
+            LOG_ERR("arg is NULL or size is not sizeof(size_t)");              \
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;                          \
+        }                                                                      \
+                                                                               \
+        VALIDATE_BUCKETS_NAME(indexes);                                        \
+        if (strcmp(#MEMBER, "size") != 0 && !pool->params.pool_trace) {        \
+            LOG_ERR("pool trace is disabled, cannot read " #NAME);             \
+            return UMF_RESULT_ERROR_NOT_SUPPORTED;                             \
+        }                                                                      \
+                                                                               \
+        size_t idx;                                                            \
+        idx = *(size_t *)indexes->arg;                                         \
+                                                                               \
+        if (idx >= pool->buckets_num) {                                        \
+            LOG_ERR("bucket id %zu is out of range [0, %zu)", idx,             \
+                    pool->buckets_num);                                        \
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;                          \
+        }                                                                      \
+                                                                               \
+        bucket_t *bucket = pool->buckets[idx];                                 \
+        *(size_t *)arg = bucket->MEMBER;                                       \
+                                                                               \
+        return UMF_RESULT_SUCCESS;                                             \
+    }
+
+DEFINE_BUCKET_STATS_HANDLER(alloc_num, alloc_count)
+DEFINE_BUCKET_STATS_HANDLER(alloc_pool_num, alloc_pool_count)
+DEFINE_BUCKET_STATS_HANDLER(free_num, free_count)
+DEFINE_BUCKET_STATS_HANDLER(curr_slabs_in_use, curr_slabs_in_use)
+DEFINE_BUCKET_STATS_HANDLER(curr_slabs_in_pool, curr_slabs_in_pool)
+DEFINE_BUCKET_STATS_HANDLER(max_slabs_in_use, max_slabs_in_use)
+DEFINE_BUCKET_STATS_HANDLER(max_slabs_in_pool, max_slabs_in_pool)
+
+static const umf_ctl_node_t CTL_NODE(stats, perBucket)[] = {
+    CTL_LEAF_RO(alloc_num, perBucket),
+    CTL_LEAF_RO(alloc_pool_num, perBucket),
+    CTL_LEAF_RO(free_num, perBucket),
+    CTL_LEAF_RO(curr_slabs_in_use, perBucket),
+    CTL_LEAF_RO(curr_slabs_in_pool, perBucket),
+    CTL_LEAF_RO(max_slabs_in_use, perBucket),
+    CTL_LEAF_RO(max_slabs_in_pool, perBucket),
+    CTL_NODE_END,
+};
+
+// Not a counter; but it is read exactly like other per-bucket stats, so we can use macro.
+DEFINE_BUCKET_STATS_HANDLER(size, size)
+
+#undef DEFINE_BUCKET_STATS_HANDLER
+
+static const umf_ctl_node_t CTL_NODE(buckets)[] = {
+    CTL_LEAF_RO(count), CTL_LEAF_RO(size, perBucket),
+    CTL_CHILD(stats, perBucket), CTL_NODE_END};
+
+static int bucket_id_parser(const void *arg, void *dest, size_t dest_size) {
+    size_t *out = (size_t *)dest;
+    assert(out);
+
+    if (arg == NULL) {
+        *out = SIZE_MAX;
+        return 1; // node n
+    }
+
+    int ret = ctl_arg_unsigned(arg, dest, dest_size);
+    if (ret) {
+        *out = SIZE_MAX;
+        return 1;
+    }
+
+    return 0;
+}
+
+static const struct ctl_argument CTL_ARG(buckets) = {
+    sizeof(size_t),
+    {{0, sizeof(size_t), CTL_ARG_TYPE_UNSIGNED_LONG_LONG, bucket_id_parser},
+     CTL_ARG_PARSER_END}};
 
 static void initialize_disjoint_ctl(void) {
     CTL_REGISTER_MODULE(&disjoint_ctl_root, stats);
-    //    CTL_REGISTER_MODULE(&disjoint_ctl_root, name);
+    CTL_REGISTER_MODULE(&disjoint_ctl_root, buckets);
+    // TODO: this is hack. Need some way to register module as node with argument
+    disjoint_ctl_root.root[disjoint_ctl_root.first_free - 1].arg =
+        &CTL_ARG(buckets);
 }
 
 umf_result_t disjoint_pool_ctl(void *hPool,
