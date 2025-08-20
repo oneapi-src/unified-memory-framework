@@ -262,7 +262,9 @@ static const umf_ctl_node_t CTL_NODE(stats)[] = {
         }                                                                      \
                                                                                \
         bucket_t *bucket = pool->buckets[idx];                                 \
+        utils_mutex_lock(&bucket->bucket_lock);                                \
         *(size_t *)arg = bucket->MEMBER;                                       \
+        utils_mutex_unlock(&bucket->bucket_lock);                              \
                                                                                \
         return UMF_RESULT_SUCCESS;                                             \
     }
