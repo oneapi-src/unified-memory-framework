@@ -876,9 +876,7 @@ static umf_result_t coarse_get_stats_no_lock(coarse_t *coarse,
 // PUBLIC API
 
 umf_result_t coarse_new(coarse_params_t *coarse_params, coarse_t **pcoarse) {
-#ifdef _WIN32
-    utils_init_once(&Log_initialized, utils_log_init);
-#endif /* _WIN32 */
+    utils_log_init();
 
     if (coarse_params == NULL || pcoarse == NULL) {
         LOG_ERR("coarse parameters or handle is missing");

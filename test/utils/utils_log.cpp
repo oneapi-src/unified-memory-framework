@@ -97,6 +97,7 @@ int mock_strerror_windows(char *buff, size_t s, int errnum) {
 
 extern "C" {
 #define DISABLE_CTL_LOGGER 1
+#define DISABLE_SINGLE_LOGGER 1
 const char *env_variable = "";
 #define fopen(A, B) mock_fopen(A, B)
 #define fputs(A, B) mock_fputs(A, B)
@@ -161,8 +162,8 @@ TEST_F(test, parseEnv_errors) {
     helper_checkConfig(&b, &loggerConfig);
     helper_log_init("_level:debug");
     helper_checkConfig(&b, &loggerConfig);
-    expected_message =
-        "[ERROR UMF] utils_log_init: Cannot open output file - path too long\n";
+    expected_message = "[ERROR UMF] utils_log_init_once: Cannot open output "
+                       "file - path too long\n";
     std::string test_env = "output:file," + std::string(300, 'x');
     helper_log_init(test_env.c_str());
 }
@@ -247,7 +248,8 @@ TEST_F(test, parseEnv) {
                             expect_fput_count = 1;
                             if (expected_filename.size() > MAX_FILE_PATH) {
                                 expected_message =
-                                    "[ERROR UMF] utils_log_init: Cannot open "
+                                    "[ERROR UMF] utils_log_init_once: Cannot "
+                                    "open "
                                     "output file - path too long\n";
                             }
                         }
