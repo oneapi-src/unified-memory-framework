@@ -22,13 +22,6 @@
 #include "utils_concurrency.h"
 #include "utils_log.h"
 
-#ifdef _WIN32
-UTIL_ONCE_FLAG Log_initialized = UTIL_ONCE_FLAG_INIT;
-#else
-void __attribute__((constructor)) coarse_init(void) { utils_log_init(); }
-void __attribute__((destructor)) coarse_destroy(void) {}
-#endif /* _WIN32 */
-
 typedef struct coarse_t {
     // handle of the memory provider
     void *provider;
