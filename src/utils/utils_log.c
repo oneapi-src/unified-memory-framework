@@ -66,11 +66,11 @@ typedef struct {
     utils_log_level_t level;
     utils_log_level_t flushLevel;
     FILE *output;
-    const char *file_name;
+    char file_name[MAX_FILE_PATH];
 } utils_log_config_t;
 
 utils_log_config_t loggerConfig = {false,     false, LOG_ERROR,
-                                   LOG_ERROR, NULL,  NULL};
+                                   LOG_ERROR, NULL,  ""};
 
 static const char *level_to_str(utils_log_level_t l) {
     switch (l) {
@@ -257,10 +257,10 @@ void utils_log_init(void) {
     const char *arg;
     if (utils_parse_var(envVar, "output:stdout", NULL)) {
         loggerConfig.output = stdout;
-        loggerConfig.file_name = "stdout";
+        strncpy(loggerConfig.file_name, "stdout", MAX_FILE_PATH);
     } else if (utils_parse_var(envVar, "output:stderr", NULL)) {
         loggerConfig.output = stderr;
-        loggerConfig.file_name = "stderr";
+        strncpy(loggerConfig.file_name, "stderr", MAX_FILE_PATH);
     } else if (utils_parse_var(envVar, "output:file", &arg)) {
         loggerConfig.output = NULL;
         const char *argEnd = strstr(arg, ";");
@@ -289,7 +289,9 @@ void utils_log_init(void) {
             loggerConfig.output = NULL;
             return;
         }
-        loggerConfig.file_name = file;
+        strncpy(loggerConfig.file_name, file, MAX_FILE_PATH - 1);
+        loggerConfig.file_name[MAX_FILE_PATH - 1] =
+            '\0'; // ensure null-termination
     } else {
         loggerConfig.output = stderr;
         LOG_ERR("Logging output not set - logging disabled (UMF_LOG = \"%s\")",
@@ -506,17 +508,29 @@ static umf_result_t CTL_READ_HANDLER(output)(void *ctx,
     /* suppress unused-parameter errors */
     (void)source, (void)indexes, (void)ctx;
 
-    const char **arg_out = (const char **)arg;
-    if (arg_out == NULL || size < sizeof(const char *)) {
+    char *arg_out = (char *)arg;
+    if (arg_out == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
     if (loggerConfig.output == NULL) {
-        *arg_out = "disabled";
+        const char disabled[] = "disabled";
+        if (size < sizeof(disabled)) {
+            LOG_ERR("Invalid output argument size: %zu, expected at least %zu",
+                    size, sizeof(disabled));
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        }
+
+        strncpy(arg_out, disabled, size);
         return UMF_RESULT_SUCCESS;
     }
+    if (size < strlen(loggerConfig.file_name)) {
+        LOG_ERR("Invalid output argument size: %zu, expected at least %zu",
+                size, strlen(loggerConfig.file_name));
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
 
-    *arg_out = loggerConfig.file_name;
+    strncpy(arg_out, loggerConfig.file_name, size);
     return UMF_RESULT_SUCCESS;
 }
 
@@ -525,16 +539,13 @@ static umf_result_t CTL_WRITE_HANDLER(output)(void *ctx,
                                               void *arg, size_t size,
                                               umf_ctl_index_utlist_t *indexes) {
     /* suppress unused-parameter errors */
-    (void)source, (void)indexes, (void)ctx;
+    (void)source, (void)indexes, (void)ctx, (void)size;
 
-    const char *arg_in = *(const char **)arg;
-    if (size < sizeof(const char *)) {
-        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-    }
+    const char *arg_in = (const char *)arg;
 
     FILE *oldHandle = loggerConfig.output;
     const char *oldName =
-        loggerConfig.file_name ? loggerConfig.file_name : "disabled";
+        *loggerConfig.file_name == '\0' ? loggerConfig.file_name : "disabled";
 
     if (arg_in == NULL) {
         if (loggerConfig.output) {
@@ -543,7 +554,7 @@ static umf_result_t CTL_WRITE_HANDLER(output)(void *ctx,
                 fclose(oldHandle);
             }
             loggerConfig.output = NULL;
-            loggerConfig.file_name = NULL;
+            loggerConfig.file_name[0] = '\0';
         }
         return UMF_RESULT_SUCCESS;
     }
@@ -552,16 +563,18 @@ static umf_result_t CTL_WRITE_HANDLER(output)(void *ctx,
 
     if (strcmp(arg_in, "stdout") == 0) {
         newHandle = stdout;
-        loggerConfig.file_name = "stdout";
+        strncpy(loggerConfig.file_name, "stdout", MAX_FILE_PATH);
     } else if (strcmp(arg_in, "stderr") == 0) {
         newHandle = stderr;
-        loggerConfig.file_name = "stderr";
+        strncpy(loggerConfig.file_name, "stderr", MAX_FILE_PATH);
     } else {
         newHandle = fopen(arg_in, "a");
         if (!newHandle) {
             return UMF_RESULT_ERROR_INVALID_ARGUMENT;
         }
-        loggerConfig.file_name = arg_in;
+        strncpy(loggerConfig.file_name, arg_in, MAX_FILE_PATH - 1);
+        loggerConfig.file_name[MAX_FILE_PATH - 1] =
+            '\0'; // ensure null-termination
     }
 
     loggerConfig.output = newHandle;
