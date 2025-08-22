@@ -414,21 +414,23 @@ TEST_F(test, ctl_logger_basic_rw) {
         UMF_RESULT_SUCCESS);
     EXPECT_EQ(flush_get, 2);
 
-    const char *out_name = "stdout";
-    ASSERT_EQ(umfCtlSet("umf.logger.output", &out_name, sizeof(out_name)),
-              UMF_RESULT_SUCCESS);
-    const char *out_get = NULL;
-    ASSERT_EQ(umfCtlGet("umf.logger.output", &out_get, sizeof(out_get)),
+    const char out_name[] = "stdout";
+    ASSERT_EQ(
+        umfCtlSet("umf.logger.output", (void *)out_name, sizeof(out_name)),
+        UMF_RESULT_SUCCESS);
+    const char out_get[256] = "";
+    ASSERT_EQ(umfCtlGet("umf.logger.output", (void *)out_get, sizeof(out_get)),
               UMF_RESULT_SUCCESS);
     EXPECT_STREQ(out_get, "stdout");
 }
 
 TEST_F(test, ctl_logger_output_file) {
-    const char *file_name = "ctl_log.txt";
-    ASSERT_EQ(umfCtlSet("umf.logger.output", &file_name, sizeof(file_name)),
-              UMF_RESULT_SUCCESS);
-    const char *out_get = NULL;
-    ASSERT_EQ(umfCtlGet("umf.logger.output", &out_get, sizeof(out_get)),
+    const char file_name[] = "ctl_log.txt";
+    ASSERT_EQ(
+        umfCtlSet("umf.logger.output", (void *)file_name, sizeof(file_name)),
+        UMF_RESULT_SUCCESS);
+    const char out_get[256] = "";
+    ASSERT_EQ(umfCtlGet("umf.logger.output", (void *)out_get, sizeof(out_get)),
               UMF_RESULT_SUCCESS);
     EXPECT_STREQ(out_get, file_name);
 }
