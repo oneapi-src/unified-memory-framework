@@ -1,0 +1,37 @@
+;;;; Begin Copyright Notice
+; Copyright (C) 2025 Intel Corporation
+; Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
+; SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+;;;;  End Copyright Notice
+
+LIBRARY UMF_ZE_LOOPBACK
+
+EXPORTS
+	level_zero_mock
+        zeInit
+        zeDriverGet
+        zeDeviceGet
+        zeDeviceGetProperties
+        zeContextCreate
+        zeContextDestroy
+        zeCommandQueueCreate
+        zeCommandQueueDestroy
+        zeCommandQueueExecuteCommandLists
+        zeCommandQueueSynchronize
+        zeCommandListCreate
+        zeCommandListDestroy
+        zeCommandListClose
+        zeCommandListAppendMemoryCopy
+        zeCommandListAppendMemoryFill
+        zeContextMakeMemoryResident
+        zeMemGetAllocProperties
+        zeMemAllocDevice
+        zeMemAllocHost
+        zeMemAllocShared
+        zeMemFree
+        zeMemFreeExt
+        zeMemGetIpcHandle
+        zeMemPutIpcHandle
+        zeMemOpenIpcHandle
+        zeMemCloseIpcHandle
+        zeDeviceGetMemoryProperties

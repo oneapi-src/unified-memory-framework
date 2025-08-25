@@ -35,6 +35,10 @@ int critnib_insert(critnib *c, uintptr_t key, void *value, int update);
 void critnib_iter(critnib *c, uintptr_t min, uintptr_t max,
                   int (*func)(uintptr_t key, void *value, void *privdata),
                   void *privdata);
+void critnib_iter_all(critnib *c,
+                      int (*func)(uintptr_t key, void *value, void *privdata),
+                      void *privdata);
+
 int critnib_remove_release(critnib *c, uintptr_t key);
 
 /*

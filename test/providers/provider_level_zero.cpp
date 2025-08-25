@@ -204,19 +204,35 @@ TEST_F(LevelZeroProviderInit, FailNonNullDevice) {
     umfLevelZeroMemoryProviderParamsDestroy(hParams);
 }
 
-TEST_F(test, FailMismatchedResidentHandlesCount) {
+static void
+invalidResidentDevicesHandlesTestHelper(ze_device_handle_t *hDevices,
+                                        uint32_t deviceCount) {
     const umf_memory_provider_ops_t *ops = umfLevelZeroMemoryProviderOps();
     ASSERT_NE(ops, nullptr);
 
     umf_level_zero_memory_provider_params_handle_t hParams = nullptr;
-    umf_result_t result = umfLevelZeroMemoryProviderParamsCreate(&hParams);
-    ASSERT_EQ(result, UMF_RESULT_SUCCESS);
+    const umf_result_t create_result =
+        umfLevelZeroMemoryProviderParamsCreate(&hParams);
+    ASSERT_EQ(create_result, UMF_RESULT_SUCCESS);
 
-    result = umfLevelZeroMemoryProviderParamsSetResidentDevices(hParams,
-                                                                nullptr, 99);
-    ASSERT_EQ(result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    const umf_result_t set_resident_result =
+        umfLevelZeroMemoryProviderParamsSetResidentDevices(hParams, hDevices,
+                                                           deviceCount);
+    ASSERT_EQ(set_resident_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 
     umfLevelZeroMemoryProviderParamsDestroy(hParams);
+}
+
+TEST_F(test, FailMismatchedResidentHandlesCount) {
+    invalidResidentDevicesHandlesTestHelper(nullptr, 99);
+}
+
+TEST_F(test, FailRedundantResidentDeviceHandles) {
+    std::vector<ze_device_handle_t> hDevices{
+        reinterpret_cast<ze_device_handle_t>(0x100),
+        reinterpret_cast<ze_device_handle_t>(0x101),
+        reinterpret_cast<ze_device_handle_t>(0x100)};
+    invalidResidentDevicesHandlesTestHelper(hDevices.data(), 3);
 }
 
 class LevelZeroMemoryAccessor : public MemoryAccessor {

@@ -143,8 +143,16 @@ for test in $TESTS; do
 	./test/test_memspace_highest_capacity)
 		FILTER='--gtest_filter="-*highestCapacityVerify*"'
 		;;
+	./test/test_pool_residency)
+		echo "- SKIPPED"
+		continue; # TODO: set UMF_ZE_LOADER_LIB_NAME as ctest does
+		;;
 	./test/test_provider_os_memory_multiple_numa_nodes)
 		FILTER='--gtest_filter="-testNuma.checkModeInterleave*:testNumaNodesAllocations/testNumaOnEachNode.checkNumaNodesAllocations*:testNumaNodesAllocations/testNumaOnEachNode.checkModePreferred*:testNumaNodesAllocations/testNumaOnEachNode.checkModeInterleaveSingleNode*:testNumaNodesAllocationsAllCpus/testNumaOnEachCpu.checkModePreferredEmptyNodeset*:testNumaNodesAllocationsAllCpus/testNumaOnEachCpu.checkModeLocal*"'
+		;;
+	./test/test_provider_level_zero_residency)
+		echo "- SKIPPED"
+		continue; # TODO: set UMF_ZE_LOADER_LIB_NAME as ctest does
 		;;
 	./test/test_memspace_highest_bandwidth)
 		FILTER='--gtest_filter="-*allocLocalMt*"'
