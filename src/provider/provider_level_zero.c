@@ -954,6 +954,7 @@ static umf_memory_provider_ops_t UMF_LEVEL_ZERO_MEMORY_PROVIDER_OPS = {
         ze_memory_provider_get_allocation_properties,
     .ext_get_allocation_properties_size =
         ze_memory_provider_get_allocation_properties_size,
+    .ext_post_initialize = NULL,
 };
 
 const umf_memory_provider_ops_t *umfLevelZeroMemoryProviderOps(void) {
