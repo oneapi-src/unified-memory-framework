@@ -13,8 +13,6 @@
 #include "utils_concurrency.h"
 #include "utils_load_library.h"
 
-#include "ze_api.h"
-
 struct libze_ops {
     ze_result_t (*zeInit)(ze_init_flags_t flags);
     ze_result_t (*zeDriverGet)(uint32_t *pCount, ze_driver_handle_t *phDrivers);

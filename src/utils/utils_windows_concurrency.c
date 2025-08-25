@@ -36,7 +36,7 @@ int utils_mutex_unlock(utils_mutex_t *mutex) {
     return 0;
 }
 
-utils_rwlock_t *utils_rwlock_init(utils_rwlock_t *rwlock) {
+int utils_rwlock_init(utils_rwlock_t *rwlock) {
     InitializeSRWLock(&rwlock->lock);
     return 0; // never fails
 }
@@ -46,24 +46,20 @@ void utils_rwlock_destroy_not_free(utils_rwlock_t *rwlock) {
     (void)rwlock;
 }
 
-int utils_read_lock(utils_rwlock_t *rwlock) {
-    AcquireSRWLockShared(&rwlock->lock);
-    return 0; // never fails
+void utils_read_lock(utils_rwlock_t *rwlock) {
+    AcquireSRWLockShared(&rwlock->lock); // never fails
 }
 
-int utils_write_lock(utils_rwlock_t *rwlock) {
-    AcquireSRWLockExclusive(&rwlock->lock);
-    return 0; // never fails
+void utils_write_lock(utils_rwlock_t *rwlock) {
+    AcquireSRWLockExclusive(&rwlock->lock); // never fails
 }
 
-int utils_read_unlock(utils_rwlock_t *rwlock) {
-    ReleaseSRWLockShared(&rwlock->lock);
-    return 0; // never fails
+void utils_read_unlock(utils_rwlock_t *rwlock) {
+    ReleaseSRWLockShared(&rwlock->lock); // never fails
 }
 
-int utils_write_unlock(utils_rwlock_t *rwlock) {
-    ReleaseSRWLockExclusive(&rwlock->lock);
-    return 0; // never fails
+void utils_write_unlock(utils_rwlock_t *rwlock) {
+    ReleaseSRWLockExclusive(&rwlock->lock); // never fails
 }
 
 static BOOL CALLBACK initOnceCb(PINIT_ONCE InitOnce, PVOID Parameter,

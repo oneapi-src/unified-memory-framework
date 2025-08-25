@@ -46,32 +46,43 @@ void utils_init_once(UTIL_ONCE_FLAG *flag, void (*oneCb)(void)) {
     pthread_once(flag, oneCb);
 }
 
-utils_rwlock_t *utils_rwlock_init(utils_rwlock_t *ptr) {
+int utils_rwlock_init(utils_rwlock_t *ptr) {
     pthread_rwlock_t *rwlock = (pthread_rwlock_t *)ptr;
-    int ret = pthread_rwlock_init(rwlock, NULL);
-    return ret == 0 ? ((utils_rwlock_t *)rwlock) : NULL;
+    return pthread_rwlock_init(rwlock, NULL);
 }
 
 void utils_rwlock_destroy_not_free(utils_rwlock_t *ptr) {
     pthread_rwlock_t *rwlock = (pthread_rwlock_t *)ptr;
-    int ret = pthread_rwlock_destroy(rwlock);
-    if (ret) {
-        LOG_ERR("pthread_rwlock_destroy failed");
+    if (pthread_rwlock_destroy(rwlock) != 0) {
+        LOG_FATAL("pthread_rwlock_destroy failed");
+        abort();
     }
 }
 
-int utils_read_lock(utils_rwlock_t *rwlock) {
-    return pthread_rwlock_rdlock((pthread_rwlock_t *)rwlock);
+void utils_read_lock(utils_rwlock_t *rwlock) {
+    if (pthread_rwlock_rdlock((pthread_rwlock_t *)rwlock) != 0) {
+        LOG_FATAL("pthread_rwlock_rdlock failed");
+        abort();
+    }
 }
 
-int utils_write_lock(utils_rwlock_t *rwlock) {
-    return pthread_rwlock_wrlock((pthread_rwlock_t *)rwlock);
+void utils_write_lock(utils_rwlock_t *rwlock) {
+    if (pthread_rwlock_wrlock((pthread_rwlock_t *)rwlock) != 0) {
+        LOG_FATAL("pthread_rwlock_wrlock failed");
+        abort();
+    }
 }
 
-int utils_read_unlock(utils_rwlock_t *rwlock) {
-    return pthread_rwlock_unlock((pthread_rwlock_t *)rwlock);
+void utils_read_unlock(utils_rwlock_t *rwlock) {
+    if (pthread_rwlock_unlock((pthread_rwlock_t *)rwlock) != 0) {
+        LOG_FATAL("pthread_rwlock_unlock failed");
+        abort();
+    }
 }
 
-int utils_write_unlock(utils_rwlock_t *rwlock) {
-    return pthread_rwlock_unlock((pthread_rwlock_t *)rwlock);
+void utils_write_unlock(utils_rwlock_t *rwlock) {
+    if (pthread_rwlock_unlock((pthread_rwlock_t *)rwlock) != 0) {
+        LOG_FATAL("pthread_rwlock_unlock failed");
+        abort();
+    }
 }
