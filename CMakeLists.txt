@@ -280,7 +280,8 @@ if(UMF_LINK_HWLOC_STATICALLY)
     endif()
 
     message(
-        STATUS "Will fetch hwloc from ${UMF_HWLOC_REPO} (tag: ${UMF_HWLOC_TAG})"
+        STATUS
+            "Will fetch hwloc from ${UMF_HWLOC_REPO} (tag: ${UMF_HWLOC_TAG}) and link it statically"
     )
 
     if(WINDOWS)
@@ -309,6 +310,14 @@ if(UMF_LINK_HWLOC_STATICALLY)
         set(LIBHWLOC_INCLUDE_DIRS ${hwloc_targ_BINARY_DIR}/include)
         set(LIBHWLOC_FOUND TRUE)
     else() # not Windows
+        find_program(AUTORECONF_EXECUTABLE autoreconf)
+        if(NOT AUTORECONF_EXECUTABLE)
+            message(
+                FATAL_ERROR
+                    "autoreconf is not installed, but it's needed in hwloc configure step. "
+                    "Either install it, or set UMF_LINK_HWLOC_STATICALLY=OFF and install hwloc >= 2.3.0 in your system."
+            )
+        endif()
         FetchContent_Declare(
             hwloc_targ
             GIT_REPOSITORY ${UMF_HWLOC_REPO}
