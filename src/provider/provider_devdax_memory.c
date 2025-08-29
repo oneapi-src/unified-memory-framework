@@ -589,6 +589,13 @@ static umf_result_t devdax_free(void *provider, void *ptr, size_t size) {
     return ret;
 }
 
+static umf_result_t devdax_post_initialize(void *provider) {
+    (void)provider;
+    assert(provider);
+    // For initial version, just return success
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_memory_provider_ops_t UMF_DEVDAX_MEMORY_PROVIDER_OPS = {
     .version = UMF_PROVIDER_OPS_VERSION_CURRENT,
     .initialize = devdax_initialize,
@@ -608,7 +615,8 @@ static umf_memory_provider_ops_t UMF_DEVDAX_MEMORY_PROVIDER_OPS = {
     .ext_put_ipc_handle = devdax_put_ipc_handle,
     .ext_open_ipc_handle = devdax_open_ipc_handle,
     .ext_close_ipc_handle = devdax_close_ipc_handle,
-    .ext_ctl = devdax_ctl};
+    .ext_ctl = devdax_ctl,
+    .ext_post_initialize = devdax_post_initialize};
 
 const umf_memory_provider_ops_t *umfDevDaxMemoryProviderOps(void) {
     return &UMF_DEVDAX_MEMORY_PROVIDER_OPS;

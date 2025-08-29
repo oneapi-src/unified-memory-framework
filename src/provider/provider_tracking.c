@@ -959,6 +959,13 @@ static umf_result_t trackingInitialize(const void *params, void **ret) {
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t trackingPostInitialize(void *provider) {
+    (void)provider;
+    assert(provider);
+    // For initial version, just return success
+    return UMF_RESULT_SUCCESS;
+}
+
 #ifndef NDEBUG
 static void check_if_tracker_is_empty(umf_memory_tracker_handle_t hTracker,
                                       umf_memory_pool_handle_t pool) {
@@ -1358,7 +1365,7 @@ umf_memory_provider_ops_t UMF_TRACKING_MEMORY_PROVIDER_OPS = {
     .ext_ctl = NULL,
     .ext_get_allocation_properties = trackingGetAllocationProperties,
     .ext_get_allocation_properties_size = trackingGetAllocationPropertiesSize,
-};
+    .ext_post_initialize = trackingPostInitialize};
 
 static void free_ipc_cache_value(void *unused, void *ipc_cache_value) {
     (void)unused;
