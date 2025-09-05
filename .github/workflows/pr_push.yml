@@ -47,7 +47,6 @@ jobs:
       provider: "LEVEL_ZERO"
       runner: "L0-BMG"
       shared_lib: "['ON']"
-      os: "['Ubuntu']"
   CUDA:
     needs: [Build]
     uses: ./.github/workflows/reusable_gpu.yml
