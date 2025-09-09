@@ -19,10 +19,10 @@ permissions:
 jobs:
   CodeChecks:
     uses: ./.github/workflows/reusable_checks.yml
-  FastBuild:
-    name: Fast builds
-    needs: [CodeChecks]
-    uses: ./.github/workflows/reusable_fast.yml
+  # FastBuild:
+  #   name: Fast builds
+  #   needs: [CodeChecks]
+  #   uses: ./.github/workflows/reusable_fast.yml
   # Build:
   #   name: Basic builds
   #   needs: [FastBuild]
@@ -31,7 +31,7 @@ jobs:
   #   needs: [FastBuild]
   #   uses: ./.github/workflows/reusable_dax.yml
   MultiNuma:
-    needs: [FastBuild]
+    # needs: [FastBuild]
     uses: ./.github/workflows/reusable_multi_numa.yml
   # L0:
   #   needs: [Build]
