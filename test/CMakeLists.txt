@@ -11,20 +11,27 @@ if(CMAKE_C_COMPILER_ID STREQUAL "IntelLLVM")
     add_link_options(-static-intel)
 endif()
 
-include(FetchContent)
-FetchContent_Declare(
-    googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG v1.15.2)
+set(GTEST_VER 1.15.2)
 
-# For Windows: Prevent overriding the parent project's compiler/linker settings
-set(gtest_force_shared_crt
-    ON
-    CACHE BOOL "" FORCE)
-set(INSTALL_GTEST
-    OFF
-    CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
+find_package(GTest ${GTEST_VER} QUIET)
+
+if(NOT GTest_FOUND)
+    include(FetchContent)
+    FetchContent_Declare(
+        googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG v${GTEST_VER})
+
+    # For Windows: Prevent overriding the parent project's compiler/linker
+    # settings
+    set(gtest_force_shared_crt
+        ON
+        CACHE BOOL "" FORCE)
+    set(INSTALL_GTEST
+        OFF
+        CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(googletest)
+endif()
 enable_testing()
 
 set(UMF_TEST_DIR ${CMAKE_CURRENT_SOURCE_DIR})

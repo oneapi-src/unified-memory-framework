@@ -128,7 +128,7 @@ static void ba_divide_memory_into_chunks(umf_ba_pool_t *pool, void *ptr,
     current_chunk->next = NULL;
     pool->metadata.free_list = ptr; // address of the first chunk
 
-    // mark the memory as unaccessible again
+    // mark the memory as inaccessible again
     utils_annotate_memory_inaccessible(ptr, size);
 }
 

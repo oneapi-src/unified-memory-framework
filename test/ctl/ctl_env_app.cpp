@@ -41,6 +41,32 @@ static int test_env_defaults(int argc, char **argv) {
     return 0;
 }
 
+static int test_logger(int argc, char **argv) {
+    char buf[256] = {0};
+    int level = 0;
+
+    if (argc != 2) {
+        std::cerr << "expected two arguments" << std::endl;
+        std::cerr << "Usage: logger log_output log_level" << std::endl;
+        return 1;
+    }
+    umfCtlGet("umf.logger.output", buf, sizeof(buf));
+    if (strcmp(buf, argv[0]) != 0) {
+        std::cerr << "Expected log_output to be '" << argv[0] << "', but got '"
+                  << buf << "'" << std::endl;
+        return 1;
+    }
+
+    umfCtlGet("umf.logger.level", &level, sizeof(level));
+    if (level != atoi(argv[1])) {
+        std::cerr << "Expected log_level to be '" << argv[1] << "', but got '"
+                  << level << "'" << std::endl;
+        return 1;
+    }
+
+    return 0;
+}
+
 int main(int argc, char **argv) {
     if (argc < 2) {
         std::cerr << "Usage: " << argv[0] << " <test_name> args..."
@@ -52,6 +78,10 @@ int main(int argc, char **argv) {
     argv += 2;
     if (strcmp(test_name, "env_defaults") == 0) {
         return test_env_defaults(argc, argv);
+    }
+
+    if (strcmp(test_name, "logger") == 0) {
+        return test_logger(argc, argv);
     }
     return 1;
 }

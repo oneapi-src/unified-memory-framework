@@ -198,11 +198,13 @@ error_parsing:
  *    structure as required by the node callback
  */
 static void *ctl_query_get_real_args(const umf_ctl_node_t *n, void *write_arg,
-                                     umf_ctl_query_source_t source) {
+                                     umf_ctl_query_source_t source,
+                                     size_t *size) {
     void *real_arg = NULL;
     switch (source) {
     case CTL_QUERY_CONFIG_INPUT:
         real_arg = ctl_parse_args(n->arg, write_arg);
+        *size = n->arg->dest_size;
         break;
     case CTL_QUERY_PROGRAMMATIC:
         real_arg = write_arg;
@@ -251,7 +253,7 @@ static umf_result_t ctl_exec_query_write(void *ctx, const umf_ctl_node_t *n,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
-    void *real_arg = ctl_query_get_real_args(n, arg, source);
+    void *real_arg = ctl_query_get_real_args(n, arg, source, &size);
     if (real_arg == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }

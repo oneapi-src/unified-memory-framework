@@ -313,7 +313,7 @@ typedef struct by_name_arg_t {
 } by_name_arg_t;
 
 // parses optional size_t argument. if arg is not integer then sets out to size_max
-int by_name_index_parser(const void *arg, void *dest, size_t dest_size) {
+static int by_name_index_parser(const void *arg, void *dest, size_t dest_size) {
     size_t *out = (size_t *)dest;
 
     if (arg == NULL) {

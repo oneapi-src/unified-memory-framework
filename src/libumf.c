@@ -56,6 +56,13 @@ void initialize_ctl(void) {
     }
 }
 
+// Benchmarks may fork multiple times and topology init is slow.
+// Init topology before fork (if not already) so children don't repeat it.
+// TODO: This is a hack. Better solution is needed.
+#if !defined(_WIN32) && !defined(UMF_NO_HWLOC)
+static void atfork_prepare(void) { umfGetTopologyReduced(); }
+#endif
+
 umf_result_t umfInit(void) {
     utils_init_once(&initMutexOnce, initialize_init_mutex);
 
@@ -91,11 +98,11 @@ umf_result_t umfInit(void) {
     if (TRACKER) {
         LOG_DEBUG("UMF library initialized");
     }
-#if !defined(UMF_NO_HWLOC)
-    // some benchmarks uses multiple forks, and topology initialization is very slow
-    // so if we initialize topology before the first fork, we can get significant performance gain.
-    umfGetTopologyReduced();
+
+#if !defined(_WIN32) && !defined(UMF_NO_HWLOC)
+    pthread_atfork(atfork_prepare, NULL, NULL);
 #endif
+
     return UMF_RESULT_SUCCESS;
 }
 
