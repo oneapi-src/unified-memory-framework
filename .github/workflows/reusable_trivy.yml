@@ -21,7 +21,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run Trivy
-        uses: aquasecurity/trivy-action@dc5a429b52fcf669ce959baa2c2dd26090d2a6c4 # v0.32.0
+        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # v0.33.1
         with:
           scan-type: 'config'
           hide-progress: false
@@ -38,6 +38,6 @@ jobs:
           cat trivy-results.sarif
 
       - name: Upload results
-        uses: github/codeql-action/upload-sarif@76621b61decf072c1cee8dd1ce2d2a82d33c17ed # v3.29.5
+        uses: github/codeql-action/upload-sarif@f1f6e5f6af878fb37288ce1c627459e94dbf7d01 # v3.29.5
         with:
           sarif_file: 'trivy-results.sarif'

@@ -121,3 +121,8 @@ TEST_F(test, ctl_env_plus_file) {
               "opt_two_value2", "umf.pool.default.test_pool.opt_three",
               "second"});
 }
+
+TEST_F(test, ctl_env_logger) {
+    run_case({{"UMF_CONF", "umf.logger.output=stdout;umf.logger.level=0"}},
+             {"logger", "stdout", "0"});
+}

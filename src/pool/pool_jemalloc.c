@@ -128,7 +128,7 @@ static void *arena_extent_alloc(extent_hooks_t *extent_hooks, void *new_addr,
 
 #ifndef __SANITIZE_ADDRESS__
     // jemalloc might write to new extents in realloc, so we cannot
-    // mark them as unaccessible under asan
+    // mark them as inaccessible under asan
     utils_annotate_memory_inaccessible(ptr, size);
 #endif
 
