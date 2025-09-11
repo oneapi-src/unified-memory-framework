@@ -66,3 +66,14 @@ processes: a producer and a consumer that communicate in the following way
 - Producer puts the IPC handle
 - Consumer shuts down
 - Producer shuts down
+
+## CTL example
+
+This example demonstrates how to add CTL support to a custom memory
+provider. It sets variables ``a`` and ``b`` through CTL, plus it allows
+for the modulus ``m`` loaded from the environment or a configuration file.
+Addition and subtraction operations return results modulo ``m`` and the
+result ``c`` can be retrieved using the CTL API. For example, to set the
+modulus through an environment variable run::
+
+  UMF_CONF="umf.provider.default.ctl.m=10" ./umf_example_ctl

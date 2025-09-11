@@ -273,6 +273,42 @@ if(LINUX)
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
     endif()
 
+    set(EXAMPLE_NAME umf_example_ctl)
+
+    add_umf_executable(
+        NAME ${EXAMPLE_NAME}
+        SRCS ctl/ctl_example.c
+        LIBS umf ${UMF_HWLOC_NAME})
+
+    target_include_directories(
+        ${EXAMPLE_NAME} PRIVATE ${UMF_CMAKE_SOURCE_DIR}/src/utils
+                                ${UMF_CMAKE_SOURCE_DIR}/include)
+
+    target_link_directories(${EXAMPLE_NAME} PRIVATE ${LIBHWLOC_LIBRARY_DIRS})
+
+    add_test(
+        NAME ${EXAMPLE_NAME}
+        COMMAND ${EXAMPLE_NAME}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+    set(EXAMPLE_NAME umf_example_ctl_statistics)
+
+    add_umf_executable(
+        NAME ${EXAMPLE_NAME}
+        SRCS ctl/ctl_statistics_example.c
+        LIBS umf ${UMF_HWLOC_NAME})
+
+    target_include_directories(
+        ${EXAMPLE_NAME} PRIVATE ${UMF_CMAKE_SOURCE_DIR}/src/utils
+                                    ${UMF_CMAKE_SOURCE_DIR}/include)
+
+    target_link_directories(${EXAMPLE_NAME} PRIVATE ${LIBHWLOC_LIBRARY_DIRS})
+
+    add_test(
+        NAME ${EXAMPLE_NAME}
+        COMMAND ${EXAMPLE_NAME}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
     if(UMF_POOL_JEMALLOC_ENABLED)
         set(EXAMPLE_NAME umf_example_dram_and_fsdax)
 

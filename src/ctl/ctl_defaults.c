@@ -16,12 +16,13 @@
 #include "utlist.h"
 
 static umf_result_t default_ctl_helper(ctl_ext_ctl_fn fn, void *ctl,
+                                       umf_ctl_query_source_t source,
                                        const char *name, void *arg, size_t size,
                                        ...) {
     va_list empty_args;
     va_start(empty_args, size);
-    umf_result_t ret = fn(ctl, CTL_QUERY_PROGRAMMATIC, name, arg, size,
-                          CTL_QUERY_WRITE, empty_args);
+    umf_result_t ret =
+        fn(ctl, source, name, arg, size, CTL_QUERY_WRITE, empty_args);
     va_end(empty_args);
     return ret;
 }
@@ -123,7 +124,7 @@ void ctl_default_apply(ctl_default_entry_t *list, const char *pname,
             strncmp(it->name, pname, pname_len) == 0 &&
             it->name[pname_len] == '.') {
             const char *ctl_name = it->name + pname_len + 1;
-            default_ctl_helper(ext_ctl, priv, ctl_name, it->value,
+            default_ctl_helper(ext_ctl, priv, it->source, ctl_name, it->value,
                                it->value_size);
         }
     }

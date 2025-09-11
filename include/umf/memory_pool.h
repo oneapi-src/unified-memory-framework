@@ -43,7 +43,6 @@ typedef enum umf_pool_create_flag_t {
 /// @brief Type for combinations of pool creation flags
 typedef uint32_t umf_pool_create_flags_t;
 
-/// @anchor umfPoolCreate
 /// @brief Creates new memory pool.
 /// @param ops instance of umf_memory_pool_ops_t
 /// @param provider memory provider that will be used for coarse-grain allocations.

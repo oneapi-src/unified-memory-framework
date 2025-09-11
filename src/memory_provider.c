@@ -34,8 +34,8 @@ static umf_result_t CTL_SUBTREE_HANDLER(CTL_NONAME, by_handle)(
 
     umf_memory_provider_handle_t hProvider =
         *(umf_memory_provider_handle_t *)indexes->arg;
-    hProvider->ops.ext_ctl(hProvider->provider_priv, /*unused*/ 0, extra_name,
-                           arg, size, queryType, args);
+    hProvider->ops.ext_ctl(hProvider->provider_priv, source, extra_name, arg,
+                           size, queryType, args);
 
     return UMF_RESULT_SUCCESS;
 }
