@@ -38,6 +38,7 @@ set(UMF_LIBS umf_utils umf_ba umf_coarse $<BUILD_INTERFACE:${UMF_HWLOC_NAME}>)
 
 set(UMF_SOURCES
     ctl/ctl.c
+    ctl/ctl_defaults.c
     libumf.c
     ipc.c
     ipc_cache.c

@@ -1060,6 +1060,11 @@ static umf_result_t trackingPurgeForce(void *provider, void *ptr, size_t size) {
 static umf_result_t trackingName(void *provider, const char **name) {
     umf_tracking_memory_provider_t *p =
         (umf_tracking_memory_provider_t *)provider;
+    // if ops->get_name is called with null provider it must return default provider name
+    if (!p) {
+        *name = "tracking";
+        return UMF_RESULT_SUCCESS;
+    }
     return umfMemoryProviderGetName(p->hUpstream, name);
 }
 

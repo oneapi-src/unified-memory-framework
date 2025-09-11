@@ -348,12 +348,11 @@ TEST_F(CtlTest, DISABLED_ctlExecInvalidSize) {
               UMF_RESULT_ERROR_INVALID_ARGUMENT);
 }
 
-#ifdef PROVIDER_DEFAULTS_NOT_IMPLEMENTED_YET
 TEST_F(CtlTest, ctlDefaultMultithreadedProvider) {
     std::vector<std::thread> threads;
     std::atomic<size_t> totalRecords = 0;
     const char *predefined_value = "xyzzyx";
-    std::string name_prefix = "umf.provider.default.some_pool.";
+    std::string name_prefix = "umf.provider.default.some_provider.";
     for (int i = 0; i < 8; i++) {
         threads.emplace_back(
             [i, &totalRecords, &predefined_value, &name_prefix]() {
@@ -377,7 +376,6 @@ TEST_F(CtlTest, ctlDefaultMultithreadedProvider) {
         ASSERT_EQ(std::string(output), std::string(predefined_value));
     }
 }
-#endif
 
 TEST_F(test, ctl_logger_basic_rw) {
     bool ts_set = true;

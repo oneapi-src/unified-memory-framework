@@ -126,7 +126,7 @@ typedef struct umf_memory_provider_ops_t {
     /// \details
     /// * Implementations *must* return a literal null-terminated string.
     ///
-    /// * Implementations *must* return default pool name when NULL is provided,
+    /// * Implementations *must* return default provider name when NULL is provided,
     ///   otherwise the pool's name is returned.
     ///
     /// * The returned name should not exceed 64 characters and may contain

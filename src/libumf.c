@@ -139,6 +139,7 @@ umf_result_t umfTearDown(void) {
         umfMemoryTrackerDestroy(t);
         LOG_DEBUG("UMF tracker destroyed");
 
+        umfProviderCtlDefaultsDestroy();
         umfPoolCtlDefaultsDestroy();
 
         umf_ba_destroy_global();
