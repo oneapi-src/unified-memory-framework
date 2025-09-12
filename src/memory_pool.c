@@ -8,17 +8,17 @@
  */
 
 #include <assert.h>
+#include <stdarg.h>
 #include <stdint.h>
 #include <string.h>
-#include <stdarg.h>
 
 #include <umf/base.h>
 #include <umf/memory_pool.h>
 #include <umf/memory_pool_ops.h>
 
 #include "base_alloc_global.h"
-#include "ctl/ctl_internal.h"
 #include "ctl/ctl_defaults.h"
+#include "ctl/ctl_internal.h"
 #include "libumf.h"
 #include "memory_pool_internal.h"
 #include "memory_provider_internal.h"
@@ -167,7 +167,7 @@ static umf_result_t CTL_SUBTREE_HANDLER(CTL_NONAME, by_handle)(
                                  queryType, arg, size, args2);
     va_end(args2);
 
-    if (ret == UMF_RESULT_ERROR_INVALID_ARGUMENT) {
+    if (ret == UMF_RESULT_ERROR_INVALID_CTL_PATH) {
         // Node was not found in pool_ctl_root, try to query the specific pool
         ret = hPool->ops.ext_ctl(hPool->pool_priv, source, extra_name, arg,
                                  size, queryType, args);
@@ -323,7 +323,7 @@ static umf_result_t CTL_SUBTREE_HANDLER(CTL_NONAME, by_name)(
                                    extra_name, queryType, arg, size, args2);
         va_end(args2);
 
-        if (r == UMF_RESULT_ERROR_INVALID_ARGUMENT) {
+        if (r == UMF_RESULT_ERROR_INVALID_CTL_PATH) {
             va_copy(args2, args);
             r = it->pool->ops.ext_ctl(it->pool->pool_priv, source, extra_name,
                                       arg, size, queryType, args2);
@@ -363,7 +363,8 @@ umfDefaultCtlPoolHandle(void *hPool, umf_ctl_query_source_t operationType,
     (void)size;
     (void)queryType;
     (void)args;
-    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    // if given path is not supported implementation should return UMF_RESULT_ERROR_INVALID_CTL_PATH
+    return UMF_RESULT_ERROR_INVALID_CTL_PATH;
 }
 
 static umf_result_t umfDefaultTrimMemory(void *provider,
@@ -377,13 +378,11 @@ static umf_result_t umfPoolPostInitialize(const umf_memory_pool_ops_t *ops,
                                           void *pool_priv, ...) {
     va_list args;
     va_start(args, pool_priv);
-    umf_result_t ret = ops->ext_ctl(pool_priv, CTL_QUERY_PROGRAMMATIC,
-                                    "post_initialize", NULL, 0,
-                                    CTL_QUERY_RUNNABLE, args);
+    umf_result_t ret =
+        ops->ext_ctl(pool_priv, CTL_QUERY_PROGRAMMATIC, "post_initialize", NULL,
+                     0, CTL_QUERY_RUNNABLE, args);
     va_end(args);
-    if (ret == UMF_RESULT_ERROR_INVALID_ARGUMENT) {
-        ret = UMF_RESULT_ERROR_NOT_SUPPORTED;
-    }
+
     return ret;
 }
 
@@ -481,8 +480,8 @@ static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
 
     ctl_default_apply(pool_default_list, pname, ops->ext_ctl, pool->pool_priv);
 
-    ret = umfPoolPostInitialize(ops, pool->pool_priv);
-    if (ret != UMF_RESULT_SUCCESS && ret != UMF_RESULT_ERROR_NOT_SUPPORTED) {
+    ret = umfPoolPostInitialize(&pool->ops, pool->pool_priv);
+    if (ret != UMF_RESULT_SUCCESS && ret != UMF_RESULT_ERROR_INVALID_CTL_PATH) {
         LOG_ERR("Failed to post-initialize pool");
         goto err_pool_init;
     }

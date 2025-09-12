@@ -492,7 +492,7 @@ ctl_find_and_execute_node(const umf_ctl_node_t *nodes, void *ctx,
     // if the appropriate node (leaf or subtree) is not found, then return error
     if (n == NULL ||
         (n->type != CTL_NODE_LEAF && n->type != CTL_NODE_SUBTREE)) {
-        ret.value = UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        ret.value = UMF_RESULT_ERROR_INVALID_CTL_PATH;
         goto out;
     }
 
@@ -554,7 +554,7 @@ umf_result_t ctl_query(struct ctl *ctl, void *ctx,
 
     va_end(args_copy);
 
-    return ret.is_valid ? ret.value : UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    return ret.is_valid ? ret.value : UMF_RESULT_ERROR_INVALID_CTL_PATH;
 }
 
 /*

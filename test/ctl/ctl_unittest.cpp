@@ -179,18 +179,18 @@ TEST_F(test, ctl_debug_node_arg_invalid) {
                                  "debug.arg_test.42", CTL_QUERY_READ, &arg,
                                  sizeof(arg), empty_args);
 
-    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_CTL_PATH);
 
     ret = ctl_query(ctl_handler, NULL, CTL_QUERY_PROGRAMMATIC,
                     "debug.arg_test.arg_value", CTL_QUERY_READ, &arg,
                     sizeof(arg), empty_args);
 
-    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_CTL_PATH);
 
     ret = ctl_query(ctl_handler, NULL, CTL_QUERY_PROGRAMMATIC,
                     "debug.arg_test.wrong_type.arg_value", CTL_QUERY_READ, &arg,
                     sizeof(arg), empty_args);
 
-    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_CTL_PATH);
     va_end(empty_args);
 }

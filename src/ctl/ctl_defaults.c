@@ -95,7 +95,7 @@ umf_result_t ctl_default_subtree(ctl_default_entry_t **list, utils_mutex_t *mtx,
         if (!entry) {
             LOG_WARN("Wrong path name: %s", extra_name);
             utils_mutex_unlock(mtx);
-            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+            return UMF_RESULT_ERROR_INVALID_CTL_PATH;
         }
 
         if (entry->value_size > size) {

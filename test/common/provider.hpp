@@ -137,7 +137,7 @@ typedef struct provider_base_t {
                          [[maybe_unused]] size_t size,
                          [[maybe_unused]] umf_ctl_query_type_t queryType,
                          [[maybe_unused]] va_list args) noexcept {
-        return UMF_RESULT_ERROR_UNKNOWN;
+        return UMF_RESULT_ERROR_INVALID_CTL_PATH;
     }
 
     umf_result_t ext_get_allocation_properties(

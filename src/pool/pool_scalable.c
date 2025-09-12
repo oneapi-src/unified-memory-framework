@@ -492,10 +492,10 @@ static umf_result_t pool_ctl(void *hPool, umf_ctl_query_source_t operationType,
                              const char *name, void *arg, size_t size,
                              umf_ctl_query_type_t query_type, va_list args) {
     (void)operationType; // unused
-    umf_memory_pool_handle_t pool_provider = (umf_memory_pool_handle_t)hPool;
+
     utils_init_once(&ctl_initialized, initialize_pool_ctl);
-    return ctl_query(&pool_scallable_ctl_root, pool_provider->pool_priv,
-                     CTL_QUERY_PROGRAMMATIC, name, query_type, arg, size, args);
+    return ctl_query(&pool_scallable_ctl_root, hPool, CTL_QUERY_PROGRAMMATIC,
+                     name, query_type, arg, size, args);
 }
 
 static umf_result_t scalable_get_name(void *pool, const char **name) {

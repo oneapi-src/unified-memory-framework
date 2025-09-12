@@ -643,7 +643,7 @@ TEST_F(test, disjointCtlBucketStatsInvalid) {
 
     ret = umfCtlGet("umf.pool.by_handle.{}.stats.buckets.count", &arg, 1,
                     poolWrapper.get());
-    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_CTL_PATH);
 
     ret = umfCtlGet("umf.pool.by_handle.{}.stats.buckets.1.alloc_num", NULL,
                     sizeof(arg), poolWrapper.get());
@@ -651,17 +651,17 @@ TEST_F(test, disjointCtlBucketStatsInvalid) {
 
     ret = umfCtlGet("umf.pool.by_handle.{}.stats.1.alloc_num", &arg, 1,
                     poolWrapper.get());
-    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_CTL_PATH);
 
     // no bucket id
     ret = umfCtlGet("umf.pool.by_handle.{}.stats.buckets.alloc_num", &arg,
                     sizeof(arg), poolWrapper.get());
-    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_CTL_PATH);
 
     // bucked id + count
     ret = umfCtlGet("umf.pool.by_handle.{}.stats.buckets.1.count", &arg,
                     sizeof(arg), poolWrapper.get());
-    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_CTL_PATH);
 
     // Clean up
     ASSERT_SUCCESS(umfDisjointPoolParamsDestroy(params));
