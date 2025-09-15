@@ -113,8 +113,9 @@ placeholder with the wildcard argument supplied to :c:func:`umfCtlGet`,
 Logger nodes
 ------------
 
-.. py:function:: umf.logger.timestamp(enabled)
 
+.. py:function:: umf.logger.timestamp(enabled)
+                 
    :param enabled: Receives (or provides) ``0`` when timestamps are disabled and
       ``1`` when they are emitted.
    :type enabled: ``int *``

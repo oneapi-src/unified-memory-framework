@@ -237,6 +237,8 @@ file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/ctl/ctl_env_config1.cfg
      DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/ctl)
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/ctl/ctl_env_config2.cfg
      DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/ctl)
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/ctl/ctl_env_disjoint_pool.cfg
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/ctl)
 
 add_umf_test(
     NAME ctl_env_driver
