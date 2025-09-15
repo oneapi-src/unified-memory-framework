@@ -802,12 +802,24 @@ INSTANTIATE_TEST_SUITE_P(
         return names[info.index];
     }));
 
-// TODO: add IPC API
+CUDATestHelper cuTestHelper;
+
+CUDAMemoryAccessor cuAccessor(cuTestHelper.get_test_context(),
+                              cuTestHelper.get_test_device());
+
+void *createCuParamsDeviceMemory() {
+    return create_cuda_prov_params(cuTestHelper.get_test_context(),
+                                   cuTestHelper.get_test_device(),
+                                   UMF_MEMORY_TYPE_DEVICE, 0);
+}
+
+#ifdef _WIN32
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(umfIpcTest);
-/*
-INSTANTIATE_TEST_SUITE_P(umfCUDAProviderTestSuite, umfIpcTest,
-                         ::testing::Values(ipcTestParams{
-                             umfProxyPoolOps(), nullptr,
-                             umfCUDAMemoryProviderOps(),
-                             cuParams_device_memory.get(), &cuAccessor, false}));
-*/
+#else
+INSTANTIATE_TEST_SUITE_P(
+    umfCUDAProviderTestSuite, umfIpcTest,
+    ::testing::Values(ipcTestParams{
+        umfProxyPoolOps(), nullptr, nullptr, umfCUDAMemoryProviderOps(),
+        createCUDAParamsDeviceMemory, destroyCuParams, &l0Accessor}),
+    ipcTestParamsNameGen);
+#endif
