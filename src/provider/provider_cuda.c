@@ -149,7 +149,7 @@ static void init_cu_global_state(void) {
 #ifdef _WIN32
     const char *lib_name = "nvcuda.dll";
 #else
-    const char *lib_name = "libcuda.so";
+    const char *lib_name = "libcuda.so.1";
 #endif
     // The CUDA shared library should be already loaded by the user
     // of the CUDA provider. UMF just want to reuse it
