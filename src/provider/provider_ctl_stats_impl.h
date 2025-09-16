@@ -74,7 +74,7 @@ static const umf_ctl_node_t CTL_NODE(peak_memory)[] = {CTL_LEAF_RUNNABLE(reset),
 
 static const umf_ctl_node_t CTL_NODE(stats)[] = {
     CTL_LEAF_RO(allocated_memory), CTL_LEAF_RO(peak_memory),
-    CTL_CHILD(peak_memory), CTL_LEAF_RUNNABLE(reset), CTL_NODE_END};
+    CTL_CHILD(peak_memory), CTL_NODE_END};
 
 static inline void provider_ctl_stats_alloc(CTL_PROVIDER_TYPE *provider,
                                             size_t size) {
