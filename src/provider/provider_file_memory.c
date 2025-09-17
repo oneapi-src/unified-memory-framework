@@ -161,9 +161,10 @@ struct ctl file_memory_ctl_root;
 static UTIL_ONCE_FLAG ctl_initialized = UTIL_ONCE_FLAG_INIT;
 
 static umf_result_t file_post_initialize(void *provider);
-static umf_result_t CTL_RUNNABLE_HANDLER(post_initialize)(
-    void *ctx, umf_ctl_query_source_t source, void *arg, size_t size,
-    umf_ctl_index_utlist_t *indexes) {
+static umf_result_t
+CTL_RUNNABLE_HANDLER(post_initialize)(void *ctx, umf_ctl_query_source_t source,
+                                      void *arg, size_t size,
+                                      umf_ctl_index_utlist_t *indexes) {
     (void)source;
     (void)arg;
     (void)size;

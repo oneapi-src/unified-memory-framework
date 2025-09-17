@@ -92,8 +92,8 @@ static int test_disjoint_pool(int argc, char **argv) {
         return 0;
     }
 
-    if (umfMemoryProviderCreate(umfOsMemoryProviderOps(), os_params, &provider) !=
-        UMF_RESULT_SUCCESS) {
+    if (umfMemoryProviderCreate(umfOsMemoryProviderOps(), os_params,
+                                &provider) != UMF_RESULT_SUCCESS) {
         std::cerr << "Failed to create provider" << std::endl;
         goto out;
     }
@@ -108,8 +108,7 @@ static int test_disjoint_pool(int argc, char **argv) {
         const char *name = argv[i];
         const char *value = argv[i + 1];
         char path[128];
-        snprintf(path, sizeof(path),
-                 "umf.pool.by_handle.{}.params.%s", name);
+        snprintf(path, sizeof(path), "umf.pool.by_handle.{}.params.%s", name);
 
         if (strcmp(name, "pool_trace") == 0) {
             int got = 0;

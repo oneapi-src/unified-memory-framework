@@ -11,8 +11,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "ctl/ctl_internal.h"
 #include "base_alloc_global.h"
+#include "ctl/ctl_internal.h"
 #include "memory_provider_internal.h"
 #include "provider_tracking.h"
 #include "utils_common.h"
@@ -616,9 +616,10 @@ err_cleanup:
     return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
 }
 
-static umf_result_t CTL_RUNNABLE_HANDLER(post_initialize)(
-    void *ctx, umf_ctl_query_source_t source, void *arg, size_t size,
-    umf_ctl_index_utlist_t *indexes) {
+static umf_result_t
+CTL_RUNNABLE_HANDLER(post_initialize)(void *ctx, umf_ctl_query_source_t source,
+                                      void *arg, size_t size,
+                                      umf_ctl_index_utlist_t *indexes) {
     (void)source;
     (void)arg;
     (void)size;
@@ -627,12 +628,11 @@ static umf_result_t CTL_RUNNABLE_HANDLER(post_initialize)(
 }
 
 static void initialize_jemalloc_ctl(void) {
-    jemalloc_ctl_root.root[jemalloc_ctl_root.first_free++] =
-        (umf_ctl_node_t){
-            .name = "post_initialize",
-            .type = CTL_NODE_LEAF,
-            .runnable_cb = CTL_RUNNABLE_HANDLER(post_initialize),
-        };
+    jemalloc_ctl_root.root[jemalloc_ctl_root.first_free++] = (umf_ctl_node_t){
+        .name = "post_initialize",
+        .type = CTL_NODE_LEAF,
+        .runnable_cb = CTL_RUNNABLE_HANDLER(post_initialize),
+    };
 }
 
 static umf_result_t op_ctl(void *pool, umf_ctl_query_source_t operationType,

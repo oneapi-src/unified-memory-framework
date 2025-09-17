@@ -94,9 +94,8 @@ static void print_pool_stat_by_handle(const char *label,
     size_t value = 0;
     /* Surround the {} placeholder with literal segments so CTL resolves
      * whichever pool handle the allocator hands back. */
-    umf_result_t res =
-        umfCtlGet("umf.pool.by_handle.{}.stats.{}", &value, sizeof(value),
-                  pool, stat_node);
+    umf_result_t res = umfCtlGet("umf.pool.by_handle.{}.stats.{}", &value,
+                                 sizeof(value), pool, stat_node);
     if (report_pool_stat_failure(label, required_trace_level, res)) {
         return;
     }

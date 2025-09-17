@@ -11,16 +11,14 @@
 #include <umf/pools/pool_disjoint.h>
 #include <umf/providers/provider_os_memory.h>
 
-#include <cstdio>
-#include <fstream>
 #include <memory>
 #include <vector>
 
 #include "base.hpp"
 #include "common/fork_helpers.hpp"
+#include "ctl/ctl_internal.h"
 #include "utils_assert.h"
 #include "utils_log.h"
-#include "ctl/ctl_internal.h"
 
 using umf_test::test;
 using namespace umf_test;
@@ -94,73 +92,6 @@ class ProviderWrapper {
     const umf_memory_provider_ops_t *m_providerOps;
     void *m_params;
 };
-
-TEST_F(test, DISABLED_disjointCtlName) {
-    umf_os_memory_provider_params_handle_t os_memory_provider_params = nullptr;
-    if (UMF_RESULT_ERROR_NOT_SUPPORTED ==
-        umfOsMemoryProviderParamsCreate(&os_memory_provider_params)) {
-        GTEST_SKIP() << "OS memory provider is not supported!";
-    }
-
-    ProviderWrapper providerWrapper(umfOsMemoryProviderOps(),
-                                    os_memory_provider_params);
-    if (providerWrapper.get() == NULL) {
-        GTEST_SKIP() << "OS memory provider is not supported!";
-    }
-
-    // Set default name
-    const char *val = "disjoint_new_name";
-    ASSERT_SUCCESS(
-        umfCtlSet("umf.pool.default.disjoint.name", (void *)val, strlen(val)));
-
-    umf_disjoint_pool_params_handle_t params = nullptr;
-    ASSERT_SUCCESS(umfDisjointPoolParamsCreate(&params));
-    PoolWrapper poolWrapper(providerWrapper.get(), umfDisjointPoolOps(),
-                            params);
-
-    // Check that the default name is correctly set
-    const char *name = NULL;
-    ASSERT_SUCCESS(umfPoolGetName(poolWrapper.get(), &name));
-    ASSERT_STREQ(name, val);
-
-    // Clean up
-    ASSERT_SUCCESS(umfDisjointPoolParamsDestroy(params));
-    ASSERT_SUCCESS(umfOsMemoryProviderParamsDestroy(os_memory_provider_params));
-}
-
-TEST_F(test, DISABLED_disjointCtlChangeNameTwice) {
-    umf_os_memory_provider_params_handle_t os_memory_provider_params = nullptr;
-    if (UMF_RESULT_ERROR_NOT_SUPPORTED ==
-        umfOsMemoryProviderParamsCreate(&os_memory_provider_params)) {
-        GTEST_SKIP() << "OS memory provider is not supported!";
-    }
-    ProviderWrapper providerWrapper(umfOsMemoryProviderOps(),
-                                    os_memory_provider_params);
-    if (providerWrapper.get() == NULL) {
-        GTEST_SKIP() << "OS memory provider is not supported!";
-    }
-    // Set default name
-    const char *val = "disjoint_new_name";
-    const char *val2 = "another_name";
-    ASSERT_SUCCESS(
-        umfCtlSet("umf.pool.default.disjoint.name", (void *)val, strlen(val)));
-    ASSERT_SUCCESS(umfCtlSet("umf.pool.default.disjoint.name", (void *)val2,
-                             strlen(val2)));
-
-    umf_disjoint_pool_params_handle_t params = nullptr;
-    ASSERT_SUCCESS(umfDisjointPoolParamsCreate(&params));
-    PoolWrapper poolWrapper(providerWrapper.get(), umfDisjointPoolOps(),
-                            params);
-
-    // Check that the default name is correctly set
-    const char *name = NULL;
-    ASSERT_SUCCESS(umfPoolGetName(poolWrapper.get(), &name));
-    ASSERT_STREQ(name, val2);
-
-    // Clean up
-    ASSERT_SUCCESS(umfDisjointPoolParamsDestroy(params));
-    ASSERT_SUCCESS(umfOsMemoryProviderParamsDestroy(os_memory_provider_params));
-}
 
 TEST_F(test, disjointCtlUsedMemory) {
     umf_os_memory_provider_params_handle_t os_memory_provider_params = nullptr;
@@ -343,29 +274,24 @@ TEST_F(test, disjointCtlGetParams) {
 
     size_t got_size = 0;
     ASSERT_SUCCESS(umfCtlGet("umf.pool.by_handle.{}.params.slab_min_size",
-                             &got_size, sizeof(got_size),
-                             poolWrapper.get()));
+                             &got_size, sizeof(got_size), poolWrapper.get()));
     EXPECT_EQ(got_size, slab_min_size);
 
-    ASSERT_SUCCESS(umfCtlGet(
-        "umf.pool.by_handle.{}.params.max_poolable_size", &got_size,
-        sizeof(got_size), poolWrapper.get()));
+    ASSERT_SUCCESS(umfCtlGet("umf.pool.by_handle.{}.params.max_poolable_size",
+                             &got_size, sizeof(got_size), poolWrapper.get()));
     EXPECT_EQ(got_size, max_poolable_size);
 
-    ASSERT_SUCCESS(umfCtlGet("umf.pool.by_handle.{}.params.capacity",
-                             &got_size, sizeof(got_size),
-                             poolWrapper.get()));
+    ASSERT_SUCCESS(umfCtlGet("umf.pool.by_handle.{}.params.capacity", &got_size,
+                             sizeof(got_size), poolWrapper.get()));
     EXPECT_EQ(got_size, capacity);
 
     ASSERT_SUCCESS(umfCtlGet("umf.pool.by_handle.{}.params.min_bucket_size",
-                             &got_size, sizeof(got_size),
-                             poolWrapper.get()));
+                             &got_size, sizeof(got_size), poolWrapper.get()));
     EXPECT_EQ(got_size, min_bucket_size);
 
     int got_trace = 0;
     ASSERT_SUCCESS(umfCtlGet("umf.pool.by_handle.{}.params.pool_trace",
-                             &got_trace, sizeof(got_trace),
-                             poolWrapper.get()));
+                             &got_trace, sizeof(got_trace), poolWrapper.get()));
     EXPECT_EQ(got_trace, pool_trace);
 
     ASSERT_SUCCESS(umfDisjointPoolParamsDestroy(params));
@@ -375,8 +301,7 @@ TEST_F(test, disjointCtlGetParams) {
 TEST_F(test, disjointCtlDefaultsOverride) {
     umf_test::run_in_fork([] {
         umf_os_memory_provider_params_handle_t raw_os_params = nullptr;
-        umf_result_t res =
-            umfOsMemoryProviderParamsCreate(&raw_os_params);
+        umf_result_t res = umfOsMemoryProviderParamsCreate(&raw_os_params);
         if (res == UMF_RESULT_ERROR_NOT_SUPPORTED) {
             GTEST_SKIP() << "OS memory provider is not supported!";
         }
@@ -397,24 +322,21 @@ TEST_F(test, disjointCtlDefaultsOverride) {
         ASSERT_EQ(umfCtlSet("umf.pool.default.disjoint.params.capacity",
                             &default_capacity, sizeof(default_capacity)),
                   UMF_RESULT_SUCCESS);
-        ASSERT_EQ(
-            umfCtlSet("umf.pool.default.disjoint.params.min_bucket_size",
-                      &default_min_bucket, sizeof(default_min_bucket)),
-            UMF_RESULT_SUCCESS);
+        ASSERT_EQ(umfCtlSet("umf.pool.default.disjoint.params.min_bucket_size",
+                            &default_min_bucket, sizeof(default_min_bucket)),
+                  UMF_RESULT_SUCCESS);
 
         size_t override_capacity = 2;
         size_t override_min_bucket = 32;
         ASSERT_EQ(umfCtlSet("umf.pool.default.disjoint.params.capacity",
                             &override_capacity, sizeof(override_capacity)),
                   UMF_RESULT_SUCCESS);
-        ASSERT_EQ(
-            umfCtlSet("umf.pool.default.disjoint.params.min_bucket_size",
-                      &override_min_bucket, sizeof(override_min_bucket)),
-            UMF_RESULT_SUCCESS);
+        ASSERT_EQ(umfCtlSet("umf.pool.default.disjoint.params.min_bucket_size",
+                            &override_min_bucket, sizeof(override_min_bucket)),
+                  UMF_RESULT_SUCCESS);
 
         umf_disjoint_pool_params_handle_t raw_params = nullptr;
-        ASSERT_EQ(umfDisjointPoolParamsCreate(&raw_params),
-                  UMF_RESULT_SUCCESS);
+        ASSERT_EQ(umfDisjointPoolParamsCreate(&raw_params), UMF_RESULT_SUCCESS);
         std::unique_ptr<umf_disjoint_pool_params_t,
                         decltype(&umfDisjointPoolParamsDestroy)>
             params(raw_params, &umfDisjointPoolParamsDestroy);
@@ -441,10 +363,9 @@ TEST_F(test, disjointCtlDefaultsOverride) {
         ASSERT_EQ(umfCtlSet("umf.pool.default.disjoint.params.capacity",
                             &default_capacity, sizeof(default_capacity)),
                   UMF_RESULT_SUCCESS);
-        ASSERT_EQ(
-            umfCtlSet("umf.pool.default.disjoint.params.min_bucket_size",
-                      &default_min_bucket, sizeof(default_min_bucket)),
-            UMF_RESULT_SUCCESS);
+        ASSERT_EQ(umfCtlSet("umf.pool.default.disjoint.params.min_bucket_size",
+                            &default_min_bucket, sizeof(default_min_bucket)),
+                  UMF_RESULT_SUCCESS);
     });
 }
 

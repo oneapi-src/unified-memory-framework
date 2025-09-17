@@ -110,9 +110,10 @@ struct ctl cu_memory_ctl_root;
 static UTIL_ONCE_FLAG ctl_initialized = UTIL_ONCE_FLAG_INIT;
 
 static umf_result_t cu_memory_provider_post_initialize(void *provider);
-static umf_result_t CTL_RUNNABLE_HANDLER(post_initialize)(
-    void *ctx, umf_ctl_query_source_t source, void *arg, size_t size,
-    umf_ctl_index_utlist_t *indexes) {
+static umf_result_t
+CTL_RUNNABLE_HANDLER(post_initialize)(void *ctx, umf_ctl_query_source_t source,
+                                      void *arg, size_t size,
+                                      umf_ctl_index_utlist_t *indexes) {
     (void)source;
     (void)arg;
     (void)size;
@@ -159,12 +160,11 @@ static umf_result_t cu2umf_result(CUresult result) {
 
 static void initialize_cu_ctl(void) {
     CTL_REGISTER_MODULE(&cu_memory_ctl_root, stats);
-    cu_memory_ctl_root.root[cu_memory_ctl_root.first_free++] =
-        (umf_ctl_node_t){
-            .name = "post_initialize",
-            .type = CTL_NODE_LEAF,
-            .runnable_cb = CTL_RUNNABLE_HANDLER(post_initialize),
-        };
+    cu_memory_ctl_root.root[cu_memory_ctl_root.first_free++] = (umf_ctl_node_t){
+        .name = "post_initialize",
+        .type = CTL_NODE_LEAF,
+        .runnable_cb = CTL_RUNNABLE_HANDLER(post_initialize),
+    };
 }
 
 static void init_cu_global_state(void) {

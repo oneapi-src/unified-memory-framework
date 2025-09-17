@@ -9,12 +9,8 @@
 
 #include <atomic>
 #include <cstring>
-#include <exception>
-#include <functional> // For std::ref
-#include <stdexcept>
 #include <string>
 #include <thread>
-#include <type_traits>
 #include <vector>
 
 #include <umf.h>
@@ -23,8 +19,6 @@
 #include <umf/memory_pool.h>
 #include <umf/memory_provider.h>
 #include <umf/pools/pool_disjoint.h>
-#include <umf/pools/pool_scalable.h>
-#include <umf/providers/provider_fixed_memory.h>
 #include <umf/providers/provider_os_memory.h>
 
 #include "../common/base.hpp"
@@ -56,124 +50,6 @@ TEST_F(test, ctl_by_handle_os_provider) {
     umfMemoryProviderDestroy(hProvider);
 }
 
-class Pool {
-  public:
-    Pool() : provider(NULL), pool(NULL) {}
-
-    int instantiatePool(const umf_memory_pool_ops_t *pool_ops,
-                        const void *pool_params,
-                        umf_pool_create_flags_t flags = 0) {
-        freeResources();
-        provider = create_memory_provider();
-        if (provider == NULL) {
-            return -1; // Provider not supported
-        }
-        int ret = umfPoolCreate(pool_ops, provider, pool_params, flags, &pool);
-        if (ret != UMF_RESULT_SUCCESS) {
-            umfMemoryProviderDestroy(provider);
-            provider = NULL;
-            return -2; // Failed to create memory pool
-        }
-        return 0; // Success
-    }
-
-    // Template specialization for different types of reference value
-    template <typename T> T getReferenceValue() {
-        if constexpr (std::is_arithmetic_v<T>) {
-            return 0xBAD;
-        } else if constexpr (std::is_same_v<T, std::string>) {
-            return "0xBAD";
-        }
-    }
-
-    template <typename T>
-    void validateQuery(umf_result_t (*ctlApiFunction)(const char *name,
-                                                      void *arg, size_t, ...),
-                       const char *name, T expectedValue,
-                       umf_result_t expected) {
-        T value = getReferenceValue<T>();
-        umf_result_t ret;
-        char ret_buf[256] = {0};
-        if constexpr (std::is_same_v<T, std::string>) {
-            strncpy(ret_buf, value.c_str(), sizeof(ret_buf) - 1);
-            ret_buf[sizeof(ret_buf) - 1] = '\0'; // Ensure null-termination
-            ret = ctlApiFunction(name, (void *)ret_buf, sizeof(ret_buf), pool);
-        } else if constexpr (std::is_arithmetic_v<T>) {
-            std::string value_str = std::to_string(value);
-            strncpy(ret_buf, value_str.c_str(), sizeof(ret_buf) - 1);
-            ret_buf[sizeof(ret_buf) - 1] = '\0'; // Ensure null-termination
-            ret = ctlApiFunction(name, (void *)ret_buf, sizeof(ret_buf), pool);
-        } else {
-            ret = ctlApiFunction(name, &value, sizeof(value), pool);
-        }
-
-        ASSERT_EQ(ret, expected);
-        if (ret == UMF_RESULT_SUCCESS) {
-            ASSERT_EQ(ret_buf, expectedValue);
-        }
-    }
-
-    template <typename T>
-    void executeQuery(umf_result_t (*ctlApiFunction)(const char *name,
-                                                     void *arg, size_t, ...),
-                      const char *name, T value) {
-        size_t value_len;
-        if constexpr (std::is_arithmetic_v<T>) {
-            value_len = sizeof(value);
-        } else if constexpr (std::is_same_v<T, std::string>) {
-            value_len = strlen(value.c_str());
-        } else if constexpr (std::is_same_v<T, const char *>) {
-            value_len = strlen(value);
-        } else {
-            throw std::runtime_error("Unsupported type for value");
-        }
-        umf_result_t ret = ctlApiFunction(name, (void *)value, value_len);
-        ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
-    }
-
-    void freeResources() {
-        if (pool) {
-            umfPoolDestroy(pool);
-            pool = NULL;
-        }
-        if (provider) {
-            umfMemoryProviderDestroy(provider);
-            provider = NULL;
-        }
-        if (data) {
-            free(data);
-            data = nullptr;
-        }
-    }
-
-    umf_memory_provider_handle_t provider;
-    umf_memory_pool_handle_t pool;
-    void *data = nullptr;
-
-  private:
-    // Create a memory provider
-    umf_memory_provider_handle_t create_memory_provider() {
-        const umf_memory_provider_ops_t *provider_ops =
-            umfFixedMemoryProviderOps();
-        umf_fixed_memory_provider_params_handle_t params = NULL;
-
-        data = malloc(1024 * 1024);
-        int ret =
-            umfFixedMemoryProviderParamsCreate(data, 1024 * 1024, &params);
-        if (ret != UMF_RESULT_SUCCESS) {
-            return 0;
-        }
-
-        ret = umfMemoryProviderCreate(provider_ops, params, &provider);
-        umfFixedMemoryProviderParamsDestroy(params);
-        if (ret != UMF_RESULT_SUCCESS) {
-            return 0;
-        }
-
-        return provider;
-    }
-};
-
 class CtlTest : public ::testing::Test {
   public:
     CtlTest() {}
@@ -190,13 +66,13 @@ class CtlTest : public ::testing::Test {
 TEST_F(CtlTest, ctlDefault) {
     umf_test::run_in_fork([] {
         const char *arg = "default_name";
-        ASSERT_EQ(umfCtlSet("umf.pool.default.some_pool.some_path",
-                             (void *)arg, strlen(arg)),
+        ASSERT_EQ(umfCtlSet("umf.pool.default.some_pool.some_path", (void *)arg,
+                            strlen(arg)),
                   UMF_RESULT_SUCCESS);
 
         char output[64] = {1};
         ASSERT_EQ(umfCtlGet("umf.pool.default.some_pool.some_path",
-                             (void *)output, sizeof(output)),
+                            (void *)output, sizeof(output)),
                   UMF_RESULT_SUCCESS);
         ASSERT_STREQ(output, arg);
     });
@@ -247,8 +123,7 @@ TEST_F(CtlTest, ctlDefaultPoolMultithreaded) {
             threads.emplace_back([i, &totalRecords, &predefined_value,
                                   &name_prefix, max_size = max_size]() {
                 for (size_t j = 0; j < max_size; j++) {
-                    std::string name =
-                        name_prefix + std::to_string(i * 10 + j);
+                    std::string name = name_prefix + std::to_string(i * 10 + j);
                     umfCtlSet(name.c_str(), (void *)predefined_value,
                               strlen(predefined_value));
                     std::atomic_fetch_add(&totalRecords, 1UL);
@@ -296,66 +171,6 @@ TEST_F(CtlTest, ctlDefaultPoolOverwrite) {
     });
 }
 
-TEST_F(CtlTest, DISABLED_ctlNameValidation) {
-    std::string name = "umf.pool.default.disjoint.name";
-    std::string value = "new_disjoint_pool_name";
-    umf_disjoint_pool_params_handle_t params = NULL;
-
-    Pool p;
-    try {
-        p.executeQuery(umfCtlSet, name.c_str(), value.c_str());
-        umf_result_t res = umfDisjointPoolParamsCreate(&params);
-        ASSERT_EQ(res, UMF_RESULT_SUCCESS);
-
-        auto ret = p.instantiatePool(umfDisjointPoolOps(), params);
-        ASSERT_EQ(ret, 0);
-
-        p.validateQuery(umfCtlGet, "umf.pool.by_handle.{}.disjoint.name",
-                        std::move(value), UMF_RESULT_SUCCESS);
-    } catch (...) {
-        GTEST_FAIL() << "Unknown exception!";
-    }
-    umfDisjointPoolParamsDestroy(params);
-    p.freeResources();
-}
-
-TEST_F(CtlTest, DISABLED_ctlSizeValidation) {
-    std::string name = "umf.pool.default.disjoint.name";
-    std::string value = "1234567890";
-    umf_disjoint_pool_params_handle_t params = NULL;
-
-    Pool p;
-    try {
-        p.executeQuery(umfCtlSet, name.c_str(), value.c_str());
-        umf_result_t res = umfDisjointPoolParamsCreate(&params);
-        ASSERT_EQ(res, UMF_RESULT_SUCCESS);
-
-        auto ret = p.instantiatePool(umfDisjointPoolOps(), params);
-        ASSERT_EQ(ret, 0);
-
-        char output[100] = {0};
-        umfCtlGet("umf.pool.default.disjoint.name", output, sizeof(output));
-        ASSERT_EQ(std::string(output), value);
-
-        memset(output, 0, sizeof(output));
-        umfCtlGet("umf.pool.default.disjoint.name", output, value.size() / 2);
-        auto half_value = value.substr(0, value.size() / 2);
-        ASSERT_EQ(half_value, std::string(output));
-    } catch (...) {
-        GTEST_FAIL() << "Unknown exception!";
-    }
-    umfDisjointPoolParamsDestroy(params);
-    p.freeResources();
-}
-
-TEST_F(CtlTest, DISABLED_ctlExecInvalidSize) {
-    std::string name = "umf.pool.default.disjoint.name";
-    ASSERT_EQ(umfCtlSet(name.c_str(), (void *)"test_value", 0),
-              UMF_RESULT_ERROR_INVALID_ARGUMENT);
-    ASSERT_EQ(umfCtlSet(name.c_str(), NULL, 10),
-              UMF_RESULT_ERROR_INVALID_ARGUMENT);
-}
-
 TEST_F(CtlTest, ctlDefaultMultithreadedProvider) {
     umf_test::run_in_fork([] {
         std::vector<std::thread> threads;
@@ -363,16 +178,15 @@ TEST_F(CtlTest, ctlDefaultMultithreadedProvider) {
         const char *predefined_value = "xyzzyx";
         std::string name_prefix = "umf.provider.default.some_provider.";
         for (int i = 0; i < 8; i++) {
-            threads.emplace_back(
-                [i, &totalRecords, &predefined_value, &name_prefix]() {
-                    for (int j = 0; j < 10; j++) {
-                        std::string name =
-                            name_prefix + std::to_string(i * 10 + j);
-                        umfCtlSet(name.c_str(), (void *)predefined_value,
-                                  strlen(predefined_value));
-                        std::atomic_fetch_add(&totalRecords, 1);
-                    }
-                });
+            threads.emplace_back([i, &totalRecords, &predefined_value,
+                                  &name_prefix]() {
+                for (int j = 0; j < 10; j++) {
+                    std::string name = name_prefix + std::to_string(i * 10 + j);
+                    umfCtlSet(name.c_str(), (void *)predefined_value,
+                              strlen(predefined_value));
+                    std::atomic_fetch_add(&totalRecords, 1);
+                }
+            });
         }
         for (auto &thread : threads) {
             thread.join();

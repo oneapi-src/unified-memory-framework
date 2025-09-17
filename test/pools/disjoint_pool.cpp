@@ -4,10 +4,10 @@
 
 #include <memory>
 
+#include <cstdarg>
 #include <umf/base.h>
 #include <umf/memory_pool.h>
 #include <umf/pools/pool_disjoint.h>
-#include <cstdarg>
 
 #include "pool.hpp"
 #include "pool/pool_disjoint_internal.h"
@@ -70,9 +70,8 @@ TEST_F(test, internals) {
     EXPECT_EQ(res, UMF_RESULT_SUCCESS);
     va_list empty_args;
     get_test_va_list(&empty_args);
-    res = ops->ext_ctl((void *)pool, CTL_QUERY_PROGRAMMATIC,
-                       "post_initialize", nullptr, 0, CTL_QUERY_RUNNABLE,
-                       empty_args);
+    res = ops->ext_ctl((void *)pool, CTL_QUERY_PROGRAMMATIC, "post_initialize",
+                       nullptr, 0, CTL_QUERY_RUNNABLE, empty_args);
     va_end(empty_args);
     EXPECT_EQ(res, UMF_RESULT_SUCCESS);
     EXPECT_NE(pool, nullptr);
@@ -327,9 +326,8 @@ TEST_F(test, disjointPoolTrim) {
 
     va_list empty_args;
     get_test_va_list(&empty_args);
-    res = ops->ext_ctl((void *)pool, CTL_QUERY_PROGRAMMATIC,
-                       "post_initialize", nullptr, 0, CTL_QUERY_RUNNABLE,
-                       empty_args);
+    res = ops->ext_ctl((void *)pool, CTL_QUERY_PROGRAMMATIC, "post_initialize",
+                       nullptr, 0, CTL_QUERY_RUNNABLE, empty_args);
     va_end(empty_args);
     EXPECT_EQ(res, UMF_RESULT_SUCCESS);
 

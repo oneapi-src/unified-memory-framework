@@ -74,4 +74,3 @@ template <typename Func> void run_in_fork(Func &&func) {
 }
 
 } // namespace umf_test
-

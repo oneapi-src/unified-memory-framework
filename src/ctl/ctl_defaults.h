@@ -9,8 +9,8 @@
 #ifndef UMF_CTL_DEFAULTS_H
 #define UMF_CTL_DEFAULTS_H 1
 
-#include <stddef.h>
 #include <stdarg.h>
+#include <stddef.h>
 
 #include <umf/base.h>
 

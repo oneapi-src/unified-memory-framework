@@ -469,9 +469,10 @@ static umf_result_t tbb_get_last_allocation_error(void *pool) {
     return TLS_last_allocation_error;
 }
 
-static umf_result_t CTL_RUNNABLE_HANDLER(post_initialize)(
-    void *ctx, umf_ctl_query_source_t source, void *arg, size_t size,
-    umf_ctl_index_utlist_t *indexes) {
+static umf_result_t
+CTL_RUNNABLE_HANDLER(post_initialize)(void *ctx, umf_ctl_query_source_t source,
+                                      void *arg, size_t size,
+                                      umf_ctl_index_utlist_t *indexes) {
     (void)source;
     (void)arg;
     (void)size;

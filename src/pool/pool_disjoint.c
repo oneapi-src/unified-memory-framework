@@ -205,8 +205,7 @@ CTL_WRITE_HANDLER(capacity)(void *ctx, umf_ctl_query_source_t source, void *arg,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
     size_t value = *(size_t *)arg;
-    umf_result_t ret =
-        umfDisjointPoolParamsSetCapacity(&pool->params, value);
+    umf_result_t ret = umfDisjointPoolParamsSetCapacity(&pool->params, value);
     if (ret == UMF_RESULT_SUCCESS) {
         pool->params_overridden |= DP_OVERRIDE_CAPACITY;
     }
@@ -279,8 +278,7 @@ CTL_WRITE_HANDLER(pool_trace)(void *ctx, umf_ctl_query_source_t source,
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
     int value = *(int *)arg;
-    umf_result_t ret =
-        umfDisjointPoolParamsSetTrace(&pool->params, value);
+    umf_result_t ret = umfDisjointPoolParamsSetTrace(&pool->params, value);
     if (ret == UMF_RESULT_SUCCESS) {
         pool->params_overridden |= DP_OVERRIDE_POOL_TRACE;
     }
@@ -557,8 +555,8 @@ umf_result_t disjoint_pool_ctl(void *hPool,
                                umf_ctl_query_type_t queryType, va_list args) {
     utils_init_once(&ctl_initialized, initialize_disjoint_ctl);
 
-    return ctl_query(&disjoint_ctl_root, hPool, operationType, name,
-                     queryType, arg, size, args);
+    return ctl_query(&disjoint_ctl_root, hPool, operationType, name, queryType,
+                     arg, size, args);
 }
 
 // Temporary solution for disabling memory poisoning. This is needed because
