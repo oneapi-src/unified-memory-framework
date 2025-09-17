@@ -41,7 +41,7 @@ jobs:
         python-version: "3.10"
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@f1f6e5f6af878fb37288ce1c627459e94dbf7d01 # v3.29.5
+      uses: github/codeql-action/init@192325c86100d080feab897ff886c34abd4c83a3 # v3.29.5
       with:
         languages: cpp
         trap-caching: false
@@ -108,7 +108,7 @@ jobs:
       run: cmake --build ${{env.BUILD_DIR}} --config Release -j
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@f1f6e5f6af878fb37288ce1c627459e94dbf7d01 # v3.29.5
+      uses: github/codeql-action/analyze@192325c86100d080feab897ff886c34abd4c83a3 # v3.29.5
 
     - name: "[Win] Prepare vcpkg cache"
       if: matrix.os == 'windows-latest' && steps.cache.outputs.cache-hit != 'true'
