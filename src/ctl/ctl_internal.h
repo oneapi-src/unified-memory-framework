@@ -198,7 +198,7 @@ int ctl_arg_string(const void *arg, void *dest, size_t dest_size);
 #define CTL_NODE(name, ...) ctl_node_##__VA_ARGS__##_##name
 
 umf_result_t ctl_query(struct ctl *ctl, void *ctx,
-                       umf_ctl_query_source_t source, const char *name,
+                       umf_ctl_query_source_t source, const char *path,
                        umf_ctl_query_type_t type, void *arg, size_t size,
                        va_list args);
 

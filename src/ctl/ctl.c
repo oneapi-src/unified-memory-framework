@@ -298,26 +298,26 @@ ctl_exec_query_subtree(void *ctx, const umf_ctl_node_t *n,
  * ctl_find_and_execulte_node -- (internal) searches for a matching entry point in the
  *    provided nodes
  *
- * Name offset is used to return the offset of the name in the query string.
+ * Path offset is used to return the offset of the path in the query string.
  * The caller is responsible for freeing all of the allocated indexes,
  * regardless of the return value.
  */
 
 static optional_umf_result_t
 ctl_find_and_execute_node(const umf_ctl_node_t *nodes, void *ctx,
-                          umf_ctl_query_source_t source, const char *name,
+                          umf_ctl_query_source_t source, const char *path,
                           umf_ctl_query_type_t type, void *arg, size_t size,
                           va_list args) {
     assert(nodes != NULL);
-    assert(name != NULL);
+    assert(path != NULL);
 
     const umf_ctl_node_t *n = NULL;
     optional_umf_result_t ret;
-    size_t name_offset = 0;
+    size_t path_offset = 0;
     ret.is_valid = true;
     ret.value = UMF_RESULT_SUCCESS;
     char *sptr = NULL;
-    char *parse_str = Strdup(name);
+    char *parse_str = Strdup(path);
     if (parse_str == NULL) {
         ret.is_valid = false;
         return ret;
@@ -336,7 +336,7 @@ ctl_find_and_execute_node(const umf_ctl_node_t *nodes, void *ctx,
      */
     while (node_name != NULL) {
         char *next_node = strtok_r(NULL, CTL_QUERY_NODE_SEPARATOR, &sptr);
-        name_offset = node_name - parse_str;
+        path_offset = node_name - parse_str;
         if (n != NULL && n->type == CTL_NODE_SUBTREE) {
             // if a subtree occurs, the subtree handler should be called
             break;
@@ -500,7 +500,7 @@ ctl_find_and_execute_node(const umf_ctl_node_t *nodes, void *ctx,
         // if the node is a subtree, then we need to call the subtree handler
         ret.value =
             ctl_exec_query_subtree(ctx, n, source, arg, size, indexes->next,
-                                   name + name_offset, type, args);
+                                   path + path_offset, type, args);
     } else {
         switch (type) {
         case CTL_QUERY_READ:
@@ -530,14 +530,14 @@ error:
 }
 
 /*
- * ctl_query -- (internal) parses the name and calls the appropriate methods
+ * ctl_query -- (internal) parses the path and calls the appropriate methods
  *    from the ctl tree
  */
 umf_result_t ctl_query(struct ctl *ctl, void *ctx,
-                       umf_ctl_query_source_t source, const char *name,
+                       umf_ctl_query_source_t source, const char *path,
                        umf_ctl_query_type_t type, void *arg, size_t size,
                        va_list args) {
-    if (name == NULL) {
+    if (path == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -545,10 +545,10 @@ umf_result_t ctl_query(struct ctl *ctl, void *ctx,
     va_copy(args_copy, args);
 
     optional_umf_result_t ret = ctl_find_and_execute_node(
-        CTL_NODE(global), ctx, source, name, type, arg, size, args_copy);
+        CTL_NODE(global), ctx, source, path, type, arg, size, args_copy);
 
     if (ret.is_valid == false && ctl) {
-        ret = ctl_find_and_execute_node(ctl->root, ctx, source, name, type, arg,
+        ret = ctl_find_and_execute_node(ctl->root, ctx, source, path, type, arg,
                                         size, args);
     }
 
@@ -573,16 +573,16 @@ void ctl_register_module_node(struct ctl *c, const char *name,
 
 /*
  * ctl_parse_query -- (internal) splits an entire query string
- *    into name and value
+ *    into path and value
  */
-static int ctl_parse_query(char *qbuf, char **name, char **value) {
+static int ctl_parse_query(char *qbuf, char **path, char **value) {
     if (qbuf == NULL) {
         return -1;
     }
 
     char *sptr = NULL;
-    *name = strtok_r(qbuf, CTL_NAME_VALUE_SEPARATOR, &sptr);
-    if (*name == NULL) {
+    *path = strtok_r(qbuf, CTL_NAME_VALUE_SEPARATOR, &sptr);
+    if (*path == NULL) {
         return -1;
     }
 
@@ -608,20 +608,20 @@ static umf_result_t ctl_load_config_helper(struct ctl *ctl, void *ctx,
                                            char *buf, ...) {
     umf_result_t ret = UMF_RESULT_SUCCESS;
     char *sptr = NULL; /* for internal use of strtok */
-    char *name;
+    char *path;
     char *value;
     char *qbuf = strtok_r(buf, CTL_STRING_QUERY_SEPARATOR, &sptr);
     va_list empty_args;
     va_start(empty_args, buf);
     while (qbuf != NULL) {
-        int parse_res = ctl_parse_query(qbuf, &name, &value);
+        int parse_res = ctl_parse_query(qbuf, &path, &value);
         if (parse_res != 0) {
             ret = UMF_RESULT_ERROR_INVALID_ARGUMENT;
             goto end;
         }
         // we do not need to copy va_list before call as we know that for query_config_input
         // ctl_query will not call va_arg on it. Ref 7.15/3 of C99 standard
-        ret = ctl_query(ctl, ctx, CTL_QUERY_CONFIG_INPUT, name, CTL_QUERY_WRITE,
+        ret = ctl_query(ctl, ctx, CTL_QUERY_CONFIG_INPUT, path, CTL_QUERY_WRITE,
                         value, strlen(value) + 1, empty_args);
 
         if (ret != UMF_RESULT_SUCCESS && ctx != NULL) {
