@@ -201,7 +201,7 @@ int main(void) {
         goto cleanup;
     }
 
-    /* set name of the pool so we can easly ref it by using name */
+    /* set name of the pool so we can easily ref it by using name */
     res = umfDisjointPoolParamsSetName(disjoint_params, pool_name);
     if (res != UMF_RESULT_SUCCESS) {
         fprintf(stderr, "Failed to name disjoint pool (error %d)\n", (int)res);

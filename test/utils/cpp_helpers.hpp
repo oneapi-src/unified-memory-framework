@@ -118,6 +118,7 @@ template <typename T> constexpr umf_memory_provider_ops_t providerOpsBase() {
                   UMF_RESULT_ERROR_UNKNOWN);
     UMF_ASSIGN_OP(ops, T, ext_get_allocation_properties_size,
                   UMF_RESULT_ERROR_UNKNOWN);
+    UMF_ASSIGN_OP(ops, T, ext_ctl, UMF_RESULT_ERROR_INVALID_CTL_PATH);
     return ops;
 }
 } // namespace detail

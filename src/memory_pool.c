@@ -469,15 +469,14 @@ static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
         goto err_pool_init;
     }
 
-    // Set default property "name" to pool if exists
     const char *pname = NULL;
-    ret = ops->get_name(NULL, &pname);
+    ret = ops->get_name(pool->pool_priv, &pname);
     if (ret != UMF_RESULT_SUCCESS) {
         LOG_ERR("Failed to get pool name");
         goto err_pool_init;
     }
     assert(pname != NULL);
-
+    utils_warn_invalid_name("Memory pool", pname);
     ctl_default_apply(pool_default_list, pname, ops->ext_ctl, pool->pool_priv);
 
     ret = umfPoolPostInitialize(&pool->ops, pool->pool_priv);
@@ -488,12 +487,6 @@ static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
 
     *hPool = pool;
     pools_by_name_add(pool);
-
-    const char *pool_name = NULL;
-    if (ops->get_name(pool->pool_priv, &pool_name) == UMF_RESULT_SUCCESS &&
-        pool_name) {
-        utils_warn_invalid_name("Memory pool", pool_name);
-    }
 
     LOG_INFO("Memory pool created: %p", (void *)pool);
     return UMF_RESULT_SUCCESS;

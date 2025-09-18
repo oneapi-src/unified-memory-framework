@@ -345,10 +345,20 @@ umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
 
     utils_init_once(&mem_provider_ctl_initialized, provider_ctl_init);
     const char *pname = NULL;
-    if (provider->ops.get_name(NULL, &pname) == UMF_RESULT_SUCCESS && pname) {
-        ctl_default_apply(provider_default_list, pname, provider->ops.ext_ctl,
-                          provider->provider_priv);
+
+    ret = provider->ops.get_name(provider->provider_priv, &pname);
+    if (ret != UMF_RESULT_SUCCESS) {
+        LOG_ERR("Failed to get pool name");
+        umf_ba_global_free(provider);
+        return ret;
     }
+
+    assert(pname != NULL);
+    utils_warn_invalid_name("Memory provider", pname);
+
+    ctl_default_apply(provider_default_list, pname, provider->ops.ext_ctl,
+                      provider->provider_priv);
+
     ret = umfProviderPostInitialize(&provider->ops, provider_priv);
     if (ret != UMF_RESULT_SUCCESS && ret != UMF_RESULT_ERROR_INVALID_CTL_PATH) {
         LOG_ERR("Failed to post-initialize provider");
@@ -357,13 +367,6 @@ umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
     }
 
     *hProvider = provider;
-
-    const char *provider_name = NULL;
-    if (provider->ops.get_name(provider->provider_priv, &provider_name) ==
-            UMF_RESULT_SUCCESS &&
-        provider_name) {
-        utils_warn_invalid_name("Memory provider", provider_name);
-    }
 
     return UMF_RESULT_SUCCESS;
 }

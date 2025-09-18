@@ -37,7 +37,7 @@ Every ``{}`` in the path is replaced with an extra argument passed to the CTL
 function. Alternative addressing methods are described below.
 
 Pool / Provider addressing
-==========================
+============================
 
 Two addressing schemes are provided: ``by_handle`` and ``by_name``. Each pool
 and provider has a unique handle and an optional user-defined name that can be
@@ -56,7 +56,7 @@ appending an index after the name::
 The number of pools with a given name can be obtained with the ``count`` node.
 
 Wildcards
-=========
+===========
 
 A ``{}`` in the path acts as a wildcard and is replaced with successive
 arguments of ``umfCtlGet``, ``umfCtlSet`` or ``umfCtlExec``. Wildcards can
@@ -74,18 +74,21 @@ replace any node, not only handles. For example::
 Ensure that the types of wildcard arguments match the expected node types.
 
 Default addressing
-==================
+===================
 
 ``umf.provider.default`` and ``umf.pool.default`` store default values applied
 to providers or pools created after the defaults are set. For example::
 
-  const char *name = "custom";
-  umfCtlSet("umf.pool.default.disjoint.name", (void *)name, strlen(name)+1);
+  size_t capacity = 16;
+  umfCtlSet("umf.pool.default.disjoint.params.capacity", &capacity,
+            sizeof(capacity));
 
-Every subsequently created disjoint pool will use ``custom`` as its name unless
-overridden by explicit parameters. Defaults may be supplied programmatically or
-via configuration and are saved internally and applied during initalization of
-a matching provider or pool.
+Every subsequently created disjoint pool will use ``16`` as its starting
+capacity overriding it's creation parameters. Defaults are keyed by the
+name returned from the provider or pool ``get_name`` callback, so if pool/provider
+has custom name it must be addressed explicitly.  Defaults may be supplied programmatically
+or via environment variable and are saved internally and applied during initialization of a
+matching provider or pool.
 
 Environment variables
 =====================
@@ -771,7 +774,7 @@ these entries.
 >>>>>>> da1363dd (better documentation)
 
 Reading this reference
-----------------------
+=======================
 
 Parameter annotations describe the values stored in the node rather than the
 pointer types passed to ``umfCtlGet``/``umfCtlSet``/``umfCtlExec``. The
@@ -841,7 +844,7 @@ Logger nodes
 
    :param path: Receives the currently selected sink on reads. On writes, pass
       ``"stdout"`` or ``"stderr"`` to redirect to standard streams, a
-      NUL-terminated file path to append to a file, or ``NULL`` to disable
+      NULL-terminated file path to append to a file, or ``NULL`` to disable
       logging altogether.
    :type path: ``char *`` when reading, ``const char *`` when writing
 
@@ -862,14 +865,14 @@ Provider entries are organized beneath ``umf.provider``. Use
 ``umf.provider.by_handle.{provider}`` with a
 :type:`umf_memory_provider_handle_t` argument to reach a specific provider.
 Providers can also be addressed by name through ``umf.provider.by_name.{provider}``;
-append ``.{index}`` to address specyfic provider when multiple providers share the same label.
-Defaults for future providers live under ``umf.provider.default.{provider_name}``,
-where ``{provider_name}`` matches the canonical provider identifier (``OS``,
-``FILE``, ``DEVDAX``, ``FIXED``, ``CUDA`` or ``LEVEL_ZERO``). Values written to
-the default tree are saved until a matching provider is created and applied
-during provider initialization. Defaults can be supplied programmatically or
-through configuration strings. The entries below list only the suffix of each
-node; prefix them with the appropriate ``umf.provider`` path.
+append ``.{index}`` to address specific provider when multiple providers share the same label.
+Defaults for future providers reside under ``umf.provider.default.{provider}`` and track the
+name returned by each provider's ``get_name`` implementation. Providers have their
+default names (``OS``, ``FILE``, ``DEVDAX``, ``FIXED``, ``CUDA`` or ``LEVEL_ZERO``),
+unless their name was changed during creation, those renamed providers must be addressed explicitly.
+Defaults can be written via ``umf.provider.default.<name>`` either programmatically or through
+configuration strings. The entries below list only the suffix of each node;
+prefix them with the appropriate ``umf.provider`` path.
 
 Common provider statistics
 --------------------------
@@ -971,11 +974,13 @@ Pool nodes
 Pool entries mirror the provider layout. ``umf.pool.by_handle.{pool}`` accepts a
 :type:`umf_memory_pool_handle_t`, while ``umf.pool.by_name.{pool}`` addresses
 pools by name with an optional ``.{index}`` suffix when names are reused.
-Defaults for future pools reside under ``umf.pool.default.{pool}``, where
-canonical names include ``disjoint``, ``scalable`` and ``jemalloc``. Defaults
-can be written via ``umf.pool.default.<pool>`` either programmatically or
-through configuration strings. The entries below list only the suffix of each
-node; prefix them with the appropriate ``umf.pool`` path.
+Defaults for future pools reside under ``umf.pool.default.{pool}`` and track the
+name returned by each pool's ``get_name`` implementation. Pools that keep their
+default names (``disjoint``, ``scalable`` and ``jemalloc``) continue to match
+those entries, while renamed pools must be addressed explicitly. Defaults can be
+written via ``umf.pool.default.<pool>`` either programmatically or through
+configuration strings. The entries below list only the suffix of each node;
+prefix them with the appropriate ``umf.pool`` path.
 
 Common pool statistics
 --------------------------
@@ -1001,7 +1006,7 @@ Disjoint pool (``disjoint``)
       provider.
    :type bytes: ``size_t``
 
-   **Access:** read-write. (write is only avaiable through defaults)
+   **Access:** read-write. (write is only available through defaults)
    **Defaults / Env:** supported.
 
    Governs how much memory the pool grabs in each slab. Lower values reduce
@@ -1014,7 +1019,7 @@ Disjoint pool (``disjoint``)
       cached by the pool.
    :type bytes: ``size_t``
 
-   **Access:** read-write. (write is only avaiable through defaults)
+   **Access:** read-write. (write is only available through defaults)
    **Defaults / Env:** supported.
 
    Sets the cut-off for pooling allocations. Requests larger than this value are
@@ -1027,7 +1032,7 @@ Disjoint pool (``disjoint``)
       may retain.
    :type count: ``size_t``
 
-   **Access:** read-write. (write is only avaiable through defaults)
+   **Access:** read-write. (write is only available through defaults)
    **Defaults / Env:** supported.
 
    Caps the pool's cached slabs per bucket to limit memory retention. Shrinking
@@ -1040,7 +1045,7 @@ Disjoint pool (``disjoint``)
       serve.
    :type bytes: ``size_t``
 
-   **Access:** read-write. (write is only avaiable through defaults)
+   **Access:** read-write. (write is only available through defaults)
    **Defaults / Env:** supported.
 
    Controls the smallest chunk size kept in the pool, which in turn affects the
@@ -1052,7 +1057,7 @@ Disjoint pool (``disjoint``)
    :param level: Receives or supplies the tracing level for the pool.
    :type level: ``int`` (``0`` disables tracing)
 
-   **Access:** read-write. (write is only avaiable through defaults)
+   **Access:** read-write. (write is only available through defaults)
    **Defaults / Env:** supported.
 
    Controls the disjoint pool's tracing features. ``0`` disables tracing.

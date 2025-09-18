@@ -23,6 +23,7 @@
 
 #include "../common/base.hpp"
 #include "../common/fork_helpers.hpp"
+#include "../common/provider.hpp"
 #include "gtest/gtest.h"
 
 using namespace umf_test;
@@ -61,7 +62,7 @@ class CtlTest : public ::testing::Test {
   private:
 };
 
-// setting default modyfies global state -
+// setting default modifies global state -
 // tests doing so should run in fork to ensure correct test isolation
 TEST_F(CtlTest, ctlDefault) {
     umf_test::run_in_fork([] {
@@ -147,6 +148,116 @@ TEST_F(CtlTest, ctlDefaultPoolMultithreaded) {
     });
 }
 
+struct ctl_provider_params {
+    const char *name;
+    int initial_value;
+};
+
+class ctl_provider : public umf_test::provider_base_t {
+  public:
+    ctl_provider() : name_ptr_(kDefaultName), stored_value_(0) {}
+
+    umf_result_t initialize(const ctl_provider_params *params) noexcept {
+        if (!params) {
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        }
+
+        stored_value_ = params->initial_value;
+        if (params->name) {
+            name_storage_ = params->name;
+            name_ptr_ = name_storage_.c_str();
+        } else {
+            name_ptr_ = kDefaultName;
+        }
+
+        return UMF_RESULT_SUCCESS;
+    }
+
+    umf_result_t get_name(const char **name) noexcept {
+        if (!name) {
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        }
+        *name = name_ptr_;
+        return UMF_RESULT_SUCCESS;
+    }
+
+    umf_result_t ext_ctl(umf_ctl_query_source_t, const char *path, void *arg,
+                         size_t size, umf_ctl_query_type_t queryType,
+                         va_list) noexcept {
+        if (std::strcmp(path, "params.value") != 0) {
+            return UMF_RESULT_ERROR_INVALID_CTL_PATH;
+        }
+
+        if (!arg || size != sizeof(int)) {
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        }
+
+        if (queryType == CTL_QUERY_WRITE) {
+            stored_value_ = *static_cast<int *>(arg);
+            return UMF_RESULT_SUCCESS;
+        }
+
+        if (queryType == CTL_QUERY_READ) {
+            *static_cast<int *>(arg) = stored_value_;
+            return UMF_RESULT_SUCCESS;
+        }
+
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+  private:
+    static constexpr const char *kDefaultName = "mock";
+    std::string name_storage_;
+    const char *name_ptr_;
+    int stored_value_;
+};
+
+TEST_F(CtlTest, ctlProviderDefaultsCustomName) {
+    umf_test::run_in_fork([] {
+        static auto provider_ops =
+            umf_test::providerMakeCOps<ctl_provider, ctl_provider_params>();
+
+        int canonical_default = 21;
+        ASSERT_EQ(umfCtlSet("umf.provider.default.mock.params.value",
+                            &canonical_default, sizeof(canonical_default)),
+                  UMF_RESULT_SUCCESS);
+
+        const std::string custom_name = "custom_provider";
+        int custom_default = 37;
+        const std::string custom_path =
+            "umf.provider.default." + custom_name + ".params.value";
+        ASSERT_EQ(umfCtlSet(custom_path.c_str(), &custom_default,
+                            sizeof(custom_default)),
+                  UMF_RESULT_SUCCESS);
+
+        ctl_provider_params custom_params{custom_name.c_str(), 0};
+        umf_memory_provider_handle_t custom_handle = nullptr;
+        ASSERT_EQ(umfMemoryProviderCreate(&provider_ops, &custom_params,
+                                          &custom_handle),
+                  UMF_RESULT_SUCCESS);
+
+        int value = 0;
+        ASSERT_EQ(umfCtlGet("umf.provider.by_handle.{}.params.value", &value,
+                            sizeof(value), custom_handle),
+                  UMF_RESULT_SUCCESS);
+        EXPECT_EQ(value, custom_default);
+        ASSERT_EQ(umfMemoryProviderDestroy(custom_handle), UMF_RESULT_SUCCESS);
+
+        ctl_provider_params canonical_params{nullptr, 7};
+        umf_memory_provider_handle_t canonical_handle = nullptr;
+        ASSERT_EQ(umfMemoryProviderCreate(&provider_ops, &canonical_params,
+                                          &canonical_handle),
+                  UMF_RESULT_SUCCESS);
+
+        ASSERT_EQ(umfCtlGet("umf.provider.by_handle.{}.params.value", &value,
+                            sizeof(value), canonical_handle),
+                  UMF_RESULT_SUCCESS);
+        EXPECT_EQ(value, canonical_default);
+        ASSERT_EQ(umfMemoryProviderDestroy(canonical_handle),
+                  UMF_RESULT_SUCCESS);
+    });
+}
+
 /* Case: overwriting an existing value for pool defaults
  * This test sets a default value and then overwrites it with a new value */
 TEST_F(CtlTest, ctlDefaultPoolOverwrite) {
@@ -184,7 +295,7 @@ TEST_F(CtlTest, ctlDefaultMultithreadedProvider) {
                     std::string name = name_prefix + std::to_string(i * 10 + j);
                     umfCtlSet(name.c_str(), (void *)predefined_value,
                               strlen(predefined_value));
-                    std::atomic_fetch_add(&totalRecords, 1);
+                    std::atomic_fetch_add(&totalRecords, (size_t)1);
                 }
             });
         }

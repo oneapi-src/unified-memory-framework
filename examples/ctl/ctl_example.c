@@ -204,7 +204,7 @@ static umf_result_t ctl_ctl(void *provider, umf_ctl_query_source_t source,
         return UMF_RESULT_SUCCESS;
     }
     if (queryType == CTL_QUERY_RUNNABLE &&
-        strcmp(formatted, "substraction") == 0) {
+        strcmp(formatted, "subtraction") == 0) {
         if (p->m) {
             p->c = (p->a - p->b) % p->m;
         } else {
@@ -300,9 +300,9 @@ int main(void) {
 
     // Execute subtraction and fetch the result
     res =
-        umfCtlExec("umf.provider.by_handle.{}.substraction", NULL, 0, provider);
+        umfCtlExec("umf.provider.by_handle.{}.subtraction", NULL, 0, provider);
     if (res != UMF_RESULT_SUCCESS) {
-        fprintf(stderr, "Failed to execute substraction!\n");
+        fprintf(stderr, "Failed to execute subtraction!\n");
         goto out;
     }
     res = umfCtlGet("umf.provider.by_handle.{}.c", &result, sizeof(result),
@@ -311,7 +311,7 @@ int main(void) {
         fprintf(stderr, "Failed to get c!\n");
         goto out;
     }
-    printf("substraction result: %d\n", result);
+    printf("subtraction result: %d\n", result);
 
 out:
     umfMemoryProviderDestroy(provider);

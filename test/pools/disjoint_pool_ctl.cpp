@@ -12,6 +12,7 @@
 #include <umf/providers/provider_os_memory.h>
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "base.hpp"
@@ -366,6 +367,97 @@ TEST_F(test, disjointCtlDefaultsOverride) {
         ASSERT_EQ(umfCtlSet("umf.pool.default.disjoint.params.min_bucket_size",
                             &default_min_bucket, sizeof(default_min_bucket)),
                   UMF_RESULT_SUCCESS);
+    });
+}
+
+TEST_F(test, disjointCtlDefaultsCustomName) {
+    umf_test::run_in_fork([] {
+        umf_os_memory_provider_params_handle_t raw_os_params = nullptr;
+        umf_result_t res = umfOsMemoryProviderParamsCreate(&raw_os_params);
+        if (res == UMF_RESULT_ERROR_NOT_SUPPORTED) {
+            GTEST_SKIP() << "OS memory provider is not supported!";
+        }
+        ASSERT_EQ(res, UMF_RESULT_SUCCESS);
+
+        std::unique_ptr<umf_os_memory_provider_params_t,
+                        decltype(&umfOsMemoryProviderParamsDestroy)>
+            os_params(raw_os_params, &umfOsMemoryProviderParamsDestroy);
+
+        ProviderWrapper providerWrapper(umfOsMemoryProviderOps(),
+                                        os_params.get());
+        if (providerWrapper.get() == nullptr) {
+            GTEST_SKIP() << "OS memory provider is not supported!";
+        }
+
+        const std::string custom_name = "custom_disjoint_pool";
+
+        size_t canonical_capacity = 9;
+        size_t canonical_min_bucket = 32;
+        ASSERT_EQ(umfCtlSet("umf.pool.default.disjoint.params.capacity",
+                            &canonical_capacity, sizeof(canonical_capacity)),
+                  UMF_RESULT_SUCCESS);
+        ASSERT_EQ(umfCtlSet("umf.pool.default.disjoint.params.min_bucket_size",
+                            &canonical_min_bucket,
+                            sizeof(canonical_min_bucket)),
+                  UMF_RESULT_SUCCESS);
+
+        size_t custom_capacity = 11;
+        size_t custom_min_bucket = 64;
+        const std::string custom_capacity_path =
+            "umf.pool.default." + custom_name + ".params.capacity";
+        const std::string custom_min_bucket_path =
+            "umf.pool.default." + custom_name + ".params.min_bucket_size";
+        ASSERT_EQ(umfCtlSet(custom_capacity_path.c_str(), &custom_capacity,
+                            sizeof(custom_capacity)),
+                  UMF_RESULT_SUCCESS);
+        ASSERT_EQ(umfCtlSet(custom_min_bucket_path.c_str(), &custom_min_bucket,
+                            sizeof(custom_min_bucket)),
+                  UMF_RESULT_SUCCESS);
+
+        umf_disjoint_pool_params_handle_t raw_custom_params = nullptr;
+        ASSERT_EQ(umfDisjointPoolParamsCreate(&raw_custom_params),
+                  UMF_RESULT_SUCCESS);
+        std::unique_ptr<umf_disjoint_pool_params_t,
+                        decltype(&umfDisjointPoolParamsDestroy)>
+            custom_params(raw_custom_params, &umfDisjointPoolParamsDestroy);
+
+        ASSERT_EQ(umfDisjointPoolParamsSetName(custom_params.get(),
+                                               custom_name.c_str()),
+                  UMF_RESULT_SUCCESS);
+
+        PoolWrapper customPool(providerWrapper.get(), umfDisjointPoolOps(),
+                               custom_params.get());
+        ASSERT_NE(customPool.get(), nullptr);
+
+        size_t value = 0;
+        ASSERT_EQ(umfCtlGet("umf.pool.by_handle.{}.params.capacity", &value,
+                            sizeof(value), customPool.get()),
+                  UMF_RESULT_SUCCESS);
+        EXPECT_EQ(value, custom_capacity);
+        ASSERT_EQ(umfCtlGet("umf.pool.by_handle.{}.params.min_bucket_size",
+                            &value, sizeof(value), customPool.get()),
+                  UMF_RESULT_SUCCESS);
+        EXPECT_EQ(value, custom_min_bucket);
+
+        umf_disjoint_pool_params_handle_t raw_default_params = nullptr;
+        ASSERT_EQ(umfDisjointPoolParamsCreate(&raw_default_params),
+                  UMF_RESULT_SUCCESS);
+        std::unique_ptr<umf_disjoint_pool_params_t,
+                        decltype(&umfDisjointPoolParamsDestroy)>
+            default_params(raw_default_params, &umfDisjointPoolParamsDestroy);
+
+        PoolWrapper defaultPool(providerWrapper.get(), umfDisjointPoolOps(),
+                                default_params.get());
+        ASSERT_NE(defaultPool.get(), nullptr);
+
+        ASSERT_EQ(umfCtlGet("umf.pool.by_handle.{}.params.capacity", &value,
+                            sizeof(value), defaultPool.get()),
+                  UMF_RESULT_SUCCESS);
+        EXPECT_EQ(value, canonical_capacity);
+        ASSERT_EQ(umfCtlGet("umf.pool.by_handle.{}.params.min_bucket_size",
+                            &value, sizeof(value), defaultPool.get()),
+                  UMF_RESULT_SUCCESS);
+        EXPECT_EQ(value, canonical_min_bucket);
     });
 }
 

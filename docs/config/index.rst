@@ -1,4 +1,4 @@
-.. Copyright 2023 Intel Corporation
+.. Copyright 2023-2025 Intel Corporation
    Intel Unified Memory Framework documentation
 
 Intel Unified Memory Framework documentation
@@ -10,4 +10,6 @@ Intel Unified Memory Framework documentation
    introduction.rst
    examples.rst
    api.rst
+   ctl.rst
    glossary.rst
+

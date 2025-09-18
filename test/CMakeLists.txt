@@ -214,7 +214,7 @@ add_umf_test(
 add_umf_test(
     NAME ctl_api
     SRCS ctl/ctl_api.cpp
-    LIBS ${UMF_UTILS_FOR_TEST})
+    LIBS ${UMF_UTILS_FOR_TEST} ${UMF_BA_FOR_TEST})
 
 add_umf_test(
     NAME utils_common
