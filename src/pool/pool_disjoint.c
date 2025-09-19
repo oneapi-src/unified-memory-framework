@@ -28,14 +28,6 @@
 
 static char *DEFAULT_NAME = "disjoint";
 
-enum {
-    DP_OVERRIDE_SLAB_MIN_SIZE = 1 << 0,
-    DP_OVERRIDE_MAX_POOLABLE_SIZE = 1 << 1,
-    DP_OVERRIDE_CAPACITY = 1 << 2,
-    DP_OVERRIDE_MIN_BUCKET_SIZE = 1 << 3,
-    DP_OVERRIDE_POOL_TRACE = 1 << 4,
-};
-
 /* Disjoint pool CTL implementation */
 struct ctl disjoint_ctl_root;
 static UTIL_ONCE_FLAG ctl_initialized = UTIL_ONCE_FLAG_INIT;
@@ -117,6 +109,15 @@ CTL_READ_HANDLER(slab_min_size)(void *ctx, umf_ctl_query_source_t source,
     *(size_t *)arg = pool->params.slab_min_size;
     return UMF_RESULT_SUCCESS;
 }
+
+// indicates that param was overridden by CTL
+enum {
+    DP_OVERRIDE_SLAB_MIN_SIZE = 1 << 0,
+    DP_OVERRIDE_MAX_POOLABLE_SIZE = 1 << 1,
+    DP_OVERRIDE_CAPACITY = 1 << 2,
+    DP_OVERRIDE_MIN_BUCKET_SIZE = 1 << 3,
+    DP_OVERRIDE_POOL_TRACE = 1 << 4,
+};
 
 static umf_result_t
 CTL_WRITE_HANDLER(slab_min_size)(void *ctx, umf_ctl_query_source_t source,

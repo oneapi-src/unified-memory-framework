@@ -69,11 +69,28 @@ processes: a producer and a consumer that communicate in the following way
 
 ## CTL example
 
+> **Note**: The CTL API is experimental and may change in future releases.
+
+This example configures an OS memory provider and disjoint pool, then queries
+statistics through CTL using both ``by_handle`` and ``by_name`` selectors. It
+demonstrates wildcard nodes to mix selectors, reset peak counters, and read
+disjoint-pool bucket telemetry. Run it with:
+
+  ./umf_example_ctl_statistics
+
+Tracing for detailed disjoint pool counters can be enabled through:
+
+  UMF_CONF="umf.pool.default.disjoint.params.pool_trace=2" ./umf_example_ctl_statistics
+
+## Custom CTL example
+
+> **Note**: The CTL API is experimental and may change in future releases.
+
 This example demonstrates how to add CTL support to a custom memory
 provider. It sets variables ``a`` and ``b`` through CTL, plus it allows
-for the modulus ``m`` loaded from the environment or a configuration file.
+for the modulus ``m`` to be loaded from the environment or a configuration file.
 Addition and subtraction operations return results modulo ``m`` and the
 result ``c`` can be retrieved using the CTL API. For example, to set the
-modulus through an environment variable run::
+modulus through an environment variable run:
 
   UMF_CONF="umf.provider.default.ctl.m=10" ./umf_example_ctl

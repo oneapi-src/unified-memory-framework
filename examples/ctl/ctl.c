@@ -7,11 +7,14 @@
  *
  */
 
-#include "umf/base.h"
 #include <stdbool.h>
 #include <stdio.h>
 
+// This example relies on the experimental CTL API, which may change without
+// notice.
 #include <umf/experimental/ctl.h>
+
+#include <umf/base.h>
 #include <umf/memory_pool.h>
 #include <umf/memory_provider.h>
 #include <umf/pools/pool_disjoint.h>
@@ -153,10 +156,7 @@ int main(void) {
         return -1;
     }
 
-    res = umfMemoryProviderGetName(provider, &provider_name);
-    if (res != UMF_RESULT_SUCCESS || provider_name == NULL) {
-        provider_name = "OS";
-    }
+    umfMemoryProviderGetName(provider, &provider_name);
 
     print_provider_stats("Provider stats before allocation", provider,
                          provider_name);

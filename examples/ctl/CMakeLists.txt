@@ -23,59 +23,59 @@ endif()
 
 # build the example
 set(EXAMPLE_NAME umf_example_ctl)
-add_executable(${ EXAMPLE_NAME} ctl_example.c)
-target_include_directories(${ EXAMPLE_NAME} PRIVATE ${ LIBUMF_INCLUDE_DIRS})
+add_executable(${EXAMPLE_NAME} custom_ctl.c)
+target_include_directories(${EXAMPLE_NAME} PRIVATE ${LIBUMF_INCLUDE_DIRS})
 target_link_directories(
     ${
     EXAMPLE_NAME}
     PRIVATE
     ${
     LIBHWLOC_LIBRARY_DIRS})
-target_link_libraries(${ EXAMPLE_NAME} PRIVATE ${LIBUMF_LIBRARIES} hwloc)
+target_link_libraries(${EXAMPLE_NAME} PRIVATE ${LIBUMF_LIBRARIES} hwloc)
 
 add_test(
     NAME ${EXAMPLE_NAME}
-    COMMAND ${ EXAMPLE_NAME}
-    WORKING_DIRECTORY ${ CMAKE_CURRENT_BINARY_DIR})
+    COMMAND ${EXAMPLE_NAME}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 set_tests_properties(${EXAMPLE_NAME} PROPERTIES LABELS "example-standalone")
 
 if(LINUX)
     # set LD_LIBRARY_PATH
     set_property(
-        TEST ${ EXAMPLE_NAME}
+        TEST ${EXAMPLE_NAME}
         PROPERTY ENVIRONMENT_MODIFICATION
                  "LD_LIBRARY_PATH=path_list_append:"
-                 "${LIBUMF_LIBRARY_DIRS};LD_"
-                 "LIBRARY_PATH=path_list_append:${"
+                 "${LIBUMF_LIBRARY_DIRS};"
+                 "LD_LIBRARY_PATH=path_list_append:${"
                  "LIBHWLOC_LIBRARY_DIRS}")
 endif()
 
 set(EXAMPLE_NAME umf_example_ctl_statistics)
-add_executable(${ EXAMPLE_NAME} ctl_statistics_example.c)
-target_include_directories(${ EXAMPLE_NAME} PRIVATE ${ LIBUMF_INCLUDE_DIRS})
+add_executable(${EXAMPLE_NAME} ctl.c)
+target_include_directories(${EXAMPLE_NAME} PRIVATE ${LIBUMF_INCLUDE_DIRS})
 target_link_directories(
     ${
     EXAMPLE_NAME}
     PRIVATE
     ${
     LIBHWLOC_LIBRARY_DIRS})
-target_link_libraries(${ EXAMPLE_NAME} PRIVATE ${LIBUMF_LIBRARIES} hwloc)
+target_link_libraries(${EXAMPLE_NAME} PRIVATE ${LIBUMF_LIBRARIES} hwloc)
 
 add_test(
     NAME ${EXAMPLE_NAME}
-    COMMAND ${ EXAMPLE_NAME}
-    WORKING_DIRECTORY ${ CMAKE_CURRENT_BINARY_DIR})
+    COMMAND ${EXAMPLE_NAME}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 set_tests_properties(${EXAMPLE_NAME} PROPERTIES LABELS "example-standalone")
 
 if(LINUX)
     # set LD_LIBRARY_PATH
     set_property(
-        TEST ${ EXAMPLE_NAME}
+        TEST ${EXAMPLE_NAME}
         PROPERTY ENVIRONMENT_MODIFICATION
                  "LD_LIBRARY_PATH=path_list_append:"
-                 "${LIBUMF_LIBRARY_DIRS};LD_"
-                 "LIBRARY_PATH=path_list_append:${"
+                 "${LIBUMF_LIBRARY_DIRS};"
+                 "LD_LIBRARY_PATH=path_list_append:${"
                  "LIBHWLOC_LIBRARY_DIRS}")
 endif()

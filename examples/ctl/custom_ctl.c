@@ -13,9 +13,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+// This example relies on the experimental CTL API, which may change without
+// notice.
+#include <umf/experimental/ctl.h>
+
 #include <umf.h>
 #include <umf/base.h>
-#include <umf/experimental/ctl.h>
+
 #include <umf/memory_provider.h>
 #include <umf/memory_provider_ops.h>
 
@@ -23,10 +27,7 @@
 
 // Provider state exposed via CTL
 typedef struct ctl_provider_t {
-    int a;
-    int b;
-    int c;
-    int m; // modulus value, optional
+    int a, b, c, m;
 } ctl_provider_t;
 
 static umf_result_t ctl_init(const void *params, void **provider) {

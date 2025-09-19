@@ -49,7 +49,7 @@ template <typename Func> void run_in_fork(Func &&func) {
                 _exit(ForkedTestFailure);
             }
         }
-        umfTearDown(); // exit not call destructor so we need to call it manualy
+        umfTearDown(); // exit not call destructor so we need to call it manually
         _exit(ForkedTestSuccess);
     }
 

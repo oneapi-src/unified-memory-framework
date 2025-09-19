@@ -6,11 +6,10 @@
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  */
 
-#include "ctl_defaults.h"
-
 #include <string.h>
 
 #include "base_alloc_global.h"
+#include "ctl_defaults.h"
 #include "utils_concurrency.h"
 #include "utils_log.h"
 #include "utlist.h"
@@ -33,7 +32,7 @@ umf_result_t ctl_default_subtree(ctl_default_entry_t **list, utils_mutex_t *mtx,
                                  umf_ctl_query_type_t queryType) {
     (void)source;
     if (strstr(extra_name, "{}") != NULL) {
-        LOG_ERR("%s, default setting do not support wildcard parameters {}",
+        LOG_ERR("%s, default setting does not support wildcard parameters {}",
                 extra_name);
         return UMF_RESULT_ERROR_NOT_SUPPORTED;
     }
