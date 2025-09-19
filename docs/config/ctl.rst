@@ -8,6 +8,9 @@ configuration options, statistics and auxiliary APIs. CTL entries can also be
 set through environment variables or a configuration file, allowing adjustment
 of UMF behavior without modifying the program.
 
+.. note::
+   The CTL API is experimental and may change in future releases.
+
 Main concepts
 =============
 
@@ -663,17 +666,16 @@ The jemalloc-backed pool currently exposes only the common statistics nodes.
 Adding CTL support to custom providers and pools
 ================================================
 
-The :file:`examples/ctl/ctl_example.c` source demonstrates how a minimal
+The :file:`examples/ctl/custom_ctl.c` source demonstrates how a minimal
 provider can expose configuration entries, statistics and runnables through the
 CTL API. To add similar support to your own provider or pool you must implement
 an ``ext_ctl`` callback – parse incoming CTL paths and handle
-`CTL_QUERY_READ``, ``CTL_QUERY_WRITE`` and ``CTL_QUERY_RUNNABLE`` requests.
+``CTL_QUERY_READ``, ``CTL_QUERY_WRITE`` and ``CTL_QUERY_RUNNABLE`` requests.
 The callback receives a ``umf_ctl_query_source_t`` indicating whether the
 query came from the application or a configuration source.  Programmatic
 calls pass typed binary data, while configuration sources deliver strings
 that must be parsed.  Wildcards (``{}``) may appear in paths and are supplied
 as additional arguments.
-new entries.
 
 During initialization UMF will execute ``post_initialize`` on the callback after
 applying any queued defaults, allowing the provider or pool to finalize its

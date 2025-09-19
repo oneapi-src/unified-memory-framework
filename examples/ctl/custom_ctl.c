@@ -19,6 +19,9 @@
 #include <umf/memory_provider.h>
 #include <umf/memory_provider_ops.h>
 
+// This example relies on the experimental CTL API, which may change without
+// notice.
+
 // Minimal memory provider demonstrating CTL integration
 
 // Provider state exposed via CTL

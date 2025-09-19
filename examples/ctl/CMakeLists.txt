@@ -23,7 +23,7 @@ endif()
 
 # build the example
 set(EXAMPLE_NAME umf_example_ctl)
-add_executable(${ EXAMPLE_NAME} ctl_example.c)
+add_executable(${ EXAMPLE_NAME} custom_ctl.c)
 target_include_directories(${ EXAMPLE_NAME} PRIVATE ${ LIBUMF_INCLUDE_DIRS})
 target_link_directories(
     ${
@@ -52,7 +52,7 @@ if(LINUX)
 endif()
 
 set(EXAMPLE_NAME umf_example_ctl_statistics)
-add_executable(${ EXAMPLE_NAME} ctl_statistics_example.c)
+add_executable(${ EXAMPLE_NAME} ctl.c)
 target_include_directories(${ EXAMPLE_NAME} PRIVATE ${ LIBUMF_INCLUDE_DIRS})
 target_link_directories(
     ${

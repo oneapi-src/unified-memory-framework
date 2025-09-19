@@ -12,6 +12,9 @@
 #include <stdio.h>
 
 #include <umf/experimental/ctl.h>
+
+// This example relies on the experimental CTL API, which may change without
+// notice.
 #include <umf/memory_pool.h>
 #include <umf/memory_provider.h>
 #include <umf/pools/pool_disjoint.h>
