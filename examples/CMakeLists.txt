@@ -277,7 +277,7 @@ if(LINUX)
 
     add_umf_executable(
         NAME ${EXAMPLE_NAME}
-        SRCS ctl/ctl_example.c
+        SRCS ctl/custom_ctl.c
         LIBS umf ${UMF_HWLOC_NAME})
 
     target_include_directories(
@@ -295,7 +295,7 @@ if(LINUX)
 
     add_umf_executable(
         NAME ${EXAMPLE_NAME}
-        SRCS ctl/ctl_statistics_example.c
+        SRCS ctl/ctl.c
         LIBS umf ${UMF_HWLOC_NAME})
 
     target_include_directories(

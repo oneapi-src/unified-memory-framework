@@ -21,6 +21,9 @@ documentation, which includes the code of the
 [basic example](https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/basic/basic.c).
 There are also more advanced examples that allocate USM memory from the [Level Zero device](examples/level_zero_shared_memory/level_zero_shared_memory.c) using the Level Zero API and UMF Level Zero memory provider and [CUDA device](examples/cuda_shared_memory/cuda_shared_memory.c) using the CUDA API and UMF CUDA memory provider.
 
+UMF's experimental CTL API is showcased in the [CTL example](examples/ctl/ctl.c),
+which explores provider and pool statistics, and in the [custom CTL example](examples/ctl/custom_ctl.c), which wires CTL support into a custom memory provider. These examples rely on experimental headers which may change in future releases.
+
 ## Build
 
 ### Requirements

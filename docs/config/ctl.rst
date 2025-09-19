@@ -8,6 +8,9 @@ configuration options, statistics and auxiliary APIs. CTL entries can also be
 set through environment variables or a configuration file, allowing adjustment
 of UMF behavior without modifying the program.
 
+.. note::
+   The CTL API is experimental and may change in future releases.
+
 Main concepts
 =============
 
@@ -84,7 +87,7 @@ to providers or pools created after the defaults are set. For example::
             sizeof(capacity));
 
 Every subsequently created disjoint pool will use ``16`` as its starting
-capacity overriding it's creation parameters. Defaults are keyed by the
+capacity overriding its creation parameters. Defaults are keyed by the
 name returned from the provider or pool ``get_name`` callback, so if pool/provider
 has custom name it must be addressed explicitly.  Defaults may be supplied programmatically
 or via environment variable and are saved internally and applied during initialization of a
@@ -99,7 +102,7 @@ Multiple entries are separated with semicolons, e.g.::
 
   UMF_CONF="umf.logger.output=stdout;umf.logger.level=0"
 
-CTL options available through environment variables are limited—you can only
+CTL options available through environment variables are limited — you can only
 target default nodes when addressing pools. This means that configuration
 strings can influence values consumed during pool creation but cannot alter
 runtime-only parameters.
@@ -118,7 +121,7 @@ major subsystems:
 Within each subsystem the path continues with an addressing scheme followed by
 the module or leaf of interest.
 
-Reading this reference
+Reading below sections
 =======================
 
 Parameter annotations describe the values stored in the node rather than the
@@ -211,8 +214,8 @@ Provider entries are organized beneath ``umf.provider``. Use
 :type:`umf_memory_provider_handle_t` argument to reach a specific provider.
 Providers can also be addressed by name through ``umf.provider.by_name.{provider}``;
 append ``.{index}`` to address specific provider when multiple providers share the same label.
-Defaults for future providers reside under ``umf.provider.default.{provider}`` and track the
-name returned by each provider's ``get_name`` implementation. Providers have their
+Defaults for future providers reside under ``umf.provider.default.{provider}`` where ``{provider}`` is
+a name returned by each provider's ``get_name`` implementation. Providers have their
 default names (``OS``, ``FILE``, ``DEVDAX``, ``FIXED``, ``CUDA`` or ``LEVEL_ZERO``),
 unless their name was changed during creation, those renamed providers must be addressed explicitly.
 Defaults can be written via ``umf.provider.default.<name>`` either programmatically or through
@@ -663,17 +666,16 @@ The jemalloc-backed pool currently exposes only the common statistics nodes.
 Adding CTL support to custom providers and pools
 ================================================
 
-The :file:`examples/ctl/ctl_example.c` source demonstrates how a minimal
+The :file:`examples/ctl/custom_ctl.c` source demonstrates how a minimal
 provider can expose configuration entries, statistics and runnables through the
 CTL API. To add similar support to your own provider or pool you must implement
 an ``ext_ctl`` callback – parse incoming CTL paths and handle
-`CTL_QUERY_READ``, ``CTL_QUERY_WRITE`` and ``CTL_QUERY_RUNNABLE`` requests.
+``CTL_QUERY_READ``, ``CTL_QUERY_WRITE`` and ``CTL_QUERY_RUNNABLE`` requests.
 The callback receives a ``umf_ctl_query_source_t`` indicating whether the
 query came from the application or a configuration source.  Programmatic
 calls pass typed binary data, while configuration sources deliver strings
 that must be parsed.  Wildcards (``{}``) may appear in paths and are supplied
 as additional arguments.
-new entries.
 
 During initialization UMF will execute ``post_initialize`` on the callback after
 applying any queued defaults, allowing the provider or pool to finalize its
