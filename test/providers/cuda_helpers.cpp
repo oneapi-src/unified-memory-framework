@@ -110,7 +110,7 @@ int InitCUDAOps() {
 #ifdef _WIN32
     const char *lib_name = "nvcuda.dll";
 #else
-    const char *lib_name = "libcuda.so";
+    const char *lib_name = "libcuda.so.1";
 #endif
     // CUDA symbols
 #if OPEN_CU_LIBRARY_GLOBAL
