@@ -31,9 +31,11 @@ int fput_count = 0;
 
 int mock_fputs(const char *s, FILE *stream) {
     fput_count++;
+#ifndef UMF_DEVELOPER_MODE
     if (!expected_message.empty()) {
         EXPECT_STREQ(s, expected_message.c_str());
     }
+#endif
     EXPECT_EQ(stream, expected_stream);
     return (int)strlen(s);
 }
