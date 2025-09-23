@@ -99,8 +99,8 @@ static const char *level_to_str(utils_log_level_t l) {
 #endif // _MSC_VER
 
 static void utils_log_internal(utils_log_level_t level, int perror,
-                               const char *func, const char *format,
-                               va_list args) {
+                               const char *fileline, const char *func,
+                               const char *format, va_list args) {
     if (!loggerConfig.output && level != LOG_FATAL) {
         return; //logger not enabled
     }
@@ -115,7 +115,12 @@ static void utils_log_internal(utils_log_level_t level, int perror,
     char *b_pos = buffer;
     int b_size = sizeof(buffer);
 
-    int tmp = snprintf(b_pos, b_size, "%s: ", func);
+    int tmp = 0;
+    if (fileline == NULL) {
+        tmp = snprintf(b_pos, b_size, "%s: ", func);
+    } else {
+        tmp = snprintf(b_pos, b_size, "%s %s: ", fileline, func);
+    }
     ASSERT(tmp > 0);
 
     b_pos += (int)tmp;
@@ -229,19 +234,19 @@ static void utils_log_internal(utils_log_level_t level, int perror,
 #pragma warning(pop)
 #endif // _MSC_VER
 
-void utils_log(utils_log_level_t level, const char *func, const char *format,
-               ...) {
+void utils_log(utils_log_level_t level, const char *fileline, const char *func,
+               const char *format, ...) {
     va_list args;
     va_start(args, format);
-    utils_log_internal(level, 0, func, format, args);
+    utils_log_internal(level, 0, fileline, func, format, args);
     va_end(args);
 }
 
-void utils_plog(utils_log_level_t level, const char *func, const char *format,
-                ...) {
+void utils_plog(utils_log_level_t level, const char *fileline, const char *func,
+                const char *format, ...) {
     va_list args;
     va_start(args, format);
-    utils_log_internal(level, 1, func, format, args);
+    utils_log_internal(level, 1, fileline, func, format, args);
     va_end(args);
 }
 
