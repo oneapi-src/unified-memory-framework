@@ -24,29 +24,47 @@ typedef enum {
     LOG_FATAL
 } utils_log_level_t;
 
-#define LOG_DEBUG(...) utils_log(LOG_DEBUG, __func__, __VA_ARGS__);
-#define LOG_INFO(...) utils_log(LOG_INFO, __func__, __VA_ARGS__);
-#define LOG_WARN(...) utils_log(LOG_WARNING, __func__, __VA_ARGS__);
-#define LOG_ERR(...) utils_log(LOG_ERROR, __func__, __VA_ARGS__);
-#define LOG_FATAL(...) utils_log(LOG_FATAL, __func__, __VA_ARGS__);
+#ifdef UMF_DEVELOPER_MODE
+#define UMF_STRINGIFY(x) #x
+#define UMF_TOSTRING(x) UMF_STRINGIFY(x)
+#define UMF_FILELINE_DESC() __FILE__ ":" UMF_TOSTRING(__LINE__)
+#else
+#define UMF_FILELINE_DESC() NULL
+#endif
 
-#define LOG_PDEBUG(...) utils_plog(LOG_DEBUG, __func__, __VA_ARGS__);
-#define LOG_PINFO(...) utils_plog(LOG_INFO, __func__, __VA_ARGS__);
-#define LOG_PWARN(...) utils_plog(LOG_WARNING, __func__, __VA_ARGS__);
-#define LOG_PERR(...) utils_plog(LOG_ERROR, __func__, __VA_ARGS__);
-#define LOG_PFATAL(...) utils_plog(LOG_FATAL, __func__, __VA_ARGS__);
+#define LOG_DEBUG(...)                                                         \
+    utils_log(LOG_DEBUG, UMF_FILELINE_DESC(), __func__, __VA_ARGS__);
+#define LOG_INFO(...)                                                          \
+    utils_log(LOG_INFO, UMF_FILELINE_DESC(), __func__, __VA_ARGS__);
+#define LOG_WARN(...)                                                          \
+    utils_log(LOG_WARNING, UMF_FILELINE_DESC(), __func__, __VA_ARGS__);
+#define LOG_ERR(...)                                                           \
+    utils_log(LOG_ERROR, UMF_FILELINE_DESC(), __func__, __VA_ARGS__);
+#define LOG_FATAL(...)                                                         \
+    utils_log(LOG_FATAL, UMF_FILELINE_DESC(), __func__, __VA_ARGS__);
+
+#define LOG_PDEBUG(...)                                                        \
+    utils_plog(LOG_DEBUG, UMF_FILELINE_DESC(), __func__, __VA_ARGS__);
+#define LOG_PINFO(...)                                                         \
+    utils_plog(LOG_INFO, UMF_FILELINE_DESC(), __func__, __VA_ARGS__);
+#define LOG_PWARN(...)                                                         \
+    utils_plog(LOG_WARNING, UMF_FILELINE_DESC(), __func__, __VA_ARGS__);
+#define LOG_PERR(...)                                                          \
+    utils_plog(LOG_ERROR, UMF_FILELINE_DESC(), __func__, __VA_ARGS__);
+#define LOG_PFATAL(...)                                                        \
+    utils_plog(LOG_FATAL, UMF_FILELINE_DESC(), __func__, __VA_ARGS__);
 
 void utils_log_init(void);
 #ifdef _WIN32
-void utils_log(utils_log_level_t level, const char *func, const char *format,
-               ...);
-void utils_plog(utils_log_level_t level, const char *func, const char *format,
-                ...);
+void utils_log(utils_log_level_t level, const char *fileline, const char *func,
+               const char *format, ...);
+void utils_plog(utils_log_level_t level, const char *fileline, const char *func,
+                const char *format, ...);
 #else
-void utils_log(utils_log_level_t level, const char *func, const char *format,
-               ...) __attribute__((format(printf, 3, 4)));
-void utils_plog(utils_log_level_t level, const char *func, const char *format,
-                ...) __attribute__((format(printf, 3, 4)));
+void utils_log(utils_log_level_t level, const char *fileline, const char *func,
+               const char *format, ...) __attribute__((format(printf, 4, 5)));
+void utils_plog(utils_log_level_t level, const char *fileline, const char *func,
+                const char *format, ...) __attribute__((format(printf, 4, 5)));
 #endif
 
 extern const umf_ctl_node_t CTL_NODE(logger)[];
