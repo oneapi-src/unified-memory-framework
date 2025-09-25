@@ -50,7 +50,11 @@ Prepare changes for the release:
 - Once all changes are done, build locally (and/or verify changes on CI), including:
   - Verify if scanners/linters/checkers passed
   - Verify if version is set properly, especially in `.dll` and `.so` files
+- Create/update a VERSION file for GitHub ZIP downloads (users without git):
+  - `echo "$VERSION" > VERSION`
+  - It will always contain "the last released version". In logs/CMake build it will introduce itself as `$VERSION-dev`, only if git is not available
 - Commit these changes and tag the release:
+  - `git add VERSION`
   - `git commit -a -S -m "$VERSION release"`
   - `git tag -a -s -m "Version $VERSION" v$VERSION`
 - Verify if commit and tag are properly signed:

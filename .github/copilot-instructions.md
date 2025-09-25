@@ -35,7 +35,7 @@ cmake -B build -DCMAKE_BUILD_TYPE=Debug \
   2. `VERSION` file fallback
   3. "0.0.0" default
 - `set_version_variables()` in `cmake/helpers.cmake` handles version detection
-- For releases: create `VERSION` file with semver format (e.g., "1.0.3-dev")
+- For releases: create `VERSION` file with semver format (e.g., "1.0.3")
 
 ### Code Formatting
 - **Always format code before committing**: `make format-apply`

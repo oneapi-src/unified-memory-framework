@@ -32,7 +32,8 @@ if(UMF_CMAKE_VERSION VERSION_EQUAL "0.0.0")
     message(
         WARNING
             "UMF version is set to 0.0.0, which most likely is not expected! "
-            "Please checkout the git tags to get a proper version.")
+            "Please install git and checkout the git tags to get a proper version."
+    )
 endif()
 
 if(PROJECT_VERSION_PATCH GREATER 0)
