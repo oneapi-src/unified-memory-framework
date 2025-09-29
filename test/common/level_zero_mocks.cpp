@@ -39,8 +39,11 @@ LevelZeroMock::initializeMemoryProviderWithResidentDevices(
     EXPECT_CALL(*this, zeDeviceGetProperties(device, _))
         .WillRepeatedly(DoAll(SetArgPointee<1>(device_properties),
                               Return(ZE_RESULT_SUCCESS)));
+
+    void *POINTER_TESTING_PROPS = TestCreatePointer<void *>(0x77);
     EXPECT_CALL(*this, zeMemAllocDevice(CONTEXT, _, _, _, device, _))
-        .WillOnce(Return(ZE_RESULT_SUCCESS));
+        .WillOnce(DoAll(SetArgPointee<5>(POINTER_TESTING_PROPS),
+                        Return(ZE_RESULT_SUCCESS)));
     for (auto dev : residentDevices) {
         EXPECT_CALL(*this, zeContextMakeMemoryResident(context, dev, _, _))
             .WillOnce(Return(ZE_RESULT_SUCCESS));
@@ -48,7 +51,7 @@ LevelZeroMock::initializeMemoryProviderWithResidentDevices(
     EXPECT_CALL(*this, zeMemGetAllocProperties(context, _, _, _))
         .WillOnce(DoAll(SetArgPointee<2>(memory_allocation_properties),
                         Return(ZE_RESULT_SUCCESS)));
-    EXPECT_CALL(*this, zeMemFree(CONTEXT, _))
+    EXPECT_CALL(*this, zeMemFree(CONTEXT, POINTER_TESTING_PROPS))
         .WillOnce(Return(ZE_RESULT_SUCCESS));
 
     umf_memory_provider_handle_t provider = nullptr;
