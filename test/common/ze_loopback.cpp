@@ -12,7 +12,7 @@
 #include <cstdlib>
 #include <iostream>
 
-ZE_APIEXPORT ZE_DLLEXPORT LevelZero *level_zero_mock = nullptr;
+ZE_APIEXPORT LevelZero *level_zero_mock = nullptr;
 
 static void check_mock_present() {
     if (level_zero_mock == nullptr) {
