@@ -425,12 +425,14 @@ static umf_result_t ze_memory_provider_free_helper(void *provider, void *ptr,
                                                    size_t bytes,
                                                    int update_stats) {
     if (ptr == NULL) {
+        LOG_DEBUG("Free skipped as ptr is NULL");
         return UMF_RESULT_SUCCESS;
     }
 
-    ze_memory_provider_t *ze_provider = (ze_memory_provider_t *)provider;
+    ze_memory_provider_t *ze_provider = provider;
     umf_result_t ret;
     if (ze_provider->freePolicyFlags == 0) {
+        LOG_DEBUG("No free policy set, caling zeMemFree with %p", ptr);
         ret = ze2umf_result(g_ze_ops.zeMemFree(ze_provider->context, ptr));
     } else {
         ze_memory_free_ext_desc_t desc = {
@@ -438,6 +440,7 @@ static umf_result_t ze_memory_provider_free_helper(void *provider, void *ptr,
             .pNext = NULL,
             .freePolicy = ze_provider->freePolicyFlags};
 
+        LOG_DEBUG("Free policy was set, caling zeMemFreeExt with %p", ptr);
         ret = ze2umf_result(
             g_ze_ops.zeMemFreeExt(ze_provider->context, &desc, ptr));
     }
@@ -559,8 +562,6 @@ static umf_result_t query_min_page_size(ze_memory_provider_t *ze_provider,
                                         size_t *min_page_size) {
     assert(min_page_size);
 
-    LOG_DEBUG("Querying minimum page size");
-
     void *ptr;
     umf_result_t result =
         ze_memory_provider_alloc_helper(ze_provider, 1, 0, 0, &ptr);
@@ -574,6 +575,7 @@ static umf_result_t query_min_page_size(ze_memory_provider_t *ze_provider,
         ze_provider->context, ptr, &properties, NULL);
 
     *min_page_size = properties.pageSize;
+    LOG_DEBUG("Querying minimum page size, got:%lu", properties.pageSize);
 
     ze_memory_provider_free_helper(ze_provider, ptr, 1, 0);
 

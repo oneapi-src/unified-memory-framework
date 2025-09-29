@@ -101,7 +101,7 @@ void MockedLevelZeroTestEnvironment::SetUp() {
     setenv("UMF_ZE_LOADER_LIB_NAME", lib_name, 1);
 #endif
 
-    void *lib_handle = utils_open_library(lib_name, 0);
+    lib_handle = utils_open_library(lib_name, 0);
     ASSERT_NE(lib_handle, nullptr);
 
     void *l0interface_sym =
@@ -113,6 +113,8 @@ void MockedLevelZeroTestEnvironment::SetUp() {
 
     ASSERT_EQ(*l0interface, nullptr);
 }
-void MockedLevelZeroTestEnvironment::TearDown() {}
+void MockedLevelZeroTestEnvironment::TearDown() {
+    utils_close_library(lib_handle);
+}
 
 LevelZero **MockedLevelZeroTestEnvironment::l0interface;
