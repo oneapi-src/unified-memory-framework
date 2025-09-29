@@ -439,7 +439,8 @@ if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
         NAME provider_level_zero_residency
         SRCS providers/provider_level_zero_residency.cpp
              ${UMF_UTILS_DIR}/utils_level_zero.cpp
-        LIBS ${UMF_UTILS_FOR_TEST} umf_ze_loopback umf_test_mocks GTest::gmock)
+        LIBS ${UMF_UTILS_FOR_TEST} umf_ze_loopback umf_test_mocks GTest::gmock
+        ENVS "UMF_LOG=level:debug\\\\\\\\;flush:debug\\\\\\\\;output:stdout")
     add_umf_test(
         NAME pool_residency
         SRCS pools/pool_residency.cpp ${UMF_UTILS_DIR}/utils_level_zero.cpp
@@ -447,7 +448,8 @@ if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
              ${UMF_BA_FOR_TEST}
              umf_ze_loopback
              umf_test_mocks
-             GTest::gmock)
+             GTest::gmock
+        ENVS "UMF_LOG=level:debug\\\\\\\\;flush:debug\\\\\\\\;output:stdout")
 endif()
 
 if(UMF_BUILD_GPU_TESTS AND UMF_LEVEL_ZERO_ENABLED)
