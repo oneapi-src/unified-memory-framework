@@ -28,7 +28,13 @@ if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
         umf_test_mocks PUBLIC ${UMF_CMAKE_SOURCE_DIR}/include ${UMF_SRC_DIR}
                               ${UMF_UTILS_DIR} ${LEVEL_ZERO_INCLUDE_DIRS})
 
-    add_library(umf_ze_loopback SHARED ze_loopback.h ze_loopback.cpp)
+    add_umf_library(
+        NAME umf_ze_loopback
+        TYPE SHARED
+        SRCS ze_loopback.h ze_loopback.cpp
+        LINUX_MAP_FILE ${CMAKE_CURRENT_SOURCE_DIR}/ze_loopback.map
+        WINDOWS_DEF_FILE ${CMAKE_CURRENT_SOURCE_DIR}/ze_loopback.def)
+
     target_include_directories(umf_ze_loopback
                                PUBLIC ${LEVEL_ZERO_INCLUDE_DIRS})
 endif()
