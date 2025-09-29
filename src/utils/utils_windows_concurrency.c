@@ -36,7 +36,7 @@ int utils_mutex_unlock(utils_mutex_t *mutex) {
     return 0;
 }
 
-utils_rwlock_t *utils_rwlock_init(utils_rwlock_t *rwlock) {
+int utils_rwlock_init(utils_rwlock_t *rwlock) {
     InitializeSRWLock(&rwlock->lock);
     return 0; // never fails
 }

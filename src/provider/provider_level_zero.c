@@ -657,7 +657,7 @@ static umf_result_t ze_memory_provider_initialize(const void *params,
         }
     }
 
-    if (utils_rwlock_init(&ze_provider->resident_device_rwlock) == NULL) {
+    if (utils_rwlock_init(&ze_provider->resident_device_rwlock) != 0) {
         LOG_ERR("Cannot initialize resident device rwlock");
         umf_ba_global_free(ze_provider);
         return UMF_RESULT_ERROR_OUT_OF_RESOURCES;

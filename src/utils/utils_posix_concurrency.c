@@ -46,10 +46,9 @@ void utils_init_once(UTIL_ONCE_FLAG *flag, void (*oneCb)(void)) {
     pthread_once(flag, oneCb);
 }
 
-utils_rwlock_t *utils_rwlock_init(utils_rwlock_t *ptr) {
+int utils_rwlock_init(utils_rwlock_t *ptr) {
     pthread_rwlock_t *rwlock = (pthread_rwlock_t *)ptr;
-    int ret = pthread_rwlock_init(rwlock, NULL);
-    return ret == 0 ? ((utils_rwlock_t *)rwlock) : NULL;
+    return pthread_rwlock_init(rwlock, NULL);
 }
 
 void utils_rwlock_destroy_not_free(utils_rwlock_t *ptr) {
