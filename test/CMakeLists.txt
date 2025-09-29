@@ -149,8 +149,11 @@ function(add_umf_test)
     if(WINDOWS)
         # add PATH to DLL on Windows
         set(DLL_PATH_LIST
-            "${DLL_PATH_LIST};PATH=path_list_append:${CMAKE_BINARY_DIR}/bin/;PATH=path_list_append:${CMAKE_BINARY_DIR}/bin/$<CONFIG>/"
-        )
+            "${DLL_PATH_LIST};"
+            "PATH=path_list_append:${CMAKE_BINARY_DIR}/bin/;"
+            "PATH=path_list_append:${CMAKE_BINARY_DIR}/bin/$<CONFIG>/;"
+            "PATH=path_list_append:${CMAKE_BINARY_DIR}/test/common/;"
+            "PATH=path_list_append:${CMAKE_BINARY_DIR}/test/common/$<CONFIG>/")
 
         # append PATH to DLLs NOTE: this would work only for the CMake ver >= #
         # 3.22. For the older versions, the PATH variable should be set in the
