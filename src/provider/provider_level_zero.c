@@ -88,14 +88,14 @@ typedef struct ze_memory_provider_t {
 typedef struct ze_ops_t {
     ze_result_t (*zeMemAllocHost)(ze_context_handle_t,
                                   const ze_host_mem_alloc_desc_t *, size_t,
-                                  size_t, void *);
+                                  size_t, void **);
     ze_result_t (*zeMemAllocDevice)(ze_context_handle_t,
                                     const ze_device_mem_alloc_desc_t *, size_t,
-                                    size_t, ze_device_handle_t, void *);
+                                    size_t, ze_device_handle_t, void **);
     ze_result_t (*zeMemAllocShared)(ze_context_handle_t,
                                     const ze_device_mem_alloc_desc_t *,
                                     const ze_host_mem_alloc_desc_t *, size_t,
-                                    size_t, ze_device_handle_t, void *);
+                                    size_t, ze_device_handle_t, void **);
     ze_result_t (*zeMemFree)(ze_context_handle_t, void *);
     ze_result_t (*zeMemGetIpcHandle)(ze_context_handle_t, const void *,
                                      ze_ipc_mem_handle_t *);
@@ -462,7 +462,7 @@ static umf_result_t ze_memory_provider_alloc_helper(void *provider, size_t size,
                                                     size_t alignment,
                                                     int update_stats,
                                                     void **resultPtr) {
-    ze_memory_provider_t *ze_provider = (ze_memory_provider_t *)provider;
+    ze_memory_provider_t *ze_provider = provider;
 
     ze_result_t ze_result = ZE_RESULT_SUCCESS;
     switch (ze2umf_memory_type(ze_provider->memory_type)) {
@@ -714,7 +714,7 @@ ze_memory_provider_get_last_native_error(void *provider, const char **ppMessage,
 static umf_result_t ze_memory_provider_get_min_page_size(void *provider,
                                                          const void *ptr,
                                                          size_t *pageSize) {
-    ze_memory_provider_t *ze_provider = (ze_memory_provider_t *)provider;
+    ze_memory_provider_t *ze_provider = provider;
 
     if (!ptr) {
         *pageSize = ze_provider->min_page_size;
@@ -770,7 +770,7 @@ static umf_result_t ze_memory_provider_get_name(void *provider,
         *name = DEFAULT_NAME;
         return UMF_RESULT_SUCCESS;
     }
-    ze_memory_provider_t *ze_provider = (ze_memory_provider_t *)provider;
+    ze_memory_provider_t *ze_provider = provider;
     *name = ze_provider->name;
     return UMF_RESULT_SUCCESS;
 }
