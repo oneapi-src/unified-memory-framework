@@ -1071,9 +1071,12 @@ umf_result_t umfLevelZeroMemoryProviderResidentDeviceChange(
             }
             LOG_DEBUG("enlarging resident devices array from %u to %u",
                       ze_provider->resident_device_capacity, new_capacity);
-            memcpy(new_handles, ze_provider->resident_device_handles,
-                   sizeof(ze_device_handle_t) *
-                       ze_provider->resident_device_count);
+            if (ze_provider->resident_device_count > 0) {
+                ASSERT(ze_provider->resident_device_handles != NULL);
+                memcpy(new_handles, ze_provider->resident_device_handles,
+                       sizeof(ze_device_handle_t) *
+                           ze_provider->resident_device_count);
+            }
             umf_ba_global_free(ze_provider->resident_device_handles);
             ze_provider->resident_device_handles = new_handles;
             ze_provider->resident_device_capacity = new_capacity;
