@@ -151,9 +151,7 @@ function(add_umf_test)
         set(DLL_PATH_LIST
             "${DLL_PATH_LIST};"
             "PATH=path_list_append:${CMAKE_BINARY_DIR}/bin/;"
-            "PATH=path_list_append:${CMAKE_BINARY_DIR}/bin/$<CONFIG>/;"
-            "PATH=path_list_append:${CMAKE_BINARY_DIR}/test/common/;"
-            "PATH=path_list_append:${CMAKE_BINARY_DIR}/test/common/$<CONFIG>/")
+            "PATH=path_list_append:${CMAKE_BINARY_DIR}/bin/$<CONFIG>/")
 
         # append PATH to DLLs NOTE: this would work only for the CMake ver >= #
         # 3.22. For the older versions, the PATH variable should be set in the
@@ -161,6 +159,22 @@ function(add_umf_test)
         set_property(TEST ${TEST_NAME} PROPERTY ENVIRONMENT_MODIFICATION
                                                 "${DLL_PATH_LIST}")
     endif()
+endfunction()
+
+function(add_umf_mocked_test test_name test_source_file)
+    add_umf_test(
+        NAME ${test_name}
+        SRCS ${test_source_file} ${UMF_UTILS_DIR}/utils_level_zero.cpp
+        LIBS ${UMF_UTILS_FOR_TEST} ${UMF_BA_FOR_TEST} umf_test_mocks
+             GTest::gmock)
+
+    set_tests_properties(
+        test_${test_name} PROPERTIES
+        ENVIRONMENT
+        "UMF_LOG=level:debug\\\\\\\\;flush:debug\\\\\\\\;output:stdout;UMF_ZE_LOADER_LIB_NAME=$<TARGET_FILE:umf_ze_loopback>"
+    )
+    target_compile_definitions(test_${test_name} PUBLIC USE_DLOPEN=1)
+    add_dependencies(test_${test_name} umf_ze_loopback)
 endfunction()
 
 add_subdirectory(common)
@@ -435,21 +449,9 @@ else()
 endif()
 
 if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
-    add_umf_test(
-        NAME provider_level_zero_residency
-        SRCS providers/provider_level_zero_residency.cpp
-             ${UMF_UTILS_DIR}/utils_level_zero.cpp
-        LIBS ${UMF_UTILS_FOR_TEST} umf_ze_loopback umf_test_mocks GTest::gmock
-        ENVS "UMF_LOG=level:debug\\\\\\\\;flush:debug\\\\\\\\;output:stdout")
-    add_umf_test(
-        NAME pool_residency
-        SRCS pools/pool_residency.cpp ${UMF_UTILS_DIR}/utils_level_zero.cpp
-        LIBS ${UMF_UTILS_FOR_TEST}
-             ${UMF_BA_FOR_TEST}
-             umf_ze_loopback
-             umf_test_mocks
-             GTest::gmock
-        ENVS "UMF_LOG=level:debug\\\\\\\\;flush:debug\\\\\\\\;output:stdout")
+    add_umf_mocked_test(provider_level_zero_residency
+                        providers/provider_level_zero_residency.cpp)
+    add_umf_mocked_test(pool_residency pools/pool_residency.cpp)
 endif()
 
 if(UMF_BUILD_GPU_TESTS AND UMF_LEVEL_ZERO_ENABLED)

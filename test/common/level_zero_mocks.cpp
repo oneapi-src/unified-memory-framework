@@ -96,13 +96,9 @@ TestCreateMemoryAllocationProperties(uint32_t modifier) {
 }
 
 void MockedLevelZeroTestEnvironment::SetUp() {
-#ifdef _WIN32
-    const char *lib_name = "umf_ze_loopback.dll";
-    _putenv_s("UMF_ZE_LOADER_LIB_NAME", lib_name);
-#else
-    const char *lib_name = "libumf_ze_loopback.so";
-    setenv("UMF_ZE_LOADER_LIB_NAME", lib_name, 1);
-#endif
+    const char *lib_name = getenv("UMF_ZE_LOADER_LIB_NAME");
+    ASSERT_NE(lib_name, nullptr);
+    ASSERT_NE(lib_name[0], '\0');
 
     lib_handle = utils_open_library(lib_name, 0);
     ASSERT_NE(lib_handle, nullptr);
@@ -116,6 +112,7 @@ void MockedLevelZeroTestEnvironment::SetUp() {
 
     ASSERT_EQ(*l0interface, nullptr);
 }
+
 void MockedLevelZeroTestEnvironment::TearDown() {
     utils_close_library(lib_handle);
 }

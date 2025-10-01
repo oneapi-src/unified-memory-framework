@@ -513,6 +513,9 @@ static umf_result_t ze_memory_provider_alloc_helper(void *provider, size_t size,
     }
 
     if (ze_result != ZE_RESULT_SUCCESS) {
+        LOG_ERR("failed to allocate memory, type:%d, size:%lu, alignment:%lu, "
+                "result:%d",
+                ze_provider->memory_type, size, alignment, ze_result);
         return ze2umf_result(ze_result);
     }
 
