@@ -11,10 +11,12 @@ include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
 
 # This function establishes version variables based on the git describe output.
-# If there's no git available in the system, the version will be set to "0.0.0".
-# If git reports only a hash, the version will be set to "0.0.0.git.<hash>".
-# Otherwise we'll use 3-component version: major.minor.patch, just for CMake's
-# sake. A few extra variables will be set for Win dll metadata.
+# If there's no git available in the system, it falls back to reading a VERSION
+# file from the project root. If neither git nor VERSION file is available, the
+# version will be set to "0.0.0". If git reports only a hash, the version will
+# be set to "0.0.0.git.<hash>". Otherwise we'll use 3-component version:
+# major.minor.patch, just for CMake's sake. A few extra variables will be set
+# for Win dll metadata.
 #
 # Important note: CMake does not support rc or git information. According to
 # semver rules, 1.5.1-rc1 should be less than 1.5.1, but it seems hard to
@@ -78,8 +80,24 @@ function(set_version_variables)
         OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
 
     if(NOT GIT_VERSION)
-        # no git or it reported no version. Use default ver: "0.0.0"
-        return()
+        # no git or it reported no version. Try fallback to VERSION file
+        if(EXISTS "${UMF_CMAKE_SOURCE_DIR}/VERSION")
+            file(READ "${UMF_CMAKE_SOURCE_DIR}/VERSION" FILE_VERSION)
+            string(STRIP ${FILE_VERSION} FILE_VERSION)
+            if(FILE_VERSION)
+                set(GIT_VERSION "v${FILE_VERSION}-dev")
+                message(
+                    STATUS
+                        "Using version from VERSION file: ${FILE_VERSION}. To get detailed version, use git and fetch tags."
+                )
+            else()
+                # VERSION file exists but is empty, use default ver: "0.0.0"
+                return()
+            endif()
+        else()
+            # no git and no VERSION file. Use default ver: "0.0.0"
+            return()
+        endif()
     endif()
 
     # v1.5.0 - we're exactly on a tag -> UMF ver: "1.5.0"
