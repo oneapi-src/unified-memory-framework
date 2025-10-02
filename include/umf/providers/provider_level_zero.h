@@ -83,6 +83,21 @@ umf_result_t umfLevelZeroMemoryProviderParamsSetFreePolicy(
     umf_level_zero_memory_provider_params_handle_t hParams,
     umf_level_zero_memory_provider_free_policy_t policy);
 
+typedef enum umf_level_zero_memory_provider_memory_exchange_policy_t {
+    UMF_LEVEL_ZERO_MEMORY_PROVIDER_MEMORY_EXCHANGE_POLICY_IPC =
+        0, ///< Memory exchange policy based on IPC. Default.
+    UMF_LEVEL_ZERO_MEMORY_PROVIDER_MEMORY_EXCHANGE_POLICY_IMPORT_EXPORT,
+    ///< Memory exchange policy based on import/export APIs. Should be used if IPC exchange policy is not supported.
+} umf_level_zero_memory_provider_memory_exchange_policy_t;
+
+/// @brief  Set the memory exchange policy.
+/// @param  hParams handle to the parameters of the Level Zero Memory Provider.
+/// @param  policy memory exchange policy.
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+umf_result_t umfLevelZeroMemoryProviderParamsSetMemoryExchangePolicy(
+    umf_level_zero_memory_provider_params_handle_t hParams,
+    umf_level_zero_memory_provider_memory_exchange_policy_t policy);
+
 /// @brief  Set the device ordinal in the parameters struct.
 /// @param  hParams handle to the parameters of the Level Zero Memory Provider.
 /// @param  deviceOrdinal device ordinal.
