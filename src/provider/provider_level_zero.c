@@ -43,20 +43,26 @@ void fini_ze_global_state(void) {
 
 // Level Zero Memory Provider settings struct
 typedef struct umf_level_zero_memory_provider_params_t {
-    ze_context_handle_t
-        level_zero_context_handle; ///< Handle to the Level Zero context
-    ze_device_handle_t
-        level_zero_device_handle; ///< Handle to the Level Zero device
+    // Handle to the Level Zero context
+    ze_context_handle_t level_zero_context_handle;
 
-    umf_usm_memory_type_t memory_type; ///< Allocation memory type
+    // Handle to the Level Zero device
+    ze_device_handle_t level_zero_device_handle;
 
-    ze_device_handle_t *
-        resident_device_handles; ///< Array of devices for which the memory should be made resident
-    uint32_t
-        resident_device_count; ///< Number of devices for which the memory should be made resident
+    // Allocation memory type
+    umf_usm_memory_type_t memory_type;
 
-    umf_level_zero_memory_provider_free_policy_t
-        freePolicy; ///< Memory free policy
+    // Array of devices for which the memory should be made resident
+    ze_device_handle_t *resident_device_handles;
+
+    // Number of devices for which the memory should be made resident
+    uint32_t resident_device_count;
+
+    // Memory free policy
+    umf_level_zero_memory_provider_free_policy_t freePolicy;
+
+    // Memory exchange policy
+    umf_level_zero_memory_provider_memory_exchange_policy_t exchangePolicy;
 
     uint32_t device_ordinal;
     char name[64];
@@ -73,6 +79,8 @@ typedef struct ze_memory_provider_t {
     ze_device_properties_t device_properties;
 
     ze_driver_memory_free_policy_ext_flags_t freePolicyFlags;
+
+    umf_level_zero_memory_provider_memory_exchange_policy_t exchangePolicy;
 
     size_t min_page_size;
 
@@ -253,6 +261,8 @@ umf_result_t umfLevelZeroMemoryProviderParamsCreate(
     params->resident_device_handles = NULL;
     params->resident_device_count = 0;
     params->freePolicy = UMF_LEVEL_ZERO_MEMORY_PROVIDER_FREE_POLICY_DEFAULT;
+    params->exchangePolicy =
+        UMF_LEVEL_ZERO_MEMORY_PROVIDER_MEMORY_EXCHANGE_POLICY_IPC;
     params->device_ordinal = 0;
     strncpy(params->name, DEFAULT_NAME, sizeof(params->name) - 1);
     params->name[sizeof(params->name) - 1] = '\0';
@@ -374,6 +384,18 @@ umf_result_t umfLevelZeroMemoryProviderParamsSetFreePolicy(
     return UMF_RESULT_SUCCESS;
 }
 
+umf_result_t umfLevelZeroMemoryProviderParamsSetMemoryExchangePolicy(
+    umf_level_zero_memory_provider_params_handle_t hParams,
+    umf_level_zero_memory_provider_memory_exchange_policy_t policy) {
+    if (!hParams) {
+        LOG_ERR("Level Zero memory provider params handle is NULL");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    hParams->exchangePolicy = policy;
+    return UMF_RESULT_SUCCESS;
+}
+
 static ze_driver_memory_free_policy_ext_flags_t
 umfFreePolicyToZePolicy(umf_level_zero_memory_provider_free_policy_t policy) {
     switch (policy) {
@@ -401,6 +423,11 @@ static ze_relaxed_allocation_limits_exp_desc_t relaxed_device_allocation_desc =
      .pNext = NULL,
      .flags = ZE_RELAXED_ALLOCATION_LIMITS_EXP_FLAG_MAX_SIZE};
 
+static ze_external_memory_export_desc_t memory_export_desc = {
+    .stype = ZE_STRUCTURE_TYPE_EXTERNAL_MEMORY_EXPORT_DESC,
+    .pNext = NULL,
+    .flags = ZE_EXTERNAL_MEMORY_TYPE_FLAG_OPAQUE_WIN32};
+
 static umf_result_t ze_memory_provider_alloc_helper(void *provider, size_t size,
                                                     size_t alignment,
                                                     int update_stats,
@@ -421,11 +448,30 @@ static umf_result_t ze_memory_provider_alloc_helper(void *provider, size_t size,
     case UMF_MEMORY_TYPE_DEVICE: {
         ze_device_mem_alloc_desc_t dev_desc = {
             .stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC,
-            .pNext = use_relaxed_allocation(ze_provider, size)
-                         ? &relaxed_device_allocation_desc
-                         : NULL,
+            .pNext = NULL,
             .flags = 0,
             .ordinal = ze_provider->device_ordinal};
+        void *lastNext = &dev_desc.pNext;
+
+        ze_relaxed_allocation_limits_exp_desc_t
+            relaxed_device_allocation_desc_copy =
+                relaxed_device_allocation_desc;
+        if (use_relaxed_allocation(ze_provider, size)) {
+            // add relaxed allocation desc to the pNext chain
+            *(uintptr_t *)lastNext =
+                (uintptr_t)&relaxed_device_allocation_desc_copy;
+            lastNext = &relaxed_device_allocation_desc_copy.pNext;
+        }
+
+        ze_external_memory_export_desc_t memory_export_desc_copy =
+            memory_export_desc;
+        if (ze_provider->exchangePolicy ==
+            UMF_LEVEL_ZERO_MEMORY_PROVIDER_MEMORY_EXCHANGE_POLICY_IMPORT_EXPORT) {
+            // add external memory export desc to the pNext chain
+            *(uintptr_t *)lastNext = (uintptr_t)&memory_export_desc_copy;
+            lastNext = &memory_export_desc_copy.pNext;
+        }
+
         ze_result = g_ze_ops.zeMemAllocDevice(ze_provider->context, &dev_desc,
                                               size, alignment,
                                               ze_provider->device, resultPtr);
@@ -599,6 +645,7 @@ static umf_result_t ze_memory_provider_initialize(const void *params,
     ze_provider->memory_type = umf2ze_memory_type(ze_params->memory_type);
     ze_provider->freePolicyFlags =
         umfFreePolicyToZePolicy(ze_params->freePolicy);
+    ze_provider->exchangePolicy = ze_params->exchangePolicy;
     ze_provider->min_page_size = 0;
     ze_provider->device_ordinal = ze_params->device_ordinal;
 
@@ -755,6 +802,7 @@ static umf_result_t ze_memory_provider_allocation_split(void *provider,
 
 typedef struct ze_ipc_data_t {
     int pid;
+    size_t size;
     ze_ipc_mem_handle_t ze_handle;
 } ze_ipc_data_t;
 
@@ -770,20 +818,45 @@ static umf_result_t ze_memory_provider_get_ipc_handle(void *provider,
                                                       const void *ptr,
                                                       size_t size,
                                                       void *providerIpcData) {
-    (void)size;
-
     ze_result_t ze_result;
     ze_ipc_data_t *ze_ipc_data = (ze_ipc_data_t *)providerIpcData;
     struct ze_memory_provider_t *ze_provider =
         (struct ze_memory_provider_t *)provider;
 
-    ze_result = g_ze_ops.zeMemGetIpcHandle(ze_provider->context, ptr,
-                                           &ze_ipc_data->ze_handle);
-    if (ze_result != ZE_RESULT_SUCCESS) {
-        LOG_ERR("zeMemGetIpcHandle() failed.");
-        return ze2umf_result(ze_result);
+    if (ze_provider->exchangePolicy ==
+        UMF_LEVEL_ZERO_MEMORY_PROVIDER_MEMORY_EXCHANGE_POLICY_IPC) {
+        ze_result = g_ze_ops.zeMemGetIpcHandle(ze_provider->context, ptr,
+                                               &ze_ipc_data->ze_handle);
+
+        if (ze_result != ZE_RESULT_SUCCESS) {
+            LOG_ERR("zeMemGetIpcHandle() failed.");
+            return ze2umf_result(ze_result);
+        }
+    } else { // UMF_LEVEL_ZERO_MEMORY_PROVIDER_MEMORY_EXCHANGE_POLICY_IMPORT_EXPORT
+        ze_external_memory_export_fd_t fd_desc = {
+            .stype = ZE_STRUCTURE_TYPE_EXTERNAL_MEMORY_EXPORT_FD,
+            .pNext = NULL,
+            .flags = ZE_EXTERNAL_MEMORY_TYPE_FLAG_OPAQUE_WIN32,
+            .fd = 0};
+
+        ze_memory_allocation_properties_t mem_alloc_props = {
+            .stype = ZE_STRUCTURE_TYPE_MEMORY_ALLOCATION_PROPERTIES,
+            .pNext = &fd_desc,
+            .type = 0,
+            .id = 0,
+            .pageSize = 0};
+
+        ze_result = g_ze_ops.zeMemGetAllocProperties(ze_provider->context, ptr,
+                                                     &mem_alloc_props, NULL);
+        if (ze_result != ZE_RESULT_SUCCESS) {
+            LOG_ERR("zeMemGetAllocProperties() failed.");
+            return ze2umf_result(ze_result);
+        }
+
+        memcpy(&ze_ipc_data->ze_handle, &fd_desc.fd, sizeof(fd_desc.fd));
     }
 
+    ze_ipc_data->size = size;
     ze_ipc_data->pid = utils_getpid();
 
     return UMF_RESULT_SUCCESS;
@@ -834,14 +907,40 @@ static umf_result_t ze_memory_provider_open_ipc_handle(void *provider,
         memcpy(&ze_ipc_handle, &fd_local, sizeof(fd_local));
     }
 
-    ze_result = g_ze_ops.zeMemOpenIpcHandle(
-        ze_provider->context, ze_provider->device, ze_ipc_handle, 0, ptr);
-    if (fd_local != -1) {
-        (void)utils_close_fd(fd_local);
-    }
-    if (ze_result != ZE_RESULT_SUCCESS) {
-        LOG_ERR("zeMemOpenIpcHandle() failed.");
-        return ze2umf_result(ze_result);
+    if (ze_provider->exchangePolicy ==
+        UMF_LEVEL_ZERO_MEMORY_PROVIDER_MEMORY_EXCHANGE_POLICY_IPC) {
+        ze_result = g_ze_ops.zeMemOpenIpcHandle(
+            ze_provider->context, ze_provider->device, ze_ipc_handle, 0, ptr);
+        if (fd_local != -1) {
+            (void)utils_close_fd(fd_local);
+        }
+        if (ze_result != ZE_RESULT_SUCCESS) {
+            LOG_ERR("zeMemOpenIpcHandle() failed.");
+            return ze2umf_result(ze_result);
+        }
+    } else { // UMF_LEVEL_ZERO_MEMORY_PROVIDER_MEMORY_EXCHANGE_POLICY_IMPORT_EXPORT
+        ze_external_memory_import_fd_t import_fd = {
+            .stype = ZE_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMPORT_FD,
+            .pNext = NULL,
+            .flags = ZE_EXTERNAL_MEMORY_TYPE_FLAG_DMA_BUF,
+            .fd = fd_local};
+
+        ze_device_mem_alloc_desc_t alloc_desc = {
+            .stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC,
+            .pNext = &import_fd,
+            .flags = 0,
+            .ordinal = 0};
+        ze_result = g_ze_ops.zeMemAllocDevice(ze_provider->context, &alloc_desc,
+                                              ze_ipc_data->size, 0,
+                                              ze_provider->device, ptr);
+        if (fd_local != -1) {
+            (void)utils_close_fd(fd_local);
+        }
+
+        if (ze_result != ZE_RESULT_SUCCESS) {
+            LOG_ERR("zeMemAllocDevice() failed.");
+            return ze2umf_result(ze_result);
+        }
     }
 
     return UMF_RESULT_SUCCESS;
@@ -1022,6 +1121,14 @@ umf_result_t umfLevelZeroMemoryProviderParamsSetResidentDevices(
 umf_result_t umfLevelZeroMemoryProviderParamsSetFreePolicy(
     umf_level_zero_memory_provider_params_handle_t hParams,
     umf_level_zero_memory_provider_free_policy_t policy) {
+    (void)hParams;
+    (void)policy;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
+umf_result_t umfLevelZeroMemoryProviderParamsSetMemoryExchangePolicy(
+    umf_level_zero_memory_provider_params_handle_t hParams,
+    umf_level_zero_memory_provider_memory_exchange_policy_t policy) {
     (void)hParams;
     (void)policy;
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
