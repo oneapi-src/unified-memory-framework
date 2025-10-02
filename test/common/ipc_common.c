@@ -73,7 +73,6 @@ int consumer_connect(int port) {
     struct sockaddr_in consumer_addr;
     struct sockaddr_in producer_addr;
     int producer_addr_len;
-    int ret = -1;
 
 #ifdef _WIN32
     // initialize Winsock
@@ -141,7 +140,7 @@ err_WSA_cleanup:
     WSACleanup();
 #endif
 
-    return ret;
+    return -1;
 }
 
 int run_consumer(int port, const umf_memory_pool_ops_t *pool_ops,
@@ -350,7 +349,8 @@ int producer_connect(int port) {
 #ifdef _WIN32
     // initialize Winsock
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-        fprintf(stderr, "WSAStartup failed. Error Code: %d\n", WSAGetLastError());
+        fprintf(stderr, "WSAStartup failed. Error Code: %d\n",
+                WSAGetLastError());
         return -1;
     }
 #endif
