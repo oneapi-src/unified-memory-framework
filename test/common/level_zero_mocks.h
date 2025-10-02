@@ -66,8 +66,8 @@ class LevelZeroMock : public LevelZero {
     MOCK_METHOD2(zeMemFree,
                  ze_result_t(ze_context_handle_t hContext, void *ptr));
 
-    // helper setting all expects related to successful l0 provider creation
-    // and initialization and calling its creation and initialization
+    // A helper function that (1) sets all EXPECT_CALLs related to successful l0 provider creation
+    // and initialization (2) calls l0 provider creation and initialization
     umf_memory_provider_handle_t initializeMemoryProviderWithResidentDevices(
         ze_device_handle_t device,
         std::vector<ze_device_handle_t> residentDevices,

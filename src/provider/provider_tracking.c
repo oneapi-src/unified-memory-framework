@@ -1543,7 +1543,7 @@ umf_result_t umfMemoryTrackerIterateAll(int (*func)(uintptr_t key, void *value,
 
     for (int level = 0; level < MAX_LEVELS_OF_ALLOC_SEGMENT_MAP; level++) {
         critnib *alloc_segment = TRACKER->alloc_segments_map[level];
-        LOG_DEBUG("iterating tracker's %d segment:%p", level,
+        LOG_DEBUG("iterating tracker's %d segment: %p", level,
                   (void *)alloc_segment);
         critnib_iter_all(alloc_segment, func, privdata);
     }
