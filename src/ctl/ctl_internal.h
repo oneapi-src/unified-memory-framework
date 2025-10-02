@@ -75,8 +75,8 @@ struct ctl_argument_parser {
 };
 
 struct ctl_argument {
-    size_t dest_size;                     /* size of the entire argument */
-    struct ctl_argument_parser parsers[]; /* array of 'fields' in arg */
+    size_t dest_size;                      /* size of the entire argument */
+    struct ctl_argument_parser parsers[8]; /* array of 'fields' in arg */
 };
 
 #define sizeof_member(type, member) sizeof(((type *)0)->member)
