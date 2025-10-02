@@ -78,7 +78,7 @@ int consumer_connect(int port) {
 #ifdef _WIN32
     // initialize Winsock
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-        fprintf(stderr, "WSAStartup failed: %d", WSAGetLastError());
+        fprintf(stderr, "WSAStartup failed: %d\n", WSAGetLastError());
         return -1;
     }
 #endif
