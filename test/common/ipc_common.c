@@ -350,7 +350,7 @@ int producer_connect(int port) {
 #ifdef _WIN32
     // initialize Winsock
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-        fprintf(stderr, "Failed. Error Code : %d", WSAGetLastError());
+        fprintf(stderr, "WSAStartup failed. Error Code: %d\n", WSAGetLastError());
         return -1;
     }
 #endif
