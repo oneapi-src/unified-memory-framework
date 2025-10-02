@@ -27,7 +27,7 @@
 #include "utils_log.h"
 #include "utils_math.h"
 
-static char *DEFAULT_NAME = "disjoint";
+static const char *DEFAULT_NAME = "disjoint";
 
 /* Disjoint pool CTL implementation */
 struct ctl disjoint_ctl_root;
