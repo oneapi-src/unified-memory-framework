@@ -1527,3 +1527,26 @@ void umfMemoryTrackerDestroy(umf_memory_tracker_handle_t handle) {
     handle->ipc_info_allocator = NULL;
     umf_ba_global_free(handle);
 }
+
+umf_result_t umfMemoryTrackerIterateAll(int (*func)(uintptr_t key, void *value,
+                                                    void *privdata),
+                                        void *privdata) {
+    if (UNLIKELY(TRACKER == NULL)) {
+        LOG_ERR("tracker does not exist");
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
+
+    if (UNLIKELY(TRACKER->alloc_segments_map[0] == NULL)) {
+        LOG_ERR("tracker's alloc_segments_map does not exist");
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
+
+    for (int level = 0; level < MAX_LEVELS_OF_ALLOC_SEGMENT_MAP; level++) {
+        critnib *alloc_segment = TRACKER->alloc_segments_map[level];
+        LOG_DEBUG("iterating tracker's %d segment: %p", level,
+                  (void *)alloc_segment);
+        critnib_iter_all(alloc_segment, func, privdata);
+    }
+
+    return UMF_RESULT_SUCCESS;
+}

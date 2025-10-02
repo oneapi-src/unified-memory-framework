@@ -71,12 +71,12 @@ typedef struct utils_rwlock_t {
 #endif
 } utils_rwlock_t;
 
-utils_rwlock_t *utils_rwlock_init(utils_rwlock_t *ptr);
+int utils_rwlock_init(utils_rwlock_t *ptr);
 void utils_rwlock_destroy_not_free(utils_rwlock_t *rwlock);
-int utils_read_lock(utils_rwlock_t *rwlock);
-int utils_write_lock(utils_rwlock_t *rwlock);
-int utils_read_unlock(utils_rwlock_t *rwlock);
-int utils_write_unlock(utils_rwlock_t *rwlock);
+void utils_read_lock(utils_rwlock_t *rwlock);
+void utils_write_lock(utils_rwlock_t *rwlock);
+void utils_read_unlock(utils_rwlock_t *rwlock);
+void utils_write_unlock(utils_rwlock_t *rwlock);
 
 #if defined(_WIN32)
 #define UTIL_ONCE_FLAG INIT_ONCE

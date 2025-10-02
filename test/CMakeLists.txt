@@ -35,8 +35,9 @@ endif()
 enable_testing()
 
 set(UMF_TEST_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-set(UMF_UTILS_DIR ${UMF_CMAKE_SOURCE_DIR}/src/utils)
-set(UMF_BA_DIR ${UMF_CMAKE_SOURCE_DIR}/src/base_alloc)
+set(UMF_SRC_DIR ${UMF_CMAKE_SOURCE_DIR}/src)
+set(UMF_UTILS_DIR ${UMF_SRC_DIR}/utils)
+set(UMF_BA_DIR ${UMF_SRC_DIR}/base_alloc)
 
 function(build_umf_test)
     # Parameters:
@@ -148,8 +149,9 @@ function(add_umf_test)
     if(WINDOWS)
         # add PATH to DLL on Windows
         set(DLL_PATH_LIST
-            "${DLL_PATH_LIST};PATH=path_list_append:${CMAKE_BINARY_DIR}/bin/;PATH=path_list_append:${CMAKE_BINARY_DIR}/bin/$<CONFIG>/"
-        )
+            "${DLL_PATH_LIST};"
+            "PATH=path_list_append:${CMAKE_BINARY_DIR}/bin/;"
+            "PATH=path_list_append:${CMAKE_BINARY_DIR}/bin/$<CONFIG>/")
 
         # append PATH to DLLs NOTE: this would work only for the CMake ver >= #
         # 3.22. For the older versions, the PATH variable should be set in the
@@ -157,6 +159,22 @@ function(add_umf_test)
         set_property(TEST ${TEST_NAME} PROPERTY ENVIRONMENT_MODIFICATION
                                                 "${DLL_PATH_LIST}")
     endif()
+endfunction()
+
+function(add_umf_mocked_test test_name test_source_file)
+    add_umf_test(
+        NAME ${test_name}
+        SRCS ${test_source_file} ${UMF_UTILS_DIR}/utils_level_zero.cpp
+        LIBS ${UMF_UTILS_FOR_TEST} ${UMF_BA_FOR_TEST} umf_test_mocks
+             GTest::gmock)
+
+    set_tests_properties(
+        test_${test_name} PROPERTIES
+        ENVIRONMENT
+        "UMF_LOG=level:debug\\\\\\\\;flush:debug\\\\\\\\;output:stdout;UMF_ZE_LOADER_LIB_NAME=$<TARGET_FILE:umf_ze_loopback>"
+    )
+    target_compile_definitions(test_${test_name} PUBLIC USE_DLOPEN=1)
+    add_dependencies(test_${test_name} umf_ze_loopback)
 endfunction()
 
 add_subdirectory(common)
@@ -428,6 +446,12 @@ else()
         NAME provider_devdax_memory_not_impl
         SRCS provider_devdax_memory_not_impl.cpp
         LIBS ${UMF_UTILS_FOR_TEST} ${UMF_BA_FOR_TEST})
+endif()
+
+if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
+    add_umf_mocked_test(provider_level_zero_residency
+                        providers/provider_level_zero_residency.cpp)
+    add_umf_mocked_test(pool_residency pools/pool_residency.cpp)
 endif()
 
 if(UMF_BUILD_GPU_TESTS AND UMF_LEVEL_ZERO_ENABLED)

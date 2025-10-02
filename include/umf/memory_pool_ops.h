@@ -167,7 +167,7 @@ typedef struct umf_memory_pool_ops_t {
     ///
     /// @return umf_result_t result of the control operation.
     ///
-    umf_result_t (*ext_ctl)(void *hPool, umf_ctl_query_source_t source,
+    umf_result_t (*ext_ctl)(void *pool, umf_ctl_query_source_t source,
                             const char *name, void *arg, size_t size,
                             umf_ctl_query_type_t queryType, va_list args);
 

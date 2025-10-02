@@ -1094,7 +1094,8 @@ int critnib_find(struct critnib *c, uintptr_t key, enum find_dir_t dir,
  *
  * If func() returns non-zero, the search is aborted.
  */
-static int iter(struct critnib_node *__restrict n, word min, word max,
+static int iter(struct critnib_node *__restrict n, const word min,
+                const word max,
                 int (*func)(word key, void *value, void *privdata),
                 void *privdata) {
     if (is_leaf(n)) {
@@ -1129,9 +1130,21 @@ static int iter(struct critnib_node *__restrict n, word min, word max,
 void critnib_iter(critnib *c, uintptr_t min, uintptr_t max,
                   int (*func)(uintptr_t key, void *value, void *privdata),
                   void *privdata) {
+    bool wasIterating = false;
     utils_mutex_lock(&c->mutex);
     if (c->root) {
         iter(c->root, min, max, func, privdata);
+        wasIterating = true;
     }
     utils_mutex_unlock(&c->mutex);
+    if (!wasIterating) {
+        LOG_DEBUG("there was no root, iterating critnib: %p was skipped",
+                  (void *)c);
+    }
+}
+
+void critnib_iter_all(critnib *c,
+                      int (*func)(uintptr_t key, void *value, void *privdata),
+                      void *privdata) {
+    critnib_iter(c, 0, (uintptr_t)-1, func, privdata);
 }
