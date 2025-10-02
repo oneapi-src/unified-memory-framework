@@ -65,8 +65,26 @@ static __TLS fixed_last_native_error_t TLS_last_native_error;
 struct ctl fixed_memory_ctl_root;
 static UTIL_ONCE_FLAG ctl_initialized = UTIL_ONCE_FLAG_INIT;
 
+static umf_result_t fixed_post_initialize(void *provider);
+static umf_result_t
+CTL_RUNNABLE_HANDLER(post_initialize)(void *ctx, umf_ctl_query_source_t source,
+                                      void *arg, size_t size,
+                                      umf_ctl_index_utlist_t *indexes) {
+    (void)source;
+    (void)arg;
+    (void)size;
+    (void)indexes;
+    return fixed_post_initialize(ctx);
+}
+
 static void initialize_fixed_ctl(void) {
     CTL_REGISTER_MODULE(&fixed_memory_ctl_root, stats);
+    fixed_memory_ctl_root.root[fixed_memory_ctl_root.first_free++] =
+        (umf_ctl_node_t){
+            .name = "post_initialize",
+            .type = CTL_NODE_LEAF,
+            .runnable_cb = CTL_RUNNABLE_HANDLER(post_initialize),
+        };
 }
 
 static const char *Native_error_str[] = {
@@ -141,20 +159,10 @@ static umf_result_t fixed_initialize(const void *params, void **provider) {
     fixed_provider->base = in_params->ptr;
     fixed_provider->size = in_params->size;
 
-    // add the entire memory as a single block
-    ret = coarse_add_memory_fixed(coarse, fixed_provider->base,
-                                  fixed_provider->size);
-    if (ret != UMF_RESULT_SUCCESS) {
-        LOG_ERR("adding memory block failed");
-        goto err_coarse_delete;
-    }
-
     *provider = fixed_provider;
 
     return UMF_RESULT_SUCCESS;
 
-err_coarse_delete:
-    coarse_delete(fixed_provider->coarse);
 err_free_fixed_provider:
     umf_ba_global_free(fixed_provider);
     return ret;
@@ -297,6 +305,22 @@ static umf_result_t fixed_free(void *provider, void *ptr, size_t size) {
     return ret;
 }
 
+static umf_result_t fixed_post_initialize(void *provider) {
+    fixed_memory_provider_t *fixed_provider =
+        (fixed_memory_provider_t *)provider;
+    assert(provider);
+
+    umf_result_t ret = coarse_add_memory_fixed(
+        fixed_provider->coarse, fixed_provider->base, fixed_provider->size);
+    if (ret != UMF_RESULT_SUCCESS) {
+        LOG_ERR("adding memory block failed");
+        coarse_delete(fixed_provider->coarse);
+        umf_ba_global_free(fixed_provider);
+        return ret;
+    }
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_result_t fixed_ctl(void *provider,
                               umf_ctl_query_source_t operationType,
                               const char *name, void *arg, size_t size,
@@ -325,7 +349,8 @@ static umf_memory_provider_ops_t UMF_FIXED_MEMORY_PROVIDER_OPS = {
     .ext_put_ipc_handle = NULL,
     .ext_open_ipc_handle = NULL,
     .ext_close_ipc_handle = NULL,
-    .ext_ctl = fixed_ctl};
+    .ext_ctl = fixed_ctl,
+};
 
 const umf_memory_provider_ops_t *umfFixedMemoryProviderOps(void) {
     return &UMF_FIXED_MEMORY_PROVIDER_OPS;

@@ -139,6 +139,7 @@ umf_result_t umfTearDown(void) {
         umfMemoryTrackerDestroy(t);
         LOG_DEBUG("UMF tracker destroyed");
 
+        umfProviderCtlDefaultsDestroy();
         umfPoolCtlDefaultsDestroy();
 
         umf_ba_destroy_global();
@@ -156,41 +157,41 @@ umf_result_t umfTearDown(void) {
 
 int umfGetCurrentVersion(void) { return UMF_VERSION_CURRENT; }
 
-umf_result_t umfCtlGet(const char *name, void *arg, size_t size, ...) {
+umf_result_t umfCtlGet(const char *path, void *arg, size_t size, ...) {
     libumfInit();
     // ctx can be NULL when getting defaults
-    if (name == NULL || arg == NULL || size == 0) {
+    if (path == NULL || arg == NULL || size == 0) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
     va_list args;
     va_start(args, size);
 
-    umf_result_t ret = ctl_query(NULL, NULL, CTL_QUERY_PROGRAMMATIC, name,
+    umf_result_t ret = ctl_query(NULL, NULL, CTL_QUERY_PROGRAMMATIC, path,
                                  CTL_QUERY_READ, arg, size, args);
     va_end(args);
     return ret;
 }
 
-umf_result_t umfCtlSet(const char *name, void *arg, size_t size, ...) {
+umf_result_t umfCtlSet(const char *path, void *arg, size_t size, ...) {
     libumfInit();
     // ctx can be NULL when setting defaults
-    if (name == NULL || arg == NULL || size == 0) {
+    if (path == NULL || arg == NULL || size == 0) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
     va_list args;
     va_start(args, size);
-    umf_result_t ret = ctl_query(NULL, NULL, CTL_QUERY_PROGRAMMATIC, name,
+    umf_result_t ret = ctl_query(NULL, NULL, CTL_QUERY_PROGRAMMATIC, path,
                                  CTL_QUERY_WRITE, arg, size, args);
     va_end(args);
     return ret;
 }
 
-umf_result_t umfCtlExec(const char *name, void *arg, size_t size, ...) {
+umf_result_t umfCtlExec(const char *path, void *arg, size_t size, ...) {
     libumfInit();
     // arg can be NULL when executing a command
     // ctx can be NULL when executing defaults
     // size can depends on the arg
-    if (name == NULL) {
+    if (path == NULL) {
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
@@ -200,7 +201,7 @@ umf_result_t umfCtlExec(const char *name, void *arg, size_t size, ...) {
     va_list args;
     va_start(args, size);
 
-    umf_result_t ret = ctl_query(NULL, NULL, CTL_QUERY_PROGRAMMATIC, name,
+    umf_result_t ret = ctl_query(NULL, NULL, CTL_QUERY_PROGRAMMATIC, path,
                                  CTL_QUERY_RUNNABLE, arg, size, args);
     va_end(args);
     return ret;

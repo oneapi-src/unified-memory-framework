@@ -147,6 +147,59 @@ in the UMF repository.
 
 TODO
 
+CTL example
+==============================================================================
+
+.. note::
+   The CTL API is experimental and may change in future releases.
+
+You can find the full example code in the `examples/ctl/ctl.c`_ file in the
+UMF repository.
+
+The sample configures an OS memory provider and a disjoint pool, reuses the
+provider's canonical ``OS`` selector obtained at runtime, assigns a custom pool
+name, and then mixes ``by_handle`` and ``by_name`` selectors to explore CTL
+statistics. Wildcard nodes are used to choose provider counters, build a
+four-segment ``{}.{}`` chain for the named pool, reset the peak tracker, and
+drill into per-bucket disjoint pool telemetry. The program prints hints on
+``stderr`` explaining which tracing level is necessary when a statistic is
+unavailable.
+
+Build and run the example with::
+
+   cmake -B build
+   cmake --build build
+   ./build/examples/umf_example_ctl_statistics
+
+Detailed disjoint pool counters are disabled unless tracing is configured
+before pool creation. Enable them through the environment::
+
+   UMF_CONF="umf.pool.default.disjoint.params.pool_trace=2" ./build/examples/umf_example_ctl_statistics
+
+Tracing level ``1`` enables slab usage counters, level ``2`` adds allocation
+and free statistics, and level ``3`` additionally emits verbose log messages
+from the pool implementation.
+
+Custom CTL example
+==============================================================================
+
+You can find the full example code in the `examples/ctl/custom_ctl.c`_ file in
+the UMF repository. The program implements a minimal memory provider with CTL
+hooks that accept configuration values, execute runnables, and expose provider
+state through the experimental API. It highlights converting wildcard segments
+to ``printf``-style format strings and reading integers supplied via
+configuration defaults.
+
+Build and run the example with::
+
+   cmake -B build
+   cmake --build build
+   ./build/examples/umf_example_ctl
+
+Optionally supply a modulus via configuration defaults::
+
+   UMF_CONF="umf.provider.default.ctl.m=10" ./build/examples/umf_example_ctl
+
 IPC example with Level Zero Memory Provider
 ==============================================================================
 The full code of the example is in the `examples/ipc_level_zero/ipc_level_zero.c`_ file in the UMF repository.
@@ -231,6 +284,8 @@ the :any:`umfCloseIPCHandle` function is called.
 .. _examples/cuda_shared_memory/cuda_shared_memory.c: https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/cuda_shared_memory/cuda_shared_memory.c
 .. _examples/ipc_level_zero/ipc_level_zero.c: https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/ipc_level_zero/ipc_level_zero.c
 .. _examples/custom_file_provider/custom_file_provider.c: https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/custom_file_provider/custom_file_provider.c
+.. _examples/ctl/ctl.c: https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/ctl/ctl.c
+.. _examples/ctl/custom_ctl.c: https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/ctl/custom_ctl.c
 .. _examples/memspace: https://github.com/oneapi-src/unified-memory-framework/blob/main/examples/memspace/
 .. _README: https://github.com/oneapi-src/unified-memory-framework/blob/main/README.md#memory-pool-managers
 .. _umf/ipc.h: https://github.com/oneapi-src/unified-memory-framework/blob/main/include/umf/ipc.h
