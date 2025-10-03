@@ -399,6 +399,10 @@ TEST_P(umfLevelZeroProviderTest, getName) {
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_STREQ(name, "LEVEL_ZERO");
 
+    // negative case - pass NULL as a name pointer
+    umf_result = umfMemoryProviderGetName(provider, nullptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
     umfMemoryProviderDestroy(provider);
 }
 
@@ -548,6 +552,12 @@ TEST_P(umfLevelZeroProviderTest, levelZeroProviderNullParams) {
     EXPECT_EQ(res, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 
     res = umfLevelZeroMemoryProviderParamsSetDeviceOrdinal(nullptr, 0);
+    EXPECT_EQ(res, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    res = umfLevelZeroMemoryProviderParamsSetAllocFlags(nullptr, 0);
+    EXPECT_EQ(res, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    res = umfLevelZeroMemoryProviderParamsSetName(nullptr, "test");
     EXPECT_EQ(res, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 }
 
