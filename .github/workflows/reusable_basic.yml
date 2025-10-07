@@ -523,9 +523,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: macos-13
-            static_hwloc: 'OFF'
           - os: macos-14
+            static_hwloc: 'OFF'
+          - os: macos-15
             static_hwloc: 'ON'
     env:
       BUILD_TYPE : "Release"
