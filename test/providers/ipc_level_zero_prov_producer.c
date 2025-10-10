@@ -88,6 +88,20 @@ int main(int argc, char *argv[]) {
         goto destroy_provider_params;
     }
 
+#ifdef _WIN32
+    // on Windows, we must use the import/export memory exchange policy because IPC
+    // currently does not work
+    umf_result = umfLevelZeroMemoryProviderParamsSetMemoryExchangePolicy(
+        l0_params,
+        UMF_LEVEL_ZERO_MEMORY_PROVIDER_MEMORY_EXCHANGE_POLICY_IMPORT_EXPORT);
+    if (umf_result != UMF_RESULT_SUCCESS) {
+        fprintf(stderr, "Failed to set memory exchange policy in Level Zero "
+                        "Memory Provider params!\n");
+        ret = -1;
+        goto destroy_provider_params;
+    }
+#endif
+
     umf_disjoint_pool_params_handle_t pool_params = NULL;
 
     umf_result = umfDisjointPoolParamsCreate(&pool_params);
