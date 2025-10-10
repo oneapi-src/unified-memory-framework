@@ -35,6 +35,10 @@ TEST_F(test, level_zero_provider_not_implemented) {
         hParams, UMF_LEVEL_ZERO_MEMORY_PROVIDER_FREE_POLICY_DEFAULT);
     ASSERT_EQ(result, UMF_RESULT_ERROR_NOT_SUPPORTED);
 
+    result = umfLevelZeroMemoryProviderParamsSetMemoryExchangePolicy(
+        hParams, UMF_LEVEL_ZERO_MEMORY_PROVIDER_MEMORY_EXCHANGE_POLICY_IPC);
+    ASSERT_EQ(result, UMF_RESULT_ERROR_NOT_SUPPORTED);
+
     result = umfLevelZeroMemoryProviderParamsSetDeviceOrdinal(hParams, 0);
     ASSERT_EQ(result, UMF_RESULT_ERROR_NOT_SUPPORTED);
 
