@@ -314,7 +314,25 @@ The CUDA provider currently exposes only the common statistics nodes.
 Level Zero memory provider (``LEVEL_ZERO``)
 -----------------------------------------------
 
-The Level Zero provider implements the same statistics nodes as the other providers.
+The Level Zero provider supports the common statistics nodes described above and 
+adds the following parameter entry.
+
+.. py:function:: .params.use_import_export_for_IPC(policy)
+
+   :param policy: Receives or supplies ``0`` to use IPC API for memory sharing 
+      and ``1`` to use import/export mechanism for memory sharing.
+   :type policy: ``int``
+
+   **Access:** read-write.
+   **Defaults / Env:** Supported.
+
+   Controls the memory exchange policy for inter-process communication 
+   operations. When set to ``0`` (default), the provider uses the IPC API 
+   for memory sharing between processes. When set to ``1``, the provider uses 
+   the import/export mechanism for memory sharing. This option is supported 
+   only on Windows with the Level Zero provider, where the default IPC mechanism
+   does not work. Note that enabling import/export adds overhead during 
+   allocation and deallocation for all allocations on the current provider.
 
 Pool nodes
 ==========

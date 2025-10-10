@@ -614,12 +614,37 @@ function(add_umf_ipc_test)
         set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
     endif()
 
-    file(COPY ${SRC_DIR}/${ARG_TEST}.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+    if(WINDOWS)
+        set(EXT py)
+    else()
+        set(EXT sh)
+    endif()
 
-    add_test(
-        NAME ${TEST_NAME}
-        COMMAND ${ARG_TEST}.sh
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    file(COPY ${SRC_DIR}/${ARG_TEST}.${EXT}
+         DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+    if(WINDOWS)
+        add_test(
+            NAME ${TEST_NAME}
+            COMMAND python ${ARG_TEST}.${EXT}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    else()
+        add_test(
+            NAME ${TEST_NAME}
+            COMMAND ${ARG_TEST}.${EXT}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    endif()
+
+    if(WINDOWS)
+        set_tests_properties(${TEST_NAME} PROPERTIES
+                             ENVIRONMENT "BUILD_TYPE=${CMAKE_BUILD_TYPE}")
+        # add PATH to DLL on Windows
+        set(DLL_PATH_LIST
+            "${DLL_PATH_LIST};PATH=path_list_append:${CMAKE_BINARY_DIR}/bin/;PATH=path_list_append:${CMAKE_BINARY_DIR}/bin/$<CONFIG>/"
+        )
+        set_property(TEST ${TEST_NAME} PROPERTY ENVIRONMENT_MODIFICATION
+                                                "${DLL_PATH_LIST}")
+    endif()
 
     set_tests_properties(${TEST_NAME} PROPERTIES LABELS "umf")
     set_tests_properties(${TEST_NAME} PROPERTIES TIMEOUT 60)
@@ -628,6 +653,42 @@ function(add_umf_ipc_test)
     endif()
 endfunction()
 
+if(WINDOWS)
+    set(UMF_IPC_LIBS ws2_32)
+endif()
+
+if(UMF_BUILD_GPU_TESTS AND UMF_LEVEL_ZERO_ENABLED)
+    build_umf_test(
+        NAME ipc_level_zero_prov_consumer
+        SRCS providers/ipc_level_zero_prov_consumer.c common/ipc_common.c
+             providers/ipc_level_zero_prov_common.c
+             ${UMF_UTILS_DIR}/utils_level_zero.cpp
+        LIBS ze_loader ${UMF_IPC_LIBS} ${UMF_UTILS_FOR_TEST})
+    build_umf_test(
+        NAME ipc_level_zero_prov_producer
+        SRCS providers/ipc_level_zero_prov_producer.c common/ipc_common.c
+             providers/ipc_level_zero_prov_common.c
+             ${UMF_UTILS_DIR}/utils_level_zero.cpp
+        LIBS ze_loader ${UMF_IPC_LIBS} ${UMF_UTILS_FOR_TEST})
+    add_umf_ipc_test(TEST ipc_level_zero_prov SRC_DIR providers)
+endif()
+
+if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_CUDA_PROVIDER)
+    build_umf_test(
+        NAME ipc_cuda_prov_consumer
+        SRCS providers/ipc_cuda_prov_consumer.c common/ipc_common.c
+             providers/ipc_cuda_prov_common.c providers/cuda_helpers.cpp
+        LIBS cuda ${UMF_IPC_LIBS} ${UMF_UTILS_FOR_TEST})
+    build_umf_test(
+        NAME ipc_cuda_prov_producer
+        SRCS providers/ipc_cuda_prov_producer.c common/ipc_common.c
+             providers/ipc_cuda_prov_common.c providers/cuda_helpers.cpp
+        LIBS cuda ${UMF_IPC_LIBS} ${UMF_UTILS_FOR_TEST})
+    add_umf_ipc_test(TEST ipc_cuda_prov SRC_DIR providers)
+endif()
+
+# TODO IPC tests for OS, file, devdax providers and proxy lib are supported only
+# on Linux - skipping
 if(LINUX)
     if(UMF_POOL_SCALABLE_ENABLED)
         build_umf_test(
@@ -671,39 +732,11 @@ if(LINUX)
         add_umf_ipc_test(TEST ipc_file_prov_fsdax)
     endif()
 
-    # TODO add IPC tests for CUDA
-
-    if(UMF_BUILD_GPU_TESTS AND UMF_LEVEL_ZERO_ENABLED)
-        build_umf_test(
-            NAME ipc_level_zero_prov_consumer
-            SRCS providers/ipc_level_zero_prov_consumer.c common/ipc_common.c
-                 providers/ipc_level_zero_prov_common.c
-                 ${UMF_UTILS_DIR}/utils_level_zero.cpp
-            LIBS ze_loader ${UMF_UTILS_FOR_TEST})
-        build_umf_test(
-            NAME ipc_level_zero_prov_producer
-            SRCS providers/ipc_level_zero_prov_producer.c common/ipc_common.c
-                 providers/ipc_level_zero_prov_common.c
-                 ${UMF_UTILS_DIR}/utils_level_zero.cpp
-            LIBS ze_loader ${UMF_UTILS_FOR_TEST})
-        add_umf_ipc_test(TEST ipc_level_zero_prov SRC_DIR providers)
-    endif()
-
-    if(UMF_BUILD_GPU_TESTS AND UMF_BUILD_CUDA_PROVIDER)
-        build_umf_test(
-            NAME ipc_cuda_prov_consumer
-            SRCS providers/ipc_cuda_prov_consumer.c common/ipc_common.c
-                 providers/ipc_cuda_prov_common.c providers/cuda_helpers.cpp
-            LIBS cuda ${UMF_UTILS_FOR_TEST})
-        build_umf_test(
-            NAME ipc_cuda_prov_producer
-            SRCS providers/ipc_cuda_prov_producer.c common/ipc_common.c
-                 providers/ipc_cuda_prov_common.c providers/cuda_helpers.cpp
-            LIBS cuda ${UMF_UTILS_FOR_TEST})
-        add_umf_ipc_test(TEST ipc_cuda_prov SRC_DIR providers)
-    endif()
 else()
-    message(STATUS "IPC tests are supported on Linux only - skipping")
+    message(
+        STATUS
+            "IPC tests for OS, file, devdax providers and proxy lib are supported only on Linux - skipping"
+    )
 endif()
 
 if(LINUX
