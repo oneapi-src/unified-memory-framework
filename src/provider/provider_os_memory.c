@@ -611,7 +611,6 @@ static umf_result_t os_initialize(const void *params, void **provider) {
     }
 
     *provider = os_provider;
-
     return UMF_RESULT_SUCCESS;
 
 err_destroy_bitmaps:

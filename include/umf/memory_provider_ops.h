@@ -126,7 +126,7 @@ typedef struct umf_memory_provider_ops_t {
     /// \details
     /// * Implementations *must* return a literal null-terminated string.
     ///
-    /// * Implementations *must* return default pool name when NULL is provided,
+    /// * Implementations *must* return default provider name when NULL is provided,
     ///   otherwise the pool's name is returned.
     ///
     /// * The returned name should not exceed 64 characters and may contain
@@ -283,6 +283,9 @@ typedef struct umf_memory_provider_ops_t {
     /// @param args variable arguments for the operation.
     ///
     /// @return umf_result_t result of the control operation.
+    ///         Implementations must return
+    ///         UMF_RESULT_ERROR_INVALID_CTL_PATH if the given path is not
+    ///         supported.
     ///
     umf_result_t (*ext_ctl)(void *provider, umf_ctl_query_source_t source,
                             const char *name, void *arg, size_t size,
@@ -307,6 +310,7 @@ typedef struct umf_memory_provider_ops_t {
         void *provider, const void *ptr,
         umf_memory_property_id_t memory_property_id, void *property_value);
 
+    ///
     /// @brief Retrieve size of the provider-specific properties of the memory
     ///        allocation.
     /// \details

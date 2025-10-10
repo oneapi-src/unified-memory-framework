@@ -166,6 +166,9 @@ typedef struct umf_memory_pool_ops_t {
     /// @param args variable arguments for the operation.
     ///
     /// @return umf_result_t result of the control operation.
+    ///         Implementations must return
+    ///         UMF_RESULT_ERROR_INVALID_CTL_PATH if the given path is not
+    ///         supported.
     ///
     umf_result_t (*ext_ctl)(void *pool, umf_ctl_query_source_t source,
                             const char *name, void *arg, size_t size,
@@ -191,6 +194,7 @@ typedef struct umf_memory_pool_ops_t {
     ///         failure.
     ///
     umf_result_t (*ext_trim_memory)(void *pool, size_t minBytesToKeep);
+
 } umf_memory_pool_ops_t;
 
 #ifdef __cplusplus

@@ -8,6 +8,7 @@
  */
 
 #include <assert.h>
+#include <stdarg.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -16,6 +17,7 @@
 #include <umf/memory_pool_ops.h>
 
 #include "base_alloc_global.h"
+#include "ctl/ctl_defaults.h"
 #include "ctl/ctl_internal.h"
 #include "libumf.h"
 #include "memory_pool_internal.h"
@@ -38,17 +40,8 @@ static bool uthash_oom = false;
 
 #include "uthash.h"
 
-typedef struct ctl_default_entry_t {
-    char *name;
-    void *value;
-    size_t value_size;
-    umf_ctl_query_source_t source;
-    struct ctl_default_entry_t *next;
-} ctl_default_entry_t;
-
-static ctl_default_entry_t *ctl_default_list = NULL;
-
-utils_mutex_t ctl_mtx;
+static ctl_default_entry_t *pool_default_list = NULL;
+static utils_mutex_t pool_default_mtx;
 static UTIL_ONCE_FLAG mem_pool_ctl_initialized = UTIL_ONCE_FLAG_INIT;
 
 static struct ctl umf_pool_ctl_root;
@@ -174,7 +167,7 @@ static umf_result_t CTL_SUBTREE_HANDLER(CTL_NONAME, by_handle)(
                                  queryType, arg, size, args2);
     va_end(args2);
 
-    if (ret == UMF_RESULT_ERROR_INVALID_ARGUMENT) {
+    if (ret == UMF_RESULT_ERROR_INVALID_CTL_PATH) {
         // Node was not found in pool_ctl_root, try to query the specific pool
         ret = hPool->ops.ext_ctl(hPool->pool_priv, source, extra_name, arg,
                                  size, queryType, args);
@@ -187,95 +180,12 @@ static umf_result_t CTL_SUBTREE_HANDLER(default)(
     void *ctx, umf_ctl_query_source_t source, void *arg, size_t size,
     umf_ctl_index_utlist_t *indexes, const char *extra_name,
     umf_ctl_query_type_t queryType, va_list args) {
-    (void)indexes, (void)source, (void)ctx, (void)args;
+    (void)indexes;
+    (void)ctx;
+    (void)args;
     utils_init_once(&mem_pool_ctl_initialized, pool_ctl_init);
-
-    if (strstr(extra_name, "{}") != NULL) {
-        // We might implement it in future - it requires store copy of va_list
-        // in defaults entries array, which according to C standard is possible,
-        // but quite insane.
-        LOG_ERR("%s, default setting do not support wildcard parameters {}",
-                extra_name);
-        return UMF_RESULT_ERROR_NOT_SUPPORTED;
-    }
-
-    utils_mutex_lock(&ctl_mtx);
-
-    ctl_default_entry_t *entry = NULL;
-    LL_FOREACH(ctl_default_list, entry) {
-        if (strcmp(entry->name, extra_name) == 0) {
-            break;
-        }
-    }
-
-    if (queryType == CTL_QUERY_WRITE) {
-        bool is_new_entry = false;
-        if (entry == NULL) {
-            entry = umf_ba_global_alloc(sizeof(*entry));
-            if (entry == NULL) {
-                utils_mutex_unlock(&ctl_mtx);
-                return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-            }
-
-            entry->name = NULL;
-            entry->value = NULL;
-            entry->next = NULL;
-            is_new_entry = true;
-        }
-
-        size_t name_len = strlen(extra_name) + 1;
-        char *new_name = umf_ba_global_alloc(name_len);
-        if (new_name == NULL) {
-            utils_mutex_unlock(&ctl_mtx);
-            return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-        }
-
-        memcpy(new_name, extra_name, name_len);
-        if (entry->name) {
-            umf_ba_global_free(entry->name);
-        }
-        entry->name = new_name;
-
-        void *new_value = NULL;
-        if (size > 0) {
-            new_value = umf_ba_global_alloc(size);
-            if (new_value == NULL) {
-                utils_mutex_unlock(&ctl_mtx);
-                return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-            }
-            memcpy(new_value, arg, size);
-        }
-
-        if (entry->value) {
-            umf_ba_global_free(entry->value);
-        }
-
-        entry->value = new_value;
-        entry->value_size = size;
-        entry->source = source;
-
-        if (is_new_entry) {
-            LL_APPEND(ctl_default_list, entry);
-        }
-    } else if (queryType == CTL_QUERY_READ) {
-        if (entry == NULL) {
-            LOG_WARN("Wrong path name: %s", extra_name);
-            utils_mutex_unlock(&ctl_mtx);
-            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-        }
-
-        if (entry->value_size > size) {
-            LOG_ERR("Provided buffer size %zu is smaller than field size %zu",
-                    size, entry->value_size);
-            utils_mutex_unlock(&ctl_mtx);
-            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
-        }
-        memcpy(arg, entry->value, entry->value_size);
-    }
-
-    utils_mutex_unlock(&ctl_mtx);
-
-    return UMF_RESULT_SUCCESS;
+    return ctl_default_subtree(&pool_default_list, &pool_default_mtx, source,
+                               arg, size, extra_name, queryType);
 }
 
 static umf_result_t
@@ -413,7 +323,7 @@ static umf_result_t CTL_SUBTREE_HANDLER(CTL_NONAME, by_name)(
                                    extra_name, queryType, arg, size, args2);
         va_end(args2);
 
-        if (r == UMF_RESULT_ERROR_INVALID_ARGUMENT) {
+        if (r == UMF_RESULT_ERROR_INVALID_CTL_PATH) {
             va_copy(args2, args);
             r = it->pool->ops.ext_ctl(it->pool->pool_priv, source, extra_name,
                                       arg, size, queryType, args2);
@@ -438,7 +348,7 @@ umf_ctl_node_t CTL_NODE(pool)[] = {CTL_CHILD_WITH_ARG(by_handle),
                                    CTL_LEAF_SUBTREE(default), CTL_NODE_END};
 
 static void pool_ctl_init(void) {
-    utils_mutex_init(&ctl_mtx);
+    utils_mutex_init(&pool_default_mtx);
     CTL_REGISTER_MODULE(&umf_pool_ctl_root, stats);
 }
 
@@ -453,7 +363,8 @@ umfDefaultCtlPoolHandle(void *hPool, umf_ctl_query_source_t operationType,
     (void)size;
     (void)queryType;
     (void)args;
-    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    // if given path is not supported implementation should return UMF_RESULT_ERROR_INVALID_CTL_PATH
+    return UMF_RESULT_ERROR_INVALID_CTL_PATH;
 }
 
 static umf_result_t umfDefaultTrimMemory(void *provider,
@@ -463,22 +374,23 @@ static umf_result_t umfDefaultTrimMemory(void *provider,
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
+static umf_result_t umfPoolPostInitialize(const umf_memory_pool_ops_t *ops,
+                                          void *pool_priv, ...) {
+    va_list args;
+    va_start(args, pool_priv);
+    umf_result_t ret =
+        ops->ext_ctl(pool_priv, CTL_QUERY_PROGRAMMATIC, "post_initialize", NULL,
+                     0, CTL_QUERY_RUNNABLE, args);
+    va_end(args);
+
+    return ret;
+}
+
 // logical sum (OR) of all umf_pool_create_flags_t flags
 static const umf_pool_create_flags_t UMF_POOL_CREATE_FLAG_ALL =
     UMF_POOL_CREATE_FLAG_OWN_PROVIDER | UMF_POOL_CREATE_FLAG_DISABLE_TRACKING;
 
 // windows do not allow to use uninitialized va_list so this function help us to initialize it.
-static umf_result_t default_ctl_helper(const umf_memory_pool_ops_t *ops,
-                                       void *ctl, const char *name, void *arg,
-                                       size_t size, ...) {
-    va_list empty_args;
-    va_start(empty_args, size);
-    umf_result_t ret = ops->ext_ctl(ctl, CTL_QUERY_PROGRAMMATIC, name, arg,
-                                    size, CTL_QUERY_WRITE, empty_args);
-    va_end(empty_args);
-    return ret;
-}
-
 static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
                                           umf_memory_provider_handle_t provider,
                                           const void *params,
@@ -495,7 +407,6 @@ static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
     }
 
     umf_result_t ret = UMF_RESULT_SUCCESS;
-
     umf_memory_pool_ops_t compatible_ops;
     if (ops->version != UMF_POOL_OPS_VERSION_CURRENT) {
         LOG_WARN("Memory Pool ops version \"%d\" is different than the current "
@@ -504,8 +415,8 @@ static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
 
         // Create a new ops compatible structure with the current version
         memset(&compatible_ops, 0, sizeof(compatible_ops));
-        if (UMF_MINOR_VERSION(ops->version) == 0) {
-            LOG_INFO("Detected 1.0 version of Memory Pool ops, "
+        if (ops->version < UMF_MAKE_VERSION(1, 1)) {
+            LOG_INFO("Detected 1.0 version or below of Memory Pool ops, "
                      "upgrading to current version");
             memcpy(&compatible_ops, ops,
                    offsetof(umf_memory_pool_ops_t, ext_trim_memory));
@@ -553,40 +464,29 @@ static umf_result_t umfPoolCreateInternal(const umf_memory_pool_ops_t *ops,
         goto err_lock_init;
     }
 
-    ret = ops->initialize(pool->provider, params, &pool->pool_priv);
+    ret = pool->ops.initialize(pool->provider, params, &pool->pool_priv);
     if (ret != UMF_RESULT_SUCCESS) {
         goto err_pool_init;
     }
 
-    // Set default property "name" to pool if exists
     const char *pname = NULL;
-    ret = ops->get_name(NULL, &pname);
+    ret = ops->get_name(pool->pool_priv, &pname);
     if (ret != UMF_RESULT_SUCCESS) {
         LOG_ERR("Failed to get pool name");
         goto err_pool_init;
     }
     assert(pname != NULL);
+    utils_warn_invalid_name("Memory pool", pname);
+    ctl_default_apply(pool_default_list, pname, ops->ext_ctl, pool->pool_priv);
 
-    size_t pname_len = strlen(pname);
-    ctl_default_entry_t *it = NULL;
-    LL_FOREACH(ctl_default_list, it) {
-        if (strlen(it->name) > pname_len + 1 &&
-            strncmp(it->name, pname, pname_len) == 0 &&
-            it->name[pname_len] == '.') {
-            const char *ctl_name = it->name + pname_len + 1;
-            default_ctl_helper(ops, pool->pool_priv, ctl_name, it->value,
-                               it->value_size);
-        }
+    ret = umfPoolPostInitialize(&pool->ops, pool->pool_priv);
+    if (ret != UMF_RESULT_SUCCESS && ret != UMF_RESULT_ERROR_INVALID_CTL_PATH) {
+        LOG_ERR("Failed to post-initialize pool");
+        goto err_pool_init;
     }
 
     *hPool = pool;
     pools_by_name_add(pool);
-
-    const char *pool_name = NULL;
-    if (ops->get_name(pool->pool_priv, &pool_name) == UMF_RESULT_SUCCESS &&
-        pool_name) {
-        utils_warn_invalid_name("Memory pool", pool_name);
-    }
 
     LOG_INFO("Memory pool created: %p", (void *)pool);
     return UMF_RESULT_SUCCESS;
@@ -803,20 +703,5 @@ umf_result_t umfPoolTrimMemory(umf_memory_pool_handle_t hPool,
 
 void umfPoolCtlDefaultsDestroy(void) {
     utils_init_once(&mem_pool_ctl_initialized, pool_ctl_init);
-
-    utils_mutex_lock(&ctl_mtx);
-
-    ctl_default_entry_t *entry = NULL, *tmp = NULL;
-    LL_FOREACH_SAFE(ctl_default_list, entry, tmp) {
-        LL_DELETE(ctl_default_list, entry);
-        if (entry->name) {
-            umf_ba_global_free(entry->name);
-        }
-        if (entry->value) {
-            umf_ba_global_free(entry->value);
-        }
-        umf_ba_global_free(entry);
-    }
-
-    utils_mutex_unlock(&ctl_mtx);
+    ctl_default_destroy(&pool_default_list, &pool_default_mtx);
 }

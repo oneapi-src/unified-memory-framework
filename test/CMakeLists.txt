@@ -232,7 +232,7 @@ add_umf_test(
 add_umf_test(
     NAME ctl_api
     SRCS ctl/ctl_api.cpp
-    LIBS ${UMF_UTILS_FOR_TEST})
+    LIBS ${UMF_UTILS_FOR_TEST} ${UMF_BA_FOR_TEST})
 
 add_umf_test(
     NAME utils_common
@@ -254,6 +254,8 @@ build_umf_test(
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/ctl/ctl_env_config1.cfg
      DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/ctl)
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/ctl/ctl_env_config2.cfg
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/ctl)
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/ctl/ctl_env_disjoint_pool.cfg
      DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/ctl)
 
 add_umf_test(

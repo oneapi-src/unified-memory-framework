@@ -608,7 +608,8 @@ static umf_memory_provider_ops_t UMF_DEVDAX_MEMORY_PROVIDER_OPS = {
     .ext_put_ipc_handle = devdax_put_ipc_handle,
     .ext_open_ipc_handle = devdax_open_ipc_handle,
     .ext_close_ipc_handle = devdax_close_ipc_handle,
-    .ext_ctl = devdax_ctl};
+    .ext_ctl = devdax_ctl,
+};
 
 const umf_memory_provider_ops_t *umfDevDaxMemoryProviderOps(void) {
     return &UMF_DEVDAX_MEMORY_PROVIDER_OPS;

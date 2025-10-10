@@ -4,6 +4,7 @@
 
 #include <memory>
 
+#include <cstdarg>
 #include <umf/base.h>
 #include <umf/memory_pool.h>
 #include <umf/pools/pool_disjoint.h>
@@ -18,6 +19,8 @@
 
 using umf_test::test;
 using namespace umf_test;
+
+static void get_test_va_list(va_list *a, ...) { va_start(*a, a); }
 
 TEST_F(test, internals) {
     static umf_result_t expectedResult = UMF_RESULT_SUCCESS;
@@ -64,6 +67,12 @@ TEST_F(test, internals) {
 
     disjoint_pool_t *pool;
     umf_result_t res = ops->initialize(provider_handle, params, (void **)&pool);
+    EXPECT_EQ(res, UMF_RESULT_SUCCESS);
+    va_list empty_args;
+    get_test_va_list(&empty_args);
+    res = ops->ext_ctl((void *)pool, CTL_QUERY_PROGRAMMATIC, "post_initialize",
+                       nullptr, 0, CTL_QUERY_RUNNABLE, empty_args);
+    va_end(empty_args);
     EXPECT_EQ(res, UMF_RESULT_SUCCESS);
     EXPECT_NE(pool, nullptr);
     EXPECT_EQ(pool->provider_min_page_size, (size_t)1024);
@@ -314,6 +323,13 @@ TEST_F(test, disjointPoolTrim) {
     umf_result_t res = ops->initialize(provider_handle, params, (void **)&pool);
     EXPECT_EQ(res, UMF_RESULT_SUCCESS);
     EXPECT_NE(pool, nullptr);
+
+    va_list empty_args;
+    get_test_va_list(&empty_args);
+    res = ops->ext_ctl((void *)pool, CTL_QUERY_PROGRAMMATIC, "post_initialize",
+                       nullptr, 0, CTL_QUERY_RUNNABLE, empty_args);
+    va_end(empty_args);
+    EXPECT_EQ(res, UMF_RESULT_SUCCESS);
 
     // do 4 allocs, then free all of them
     size_t size = 64;

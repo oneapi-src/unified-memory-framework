@@ -109,6 +109,18 @@ static bool Init_cu_global_state_failed;
 struct ctl cu_memory_ctl_root;
 static UTIL_ONCE_FLAG ctl_initialized = UTIL_ONCE_FLAG_INIT;
 
+static umf_result_t cu_memory_provider_post_initialize(void *provider);
+static umf_result_t
+CTL_RUNNABLE_HANDLER(post_initialize)(void *ctx, umf_ctl_query_source_t source,
+                                      void *arg, size_t size,
+                                      umf_ctl_index_utlist_t *indexes) {
+    (void)source;
+    (void)arg;
+    (void)size;
+    (void)indexes;
+    return cu_memory_provider_post_initialize(ctx);
+}
+
 // forward decl needed for alloc
 static umf_result_t cu_memory_provider_free(void *provider, void *ptr,
                                             size_t bytes);
@@ -148,6 +160,11 @@ static umf_result_t cu2umf_result(CUresult result) {
 
 static void initialize_cu_ctl(void) {
     CTL_REGISTER_MODULE(&cu_memory_ctl_root, stats);
+    cu_memory_ctl_root.root[cu_memory_ctl_root.first_free++] = (umf_ctl_node_t){
+        .name = "post_initialize",
+        .type = CTL_NODE_LEAF,
+        .runnable_cb = CTL_RUNNABLE_HANDLER(post_initialize),
+    };
 }
 
 static void init_cu_global_state(void) {
@@ -375,35 +392,10 @@ static umf_result_t cu_memory_provider_initialize(const void *params,
     snprintf(cu_provider->name, sizeof(cu_provider->name), "%s",
              cu_params->name);
 
-    // CUDA alloc functions doesn't allow to provide user alignment - get the
-    // minimum one from the driver
-    size_t min_alignment = 0;
-    CUmemAllocationProp allocProps = {0};
-    allocProps.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
-    allocProps.type = CU_MEM_ALLOCATION_TYPE_PINNED;
-    allocProps.location.id = cu_params->cuda_device_handle;
-    CUresult cu_result = g_cu_ops.cuMemGetAllocationGranularity(
-        &min_alignment, &allocProps, CU_MEM_ALLOC_GRANULARITY_MINIMUM);
-    if (cu_result != CUDA_SUCCESS) {
-        umf_ba_global_free(cu_provider);
-        return cu2umf_result(cu_result);
-    }
-
     cu_provider->context = cu_params->cuda_context_handle;
     cu_provider->device = cu_params->cuda_device_handle;
     cu_provider->memory_type = cu_params->memory_type;
-    cu_provider->min_alignment = min_alignment;
-
-    // If the memory type is shared (CUDA managed), the allocation flags must
-    // be set. NOTE: we do not check here if the flags are valid -
-    // this will be done by CUDA runtime.
-    if (cu_params->memory_type == UMF_MEMORY_TYPE_SHARED &&
-        cu_params->alloc_flags == 0) {
-        // the default setting is CU_MEM_ATTACH_GLOBAL
-        cu_provider->alloc_flags = CU_MEM_ATTACH_GLOBAL;
-    } else {
-        cu_provider->alloc_flags = cu_params->alloc_flags;
-    }
+    cu_provider->alloc_flags = cu_params->alloc_flags;
 
     *provider = cu_provider;
 
@@ -412,6 +404,37 @@ static umf_result_t cu_memory_provider_initialize(const void *params,
 
 static umf_result_t cu_memory_provider_finalize(void *provider) {
     umf_ba_global_free(provider);
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t cu_memory_provider_post_initialize(void *provider) {
+    cu_memory_provider_t *cu_provider = (cu_memory_provider_t *)provider;
+
+    assert(provider);
+    // CUDA alloc functions doesn't allow to provide user alignment - get the
+    // minimum one from the driver
+    size_t min_alignment = 0;
+    CUmemAllocationProp allocProps = {0};
+    allocProps.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
+    allocProps.type = CU_MEM_ALLOCATION_TYPE_PINNED;
+    allocProps.location.id = cu_provider->device;
+    CUresult cu_result = g_cu_ops.cuMemGetAllocationGranularity(
+        &min_alignment, &allocProps, CU_MEM_ALLOC_GRANULARITY_MINIMUM);
+    if (cu_result != CUDA_SUCCESS) {
+        umf_ba_global_free(cu_provider);
+        return cu2umf_result(cu_result);
+    }
+
+    cu_provider->min_alignment = min_alignment;
+
+    // If the memory type is shared (CUDA managed), the allocation flags must
+    // be set. NOTE: we do not check here if the flags are valid -
+    // this will be done by CUDA runtime.
+    if (cu_provider->memory_type == UMF_MEMORY_TYPE_SHARED &&
+        cu_provider->alloc_flags == 0) {
+        // the default setting is CU_MEM_ATTACH_GLOBAL
+        cu_provider->alloc_flags = CU_MEM_ATTACH_GLOBAL;
+    }
     return UMF_RESULT_SUCCESS;
 }
 
