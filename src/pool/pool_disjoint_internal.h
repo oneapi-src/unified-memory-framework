@@ -159,6 +159,12 @@ typedef struct disjoint_pool_t {
 
     // Coarse-grain allocation min alignment
     size_t provider_min_page_size;
+
+    // true after post_initialize was successfully called
+    bool post_initialized;
+
+    // bitmask of parameters overridden via CTL
+    unsigned params_overridden;
 } disjoint_pool_t;
 
 static inline void slab_set_chunk_bit(slab_t *slab, size_t index, bool value) {

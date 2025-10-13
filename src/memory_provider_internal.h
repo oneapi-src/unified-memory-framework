@@ -28,6 +28,7 @@ typedef struct umf_memory_provider_t {
 
 void *umfMemoryProviderGetPriv(umf_memory_provider_handle_t hProvider);
 umf_memory_provider_handle_t *umfGetLastFailedMemoryProviderPtr(void);
+void umfProviderCtlDefaultsDestroy(void);
 
 extern umf_ctl_node_t CTL_NODE(provider)[];
 

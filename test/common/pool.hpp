@@ -156,7 +156,7 @@ typedef struct pool_base_t {
     }
     umf_result_t ext_ctl(umf_ctl_query_source_t, const char *, void *, size_t,
                          umf_ctl_query_type_t, va_list) noexcept {
-        return UMF_RESULT_ERROR_UNKNOWN;
+        return UMF_RESULT_ERROR_INVALID_CTL_PATH;
     }
     umf_result_t ext_trim_memory(size_t) noexcept {
         return UMF_RESULT_ERROR_UNKNOWN;

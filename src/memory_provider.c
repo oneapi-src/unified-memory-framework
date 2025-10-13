@@ -8,6 +8,7 @@
  */
 
 #include <assert.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,6 +19,7 @@
 
 #include "base_alloc.h"
 #include "base_alloc_global.h"
+#include "ctl/ctl_defaults.h"
 #include "ctl/ctl_internal.h"
 #include "libumf.h"
 #include "memory_provider_internal.h"
@@ -32,8 +34,8 @@ static umf_result_t CTL_SUBTREE_HANDLER(CTL_NONAME, by_handle)(
 
     umf_memory_provider_handle_t hProvider =
         *(umf_memory_provider_handle_t *)indexes->arg;
-    hProvider->ops.ext_ctl(hProvider->provider_priv, /*unused*/ 0, extra_name,
-                           arg, size, queryType, args);
+    hProvider->ops.ext_ctl(hProvider->provider_priv, source, extra_name, arg,
+                           size, queryType, args);
 
     return UMF_RESULT_SUCCESS;
 }
@@ -45,8 +47,26 @@ static umf_ctl_node_t CTL_NODE(by_handle)[] = {
 
 static const struct ctl_argument CTL_ARG(by_handle) = CTL_ARG_PTR;
 
+static ctl_default_entry_t *provider_default_list = NULL;
+static utils_mutex_t provider_default_mtx;
+static UTIL_ONCE_FLAG mem_provider_ctl_initialized = UTIL_ONCE_FLAG_INIT;
+
+static void provider_ctl_init(void) { utils_mutex_init(&provider_default_mtx); }
+
+static umf_result_t CTL_SUBTREE_HANDLER(default)(
+    void *ctx, umf_ctl_query_source_t source, void *arg, size_t size,
+    umf_ctl_index_utlist_t *indexes, const char *extra_name,
+    umf_ctl_query_type_t queryType, va_list args) {
+    (void)ctx;
+    (void)indexes;
+    (void)args;
+    utils_init_once(&mem_provider_ctl_initialized, provider_ctl_init);
+    return ctl_default_subtree(&provider_default_list, &provider_default_mtx,
+                               source, arg, size, extra_name, queryType);
+}
+
 umf_ctl_node_t CTL_NODE(provider)[] = {CTL_CHILD_WITH_ARG(by_handle),
-                                       CTL_NODE_END};
+                                       CTL_LEAF_SUBTREE(default), CTL_NODE_END};
 
 static umf_result_t umfDefaultPurgeLazy(void *provider, void *ptr,
                                         size_t size) {
@@ -132,7 +152,8 @@ umfDefaultCtlHandle(void *provider, umf_ctl_query_source_t operationType,
     (void)size;
     (void)queryType;
     (void)args;
-    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    // if given path is not supported implementation should return UMF_RESULT_ERROR_INVALID_CTL_PATH
+    return UMF_RESULT_ERROR_INVALID_CTL_PATH;
 }
 
 static umf_result_t
@@ -205,6 +226,18 @@ void assignOpsIpcDefaults(umf_memory_provider_ops_t *ops) {
     if (!ops->ext_close_ipc_handle) {
         ops->ext_close_ipc_handle = umfDefaultCloseIPCHandle;
     }
+}
+
+static umf_result_t umfProviderPostInitialize(umf_memory_provider_ops_t *ops,
+                                              void *provider_priv, ...) {
+    va_list args;
+    va_start(args, provider_priv);
+    umf_result_t ret =
+        ops->ext_ctl(provider_priv, CTL_QUERY_PROGRAMMATIC, "post_initialize",
+                     NULL, 0, CTL_QUERY_RUNNABLE, args);
+    va_end(args);
+
+    return ret;
 }
 
 #define CHECK_OP(ops, fn)                                                      \
@@ -310,14 +343,30 @@ umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
 
     provider->provider_priv = provider_priv;
 
-    *hProvider = provider;
+    utils_init_once(&mem_provider_ctl_initialized, provider_ctl_init);
+    const char *pname = NULL;
 
-    const char *provider_name = NULL;
-    if (provider->ops.get_name(provider->provider_priv, &provider_name) ==
-            UMF_RESULT_SUCCESS &&
-        provider_name) {
-        utils_warn_invalid_name("Memory provider", provider_name);
+    ret = provider->ops.get_name(provider->provider_priv, &pname);
+    if (ret != UMF_RESULT_SUCCESS) {
+        LOG_ERR("Failed to get pool name");
+        umf_ba_global_free(provider);
+        return ret;
     }
+
+    assert(pname != NULL);
+    utils_warn_invalid_name("Memory provider", pname);
+
+    ctl_default_apply(provider_default_list, pname, provider->ops.ext_ctl,
+                      provider->provider_priv);
+
+    ret = umfProviderPostInitialize(&provider->ops, provider_priv);
+    if (ret != UMF_RESULT_SUCCESS && ret != UMF_RESULT_ERROR_INVALID_CTL_PATH) {
+        LOG_ERR("Failed to post-initialize provider");
+        umf_ba_global_free(provider);
+        return ret;
+    }
+
+    *hProvider = provider;
 
     return UMF_RESULT_SUCCESS;
 }
@@ -605,4 +654,9 @@ umf_result_t umfMemoryProviderGetAllocationPropertiesSize(
 
     checkErrorAndSetLastProvider(res, hProvider);
     return res;
+}
+
+void umfProviderCtlDefaultsDestroy(void) {
+    utils_init_once(&mem_provider_ctl_initialized, provider_ctl_init);
+    ctl_default_destroy(&provider_default_list, &provider_default_mtx);
 }

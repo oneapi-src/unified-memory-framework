@@ -126,3 +126,20 @@ TEST_F(test, ctl_env_logger) {
     run_case({{"UMF_CONF", "umf.logger.output=stdout;umf.logger.level=0"}},
              {"logger", "stdout", "0"});
 }
+
+TEST_F(test, ctl_env_disjoint_pool_env) {
+    run_case(
+        {{"UMF_CONF", "umf.pool.default.disjoint.params.slab_min_size=65536;"
+                      "umf.pool.default.disjoint.params.capacity=4;"
+                      "umf.pool.default.disjoint.params.min_bucket_size=8;"
+                      "umf.pool.default.disjoint.params.pool_trace=0"}},
+        {"disjoint_pool", "slab_min_size", "65536", "capacity", "4",
+         "min_bucket_size", "8", "pool_trace", "0"});
+}
+
+TEST_F(test, ctl_env_disjoint_pool_file) {
+    std::string cfg = CTL_CONF_FILE_DIR "/ctl_env_disjoint_pool.cfg";
+    run_case({{"UMF_CONF_FILE", cfg}},
+             {"disjoint_pool", "slab_min_size", "65536", "capacity", "4",
+              "min_bucket_size", "8", "pool_trace", "0"});
+}

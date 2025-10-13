@@ -100,6 +100,11 @@ static umf_result_t traceName(void *provider, const char **name) {
     umf_provider_trace_params_t *traceProvider =
         (umf_provider_trace_params_t *)provider;
 
+    // if ops->get_name is called with null provider it must return default provider name
+    if (!provider) {
+        *name = "trace";
+        return UMF_RESULT_SUCCESS;
+    }
     traceProvider->trace_handler(traceProvider->trace_context, "name");
     return umfMemoryProviderGetName(traceProvider->hUpstreamProvider, name);
 }

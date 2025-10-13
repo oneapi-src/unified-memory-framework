@@ -7,7 +7,6 @@
 
 #include <assert.h>
 #include <ctype.h>
-#include <errno.h>
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
@@ -32,6 +31,18 @@ static const char *DEFAULT_NAME = "disjoint";
 /* Disjoint pool CTL implementation */
 struct ctl disjoint_ctl_root;
 static UTIL_ONCE_FLAG ctl_initialized = UTIL_ONCE_FLAG_INIT;
+
+umf_result_t disjoint_pool_post_initialize(void *ppPool);
+static umf_result_t
+CTL_RUNNABLE_HANDLER(post_initialize)(void *ctx, umf_ctl_query_source_t source,
+                                      void *arg, size_t size,
+                                      umf_ctl_index_utlist_t *indexes) {
+    (void)source;
+    (void)arg;
+    (void)size;
+    (void)indexes;
+    return disjoint_pool_post_initialize(ctx);
+}
 
 // Disable name ctl for 1.0 release
 #if 0
@@ -75,6 +86,211 @@ static umf_result_t CTL_WRITE_HANDLER(name)(void *ctx,
     return UMF_RESULT_SUCCESS;
 }
 #endif
+
+static const struct ctl_argument
+    CTL_ARG(slab_min_size) = CTL_ARG_UNSIGNED_LONG_LONG;
+static const struct ctl_argument
+    CTL_ARG(max_poolable_size) = CTL_ARG_UNSIGNED_LONG_LONG;
+static const struct ctl_argument CTL_ARG(capacity) = CTL_ARG_UNSIGNED_LONG_LONG;
+static const struct ctl_argument
+    CTL_ARG(min_bucket_size) = CTL_ARG_UNSIGNED_LONG_LONG;
+static const struct ctl_argument CTL_ARG(pool_trace) = CTL_ARG_INT;
+
+static umf_result_t
+CTL_READ_HANDLER(slab_min_size)(void *ctx, umf_ctl_query_source_t source,
+                                void *arg, size_t size,
+                                umf_ctl_index_utlist_t *indexes) {
+    (void)source, (void)indexes;
+    disjoint_pool_t *pool = (disjoint_pool_t *)ctx;
+    if (arg == NULL || size != sizeof(size_t)) {
+        LOG_ERR("arg is NULL or size is not sizeof(size_t)");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    *(size_t *)arg = pool->params.slab_min_size;
+    return UMF_RESULT_SUCCESS;
+}
+
+// indicates that param was overridden by CTL
+enum {
+    DP_OVERRIDE_SLAB_MIN_SIZE = 1 << 0,
+    DP_OVERRIDE_MAX_POOLABLE_SIZE = 1 << 1,
+    DP_OVERRIDE_CAPACITY = 1 << 2,
+    DP_OVERRIDE_MIN_BUCKET_SIZE = 1 << 3,
+    DP_OVERRIDE_POOL_TRACE = 1 << 4,
+};
+
+static umf_result_t
+CTL_WRITE_HANDLER(slab_min_size)(void *ctx, umf_ctl_query_source_t source,
+                                 void *arg, size_t size,
+                                 umf_ctl_index_utlist_t *indexes) {
+    (void)source, (void)indexes;
+    disjoint_pool_t *pool = (disjoint_pool_t *)ctx;
+    if (pool->post_initialized) {
+        LOG_ERR("writing parameter after post_initialize is not allowed");
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
+    if (arg == NULL || size != sizeof(size_t)) {
+        LOG_ERR("arg is NULL or size is not sizeof(size_t)");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    size_t value = *(size_t *)arg;
+    umf_result_t ret =
+        umfDisjointPoolParamsSetSlabMinSize(&pool->params, value);
+    if (ret == UMF_RESULT_SUCCESS) {
+        pool->params_overridden |= DP_OVERRIDE_SLAB_MIN_SIZE;
+    }
+    return ret;
+}
+
+static umf_result_t
+CTL_READ_HANDLER(max_poolable_size)(void *ctx, umf_ctl_query_source_t source,
+                                    void *arg, size_t size,
+                                    umf_ctl_index_utlist_t *indexes) {
+    (void)source, (void)indexes;
+    disjoint_pool_t *pool = (disjoint_pool_t *)ctx;
+    if (arg == NULL || size != sizeof(size_t)) {
+        LOG_ERR("arg is NULL or size is not sizeof(size_t)");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    *(size_t *)arg = pool->params.max_poolable_size;
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t
+CTL_WRITE_HANDLER(max_poolable_size)(void *ctx, umf_ctl_query_source_t source,
+                                     void *arg, size_t size,
+                                     umf_ctl_index_utlist_t *indexes) {
+    (void)source, (void)indexes;
+    disjoint_pool_t *pool = (disjoint_pool_t *)ctx;
+    if (pool->post_initialized) {
+        LOG_ERR("writing parameter after post_initialize is not allowed");
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
+    if (arg == NULL || size != sizeof(size_t)) {
+        LOG_ERR("arg is NULL or size is not sizeof(size_t)");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    size_t value = *(size_t *)arg;
+    umf_result_t ret =
+        umfDisjointPoolParamsSetMaxPoolableSize(&pool->params, value);
+    if (ret == UMF_RESULT_SUCCESS) {
+        pool->params_overridden |= DP_OVERRIDE_MAX_POOLABLE_SIZE;
+    }
+    return ret;
+}
+
+static umf_result_t
+CTL_READ_HANDLER(capacity)(void *ctx, umf_ctl_query_source_t source, void *arg,
+                           size_t size, umf_ctl_index_utlist_t *indexes) {
+    (void)source, (void)indexes;
+    disjoint_pool_t *pool = (disjoint_pool_t *)ctx;
+    if (arg == NULL || size != sizeof(size_t)) {
+        LOG_ERR("arg is NULL or size is not sizeof(size_t)");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    *(size_t *)arg = pool->params.capacity;
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t
+CTL_WRITE_HANDLER(capacity)(void *ctx, umf_ctl_query_source_t source, void *arg,
+                            size_t size, umf_ctl_index_utlist_t *indexes) {
+    (void)source, (void)indexes;
+    disjoint_pool_t *pool = (disjoint_pool_t *)ctx;
+    if (pool->post_initialized) {
+        LOG_ERR("writing parameter after post_initialize is not allowed");
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
+    if (arg == NULL || size != sizeof(size_t)) {
+        LOG_ERR("arg is NULL or size is not sizeof(size_t)");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    size_t value = *(size_t *)arg;
+    umf_result_t ret = umfDisjointPoolParamsSetCapacity(&pool->params, value);
+    if (ret == UMF_RESULT_SUCCESS) {
+        pool->params_overridden |= DP_OVERRIDE_CAPACITY;
+    }
+    return ret;
+}
+
+static umf_result_t
+CTL_READ_HANDLER(min_bucket_size)(void *ctx, umf_ctl_query_source_t source,
+                                  void *arg, size_t size,
+                                  umf_ctl_index_utlist_t *indexes) {
+    (void)source, (void)indexes;
+    disjoint_pool_t *pool = (disjoint_pool_t *)ctx;
+    if (arg == NULL || size != sizeof(size_t)) {
+        LOG_ERR("arg is NULL or size is not sizeof(size_t)");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    *(size_t *)arg = pool->params.min_bucket_size;
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t
+CTL_WRITE_HANDLER(min_bucket_size)(void *ctx, umf_ctl_query_source_t source,
+                                   void *arg, size_t size,
+                                   umf_ctl_index_utlist_t *indexes) {
+    (void)source, (void)indexes;
+    disjoint_pool_t *pool = (disjoint_pool_t *)ctx;
+    if (pool->post_initialized) {
+        LOG_ERR("writing parameter after post_initialize is not allowed");
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
+    if (arg == NULL || size != sizeof(size_t)) {
+        LOG_ERR("arg is NULL or size is not sizeof(size_t)");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    size_t value = *(size_t *)arg;
+    umf_result_t ret =
+        umfDisjointPoolParamsSetMinBucketSize(&pool->params, value);
+    if (ret == UMF_RESULT_SUCCESS) {
+        pool->params_overridden |= DP_OVERRIDE_MIN_BUCKET_SIZE;
+    }
+    return ret;
+}
+
+static umf_result_t
+CTL_READ_HANDLER(pool_trace)(void *ctx, umf_ctl_query_source_t source,
+                             void *arg, size_t size,
+                             umf_ctl_index_utlist_t *indexes) {
+    (void)source, (void)indexes;
+    disjoint_pool_t *pool = (disjoint_pool_t *)ctx;
+    if (arg == NULL || size != sizeof(int)) {
+        LOG_ERR("arg is NULL or size is not sizeof(int)");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    *(int *)arg = pool->params.pool_trace;
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t
+CTL_WRITE_HANDLER(pool_trace)(void *ctx, umf_ctl_query_source_t source,
+                              void *arg, size_t size,
+                              umf_ctl_index_utlist_t *indexes) {
+    (void)source, (void)indexes;
+    disjoint_pool_t *pool = (disjoint_pool_t *)ctx;
+    if (pool->post_initialized) {
+        LOG_ERR("writing parameter after post_initialize is not allowed");
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
+    if (arg == NULL || size != sizeof(int)) {
+        LOG_ERR("arg is NULL or size is not sizeof(int)");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+    int value = *(int *)arg;
+    umf_result_t ret = umfDisjointPoolParamsSetTrace(&pool->params, value);
+    if (ret == UMF_RESULT_SUCCESS) {
+        pool->params_overridden |= DP_OVERRIDE_POOL_TRACE;
+    }
+    return ret;
+}
+
+static const umf_ctl_node_t CTL_NODE(params)[] = {
+    CTL_LEAF_RW(slab_min_size), CTL_LEAF_RW(max_poolable_size),
+    CTL_LEAF_RW(capacity),      CTL_LEAF_RW(min_bucket_size),
+    CTL_LEAF_RW(pool_trace),    CTL_NODE_END,
+};
 static umf_result_t
 CTL_READ_HANDLER(used_memory)(void *ctx, umf_ctl_query_source_t source,
                               void *arg, size_t size,
@@ -321,22 +537,27 @@ static const struct ctl_argument CTL_ARG(buckets) = {
      CTL_ARG_PARSER_END}};
 
 static void initialize_disjoint_ctl(void) {
+    CTL_REGISTER_MODULE(&disjoint_ctl_root, params);
     CTL_REGISTER_MODULE(&disjoint_ctl_root, stats);
     CTL_REGISTER_MODULE(&disjoint_ctl_root, buckets);
     // TODO: this is hack. Need some way to register module as node with argument
     disjoint_ctl_root.root[disjoint_ctl_root.first_free - 1].arg =
         &CTL_ARG(buckets);
+    disjoint_ctl_root.root[disjoint_ctl_root.first_free++] = (umf_ctl_node_t){
+        .name = "post_initialize",
+        .type = CTL_NODE_LEAF,
+        .runnable_cb = CTL_RUNNABLE_HANDLER(post_initialize),
+    };
 }
 
 umf_result_t disjoint_pool_ctl(void *hPool,
                                umf_ctl_query_source_t operationType,
                                const char *name, void *arg, size_t size,
                                umf_ctl_query_type_t queryType, va_list args) {
-    (void)operationType;
     utils_init_once(&ctl_initialized, initialize_disjoint_ctl);
 
-    return ctl_query(&disjoint_ctl_root, hPool, CTL_QUERY_PROGRAMMATIC, name,
-                     queryType, arg, size, args);
+    return ctl_query(&disjoint_ctl_root, hPool, operationType, name, queryType,
+                     arg, size, args);
 }
 
 // Temporary solution for disabling memory poisoning. This is needed because
@@ -929,6 +1150,41 @@ umf_result_t disjoint_pool_initialize(umf_memory_provider_handle_t provider,
 
     disjoint_pool->provider = provider;
     disjoint_pool->params = *dp_params;
+    disjoint_pool->post_initialized = false;
+    disjoint_pool->params_overridden = 0;
+
+    *ppPool = (void *)disjoint_pool;
+
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t disjoint_pool_post_initialize(void *ppPool) {
+    disjoint_pool_t *disjoint_pool = (disjoint_pool_t *)ppPool;
+
+    disjoint_pool->post_initialized = true;
+
+    if (disjoint_pool->params_overridden) {
+        if (disjoint_pool->params_overridden & DP_OVERRIDE_SLAB_MIN_SIZE) {
+            LOG_INFO("CTL override: slab_min_size=%zu",
+                     disjoint_pool->params.slab_min_size);
+        }
+        if (disjoint_pool->params_overridden & DP_OVERRIDE_MAX_POOLABLE_SIZE) {
+            LOG_INFO("CTL override: max_poolable_size=%zu",
+                     disjoint_pool->params.max_poolable_size);
+        }
+        if (disjoint_pool->params_overridden & DP_OVERRIDE_CAPACITY) {
+            LOG_INFO("CTL override: capacity=%zu",
+                     disjoint_pool->params.capacity);
+        }
+        if (disjoint_pool->params_overridden & DP_OVERRIDE_MIN_BUCKET_SIZE) {
+            LOG_INFO("CTL override: min_bucket_size=%zu",
+                     disjoint_pool->params.min_bucket_size);
+        }
+        if (disjoint_pool->params_overridden & DP_OVERRIDE_POOL_TRACE) {
+            LOG_INFO("CTL override: pool_trace=%d",
+                     disjoint_pool->params.pool_trace);
+        }
+    }
 
     disjoint_pool->known_slabs = critnib_new(free_slab, NULL);
     if (disjoint_pool->known_slabs == NULL) {
@@ -988,12 +1244,10 @@ umf_result_t disjoint_pool_initialize(umf_memory_provider_handle_t provider,
     }
 
     umf_result_t ret = umfMemoryProviderGetMinPageSize(
-        provider, NULL, &disjoint_pool->provider_min_page_size);
+        disjoint_pool->provider, NULL, &disjoint_pool->provider_min_page_size);
     if (ret != UMF_RESULT_SUCCESS) {
         disjoint_pool->provider_min_page_size = 0;
     }
-
-    *ppPool = (void *)disjoint_pool;
 
     return UMF_RESULT_SUCCESS;
 
@@ -1013,7 +1267,6 @@ err_free_known_slabs:
 
 err_free_disjoint_pool:
     umf_ba_global_free(disjoint_pool);
-
     return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
 }
 
