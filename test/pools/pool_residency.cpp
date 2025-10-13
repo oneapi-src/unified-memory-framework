@@ -110,6 +110,32 @@ TEST_F(PoolResidencyTestFixture,
 }
 
 TEST_F(PoolResidencyTestFixture,
+       existingAllocationsShouldBeEvictedFromRemovedDevice) {
+    initializeMemoryPool(l0mock.initializeMemoryProviderWithResidentDevices(
+        OUR_DEVICE, {DEVICE_2, DEVICE_3}));
+
+    EXPECT_CALL(l0mock, zeMemAllocDevice(CONTEXT, _, _, _, OUR_DEVICE, _))
+        .WillOnce(
+            DoAll(SetArgPointee<5>(POINTER_0), Return(ZE_RESULT_SUCCESS)));
+    EXPECT_CALL(l0mock, zeContextMakeMemoryResident(CONTEXT, DEVICE_2, _, _))
+        .WillOnce(Return(ZE_RESULT_SUCCESS));
+    EXPECT_CALL(l0mock, zeContextMakeMemoryResident(CONTEXT, DEVICE_3, _, _))
+        .WillOnce(Return(ZE_RESULT_SUCCESS));
+
+    void *ptr = umfPoolMalloc(pool, 123);
+    EXPECT_EQ(ptr, POINTER_0);
+
+    EXPECT_CALL(l0mock, zeContextEvictMemory(CONTEXT, DEVICE_2, _, _))
+        .WillOnce(Return(ZE_RESULT_SUCCESS));
+
+    umf_memory_provider_handle_t provider = nullptr;
+    EXPECT_EQ(umfPoolGetMemoryProvider(pool, &provider), UMF_RESULT_SUCCESS);
+    umfLevelZeroMemoryProviderResidentDeviceChange(provider, DEVICE_2, false);
+
+    umfPoolFree(pool, ptr);
+}
+
+TEST_F(PoolResidencyTestFixture,
        allocationShouldNotBeMadeResidentOnRemovedDevice) {
     initializeMemoryPool(l0mock.initializeMemoryProviderWithResidentDevices(
         OUR_DEVICE, {DEVICE_2}));
