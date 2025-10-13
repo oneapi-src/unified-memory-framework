@@ -64,6 +64,9 @@ class LevelZeroMock : public LevelZero {
     MOCK_METHOD4(zeContextMakeMemoryResident,
                  ze_result_t(ze_context_handle_t, ze_device_handle_t, void *,
                              size_t));
+    MOCK_METHOD4(zeContextEvictMemory,
+                 ze_result_t(ze_context_handle_t, ze_device_handle_t, void *,
+                             size_t));
     MOCK_METHOD2(zeMemFree,
                  ze_result_t(ze_context_handle_t hContext, void *ptr));
 

@@ -107,6 +107,8 @@ typedef struct ze_ops_t {
     ze_result_t (*zeContextMakeMemoryResident)(ze_context_handle_t,
                                                ze_device_handle_t, void *,
                                                size_t);
+    ze_result_t (*zeContextEvictMemory)(ze_context_handle_t, ze_device_handle_t,
+                                        void *, size_t);
     ze_result_t (*zeDeviceGetProperties)(ze_device_handle_t,
                                          ze_device_properties_t *);
     ze_result_t (*zeMemFreeExt)(ze_context_handle_t,
@@ -218,6 +220,8 @@ static void init_ze_global_state(void) {
         utils_get_symbol_addr(lib_handle, "zeMemCloseIpcHandle", lib_name);
     *(void **)&g_ze_ops.zeContextMakeMemoryResident = utils_get_symbol_addr(
         lib_handle, "zeContextMakeMemoryResident", lib_name);
+    *(void **)&g_ze_ops.zeContextEvictMemory =
+        utils_get_symbol_addr(lib_handle, "zeContextEvictMemory", lib_name);
     *(void **)&g_ze_ops.zeDeviceGetProperties =
         utils_get_symbol_addr(lib_handle, "zeDeviceGetProperties", lib_name);
     *(void **)&g_ze_ops.zeMemFreeExt =
@@ -230,7 +234,8 @@ static void init_ze_global_state(void) {
         !g_ze_ops.zeMemGetIpcHandle || !g_ze_ops.zeMemOpenIpcHandle ||
         !g_ze_ops.zeMemCloseIpcHandle ||
         !g_ze_ops.zeContextMakeMemoryResident ||
-        !g_ze_ops.zeDeviceGetProperties || !g_ze_ops.zeMemGetAllocProperties) {
+        !g_ze_ops.zeContextEvictMemory || !g_ze_ops.zeDeviceGetProperties ||
+        !g_ze_ops.zeMemGetAllocProperties) {
         // g_ze_ops.zeMemPutIpcHandle can be NULL because it was introduced
         // starting from Level Zero 1.6
         LOG_FATAL("Required Level Zero symbols not found.");
@@ -1012,8 +1017,9 @@ static int ze_memory_provider_resident_device_change_helper(uintptr_t key,
             change_data->source_memory_provider->context,
             change_data->peer_device, info->props.base, info->props.base_size);
     } else {
-        result = ZE_RESULT_SUCCESS;
-        // TODO: currently not implemented call evict here
+        result = g_ze_ops.zeContextEvictMemory(
+            change_data->source_memory_provider->context,
+            change_data->peer_device, info->props.base, info->props.base_size);
     }
 
     if (result != ZE_RESULT_SUCCESS) {

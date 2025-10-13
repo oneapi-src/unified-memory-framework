@@ -263,6 +263,13 @@ ze_result_t ZE_APICALL zeContextMakeMemoryResident(ze_context_handle_t hContext,
                                                         size);
 }
 
+ze_result_t ZE_APICALL zeContextEvictMemory(ze_context_handle_t hContext,
+                                            ze_device_handle_t hDevice,
+                                            void *ptr, size_t size) {
+    check_mock_present();
+    return level_zero_mock->zeContextEvictMemory(hContext, hDevice, ptr, size);
+}
+
 ze_result_t ZE_APICALL
 zeMemFreeExt(ze_context_handle_t hContext,
              const ze_memory_free_ext_desc_t *pMemFreeDesc, void *ptr) {
