@@ -83,7 +83,12 @@ TEST_F(LevelZeroResidencyTestFixture, removeDeviceTwiceShouldFail) {
 }
 
 int main(int argc, char **argv) {
-    InitGoogleTest(&argc, argv);
-    AddGlobalTestEnvironment(new MockedLevelZeroTestEnvironment);
-    return RUN_ALL_TESTS();
+    try {
+        InitGoogleTest(&argc, argv);
+        AddGlobalTestEnvironment(new MockedLevelZeroTestEnvironment);
+        return RUN_ALL_TESTS();
+    } catch (...) {
+        std::cerr << "Exception occurred." << std::endl;
+        return 1;
+    }
 }
