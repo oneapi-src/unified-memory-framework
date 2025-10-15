@@ -66,9 +66,6 @@ static bool report_pool_stat_failure(const char *label,
             reason = "slab statistics";
         } else if (hint_level == 2) {
             reason = "allocation counters";
-        } else if (hint_level < 3) {
-            hint_level = 2;
-            reason = "allocation counters";
         } else {
             hint_level = 3;
         }
