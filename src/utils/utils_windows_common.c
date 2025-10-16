@@ -10,6 +10,7 @@
 #include <windows.h>
 
 #include <assert.h>
+#include <handleapi.h>
 #include <processenv.h>
 #include <processthreadsapi.h>
 #include <stdio.h>
@@ -47,10 +48,7 @@ int utils_getpid(void) { return GetCurrentProcessId(); }
 
 int utils_gettid(void) { return GetCurrentThreadId(); }
 
-int utils_close_fd(int fd) {
-    (void)fd; // unused
-    return -1;
-}
+int utils_close_fd(int fd) { return CloseHandle((HANDLE)(uintptr_t)fd); }
 
 umf_result_t utils_errno_to_umf_result(int err) {
     (void)err; // unused
@@ -58,10 +56,41 @@ umf_result_t utils_errno_to_umf_result(int err) {
 }
 
 umf_result_t utils_duplicate_fd(int pid, int fd_in, int *fd_out) {
-    (void)pid;    // unused
-    (void)fd_in;  // unused
-    (void)fd_out; // unused
-    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    umf_result_t ret = UMF_RESULT_SUCCESS;
+    HANDLE current_process_handle = GetCurrentProcess();
+    if (!current_process_handle) {
+        LOG_ERR("GetCurrentProcess() failed.");
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
+
+    HANDLE source_process_handle = OpenProcess(PROCESS_DUP_HANDLE, FALSE, pid);
+    if (!source_process_handle) {
+        LOG_ERR("OpenProcess() failed for pid=%d.", pid);
+        ret = UMF_RESULT_ERROR_UNKNOWN;
+        goto release_current;
+    }
+
+    HANDLE handle_in = (HANDLE)(uintptr_t)fd_in;
+    HANDLE handle_out = NULL;
+    BOOL result = DuplicateHandle(source_process_handle, handle_in,
+                                  current_process_handle, &handle_out,
+                                  GENERIC_READ | GENERIC_WRITE, FALSE, 0);
+    if (!result) {
+        LOG_ERR("DuplicateHandle() failed for pid=%d fd_in=%d handle_in=%p",
+                pid, fd_in, handle_in);
+        ret = UMF_RESULT_ERROR_UNKNOWN;
+        goto release_source;
+    }
+
+    *fd_out = (int)(uintptr_t)handle_out;
+
+release_source:
+    CloseHandle(source_process_handle);
+
+release_current:
+    CloseHandle(current_process_handle);
+
+    return ret;
 }
 
 umf_result_t utils_translate_mem_protection_flags(unsigned in_protection,

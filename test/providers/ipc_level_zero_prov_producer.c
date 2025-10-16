@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <umf/experimental/ctl.h>
 #include <umf/pools/pool_disjoint.h>
 #include <umf/providers/provider_level_zero.h>
 
@@ -87,6 +88,15 @@ int main(int argc, char *argv[]) {
         ret = -1;
         goto destroy_provider_params;
     }
+
+#ifdef _WIN32
+    // NOTE: On Windows, we must use the import/export memory exchange policy
+    // because IPC currently does not work
+    int use_import_export_for_IPC = 1;
+    umfCtlSet(
+        "umf.provider.default.LEVEL_ZERO.params.use_import_export_for_IPC",
+        &use_import_export_for_IPC, sizeof(use_import_export_for_IPC));
+#endif
 
     umf_disjoint_pool_params_handle_t pool_params = NULL;
 

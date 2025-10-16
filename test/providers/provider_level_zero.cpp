@@ -476,6 +476,41 @@ TEST_P(umfLevelZeroProviderTest, ctl_stats) {
     umfMemoryProviderDestroy(provider);
 }
 
+TEST_P(umfLevelZeroProviderTest, ctl_use_import_export_for_IPC) {
+    umf_memory_provider_handle_t provider = nullptr;
+    umf_result_t ret = umfMemoryProviderCreate(umfLevelZeroMemoryProviderOps(),
+                                               params, &provider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(provider, nullptr);
+
+    // Test reading the default value (0 = IPC)
+    int use_import_export_for_IPC = 1; // Set to invalid value first
+    ret =
+        umfCtlGet("umf.provider.by_handle.{}.params.use_import_export_for_IPC",
+                  &use_import_export_for_IPC, sizeof(use_import_export_for_IPC),
+                  provider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(use_import_export_for_IPC, 0); // Default is IPC (0)
+
+    // Test writing a new value (1 = import/export)
+    int new_policy = 1;
+    ret =
+        umfCtlSet("umf.provider.by_handle.{}.params.use_import_export_for_IPC",
+                  &new_policy, sizeof(new_policy), provider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    // Test reading the updated value
+    use_import_export_for_IPC = 0; // Set to different value first
+    ret =
+        umfCtlGet("umf.provider.by_handle.{}.params.use_import_export_for_IPC",
+                  &use_import_export_for_IPC, sizeof(use_import_export_for_IPC),
+                  provider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(use_import_export_for_IPC, 1); // Should be import/export (1)
+
+    umfMemoryProviderDestroy(provider);
+}
+
 TEST_P(umfLevelZeroProviderTest, custom_name) {
     const char *custom = "my_level_zero";
     ASSERT_EQ(umfLevelZeroMemoryProviderParamsSetName(params, custom),
