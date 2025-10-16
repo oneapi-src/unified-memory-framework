@@ -99,6 +99,9 @@ TestCreateMemoryAllocationProperties(uint32_t modifier) {
 void MockedLevelZeroTestEnvironment::SetUp() {
     const char *lib_name = getenv("UMF_ZE_LOADER_LIB_NAME");
     ASSERT_NE(lib_name, nullptr);
+    if (lib_name == nullptr) {
+        return; // to avoid nullptr deref coverity issue
+    }
     ASSERT_NE(lib_name[0], '\0');
 
     lib_handle = utils_open_library(lib_name, 0);
