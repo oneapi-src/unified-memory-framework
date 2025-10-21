@@ -1,5 +1,5 @@
 ================
-Introduction
+CTL
 ================
 
 UMF's CTL is a mechanism for advanced configuration and control of UMF pools
