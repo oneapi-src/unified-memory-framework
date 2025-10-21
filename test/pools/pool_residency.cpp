@@ -9,6 +9,13 @@
 #include "pool.hpp"
 #include "gtest/gtest.h"
 
+// On MSVC disable C6285 warning produced by gtest:
+// (<non-zero constant> || <non-zero constant>) is always a non-zero constant.
+// Did you intend to use the bitwise-and operator?
+#ifdef _MSC_VER
+#pragma warning(disable : 6285)
+#endif
+
 using namespace testing;
 
 class PoolResidencyTestFixture : public Test {
@@ -53,6 +60,7 @@ TEST_F(PoolResidencyTestFixture,
     EXPECT_CALL(l0mock, zeMemAllocDevice(CONTEXT, _, _, _, OUR_DEVICE, _))
         .WillOnce(
             DoAll(SetArgPointee<5>(POINTER_0), Return(ZE_RESULT_SUCCESS)));
+
     EXPECT_CALL(l0mock, zeContextMakeMemoryResident(CONTEXT, DEVICE_0, _, _))
         .WillOnce(Return(ZE_RESULT_SUCCESS));
     EXPECT_CALL(l0mock, zeContextMakeMemoryResident(CONTEXT, DEVICE_1, _, _))
