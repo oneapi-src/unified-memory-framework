@@ -705,6 +705,29 @@ TEST_P(umfIpcTest, openInTwoIpcHandlers) {
     EXPECT_EQ(stat.closeCount, stat.openCount);
 }
 
+TEST_P(umfIpcTest, PutIPCHandleAfterFree) {
+    constexpr size_t SIZE = 100;
+    umf_test::pool_unique_handle_t pool = makePool();
+    ASSERT_NE(pool.get(), nullptr);
+
+    void *ptr = umfPoolMalloc(pool.get(), SIZE);
+    EXPECT_NE(ptr, nullptr);
+
+    umf_ipc_handle_t ipcHandle = nullptr;
+    size_t handleSize = 0;
+    umf_result_t ret = umfGetIPCHandle(ptr, &ipcHandle, &handleSize);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfPoolFree(pool.get(), ptr);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfPutIPCHandle(ipcHandle);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    pool.reset(nullptr);
+    EXPECT_EQ(stat.putCount, stat.getCount);
+}
+
 TEST_P(umfIpcTest, ConcurrentGetConcurrentPutHandles) {
     concurrentGetConcurrentPutHandles(false);
 }
