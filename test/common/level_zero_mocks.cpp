@@ -21,6 +21,7 @@ LevelZeroMock::initializeMemoryProviderWithResidentDevices(
     ze_device_handle_t device, std::vector<ze_device_handle_t> residentDevices,
     ze_context_handle_t context, ze_device_properties_t device_properties,
     ze_memory_allocation_properties_t memory_allocation_properties) {
+
     umf_level_zero_memory_provider_params_handle_t params = nullptr;
     EXPECT_EQ(umfLevelZeroMemoryProviderParamsCreate(&params),
               UMF_RESULT_SUCCESS);
@@ -31,10 +32,10 @@ LevelZeroMock::initializeMemoryProviderWithResidentDevices(
     EXPECT_EQ(umfLevelZeroMemoryProviderParamsSetMemoryType(
                   params, UMF_MEMORY_TYPE_DEVICE),
               UMF_RESULT_SUCCESS);
-
-    EXPECT_EQ(umfLevelZeroMemoryProviderParamsSetResidentDevices(
-                  params, residentDevices.data(), residentDevices.size()),
-              UMF_RESULT_SUCCESS);
+    EXPECT_EQ(
+        umfLevelZeroMemoryProviderParamsSetResidentDevices(
+            params, residentDevices.data(), (uint32_t)residentDevices.size()),
+        UMF_RESULT_SUCCESS);
 
     // query min page size operation upon provider initialization
     EXPECT_CALL(*this, zeDeviceGetProperties(device, _))
