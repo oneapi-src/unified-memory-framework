@@ -28,8 +28,10 @@ jobs:
       pr_no: '0'
       bench_script_params: >-
         --adapter level_zero_v2
+        --compute-runtime
         --preset Minimal
         --exit-on-failure
         --iterations 1
+        --verbose
       runner: 'L0_PERF_ARC'
       compatibility: '1'
