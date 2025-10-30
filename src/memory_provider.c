@@ -230,6 +230,17 @@ void assignOpsIpcDefaults(umf_memory_provider_ops_t *ops) {
 
 static umf_result_t umfProviderPostInitialize(umf_memory_provider_ops_t *ops,
                                               void *provider_priv, ...) {
+
+    // "post_initialize" ctl query is supported since version 1.1
+    if (ops->version < UMF_MAKE_VERSION(1, 1)) {
+        LOG_DEBUG(
+            "\"post_initialize\" ctl query was not required for memory "
+            "provider version %d, but the implementation could not handle "
+            "errors properly in this case",
+            ops->version);
+        return UMF_RESULT_ERROR_INVALID_CTL_PATH;
+    }
+
     va_list args;
     va_start(args, provider_priv);
     umf_result_t ret =
