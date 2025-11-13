@@ -837,11 +837,11 @@ static void bucket_free_chunk(bucket_t *bucket, void *ptr, slab_t *slab,
             // remove slab
             slab_list_item_t *slab_it = &slab->iter;
             assert(slab_it->val != NULL);
-            destroy_slab(slab_it->val);
+            pool_unregister_slab(bucket->pool, slab_it->val);
             DL_DELETE(bucket->available_slabs, slab_it);
             assert(bucket->available_slabs_num > 0);
             bucket->available_slabs_num--;
-            pool_unregister_slab(bucket->pool, slab_it->val);
+            destroy_slab(slab_it->val);
         }
     } else {
         // return this chunk to the pool
