@@ -32,6 +32,10 @@
 #include "utils_common.h"
 #include "utils_log.h"
 
+#ifndef DISABLE_SINGLE_LOGGER
+#include "utils_concurrency.h"
+#endif
+
 #define UMF_MAGIC_STR "\x00@(#) "
 #define UMF_PREF_STR "Intel(R) "
 #define UMF_PREFIX UMF_MAGIC_STR UMF_PREF_STR
@@ -59,6 +63,10 @@ char const __umf_str_1__all_cmake_vars[] =
 #define LOG_HEADER 256
 #define MAX_FILE_PATH 256
 #define MAX_ENV_LEN 2048
+
+#ifndef DISABLE_SINGLE_LOGGER
+static UTIL_ONCE_FLAG initOnce = UTIL_ONCE_FLAG_INIT;
+#endif
 
 typedef struct {
     bool enableTimestamp;
@@ -252,7 +260,7 @@ void utils_plog(utils_log_level_t level, const char *fileline, const char *func,
 
 static const char *bool_to_str(int b) { return b ? "yes" : "no"; }
 
-void utils_log_init(void) {
+static void utils_log_init_once(void) {
     const char *envVar = getenv("UMF_LOG");
 
     if (!envVar) {
@@ -350,6 +358,12 @@ void utils_log_init(void) {
 }
 
 // this is needed for logger unit test
+#ifndef DISABLE_SINGLE_LOGGER
+void utils_log_init(void) { utils_init_once(&initOnce, utils_log_init_once); }
+#else
+void utils_log_init(void) { utils_log_init_once(); }
+#endif
+
 #ifndef DISABLE_CTL_LOGGER
 static umf_result_t
 CTL_READ_HANDLER(timestamp)(void *ctx, umf_ctl_query_source_t source, void *arg,
