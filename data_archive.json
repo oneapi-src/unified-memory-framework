@@ -4,6 +4,664 @@
       "results": [
         {
           "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 umfProxy",
+          "value": 628.983,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 6.127006147649395,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 umfProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 umfProxy",
+          "value": 3088.55,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 104.08742014928268,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 umfProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 umfProxy",
+          "value": 580.773,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 9.995424820053087,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 umfProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 umfProxy",
+          "value": 2913.51,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 32.228326567374395,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 umfProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 umfProxy",
+          "value": 378.808,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 5.578574758245448,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 umfProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 umfProxy",
+          "value": 2711.71,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 142.2969946977097,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 umfProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 umfProxy",
+          "value": 613.947,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 1.378874299322943,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 umfProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 umfProxy",
+          "value": 2963.75,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 23.691308532877468,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 umfProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 umfProxy",
+          "value": 585.696,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 2.5406043244341627,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 umfProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 umfProxy",
+          "value": 2870.0,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 146.18918199830426,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 umfProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 umfProxy",
+          "value": 396.316,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 18.943906698461117,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 umfProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 umfProxy",
+          "value": 2745.37,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 235.6100118840452,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 umfProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 jemalloc",
+          "value": 188.996,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libjemalloc.so"
+          },
+          "unit": "ns",
+          "stddev": 1.1188879896277917,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 jemalloc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 jemalloc",
+          "value": 211.071,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libjemalloc.so"
+          },
+          "unit": "ns",
+          "stddev": 5.844117384173601,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 jemalloc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 jemalloc",
+          "value": 161.302,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libjemalloc.so"
+          },
+          "unit": "ns",
+          "stddev": 0.3779157754491505,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 jemalloc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 jemalloc",
+          "value": 176.56,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libjemalloc.so"
+          },
+          "unit": "ns",
+          "stddev": 2.773311558408109,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 jemalloc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 jemalloc",
+          "value": 94.4061,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libjemalloc.so"
+          },
+          "unit": "ns",
+          "stddev": 0.6692632466625748,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 jemalloc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 jemalloc",
+          "value": 105.285,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libjemalloc.so"
+          },
+          "unit": "ns",
+          "stddev": 1.4968508053020295,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 jemalloc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 jemalloc",
+          "value": 189.145,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libjemalloc.so"
+          },
+          "unit": "ns",
+          "stddev": 0.45220238831743054,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 jemalloc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 jemalloc",
+          "value": 209.32,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libjemalloc.so"
+          },
+          "unit": "ns",
+          "stddev": 0.452117610067715,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 jemalloc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 jemalloc",
+          "value": 158.723,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libjemalloc.so"
+          },
+          "unit": "ns",
+          "stddev": 0.14108271805339329,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 jemalloc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 jemalloc",
+          "value": 170.156,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libjemalloc.so"
+          },
+          "unit": "ns",
+          "stddev": 2.3185497622436264,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 jemalloc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 jemalloc",
+          "value": 92.8487,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libjemalloc.so"
+          },
+          "unit": "ns",
+          "stddev": 0.40997643834737457,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 jemalloc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 jemalloc",
+          "value": 102.924,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libjemalloc.so"
+          },
+          "unit": "ns",
+          "stddev": 1.8333470302518664,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 jemalloc",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 tbbProxy",
+          "value": 337.38,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libtbbmalloc_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 61.4877556130758,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 tbbProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 tbbProxy",
+          "value": 379.404,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libtbbmalloc_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 5.528229041323566,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 tbbProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 tbbProxy",
+          "value": 331.201,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libtbbmalloc_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 2.3210937077162526,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 tbbProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 tbbProxy",
+          "value": 376.125,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libtbbmalloc_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 2.0878476955946965,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 tbbProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 tbbProxy",
+          "value": 213.344,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libtbbmalloc_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 0.47304263373752753,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 tbbProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 tbbProxy",
+          "value": 232.675,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libtbbmalloc_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 1.7025928266421542,
+          "git_url": "",
+          "git_hash": "",
+          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 tbbProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 tbbProxy",
+          "value": 321.611,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libtbbmalloc_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 5.738024253463324,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 tbbProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 tbbProxy",
+          "value": 387.222,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libtbbmalloc_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 5.652618154448424,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 tbbProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 tbbProxy",
+          "value": 326.895,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libtbbmalloc_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 0.42523209348934765,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 tbbProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 tbbProxy",
+          "value": 365.549,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libtbbmalloc_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 3.6357662191070674,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 tbbProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 tbbProxy",
+          "value": 207.521,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libtbbmalloc_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 1.0354367838421412,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 tbbProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        },
+        {
+          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 tbbProxy",
+          "value": 222.204,
+          "command": [
+            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
+            "--benchmark_format=csv"
+          ],
+          "env": {
+            "LD_PRELOAD": "libtbbmalloc_proxy.so"
+          },
+          "unit": "ns",
+          "stddev": 1.1909060976136407,
+          "git_url": "",
+          "git_hash": "",
+          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 tbbProxy",
+          "lower_is_better": true,
+          "suite": "UMF"
+        }
+      ],
+      "name": "Baseline_PVC",
+      "hostname": "dnp_intel_06_02",
+      "git_hash": "8f5471055",
+      "github_repo": "intel/llvm",
+      "date": "2025-11-06T04:11:14.338386+00:00",
+      "compute_runtime": "unknown"
+    },
+    {
+      "results": [
+        {
+          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 umfProxy",
           "value": 630.323,
           "command": [
             "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
@@ -40136,664 +40794,6 @@
       "git_hash": "8f5471055",
       "github_repo": "intel/llvm",
       "date": "2025-09-08T04:08:28.907991+00:00",
-      "compute_runtime": "unknown"
-    },
-    {
-      "results": [
-        {
-          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 umfProxy",
-          "value": 635.174,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
-          },
-          "unit": "ns",
-          "stddev": 8.5258101667818,
-          "git_url": "",
-          "git_hash": "",
-          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 umfProxy",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 umfProxy",
-          "value": 3029.48,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
-          },
-          "unit": "ns",
-          "stddev": 206.63765057059032,
-          "git_url": "",
-          "git_hash": "",
-          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 umfProxy",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 umfProxy",
-          "value": 584.318,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
-          },
-          "unit": "ns",
-          "stddev": 1.972103023001931,
-          "git_url": "",
-          "git_hash": "",
-          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 umfProxy",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 umfProxy",
-          "value": 2920.77,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
-          },
-          "unit": "ns",
-          "stddev": 164.16760531034524,
-          "git_url": "",
-          "git_hash": "",
-          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 umfProxy",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 umfProxy",
-          "value": 379.626,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
-          },
-          "unit": "ns",
-          "stddev": 1.5909702490409197,
-          "git_url": "",
-          "git_hash": "",
-          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 umfProxy",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 umfProxy",
-          "value": 2707.43,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
-          },
-          "unit": "ns",
-          "stddev": 51.74357963393471,
-          "git_url": "",
-          "git_hash": "",
-          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 umfProxy",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 umfProxy",
-          "value": 617.731,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
-          },
-          "unit": "ns",
-          "stddev": 11.004344339093276,
-          "git_url": "",
-          "git_hash": "",
-          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 umfProxy",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 umfProxy",
-          "value": 3211.45,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
-          },
-          "unit": "ns",
-          "stddev": 118.0691891787747,
-          "git_url": "",
-          "git_hash": "",
-          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 umfProxy",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 umfProxy",
-          "value": 595.8,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
-          },
-          "unit": "ns",
-          "stddev": 3.9470798066419017,
-          "git_url": "",
-          "git_hash": "",
-          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 umfProxy",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 umfProxy",
-          "value": 2868.78,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
-          },
-          "unit": "ns",
-          "stddev": 197.37008393708845,
-          "git_url": "",
-          "git_hash": "",
-          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 umfProxy",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 umfProxy",
-          "value": 393.974,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
-          },
-          "unit": "ns",
-          "stddev": 18.952644045972384,
-          "git_url": "",
-          "git_hash": "",
-          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 umfProxy",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 umfProxy",
-          "value": 2757.87,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/lib/libumf_proxy.so"
-          },
-          "unit": "ns",
-          "stddev": 104.89646085545512,
-          "git_url": "",
-          "git_hash": "",
-          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 umfProxy",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 jemalloc",
-          "value": 189.677,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "libjemalloc.so"
-          },
-          "unit": "ns",
-          "stddev": 0.5985616091932279,
-          "git_url": "",
-          "git_hash": "",
-          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 jemalloc",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 jemalloc",
-          "value": 210.397,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "libjemalloc.so"
-          },
-          "unit": "ns",
-          "stddev": 5.7771073499921455,
-          "git_url": "",
-          "git_hash": "",
-          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 jemalloc",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 jemalloc",
-          "value": 161.316,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "libjemalloc.so"
-          },
-          "unit": "ns",
-          "stddev": 1.6651034001927134,
-          "git_url": "",
-          "git_hash": "",
-          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 jemalloc",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 jemalloc",
-          "value": 172.862,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "libjemalloc.so"
-          },
-          "unit": "ns",
-          "stddev": 1.7641269795567445,
-          "git_url": "",
-          "git_hash": "",
-          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 jemalloc",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 jemalloc",
-          "value": 94.9522,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "libjemalloc.so"
-          },
-          "unit": "ns",
-          "stddev": 0.6865301328662344,
-          "git_url": "",
-          "git_hash": "",
-          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 jemalloc",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 jemalloc",
-          "value": 105.131,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "libjemalloc.so"
-          },
-          "unit": "ns",
-          "stddev": 1.9236229706814534,
-          "git_url": "",
-          "git_hash": "",
-          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 jemalloc",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 jemalloc",
-          "value": 196.745,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "libjemalloc.so"
-          },
-          "unit": "ns",
-          "stddev": 0.9147234554771231,
-          "git_url": "",
-          "git_hash": "",
-          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 jemalloc",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 jemalloc",
-          "value": 208.229,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "libjemalloc.so"
-          },
-          "unit": "ns",
-          "stddev": 1.0619609220682247,
-          "git_url": "",
-          "git_hash": "",
-          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 jemalloc",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 jemalloc",
-          "value": 158.759,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "libjemalloc.so"
-          },
-          "unit": "ns",
-          "stddev": 0.8105115668514634,
-          "git_url": "",
-          "git_hash": "",
-          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 jemalloc",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 jemalloc",
-          "value": 168.352,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "libjemalloc.so"
-          },
-          "unit": "ns",
-          "stddev": 1.41021605909638,
-          "git_url": "",
-          "git_hash": "",
-          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 jemalloc",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 jemalloc",
-          "value": 93.1054,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "libjemalloc.so"
-          },
-          "unit": "ns",
-          "stddev": 0.8247131460898023,
-          "git_url": "",
-          "git_hash": "",
-          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 jemalloc",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 jemalloc",
-          "value": 101.005,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "libjemalloc.so"
-          },
-          "unit": "ns",
-          "stddev": 1.1609720065531284,
-          "git_url": "",
-          "git_hash": "",
-          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 jemalloc",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 tbbProxy",
-          "value": 347.001,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "libtbbmalloc_proxy.so"
-          },
-          "unit": "ns",
-          "stddev": 59.43961832257448,
-          "git_url": "",
-          "git_hash": "",
-          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 tbbProxy",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 tbbProxy",
-          "value": 385.541,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "libtbbmalloc_proxy.so"
-          },
-          "unit": "ns",
-          "stddev": 6.832393138571596,
-          "git_url": "",
-          "git_hash": "",
-          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 tbbProxy",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 tbbProxy",
-          "value": 339.013,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "libtbbmalloc_proxy.so"
-          },
-          "unit": "ns",
-          "stddev": 3.1867852139734705,
-          "git_url": "",
-          "git_hash": "",
-          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 tbbProxy",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 tbbProxy",
-          "value": 372.09,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "libtbbmalloc_proxy.so"
-          },
-          "unit": "ns",
-          "stddev": 2.7240789880863168,
-          "git_url": "",
-          "git_hash": "",
-          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 tbbProxy",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 tbbProxy",
-          "value": 213.288,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "libtbbmalloc_proxy.so"
-          },
-          "unit": "ns",
-          "stddev": 0.12260641636281877,
-          "git_url": "",
-          "git_hash": "",
-          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 tbbProxy",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 tbbProxy",
-          "value": 229.734,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "libtbbmalloc_proxy.so"
-          },
-          "unit": "ns",
-          "stddev": 0.5710788036689906,
-          "git_url": "",
-          "git_hash": "",
-          "name": "multiple_malloc_free/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 tbbProxy",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 tbbProxy",
-          "value": 318.433,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "libtbbmalloc_proxy.so"
-          },
-          "unit": "ns",
-          "stddev": 6.884798060461426,
-          "git_url": "",
-          "git_hash": "",
-          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:1 tbbProxy",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 tbbProxy",
-          "value": 386.218,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "libtbbmalloc_proxy.so"
-          },
-          "unit": "ns",
-          "stddev": 7.894505177653647,
-          "git_url": "",
-          "git_hash": "",
-          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/size:4096/iterations:500000/threads:4 tbbProxy",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 tbbProxy",
-          "value": 326.689,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "libtbbmalloc_proxy.so"
-          },
-          "unit": "ns",
-          "stddev": 1.84071788531903,
-          "git_url": "",
-          "git_hash": "",
-          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:1 tbbProxy",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 tbbProxy",
-          "value": 365.493,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "libtbbmalloc_proxy.so"
-          },
-          "unit": "ns",
-          "stddev": 3.2321434064719448,
-          "git_url": "",
-          "git_hash": "",
-          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:4096/granularity:8/iterations:500000/threads:4 tbbProxy",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 tbbProxy",
-          "value": 207.201,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "libtbbmalloc_proxy.so"
-          },
-          "unit": "ns",
-          "stddev": 0.40636108737591264,
-          "git_url": "",
-          "git_hash": "",
-          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:1 tbbProxy",
-          "lower_is_better": true,
-          "suite": "UMF"
-        },
-        {
-          "label": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 tbbProxy",
-          "value": 222.653,
-          "command": [
-            "/home/test-user/actions-runners/umf-perf-runner/_work/unified-memory-framework/unified-memory-framework/umf-repo/build/benchmark/umf-benchmark",
-            "--benchmark_format=csv"
-          ],
-          "env": {
-            "LD_PRELOAD": "libtbbmalloc_proxy.so"
-          },
-          "unit": "ns",
-          "stddev": 1.7848073658894816,
-          "git_url": "",
-          "git_hash": "",
-          "name": "peak_alloc/max_allocs:10000/thread_local_allocations:1/min_size:8/max_size:128/granularity:8/iterations:500000/threads:4 tbbProxy",
-          "lower_is_better": true,
-          "suite": "UMF"
-        }
-      ],
-      "name": "Baseline_PVC",
-      "hostname": "dnp_intel_06_02",
-      "git_hash": "8f5471055",
-      "github_repo": "intel/llvm",
-      "date": "2025-09-07T04:08:20.032573+00:00",
       "compute_runtime": "unknown"
     }
   ],
