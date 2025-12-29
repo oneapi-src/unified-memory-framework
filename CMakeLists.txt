@@ -406,7 +406,7 @@ if(UMF_BUILD_LEVEL_ZERO_PROVIDER)
     else()
         set(LEVEL_ZERO_LOADER_REPO
             "https://github.com/oneapi-src/level-zero.git")
-        set(LEVEL_ZERO_LOADER_TAG v1.22.4)
+        set(LEVEL_ZERO_LOADER_TAG v1.26.3)
 
         message(STATUS "Fetching Level Zero loader (${LEVEL_ZERO_LOADER_TAG}) "
                        "from ${LEVEL_ZERO_LOADER_REPO} ...")
@@ -464,7 +464,7 @@ if(UMF_BUILD_CUDA_PROVIDER)
     else()
         set(CUDA_REPO
             "https://gitlab.com/nvidia/headers/cuda-individual/cudart.git")
-        set(CUDA_TAG cuda-12.5.1)
+        set(CUDA_TAG cuda-12.6.3)
 
         message(
             STATUS "Fetching CUDA (${CUDA_TAG}) headers from ${CUDA_REPO} ...")

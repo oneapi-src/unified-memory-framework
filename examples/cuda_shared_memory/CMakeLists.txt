@@ -25,7 +25,7 @@ endif()
 include(FetchContent)
 
 set(CUDA_REPO "https://gitlab.com/nvidia/headers/cuda-individual/cudart.git")
-set(CUDA_TAG cuda-12.5.1)
+set(CUDA_TAG cuda-12.6.3)
 message(STATUS "Fetching CUDA ${CUDA_TAG} from ${CUDA_REPO} ...")
 
 # We don't want to build and include CUDA binaries to our install target. For
