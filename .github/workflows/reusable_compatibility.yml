@@ -29,14 +29,14 @@ jobs:
         sudo apt-get install -y clang cmake hwloc libhwloc-dev libnuma-dev libtbb-dev
 
     - name: Checkout "tag" UMF version
-      uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       with:
         fetch-depth: 0
         ref: refs/tags/${{inputs.tag}}
         path: ${{github.workspace}}/tag_version
 
     - name: Checkout latest UMF version
-      uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       with:
         fetch-depth: 0
         path: ${{github.workspace}}/latest_version
@@ -143,14 +143,14 @@ jobs:
 
     steps:
     - name: Checkout "tag" UMF version
-      uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       with:
         fetch-depth: 0
         ref: refs/tags/${{inputs.tag}}
         path: ${{github.workspace}}/tag_version
 
     - name: Restore vcpkg cache
-      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+      uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
       id: cache
       with:
         path: vcpkg_pkgs_cache.zip
@@ -176,7 +176,7 @@ jobs:
       run: vcpkg install --triplet x64-windows
 
     - name: Checkout latest UMF version
-      uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       with:
         fetch-depth: 0
         path: ${{github.workspace}}/latest_version
@@ -292,7 +292,7 @@ jobs:
 
     - name: Save vcpkg cache
       if: steps.cache.outputs.cache-hit != 'true'
-      uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+      uses: actions/cache/save@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
       with:
         path: ${{github.workspace}}/vcpkg_pkgs_cache.zip
         key: ${{ steps.cache.outputs.cache-primary-key }}
@@ -308,7 +308,7 @@ jobs:
 
     steps:
     - name: Checkout latest UMF version
-      uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       with:
         fetch-depth: 0
         path: ${{github.workspace}}/latest_version
@@ -340,7 +340,7 @@ jobs:
       run: cmake --install ${{github.workspace}}/latest_version/build --config Debug
       
     - name: Checkout "tag" UMF version
-      uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       with:
         fetch-depth: 0
         ref: refs/tags/${{inputs.tag}}
