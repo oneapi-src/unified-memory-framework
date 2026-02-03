@@ -1,3 +1,25 @@
+XXX Feb XX 2026 Łukasz Stolarczuk <lukasz.stolarczuk@intel.com>
+
+	* Version 1.1.0
+
+	This minor release contains following changes:
+	- Add memory properties API (#1301)
+	- Implement Level Zero memory eviction (#1534)
+	- Add umfPoolTrimMemory() (#1318)
+	- Add "set name" to all pools and providers (#1445)
+	- Expose disjoint pool stats through CTL (#1487)
+	- Allow using pool/provider names in CTL (#1471)
+	- Allow controlling logger through CTL (#1446)
+	- Extend CTL capabilities and add its documentation (#1524)
+	- Remove UMF_DISABLE_HWLOC option (which was deprecated) (#1228)
+
+	And fixes:
+	- Check for null pointer dereference in umfPoolDestroy() (#1462)
+	- Fix null pointer dereference in createDevDaxParams() (#1473)
+	- Fix Disjoint Pool bucket_free_chunk (#1543)
+	- Initialize hwloc topology only before first fork, not always (#1506)
+	- Fix UMF build on Alpine OS (#1294)
+
 Tue Sep 16 2025 Łukasz Stolarczuk <lukasz.stolarczuk@intel.com>
 
 	* Version 1.0.3
