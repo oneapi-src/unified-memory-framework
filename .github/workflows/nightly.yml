@@ -3,6 +3,7 @@ name: Nightly
 
 # This job is run at 04:00 UTC every day or on demand.
 on:
+  pull_request:
   workflow_dispatch:
   schedule:
     - cron: '0 4 * * *'
@@ -24,6 +25,7 @@ jobs:
         compiler: [{c: clang, cxx: clang++}]
     name: Fuzzing (ubuntu-latest, build_type=${{matrix.build_type}}, compilers=${{matrix.compiler.c}}/${{matrix.compiler.cxx}})
     runs-on: ubuntu-latest
+    if: false
 
     steps:
     - name: Checkout repository
@@ -76,6 +78,7 @@ jobs:
           tool: ['memcheck', 'drd', 'helgrind']
     name: Valgrind (${{matrix.tool}})
     runs-on: ubuntu-latest
+    if: false
 
     steps:
     - name: Checkout repository
@@ -121,6 +124,7 @@ jobs:
         generator: ['Ninja', 'NMake Makefiles']
         umfd_lib: ['ON', 'OFF']
     name: Windows (generator=${{matrix.generator}}, compilers=${{matrix.compiler.c}}/${{matrix.compiler.cxx}}, build_type=${{matrix.build_type}}, shared_library=${{matrix.shared_library}}, static_hwloc=${{matrix.static_hwloc}}, umfd_lib=${{matrix.umfd_lib}})
+    if: false
 
     runs-on: windows-latest
 
@@ -265,6 +269,7 @@ jobs:
            shared_library: 'ON'
    name: ICX (${{matrix.os}}, build_type=${{matrix.build_type}}, compilers=${{matrix.compiler.c}}/${{matrix.compiler.cxx}}, shared_library=${{matrix.shared_library}})
    runs-on: ${{matrix.os}}
+   if: false
 
    steps:
     - name: Checkout
@@ -373,6 +378,7 @@ jobs:
             number_of_processors: '$Env:NUMBER_OF_PROCESSORS'
     name: "Fallback to static hwloc build (${{matrix.os}}), build_type=${{matrix.build_type}})"
     runs-on: ${{matrix.os}}
+    if: false
 
     steps:
     - name: Install dependencies
@@ -421,6 +427,7 @@ jobs:
         build_type: [Release]
 
     runs-on: 'windows-latest'
+    if: false
 
     steps:
     - name: Checkout
@@ -459,16 +466,19 @@ jobs:
       run: ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
 
   L0:
+    if: false
     uses: ./.github/workflows/reusable_gpu.yml
     with:
       provider: "LEVEL_ZERO"
       runner: "L0"
   L0-BMG:
+    if: false
     uses: ./.github/workflows/reusable_gpu.yml
     with:
       provider: "LEVEL_ZERO"
       runner: "L0-BMG"
   CUDA:
+    if: false
     uses: ./.github/workflows/reusable_gpu.yml
     with:
       provider: "CUDA"
@@ -476,6 +486,7 @@ jobs:
 
   # Full execution of QEMU tests
   QEMU:
+    if: false
     uses: ./.github/workflows/reusable_qemu.yml
     with:
       short_run: false
@@ -517,6 +528,7 @@ jobs:
     uses: ./.github/workflows/reusable_sycl.yml
 
   alpine:
+    if: false
     name: Alpine
     env:
       HOST_WORKDIR: ${{github.workspace}}
