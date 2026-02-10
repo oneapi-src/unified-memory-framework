@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024-2025 Intel Corporation
+ * Copyright (C) 2024-2026 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -28,9 +28,13 @@
  */
 
 #ifndef _WIN32
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE // for RTLD_NEXT
 #include <dlfcn.h>
 #undef _GNU_SOURCE
+#else /* _GNU_SOURCE */
+#include <dlfcn.h>
+#endif /* _GNU_SOURCE */
 #endif /* _WIN32 */
 
 #if (defined PROXY_LIB_USES_JEMALLOC_POOL)
