@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2025 Intel Corporation
+# Copyright (C) 2022-2026 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -277,7 +277,7 @@ if(UMF_LINK_HWLOC_STATICALLY)
         set(UMF_HWLOC_REPO "https://github.com/open-mpi/hwloc.git")
     endif()
     if(NOT DEFINED UMF_HWLOC_TAG)
-        set(UMF_HWLOC_TAG hwloc-2.10.0)
+        set(UMF_HWLOC_TAG hwloc-2.13.0)
     endif()
 
     message(
