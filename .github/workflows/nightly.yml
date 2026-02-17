@@ -408,7 +408,9 @@ jobs:
 
   Windows-dynamic_mingw_hwloc:
     env:
-      HWLOC_PACKAGE_NAME: hwloc-win64-build-2.10.0
+      HWLOC_PACKAGE_VER: v2.13
+      HWLOC_PACKAGE_NAME: hwloc-win64-build-2.13.0
+      TBB_PACKAGE_VER: v2021.12.0
       TBB_PACKAGE_NAME: oneapi-tbb-2021.12.0
       TBB_LIB_DIR: lib\intel64\vc14
       TBB_BIN_DIR: redist\intel64\vc14
@@ -428,12 +430,12 @@ jobs:
 
     - name: Get hwloc from official repo (mingw version)
       run: |
-        Invoke-WebRequest -Uri https://download.open-mpi.org/release/hwloc/v2.10/${{env.HWLOC_PACKAGE_NAME}}.zip -OutFile ${{github.workspace}}\${{env.HWLOC_PACKAGE_NAME}}.zip -TimeoutSec 360
+        Invoke-WebRequest -Uri https://download.open-mpi.org/release/hwloc/${{env.HWLOC_PACKAGE_VER}}/${{env.HWLOC_PACKAGE_NAME}}.zip -OutFile ${{github.workspace}}\${{env.HWLOC_PACKAGE_NAME}}.zip -TimeoutSec 360
         Expand-Archive ${{github.workspace}}\${{env.HWLOC_PACKAGE_NAME}}.zip -DestinationPath ${{github.workspace}}
 
     - name: Get TBB from github
       run: |
-        Invoke-WebRequest -Uri https://github.com/oneapi-src/oneTBB/releases/download/v2021.12.0/${{env.TBB_PACKAGE_NAME}}-win.zip -OutFile "${{github.workspace}}\${{env.TBB_PACKAGE_NAME}}-win.zip" -TimeoutSec 360
+        Invoke-WebRequest -Uri https://github.com/oneapi-src/oneTBB/releases/download/${{env.TBB_PACKAGE_VER}}/${{env.TBB_PACKAGE_NAME}}-win.zip -OutFile "${{github.workspace}}\${{env.TBB_PACKAGE_NAME}}-win.zip" -TimeoutSec 360
         Expand-Archive "${{github.workspace}}\${{env.TBB_PACKAGE_NAME}}-win.zip" -DestinationPath ${{github.workspace}}
 
     - name: Configure build
