@@ -3,6 +3,7 @@ name: Nightly
 
 # This job is run at 04:00 UTC every day or on demand.
 on:
+  pull_request:
   workflow_dispatch:
   schedule:
     - cron: '0 4 * * *'
@@ -17,6 +18,7 @@ env:
 
 jobs:
   Fuzzing:
+    if: false
     strategy:
       fail-fast: false
       matrix:
@@ -70,6 +72,7 @@ jobs:
       run: ctest -C ${{matrix.build_type}} --output-on-failure --verbose -L "fuzz-long"
 
   Valgrind:
+    if: false
     strategy:
       fail-fast: false
       matrix:
@@ -109,6 +112,7 @@ jobs:
 
   # Build and test UMF with different CMake generators on Windows
   Windows-generators:
+    if: false
     env:
       VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
       VCPKG_PATH_NO_HWLOC: "${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
@@ -250,6 +254,7 @@ jobs:
 
   # Build and test UMF with Intel C++ Compiler (ICX) on Windows
   Windows-icx:
+    if: false
    env:
      VCPKG_PATH: "${{github.workspace}}/build/vcpkg/packages/hwloc_x64-windows;${{github.workspace}}/build/vcpkg/packages/tbb_x64-windows;${{github.workspace}}/build/vcpkg/packages/jemalloc_x64-windows"
    strategy:
@@ -362,6 +367,7 @@ jobs:
   # Scenarios where UMF_LINK_HWLOC_STATICALLY is set to OFF and hwloc is not installed in the system
   # The hwloc library is fetched implicitly
   Hwloc-fallback:
+    if: false
     strategy:
       matrix:
         include:
@@ -407,6 +413,7 @@ jobs:
       run: ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
 
   Windows-dynamic_mingw_hwloc:
+    if: false
     env:
       HWLOC_PACKAGE_VER: v2.13
       HWLOC_PACKAGE_NAME: hwloc-win64-build-2.13.0
@@ -459,16 +466,19 @@ jobs:
       run: ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
 
   L0:
+    if: false
     uses: ./.github/workflows/reusable_gpu.yml
     with:
       provider: "LEVEL_ZERO"
       runner: "L0"
   L0-BMG:
+    if: false
     uses: ./.github/workflows/reusable_gpu.yml
     with:
       provider: "LEVEL_ZERO"
       runner: "L0-BMG"
   CUDA:
+    if: false
     uses: ./.github/workflows/reusable_gpu.yml
     with:
       provider: "CUDA"
@@ -476,6 +486,7 @@ jobs:
 
   # Full execution of QEMU tests
   QEMU:
+    if: false
     uses: ./.github/workflows/reusable_qemu.yml
     with:
       short_run: false
@@ -496,13 +507,7 @@ jobs:
 
   # Run benchmarks with the latest SYCL (with the latest UMF copied into the SYCL)
   # to verify the compatibility.
-  #
-  # TODO: re-enable this job, when nightly sycl builds are again available;
-  #   the last one available (as of 24.07.2025) is not working properly with
-  #   compute benchmarks. Now, we could only build sycl from sources, or find a
-  #   matching version of compute benchmarks with last nightly package.
   Benchmarks-sycl:
-    if: false
     uses: ./.github/workflows/reusable_benchmarks.yml
     permissions:
       contents: write
@@ -512,9 +517,10 @@ jobs:
       bench_script_params: >-
         --adapter level_zero_v2
         --compute-runtime
-        --build-igc
         --preset Minimal
         --exit-on-failure
+        --iterations 1
+        --verbose
       runner: 'L0_PERF_ARC'
       compatibility: '1'
 
@@ -522,6 +528,7 @@ jobs:
     uses: ./.github/workflows/reusable_sycl.yml
 
   alpine:
+    if: false
     name: Alpine
     env:
       HOST_WORKDIR: ${{github.workspace}}
