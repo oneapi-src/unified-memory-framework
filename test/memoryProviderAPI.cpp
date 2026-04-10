@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // This file contains tests for UMF provider API
@@ -361,6 +361,65 @@ TEST_P(providerInitializeTest, errorPropagation) {
     auto ret = umfMemoryProviderCreate(&provider_ops, (void *)&this->GetParam(),
                                        &hProvider);
     ASSERT_EQ(ret, this->GetParam());
+}
+
+static int *provider_destroy_count_ptr = nullptr;
+
+TEST_F(test, memoryProviderCreateCleansUpWhenGetNameFails) {
+    int provider_destroy_count = 0;
+
+    struct provider_fail_get_name : public umf_test::provider_base_t {
+        ~provider_fail_get_name() override { (*provider_destroy_count_ptr)++; }
+
+        umf_result_t get_name(const char **) noexcept {
+            return UMF_RESULT_ERROR_UNKNOWN;
+        }
+    };
+
+    provider_destroy_count_ptr = &provider_destroy_count;
+
+    umf_memory_provider_ops_t provider_ops =
+        umf_test::providerMakeCOps<provider_fail_get_name, void>();
+
+    umf_memory_provider_handle_t hProvider = nullptr;
+    auto ret = umfMemoryProviderCreate(&provider_ops, nullptr, &hProvider);
+
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_UNKNOWN);
+    ASSERT_EQ(hProvider, nullptr);
+    ASSERT_EQ(provider_destroy_count, 1);
+    provider_destroy_count_ptr = nullptr;
+}
+
+TEST_F(test, memoryProviderCreateCleansUpWhenPostInitializeFails) {
+    int provider_destroy_count = 0;
+
+    struct provider_fail_post_initialize : public umf_test::provider_base_t {
+        ~provider_fail_post_initialize() override {
+            (*provider_destroy_count_ptr)++;
+        }
+
+        umf_result_t ext_ctl(umf_ctl_query_source_t, const char *name, void *,
+                             size_t, umf_ctl_query_type_t, va_list) noexcept {
+            if (name && std::string(name) == "post_initialize") {
+                return UMF_RESULT_ERROR_UNKNOWN;
+            }
+
+            return UMF_RESULT_ERROR_INVALID_CTL_PATH;
+        }
+    };
+
+    provider_destroy_count_ptr = &provider_destroy_count;
+
+    umf_memory_provider_ops_t provider_ops =
+        umf_test::providerMakeCOps<provider_fail_post_initialize, void>();
+
+    umf_memory_provider_handle_t hProvider = nullptr;
+    auto ret = umfMemoryProviderCreate(&provider_ops, nullptr, &hProvider);
+
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_UNKNOWN);
+    ASSERT_EQ(hProvider, nullptr);
+    ASSERT_EQ(provider_destroy_count, 1);
+    provider_destroy_count_ptr = nullptr;
 }
 
 // This fixture can be instantiated with any function that accepts void

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2025 Intel Corporation
+ * Copyright (C) 2023-2026 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -360,6 +360,11 @@ umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
     ret = provider->ops.get_name(provider->provider_priv, &pname);
     if (ret != UMF_RESULT_SUCCESS) {
         LOG_ERR("Failed to get pool name");
+        umf_result_t finalize_ret =
+            provider->ops.finalize(provider->provider_priv);
+        if (finalize_ret != UMF_RESULT_SUCCESS) {
+            LOG_ERR("Failed to finalize provider after create failure");
+        }
         umf_ba_global_free(provider);
         return ret;
     }
@@ -373,6 +378,11 @@ umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
     ret = umfProviderPostInitialize(&provider->ops, provider_priv);
     if (ret != UMF_RESULT_SUCCESS && ret != UMF_RESULT_ERROR_INVALID_CTL_PATH) {
         LOG_ERR("Failed to post-initialize provider");
+        umf_result_t finalize_ret =
+            provider->ops.finalize(provider->provider_priv);
+        if (finalize_ret != UMF_RESULT_SUCCESS) {
+            LOG_ERR("Failed to finalize provider after create failure");
+        }
         umf_ba_global_free(provider);
         return ret;
     }
