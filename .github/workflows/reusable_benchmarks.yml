@@ -49,6 +49,7 @@ jobs:
 
     steps:
     - name: Establish bench params
+      id: bench_params
       run: |
         params="${{ inputs.bench_script_params }}"
         if [ -n "${{ inputs.bench_script_compare }}" ]; then
@@ -56,16 +57,19 @@ jobs:
         fi
 
         echo "params=$params"
-        echo "bench_params=$params" >> $GITHUB_ENV
+        echo "PARAMS=$params" >> $GITHUB_OUTPUT
 
     - name: Add comment to PR
       uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
       if: ${{ always() && inputs.pr_no != 0 }}
+      env:
+        PR_NO: ${{ inputs.pr_no }}
+        PARAMS: ${{ steps.bench_params.outputs.PARAMS }}
       with:
         script: |
-          const pr_no = '${{ inputs.pr_no }}';
+          const pr_no = '${PR_NO}';
           const url = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
-          const params = `${{ env.bench_params }}`;
+          const params = `${PARAMS}`;
           const body = `Compute Benchmarks run (with params: ${params}):\n${url}`;
 
           github.rest.issues.createComment({
@@ -199,6 +203,7 @@ jobs:
       env:
         LD_LIBRARY_PATH: ${{ env.SYCL_DIR }}/lib
         CPATH: ${{ env.SYCL_DIR }}/include
+        BENCH_PARAMS: ${{ steps.bench_params.outputs.PARAMS }}
       run: >
         taskset -c ${{ env.CORES }} ./sc/devops/scripts/benchmarks/main.py
         ~/bench_workdir_umf
@@ -206,7 +211,7 @@ jobs:
         --output-markdown
         ${{ (inputs.compatibility == 0) && format('--umf {0}/ --timeout 3000 --output-html remote', env.BUILD_DIR) || '' }}
         ${{ (inputs.compatibility == 1) && format('--sycl {0} --timeout 7200', env.SYCL_DIR) || '' }}
-        ${{ env.bench_params }}
+        ${BENCH_PARAMS}
 
     # In case it failed to add a comment, we can still print the results.
     - name: Print benchmark results
@@ -216,6 +221,11 @@ jobs:
     - name: Add comment to PR
       uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
       if: ${{ always() && inputs.pr_no != 0 }}
+      env:
+        PR_NO: ${{ inputs.pr_no }}
+        BENCH_PARAMS: ${{ steps.bench_params.outputs.PARAMS }}
+        BENCH_OUTCOME: ${{ steps.benchmarks.outcome }}
+        JOB_STATUS: ${{ job.status }}
       with:
         script: |
           let markdown = ""
@@ -225,11 +235,11 @@ jobs:
           } catch(err) {
           }
 
-          const pr_no = '${{ inputs.pr_no }}';
+          const pr_no = '$PR_NO';
           const url = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
-          const test_status = '${{ steps.benchmarks.outcome }}';
-          const job_status = '${{ job.status }}';
-          const params = `${{ env.bench_params }}`;
+          const test_status = '${BENCH_OUTCOME}';
+          const job_status = '${JOB_STATUS}';
+          const params = `${BENCH_PARAMS}`;
           const body = `Compute Benchmarks run (${params}):\n${url}\nJob status: ${job_status}. Test status: ${test_status}.\n ${markdown}`;
 
           github.rest.issues.createComment({
