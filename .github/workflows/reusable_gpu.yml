@@ -75,7 +75,7 @@ jobs:
 
       - name: "[Win] Restore vcpkg cache"
         if: matrix.os == 'Windows'
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         id: cache
         with:
           path: vcpkg_pkgs_cache.zip
@@ -88,7 +88,7 @@ jobs:
 
       - name: "[Win] Initialize vcpkg"
         if: matrix.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
-        uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
+        uses: lukka/run-vcpkg@b1a0dd252f06b9e25b3c022a9a03bd7a427fb6a2 # v11.6
         with:
           vcpkgGitCommitId: ea2a964f9303270322cf3f2d51c265ba146c422d # 1.04.2025
           vcpkgDirectory: ${{github.workspace}}/vcpkg
@@ -197,7 +197,7 @@ jobs:
 
       - name: "[Win] Save vcpkg cache"
         if: matrix.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{github.workspace}}/vcpkg_pkgs_cache.zip
           key: ${{ steps.cache.outputs.cache-primary-key }}
