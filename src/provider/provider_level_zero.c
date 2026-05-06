@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024-2025 Intel Corporation
+ * Copyright (C) 2024-2026 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -1131,8 +1131,8 @@ static int ze_memory_provider_resident_device_change_helper(uintptr_t key,
     tracker_alloc_info_t *info = value;
     if (info->props.provider->provider_priv !=
         (void *)change_data->source_memory_provider) {
-        LOG_DEBUG("ze_memory_provider_resident_device_change found not our "
-                  "pointer %p",
+        LOG_DEBUG("ze_memory_provider_resident_device_change() did not find "
+                  "our pointer %p",
                   (void *)key);
         return 0;
     }
@@ -1152,17 +1152,22 @@ static int ze_memory_provider_resident_device_change_helper(uintptr_t key,
 
     if (result != ZE_RESULT_SUCCESS) {
         LOG_ERR(
-            "ze_memory_provider_resident_device_change found our pointer "
-            "%p but failed to make it resident on device: %p due to err: %d",
-            (void *)key, (void *)change_data->peer_device, result);
+            "ze_memory_provider_resident_device_change() found our pointer "
+            "%p but failed to %s device: %p due to err: %d",
+            (void *)key,
+            (change_data->is_adding ? "make it resident on" : "evict it from"),
+            (void *)change_data->peer_device, result);
         ++change_data->failed_changes;
         store_last_native_error(result);
         return 1;
     }
 
-    LOG_DEBUG("ze_memory_provider_resident_device_change found our pointer %p "
-              "and made it resident on device: %p",
-              (void *)key, (void *)change_data->peer_device);
+    LOG_DEBUG(
+        "ze_memory_provider_resident_device_change() found our pointer %p "
+        "and %s device: %p",
+        (void *)key,
+        (change_data->is_adding ? "made it resident on" : "evicted it from"),
+        (void *)change_data->peer_device);
     ++change_data->success_changes;
     return 0;
 }
@@ -1270,7 +1275,7 @@ umf_result_t umfLevelZeroMemoryProviderResidentDeviceChange(
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
 
-    LOG_INFO("ze_memory_provider_resident_device_change done, numSuccess: %d",
+    LOG_INFO("ze_memory_provider_resident_device_change() done, numSuccess: %d",
              privData.success_changes);
     return UMF_RESULT_SUCCESS;
 }
