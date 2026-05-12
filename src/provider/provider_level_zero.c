@@ -1264,14 +1264,14 @@ umf_result_t umfLevelZeroMemoryProviderResidentDeviceChange(
     if (result != UMF_RESULT_SUCCESS) {
         LOG_ERR("umfMemoryTrackerIterateAll failed during resident device "
                 "change with result: %d numFailed: %d, numSuccess: %d",
-                result, privData.success_changes, privData.failed_changes);
+                result, privData.failed_changes, privData.success_changes);
         return result;
     }
 
     if (privData.failed_changes > 0) {
         LOG_ERR("umfMemoryTrackerIterateAll did not manage to do some change "
                 "numFailed: %d, numSuccess: %d",
-                privData.success_changes, privData.failed_changes);
+                privData.failed_changes, privData.success_changes);
         return UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC;
     }
 
