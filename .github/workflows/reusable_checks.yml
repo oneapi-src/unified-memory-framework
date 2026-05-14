@@ -57,7 +57,7 @@ jobs:
         ./scripts/check_license/check_headers.sh . "Apache-2.0 WITH LLVM-exception" -v
 
     - name: Run a spell check
-      uses: crate-ci/typos@bbaefadf97b0ec5fdc942684b647f1a6ab250274 # v1.46.0
+      uses: crate-ci/typos@5374cbf686e897b15713110e233094e2874de7ef # v1.46.1
       with:
         config: ./.github/workflows/.spellcheck-conf.toml
 

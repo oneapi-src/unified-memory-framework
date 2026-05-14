@@ -144,7 +144,7 @@ jobs:
 
     - name: Initialize vcpkg
       if: steps.cache.outputs.cache-hit != 'true'
-      uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
+      uses: lukka/run-vcpkg@b1a0dd252f06b9e25b3c022a9a03bd7a427fb6a2 # v11.6
       with:
         vcpkgGitCommitId: ea2a964f9303270322cf3f2d51c265ba146c422d # 1.04.2025
         vcpkgDirectory: ${{env.BUILD_DIR}}/vcpkg
@@ -286,7 +286,7 @@ jobs:
 
     - name: Initialize vcpkg
       if: steps.cache.outputs.cache-hit != 'true'
-      uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
+      uses: lukka/run-vcpkg@b1a0dd252f06b9e25b3c022a9a03bd7a427fb6a2 # v11.6
       with:
         vcpkgGitCommitId: ea2a964f9303270322cf3f2d51c265ba146c422d # 1.04.2025
         vcpkgDirectory: ${{env.BUILD_DIR}}/vcpkg
