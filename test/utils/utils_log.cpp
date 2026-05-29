@@ -1,4 +1,4 @@
-// Copyright (C) 2024-2025 Intel Corporation
+// Copyright (C) 2024-2026 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -366,6 +366,38 @@ TEST_F(test, long_log) {
                        "[truncated...]\n";
     helper_test_log(LOG_DEBUG, MOCK_FN_NAME.c_str(), "%s",
                     std::string(8190 - MOCK_FN_NAME.size(), 'x').c_str());
+}
+
+TEST_F(test, long_func_name) {
+    expect_fput_count = 1;
+    expect_fflush_count = 1;
+    loggerConfig =
+        utils_log_config_t{false, false, LOG_DEBUG, LOG_DEBUG, stderr, ""};
+
+    std::string long_func(LOG_MAX, 'f');
+    expected_message =
+        "[DEBUG UMF] " + long_func.substr(0, LOG_MAX - 1) + "[truncated...]\n";
+
+    helper_test_log(LOG_DEBUG, long_func.c_str(), "%s", "tail");
+}
+
+TEST_F(test, long_fileline_and_func_name) {
+    expect_fput_count = 1;
+    expect_fflush_count = 1;
+    loggerConfig =
+        utils_log_config_t{false, false, LOG_DEBUG, LOG_DEBUG, stderr, ""};
+
+    std::string long_fileline(LOG_MAX, 'l');
+    std::string long_func(LOG_MAX, 'f');
+    expected_message = "[DEBUG UMF] " + long_fileline.substr(0, LOG_MAX - 1) +
+                       "[truncated...]\n";
+
+    fput_count = 0;
+    fflush_count = 0;
+    utils_log(LOG_DEBUG, long_fileline.c_str(), long_func.c_str(), "%s",
+              "tail");
+    EXPECT_EQ(fput_count, expect_fput_count);
+    EXPECT_EQ(fflush_count, expect_fflush_count);
 }
 
 TEST_F(test, timestamp_log) {
