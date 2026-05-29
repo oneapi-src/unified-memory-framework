@@ -152,6 +152,8 @@ jobs:
 
     - name: Install dependencies
       if: steps.cache.outputs.cache-hit != 'true'
+      env:
+        VCPKG_BINARY_SOURCES: clear
       run: vcpkg install --triplet x64-windows
 
     - name: Set VCPKG_PATH without hwloc
@@ -294,6 +296,8 @@ jobs:
 
     - name: Install dependencies
       if: steps.cache.outputs.cache-hit != 'true'
+      env:
+        VCPKG_BINARY_SOURCES: clear
       run: vcpkg install --triplet x64-windows
 
     - name: Install Ninja

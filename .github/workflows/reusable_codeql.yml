@@ -69,6 +69,8 @@ jobs:
 
     - name: "[Win] Install vcpkg dependencies"
       if: matrix.os == 'windows-latest' && steps.cache.outputs.cache-hit != 'true'
+      env:
+        VCPKG_BINARY_SOURCES: clear
       run: vcpkg install --triplet x64-windows
 
     - name: "[Win] Install Python requirements"

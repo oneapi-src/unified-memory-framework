@@ -96,6 +96,8 @@ jobs:
 
       - name: "[Win] Install dependencies"
         if: matrix.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
+        env:
+          VCPKG_BINARY_SOURCES: clear
         run: vcpkg install --triplet x64-windows
 
       # note: disable all providers except the one being tested
