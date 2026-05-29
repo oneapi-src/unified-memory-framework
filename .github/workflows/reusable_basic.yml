@@ -307,6 +307,8 @@ jobs:
 
     - name: Install dependencies
       if: steps.cache.outputs.cache-hit != 'true'
+      env:
+        VCPKG_BINARY_SOURCES: clear
       run: vcpkg install --triplet x64-windows
 
     # Older versions of CMake require this step to correctly locate dependencies

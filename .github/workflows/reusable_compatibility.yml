@@ -173,6 +173,8 @@ jobs:
     - name: Install dependencies
       if: steps.cache.outputs.cache-hit != 'true'
       working-directory: ${{github.workspace}}/tag_version
+      env:
+        VCPKG_BINARY_SOURCES: clear
       run: vcpkg install --triplet x64-windows
 
     - name: Checkout latest UMF version
