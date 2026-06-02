@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2024-2025 Intel Corporation
+ * Copyright (C) 2024-2026 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -72,6 +72,46 @@ typedef struct {
 utils_log_config_t loggerConfig = {false,     false, LOG_ERROR,
                                    LOG_ERROR, NULL,  ""};
 
+static void log_buffer_advance(char **pos, size_t *size, size_t written) {
+    ASSERT(pos);
+    ASSERT(size);
+
+    // do nothing if the size is 0 or can only hold the NULL terminator
+    if (*size <= 1) {
+        *size = 0;
+        return;
+    }
+
+    size_t advance = utils_min(written, *size - 1);
+    *pos += advance;
+
+    if (written >= *size) {
+        *size = 0;
+        return;
+    }
+
+    *size -= advance;
+}
+
+static void log_buffer_append(char **pos, size_t *size, const char *src) {
+    ASSERT(pos);
+    ASSERT(size);
+    ASSERT(src);
+
+    if (*size == 0) {
+        return;
+    }
+
+    size_t src_len = strlen(src);
+    size_t copy_len = utils_min(src_len, *size - 1);
+    memcpy(*pos, src, copy_len);
+
+    // copy_len excludes the trailing NULL, add it explicitly
+    (*pos)[copy_len] = '\0';
+
+    log_buffer_advance(pos, size, src_len);
+}
+
 static const char *level_to_str(utils_log_level_t l) {
     switch (l) {
     case LOG_DEBUG:
@@ -113,7 +153,7 @@ static void utils_log_internal(utils_log_level_t level, int perror,
 
     char buffer[LOG_MAX];
     char *b_pos = buffer;
-    int b_size = sizeof(buffer);
+    size_t b_size = sizeof(buffer);
 
     int tmp = 0;
     if (fileline == NULL) {
@@ -121,16 +161,21 @@ static void utils_log_internal(utils_log_level_t level, int perror,
     } else {
         tmp = snprintf(b_pos, b_size, "%s %s: ", fileline, func);
     }
-    ASSERT(tmp > 0);
 
-    b_pos += (int)tmp;
-    b_size -= (int)tmp;
+    if (tmp < 0) {
+        return; // snprintf error
+    }
+
+    size_t written = (size_t)tmp;
+    log_buffer_advance(&b_pos, &b_size, written);
 
     tmp = vsnprintf(b_pos, b_size, format, args);
-    ASSERT(tmp > 0);
+    if (tmp < 0) {
+        return; // vsnprintf error
+    }
 
-    b_pos += (int)tmp;
-    b_size -= (int)tmp;
+    written = (size_t)tmp;
+    log_buffer_advance(&b_pos, &b_size, written);
 
     const char *postfix = "";
 
@@ -139,10 +184,12 @@ static void utils_log_internal(utils_log_level_t level, int perror,
             strncat(b_pos, ": ", b_size);
             b_pos += 2;
             b_size -= 2;
+            const char *err = "";
 #if defined(_WIN32)
-            char err[80]; // max size according to msdn
-            if (strerror_s(err, sizeof(err), errno)) {
-                *err = '\0';
+            char err_buff[80]; // max size according to msdn
+            err = err_buff;
+            if (strerror_s(err_buff, sizeof(err_buff), errno)) {
+                *err_buff = '\0';
                 postfix = "[strerror_s failed]";
             }
 #else
@@ -151,10 +198,11 @@ static void utils_log_internal(utils_log_level_t level, int perror,
 
 #if defined(__APPLE__) ||                                                      \
     ((_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && !_GNU_SOURCE)
-            char err[1024];
-            int ret = strerror_r(saveno, err, sizeof(err));
+            char err_buff[1024];
+            err = err_buff;
+            int ret = strerror_r(saveno, err_buff, sizeof(err_buff));
             if (ret) {
-                *err = '\0';
+                *err_buff = '\0';
                 postfix = "[strerror_r failed]";
             }
             if (errno == ERANGE) {
@@ -162,7 +210,7 @@ static void utils_log_internal(utils_log_level_t level, int perror,
             }
 #else
             char err_buff[1024];
-            const char *err = strerror_r(saveno, err_buff, sizeof(err_buff));
+            err = strerror_r(saveno, err_buff, sizeof(err_buff));
             if (errno == ERANGE) {
                 postfix = "[truncated...]";
             }
@@ -170,14 +218,7 @@ static void utils_log_internal(utils_log_level_t level, int perror,
 
             errno = saveno;
 #endif
-            strncpy(b_pos, err, b_size);
-            size_t err_size = strlen(err);
-            b_pos += err_size;
-            b_size -= (int)err_size;
-            if (b_size <= 0) {
-                buffer[LOG_MAX - 1] =
-                    '\0'; //strncpy do not add \0 in case of overflow
-            }
+            log_buffer_append(&b_pos, &b_size, err);
         } else {
             postfix = "[truncated...]";
         }
@@ -190,7 +231,7 @@ static void utils_log_internal(utils_log_level_t level, int perror,
 
     char header[LOG_HEADER];
     char *h_pos = header;
-    int h_size = sizeof(header);
+    size_t h_size = sizeof(header);
     memset(header, 0, sizeof(header));
 
     if (loggerConfig.enableTimestamp) {
@@ -202,18 +243,22 @@ static void utils_log_internal(utils_log_level_t level, int perror,
         localtime_r(&now, &tm_info);
 #endif
 
-        ASSERT(h_size > 0);
-        tmp = (int)strftime(h_pos, h_size, "%Y-%m-%dT%H:%M:%S ", &tm_info);
-        h_pos += tmp;
-        h_size -= tmp;
+        written = strftime(h_pos, h_size, "%Y-%m-%dT%H:%M:%S ", &tm_info);
+        if (written == 0 && h_size > 0) {
+            h_pos[0] = '\0';
+        }
+        log_buffer_advance(&h_pos, &h_size, written);
     }
 
     if (loggerConfig.enablePid) {
         ASSERT(h_size > 0);
         tmp = snprintf(h_pos, h_size, "PID:%-6lu TID:%-6lu ",
                        (unsigned long)pid, (unsigned long)tid);
-        h_pos += tmp;
-        h_size -= tmp;
+        if (tmp < 0) {
+            return; // snprintf error
+        }
+        written = (size_t)tmp;
+        log_buffer_advance(&h_pos, &h_size, written);
     }
 
     // We take twice header size here to ensure that
@@ -222,6 +267,7 @@ static void utils_log_internal(utils_log_level_t level, int perror,
     char logLine[LOG_MAX + LOG_HEADER * 2];
     snprintf(logLine, sizeof(logLine), "[%s%-5s UMF] %s%s\n", header,
              level_to_str(level), buffer, postfix);
+
     FILE *out = loggerConfig.output ? loggerConfig.output : stderr;
     fputs(logLine, out);
 
