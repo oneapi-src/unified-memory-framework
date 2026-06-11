@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2025 Intel Corporation
+ * Copyright (C) 2023-2026 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -43,6 +43,11 @@ umf_result_t umfPoolGetIPCHandleSize(umf_memory_pool_handle_t hPool,
     if (ret != UMF_RESULT_SUCCESS) {
         LOG_ERR("cannot get IPC handle size.");
         return ret;
+    }
+
+    if (providerIPCHandleSize > SIZE_MAX - sizeof(umf_ipc_data_t)) {
+        LOG_ERR("IPC handle size is too large.");
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
     *size = sizeof(umf_ipc_data_t) + providerIPCHandleSize;
