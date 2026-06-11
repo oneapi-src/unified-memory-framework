@@ -1,14 +1,17 @@
-// Copyright (C) 2023-2025 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // This file contains tests for UMF pool API
 
 #include "ipcFixtures.hpp"
 
+#include "ipc_internal.h"
 #include "provider.hpp"
 
 #include <umf/pools/pool_disjoint.h>
 
+#include <array>
+#include <limits>
 #include <shared_mutex>
 #include <unordered_map>
 
@@ -121,6 +124,89 @@ provider_mock_ipc::allocations_map_type provider_mock_ipc::allocations;
 
 static umf_memory_provider_ops_t IPC_MOCK_PROVIDER_OPS =
     umf_test::providerMakeCOps<provider_mock_ipc, void>();
+
+struct provider_mock_ipc_huge_handle : public provider_mock_ipc {
+    struct tracking_ipc_cache_header_t {
+        uint64_t handle_id;
+        uint64_t ipcDataSize;
+    };
+
+    umf_result_t get_name(const char **name) noexcept {
+        *name = "mock_ipc_huge_handle";
+        return UMF_RESULT_SUCCESS;
+    }
+
+    umf_result_t ext_get_ipc_handle_size(size_t *size) noexcept {
+        *size = std::numeric_limits<size_t>::max() -
+                sizeof(tracking_ipc_cache_header_t) + 1;
+        return UMF_RESULT_SUCCESS;
+    }
+
+    umf_result_t ext_get_ipc_handle(const void *ptr, size_t size,
+                                    void *providerIpcData) noexcept {
+        (void)ptr;
+        (void)size;
+        (void)providerIpcData;
+        ADD_FAILURE() << "IPC handle callback should not be called";
+        return UMF_RESULT_ERROR_UNKNOWN;
+    }
+};
+
+static umf_memory_provider_ops_t IPC_HUGE_HANDLE_PROVIDER_OPS =
+    umf_test::providerMakeCOps<provider_mock_ipc_huge_handle, void>();
+
+static umf_test::pool_unique_handle_t createHugeHandlePool() {
+    umf_memory_provider_handle_t hProvider = nullptr;
+    auto ret = umfMemoryProviderCreate(&IPC_HUGE_HANDLE_PROVIDER_OPS, nullptr,
+                                       &hProvider);
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    umf_memory_pool_handle_t hPool = nullptr;
+    ret = umfPoolCreate(umfProxyPoolOps(), hProvider, nullptr,
+                        UMF_POOL_CREATE_FLAG_OWN_PROVIDER, &hPool);
+    if (ret != UMF_RESULT_SUCCESS) {
+        umfMemoryProviderDestroy(hProvider);
+    }
+    EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    return umf_test::pool_unique_handle_t(hPool, &umfPoolDestroy);
+}
+
+struct ipcOverflowTest : umf_test::test {};
+
+TEST_F(ipcOverflowTest, ipcHandleSizeOverflow) {
+    auto pool = createHugeHandlePool();
+    ASSERT_NE(pool, nullptr);
+
+    size_t ipcHandleSize = 0;
+    auto ret = umfPoolGetIPCHandleSize(pool.get(), &ipcHandleSize);
+    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    EXPECT_EQ(ipcHandleSize, 0u);
+}
+
+TEST_F(ipcOverflowTest, trackingIpcCacheValueSizeOverflow) {
+    auto pool = createHugeHandlePool();
+    ASSERT_NE(pool, nullptr);
+
+    void *ptr = umfPoolMalloc(pool.get(), 4096);
+    ASSERT_NE(ptr, nullptr);
+
+    umf_ipc_handler_handle_t hIPCHandler = nullptr;
+    auto ret = umfPoolGetIPCHandler(pool.get(), &hIPCHandler);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(hIPCHandler, nullptr);
+
+    alignas(umf_ipc_data_t) std::array<char, sizeof(umf_ipc_data_t) + 64>
+        ipcDataBuffer{};
+    auto *ipcData = reinterpret_cast<umf_ipc_data_t *>(ipcDataBuffer.data());
+
+    ret = umfMemoryProviderGetIPCHandle(
+        reinterpret_cast<umf_memory_provider_handle_t>(hIPCHandler), ptr, 4096,
+        ipcData->providerIpcData);
+    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    umfPoolFree(pool.get(), ptr);
+}
 
 HostMemoryAccessor hostMemoryAccessor;
 
