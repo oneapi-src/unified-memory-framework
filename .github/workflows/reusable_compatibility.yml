@@ -29,14 +29,14 @@ jobs:
         sudo apt-get install -y clang cmake hwloc libhwloc-dev libnuma-dev libtbb-dev
 
     - name: Checkout "tag" UMF version
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       with:
         fetch-depth: 0
         ref: refs/tags/${{inputs.tag}}
         path: ${{github.workspace}}/tag_version
 
     - name: Checkout latest UMF version
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       with:
         fetch-depth: 0
         path: ${{github.workspace}}/latest_version
@@ -143,7 +143,7 @@ jobs:
 
     steps:
     - name: Checkout "tag" UMF version
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       with:
         fetch-depth: 0
         ref: refs/tags/${{inputs.tag}}
@@ -178,7 +178,7 @@ jobs:
       run: vcpkg install --triplet x64-windows
 
     - name: Checkout latest UMF version
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       with:
         fetch-depth: 0
         path: ${{github.workspace}}/latest_version
@@ -310,7 +310,7 @@ jobs:
 
     steps:
     - name: Checkout latest UMF version
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       with:
         fetch-depth: 0
         path: ${{github.workspace}}/latest_version
@@ -342,7 +342,7 @@ jobs:
       run: cmake --install ${{github.workspace}}/latest_version/build --config Debug
       
     - name: Checkout "tag" UMF version
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       with:
         fetch-depth: 0
         ref: refs/tags/${{inputs.tag}}

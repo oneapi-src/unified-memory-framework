@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2024-2025 Intel Corporation
+ * Copyright (C) 2024-2026 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -37,7 +37,7 @@ static umf_result_t umfMemspaceHostAllCreate(umf_memspace_handle_t *hMemspace) {
 
     hwloc_topology_t topology = umfGetTopologyReduced();
     if (!topology) {
-        // TODO: What would be an approrpiate err?
+        // TODO: What would be an appropriate err?
         return UMF_RESULT_ERROR_UNKNOWN;
     }
 

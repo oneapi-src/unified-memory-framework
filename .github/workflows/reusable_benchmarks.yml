@@ -80,7 +80,7 @@ jobs:
           })
 
     - name: Checkout UMF
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       with:
         path: ${{env.UMF_DIR}}
         fetch-depth: 0
@@ -117,7 +117,7 @@ jobs:
       run: cmake --build ${{env.BUILD_DIR}} -j $(nproc)
 
     - name: Checkout UMF results branch
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       with:
         ref: benchmark-results
         path: results-repo
@@ -125,7 +125,7 @@ jobs:
     # Get scripts for benchmark data visualization (from SYCL repo).
     # Use specific ref, as the scripts or files' location may change.
     - name: Checkout benchmark scripts
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       with:
         repository: intel/llvm
         # Note: The same ref is used in docs build (for dashboard generation)!
