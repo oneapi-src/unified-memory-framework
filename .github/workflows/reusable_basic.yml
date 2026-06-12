@@ -235,6 +235,7 @@ jobs:
             shared_library: 'ON'
             level_zero_provider: 'OFF'
             cuda_provider: 'OFF'
+            extra_release_build_type: '-DCMAKE_BUILD_TYPE=Release' # NMake generator requires this
             cmake_ver: '3.28.0-windows-x86_64'
           # umfd enabled (this job will replace one from matrix)
           - os: 'windows-2022'
@@ -242,6 +243,7 @@ jobs:
             shared_library: 'ON'
             level_zero_provider: 'ON'
             cuda_provider: 'ON'
+            extra_release_build_type: '-DCMAKE_BUILD_TYPE=Release' # NMake generator requires this            
             umfd_lib: 'ON'
     name: Basic (${{matrix.os}}, 
           compilers=${{matrix.compiler.c}}/${{matrix.compiler.cxx}}, 
@@ -423,12 +425,25 @@ jobs:
 
     - name: check /DEPENDENTLOADFLAG in umf.dll (Release)
       if: ${{matrix.shared_library == 'ON' && matrix.compiler.cxx == 'cl'}}
-      run: ${{github.workspace}}/.github/scripts/check_dll_flags.ps1 ${{env.BUILD_RELEASE_DIR}}/bin/Release/umf.dll
+      run: |
+        if (Test-Path "${{env.BUILD_RELEASE_DIR}}/bin/Release/umf.dll") {
+          $dll_path = "${{env.BUILD_RELEASE_DIR}}/bin/Release/umf.dll"
+        } else {
+          $dll_path = "${{env.BUILD_RELEASE_DIR}}/bin/umf.dll"
+        }        
+        ${{github.workspace}}/.github/scripts/check_dll_flags.ps1 $dll_path
       shell: pwsh
 
     - name: check /DEPENDENTLOADFLAG in umf_proxy.dll (Release)
       if: ${{matrix.shared_library == 'ON' && matrix.compiler.cxx == 'cl'}}
-      run: ${{github.workspace}}/.github/scripts/check_dll_flags.ps1 ${{env.BUILD_RELEASE_DIR}}/src/proxy_lib/Release/umf_proxy.dll
+      run: |
+        Get-ChildItem -Path "${{env.BUILD_RELEASE_DIR}}" -Recurse        
+        if (Test-Path "${{env.BUILD_RELEASE_DIR}}/src/proxy_lib/Release/umf_proxy.dll") {
+          $dll_path = "${{env.BUILD_RELEASE_DIR}}/src/proxy_lib/Release/umf_proxy.dll"
+        } else {
+          $dll_path = "${{env.BUILD_RELEASE_DIR}}/src/proxy_lib/umf_proxy.dll"
+        }        
+        ${{github.workspace}}/.github/scripts/check_dll_flags.ps1 $dll_path
       shell: pwsh
 
     - name: Prepare vcpkg cache
@@ -482,7 +497,13 @@ jobs:
       # we check umf.dll only here - note that the proxy library is disabled in
       # this configuration
     - name: check /DEPENDENTLOADFLAG in umf.dll
-      run: ${{github.workspace}}/.github/scripts/check_dll_flags.ps1 ${{env.BUILD_DIR}}/bin/${{matrix.build_type}}/umf.dll
+      run: |
+        if (Test-Path "${{env.BUILD_DIR}}/bin/${{matrix.build_type}}/umf.dll") {
+          $dll_path = "${{env.BUILD_DIR}}/bin/${{matrix.build_type}}/umf.dll"
+        } else {
+          $dll_path = "${{env.BUILD_DIR}}/bin/umf.dll"
+        }        
+        ${{github.workspace}}/.github/scripts/check_dll_flags.ps1 $dll_path
       shell: pwsh
 
   windows-static_build_hwloc:
