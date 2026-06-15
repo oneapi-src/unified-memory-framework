@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2025 Intel Corporation
+ * Copyright (C) 2023-2026 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -455,7 +455,11 @@ static int umfMemspaceFilterHelper(umf_memspace_handle_t memspace,
             LOG_ERR("filter function failed");
             goto free_mem;
         } else if (ret == 0) {
-            nodesToRemove[idx++] = memspace->nodes[i];
+            ret = umfMemtargetClone(memspace->nodes[i], &nodesToRemove[idx]);
+            if (ret != UMF_RESULT_SUCCESS) {
+                goto free_mem;
+            }
+            idx++;
         }
     }
 
@@ -467,8 +471,8 @@ static int umfMemspaceFilterHelper(umf_memspace_handle_t memspace,
         }
     }
 
-    umf_ba_global_free(nodesToRemove);
-    return UMF_RESULT_SUCCESS;
+    ret = UMF_RESULT_SUCCESS;
+    goto free_mem;
 
 re_add:
     // If target removal failed, add back previously removed targets.
@@ -481,6 +485,9 @@ re_add:
         }
     }
 free_mem:
+    for (size_t j = 0; j < idx; j++) {
+        umfMemtargetDestroy(nodesToRemove[j]);
+    }
     umf_ba_global_free(nodesToRemove);
     return ret;
 }
