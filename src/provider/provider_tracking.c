@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2025 Intel Corporation
+ * Copyright (C) 2023-2026 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -1106,6 +1106,11 @@ static umf_result_t trackingGetIpcHandle(void *provider, const void *ptr,
                 LOG_ERR("upstream provider failed to get the size of IPC "
                         "handle");
                 return ret;
+            }
+
+            if (ipcDataSize > SIZE_MAX - sizeof(ipc_cache_value_t)) {
+                LOG_ERR("upstream provider IPC handle size is too large");
+                return UMF_RESULT_ERROR_INVALID_ARGUMENT;
             }
 
             size_t value_size = sizeof(ipc_cache_value_t) + ipcDataSize;
