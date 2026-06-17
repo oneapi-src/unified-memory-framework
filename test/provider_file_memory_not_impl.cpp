@@ -28,6 +28,9 @@ TEST_F(test, file_provider_not_implemented) {
         umfFileMemoryProviderParamsSetVisibility(nullptr, UMF_MEM_MAP_PRIVATE);
     EXPECT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
 
+    umf_result = umfFileMemoryProviderParamsSetName(params, "test");
+    EXPECT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
+
     const umf_memory_provider_ops_t *ops = umfFileMemoryProviderOps();
     EXPECT_EQ(ops, nullptr);
 }

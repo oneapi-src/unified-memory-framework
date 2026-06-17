@@ -25,6 +25,9 @@ TEST_F(test, devdax_provider_not_implemented) {
     umf_result = umfDevDaxMemoryProviderParamsSetProtection(nullptr, 0);
     EXPECT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
 
+    umf_result = umfDevDaxMemoryProviderParamsSetName(params, "test");
+    EXPECT_EQ(umf_result, UMF_RESULT_ERROR_NOT_SUPPORTED);
+
     const umf_memory_provider_ops_t *ops = umfDevDaxMemoryProviderOps();
     EXPECT_EQ(ops, nullptr);
 }
