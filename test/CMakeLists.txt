@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2025 Intel Corporation
+# Copyright (C) 2022-2026 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -377,8 +377,10 @@ if(LINUX) # OS-specific functions are implemented
         LIBS ${LIBNUMA_LIBRARIES})
     add_umf_test(
         NAME memtarget
-        SRCS memspaces/memtarget.cpp
-        LIBS ${LIBNUMA_LIBRARIES} ${UMF_HWLOC_NAME})
+        SRCS memspaces/memtarget.cpp ${UMF_SRC_DIR}/memtarget.c
+             ${UMF_SRC_DIR}/libumf_linux.c
+        LIBS ${UMF_UTILS_FOR_TEST} ${UMF_BA_FOR_TEST} ${LIBNUMA_LIBRARIES}
+             ${UMF_HWLOC_NAME})
     add_umf_test(
         NAME provider_devdax_memory
         SRCS provider_devdax_memory.cpp
