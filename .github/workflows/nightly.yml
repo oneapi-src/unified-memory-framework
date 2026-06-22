@@ -305,8 +305,8 @@ jobs:
 
     - name: Download icx compiler
       env:
-        # Link source: https://www.intel.com/content/www/us/en/developer/tools/oneapi/dpc-compiler-download.html
-        CMPLR_LINK: "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/15a35578-2f9a-4f39-804b-3906e0a5f8fc/w_dpcpp-cpp-compiler_p_2024.2.1.83_offline.exe"
+        # Link source: https://www.intel.com/content/www/us/en/developer/tools/oneapi/oneapi-toolkit-download.html
+        CMPLR_LINK: "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/baec913e-84a0-439d-becc-6fb62f2d0c83/intel-dpcpp-cpp-compiler-2026.0.0.560_offline.exe"
       run: |
         Invoke-WebRequest -Uri "${{ env.CMPLR_LINK }}" -OutFile compiler_install.exe
 
@@ -349,6 +349,7 @@ jobs:
       run: |
         call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
         call "C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat"
+        set "PATH=${{env.BUILD_DIR}}\bin;${{env.BUILD_DIR}}\bin\${{matrix.build_type}};${{env.BUILD_DIR}}\src\proxy_lib;${{env.BUILD_DIR}}\src\proxy_lib\${{matrix.build_type}};%PATH%"
         ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
 
     - name: Prepare vcpkg cache
