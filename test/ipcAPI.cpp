@@ -143,7 +143,7 @@ struct provider_mock_ipc_huge_handle : public provider_mock_ipc {
     }
 
     umf_result_t ext_get_ipc_handle(const void *ptr, size_t size,
-                                    void *providerIpcData) noexcept {
+                                    void *providerIpcData) {
         (void)ptr;
         (void)size;
         (void)providerIpcData;
