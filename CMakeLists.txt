@@ -325,11 +325,11 @@ if(UMF_LINK_HWLOC_STATICALLY)
         set(hwloc_targ_SOURCE_DIR ${hwloc_targ_PREFIX}/src/hwloc_targ)
         set(hwloc_targ_BINARY_DIR ${hwloc_targ_PREFIX})
 
-        # CC/CXX/CFLAGS/CXXFLAGS are not forwarded by CMake into the
-        # autotools ./configure invocation below, so hwloc would otherwise
-        # be built with the ambient host compiler instead of the one CMake
-        # was configured to use (e.g. a sysroot- or toolchain-file-pinned
-        # compiler), causing an ABI mismatch against the rest of the build.
+        # CC/CXX/CFLAGS/CXXFLAGS are not forwarded by CMake into the autotools
+        # ./configure invocation below, so hwloc would otherwise be built with
+        # the ambient host compiler instead of the one CMake was configured to
+        # use (e.g. a sysroot- or toolchain-file-pinned compiler), causing an
+        # ABI mismatch against the rest of the build.
         ExternalProject_Add(
             hwloc_targ
             PREFIX ${hwloc_targ_PREFIX}
@@ -338,19 +338,15 @@ if(UMF_LINK_HWLOC_STATICALLY)
             UPDATE_DISCONNECTED TRUE
             PATCH_COMMAND git apply
                           ${PROJECT_SOURCE_DIR}/cmake/fix_coverity_issues.patch
-            CONFIGURE_COMMAND
-                ${CMAKE_COMMAND} -E env
-                CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER}
-                <SOURCE_DIR>/autogen.sh
-                COMMAND
-                    ${CMAKE_COMMAND} -E env
-                    CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER}
-                    <SOURCE_DIR>/configure --prefix=<INSTALL_DIR>
-                    --enable-static=yes --enable-shared=no
-                    --disable-libxml2 --disable-pci --disable-levelzero
-                    --disable-opencl --disable-cuda --disable-nvml
-                    --disable-libudev --disable-rsmi
-                    CFLAGS=-fPIC CXXFLAGS=-fPIC
+            CONFIGURE_COMMAND ${CMAKE_COMMAND} -E env CC=${CMAKE_C_COMPILER}
+                              CXX=${CMAKE_CXX_COMPILER} <SOURCE_DIR>/autogen.sh
+            COMMAND
+                ${CMAKE_COMMAND} -E env CC=${CMAKE_C_COMPILER}
+                CXX=${CMAKE_CXX_COMPILER} <SOURCE_DIR>/configure
+                --prefix=<INSTALL_DIR> --enable-static=yes --enable-shared=no
+                --disable-libxml2 --disable-pci --disable-levelzero
+                --disable-opencl --disable-cuda --disable-nvml --disable-libudev
+                --disable-rsmi CFLAGS=-fPIC CXXFLAGS=-fPIC
             BUILD_COMMAND make
             BUILD_IN_SOURCE TRUE
             INSTALL_COMMAND make install
@@ -378,8 +374,8 @@ endif()
 
 if(WINDOWS AND hwloc_targ_SOURCE_DIR)
     # Apply security patch for HWLOC. On non-Windows this is applied via
-    # ExternalProject_Add's PATCH_COMMAND instead, since that source tree
-    # is only populated at build time, not at configure time.
+    # ExternalProject_Add's PATCH_COMMAND instead, since that source tree is
+    # only populated at build time, not at configure time.
     execute_process(
         COMMAND git apply ${PROJECT_SOURCE_DIR}/cmake/fix_coverity_issues.patch
         WORKING_DIRECTORY ${hwloc_targ_SOURCE_DIR}
