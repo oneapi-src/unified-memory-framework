@@ -319,43 +319,43 @@ if(UMF_LINK_HWLOC_STATICALLY)
                     "Either install it, or set UMF_LINK_HWLOC_STATICALLY=OFF and install hwloc >= 2.3.0 in your system."
             )
         endif()
-        FetchContent_Declare(
+        include(ExternalProject)
+
+        set(hwloc_targ_PREFIX ${CMAKE_BINARY_DIR}/hwloc_targ-prefix)
+        set(hwloc_targ_SOURCE_DIR ${hwloc_targ_PREFIX}/src/hwloc_targ)
+        set(hwloc_targ_BINARY_DIR ${hwloc_targ_PREFIX})
+
+        # CC/CXX/CFLAGS/CXXFLAGS are not forwarded by CMake into the autotools
+        # ./configure invocation below, so hwloc would otherwise be built with
+        # the ambient host compiler instead of the one CMake was configured to
+        # use (e.g. a sysroot- or toolchain-file-pinned compiler), causing an
+        # ABI mismatch against the rest of the build.
+        ExternalProject_Add(
             hwloc_targ
+            PREFIX ${hwloc_targ_PREFIX}
             GIT_REPOSITORY ${UMF_HWLOC_REPO}
-            GIT_TAG ${UMF_HWLOC_TAG})
-        FetchContent_MakeAvailable(hwloc_targ)
-
-        add_custom_command(
-            COMMAND ./autogen.sh
-            WORKING_DIRECTORY ${hwloc_targ_SOURCE_DIR}
-            OUTPUT ${hwloc_targ_SOURCE_DIR}/configure)
-        add_custom_command(
+            GIT_TAG ${UMF_HWLOC_TAG}
+            UPDATE_DISCONNECTED TRUE
+            PATCH_COMMAND git apply
+                          ${PROJECT_SOURCE_DIR}/cmake/fix_coverity_issues.patch
+            CONFIGURE_COMMAND ${CMAKE_COMMAND} -E env CC=${CMAKE_C_COMPILER}
+                              CXX=${CMAKE_CXX_COMPILER} <SOURCE_DIR>/autogen.sh
             COMMAND
-                ./configure --prefix=${hwloc_targ_BINARY_DIR}
-                --enable-static=yes --enable-shared=no --disable-libxml2
-                --disable-pci --disable-levelzero --disable-opencl
-                --disable-cuda --disable-nvml --disable-libudev --disable-rsmi
-                CFLAGS=-fPIC CXXFLAGS=-fPIC
-            WORKING_DIRECTORY ${hwloc_targ_SOURCE_DIR}
-            OUTPUT ${hwloc_targ_SOURCE_DIR}/Makefile
-            DEPENDS ${hwloc_targ_SOURCE_DIR}/configure)
-        add_custom_command(
-            COMMAND make
-            WORKING_DIRECTORY ${hwloc_targ_SOURCE_DIR}
-            OUTPUT ${hwloc_targ_SOURCE_DIR}/lib/libhwloc.la
-            DEPENDS ${hwloc_targ_SOURCE_DIR}/Makefile)
-        add_custom_command(
-            COMMAND make install
-            WORKING_DIRECTORY ${hwloc_targ_SOURCE_DIR}
-            OUTPUT ${hwloc_targ_BINARY_DIR}/lib/libhwloc.a
-            DEPENDS ${hwloc_targ_SOURCE_DIR}/lib/libhwloc.la)
+                ${CMAKE_COMMAND} -E env CC=${CMAKE_C_COMPILER}
+                CXX=${CMAKE_CXX_COMPILER} <SOURCE_DIR>/configure
+                --prefix=<INSTALL_DIR> --enable-static=yes --enable-shared=no
+                --disable-libxml2 --disable-pci --disable-levelzero
+                --disable-opencl --disable-cuda --disable-nvml --disable-libudev
+                --disable-rsmi CFLAGS=-fPIC CXXFLAGS=-fPIC
+            BUILD_COMMAND make
+            BUILD_IN_SOURCE TRUE
+            INSTALL_COMMAND make install
+            BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libhwloc.a)
 
-        add_custom_target(hwloc_prod
-                          DEPENDS ${hwloc_targ_BINARY_DIR}/lib/libhwloc.a)
         add_library(hwloc INTERFACE)
         target_link_libraries(hwloc
                               INTERFACE ${hwloc_targ_BINARY_DIR}/lib/libhwloc.a)
-        add_dependencies(hwloc hwloc_prod)
+        add_dependencies(hwloc hwloc_targ)
 
         set(LIBHWLOC_LIBRARY_DIRS ${hwloc_targ_BINARY_DIR}/lib)
         set(LIBHWLOC_INCLUDE_DIRS ${hwloc_targ_BINARY_DIR}/include)
@@ -372,8 +372,10 @@ if(WINDOWS)
     message(STATUS "    LIBHWLOC_DLL_DIRS = ${LIBHWLOC_DLL_DIRS}")
 endif()
 
-if(hwloc_targ_SOURCE_DIR)
-    # Apply security patch for HWLOC
+if(WINDOWS AND hwloc_targ_SOURCE_DIR)
+    # Apply security patch for HWLOC. On non-Windows this is applied via
+    # ExternalProject_Add's PATCH_COMMAND instead, since that source tree is
+    # only populated at build time, not at configure time.
     execute_process(
         COMMAND git apply ${PROJECT_SOURCE_DIR}/cmake/fix_coverity_issues.patch
         WORKING_DIRECTORY ${hwloc_targ_SOURCE_DIR}
