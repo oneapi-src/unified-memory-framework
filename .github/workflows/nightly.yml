@@ -3,6 +3,7 @@ name: Nightly
 
 # This job is run at 04:00 UTC every day or on demand.
 on:
+  pull_request:
   workflow_dispatch:
   schedule:
     - cron: '0 4 * * *'
