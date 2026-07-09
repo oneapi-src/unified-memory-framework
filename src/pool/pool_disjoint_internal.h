@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 Intel Corporation
+ * Copyright (C) 2025-2026 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -120,7 +120,8 @@ typedef struct umf_disjoint_pool_params_t {
 
     // Holds the minimum bucket size valid for allocation of a memory type.
     // This value must be a power of 2.
-    size_t min_bucket_size; // Default: 8
+    size_t min_bucket_size; // Default: provider cache line size
+    bool min_bucket_size_set;
 
     // Holds size of the pool managed by the allocator.
     size_t cur_pool_size; // Default: 0

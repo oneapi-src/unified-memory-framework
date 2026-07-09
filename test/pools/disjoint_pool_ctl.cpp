@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Intel Corporation
+// Copyright (C) 2025-2026 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exceptiongi
 
@@ -614,19 +614,28 @@ TEST_F(test, disjointCtlBucketStats) {
                              sizeof(count), poolWrapper.get()));
     EXPECT_GE(count, 0ull);
 
-    auto expected_bucket_size = [](size_t i) -> size_t {
-        // Even indexes: 8 << (i/2)  => 8,16,32,64,...
-        // Odd  indexes: 12 << (i/2) => 12,24,48,96,...
-        return (i % 2 == 0) ? (size_t(8) << (i / 2)) : (size_t(12) << (i / 2));
-    };
+    size_t min_bucket_size = 0;
+    ASSERT_SUCCESS(umfCtlGet("umf.pool.by_handle.{}.params.min_bucket_size",
+                             &min_bucket_size, sizeof(min_bucket_size),
+                             poolWrapper.get()));
 
+    // Check bucket sizes
+    size_t prev_size = 0;
     for (size_t i = 0; i < count; i++) {
         ASSERT_SUCCESS(umfCtlGet("umf.pool.by_handle.{}.buckets.{}.size", &arg,
                                  sizeof(arg), poolWrapper.get(), i));
-        EXPECT_EQ(arg, expected_bucket_size(i)) << "Failed for bucket: " << i;
+
+        // Each bucket size should be:
+        // * greater than the previous one for >= minimum bucket size
+        // * size aligned to the minimum bucket size
+        EXPECT_GE(arg, prev_size + min_bucket_size);
+        EXPECT_EQ(arg % min_bucket_size, 0ull);
+
         if (arg >= alloc_size && used_bucket == SIZE_MAX) {
             used_bucket = i; // Find the bucket that matches alloc_size
         }
+
+        prev_size = arg;
     }
 
     std::unordered_map<std::string, size_t> stats = {

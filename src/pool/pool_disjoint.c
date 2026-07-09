@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2025 Intel Corporation
+ * Copyright (C) 2022-2026 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <inttypes.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -595,6 +596,7 @@ static __TLS umf_result_t TLS_last_allocation_error;
 // Allocations with size > CutOff bypass the pool and
 // go directly to the provider.
 static const size_t CutOff = (size_t)1 << 31; // 2GB
+#define DP_MAX_BUCKET_COUNT (sizeof(size_t) * CHAR_BIT * 2 + 1)
 
 static size_t bucket_slab_min_size(bucket_t *bucket) {
     return bucket->pool->params.slab_min_size;
@@ -981,24 +983,22 @@ static bool bucket_can_pool(bucket_t *bucket) {
 static size_t size_to_idx(disjoint_pool_t *pool, size_t size) {
     assert(size <= CutOff && "Unexpected size");
     assert(size > 0 && "Unexpected size");
+    assert(pool->buckets_num > 0 && "Unexpected buckets count");
 
-    size_t min_bucket_size = (size_t)1 << pool->min_bucket_size_exp;
-    if (size < min_bucket_size) {
-        return 0;
+    size_t left = 0;
+    size_t right = pool->buckets_num - 1;
+
+    while (left < right) {
+        size_t mid = left + (right - left) / 2;
+
+        if (pool->buckets[mid]->size < size) {
+            left = mid + 1;
+        } else {
+            right = mid;
+        }
     }
 
-    // get the position of the leftmost set bit
-    size_t position = utils_msb64(size);
-
-    bool is_power_of_2 = IS_POWER_OF_2(size);
-    bool larger_than_halfway_between_powers_of_2 =
-        !is_power_of_2 &&
-        (bool)((size - 1) & ((uint64_t)(1) << (position - 1)));
-    size_t index = (position - pool->min_bucket_size_exp) * 2 +
-                   (int)(!is_power_of_2) +
-                   (int)larger_than_halfway_between_powers_of_2;
-
-    return index;
+    return left;
 }
 
 static umf_disjoint_pool_shared_limits_t *
@@ -1120,6 +1120,7 @@ static const umf_disjoint_pool_params_t default_params = {
     .max_poolable_size = 2 * 1024 * 1024, // 2MB default
     .capacity = 4,                        // default
     .min_bucket_size = 8,                 // default
+    .min_bucket_size_set = false,
     .cur_pool_size = 0,
     .pool_trace = 0,
     .shared_limits = NULL,
@@ -1161,6 +1162,9 @@ umf_result_t disjoint_pool_initialize(umf_memory_provider_handle_t provider,
 umf_result_t disjoint_pool_post_initialize(void *ppPool) {
     disjoint_pool_t *disjoint_pool = (disjoint_pool_t *)ppPool;
 
+    size_t bucket_sizes[DP_MAX_BUCKET_COUNT];
+    size_t unique_bucket_sizes[DP_MAX_BUCKET_COUNT];
+
     disjoint_pool->post_initialized = true;
 
     if (disjoint_pool->params_overridden) {
@@ -1191,32 +1195,53 @@ umf_result_t disjoint_pool_post_initialize(void *ppPool) {
         goto err_free_disjoint_pool;
     }
 
+    if (!disjoint_pool->params.min_bucket_size_set) {
+        size_t cache_line_size;
+        umf_result_t ret = umfMemoryProviderGetCacheLineSize(
+            disjoint_pool->provider, &cache_line_size);
+        if (ret == UMF_RESULT_SUCCESS) {
+            disjoint_pool->params.min_bucket_size = cache_line_size;
+        }
+    }
+
     // Generate buckets sized such as: 64, 96, 128, 192, ..., CutOff.
     // Powers of 2 and the value halfway between the powers of 2.
-    size_t Size1 = disjoint_pool->params.min_bucket_size;
+    size_t size1 = disjoint_pool->params.min_bucket_size;
 
     // min_bucket_size cannot be larger than CutOff.
-    Size1 = utils_min(Size1, CutOff);
+    size1 = utils_min(size1, CutOff);
 
-    // Buckets sized smaller than the bucket default size- 8 aren't needed.
-    Size1 = utils_max(Size1, UMF_DISJOINT_POOL_MIN_BUCKET_DEFAULT_SIZE);
+    // Buckets sized smaller than the bucket default size - 8 aren't needed.
+    size1 = utils_max(size1, UMF_DISJOINT_POOL_MIN_BUCKET_DEFAULT_SIZE);
 
-    // Calculate the exponent for min_bucket_size used for finding buckets.
-    disjoint_pool->min_bucket_size_exp = (size_t)utils_msb64(Size1);
+    // Calculate the size of the "halfway" bucket
+    size_t size2 = size1 + size1 / 2;
+
     if (umfDisjointPoolSharedLimitsCreate(
             SIZE_MAX, &disjoint_pool->default_shared_limits) !=
         UMF_RESULT_SUCCESS) {
         goto err_free_known_slabs;
     }
 
-    // count number of buckets, start from 1
-    disjoint_pool->buckets_num = 1;
-    size_t Size2 = Size1 + Size1 / 2;
-    size_t ts2 = Size2, ts1 = Size1;
-    while (Size2 < CutOff) {
-        disjoint_pool->buckets_num += 2;
-        Size2 *= 2;
+    // Calculate sizes of buckets and store them in the array.
+    size_t i = 0;
+    for (; size2 < CutOff; size1 *= 2, size2 *= 2, i += 2) {
+        bucket_sizes[i] =
+            ALIGN_UP_SAFE(size1, disjoint_pool->params.min_bucket_size);
+        bucket_sizes[i + 1] =
+            ALIGN_UP_SAFE(size2, disjoint_pool->params.min_bucket_size);
     }
+    bucket_sizes[i] = CutOff;
+
+    // After rounding up some sizes may be equal, we need to remove duplicates
+    // and count the number of unique sizes.
+    size_t unique_count = 0;
+    for (size_t j = 0; j <= i; j++) {
+        if (j == 0 || bucket_sizes[j] != bucket_sizes[j - 1]) {
+            unique_bucket_sizes[unique_count++] = bucket_sizes[j];
+        }
+    }
+    disjoint_pool->buckets_num = unique_count;
 
     disjoint_pool->buckets = umf_ba_global_alloc(
         sizeof(*disjoint_pool->buckets) * disjoint_pool->buckets_num);
@@ -1224,20 +1249,11 @@ umf_result_t disjoint_pool_post_initialize(void *ppPool) {
         goto err_free_shared_limits;
     }
 
-    size_t i = 0;
-    Size1 = ts1;
-    Size2 = ts2;
-    for (; Size2 < CutOff; Size1 *= 2, Size2 *= 2, i += 2) {
-        disjoint_pool->buckets[i] = create_bucket(
-            Size1, disjoint_pool, disjoint_pool_get_limits(disjoint_pool));
-        disjoint_pool->buckets[i + 1] = create_bucket(
-            Size2, disjoint_pool, disjoint_pool_get_limits(disjoint_pool));
-    }
-    disjoint_pool->buckets[i] = create_bucket(
-        CutOff, disjoint_pool, disjoint_pool_get_limits(disjoint_pool));
-
-    // check if all buckets were created successfully
+    // Create buckets for each unique size.
     for (i = 0; i < disjoint_pool->buckets_num; i++) {
+        disjoint_pool->buckets[i] =
+            create_bucket(unique_bucket_sizes[i], disjoint_pool,
+                          disjoint_pool_get_limits(disjoint_pool));
         if (disjoint_pool->buckets[i] == NULL) {
             goto err_free_buckets;
         }
@@ -1733,6 +1749,7 @@ umfDisjointPoolParamsSetMinBucketSize(umf_disjoint_pool_params_handle_t hParams,
     }
 
     hParams->min_bucket_size = minBucketSize;
+    hParams->min_bucket_size_set = true;
     return UMF_RESULT_SUCCESS;
 }
 
