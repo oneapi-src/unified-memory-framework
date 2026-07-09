@@ -74,8 +74,10 @@ void utils_init_once(UTIL_ONCE_FLAG *flag, void (*onceCb)(void));
 
 #else /* Linux *************************************************/
 
+#include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "utils_concurrency.h"
 
@@ -222,7 +224,14 @@ void proxy_lib_create_common(void) {
 
         char shm_name[NAME_MAX];
         memset(shm_name, 0, NAME_MAX);
-        sprintf(shm_name, "umf_proxy_lib_shm_pid_%i", utils_getpid());
+        unsigned int rand_val = 0;
+        int urand_fd = open("/dev/urandom", O_RDONLY);
+        if (urand_fd >= 0) {
+            (void)read(urand_fd, &rand_val, sizeof(rand_val));
+            close(urand_fd);
+        }
+        snprintf(shm_name, NAME_MAX, "umf_proxy_lib_shm_pid_%i_%08x",
+                 utils_getpid(), rand_val);
         umf_result = umfOsMemoryProviderParamsSetShmName(os_params, shm_name);
         if (umf_result != UMF_RESULT_SUCCESS) {
             LOG_FATAL("setting shared memory name failed");
