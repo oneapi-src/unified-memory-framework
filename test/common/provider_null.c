@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -67,6 +67,12 @@ static umf_result_t nullGetPageSize(void *provider, const void *ptr,
     (void)provider;
     (void)ptr;
     (void)pageSize;
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t nullGetCacheLineSize(void *provider, size_t *size) {
+    (void)provider;
+    *size = 64;
     return UMF_RESULT_SUCCESS;
 }
 
@@ -171,6 +177,7 @@ umf_memory_provider_ops_t UMF_NULL_PROVIDER_OPS = {
     .get_last_native_error = nullGetLastError,
     .get_recommended_page_size = nullGetRecommendedPageSize,
     .get_min_page_size = nullGetPageSize,
+    .get_cache_line_size = nullGetCacheLineSize,
     .get_name = nullName,
     .ext_purge_lazy = nullPurgeLazy,
     .ext_purge_force = nullPurgeForce,

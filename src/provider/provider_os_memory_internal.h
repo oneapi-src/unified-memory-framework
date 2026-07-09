@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023-2025 Intel Corporation
+ * Copyright (C) 2023-2026 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -73,6 +73,8 @@ typedef struct os_memory_provider_t {
     char name[64];
 
     ctl_stats_t stats;
+
+    size_t cache_line_size;
 } os_memory_provider_t;
 
 #ifdef __cplusplus

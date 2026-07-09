@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024-2025 Intel Corporation
+ * Copyright (C) 2024-2026 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -9,6 +9,7 @@
 
 #include <memory>
 #include <stdlib.h>
+#include <string.h>
 
 #include "utils_concurrency.h"
 #include "utils_load_library.h"
@@ -16,6 +17,9 @@
 struct libze_ops {
     ze_result_t (*zeInit)(ze_init_flags_t flags);
     ze_result_t (*zeDriverGet)(uint32_t *pCount, ze_driver_handle_t *phDrivers);
+    ze_result_t (*zeDriverGetExtensionProperties)(
+        ze_driver_handle_t hDriver, uint32_t *pCount,
+        ze_driver_extension_properties_t *pExtensionProperties);
     ze_result_t (*zeDeviceGet)(ze_driver_handle_t hDriver, uint32_t *pCount,
                                ze_device_handle_t *phDevices);
     ze_result_t (*zeDeviceGetProperties)(
@@ -61,6 +65,11 @@ struct libze_ops {
     ze_result_t (*zeDeviceGetMemoryProperties)(
         ze_device_handle_t hDevice, uint32_t *pCount,
         ze_device_memory_properties_t *pMemProperties);
+#if defined(ZE_CACHELINE_SIZE_EXT_NAME)
+    ze_result_t (*zeDeviceGetCacheProperties)(
+        ze_device_handle_t hDevice, uint32_t *pCount,
+        ze_device_cache_properties_t *pCacheProperties);
+#endif
 } libze_ops;
 
 #if USE_DLOPEN
@@ -76,6 +85,9 @@ struct DlHandleCloser {
             // but some other global object still try to call Level Zero functions.
             libze_ops.zeInit = [](auto... args) { return noop_stub(args...); };
             libze_ops.zeDriverGet = [](auto... args) {
+                return noop_stub(args...);
+            };
+            libze_ops.zeDriverGetExtensionProperties = [](auto... args) {
                 return noop_stub(args...);
             };
             libze_ops.zeDeviceGet = [](auto... args) {
@@ -129,6 +141,11 @@ struct DlHandleCloser {
             libze_ops.zeDeviceGetMemoryProperties = [](auto... args) {
                 return noop_stub(args...);
             };
+#if defined(ZE_CACHELINE_SIZE_EXT_NAME)
+            libze_ops.zeDeviceGetCacheProperties = [](auto... args) {
+                return noop_stub(args...);
+            };
+#endif
             utils_close_library(dlHandle);
         }
     }
@@ -163,6 +180,8 @@ int InitLevelZeroOps() {
         fprintf(stderr, "zeDriverGet symbol not found in %s\n", lib_name);
         return -1;
     }
+    *(void **)&libze_ops.zeDriverGetExtensionProperties = utils_get_symbol_addr(
+        zeDlHandle.get(), "zeDriverGetExtensionProperties", lib_name);
     *(void **)&libze_ops.zeDeviceGet =
         utils_get_symbol_addr(zeDlHandle.get(), "zeDeviceGet", lib_name);
     if (libze_ops.zeDeviceGet == nullptr) {
@@ -281,16 +300,21 @@ int InitLevelZeroOps() {
                 lib_name);
         return -1;
     }
+#if defined(ZE_CACHELINE_SIZE_EXT_NAME)
+    *(void **)&libze_ops.zeDeviceGetCacheProperties = utils_get_symbol_addr(
+        zeDlHandle.get(), "zeDeviceGetCacheProperties", lib_name);
+#endif
 
     return 0;
 }
 
-#else  // USE_DLOPEN
+#else // USE_DLOPEN
 int InitLevelZeroOps() {
     // Level Zero is linked statically but we prepare ops structure to
     // make test code consistent
     libze_ops.zeInit = zeInit;
     libze_ops.zeDriverGet = zeDriverGet;
+    libze_ops.zeDriverGetExtensionProperties = zeDriverGetExtensionProperties;
     libze_ops.zeDeviceGet = zeDeviceGet;
     libze_ops.zeDeviceGetProperties = zeDeviceGetProperties;
     libze_ops.zeContextCreate = zeContextCreate;
@@ -309,6 +333,9 @@ int InitLevelZeroOps() {
     libze_ops.zeMemAllocDevice = zeMemAllocDevice;
     libze_ops.zeMemFree = zeMemFree;
     libze_ops.zeDeviceGetMemoryProperties = zeDeviceGetMemoryProperties;
+#if defined(ZE_CACHELINE_SIZE_EXT_NAME)
+    libze_ops.zeDeviceGetCacheProperties = zeDeviceGetCacheProperties;
+#endif
 
     return 0;
 }
@@ -498,6 +525,49 @@ fn_exit:
         free(drivers);
     }
     return ret;
+}
+
+int utils_ze_driver_supports_cache_line_size(ze_driver_handle_t driver) {
+#if defined(ZE_CACHELINE_SIZE_EXT_NAME)
+    if (!driver || !libze_ops.zeDriverGetExtensionProperties) {
+        return 0;
+    }
+
+    uint32_t count = 0;
+    ze_result_t ze_result =
+        libze_ops.zeDriverGetExtensionProperties(driver, &count, NULL);
+    if (ze_result != ZE_RESULT_SUCCESS || count == 0) {
+        return 0;
+    }
+
+    ze_driver_extension_properties_t *extensions =
+        (ze_driver_extension_properties_t *)calloc(
+            count, sizeof(ze_driver_extension_properties_t));
+    if (!extensions) {
+        return 0;
+    }
+
+    ze_result =
+        libze_ops.zeDriverGetExtensionProperties(driver, &count, extensions);
+    if (ze_result != ZE_RESULT_SUCCESS) {
+        free(extensions);
+        return 0;
+    }
+
+    int supported = 0;
+    for (uint32_t i = 0; i < count; i++) {
+        if (strcmp(extensions[i].name, ZE_CACHELINE_SIZE_EXT_NAME) == 0) {
+            supported = 1;
+            break;
+        }
+    }
+
+    free(extensions);
+    return supported;
+#else
+    (void)driver;
+    return 0;
+#endif
 }
 
 int utils_ze_find_gpu_device(ze_driver_handle_t driver,
@@ -760,4 +830,32 @@ int64_t utils_ze_get_num_memory_properties(ze_device_handle_t device) {
     }
 
     return static_cast<int64_t>(pCount);
+}
+
+int utils_ze_get_cache_line_size(ze_device_handle_t device, size_t *size) {
+#if defined(ZE_CACHELINE_SIZE_EXT_NAME)
+    if (!device || !size || !libze_ops.zeDeviceGetCacheProperties) {
+        return -1;
+    }
+
+    ze_device_cache_line_size_ext_t cacheLineSize = {
+        ZE_STRUCTURE_TYPE_DEVICE_CACHELINE_SIZE_EXT, nullptr, 0};
+    ze_device_cache_properties_t cacheProperties = {
+        ZE_STRUCTURE_TYPE_DEVICE_CACHE_PROPERTIES, &cacheLineSize, 0, 0};
+    uint32_t count = 1;
+
+    ze_result_t ze_result =
+        libze_ops.zeDeviceGetCacheProperties(device, &count, &cacheProperties);
+    if (ze_result != ZE_RESULT_SUCCESS || count == 0 ||
+        cacheLineSize.cacheLineSize == 0) {
+        return -1;
+    }
+
+    *size = cacheLineSize.cacheLineSize;
+    return 0;
+#else
+    (void)device;
+    (void)size;
+    return -1;
+#endif
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024-2025 Intel Corporation
+ * Copyright (C) 2024-2026 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -26,6 +26,8 @@ int utils_ze_get_devices(ze_driver_handle_t driver, uint32_t *devices_num_,
 int utils_ze_find_driver_with_gpu(uint32_t *driver_idx,
                                   ze_driver_handle_t *driver_);
 
+int utils_ze_driver_supports_cache_line_size(ze_driver_handle_t driver);
+
 int utils_ze_find_gpu_device(ze_driver_handle_t driver,
                              ze_device_handle_t *device_);
 
@@ -45,6 +47,8 @@ int utils_ze_destroy_context(ze_context_handle_t context);
 ze_memory_type_t utils_ze_get_mem_type(ze_context_handle_t context, void *ptr);
 
 int64_t utils_ze_get_num_memory_properties(ze_device_handle_t device);
+
+int utils_ze_get_cache_line_size(ze_device_handle_t device, size_t *size);
 
 #ifdef __cplusplus
 }

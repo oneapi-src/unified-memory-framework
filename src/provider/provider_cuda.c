@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024-2025 Intel Corporation
+ * Copyright (C) 2024-2026 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -825,6 +825,14 @@ static umf_result_t cu_memory_provider_get_allocation_properties_size(
     return UMF_RESULT_ERROR_INVALID_ARGUMENT;
 }
 
+static umf_result_t cu_memory_provider_get_cache_line_size(void *provider,
+                                                           size_t *size) {
+    (void)provider;
+
+    *size = 128;
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_memory_provider_ops_t UMF_CUDA_MEMORY_PROVIDER_OPS = {
     .version = UMF_PROVIDER_OPS_VERSION_CURRENT,
     .initialize = cu_memory_provider_initialize,
@@ -834,6 +842,7 @@ static umf_memory_provider_ops_t UMF_CUDA_MEMORY_PROVIDER_OPS = {
     .get_last_native_error = cu_memory_provider_get_last_native_error,
     .get_recommended_page_size = cu_memory_provider_get_recommended_page_size,
     .get_min_page_size = cu_memory_provider_get_min_page_size,
+    .get_cache_line_size = cu_memory_provider_get_cache_line_size,
     .get_name = cu_memory_provider_get_name,
     // TODO
     /*

@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -94,6 +94,16 @@ static umf_result_t traceGetPageSize(void *provider, const void *ptr,
                                  "get_min_page_size");
     return umfMemoryProviderGetMinPageSize(traceProvider->hUpstreamProvider,
                                            ptr, pageSize);
+}
+
+static umf_result_t traceGetCacheLineSize(void *provider, size_t *size) {
+    umf_provider_trace_params_t *traceProvider =
+        (umf_provider_trace_params_t *)provider;
+
+    traceProvider->trace_handler(traceProvider->trace_context,
+                                 "get_cache_line_size");
+    return umfMemoryProviderGetCacheLineSize(traceProvider->hUpstreamProvider,
+                                             size);
 }
 
 static umf_result_t traceName(void *provider, const char **name) {
@@ -211,6 +221,7 @@ umf_memory_provider_ops_t UMF_TRACE_PROVIDER_OPS = {
     .get_last_native_error = traceGetLastError,
     .get_recommended_page_size = traceGetRecommendedPageSize,
     .get_min_page_size = traceGetPageSize,
+    .get_cache_line_size = traceGetCacheLineSize,
     .get_name = traceName,
     .ext_purge_lazy = tracePurgeLazy,
     .ext_purge_force = tracePurgeForce,

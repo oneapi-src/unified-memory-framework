@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2025 Intel Corporation
+ * Copyright (C) 2025-2026 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -89,6 +89,12 @@ static umf_result_t ctl_get_min_page_size(void *provider, const void *ptr,
     (void)provider;
     (void)ptr;
     *pageSize = 4096;
+    return UMF_RESULT_SUCCESS;
+}
+
+static umf_result_t ctl_get_cache_line_size(void *provider, size_t *size) {
+    (void)provider;
+    *size = 64;
     return UMF_RESULT_SUCCESS;
 }
 
@@ -243,6 +249,7 @@ static umf_memory_provider_ops_t ctl_ops = {
     .get_last_native_error = ctl_get_last_native_error,
     .get_recommended_page_size = ctl_get_recommended_page_size,
     .get_min_page_size = ctl_get_min_page_size,
+    .get_cache_line_size = ctl_get_cache_line_size,
     .get_name = ctl_get_name,
     .ext_ctl = ctl_ctl, // register CTL handler
 };

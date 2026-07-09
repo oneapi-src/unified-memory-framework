@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024-2025 Intel Corporation
+ * Copyright (C) 2024-2026 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -330,6 +330,13 @@ static umf_result_t fixed_ctl(void *provider,
                      query_type, arg, size, args);
 }
 
+static umf_result_t fixed_get_cache_line_size(void *provider, size_t *size) {
+    (void)provider;
+
+    *size = 64;
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_memory_provider_ops_t UMF_FIXED_MEMORY_PROVIDER_OPS = {
     .version = UMF_PROVIDER_OPS_VERSION_CURRENT,
     .initialize = fixed_initialize,
@@ -339,6 +346,7 @@ static umf_memory_provider_ops_t UMF_FIXED_MEMORY_PROVIDER_OPS = {
     .get_last_native_error = fixed_get_last_native_error,
     .get_recommended_page_size = fixed_get_recommended_page_size,
     .get_min_page_size = fixed_get_min_page_size,
+    .get_cache_line_size = fixed_get_cache_line_size,
     .get_name = fixed_get_name,
     .ext_purge_lazy = fixed_purge_lazy,
     .ext_purge_force = fixed_purge_force,
