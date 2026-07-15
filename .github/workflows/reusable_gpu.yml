@@ -64,6 +64,12 @@ jobs:
           echo "CXX_COMPILER=g++" >> $GITHUB_ENV
           echo "PROCS=$(nproc)" >> $GITHUB_ENV
 
+      - name: "[Lin] Clean workspace"
+        if: matrix.os == 'Ubuntu'
+        run: |
+          find $GITHUB_WORKSPACE -mindepth 1 -delete 2>/dev/null || true
+          mkdir -p $GITHUB_WORKSPACE
+
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
