@@ -1,4 +1,4 @@
-# Copyright (C) 2023-2025 Intel Corporation
+# Copyright (C) 2023-2026 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -74,8 +74,6 @@ if(UMF_POOL_JEMALLOC_ENABLED)
     set(UMF_LIBS ${UMF_LIBS} ${JEMALLOC_LIBRARIES})
     set(UMF_PRIVATE_LIBRARY_DIRS ${UMF_PRIVATE_LIBRARY_DIRS}
                                  ${JEMALLOC_LIBRARY_DIRS})
-    set(UMF_PRIVATE_INCLUDE_DIRS ${UMF_PRIVATE_INCLUDE_DIRS}
-                                 ${JEMALLOC_INCLUDE_DIRS})
     set(UMF_COMMON_COMPILE_DEFINITIONS ${UMF_COMMON_COMPILE_DEFINITIONS}
                                        "UMF_POOL_JEMALLOC_ENABLED=1")
 endif()
@@ -147,6 +145,12 @@ else()
 endif()
 
 target_include_directories(umf PRIVATE ${UMF_PRIVATE_INCLUDE_DIRS})
+if(UMF_POOL_JEMALLOC_ENABLED)
+    # Add jemalloc include dirs as SYSTEM to avoid warnings from jemalloc
+    # headers
+    target_include_directories(umf SYSTEM PRIVATE ${JEMALLOC_INCLUDE_DIRS})
+endif()
+
 target_link_directories(umf PRIVATE ${UMF_PRIVATE_LIBRARY_DIRS})
 target_compile_definitions(umf PRIVATE ${UMF_COMMON_COMPILE_DEFINITIONS})
 
