@@ -40,6 +40,7 @@ jobs:
       provider: "LEVEL_ZERO"
       runner: "L0"
       shared_lib: "['ON']"
+    secrets: inherit
   L0-BMG:
     # needs: [Build]
     uses: ./.github/workflows/reusable_gpu.yml
@@ -47,6 +48,7 @@ jobs:
       provider: "LEVEL_ZERO"
       runner: "L0-BMG"
       shared_lib: "['ON']"
+    secrets: inherit
   CUDA:
     # needs: [Build]
     uses: ./.github/workflows/reusable_gpu.yml
@@ -54,6 +56,7 @@ jobs:
       provider: "CUDA"
       runner: "CUDA"
       shared_lib: "['ON']"
+    secrets: inherit
   # Sanitizers:
   #   needs: [FastBuild]
   #   uses: ./.github/workflows/reusable_sanitizers.yml
