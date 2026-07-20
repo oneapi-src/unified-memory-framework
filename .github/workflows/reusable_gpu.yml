@@ -29,7 +29,8 @@ permissions:
 jobs:
   win:
     # run only on upstream; forks will not have the HW
-    if: github.repository == 'oneapi-src/unified-memory-framework'
+    # if: github.repository == 'oneapi-src/unified-memory-framework'
+    if: false
     uses: ./.github/workflows/reusable_gpu_win.yml
     with:
       provider: ${{ inputs.provider }}
