@@ -61,12 +61,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      # - name: Install drivers
-      #   run: |
-      #     # extra proxy inherited to docker has to be removed
-      #     unset no_proxy
-      #     unset NO_PROXY
-
       #     add-apt-repository -y ppa:kobuk-team/intel-graphics
       #     apt-get update
       #     apt-get install -y \
@@ -86,6 +80,18 @@ jobs:
       #       software-properties-common \
       #       va-driver-all \
       #       vainfo
+      - name: Install dependencies
+        run: |
+          # extra proxy inherited to docker has to be removed
+          unset no_proxy
+          unset NO_PROXY
+
+          apt-get update
+          apt-get install -y \
+            automake \
+            lcov \
+            libnuma-dev \
+            libtool
 
       - name: "Get information about platform"
         run: .github/scripts/get_system_info.sh
