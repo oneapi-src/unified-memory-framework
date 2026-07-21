@@ -47,9 +47,6 @@ jobs:
         --device=/dev/dri
       volumes:
         - ${{ github.workspace }}:${{ github.workspace }}
-      credentials:
-        username: urbuildbot
-        password: ${{ secrets.GH_BB_DOCKER_TOKEN }}
 
     steps:
       - name: "Establish build params"
