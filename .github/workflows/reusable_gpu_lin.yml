@@ -1,0 +1,183 @@
+# This workflow builds and tests providers using GPU memory. It requires properly
+# labelled self-hosted runners on systems with the correct GPU and drivers.
+#
+# Linux runners, using docker containers.
+#
+name: "[Lin] GPU"
+
+on:
+  workflow_call:
+    inputs:
+      provider:
+        description: Provider name
+        type: string
+        required: true
+      runner:
+        description: Runner name (without 'DSS-' prefix)
+        type: string
+        required: true
+      shared_lib:
+        description: A list of options for building shared library
+        type: string
+        default: "['ON', 'OFF']"
+
+permissions:
+  contents: read
+
+env:
+  BUILD_DEBUG_DIR : "${{github.workspace}}/debug/build"
+  BUILD_RELEASE_DIR : "${{github.workspace}}/release/build"
+  INSTL_DEBUG_DIR : "${{github.workspace}}/debug/install-dir"
+  INSTL_RELEASE_DIR : "${{github.workspace}}/release/install-dir"
+  COVERAGE_DIR : "${{github.workspace}}/coverage"
+
+jobs:
+  gpu:
+    env:
+      COVERAGE_NAME : "exports-coverage-${{inputs.provider}}-${{inputs.runner}}"
+    strategy:
+      fail-fast: false
+      matrix:
+        shared_library: ${{ fromJSON(inputs.shared_lib)}}
+    name: GPU (Lin, shared=${{matrix.shared_library}})
+    runs-on: ["DSS-${{inputs.runner}}", "DSS-Ubuntu"]
+    container:
+      image: intel/oneapi:2026.1.0-devel-ubuntu26.04 # intel/oneapi:2025.3.1-0-devel-ubuntu24.04
+      options: >-
+        --device=/dev/dri
+      volumes:
+        - ${{ github.workspace }}:${{ github.workspace }}
+
+    steps:
+      - name: "Establish build params"
+        run: |
+          echo "C_COMPILER=gcc" >> $GITHUB_ENV
+          echo "CXX_COMPILER=g++" >> $GITHUB_ENV
+          echo "PROCS=$(nproc)" >> $GITHUB_ENV
+
+          mkdir -p ${{env.BUILD_DEBUG_DIR}} ${{env.BUILD_RELEASE_DIR}} ${{env.INSTL_DEBUG_DIR}} ${{env.INSTL_RELEASE_DIR}}
+
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+
+      #     add-apt-repository -y ppa:kobuk-team/intel-graphics
+      #     apt-get update
+      #     apt-get install -y \
+      #       clinfo \
+      #       intel-gsc \
+      #       intel-media-va-driver-non-free \
+      #       intel-metrics-discovery \
+      #       intel-ocloc \
+      #       intel-opencl-icd \
+      #       libmfx-gen1 \
+      #       libva-glx2 \
+      #       libvpl2 \
+      #       libvpl-tools \
+      #       libze1 \
+      #       libze-dev \
+      #       libze-intel-gpu1 \
+      #       software-properties-common \
+      #       va-driver-all \
+      #       vainfo
+      - name: Install dependencies
+        run: |
+          # extra proxy inherited to docker has to be removed
+          unset no_proxy
+          unset NO_PROXY
+
+          apt-get update
+          apt-get install -y \
+            automake \
+            lcov \
+            libnuma-dev \
+            libtool
+
+      - name: "Get information about platform"
+        run: .github/scripts/get_system_info.sh
+
+      # note: disable all providers except the one being tested
+      - name: Configure build (Debug)
+        run: >
+          cmake
+          -B ${{env.BUILD_DEBUG_DIR}}
+          -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DEBUG_DIR}}"
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_C_COMPILER=${{env.C_COMPILER}}
+          -DCMAKE_CXX_COMPILER=${{env.CXX_COMPILER}}
+          -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
+          -DUMF_BUILD_BENCHMARKS=ON
+          -DUMF_BUILD_BENCHMARKS_MT=ON
+          -DUMF_BUILD_TESTS=ON
+          -DUMF_BUILD_GPU_TESTS=ON
+          -DUMF_BUILD_GPU_EXAMPLES=ON
+          -DUMF_DEVELOPER_MODE=ON
+          -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
+          -DUMF_BUILD_CUDA_PROVIDER=OFF
+          -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
+          -DUMF_BUILD_${{inputs.provider}}_PROVIDER=ON
+          -DUMF_TESTS_FAIL_ON_SKIP=ON
+          -DUMF_USE_COVERAGE=ON
+
+      - name: Build UMF (Debug)
+        run: cmake --build ${{env.BUILD_DEBUG_DIR}} --config Debug -j ${{env.PROCS}}
+
+      - name: Run tests (Debug)
+        working-directory: ${{env.BUILD_DEBUG_DIR}}
+        run: ctest -C Debug --output-on-failure --test-dir test
+
+      - name: Run examples (Debug)
+        working-directory: ${{env.BUILD_DEBUG_DIR}}
+        run: ctest --output-on-failure --test-dir examples -C Debug
+
+      - name: Configure build (Release)
+        run: >
+          cmake
+          -B ${{env.BUILD_RELEASE_DIR}}
+          -DCMAKE_INSTALL_PREFIX="${{env.INSTL_RELEASE_DIR}}"
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_C_COMPILER=${{env.C_COMPILER}}
+          -DCMAKE_CXX_COMPILER=${{env.CXX_COMPILER}}
+          -DUMF_BUILD_SHARED_LIBRARY=${{matrix.shared_library}}
+          -DUMF_BUILD_BENCHMARKS=ON
+          -DUMF_BUILD_BENCHMARKS_MT=ON
+          -DUMF_BUILD_TESTS=ON
+          -DUMF_BUILD_GPU_TESTS=ON
+          -DUMF_BUILD_GPU_EXAMPLES=ON
+          -DUMF_DEVELOPER_MODE=ON
+          -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
+          -DUMF_BUILD_CUDA_PROVIDER=OFF
+          -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
+          -DUMF_BUILD_${{inputs.provider}}_PROVIDER=ON
+          -DUMF_TESTS_FAIL_ON_SKIP=ON
+
+      - name: Build UMF (Release)
+        run: cmake --build ${{env.BUILD_RELEASE_DIR}} --config Release -j ${{env.PROCS}}
+
+      - name: Run tests (Release)
+        working-directory: ${{env.BUILD_RELEASE_DIR}}
+        run: ctest -C Release --output-on-failure --test-dir test
+
+      - name: Run examples (Release)
+        working-directory: ${{env.BUILD_RELEASE_DIR}}
+        run: ctest --output-on-failure --test-dir examples -C Release
+
+      - name: Run benchmarks (Release)
+        working-directory: ${{env.BUILD_RELEASE_DIR}}
+        run: ctest --output-on-failure --test-dir benchmark -C Release --exclude-regex umf-multithreaded
+
+      - name: "Check coverage (Debug)"
+        working-directory: ${{env.BUILD_DEBUG_DIR}}
+        run: |
+          export COVERAGE_FILE_NAME=${{env.COVERAGE_NAME}}-shared-${{matrix.shared_library}}
+          echo "COVERAGE_FILE_NAME: $COVERAGE_FILE_NAME"
+          ${{github.workspace}}/scripts/coverage/coverage_capture.sh $COVERAGE_FILE_NAME
+          mkdir -p ${{env.COVERAGE_DIR}}
+          mv ./$COVERAGE_FILE_NAME ${{env.COVERAGE_DIR}}
+
+      - name: "Upload coverage"
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{env.COVERAGE_NAME}}-shared-${{matrix.shared_library}}
+          path: ${{env.COVERAGE_DIR}}
