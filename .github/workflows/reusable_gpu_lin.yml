@@ -45,6 +45,8 @@ jobs:
       image: intel/oneapi:2026.1.0-devel-ubuntu26.04 # intel/oneapi:2025.3.1-0-devel-ubuntu24.04
       options: >-
         --device=/dev/dri
+      volumes:
+        - ${{ github.workspace }}:${{ github.workspace }}
       credentials:
         username: urbuildbot
         password: ${{ secrets.GH_BB_DOCKER_TOKEN }}
