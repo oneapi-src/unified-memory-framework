@@ -56,6 +56,8 @@ jobs:
           echo "CXX_COMPILER=g++" >> $GITHUB_ENV
           echo "PROCS=$(nproc)" >> $GITHUB_ENV
 
+          mkdir -p ${{env.BUILD_DEBUG_DIR}} ${{env.BUILD_RELEASE_DIR}} ${{env.INSTL_DEBUG_DIR}} ${{env.INSTL_RELEASE_DIR}}
+
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -100,7 +102,6 @@ jobs:
       - name: Configure build (Debug)
         run: >
           cmake
-          -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}};${{env.EXTRA_CMAKE_PATH}}"
           -B ${{env.BUILD_DEBUG_DIR}}
           -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DEBUG_DIR}}"
           -DCMAKE_BUILD_TYPE=Debug
@@ -134,7 +135,6 @@ jobs:
       - name: Configure build (Release)
         run: >
           cmake
-          -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}};${{env.EXTRA_CMAKE_PATH}}"
           -B ${{env.BUILD_RELEASE_DIR}}
           -DCMAKE_INSTALL_PREFIX="${{env.INSTL_RELEASE_DIR}}"
           -DCMAKE_BUILD_TYPE=Release
