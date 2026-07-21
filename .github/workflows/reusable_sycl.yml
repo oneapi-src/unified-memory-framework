@@ -20,10 +20,12 @@ jobs:
         llvm_tag: ["latest", "nightly-2025-07-31"] # "latest" or llvm with UMF v1.0.0
 
     steps:
+    - name: "Clean workspace"
+      run: |
+        find $GITHUB_WORKSPACE -mindepth 1 -delete 2>/dev/null || true
+        mkdir -p $GITHUB_WORKSPACE
+
     # 1. Install sycl
-    - name: Clean up
-      if: always()
-      run: rm -rf llvm sycl_linux.tar.gz
 
     - name: Download llvm daily release
       run: |
