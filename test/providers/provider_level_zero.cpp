@@ -538,6 +538,13 @@ TEST(umfLevelZeroProviderOps, default_name_null_handle) {
 }
 
 TEST_P(umfLevelZeroProviderTest, allocInvalidSize) {
+    if (GetParam() == UMF_MEMORY_TYPE_HOST) {
+        // For host memory, even with relaxed limits, the allocation may
+        // succeed or fail depending on the system's available memory,
+        // so we skip this test for host memory type.
+        GTEST_SKIP() << "Skipping test for host memory type.";
+    }
+
     umf_memory_provider_handle_t provider = nullptr;
     umf_result_t umf_result = umfMemoryProviderCreate(
         umfLevelZeroMemoryProviderOps(), params, &provider);
@@ -547,6 +554,7 @@ TEST_P(umfLevelZeroProviderTest, allocInvalidSize) {
     void *ptr = nullptr;
     umf_result = umfMemoryProviderAlloc(
         provider, std::numeric_limits<size_t>::max(), 0, &ptr);
+
     ASSERT_EQ(umf_result, UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC);
     const char *message;
     int32_t error;

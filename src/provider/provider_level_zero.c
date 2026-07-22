@@ -143,10 +143,10 @@ static void store_last_native_error(int32_t native_error) {
 struct ctl ze_memory_ctl_root;
 static UTIL_ONCE_FLAG ctl_initialized = UTIL_ONCE_FLAG_INIT;
 
-static ze_relaxed_allocation_limits_exp_desc_t relaxed_device_allocation_desc =
-    {.stype = ZE_STRUCTURE_TYPE_RELAXED_ALLOCATION_LIMITS_EXP_DESC,
-     .pNext = NULL,
-     .flags = ZE_RELAXED_ALLOCATION_LIMITS_EXP_FLAG_MAX_SIZE};
+static ze_relaxed_allocation_limits_exp_desc_t relaxed_allocation_desc = {
+    .stype = ZE_STRUCTURE_TYPE_RELAXED_ALLOCATION_LIMITS_EXP_DESC,
+    .pNext = NULL,
+    .flags = ZE_RELAXED_ALLOCATION_LIMITS_EXP_FLAG_MAX_SIZE};
 
 static ze_external_memory_export_desc_t memory_export_desc = {
     .stype = ZE_STRUCTURE_TYPE_EXTERNAL_MEMORY_EXPORT_DESC,
@@ -530,6 +530,13 @@ static umf_result_t ze_memory_provider_alloc_helper(void *provider, size_t size,
             .stype = ZE_STRUCTURE_TYPE_HOST_MEM_ALLOC_DESC,
             .pNext = NULL,
             .flags = 0};
+        void *lastNext = &host_desc.pNext;
+
+        // add relaxed allocation desc to the pNext chain
+        ze_relaxed_allocation_limits_exp_desc_t relaxed_allocation_desc_copy =
+            relaxed_allocation_desc;
+        *(void **)lastNext = &relaxed_allocation_desc_copy;
+
         ze_result = g_ze_ops.zeMemAllocHost(ze_provider->context, &host_desc,
                                             size, alignment, resultPtr);
         break;
@@ -542,13 +549,12 @@ static umf_result_t ze_memory_provider_alloc_helper(void *provider, size_t size,
             .ordinal = ze_provider->device_ordinal};
         void *lastNext = &dev_desc.pNext;
 
-        ze_relaxed_allocation_limits_exp_desc_t
-            relaxed_device_allocation_desc_copy =
-                relaxed_device_allocation_desc;
+        ze_relaxed_allocation_limits_exp_desc_t relaxed_allocation_desc_copy =
+            relaxed_allocation_desc;
         if (use_relaxed_allocation(ze_provider, size)) {
             // add relaxed allocation desc to the pNext chain
-            *(void **)lastNext = &relaxed_device_allocation_desc_copy;
-            lastNext = &relaxed_device_allocation_desc_copy.pNext;
+            *(void **)lastNext = &relaxed_allocation_desc_copy;
+            lastNext = &relaxed_allocation_desc_copy.pNext;
         }
 
         // check if the allocation should use import / export mechanism
@@ -573,7 +579,7 @@ static umf_result_t ze_memory_provider_alloc_helper(void *provider, size_t size,
         ze_device_mem_alloc_desc_t dev_desc = {
             .stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC,
             .pNext = use_relaxed_allocation(ze_provider, size)
-                         ? &relaxed_device_allocation_desc
+                         ? &relaxed_allocation_desc
                          : NULL,
             .flags = 0,
             .ordinal = ze_provider->device_ordinal};
