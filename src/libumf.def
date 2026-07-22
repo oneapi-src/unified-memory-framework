@@ -1,12 +1,12 @@
 ;;;; Begin Copyright Notice
-; Copyright (C) 2023-2025 Intel Corporation
+; Copyright (C) 2023-2026 Intel Corporation
 ; Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 ; SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 ;;;;  End Copyright Notice
 
 LIBRARY UMF
 
-VERSION 1.1
+VERSION 1.2
 
 EXPORTS
     DllMain
@@ -158,3 +158,5 @@ EXPORTS
     umfOsMemoryProviderParamsSetName
     umfPoolTrimMemory
     umfScalablePoolParamsSetName
+; Added in UMF_1.2
+    umfMemoryProviderGetCacheLineSize

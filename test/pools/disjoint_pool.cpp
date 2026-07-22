@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -44,6 +44,11 @@ TEST_F(test, internals) {
             *pageSize = 1024;
             return UMF_RESULT_SUCCESS;
         }
+
+        umf_result_t get_cache_line_size(size_t *size) noexcept {
+            *size = 128;
+            return UMF_RESULT_SUCCESS;
+        }
     };
     umf_memory_provider_ops_t provider_ops =
         umf_test::providerMakeCOps<memory_provider, void>();
@@ -78,22 +83,16 @@ TEST_F(test, internals) {
     EXPECT_EQ(pool->provider_min_page_size, (size_t)1024);
 
     // check buckets sizes
-    size_t expected_size = DEFAULT_DISJOINT_MIN_BUCKET_SIZE;
-    EXPECT_EQ(pool->buckets[0]->size, expected_size);
+    EXPECT_EQ(pool->buckets[0]->size, params->min_bucket_size);
     EXPECT_EQ(pool->buckets[pool->buckets_num - 1]->size,
               (size_t)1 << 31); // 2GB
+    size_t prev_size = 0;
     for (size_t i = 0; i < pool->buckets_num; i++) {
         bucket_t *bucket = pool->buckets[i];
         EXPECT_NE(bucket, nullptr);
-        EXPECT_EQ(bucket->size, expected_size);
-
-        // assuming DEFAULT_DISJOINT_MIN_BUCKET_SIZE = 64, expected bucket
-        // sizes are: 64, 96, 128, 192, 256, ..., 2GB
-        if (i % 2 == 0) {
-            expected_size += expected_size / 2;
-        } else {
-            expected_size = DEFAULT_DISJOINT_MIN_BUCKET_SIZE << ((i + 1) / 2);
-        }
+        EXPECT_GE(bucket->size, prev_size + params->min_bucket_size);
+        EXPECT_EQ(bucket->size % params->min_bucket_size, 0ull);
+        prev_size = bucket->size;
     }
 
     // test small allocations

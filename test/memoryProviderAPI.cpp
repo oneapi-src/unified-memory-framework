@@ -61,6 +61,14 @@ TEST_F(test, memoryProviderTrace) {
     ASSERT_EQ(calls["get_min_page_size"], 1UL);
     ASSERT_EQ(calls.size(), ++call_count);
 
+    size_t cache_line_size;
+    ret = umfMemoryProviderGetCacheLineSize(tracingProvider.get(),
+                                            &cache_line_size);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(cache_line_size, 64UL);
+    ASSERT_EQ(calls["get_cache_line_size"], 1UL);
+    ASSERT_EQ(calls.size(), ++call_count);
+
     const char *pName = nullptr;
     ret = umfMemoryProviderGetName(tracingProvider.get(), &pName);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
@@ -231,6 +239,14 @@ TEST_F(test, memoryProviderOpsNullGetRecommendedPageSizeField) {
 TEST_F(test, memoryProviderOpsNullGetMinPageSizeField) {
     umf_memory_provider_ops_t provider_ops = UMF_NULL_PROVIDER_OPS;
     provider_ops.get_min_page_size = nullptr;
+    umf_memory_provider_handle_t hProvider;
+    auto ret = umfMemoryProviderCreate(&provider_ops, nullptr, &hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, memoryProviderOpsNullGetCacheLineSizeField) {
+    umf_memory_provider_ops_t provider_ops = UMF_NULL_PROVIDER_OPS;
+    provider_ops.get_cache_line_size = nullptr;
     umf_memory_provider_handle_t hProvider;
     auto ret = umfMemoryProviderCreate(&provider_ops, nullptr, &hProvider);
     ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
@@ -454,6 +470,7 @@ INSTANTIATE_TEST_SUITE_P(
         umf_test::withGeneratedArgs(umfMemoryProviderFree),
         umf_test::withGeneratedArgs(umfMemoryProviderGetRecommendedPageSize),
         umf_test::withGeneratedArgs(umfMemoryProviderGetMinPageSize),
+        umf_test::withGeneratedArgs(umfMemoryProviderGetCacheLineSize),
         umf_test::withGeneratedArgs(umfMemoryProviderPurgeLazy),
         umf_test::withGeneratedArgs(umfMemoryProviderPurgeForce),
         umf_test::withGeneratedArgs(umfMemoryProviderGetName)),
@@ -462,6 +479,7 @@ INSTANTIATE_TEST_SUITE_P(
                                       "umfMemoryProviderFree",
                                       "umfMemoryProviderGetRecommendedPageSize",
                                       "umfMemoryProviderGetMinPageSize",
+                                      "umfMemoryProviderGetCacheLineSize",
                                       "umfMemoryProviderPurgeLazy",
                                       "umfMemoryProviderPurgeForce",
                                       "umfMemoryProviderGetName"};

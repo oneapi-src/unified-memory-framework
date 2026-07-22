@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2025 Intel Corporation
+ * Copyright (C) 2023-2026 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -83,6 +83,10 @@ typedef struct provider_base_t {
     umf_result_t get_min_page_size([[maybe_unused]] const void *ptr,
                                    [[maybe_unused]] size_t *pageSize) noexcept {
         return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
+    umf_result_t get_cache_line_size(size_t *size) noexcept {
+        *size = 64;
+        return UMF_RESULT_SUCCESS;
     }
     umf_result_t get_name(const char **name) noexcept {
         *name = "base";

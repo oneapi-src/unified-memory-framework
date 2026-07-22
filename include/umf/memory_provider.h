@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2025 Intel Corporation
+ * Copyright (C) 2023-2026 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -128,6 +128,16 @@ umfMemoryProviderGetRecommendedPageSize(umf_memory_provider_handle_t hProvider,
 umf_result_t
 umfMemoryProviderGetMinPageSize(umf_memory_provider_handle_t hProvider,
                                 const void *ptr, size_t *pageSize);
+
+///
+/// @brief Retrieve cache line size for memory allocated by the provider.
+/// @param hProvider handle to the memory provider
+/// @param size [out] pointer to the cache line size
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+///
+umf_result_t
+umfMemoryProviderGetCacheLineSize(umf_memory_provider_handle_t hProvider,
+                                  size_t *size);
 
 ///
 /// @brief Discard physical pages within the virtual memory mapping associated at the given addr

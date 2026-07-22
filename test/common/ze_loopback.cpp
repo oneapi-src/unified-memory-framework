@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2025 Intel Corporation
+ * Copyright (C) 2025-2026 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -37,8 +37,17 @@ ZE_APIEXPORT ze_result_t ZE_APICALL zeInit(ze_init_flags_t flags) {
 ZE_APIEXPORT ze_result_t ZE_APICALL zeDriverGet(uint32_t *pCount,
                                                 ze_driver_handle_t *phDrivers) {
     (void)phDrivers;
-    (void)pCount;
-    FAIL_NOT_IMPLEMENTED
+    *pCount = 0;
+    return ZE_RESULT_SUCCESS;
+}
+
+ZE_APIEXPORT ze_result_t ZE_APICALL zeDriverGetExtensionProperties(
+    ze_driver_handle_t hDriver, uint32_t *pCount,
+    ze_driver_extension_properties_t *pExtensionProperties) {
+    (void)hDriver;
+    (void)pExtensionProperties;
+    *pCount = 0;
+    return ZE_RESULT_SUCCESS;
 }
 
 ZE_APIEXPORT ze_result_t ZE_APICALL zeDeviceGet(ze_driver_handle_t hDriver,
@@ -187,6 +196,15 @@ zeDeviceGetMemoryProperties(ze_device_handle_t hDevice, uint32_t *pCount,
     (void)pCount;
     (void)pMemProperties;
     FAIL_NOT_IMPLEMENTED
+}
+
+ZE_APIEXPORT ze_result_t ZE_APICALL
+zeDeviceGetCacheProperties(ze_device_handle_t hDevice, uint32_t *pCount,
+                           ze_device_cache_properties_t *pCacheProperties) {
+    (void)hDevice;
+    (void)pCount;
+    (void)pCacheProperties;
+    return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 }
 
 //

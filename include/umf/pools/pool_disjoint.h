@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2025 Intel Corporation
+ * Copyright (C) 2023-2026 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -82,7 +82,7 @@ umfDisjointPoolParamsSetCapacity(umf_disjoint_pool_params_handle_t hParams,
                                  size_t maxCapacity);
 
 /// @brief Set minimum bucket allocation size.
-/// @details Default value for minimum bucket size is 8.
+/// @details If not set, the pool uses the provider cache line size.
 /// @param hParams handle to the parameters of the disjoint pool.
 /// @param minBucketSize minimum bucket size. Must be power of 2.
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.

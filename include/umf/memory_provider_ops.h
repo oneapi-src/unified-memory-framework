@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2025 Intel Corporation
+ * Copyright (C) 2023-2026 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -21,7 +21,7 @@ extern "C" {
 /// @brief Version of the Memory Provider ops structure.
 /// NOTE: This is equal to the latest UMF version, in which the ops structure
 /// has been modified.
-#define UMF_PROVIDER_OPS_VERSION_CURRENT UMF_MAKE_VERSION(1, 1)
+#define UMF_PROVIDER_OPS_VERSION_CURRENT UMF_MAKE_VERSION(1, 2)
 
 ///
 /// @brief This structure comprises function pointers used by corresponding
@@ -325,6 +325,16 @@ typedef struct umf_memory_provider_ops_t {
     umf_result_t (*ext_get_allocation_properties_size)(
         void *provider, umf_memory_property_id_t memory_property_id,
         size_t *size);
+
+    // The following operations were added in ops version 1.2
+
+    ///
+    /// @brief Retrieve cache line size for memory allocated by the provider.
+    /// @param provider pointer to the memory provider
+    /// @param size [out] pointer to the cache line size
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+    ///
+    umf_result_t (*get_cache_line_size)(void *provider, size_t *size);
 
 } umf_memory_provider_ops_t;
 

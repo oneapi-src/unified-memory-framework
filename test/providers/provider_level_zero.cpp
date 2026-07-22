@@ -1,4 +1,4 @@
-// Copyright (C) 2024-2025 Intel Corporation
+// Copyright (C) 2024-2026 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -32,6 +32,8 @@ class LevelZeroTestHelper {
     }
 
     ze_context_handle_t get_test_context() const { return hContext_; }
+
+    ze_driver_handle_t get_test_driver() const { return hDriver_; }
 
     ze_device_handle_t get_test_device() const { return hDevice_; }
 
@@ -399,6 +401,34 @@ TEST_P(umfLevelZeroProviderTest, getPageSize) {
 
     umf_result = umfMemoryProviderFree(provider, ptr, 1);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umfMemoryProviderDestroy(provider);
+}
+
+TEST_P(umfLevelZeroProviderTest, getCacheLineSize) {
+    umf_memory_provider_handle_t provider = nullptr;
+    umf_result_t umf_result = umfMemoryProviderCreate(
+        umfLevelZeroMemoryProviderOps(), params, &provider);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_NE(provider, nullptr);
+
+    size_t cacheLineSize = 0;
+    umf_result = umfMemoryProviderGetCacheLineSize(provider, &cacheLineSize);
+    EXPECT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    EXPECT_GT(cacheLineSize, 0);
+
+    if (GetParam() != UMF_MEMORY_TYPE_HOST) {
+        if (utils_ze_driver_supports_cache_line_size(
+                l0TestHelper.get_test_driver())) {
+            size_t deviceCacheLineSize = 0;
+            int ret = utils_ze_get_cache_line_size(
+                l0TestHelper.get_test_device(), &deviceCacheLineSize);
+            EXPECT_EQ(ret, 0);
+            EXPECT_EQ(cacheLineSize, deviceCacheLineSize);
+        } else {
+            EXPECT_EQ(cacheLineSize, 128);
+        }
+    }
 
     umfMemoryProviderDestroy(provider);
 }

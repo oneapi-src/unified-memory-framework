@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2025 Intel Corporation
+ * Copyright (C) 2022-2026 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -127,6 +127,17 @@ static const umf_ctl_node_t CTL_NODE(params)[] = {CTL_LEAF_RO(ipc_enabled),
 static void initialize_os_ctl(void) {
     CTL_REGISTER_MODULE(&os_memory_ctl_root, params);
     CTL_REGISTER_MODULE(&os_memory_ctl_root, stats);
+}
+
+static size_t os_query_cache_line_size(void) {
+#ifdef _SC_LEVEL1_DCACHE_LINESIZE
+    long cache_line_size = sysconf(_SC_LEVEL1_DCACHE_LINESIZE);
+    if (cache_line_size > 0) {
+        return (size_t)cache_line_size;
+    }
+#endif
+
+    return 64;
 }
 
 static void os_store_last_native_error(int32_t native_error, int errno_value) {
@@ -577,6 +588,8 @@ static umf_result_t os_initialize(const void *params, void **provider) {
         ret = UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
         goto err_free_os_provider;
     }
+
+    os_provider->cache_line_size = os_query_cache_line_size();
 
     ret = translate_params(in_params, os_provider);
     if (ret != UMF_RESULT_SUCCESS) {
@@ -1382,6 +1395,12 @@ static umf_result_t os_ctl(void *hProvider,
                      query_type, arg, size, args);
 }
 
+static umf_result_t os_get_cache_line_size(void *provider, size_t *size) {
+    os_memory_provider_t *os_provider = provider;
+    *size = os_provider->cache_line_size;
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_memory_provider_ops_t UMF_OS_MEMORY_PROVIDER_OPS = {
     .version = UMF_PROVIDER_OPS_VERSION_CURRENT,
     .initialize = os_initialize,
@@ -1391,6 +1410,7 @@ static umf_memory_provider_ops_t UMF_OS_MEMORY_PROVIDER_OPS = {
     .get_last_native_error = os_get_last_native_error,
     .get_recommended_page_size = os_get_recommended_page_size,
     .get_min_page_size = os_get_min_page_size,
+    .get_cache_line_size = os_get_cache_line_size,
     .get_name = os_get_name,
     .ext_purge_lazy = os_purge_lazy,
     .ext_purge_force = os_purge_force,

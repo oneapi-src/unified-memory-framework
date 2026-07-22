@@ -87,6 +87,10 @@ typedef struct ze_memory_provider_t {
     int use_import_export_for_IPC;
 
     size_t min_page_size;
+    size_t cache_line_size;
+#if defined(ZE_CACHELINE_SIZE_EXT_NAME)
+    bool cache_line_size_supported;
+#endif
 
     uint32_t device_ordinal;
     char name[64];
@@ -95,6 +99,13 @@ typedef struct ze_memory_provider_t {
 } ze_memory_provider_t;
 
 typedef struct ze_ops_t {
+#if defined(ZE_CACHELINE_SIZE_EXT_NAME)
+    ze_result_t (*zeDriverGet)(uint32_t *, ze_driver_handle_t *);
+    ze_result_t (*zeDriverGetExtensionProperties)(
+        ze_driver_handle_t, uint32_t *, ze_driver_extension_properties_t *);
+    ze_result_t (*zeDeviceGet)(ze_driver_handle_t, uint32_t *,
+                               ze_device_handle_t *);
+#endif
     ze_result_t (*zeMemAllocHost)(ze_context_handle_t,
                                   const ze_host_mem_alloc_desc_t *, size_t,
                                   size_t, void **);
@@ -120,6 +131,10 @@ typedef struct ze_ops_t {
                                         void *, size_t);
     ze_result_t (*zeDeviceGetProperties)(ze_device_handle_t,
                                          ze_device_properties_t *);
+#if defined(ZE_CACHELINE_SIZE_EXT_NAME)
+    ze_result_t (*zeDeviceGetCacheProperties)(ze_device_handle_t, uint32_t *,
+                                              ze_device_cache_properties_t *);
+#endif
     ze_result_t (*zeMemFreeExt)(ze_context_handle_t,
                                 ze_memory_free_ext_desc_t *, void *);
     ze_result_t (*zeMemGetAllocProperties)(ze_context_handle_t, const void *,
@@ -196,6 +211,140 @@ static void initialize_ze_ctl(void) {
     CTL_REGISTER_MODULE(&ze_memory_ctl_root, stats);
 }
 
+#if defined(ZE_CACHELINE_SIZE_EXT_NAME)
+static bool ze_driver_supports_cache_line_size(ze_driver_handle_t driver) {
+    if (!driver || !g_ze_ops.zeDriverGetExtensionProperties) {
+        return false;
+    }
+
+    uint32_t extension_count = 0;
+    ze_result_t ze_result =
+        g_ze_ops.zeDriverGetExtensionProperties(driver, &extension_count, NULL);
+    if (ze_result != ZE_RESULT_SUCCESS || extension_count == 0) {
+        return false;
+    }
+
+    ze_driver_extension_properties_t *extensions = umf_ba_global_alloc(
+        extension_count * sizeof(ze_driver_extension_properties_t));
+    if (!extensions) {
+        return false;
+    }
+
+    ze_result = g_ze_ops.zeDriverGetExtensionProperties(
+        driver, &extension_count, extensions);
+    if (ze_result != ZE_RESULT_SUCCESS) {
+        umf_ba_global_free(extensions);
+        return false;
+    }
+
+    bool supported = false;
+    for (uint32_t i = 0; i < extension_count; i++) {
+        if (strcmp(extensions[i].name, ZE_CACHELINE_SIZE_EXT_NAME) == 0) {
+            supported = true;
+            break;
+        }
+    }
+
+    umf_ba_global_free(extensions);
+    return supported;
+}
+
+static bool ze_device_supports_cache_line_size(ze_device_handle_t device) {
+    if (!device || !g_ze_ops.zeDriverGet || !g_ze_ops.zeDeviceGet ||
+        !g_ze_ops.zeDriverGetExtensionProperties ||
+        !g_ze_ops.zeDeviceGetCacheProperties) {
+        return false;
+    }
+
+    uint32_t driver_count = 0;
+    ze_result_t ze_result = g_ze_ops.zeDriverGet(&driver_count, NULL);
+    if (ze_result != ZE_RESULT_SUCCESS || driver_count == 0) {
+        return false;
+    }
+
+    ze_driver_handle_t *drivers =
+        umf_ba_global_alloc(driver_count * sizeof(ze_driver_handle_t));
+    if (!drivers) {
+        return false;
+    }
+
+    ze_result = g_ze_ops.zeDriverGet(&driver_count, drivers);
+    if (ze_result != ZE_RESULT_SUCCESS) {
+        umf_ba_global_free(drivers);
+        return false;
+    }
+
+    bool supported = false;
+    for (uint32_t driver_index = 0; driver_index < driver_count;
+         driver_index++) {
+        uint32_t device_count = 0;
+        ze_result =
+            g_ze_ops.zeDeviceGet(drivers[driver_index], &device_count, NULL);
+        if (ze_result != ZE_RESULT_SUCCESS || device_count == 0) {
+            continue;
+        }
+
+        ze_device_handle_t *devices =
+            umf_ba_global_alloc(device_count * sizeof(ze_device_handle_t));
+        if (!devices) {
+            continue;
+        }
+
+        ze_result =
+            g_ze_ops.zeDeviceGet(drivers[driver_index], &device_count, devices);
+        if (ze_result == ZE_RESULT_SUCCESS) {
+            for (uint32_t device_index = 0; device_index < device_count;
+                 device_index++) {
+                if (devices[device_index] == device) {
+                    supported = ze_driver_supports_cache_line_size(
+                        drivers[driver_index]);
+                    break;
+                }
+            }
+        }
+
+        umf_ba_global_free(devices);
+        if (supported) {
+            break;
+        }
+    }
+
+    umf_ba_global_free(drivers);
+    return supported;
+}
+#endif
+
+static size_t
+ze_memory_provider_query_cache_line_size(ze_memory_provider_t *ze_provider) {
+#if defined(ZE_CACHELINE_SIZE_EXT_NAME)
+    if (ze_provider->cache_line_size_supported &&
+        g_ze_ops.zeDeviceGetCacheProperties) {
+        ze_device_cache_line_size_ext_t cache_line_size = {
+            .stype = ZE_STRUCTURE_TYPE_DEVICE_CACHELINE_SIZE_EXT,
+            .pNext = NULL};
+        ze_device_cache_properties_t cache_properties = {
+            .stype = ZE_STRUCTURE_TYPE_DEVICE_CACHE_PROPERTIES,
+            .pNext = &cache_line_size};
+        uint32_t count = 1;
+
+        ze_result_t ze_result = g_ze_ops.zeDeviceGetCacheProperties(
+            ze_provider->device, &count, &cache_properties);
+        if (ze_result == ZE_RESULT_SUCCESS && count > 0 &&
+            cache_line_size.cacheLineSize > 0) {
+            return cache_line_size.cacheLineSize;
+        }
+
+        if (ze_result == ZE_RESULT_ERROR_UNSUPPORTED_ENUMERATION) {
+            ze_provider->cache_line_size_supported = false;
+        }
+    }
+#else
+    (void)ze_provider;
+#endif
+
+    return 128;
+}
+
 static umf_result_t ze2umf_result(ze_result_t result) {
     switch (result) {
     case ZE_RESULT_SUCCESS:
@@ -260,6 +409,14 @@ static void init_ze_global_state(void) {
         return;
     }
 
+#if defined(ZE_CACHELINE_SIZE_EXT_NAME)
+    *(void **)&g_ze_ops.zeDriverGet =
+        utils_get_symbol_addr(lib_handle, "zeDriverGet", lib_name);
+    *(void **)&g_ze_ops.zeDriverGetExtensionProperties = utils_get_symbol_addr(
+        lib_handle, "zeDriverGetExtensionProperties", lib_name);
+    *(void **)&g_ze_ops.zeDeviceGet =
+        utils_get_symbol_addr(lib_handle, "zeDeviceGet", lib_name);
+#endif
     *(void **)&g_ze_ops.zeMemAllocHost =
         utils_get_symbol_addr(lib_handle, "zeMemAllocHost", lib_name);
     *(void **)&g_ze_ops.zeMemAllocDevice =
@@ -282,6 +439,10 @@ static void init_ze_global_state(void) {
         utils_get_symbol_addr(lib_handle, "zeContextEvictMemory", lib_name);
     *(void **)&g_ze_ops.zeDeviceGetProperties =
         utils_get_symbol_addr(lib_handle, "zeDeviceGetProperties", lib_name);
+#if defined(ZE_CACHELINE_SIZE_EXT_NAME)
+    *(void **)&g_ze_ops.zeDeviceGetCacheProperties = utils_get_symbol_addr(
+        lib_handle, "zeDeviceGetCacheProperties", lib_name);
+#endif
     *(void **)&g_ze_ops.zeMemFreeExt =
         utils_get_symbol_addr(lib_handle, "zeMemFreeExt", lib_name);
     *(void **)&g_ze_ops.zeMemGetAllocProperties =
@@ -722,6 +883,7 @@ static umf_result_t ze_memory_provider_initialize(const void *params,
     ze_provider->use_import_export_for_IPC =
         ze_params->use_import_export_for_IPC;
     ze_provider->min_page_size = 0;
+    ze_provider->cache_line_size = 128;
     ze_provider->device_ordinal = ze_params->device_ordinal;
 
     memset(&ze_provider->device_properties, 0,
@@ -737,7 +899,14 @@ static umf_result_t ze_memory_provider_initialize(const void *params,
             umf_ba_global_free(ze_provider);
             return ret;
         }
+#if defined(ZE_CACHELINE_SIZE_EXT_NAME)
+        ze_provider->cache_line_size_supported =
+            ze_device_supports_cache_line_size(ze_provider->device);
+#endif
     }
+
+    ze_provider->cache_line_size =
+        ze_memory_provider_query_cache_line_size(ze_provider);
 
     if (utils_rwlock_init(&ze_provider->resident_device_rwlock) != 0) {
         LOG_ERR("Cannot initialize resident device rwlock");
@@ -1115,6 +1284,13 @@ static umf_result_t ze_memory_provider_get_allocation_properties_size(
     return UMF_RESULT_ERROR_INVALID_ARGUMENT;
 }
 
+static umf_result_t ze_memory_provider_get_cache_line_size(void *provider,
+                                                           size_t *size) {
+    ze_memory_provider_t *ze_provider = (ze_memory_provider_t *)provider;
+    *size = ze_provider->cache_line_size;
+    return UMF_RESULT_SUCCESS;
+}
+
 struct ze_memory_provider_resident_device_change_data {
     bool is_adding;
     ze_device_handle_t peer_device;
@@ -1289,6 +1465,7 @@ static umf_memory_provider_ops_t UMF_LEVEL_ZERO_MEMORY_PROVIDER_OPS = {
     .get_last_native_error = ze_memory_provider_get_last_native_error,
     .get_recommended_page_size = ze_memory_provider_get_recommended_page_size,
     .get_min_page_size = ze_memory_provider_get_min_page_size,
+    .get_cache_line_size = ze_memory_provider_get_cache_line_size,
     .get_name = ze_memory_provider_get_name,
     .ext_purge_lazy = ze_memory_provider_purge_lazy,
     .ext_purge_force = ze_memory_provider_purge_force,

@@ -1045,6 +1045,12 @@ static umf_result_t trackingGetMinPageSize(void *provider, const void *ptr,
     return umfMemoryProviderGetMinPageSize(p->hUpstream, ptr, pageSize);
 }
 
+static umf_result_t trackingGetCacheLineSize(void *provider, size_t *size) {
+    umf_tracking_memory_provider_t *p =
+        (umf_tracking_memory_provider_t *)provider;
+    return umfMemoryProviderGetCacheLineSize(p->hUpstream, size);
+}
+
 static umf_result_t trackingPurgeLazy(void *provider, void *ptr, size_t size) {
     umf_tracking_memory_provider_t *p =
         (umf_tracking_memory_provider_t *)provider;
@@ -1355,6 +1361,7 @@ umf_memory_provider_ops_t UMF_TRACKING_MEMORY_PROVIDER_OPS = {
     .get_last_native_error = trackingGetLastError,
     .get_min_page_size = trackingGetMinPageSize,
     .get_recommended_page_size = trackingGetRecommendedPageSize,
+    .get_cache_line_size = trackingGetCacheLineSize,
     .get_name = trackingName,
     .ext_purge_force = trackingPurgeForce,
     .ext_purge_lazy = trackingPurgeLazy,

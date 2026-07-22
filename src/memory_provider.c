@@ -175,6 +175,13 @@ static umf_result_t umfDefaultGetAllocationPropertiesSize(
     return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
+static umf_result_t umfDefaultGetCacheLineSize(void *provider, size_t *size) {
+    (void)provider;
+
+    *size = 64;
+    return UMF_RESULT_SUCCESS;
+}
+
 void assignOpsExtDefaults(umf_memory_provider_ops_t *ops) {
     if (!ops->ext_purge_lazy) {
         ops->ext_purge_lazy = umfDefaultPurgeLazy;
@@ -263,6 +270,7 @@ static bool validateOps(const umf_memory_provider_ops_t *ops) {
     CHECK_OP(ops, free);
     CHECK_OP(ops, get_recommended_page_size);
     CHECK_OP(ops, get_min_page_size);
+    CHECK_OP(ops, get_cache_line_size);
     CHECK_OP(ops, initialize);
     CHECK_OP(ops, finalize);
     CHECK_OP(ops, get_last_native_error);
@@ -321,6 +329,13 @@ umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
             memcpy(&compatible_ops, ops,
                    offsetof(umf_memory_provider_ops_t,
                             ext_get_allocation_properties));
+            compatible_ops.get_cache_line_size = umfDefaultGetCacheLineSize;
+        } else if (UMF_MINOR_VERSION(ops->version) == 1) {
+            LOG_INFO("Detected 1.1 version of Memory Provider ops, "
+                     "upgrading to current version");
+            memcpy(&compatible_ops, ops,
+                   offsetof(umf_memory_provider_ops_t, get_cache_line_size));
+            compatible_ops.get_cache_line_size = umfDefaultGetCacheLineSize;
         } else {
             LOG_ERR("Unsupported Memory Provider ops version: %d",
                     ops->version);
@@ -474,6 +489,19 @@ umfMemoryProviderGetMinPageSize(umf_memory_provider_handle_t hProvider,
 
     umf_result_t res = hProvider->ops.get_min_page_size(
         hProvider->provider_priv, ptr, pageSize);
+
+    checkErrorAndSetLastProvider(res, hProvider);
+    return res;
+}
+
+umf_result_t
+umfMemoryProviderGetCacheLineSize(umf_memory_provider_handle_t hProvider,
+                                  size_t *size) {
+    UMF_CHECK((hProvider != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    UMF_CHECK((size != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    umf_result_t res =
+        hProvider->ops.get_cache_line_size(hProvider->provider_priv, size);
 
     checkErrorAndSetLastProvider(res, hProvider);
     return res;
