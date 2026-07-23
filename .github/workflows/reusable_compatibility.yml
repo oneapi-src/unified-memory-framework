@@ -385,16 +385,22 @@ jobs:
         UMF_LOG: level:warning;flush:debug;output:stderr;pid:no
         LD_LIBRARY_PATH: ${{github.workspace}}/latest_version/build/lib/
       run: |
-        ctest --verbose -E "test_memoryProvider|test_disjoint_pool"
+        ctest --verbose -E "test_memoryProvider|test_disjoint_pool|test_provider_level_zero|test_provider_level_zero_dlopen_global|test_provider_level_zero_dlopen_local"
 
     - name: Run disabled tests individually with latest UMF libs (warnings enabled)
       working-directory: ${{github.workspace}}/tag_version/build
       env:
         UMF_LOG: level:warning;flush:debug;output:stderr;pid:no
         LD_LIBRARY_PATH: ${{github.workspace}}/latest_version/build/lib/
+        MATRIX_PROVIDER: ${{matrix.provider}}
       run: |
         test/test_memoryProvider --gtest_filter="-*Trace"
         test/test_disjoint_pool --gtest_filter="-test.internals"
+        if [[ "$MATRIX_PROVIDER" == "LEVEL_ZERO" ]]; then
+          test/test_provider_level_zero --gtest_filter="-*allocInvalidSize/2"
+          test/test_provider_level_zero_dlopen_global --gtest_filter="-*allocInvalidSize/2"
+          test/test_provider_level_zero_dlopen_local --gtest_filter="-*allocInvalidSize/2"
+        fi
 
     # Browse all folders in the examples directory, build them using the 
     # latest UMF version, and run them, excluding those in the exclude list.
