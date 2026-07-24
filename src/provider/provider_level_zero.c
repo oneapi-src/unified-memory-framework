@@ -788,6 +788,8 @@ static umf_result_t ze_memory_provider_alloc_helper(void *provider, size_t size,
                   *resultPtr, size,
                   (void *)ze_provider->resident_device_handles[i]);
     }
+    LOG_DEBUG("allocation %p of size: %lu made resident on %d device(s)",
+              *resultPtr, size, ze_provider->resident_device_count);
     utils_read_unlock(&ze_provider->resident_device_rwlock);
 
     if (update_stats) {
