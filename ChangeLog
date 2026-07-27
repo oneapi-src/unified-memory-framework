@@ -1,3 +1,22 @@
+Mon Jul 27 2026 Łukasz Stolarczuk <lukasz.stolarczuk@intel.com>
+
+	* Version 1.2.0
+
+	This minor release contains following changes:
+	- Add GetCacheLineSize() to memory provider and use it to initialize Disjoint Pool's
+		min bucket size (#1587)
+	- Always use relaxed allocation limits for L0 host memory (#1594)
+	- Build hwloc via ExternalProject_Add and propagate sysroot/gcc-toolchain (#1585, #1597)
+	- [L0] Improve and fix log messages in provider_level_zero.c (#1572, #1573)
+
+	And fixes:
+	- Fix umfMemspaceFilterHelper leak (#1582)
+	- Fix memory provider cleanup on initialization failures (#1565)
+	- Add overflow checks for IPC handle size (#1579)
+	- Fix potential mem corruption in utils_log_internal (#1576)
+	- Target jemalloc dirs for UMF as SYSTEM (#1591)
+	- Fix _GNU_SOURCE redefined warn (#1555)
+
 Tue Feb 03 2026 Łukasz Stolarczuk <lukasz.stolarczuk@intel.com>
 
 	* Version 1.1.0
