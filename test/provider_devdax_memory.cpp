@@ -1,12 +1,15 @@
-// Copyright (C) 2024-2025 Intel Corporation
+// Copyright (C) 2024-2026 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 #ifndef _WIN32
 #include <fcntl.h>
+#include <limits.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #endif
+
+#include <cerrno>
 
 #include <umf/experimental/ctl.h>
 #include <umf/memory_provider.h>
@@ -132,7 +135,17 @@ TEST_F(test, test_if_mapped_with_MAP_SYNC) {
         GTEST_SKIP() << "Test skipped, UMF_TESTS_DEVDAX_SIZE is not set";
     }
 
-    size_t size = atol(size_str);
+    // Parse the size string to an unsigned long long and check for errors
+    char *end = nullptr;
+    errno = 0;
+    unsigned long long parsed_size = strtoull(size_str, &end, 10);
+    ASSERT_EQ(errno, 0);
+    ASSERT_NE(end, size_str);
+    ASSERT_EQ(*end, '\0');
+
+    ASSERT_GT(parsed_size, 0);
+    ASSERT_LE(parsed_size, static_cast<unsigned long long>(SSIZE_MAX));
+    size_t size = static_cast<size_t>(parsed_size);
     umf_devdax_memory_provider_params_handle_t params = NULL;
     umf_result = umfDevDaxMemoryProviderParamsCreate(path, size, &params);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
