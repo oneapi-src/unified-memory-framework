@@ -331,8 +331,8 @@ if(UMF_LINK_HWLOC_STATICALLY)
         # use (e.g. a sysroot- or toolchain-file-pinned compiler), causing an
         # ABI mismatch against the rest of the build. CC/CXX are passed as
         # space-separated "compiler [flags...]" strings (like CC="ccache gcc"),
-        # so --sysroot/--gcc-toolchain can be appended directly; make word-splits
-        # them unquoted when invoking the compiler.
+        # so --sysroot/--gcc-toolchain can be appended directly; make
+        # word-splits them unquoted when invoking the compiler.
         set(UMF_HWLOC_CC "${CMAKE_C_COMPILER}")
         set(UMF_HWLOC_CXX "${CMAKE_CXX_COMPILER}")
         if(CMAKE_SYSROOT)
