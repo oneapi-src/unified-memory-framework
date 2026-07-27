@@ -329,7 +329,25 @@ if(UMF_LINK_HWLOC_STATICALLY)
         # ./configure invocation below, so hwloc would otherwise be built with
         # the ambient host compiler instead of the one CMake was configured to
         # use (e.g. a sysroot- or toolchain-file-pinned compiler), causing an
-        # ABI mismatch against the rest of the build.
+        # ABI mismatch against the rest of the build. CC/CXX are passed as
+        # space-separated "compiler [flags...]" strings (like CC="ccache gcc"),
+        # so --sysroot/--gcc-toolchain can be appended directly; make
+        # word-splits them unquoted when invoking the compiler.
+        set(UMF_HWLOC_CC "${CMAKE_C_COMPILER}")
+        set(UMF_HWLOC_CXX "${CMAKE_CXX_COMPILER}")
+        if(CMAKE_SYSROOT)
+            string(APPEND UMF_HWLOC_CC " --sysroot=${CMAKE_SYSROOT}")
+            string(APPEND UMF_HWLOC_CXX " --sysroot=${CMAKE_SYSROOT}")
+        endif()
+        if(CMAKE_C_COMPILER_EXTERNAL_TOOLCHAIN)
+            string(APPEND UMF_HWLOC_CC
+                   " --gcc-toolchain=${CMAKE_C_COMPILER_EXTERNAL_TOOLCHAIN}")
+        endif()
+        if(CMAKE_CXX_COMPILER_EXTERNAL_TOOLCHAIN)
+            string(APPEND UMF_HWLOC_CXX
+                   " --gcc-toolchain=${CMAKE_CXX_COMPILER_EXTERNAL_TOOLCHAIN}")
+        endif()
+
         ExternalProject_Add(
             hwloc_targ
             PREFIX ${hwloc_targ_PREFIX}
@@ -338,11 +356,11 @@ if(UMF_LINK_HWLOC_STATICALLY)
             UPDATE_DISCONNECTED TRUE
             PATCH_COMMAND git apply
                           ${PROJECT_SOURCE_DIR}/cmake/fix_coverity_issues.patch
-            CONFIGURE_COMMAND ${CMAKE_COMMAND} -E env CC=${CMAKE_C_COMPILER}
-                              CXX=${CMAKE_CXX_COMPILER} <SOURCE_DIR>/autogen.sh
+            CONFIGURE_COMMAND ${CMAKE_COMMAND} -E env "CC=${UMF_HWLOC_CC}"
+                              "CXX=${UMF_HWLOC_CXX}" <SOURCE_DIR>/autogen.sh
             COMMAND
-                ${CMAKE_COMMAND} -E env CC=${CMAKE_C_COMPILER}
-                CXX=${CMAKE_CXX_COMPILER} <SOURCE_DIR>/configure
+                ${CMAKE_COMMAND} -E env "CC=${UMF_HWLOC_CC}"
+                "CXX=${UMF_HWLOC_CXX}" <SOURCE_DIR>/configure
                 --prefix=<INSTALL_DIR> --enable-static=yes --enable-shared=no
                 --disable-libxml2 --disable-pci --disable-levelzero
                 --disable-opencl --disable-cuda --disable-nvml --disable-libudev
