@@ -29,14 +29,14 @@ jobs:
         sudo apt-get install -y clang cmake hwloc libhwloc-dev libnuma-dev libtbb-dev
 
     - name: Checkout "tag" UMF version
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         fetch-depth: 0
         ref: refs/tags/${{inputs.tag}}
         path: ${{github.workspace}}/tag_version
 
     - name: Checkout latest UMF version
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         fetch-depth: 0
         path: ${{github.workspace}}/latest_version
@@ -143,7 +143,7 @@ jobs:
 
     steps:
     - name: Checkout "tag" UMF version
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         fetch-depth: 0
         ref: refs/tags/${{inputs.tag}}
@@ -178,7 +178,7 @@ jobs:
       run: vcpkg install --triplet x64-windows
 
     - name: Checkout latest UMF version
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         fetch-depth: 0
         path: ${{github.workspace}}/latest_version
@@ -310,7 +310,7 @@ jobs:
 
     steps:
     - name: Checkout latest UMF version
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         fetch-depth: 0
         path: ${{github.workspace}}/latest_version
@@ -342,7 +342,7 @@ jobs:
       run: cmake --install ${{github.workspace}}/latest_version/build --config Debug
       
     - name: Checkout "tag" UMF version
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         fetch-depth: 0
         ref: refs/tags/${{inputs.tag}}
