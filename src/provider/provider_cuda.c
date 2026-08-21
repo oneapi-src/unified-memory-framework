@@ -59,6 +59,8 @@ typedef struct cu_memory_provider_t {
     char name[64];
 } cu_memory_provider_t;
 
+static const char CUDA_ADDRESS_SPACE_NAMESPACE = 0;
+
 #define CTL_PROVIDER_TYPE cu_memory_provider_t
 #include "provider_ctl_stats_impl.h"
 
@@ -833,6 +835,21 @@ static umf_result_t cu_memory_provider_get_cache_line_size(void *provider,
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t cu_memory_provider_get_address_space(
+    void *provider, umf_memory_provider_address_space_t *address_space) {
+    cu_memory_provider_t *cu_provider = provider;
+    if (cu_provider->memory_type == UMF_MEMORY_TYPE_HOST) {
+        address_space->namespace_token = NULL;
+        address_space->context = 0;
+        address_space->device = 0;
+    } else {
+        address_space->namespace_token = &CUDA_ADDRESS_SPACE_NAMESPACE;
+        address_space->context = (uintptr_t)cu_provider->context;
+        address_space->device = (uintptr_t)cu_provider->device;
+    }
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_memory_provider_ops_t UMF_CUDA_MEMORY_PROVIDER_OPS = {
     .version = UMF_PROVIDER_OPS_VERSION_CURRENT,
     .initialize = cu_memory_provider_initialize,
@@ -843,6 +860,7 @@ static umf_memory_provider_ops_t UMF_CUDA_MEMORY_PROVIDER_OPS = {
     .get_recommended_page_size = cu_memory_provider_get_recommended_page_size,
     .get_min_page_size = cu_memory_provider_get_min_page_size,
     .get_cache_line_size = cu_memory_provider_get_cache_line_size,
+    .get_address_space = cu_memory_provider_get_address_space,
     .get_name = cu_memory_provider_get_name,
     // TODO
     /*

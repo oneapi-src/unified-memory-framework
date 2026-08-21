@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024-2025 Intel Corporation
+ * Copyright (C) 2024-2026 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -40,6 +40,14 @@ umf_result_t umfFixedMemoryProviderParamsCreate(
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
 umf_result_t umfFixedMemoryProviderParamsSetMemory(
     umf_fixed_memory_provider_params_handle_t hParams, void *ptr, size_t size);
+
+/// @brief Set the address space containing the fixed memory region.
+/// @param hParams [in] handle to the parameters of the Fixed Memory Provider.
+/// @param addressSpace [in] process-local address-space identity.
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+umf_result_t umfFixedMemoryProviderParamsSetAddressSpace(
+    umf_fixed_memory_provider_params_handle_t hParams,
+    const umf_memory_provider_address_space_t *addressSpace);
 
 /// @brief  Destroy parameters struct.
 /// @param  hParams [in] handle to the parameters of the Fixed Memory Provider.
