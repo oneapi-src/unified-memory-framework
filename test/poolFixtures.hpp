@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -510,7 +510,7 @@ TEST_P(umfMultiPoolTest, memoryTracking) {
     }
 
     for (auto &p : ptrs) {
-        umfFree(std::get<0>(p));
+        ASSERT_EQ(umfFree(std::get<0>(p)), UMF_RESULT_SUCCESS);
     }
 }
 

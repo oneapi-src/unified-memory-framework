@@ -182,6 +182,14 @@ static umf_result_t umfDefaultGetCacheLineSize(void *provider, size_t *size) {
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t
+umfDefaultGetAddressSpace(void *provider,
+                          umf_memory_provider_address_space_t *address_space) {
+    (void)provider;
+    (void)address_space;
+    return UMF_RESULT_ERROR_NOT_SUPPORTED;
+}
+
 void assignOpsExtDefaults(umf_memory_provider_ops_t *ops) {
     if (!ops->ext_purge_lazy) {
         ops->ext_purge_lazy = umfDefaultPurgeLazy;
@@ -210,6 +218,10 @@ void assignOpsExtDefaults(umf_memory_provider_ops_t *ops) {
     if (!ops->ext_get_allocation_properties_size) {
         ops->ext_get_allocation_properties_size =
             umfDefaultGetAllocationPropertiesSize;
+    }
+
+    if (!ops->get_address_space) {
+        ops->get_address_space = umfDefaultGetAddressSpace;
     }
 }
 
@@ -336,6 +348,13 @@ umf_result_t umfMemoryProviderCreate(const umf_memory_provider_ops_t *ops,
             memcpy(&compatible_ops, ops,
                    offsetof(umf_memory_provider_ops_t, get_cache_line_size));
             compatible_ops.get_cache_line_size = umfDefaultGetCacheLineSize;
+            compatible_ops.get_address_space = umfDefaultGetAddressSpace;
+        } else if (UMF_MINOR_VERSION(ops->version) == 2) {
+            LOG_INFO("Detected 1.2 version of Memory Provider ops, "
+                     "upgrading to current version");
+            memcpy(&compatible_ops, ops,
+                   offsetof(umf_memory_provider_ops_t, get_address_space));
+            compatible_ops.get_address_space = umfDefaultGetAddressSpace;
         } else {
             LOG_ERR("Unsupported Memory Provider ops version: %d",
                     ops->version);
@@ -502,6 +521,19 @@ umfMemoryProviderGetCacheLineSize(umf_memory_provider_handle_t hProvider,
 
     umf_result_t res =
         hProvider->ops.get_cache_line_size(hProvider->provider_priv, size);
+
+    checkErrorAndSetLastProvider(res, hProvider);
+    return res;
+}
+
+umf_result_t umfMemoryProviderGetAddressSpace(
+    umf_memory_provider_handle_t hProvider,
+    umf_memory_provider_address_space_t *address_space) {
+    UMF_CHECK((hProvider != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    UMF_CHECK((address_space != NULL), UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    umf_result_t res = hProvider->ops.get_address_space(
+        hProvider->provider_priv, address_space);
 
     checkErrorAndSetLastProvider(res, hProvider);
     return res;

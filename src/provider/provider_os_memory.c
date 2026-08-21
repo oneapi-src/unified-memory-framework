@@ -1401,6 +1401,16 @@ static umf_result_t os_get_cache_line_size(void *provider, size_t *size) {
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t
+os_get_address_space(void *provider,
+                     umf_memory_provider_address_space_t *address_space) {
+    (void)provider;
+    address_space->namespace_token = NULL;
+    address_space->context = 0;
+    address_space->device = 0;
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_memory_provider_ops_t UMF_OS_MEMORY_PROVIDER_OPS = {
     .version = UMF_PROVIDER_OPS_VERSION_CURRENT,
     .initialize = os_initialize,
@@ -1411,6 +1421,7 @@ static umf_memory_provider_ops_t UMF_OS_MEMORY_PROVIDER_OPS = {
     .get_recommended_page_size = os_get_recommended_page_size,
     .get_min_page_size = os_get_min_page_size,
     .get_cache_line_size = os_get_cache_line_size,
+    .get_address_space = os_get_address_space,
     .get_name = os_get_name,
     .ext_purge_lazy = os_purge_lazy,
     .ext_purge_force = os_purge_force,

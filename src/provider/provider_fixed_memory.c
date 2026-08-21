@@ -31,8 +31,9 @@
 static const char *DEFAULT_NAME = "FIXED";
 
 typedef struct fixed_memory_provider_t {
-    void *base;       // base address of memory
-    size_t size;      // size of the memory region
+    void *base;  // base address of memory
+    size_t size; // size of the memory region
+    umf_memory_provider_address_space_t address_space;
     coarse_t *coarse; // coarse library handle
     ctl_stats_t stats;
     char name[64];
@@ -42,6 +43,7 @@ typedef struct fixed_memory_provider_t {
 typedef struct umf_fixed_memory_provider_params_t {
     void *ptr;
     size_t size;
+    umf_memory_provider_address_space_t address_space;
     char name[64];
 } umf_fixed_memory_provider_params_t;
 
@@ -158,6 +160,7 @@ static umf_result_t fixed_initialize(const void *params, void **provider) {
 
     fixed_provider->base = in_params->ptr;
     fixed_provider->size = in_params->size;
+    fixed_provider->address_space = in_params->address_space;
 
     *provider = fixed_provider;
 
@@ -337,6 +340,14 @@ static umf_result_t fixed_get_cache_line_size(void *provider, size_t *size) {
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t
+fixed_get_address_space(void *provider,
+                        umf_memory_provider_address_space_t *address_space) {
+    fixed_memory_provider_t *fixed_provider = provider;
+    *address_space = fixed_provider->address_space;
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_memory_provider_ops_t UMF_FIXED_MEMORY_PROVIDER_OPS = {
     .version = UMF_PROVIDER_OPS_VERSION_CURRENT,
     .initialize = fixed_initialize,
@@ -358,6 +369,7 @@ static umf_memory_provider_ops_t UMF_FIXED_MEMORY_PROVIDER_OPS = {
     .ext_open_ipc_handle = NULL,
     .ext_close_ipc_handle = NULL,
     .ext_ctl = fixed_ctl,
+    .get_address_space = fixed_get_address_space,
 };
 
 const umf_memory_provider_ops_t *umfFixedMemoryProviderOps(void) {
@@ -382,6 +394,11 @@ umf_result_t umfFixedMemoryProviderParamsCreate(
 
     strncpy(params->name, DEFAULT_NAME, sizeof(params->name) - 1);
     params->name[sizeof(params->name) - 1] = '\0';
+    params->address_space = (umf_memory_provider_address_space_t){
+        .namespace_token = NULL,
+        .context = 0,
+        .device = 0,
+    };
 
     umf_result_t ret = umfFixedMemoryProviderParamsSetMemory(params, ptr, size);
     if (ret != UMF_RESULT_SUCCESS) {
@@ -423,6 +440,17 @@ umf_result_t umfFixedMemoryProviderParamsSetMemory(
 
     hParams->ptr = ptr;
     hParams->size = size;
+    return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t umfFixedMemoryProviderParamsSetAddressSpace(
+    umf_fixed_memory_provider_params_handle_t hParams,
+    const umf_memory_provider_address_space_t *addressSpace) {
+    if (hParams == NULL || addressSpace == NULL) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    hParams->address_space = *addressSpace;
     return UMF_RESULT_SUCCESS;
 }
 

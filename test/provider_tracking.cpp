@@ -71,10 +71,14 @@ struct TrackingProviderTest
     size_t memory_size = 0;
 };
 
+// Helper function to create a memory pool from an existing allocation.
+// If alternateAddressSpace is set to true, the pool will be created in a
+// non-default address space.
 static void
 createPoolFromAllocation(void *ptr0, size_t size1,
                          umf_memory_provider_handle_t *_providerFromPtr,
-                         umf_memory_pool_handle_t *_poolFromPtr) {
+                         umf_memory_pool_handle_t *_poolFromPtr,
+                         bool alternateAddressSpace = false) {
     umf_result_t umf_result;
 
     // Create provider parameters
@@ -82,6 +86,15 @@ createPoolFromAllocation(void *ptr0, size_t size1,
     umf_result = umfFixedMemoryProviderParamsCreate(ptr0, size1, &params);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_NE(params, nullptr);
+
+    static const char namespace_token = 0;
+    if (alternateAddressSpace) {
+        umf_memory_provider_address_space_t addressSpace = {&namespace_token, 0,
+                                                            0};
+        umf_result =
+            umfFixedMemoryProviderParamsSetAddressSpace(params, &addressSpace);
+        ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    }
 
     umf_memory_provider_handle_t provider1 = nullptr;
     umf_result = umfMemoryProviderCreate(umfFixedMemoryProviderOps(), params,
@@ -155,7 +168,7 @@ TEST_P(TrackingProviderTest, identical_address_ranges) {
 
     umf_memory_provider_handle_t provider1 = nullptr;
     umf_memory_pool_handle_t pool1 = nullptr;
-    createPoolFromAllocation(ptr0, size, &provider1, &pool1);
+    createPoolFromAllocation(ptr0, size, &provider1, &pool1, true);
 
     void *ptr1 = umfPoolMalloc(pool1, size);
     ASSERT_EQ(ptr1, ptr0);
@@ -192,7 +205,7 @@ TEST_P(TrackingProviderTest, identical_address_ranges_umf_free) {
 
     umf_memory_provider_handle_t provider1 = nullptr;
     umf_memory_pool_handle_t pool1 = nullptr;
-    createPoolFromAllocation(ptr0, size, &provider1, &pool1);
+    createPoolFromAllocation(ptr0, size, &provider1, &pool1, true);
 
     void *ptr1 = umfPoolMalloc(pool1, size);
     ASSERT_EQ(ptr1, ptr0);
@@ -293,7 +306,7 @@ TEST_P(TrackingProviderTest, partial_overlap) {
     size_t size1 = size0;
     umf_memory_provider_handle_t provider1 = nullptr;
     umf_memory_pool_handle_t pool1 = nullptr;
-    createPoolFromAllocation(overlap_begin, size1, &provider1, &pool1);
+    createPoolFromAllocation(overlap_begin, size1, &provider1, &pool1, true);
 
     void *ptr1 = umfPoolMalloc(pool1, size1);
     EXPECT_NE(ptr1, nullptr);
