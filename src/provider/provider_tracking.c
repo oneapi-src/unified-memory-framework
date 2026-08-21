@@ -43,6 +43,9 @@ struct umf_memory_tracker_t {
     // when one memory pool acts as a memory provider
     // for another memory pool (nested memory pooling).
     critnib *alloc_segments_map[MAX_LEVELS_OF_ALLOC_SEGMENT_MAP];
+    // Monotonic count used to skip ambiguity checks until a second tracked
+    // pool has been created.
+    uint64_t pools_created;
     utils_mutex_t splitMergeMutex;
     umf_ba_pool_t *ipc_info_allocator;
     critnib *ipc_segments_map;
@@ -581,6 +584,47 @@ umf_result_t umfMemoryTrackerGetAllocInfo(const void *ptr,
     critnib_release(TRACKER->alloc_segments_map[ref_level], ref_top_most_value);
 
     return UMF_RESULT_SUCCESS;
+}
+
+umf_result_t umfMemoryTrackerGetAllocInfoExactCount(const void *ptr,
+                                                    size_t *count) {
+    if (UNLIKELY(ptr == NULL || count == NULL)) {
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (UNLIKELY(TRACKER == NULL || TRACKER->alloc_segments_map[0] == NULL)) {
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
+
+    *count = 0;
+    for (int level = 0; level < MAX_LEVELS_OF_ALLOC_SEGMENT_MAP; ++level) {
+        uintptr_t key = 0;
+        tracker_alloc_info_t *value = NULL;
+        void *ref_value = NULL;
+        int found =
+            critnib_find(TRACKER->alloc_segments_map[level], (uintptr_t)ptr,
+                         FIND_LE, (void *)&key, (void **)&value, &ref_value);
+
+        if (found && value != NULL && key == (uintptr_t)ptr) {
+            ++*count;
+        }
+
+        if (ref_value) {
+            critnib_release(TRACKER->alloc_segments_map[level], ref_value);
+        }
+    }
+
+    return UMF_RESULT_SUCCESS;
+}
+
+int umfMemoryTrackerHasMultiplePools(void) {
+    if (UNLIKELY(TRACKER == NULL)) {
+        return 0;
+    }
+
+    uint64_t pools_created = 0;
+    utils_atomic_load_acquire_u64(&TRACKER->pools_created, &pools_created);
+    return pools_created > 1;
 }
 
 umf_result_t umfMemoryTrackerGetIpcInfo(const void *ptr,
@@ -1410,8 +1454,13 @@ umf_result_t umfTrackingMemoryProviderCreate(
               (void *)params.pool, (void *)params.ipcCache,
               (void *)params.hIpcMappedCache);
 
-    return umfMemoryProviderCreate(&UMF_TRACKING_MEMORY_PROVIDER_OPS, &params,
-                                   hTrackingProvider);
+    umf_result_t ret = umfMemoryProviderCreate(
+        &UMF_TRACKING_MEMORY_PROVIDER_OPS, &params, hTrackingProvider);
+    if (ret == UMF_RESULT_SUCCESS) {
+        utils_atomic_increment_u64(&params.hTracker->pools_created);
+    }
+
+    return ret;
 }
 
 void umfTrackingMemoryProviderGetUpstreamProvider(
