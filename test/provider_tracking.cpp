@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Intel Corporation
+// Copyright (C) 2025-2026 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -145,6 +145,75 @@ TEST_P(TrackingProviderTest, whole_size_success) {
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 }
 
+TEST_P(TrackingProviderTest, identical_address_ranges) {
+    // Two pools allocate identical address ranges. Freeing through pool0 must
+    // remove only its entry and leave the address associated with pool1.
+    umf_memory_pool_handle_t pool0 = pool.get();
+    size_t size = FIXED_BUFFER_SIZE - (2 * page_size);
+    void *ptr0 = umfPoolAlignedMalloc(pool0, size, utils_get_page_size());
+    ASSERT_NE(ptr0, nullptr);
+
+    umf_memory_provider_handle_t provider1 = nullptr;
+    umf_memory_pool_handle_t pool1 = nullptr;
+    createPoolFromAllocation(ptr0, size, &provider1, &pool1);
+
+    void *ptr1 = umfPoolMalloc(pool1, size);
+    ASSERT_EQ(ptr1, ptr0);
+
+    umf_memory_pool_handle_t found_pool = nullptr;
+    umf_result_t umf_result = umfPoolByPtr(ptr0, &found_pool);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(found_pool, pool1);
+
+    umf_result = umfPoolFree(pool0, ptr0);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    found_pool = nullptr;
+    umf_result = umfPoolByPtr(ptr1, &found_pool);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    EXPECT_EQ(found_pool, pool1);
+
+    umf_result = umfPoolFree(pool1, ptr1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umf_result = umfPoolDestroy(pool1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result = umfMemoryProviderDestroy(provider1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+}
+
+TEST_P(TrackingProviderTest, identical_address_ranges_umf_free) {
+    // Two pools return the same address. umfFree called for ptr0 is expected
+    // to leave the second allocation associated with pool1.
+    umf_memory_pool_handle_t pool0 = pool.get();
+    size_t size = FIXED_BUFFER_SIZE - (2 * page_size);
+    void *ptr0 = umfPoolAlignedMalloc(pool0, size, utils_get_page_size());
+    ASSERT_NE(ptr0, nullptr);
+
+    umf_memory_provider_handle_t provider1 = nullptr;
+    umf_memory_pool_handle_t pool1 = nullptr;
+    createPoolFromAllocation(ptr0, size, &provider1, &pool1);
+
+    void *ptr1 = umfPoolMalloc(pool1, size);
+    ASSERT_EQ(ptr1, ptr0);
+
+    umf_result_t umf_result = umfFree(ptr0);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umf_memory_pool_handle_t found_pool = nullptr;
+    umf_result = umfPoolByPtr(ptr1, &found_pool);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    EXPECT_EQ(found_pool, pool1);
+
+    umf_result = umfPoolFree(found_pool, ptr1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umf_result = umfPoolDestroy(pool1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result = umfMemoryProviderDestroy(provider1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+}
+
 TEST_P(TrackingProviderTest, half_size_success) {
     umf_result_t umf_result;
     size_t size0;
@@ -202,6 +271,42 @@ TEST_P(TrackingProviderTest, failure_exceeding_size) {
     ASSERT_EQ(ptr1, nullptr);
 
     umf_result = umfPoolDestroy(pool1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result = umfMemoryProviderDestroy(provider1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+
+    umf_result = umfPoolFree(pool0, ptr0);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+}
+
+TEST_P(TrackingProviderTest, partial_overlap) {
+    // The second range starts inside the first and extends beyond it. Since it
+    // belongs to another pool, tracking it should succeed and resolve pool1.
+    umf_memory_pool_handle_t pool0 = pool.get();
+    size_t size0 = 4 * page_size;
+    void *ptr0 = umfPoolAlignedMalloc(pool0, size0, utils_get_page_size());
+    ASSERT_NE(ptr0, nullptr);
+
+    void *overlap_begin = static_cast<char *>(ptr0) + page_size;
+    size_t size1 = size0;
+    umf_memory_provider_handle_t provider1 = nullptr;
+    umf_memory_pool_handle_t pool1 = nullptr;
+    createPoolFromAllocation(overlap_begin, size1, &provider1, &pool1);
+
+    void *ptr1 = umfPoolMalloc(pool1, size1);
+    EXPECT_NE(ptr1, nullptr);
+
+    if (ptr1 != nullptr) {
+        umf_memory_pool_handle_t found_pool = nullptr;
+        umf_result_t umf_result = umfPoolByPtr(ptr1, &found_pool);
+        ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+        EXPECT_EQ(found_pool, pool1);
+
+        umf_result = umfPoolFree(pool1, ptr1);
+        ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    }
+
+    umf_result_t umf_result = umfPoolDestroy(pool1);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     umf_result = umfMemoryProviderDestroy(provider1);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
