@@ -339,7 +339,7 @@ typedef struct umf_memory_provider_ops_t {
     // The following operations were added in ops version 1.3
 
     ///
-    /// @brief Retrieve the process-local context and device identities used by
+    /// @brief Retrieve the process-local address-space identity used by
     ///        allocations from the provider.
     /// @details The callback must return a NULL namespace token for the host
     ///          address space. Providers that share another address-space

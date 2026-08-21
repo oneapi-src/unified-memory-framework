@@ -63,7 +63,11 @@ typedef struct umf_memory_provider_address_space_t {
     /// namespace must return the same token. The token address must remain
     /// stable while providers using it exist.
     const void *namespace_token;
+    /// Process-local native context identifier within the namespace, or zero
+    /// when the namespace does not use contexts.
     uintptr_t context;
+    /// Process-local native device identifier within the context, or zero when
+    /// the namespace does not use devices.
     uintptr_t device;
 } umf_memory_provider_address_space_t;
 
