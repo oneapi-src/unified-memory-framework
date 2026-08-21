@@ -183,8 +183,8 @@ TEST_P(TrackingProviderTest, identical_address_ranges) {
 }
 
 TEST_P(TrackingProviderTest, identical_address_ranges_umf_free) {
-    // Two pools return the same address. umfFree called for ptr0 is expected
-    // to leave the second allocation associated with pool1.
+    // Two pools return the same address. umfFree cannot select one allocation,
+    // so it must report ambiguity and leave both allocations tracked.
     umf_memory_pool_handle_t pool0 = pool.get();
     size_t size = FIXED_BUFFER_SIZE - (2 * page_size);
     void *ptr0 = umfPoolAlignedMalloc(pool0, size, utils_get_page_size());
@@ -198,14 +198,16 @@ TEST_P(TrackingProviderTest, identical_address_ranges_umf_free) {
     ASSERT_EQ(ptr1, ptr0);
 
     umf_result_t umf_result = umfFree(ptr0);
-    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_AMBIGUOUS);
 
     umf_memory_pool_handle_t found_pool = nullptr;
     umf_result = umfPoolByPtr(ptr1, &found_pool);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
-    EXPECT_EQ(found_pool, pool1);
+    ASSERT_EQ(found_pool, pool1);
 
-    umf_result = umfPoolFree(found_pool, ptr1);
+    umf_result = umfPoolFree(pool1, ptr1);
+    ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+    umf_result = umfPoolFree(pool0, ptr0);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 
     umf_result = umfPoolDestroy(pool1);

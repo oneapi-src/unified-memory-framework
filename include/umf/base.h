@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2025 Intel Corporation
+ * Copyright (C) 2023-2026 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -50,6 +50,8 @@ typedef enum umf_result_t {
     UMF_RESULT_ERROR_OUT_OF_RESOURCES = 8, ///< Out of internal resources
     UMF_RESULT_ERROR_INVALID_CTL_PATH =
         9, ///< CTL path is not supported or not found
+    UMF_RESULT_ERROR_AMBIGUOUS =
+        10, ///< Multiple allocations match the supplied argument
     UMF_RESULT_ERROR_UNKNOWN = 0x7ffffffe ///< Unknown error
 } umf_result_t;
 

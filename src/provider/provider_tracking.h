@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2025 Intel Corporation
+ * Copyright (C) 2023-2026 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -48,6 +48,11 @@ typedef struct tracker_alloc_info_t {
 
 umf_result_t umfMemoryTrackerGetAllocInfo(const void *ptr,
                                           tracker_alloc_info_t **info);
+
+umf_result_t umfMemoryTrackerGetAllocInfoExactCount(const void *ptr,
+                                                    size_t *count);
+
+int umfMemoryTrackerHasMultiplePools(void);
 
 typedef struct umf_ipc_info_t {
     umf_memory_properties_handle_t props;
