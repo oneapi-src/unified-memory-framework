@@ -126,8 +126,9 @@ umf_result_t umfPoolFree(umf_memory_pool_handle_t hPool, void *ptr);
 /// @brief Frees the memory space pointed by ptr if it belongs to UMF pool, does nothing otherwise.
 /// @param ptr pointer to the allocated memory
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
-///         UMF_RESULT_ERROR_AMBIGUOUS if multiple active allocations have the
-///         same address. Use umfPoolFree() to select the allocation's pool.
+///         UMF_RESULT_ERROR_AMBIGUOUS if ptr matches allocations in multiple
+///         address spaces. In this case, no allocation is freed or modified.
+///         Use umfPoolFree() to select the allocation's pool.
 ///         Whether any status other than UMF_RESULT_SUCCESS can be returned
 ///         depends on the memory provider used by the pool.
 ///
@@ -156,10 +157,15 @@ umf_result_t umfPoolGetLastAllocationError(umf_memory_pool_handle_t hPool);
 ///
 /// @brief Retrieve memory pool associated with a given ptr. Only memory allocated
 ///        with the usage of a memory provider is being tracked.
+/// @details Within one address space, the most nested allocation is selected.
+///          Matches in multiple address spaces are ambiguous, including for
+///          pointers inside allocations.
 /// @param ptr pointer to memory belonging to a memory pool
 /// @param pool [out] handle to the memory pool that contains ptr
 /// @return UMF_RESULT_SUCCESS on success
 ///         UMF_RESULT_ERROR_INVALID_ARGUMENT if pool is NULL, or ptr do not belongs to any pool.
+///         UMF_RESULT_ERROR_AMBIGUOUS if ptr matches allocations in multiple
+///         address spaces.
 ///
 umf_result_t umfPoolByPtr(const void *ptr, umf_memory_pool_handle_t *pool);
 
