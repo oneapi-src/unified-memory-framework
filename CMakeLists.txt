@@ -354,8 +354,9 @@ if(UMF_LINK_HWLOC_STATICALLY)
             GIT_REPOSITORY ${UMF_HWLOC_REPO}
             GIT_TAG ${UMF_HWLOC_TAG}
             UPDATE_DISCONNECTED TRUE
-            PATCH_COMMAND git apply
-                          ${PROJECT_SOURCE_DIR}/cmake/fix_coverity_issues.patch
+            PATCH_COMMAND
+                sh -c
+                "git apply --reverse --check ${PROJECT_SOURCE_DIR}/cmake/fix_coverity_issues.patch || git apply ${PROJECT_SOURCE_DIR}/cmake/fix_coverity_issues.patch"
             CONFIGURE_COMMAND ${CMAKE_COMMAND} -E env "CC=${UMF_HWLOC_CC}"
                               "CXX=${UMF_HWLOC_CXX}" <SOURCE_DIR>/autogen.sh
             COMMAND
