@@ -165,7 +165,7 @@ jobs:
       if: steps.cache.outputs.cache-hit != 'true'
       uses: lukka/run-vcpkg@b1a0dd252f06b9e25b3c022a9a03bd7a427fb6a2 # v11.6
       with:
-        vcpkgGitCommitId: ea2a964f9303270322cf3f2d51c265ba146c422d # 1.04.2025
+        vcpkgGitCommitId: 9e593bb18ea69cc5095e012465dcd675a822ed0d # 29.07.2026
         vcpkgDirectory: ${{github.workspace}}/vcpkg
         vcpkgJsonGlob: '**/vcpkg.json'
 
