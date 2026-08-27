@@ -208,6 +208,9 @@ jobs:
       run: cmake --install ${{github.workspace}}/latest_version/build --config Debug
       
     - name: Configure "tag" UMF build
+      # NOTE: we need to disable warning 4068 (unknown pragma) in the "tag" version
+      # as the fix was implemented in the newer version. Re-enable warning 4068
+      # after updating the compatibility tag to a version newer than v1.0.1.
       working-directory: ${{github.workspace}}/tag_version
       run: >
         cmake
@@ -215,6 +218,8 @@ jobs:
         -DCMAKE_PREFIX_PATH="${{env.VCPKG_PATH}}"
         -DCMAKE_C_COMPILER=cl
         -DCMAKE_CXX_COMPILER=cl
+        -DCMAKE_C_FLAGS="/wd4068"
+        -DCMAKE_CXX_FLAGS="/wd4068 /EHsc"
         -DUMF_BUILD_SHARED_LIBRARY=ON
         -DUMF_BUILD_TESTS=ON
         -DUMF_BUILD_EXAMPLES=ON
