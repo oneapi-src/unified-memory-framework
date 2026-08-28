@@ -992,26 +992,6 @@ static umf_result_t ze_memory_provider_get_min_page_size(void *provider,
     return UMF_RESULT_SUCCESS;
 }
 
-static umf_result_t ze_memory_provider_purge_lazy(void *provider, void *ptr,
-                                                  size_t size) {
-    (void)provider;
-    (void)ptr;
-    (void)size;
-
-    // TODO not supported yet
-    return UMF_RESULT_ERROR_NOT_SUPPORTED;
-}
-
-static umf_result_t ze_memory_provider_purge_force(void *provider, void *ptr,
-                                                   size_t size) {
-    (void)provider;
-    (void)ptr;
-    (void)size;
-
-    // TODO not supported yet
-    return UMF_RESULT_ERROR_NOT_SUPPORTED;
-}
-
 static umf_result_t
 ze_memory_provider_get_recommended_page_size(void *provider, size_t size,
                                              size_t *pageSize) {
@@ -1031,32 +1011,6 @@ static umf_result_t ze_memory_provider_get_name(void *provider,
     ze_memory_provider_t *ze_provider = provider;
     *name = ze_provider->name;
     return UMF_RESULT_SUCCESS;
-}
-
-static umf_result_t ze_memory_provider_allocation_merge(void *hProvider,
-                                                        void *lowPtr,
-                                                        void *highPtr,
-                                                        size_t totalSize) {
-    (void)hProvider;
-    (void)lowPtr;
-    (void)highPtr;
-    (void)totalSize;
-
-    // TODO not supported yet
-    return UMF_RESULT_ERROR_NOT_SUPPORTED;
-}
-
-static umf_result_t ze_memory_provider_allocation_split(void *provider,
-                                                        void *ptr,
-                                                        size_t totalSize,
-                                                        size_t firstSize) {
-    (void)provider;
-    (void)ptr;
-    (void)totalSize;
-    (void)firstSize;
-
-    // TODO not supported yet
-    return UMF_RESULT_ERROR_NOT_SUPPORTED;
 }
 
 typedef struct ze_ipc_data_t {
@@ -1473,10 +1427,10 @@ static umf_memory_provider_ops_t UMF_LEVEL_ZERO_MEMORY_PROVIDER_OPS = {
     .get_min_page_size = ze_memory_provider_get_min_page_size,
     .get_cache_line_size = ze_memory_provider_get_cache_line_size,
     .get_name = ze_memory_provider_get_name,
-    .ext_purge_lazy = ze_memory_provider_purge_lazy,
-    .ext_purge_force = ze_memory_provider_purge_force,
-    .ext_allocation_merge = ze_memory_provider_allocation_merge,
-    .ext_allocation_split = ze_memory_provider_allocation_split,
+    .ext_purge_lazy = NULL,
+    .ext_purge_force = NULL,
+    .ext_allocation_merge = NULL,
+    .ext_allocation_split = NULL,
     .ext_get_ipc_handle_size = ze_memory_provider_get_ipc_handle_size,
     .ext_get_ipc_handle = ze_memory_provider_get_ipc_handle,
     .ext_put_ipc_handle = ze_memory_provider_put_ipc_handle,

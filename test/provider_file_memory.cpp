@@ -624,3 +624,65 @@ TEST_P(FileProviderParamsShared, IPC_file_not_exist) {
     umf_result = umfMemoryProviderFree(provider.get(), ptr, size);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
 }
+
+TEST_F(test, create_NULL_params) {
+    umf_memory_provider_handle_t hProvider = nullptr;
+    auto ret = umfMemoryProviderCreate(umfFileMemoryProviderOps(), nullptr,
+                                       &hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    ASSERT_EQ(hProvider, nullptr);
+}
+
+TEST_F(test, params_NULL_name) {
+    umf_file_memory_provider_params_handle_t params = nullptr;
+    umf_result_t ret = umfFileMemoryProviderParamsCreate(FILE_PATH, &params);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(params, nullptr);
+
+    ret = umfFileMemoryProviderParamsSetName(params, nullptr);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    ret = umfFileMemoryProviderParamsDestroy(params);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfFileMemoryProviderParamsSetName(nullptr, "test");
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, get_NULL_name) {
+    umf_file_memory_provider_params_handle_t params = nullptr;
+    umf_result_t ret = umfFileMemoryProviderParamsCreate(FILE_PATH, &params);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(params, nullptr);
+
+    umf_memory_provider_handle_t hProvider = nullptr;
+    ret =
+        umfMemoryProviderCreate(umfFileMemoryProviderOps(), params, &hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(hProvider, nullptr);
+
+    ret = umfMemoryProviderGetName(hProvider, NULL);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    ret = umfMemoryProviderDestroy(hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfFileMemoryProviderParamsDestroy(params);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+}
+
+TEST_F(test, params_protection_flag) {
+    umf_file_memory_provider_params_handle_t params = nullptr;
+    umf_result_t ret = umfFileMemoryProviderParamsCreate(FILE_PATH, &params);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(params, nullptr);
+
+    // test all valid combinations
+    for (unsigned protection = UMF_PROTECTION_NONE;
+         protection < (UMF_PROTECTION_MAX - 1) << 1; ++protection) {
+        ret = umfFileMemoryProviderParamsSetProtection(params, protection);
+        ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    }
+
+    umfFileMemoryProviderParamsDestroy(params);
+}
