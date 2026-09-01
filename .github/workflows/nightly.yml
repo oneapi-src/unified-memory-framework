@@ -1,11 +1,11 @@
 # Various non-standard tests, requiring e.g. longer run
 name: Nightly
 
-# This job is run at 04:00 UTC every day or on demand.
 on:
-  workflow_dispatch:
-  schedule:
-    - cron: '0 4 * * *'
+  push:
+    branches-ignore:
+      - 'dependabot/**'
+  pull_request:
 
 permissions:
   contents: read
