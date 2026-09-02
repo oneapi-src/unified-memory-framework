@@ -88,6 +88,11 @@ typedef struct provider_base_t {
         *size = 64;
         return UMF_RESULT_SUCCESS;
     }
+    umf_result_t
+    get_address_space([[maybe_unused]] umf_memory_provider_address_space_t
+                          *address_space) noexcept {
+        return UMF_RESULT_ERROR_NOT_SUPPORTED;
+    }
     umf_result_t get_name(const char **name) noexcept {
         *name = "base";
         return UMF_RESULT_SUCCESS;

@@ -140,6 +140,22 @@ umfMemoryProviderGetCacheLineSize(umf_memory_provider_handle_t hProvider,
                                   size_t *size);
 
 ///
+/// @brief Retrieve the process-local address-space identity used by allocations
+///        from the provider.
+/// @details The returned namespace token is NULL for the host address space.
+///          Providers that share another address-space namespace must return
+///          the same stable non-NULL token.
+/// @param hProvider handle to the memory provider
+/// @param address_space [out] pointer to the address-space identity
+/// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+///         UMF_RESULT_ERROR_NOT_SUPPORTED if the provider cannot determine its
+///         address space.
+///
+umf_result_t umfMemoryProviderGetAddressSpace(
+    umf_memory_provider_handle_t hProvider,
+    umf_memory_provider_address_space_t *address_space);
+
+///
 /// @brief Discard physical pages within the virtual memory mapping associated at the given addr
 ///        and \p size. This call is asynchronous and may delay purging the pages indefinitely.
 /// @param hProvider handle to the memory provider

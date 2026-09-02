@@ -21,7 +21,7 @@ extern "C" {
 /// @brief Version of the Memory Provider ops structure.
 /// NOTE: This is equal to the latest UMF version, in which the ops structure
 /// has been modified.
-#define UMF_PROVIDER_OPS_VERSION_CURRENT UMF_MAKE_VERSION(1, 2)
+#define UMF_PROVIDER_OPS_VERSION_CURRENT UMF_MAKE_VERSION(1, 3)
 
 ///
 /// @brief This structure comprises function pointers used by corresponding
@@ -335,6 +335,23 @@ typedef struct umf_memory_provider_ops_t {
     /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
     ///
     umf_result_t (*get_cache_line_size)(void *provider, size_t *size);
+
+    // The following operations were added in ops version 1.3
+
+    ///
+    /// @brief Retrieve the process-local address-space identity used by
+    ///        allocations from the provider.
+    /// @details The callback must return a NULL namespace token for the host
+    ///          address space. Providers that share another address-space
+    ///          namespace must return the same stable non-NULL token.
+    /// @param provider pointer to the memory provider
+    /// @param address_space [out] pointer to the address-space identity
+    /// @return UMF_RESULT_SUCCESS on success or appropriate error code on
+    ///         failure. UMF_RESULT_ERROR_NOT_SUPPORTED if the provider cannot
+    ///         determine its address space.
+    ///
+    umf_result_t (*get_address_space)(
+        void *provider, umf_memory_provider_address_space_t *address_space);
 
 } umf_memory_provider_ops_t;
 

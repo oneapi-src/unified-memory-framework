@@ -8,12 +8,84 @@
 #include <unordered_map>
 #include <variant>
 
+#include <umf/providers/provider_os_memory.h>
+
 #include "memory_properties_internal.h"
 #include "provider.hpp"
 #include "provider_null.h"
 #include "test_helpers.h"
 
 using umf_test::test;
+
+static const char TEST_ADDRESS_SPACE_NAMESPACE = 0;
+static uintptr_t TEST_ADDRESS_SPACE_CONTEXT = 42;
+static uintptr_t TEST_ADDRESS_SPACE_DEVICE = 7;
+
+static umf_result_t
+getTestAddressSpace(void *provider,
+                    umf_memory_provider_address_space_t *address_space) {
+    (void)provider;
+    address_space->namespace_token = &TEST_ADDRESS_SPACE_NAMESPACE;
+    address_space->context = TEST_ADDRESS_SPACE_CONTEXT;
+    address_space->device = TEST_ADDRESS_SPACE_DEVICE;
+    return UMF_RESULT_SUCCESS;
+}
+
+TEST_F(test, memoryProviderGetAddressSpace) {
+    umf_memory_provider_ops_t provider_ops = UMF_NULL_PROVIDER_OPS;
+    provider_ops.get_address_space = getTestAddressSpace;
+    auto provider = umf_test::wrapProviderUnique(
+        umf_test::createProviderChecked(&provider_ops, nullptr));
+
+    umf_memory_provider_address_space_t address_space = {};
+    EXPECT_EQ(umfMemoryProviderGetAddressSpace(provider.get(), &address_space),
+              UMF_RESULT_SUCCESS);
+    EXPECT_EQ(address_space.namespace_token, &TEST_ADDRESS_SPACE_NAMESPACE);
+    EXPECT_EQ(address_space.context, TEST_ADDRESS_SPACE_CONTEXT);
+    EXPECT_EQ(address_space.device, TEST_ADDRESS_SPACE_DEVICE);
+}
+
+TEST_F(test, memoryProviderGetAddressSpaceNotSupported) {
+    auto provider = umf_test::wrapProviderUnique(nullProviderCreate());
+    umf_memory_provider_address_space_t address_space = {};
+
+    EXPECT_EQ(umfMemoryProviderGetAddressSpace(provider.get(), &address_space),
+              UMF_RESULT_ERROR_NOT_SUPPORTED);
+    EXPECT_EQ(umfMemoryProviderGetAddressSpace(nullptr, &address_space),
+              UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    EXPECT_EQ(umfMemoryProviderGetAddressSpace(provider.get(), nullptr),
+              UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, memoryProviderGetAddressSpaceHost) {
+    umf_os_memory_provider_params_handle_t params = nullptr;
+    ASSERT_EQ(umfOsMemoryProviderParamsCreate(&params), UMF_RESULT_SUCCESS);
+
+    umf_memory_provider_handle_t raw_provider = nullptr;
+    ASSERT_EQ(umfMemoryProviderCreate(umfOsMemoryProviderOps(), params,
+                                      &raw_provider),
+              UMF_RESULT_SUCCESS);
+    auto provider = umf_test::wrapProviderUnique(raw_provider);
+    ASSERT_EQ(umfOsMemoryProviderParamsDestroy(params), UMF_RESULT_SUCCESS);
+
+    umf_memory_provider_address_space_t address_space = {};
+    EXPECT_EQ(umfMemoryProviderGetAddressSpace(provider.get(), &address_space),
+              UMF_RESULT_SUCCESS);
+    EXPECT_EQ(address_space.namespace_token, nullptr);
+    EXPECT_EQ(address_space.context, 0U);
+    EXPECT_EQ(address_space.device, 0U);
+}
+
+TEST_F(test, memoryProviderGetAddressSpaceOps12Compatibility) {
+    umf_memory_provider_ops_t provider_ops = UMF_NULL_PROVIDER_OPS;
+    provider_ops.version = UMF_MAKE_VERSION(1, 2);
+    auto provider = umf_test::wrapProviderUnique(
+        umf_test::createProviderChecked(&provider_ops, nullptr));
+
+    umf_memory_provider_address_space_t address_space = {};
+    EXPECT_EQ(umfMemoryProviderGetAddressSpace(provider.get(), &address_space),
+              UMF_RESULT_ERROR_NOT_SUPPORTED);
+}
 
 TEST_F(test, memoryProviderTrace) {
     using calls_type = std::unordered_map<std::string, unsigned int>;

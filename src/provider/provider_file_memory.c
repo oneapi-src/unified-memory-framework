@@ -708,6 +708,16 @@ static umf_result_t file_get_name(void *provider, const char **name) {
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t
+file_get_address_space(void *provider,
+                       umf_memory_provider_address_space_t *address_space) {
+    (void)provider;
+    address_space->namespace_token = NULL;
+    address_space->context = 0;
+    address_space->device = 0;
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_result_t file_allocation_split(void *provider, void *ptr,
                                           size_t totalSize, size_t firstSize) {
     file_memory_provider_t *file_provider = (file_memory_provider_t *)provider;
@@ -965,6 +975,7 @@ static umf_memory_provider_ops_t UMF_FILE_MEMORY_PROVIDER_OPS = {
     .get_recommended_page_size = file_get_recommended_page_size,
     .get_min_page_size = file_get_min_page_size,
     .get_cache_line_size = file_get_cache_line_size,
+    .get_address_space = file_get_address_space,
     .get_name = file_get_name,
     .ext_purge_lazy = file_purge_lazy,
     .ext_purge_force = file_purge_force,

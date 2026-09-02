@@ -1,4 +1,4 @@
-// Copyright (C) 2024-2025 Intel Corporation
+// Copyright (C) 2024-2026 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -509,6 +509,36 @@ TEST_F(test, params_invalid_set_memory) {
 
     umf_result = umfFixedMemoryProviderParamsDestroy(valid_params);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+}
+
+TEST_F(test, params_set_host_address_space) {
+    constexpr size_t memory_size = 100;
+    char memory_buffer[memory_size];
+    umf_fixed_memory_provider_params_handle_t params = nullptr;
+    ASSERT_EQ(
+        umfFixedMemoryProviderParamsCreate(memory_buffer, memory_size, &params),
+        UMF_RESULT_SUCCESS);
+
+    umf_memory_provider_address_space_t host_address_space = {};
+    ASSERT_EQ(umfFixedMemoryProviderParamsSetAddressSpace(params,
+                                                          &host_address_space),
+              UMF_RESULT_SUCCESS);
+
+    umf_memory_provider_handle_t raw_provider = nullptr;
+    ASSERT_EQ(umfMemoryProviderCreate(umfFixedMemoryProviderOps(), params,
+                                      &raw_provider),
+              UMF_RESULT_SUCCESS);
+    auto provider = umf_test::wrapProviderUnique(raw_provider);
+    ASSERT_EQ(umfFixedMemoryProviderParamsDestroy(params), UMF_RESULT_SUCCESS);
+
+    umf_memory_provider_address_space_t address_space = {};
+    ASSERT_EQ(umfMemoryProviderGetAddressSpace(provider.get(), &address_space),
+              UMF_RESULT_SUCCESS);
+
+    // By definition, the host address space has a NULL namespace token
+    EXPECT_EQ(address_space.namespace_token, nullptr);
+    EXPECT_EQ(address_space.context, 0U);
+    EXPECT_EQ(address_space.device, 0U);
 }
 
 // Split / merge tests

@@ -145,7 +145,44 @@ Custom memory provider
 You can find the full examples code in the `examples/custom_file_provider/custom_file_provider.c`_ file
 in the UMF repository.
 
-TODO
+Custom providers using operations version 1.3 or newer should implement the
+``get_address_space`` callback. The callback returns the process-local address
+space used by every allocation from that provider. UMF uses this information
+to distinguish allocations that have the same numerical pointer value but
+belong to different memory domains.
+
+The ``namespace_token`` field is NULL for the host address space. For other
+address spaces, UMF compares tokens by pointer value and never dereferences
+them. Use the same stable token for providers whose pointers share an
+address-space namespace, and different tokens for independent namespaces. The
+token must remain at a stable address for as long as any provider using it
+exists. Other implementations can use the address of a private static object,
+for example::
+
+   static const char CUSTOM_ADDRESS_SPACE_NAMESPACE;
+
+   static umf_result_t custom_get_address_space(
+       void *provider,
+       umf_memory_provider_address_space_t *address_space) {
+       custom_provider_t *custom = provider;
+
+       address_space->namespace_token = &CUSTOM_ADDRESS_SPACE_NAMESPACE;
+       address_space->context = (uintptr_t)custom->context;
+       address_space->device = (uintptr_t)custom->device;
+       return UMF_RESULT_SUCCESS;
+   }
+
+   static umf_memory_provider_ops_t custom_ops = {
+       .version = UMF_PROVIDER_OPS_VERSION_CURRENT,
+       /* Other required callbacks. */
+       .get_address_space = custom_get_address_space,
+   };
+
+Set ``context`` or ``device`` to zero when that part of the identity does not
+apply. Providers that cannot determine their address space can return
+``UMF_RESULT_ERROR_NOT_SUPPORTED``; tracking then treats each provider instance
+as a separate address space, so providers that intentionally share an address
+space should return an explicit common identity instead.
 
 CTL example
 ==============================================================================

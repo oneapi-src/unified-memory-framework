@@ -105,6 +105,7 @@ template <typename T> constexpr umf_memory_provider_ops_t providerOpsBase() {
     UMF_ASSIGN_OP(ops, T, get_recommended_page_size, UMF_RESULT_ERROR_UNKNOWN);
     UMF_ASSIGN_OP(ops, T, get_min_page_size, UMF_RESULT_ERROR_UNKNOWN);
     UMF_ASSIGN_OP(ops, T, get_cache_line_size, UMF_RESULT_ERROR_UNKNOWN);
+    UMF_ASSIGN_OP(ops, T, get_address_space, UMF_RESULT_ERROR_UNKNOWN);
     UMF_ASSIGN_OP(ops, T, get_name, UMF_RESULT_ERROR_UNKNOWN);
     UMF_ASSIGN_OP(ops, T, ext_purge_lazy, UMF_RESULT_ERROR_UNKNOWN);
     UMF_ASSIGN_OP(ops, T, ext_purge_force, UMF_RESULT_ERROR_UNKNOWN);

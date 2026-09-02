@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Intel Corporation
+// Copyright (C) 2025-2026 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -46,6 +46,16 @@ struct provider_from_pool : public umf_test::provider_base_t {
     umf_result_t get_name(const char **name) noexcept {
         *name = "provider_from_pool";
         return UMF_RESULT_SUCCESS;
+    }
+
+    umf_result_t get_address_space(
+        umf_memory_provider_address_space_t *address_space) noexcept {
+        umf_memory_provider_handle_t provider = nullptr;
+        umf_result_t ret = umfPoolGetMemoryProvider(pool, &provider);
+        if (ret != UMF_RESULT_SUCCESS) {
+            return ret;
+        }
+        return umfMemoryProviderGetAddressSpace(provider, address_space);
     }
 
     virtual ~provider_from_pool() {

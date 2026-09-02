@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2025 Intel Corporation
+ * Copyright (C) 2023-2026 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -126,6 +126,8 @@ umf_result_t umfPoolFree(umf_memory_pool_handle_t hPool, void *ptr);
 /// @brief Frees the memory space pointed by ptr if it belongs to UMF pool, does nothing otherwise.
 /// @param ptr pointer to the allocated memory
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+///         UMF_RESULT_ERROR_AMBIGUOUS if multiple active allocations have the
+///         same address. Use umfPoolFree() to select the allocation's pool.
 ///         Whether any status other than UMF_RESULT_SUCCESS can be returned
 ///         depends on the memory provider used by the pool.
 ///
