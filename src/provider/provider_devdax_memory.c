@@ -408,6 +408,16 @@ static umf_result_t devdax_get_name(void *provider, const char **name) {
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t
+devdax_get_address_space(void *provider,
+                         umf_memory_provider_address_space_t *address_space) {
+    (void)provider;
+    address_space->namespace_token = NULL;
+    address_space->context = 0;
+    address_space->device = 0;
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_result_t devdax_allocation_split(void *provider, void *ptr,
                                             size_t totalSize,
                                             size_t firstSize) {
@@ -606,6 +616,7 @@ static umf_memory_provider_ops_t UMF_DEVDAX_MEMORY_PROVIDER_OPS = {
     .get_recommended_page_size = devdax_get_recommended_page_size,
     .get_min_page_size = devdax_get_min_page_size,
     .get_cache_line_size = devdax_get_cache_line_size,
+    .get_address_space = devdax_get_address_space,
     .get_name = devdax_get_name,
     .ext_purge_lazy = devdax_purge_lazy,
     .ext_purge_force = devdax_purge_force,

@@ -1424,7 +1424,8 @@ umf_result_t disjoint_pool_malloc_usable_size(void *pool, const void *ptr,
         }
 
         umf_memory_properties_handle_t props = NULL;
-        umf_result_t umf_result = umfGetMemoryPropertiesHandle(ptr, &props);
+        umf_result_t umf_result = umfTrackingMemoryProviderGetMemoryProperties(
+            disjoint_pool->provider, ptr, &props);
         if (umf_result != UMF_RESULT_SUCCESS) {
             return umf_result;
         }
@@ -1472,7 +1473,8 @@ umf_result_t disjoint_pool_free(void *pool, void *ptr) {
         }
 
         umf_memory_properties_handle_t props = NULL;
-        umf_result_t ret = umfGetMemoryPropertiesHandle(ptr, &props);
+        umf_result_t ret = umfTrackingMemoryProviderGetMemoryProperties(
+            disjoint_pool->provider, ptr, &props);
         if (ret != UMF_RESULT_SUCCESS) {
             TLS_last_allocation_error = ret;
             LOG_ERR("failed to get allocation info from the memory tracker");

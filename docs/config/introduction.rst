@@ -78,6 +78,21 @@ would be a NUMA node mask for the OS memory provider, file path for the
 file-backed memory provider, etc. After creation, the memory provider context
 can't be changed.
 
+Address spaces
+--------------
+
+Numerically identical pointer values can refer to different memory when they
+come from different address spaces, for example from different GPU contexts.
+Memory providers identify the address space used by their allocations with a
+process-local tuple consisting of a namespace token, context, and device. UMF
+uses this identity when tracking allocations so that overlapping virtual
+address ranges from independent memory domains do not conflict.
+
+The namespace token distinguishes address-space implementations. Providers
+that return pointers in the process host address space use a NULL namespace
+token with zero context and device identifiers. GPU and custom providers can
+use their own namespace token and native context and device identifiers.
+
 Pool Allocators
 ===============
 

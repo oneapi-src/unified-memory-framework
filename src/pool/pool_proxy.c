@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2024-2025 Intel Corporation
+ * Copyright (C) 2024-2026 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -101,7 +101,8 @@ static umf_result_t proxy_free(void *pool, void *ptr) {
 
     if (ptr) {
         umf_memory_properties_handle_t props = NULL;
-        umf_result_t umf_result = umfGetMemoryPropertiesHandle(ptr, &props);
+        umf_result_t umf_result = umfTrackingMemoryProviderGetMemoryProperties(
+            hPool->hProvider, ptr, &props);
 
         if (umf_result != UMF_RESULT_SUCCESS) {
             TLS_last_allocation_error = umf_result;

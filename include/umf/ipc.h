@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2025 Intel Corporation
+ * Copyright (C) 2023-2026 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -35,6 +35,8 @@ umf_result_t umfPoolGetIPCHandleSize(umf_memory_pool_handle_t hPool,
 /// @param ipcHandle [out] returned IPC handle.
 /// @param size [out] size of IPC handle in bytes.
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+///         UMF_RESULT_ERROR_AMBIGUOUS if ptr matches allocations in multiple
+///         address spaces, including pointers inside allocations.
 umf_result_t umfGetIPCHandle(const void *ptr, umf_ipc_handle_t *ipcHandle,
                              size_t *size);
 

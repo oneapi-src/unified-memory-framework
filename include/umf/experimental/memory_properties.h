@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2025 Intel Corporation
+ * Copyright (C) 2025-2026 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -20,9 +20,12 @@ extern "C" {
 /// \details
 ///     The handle returned by this function is valid until the memory pointed
 ///     to by the pointer is freed.
+///     Within one address space, the most nested allocation is selected.
 /// @param ptr pointer to the allocated memory
 /// @param props_handle [out] pointer to the memory properties handle
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure
+///         UMF_RESULT_ERROR_AMBIGUOUS if ptr matches allocations in multiple
+///         address spaces, including pointers inside allocations.
 umf_result_t
 umfGetMemoryPropertiesHandle(const void *ptr,
                              umf_memory_properties_handle_t *props_handle);

@@ -98,6 +98,8 @@ typedef struct ze_memory_provider_t {
     ctl_stats_t stats;
 } ze_memory_provider_t;
 
+static const char LEVEL_ZERO_ADDRESS_SPACE_NAMESPACE = 0;
+
 typedef struct ze_ops_t {
 #if defined(ZE_CACHELINE_SIZE_EXT_NAME)
     ze_result_t (*zeDriverGet)(uint32_t *, ze_driver_handle_t *);
@@ -1033,6 +1035,21 @@ static umf_result_t ze_memory_provider_get_name(void *provider,
     return UMF_RESULT_SUCCESS;
 }
 
+static umf_result_t ze_memory_provider_get_address_space(
+    void *provider, umf_memory_provider_address_space_t *address_space) {
+    ze_memory_provider_t *ze_provider = provider;
+    if (ze_provider->memory_type == ZE_MEMORY_TYPE_HOST) {
+        address_space->namespace_token = NULL;
+        address_space->context = 0;
+        address_space->device = 0;
+    } else {
+        address_space->namespace_token = &LEVEL_ZERO_ADDRESS_SPACE_NAMESPACE;
+        address_space->context = (uintptr_t)ze_provider->context;
+        address_space->device = (uintptr_t)ze_provider->device;
+    }
+    return UMF_RESULT_SUCCESS;
+}
+
 static umf_result_t ze_memory_provider_allocation_merge(void *hProvider,
                                                         void *lowPtr,
                                                         void *highPtr,
@@ -1472,6 +1489,7 @@ static umf_memory_provider_ops_t UMF_LEVEL_ZERO_MEMORY_PROVIDER_OPS = {
     .get_recommended_page_size = ze_memory_provider_get_recommended_page_size,
     .get_min_page_size = ze_memory_provider_get_min_page_size,
     .get_cache_line_size = ze_memory_provider_get_cache_line_size,
+    .get_address_space = ze_memory_provider_get_address_space,
     .get_name = ze_memory_provider_get_name,
     .ext_purge_lazy = ze_memory_provider_purge_lazy,
     .ext_purge_force = ze_memory_provider_purge_force,

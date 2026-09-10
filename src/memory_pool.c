@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2025 Intel Corporation
+ * Copyright (C) 2023-2026 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -542,8 +542,22 @@ umf_result_t umfPoolDestroy(umf_memory_pool_handle_t hPool) {
 }
 
 umf_result_t umfFree(void *ptr) {
+    umf_result_t ret = UMF_RESULT_SUCCESS;
+    if (umfMemoryTrackerHasMultiplePools()) {
+        size_t exact_match_count = 0;
+        ret = umfMemoryTrackerGetAllocInfoExactCount(ptr, &exact_match_count);
+        if (ret != UMF_RESULT_SUCCESS) {
+            return ret;
+        }
+        if (exact_match_count > 1) {
+            LOG_ERR("cannot free ambiguous pointer %p matching %zu allocations",
+                    ptr, exact_match_count);
+            return UMF_RESULT_ERROR_AMBIGUOUS;
+        }
+    }
+
     umf_memory_pool_handle_t hPool = NULL;
-    umf_result_t ret = umfPoolByPtr(ptr, &hPool);
+    ret = umfPoolByPtr(ptr, &hPool);
     if (ret == UMF_RESULT_SUCCESS) {
         LOG_DEBUG("calling umfPoolFree(pool=%p, ptr=%p) ...", (void *)hPool,
                   ptr);
@@ -558,6 +572,9 @@ umf_result_t umfPoolByPtr(const void *ptr, umf_memory_pool_handle_t *pool) {
 
     umf_memory_properties_handle_t props = NULL;
     umf_result_t ret = umfGetMemoryPropertiesHandle(ptr, &props);
+    if (ret == UMF_RESULT_ERROR_AMBIGUOUS) {
+        return ret;
+    }
     if (ret != UMF_RESULT_SUCCESS || props == NULL || props->pool == NULL) {
         *pool = NULL;
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;

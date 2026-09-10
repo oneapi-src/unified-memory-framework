@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2023-2025 Intel Corporation
+ * Copyright (C) 2023-2026 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -28,7 +28,7 @@ extern "C" {
 #define UMF_MINOR_VERSION(_ver) (_ver & 0x0000ffff)
 
 /// @brief Current version of the UMF headers
-#define UMF_VERSION_CURRENT UMF_MAKE_VERSION(1, 0)
+#define UMF_VERSION_CURRENT UMF_MAKE_VERSION(1, 1)
 
 /// @brief Operation results
 typedef enum umf_result_t {
@@ -50,8 +50,26 @@ typedef enum umf_result_t {
     UMF_RESULT_ERROR_OUT_OF_RESOURCES = 8, ///< Out of internal resources
     UMF_RESULT_ERROR_INVALID_CTL_PATH =
         9, ///< CTL path is not supported or not found
+    UMF_RESULT_ERROR_AMBIGUOUS =
+        10, ///< Multiple allocations match the supplied argument
     UMF_RESULT_ERROR_UNKNOWN = 0x7ffffffe ///< Unknown error
 } umf_result_t;
+
+/// @brief Process-local identity of a virtual address space.
+typedef struct umf_memory_provider_address_space_t {
+    /// Opaque namespace token. NULL identifies the host address space. UMF
+    /// compares non-NULL tokens by address and never dereferences them.
+    /// Providers whose pointers belong to the same non-host address-space
+    /// namespace must return the same token. The token address must remain
+    /// stable while providers using it exist.
+    const void *namespace_token;
+    /// Process-local native context identifier within the namespace, or zero
+    /// when the namespace does not use contexts.
+    uintptr_t context;
+    /// Process-local native device identifier within the context, or zero when
+    /// the namespace does not use devices.
+    uintptr_t device;
+} umf_memory_provider_address_space_t;
 
 /// @brief Handle to the memory properties structure
 typedef struct umf_memory_properties_t *umf_memory_properties_handle_t;
