@@ -71,18 +71,31 @@ void *utils_open_library(const char *filename, int userFlags) {
         dlopenFlags |= RTLD_GLOBAL;
     }
     if (userFlags & UMF_UTIL_OPEN_LIBRARY_NO_LOAD) {
-        dlopenFlags |= RTLD_NOLOAD;
+        dlopenFlags = RTLD_NOLOAD | RTLD_NOW;
     }
 
     void *handle = dlopen(filename, dlopenFlags);
     if (handle == NULL) {
+        if (userFlags & UMF_UTIL_OPEN_LIBRARY_NO_LOAD) {
+            // if we are not loading the library, just return NULL if it is not
+            // found
+            LOG_DEBUG("Library %s not found, returning NULL", filename);
+            return NULL;
+        }
+
         LOG_FATAL("dlopen(%s) failed with error: %s", filename, dlerror());
+        return NULL;
     }
 
+    LOG_DEBUG("Opened library %s with handle %p", filename, handle);
     return handle;
 }
 
-int utils_close_library(void *handle) { return dlclose(handle); }
+int utils_close_library(void *handle) {
+    LOG_DEBUG("Closing library handle %p", handle);
+
+    return dlclose(handle);
+}
 
 void *utils_get_symbol_addr(void *handle, const char *symbol,
                             const char *libname) {

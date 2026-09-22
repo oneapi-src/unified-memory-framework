@@ -54,6 +54,10 @@ jobs:
       - name: Build UMF
         run: cmake --build ${{env.BUILD_DIR}} -j $(nproc)
 
+      - name: Run "ctest --output-on-failure" without proxy library
+        working-directory: ${{env.BUILD_DIR}}
+        run: ctest --output-on-failure
+        
       - name: Run "ctest --output-on-failure" with proxy library
         working-directory: ${{env.BUILD_DIR}}
         run: LD_PRELOAD=./lib/libumf_proxy.so ctest --output-on-failure
