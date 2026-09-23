@@ -31,6 +31,7 @@ jobs:
         cuda_provider: ['ON']
         install_tbb: ['ON']
         link_hwloc_statically: ['OFF']
+        use_bundled_hwloc: ['OFF']
         cmake_ver: ['default']
         include:
           - os: ubuntu-22.04
@@ -111,7 +112,17 @@ jobs:
             install_tbb: 'ON'
             link_hwloc_statically: 'ON'
             cmake_ver: 'default'
-    name: Basic (${{matrix.os}}, build_type=${{matrix.build_type}}, compilers=${{matrix.compiler.c}}/${{matrix.compiler.cxx}}, shared_library=${{matrix.shared_library}}, level_zero_provider=${{matrix.level_zero_provider}}, cuda_provider=${{matrix.cuda_provider}}, install_tbb=${{matrix.install_tbb}}, link_hwloc_statically=${{matrix.link_hwloc_statically}}, cmake_ver=${{matrix.cmake_ver}})
+          - os: ubuntu-22.04
+            build_type: Release
+            compiler: {c: gcc, cxx: g++}
+            shared_library: 'ON'
+            level_zero_provider: 'ON'
+            cuda_provider: 'ON'
+            install_tbb: 'ON'
+            link_hwloc_statically: 'ON'
+            use_bundled_hwloc: 'ON'
+            cmake_ver: 'default'
+    name: Basic (${{matrix.os}}, build_type=${{matrix.build_type}}, compilers=${{matrix.compiler.c}}/${{matrix.compiler.cxx}}, shared_library=${{matrix.shared_library}}, level_zero_provider=${{matrix.level_zero_provider}}, cuda_provider=${{matrix.cuda_provider}}, install_tbb=${{matrix.install_tbb}}, link_hwloc_statically=${{matrix.link_hwloc_statically}}, use_bundled_hwloc=${{matrix.use_bundled_hwloc || 'OFF'}}, cmake_ver=${{matrix.cmake_ver}})
 
     steps:
     - name: Checkout
@@ -161,6 +172,7 @@ jobs:
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
         -DUMF_TESTS_FAIL_ON_SKIP=ON
         -DUMF_LINK_HWLOC_STATICALLY=${{matrix.link_hwloc_statically}}
+        -DUMF_USE_BUNDLED_HWLOC=${{matrix.use_bundled_hwloc || 'OFF'}}
         ${{ matrix.build_type == 'Debug' && matrix.compiler.c == 'gcc' && '-DUMF_USE_COVERAGE=ON' || '' }}
         ${{ matrix.llvm_linker || '' }}
 
@@ -459,10 +471,11 @@ jobs:
         key: ${{ steps.cache.outputs.cache-primary-key }}
 
   windows-dynamic_build_hwloc:
-    name: "Windows dynamic UMF + static hwloc"
+    name: "Windows dynamic UMF + static hwloc (bundled=${{matrix.use_bundled_hwloc}})"
     strategy:
       matrix:
         build_type: [Release]
+        use_bundled_hwloc: ['OFF', 'ON']
 
     runs-on: 'windows-latest'
 
@@ -486,6 +499,7 @@ jobs:
         -DUMF_BUILD_CUDA_PROVIDER=ON
         -DUMF_TESTS_FAIL_ON_SKIP=ON
         -DUMF_LINK_HWLOC_STATICALLY=ON
+        -DUMF_USE_BUNDLED_HWLOC=${{matrix.use_bundled_hwloc}}
 
     - name: Build UMF
       run: cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j $Env:NUMBER_OF_PROCESSORS
