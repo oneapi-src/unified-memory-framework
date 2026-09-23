@@ -38,7 +38,7 @@ For development and contributions:
 
 - clang-format-15.0 (can be installed with `python -m pip install clang-format==15.0.7`)
 - cmake-format-0.6 (can be installed with `python -m pip install cmake-format==0.6.13`)
-- black (can be installed with `python -m pip install black==24.3.0`)
+- black (can be installed with `python -m pip install black>=26.3.1`)
 
 > **Note**: All devs dependencies are defined in `third-party/requirements.txt`
 > and can be installed, for example: `pip install -r third_party/requirements.txt`.
