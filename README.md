@@ -141,6 +141,7 @@ List of options provided by CMake:
 | UMF_USE_VALGRIND | Enable Valgrind instrumentation | ON/OFF | OFF |
 | UMF_USE_COVERAGE | Build with coverage enabled (Linux only) | ON/OFF | OFF |
 | UMF_LINK_HWLOC_STATICALLY | Link UMF with HWLOC library statically (proxy library will be disabled on Windows+Debug build) | ON/OFF | OFF |
+| UMF_USE_BUNDLED_HWLOC | Use prebuilt hwloc from `src/deps/hwloc` (requires `UMF_LINK_HWLOC_STATICALLY=ON`) | ON/OFF | OFF |
 
 ## Architecture: memory pools and providers
 
