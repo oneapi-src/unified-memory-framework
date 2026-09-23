@@ -80,6 +80,13 @@ umf_option(
     UMF_LINK_HWLOC_STATICALLY
     "Link UMF with HWLOC library statically (proxy library will be disabled on Windows+Debug build)"
     OFF)
+umf_option(UMF_USE_BUNDLED_HWLOC
+           "Use the prebuilt x86-64 static hwloc library in src/deps/hwloc" OFF)
+if(UMF_USE_BUNDLED_HWLOC AND NOT UMF_LINK_HWLOC_STATICALLY)
+    message(
+        FATAL_ERROR
+            "UMF_USE_BUNDLED_HWLOC requires UMF_LINK_HWLOC_STATICALLY=ON")
+endif()
 set(UMF_HWLOC_NAME
     "hwloc"
     CACHE STRING "Custom name for hwloc library w/o extension")
@@ -272,7 +279,52 @@ if(NOT UMF_LINK_HWLOC_STATICALLY)
     endif()
 endif()
 
-if(UMF_LINK_HWLOC_STATICALLY)
+if(UMF_USE_BUNDLED_HWLOC)
+    if(NOT LINUX AND NOT WINDOWS)
+        message(
+            FATAL_ERROR "Bundled hwloc is only available on Linux and Windows")
+    endif()
+    set(UMF_BUNDLED_HWLOC_ARCH "${CMAKE_C_COMPILER_ARCHITECTURE_ID}")
+    if(NOT WINDOWS OR NOT UMF_BUNDLED_HWLOC_ARCH)
+        set(UMF_BUNDLED_HWLOC_ARCH "${CMAKE_SYSTEM_PROCESSOR}")
+    endif()
+    if(NOT UMF_BUNDLED_HWLOC_ARCH MATCHES "^(x86_64|AMD64|amd64|x64)$")
+        message(
+            FATAL_ERROR
+                "Bundled hwloc is available only for x86-64, but the target "
+                "architecture is '${UMF_BUNDLED_HWLOC_ARCH}' "
+                "Set UMF_USE_BUNDLED_HWLOC=OFF to build hwloc from sources.")
+    endif()
+    set(UMF_BUNDLED_HWLOC_DIR "${UMF_CMAKE_SOURCE_DIR}/src/deps/hwloc")
+    set(LIBHWLOC_LIBRARY_DIRS "${UMF_BUNDLED_HWLOC_DIR}/${OS_NAME}")
+    set(LIBHWLOC_INCLUDE_DIRS "${LIBHWLOC_LIBRARY_DIRS}/include"
+                              "${UMF_BUNDLED_HWLOC_DIR}/include")
+    if(WINDOWS)
+        set(LIBHWLOC_LIBRARIES "${LIBHWLOC_LIBRARY_DIRS}/hwloc.lib")
+    else()
+        set(LIBHWLOC_LIBRARIES "${LIBHWLOC_LIBRARY_DIRS}/libhwloc.a")
+    endif()
+
+    foreach(
+        HWLOC_REQUIRED_FILE IN
+        ITEMS "${LIBHWLOC_LIBRARIES}"
+              "${UMF_BUNDLED_HWLOC_DIR}/include/hwloc.h"
+              "${LIBHWLOC_LIBRARY_DIRS}/include/hwloc/autogen/config.h")
+        if(NOT EXISTS "${HWLOC_REQUIRED_FILE}")
+            message(
+                FATAL_ERROR
+                    "Bundled hwloc file not found: ${HWLOC_REQUIRED_FILE}")
+        endif()
+    endforeach()
+
+    message(STATUS "Using bundled hwloc from ${UMF_BUNDLED_HWLOC_DIR}")
+
+    add_library(${UMF_HWLOC_NAME} INTERFACE)
+    target_link_libraries(${UMF_HWLOC_NAME} INTERFACE "${LIBHWLOC_LIBRARIES}")
+    target_include_directories(${UMF_HWLOC_NAME}
+                               INTERFACE ${LIBHWLOC_INCLUDE_DIRS})
+    set(LIBHWLOC_FOUND TRUE)
+elseif(UMF_LINK_HWLOC_STATICALLY)
     if(NOT DEFINED UMF_HWLOC_REPO)
         set(UMF_HWLOC_REPO "https://github.com/open-mpi/hwloc.git")
     endif()
@@ -348,6 +400,9 @@ if(UMF_LINK_HWLOC_STATICALLY)
                    " --gcc-toolchain=${CMAKE_CXX_COMPILER_EXTERNAL_TOOLCHAIN}")
         endif()
 
+        # All symbols defined in the hwloc library must have the 'umf_hwloc_'
+        # prefix, so that they do not conflict with other hwloc instances linked
+        # into the same application.
         ExternalProject_Add(
             hwloc_targ
             PREFIX ${hwloc_targ_PREFIX}
@@ -363,9 +418,10 @@ if(UMF_LINK_HWLOC_STATICALLY)
                 ${CMAKE_COMMAND} -E env "CC=${UMF_HWLOC_CC}"
                 "CXX=${UMF_HWLOC_CXX}" <SOURCE_DIR>/configure
                 --prefix=<INSTALL_DIR> --enable-static=yes --enable-shared=no
-                --disable-libxml2 --disable-pci --disable-levelzero
-                --disable-opencl --disable-cuda --disable-nvml --disable-libudev
-                --disable-rsmi CFLAGS=-fPIC CXXFLAGS=-fPIC
+                --with-hwloc-symbol-prefix=umf_hwloc_ --disable-libxml2
+                --disable-pci --disable-levelzero --disable-opencl
+                --disable-cuda --disable-nvml --disable-libudev --disable-rsmi
+                "CFLAGS=-O2 -fPIC" "CXXFLAGS=-O2 -fPIC"
             BUILD_COMMAND make
             BUILD_IN_SOURCE TRUE
             INSTALL_COMMAND make install
@@ -547,6 +603,7 @@ if(WINDOWS AND UMF_USE_DEBUG_POSTFIX)
             -DUMF_BUILD_EXAMPLES=OFF -DUMF_BUILD_GPU_EXAMPLES=OFF
             -DUMF_BUILD_FUZZTESTS=OFF
             -DUMF_LINK_HWLOC_STATICALLY=${UMF_LINK_HWLOC_STATICALLY}
+            -DUMF_USE_BUNDLED_HWLOC=${UMF_USE_BUNDLED_HWLOC}
             -DUMF_HWLOC_NAME=${UMF_HWLOC_NAME}
             -DUMF_INSTALL_RPATH=${UMF_INSTALL_RPATH} -DUMF_DEVELOPER_MODE=OFF
             -DUMF_FORMAT_CODE_STYLE=OFF -DUMF_TESTS_FAIL_ON_SKIP=OFF
@@ -1036,7 +1093,7 @@ install(TARGETS umf_headers EXPORT ${PROJECT_NAME}-targets)
 
 # Add the list of installed targets to the install. This includes the namespace
 # which all installed targets will be prefixed with, e.g. for the headers target
-# users will depend on ${PROJECT_NAME}::headers.
+# users will depend on ${PROJECT_NAME}::umf_headers.
 install(
     EXPORT ${PROJECT_NAME}-targets
     FILE ${PROJECT_NAME}-targets.cmake
