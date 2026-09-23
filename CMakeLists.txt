@@ -912,6 +912,13 @@ if(UMF_FORMAT_CODE_STYLE)
                 "${DIR}/**/*.cpp")
         endforeach()
         file(GLOB_RECURSE format_list ${format_clang_glob})
+        # exclude files in the src/deps/ directory from formatting checks
+        list(
+            FILTER
+            format_list
+            EXCLUDE
+            REGEX
+            "/src/deps/")
 
         message(
             STATUS
