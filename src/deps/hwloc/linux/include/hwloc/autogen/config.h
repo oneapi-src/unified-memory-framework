@@ -232,12 +232,12 @@ typedef uint64_t hwloc_uint64_t;
 /* #undef HWLOC_HAVE_32BITS_PCI_DOMAIN */
 
 /* Whether we need to re-define all the hwloc public symbols or not */
-#define HWLOC_SYM_TRANSFORM 0
+#define HWLOC_SYM_TRANSFORM 1
 
 /* The hwloc symbol prefix */
-#define HWLOC_SYM_PREFIX hwloc_
+#define HWLOC_SYM_PREFIX umf_hwloc_
 
 /* The hwloc symbol prefix in all caps */
-#define HWLOC_SYM_PREFIX_CAPS HWLOC_
+#define HWLOC_SYM_PREFIX_CAPS UMF_HWLOC_
 
 #endif /* HWLOC_CONFIG_H */

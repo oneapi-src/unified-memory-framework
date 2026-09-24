@@ -231,8 +231,9 @@ jobs:
         fetch-depth: 0
 
     - name: Install dependencies
-      if: matrix.use_bundled_hwloc == 'OFF'
-      run: sudo apt-get update && sudo apt-get install -y autoconf automake libtool
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libhwloc-dev ${{ matrix.use_bundled_hwloc == 'OFF' && 'autoconf automake libtool' || '' }}
 
     - name: Configure build
       run: >
@@ -256,9 +257,20 @@ jobs:
         cmake --build ${{env.BUILD_DIR}} -j $(nproc)
         cmake --install ${{env.BUILD_DIR}}
 
+    - name: Check that hwloc embedded in UMF uses prefixed symbols
+      working-directory: ${{env.INSTL_DIR}}/lib
+      run: |
+        unprefixed=$(nm -g --defined-only libhwloc.a | awk 'NF == 3 {print $3}' | grep -v '^umf_hwloc_' || true)
+        unprefixed_refs=$(nm -u libumf.a | grep -E ' hwloc_' || true)
+        if [ -n "$unprefixed" ] || [ -n "$unprefixed_refs" ]; then
+          echo "Unprefixed hwloc symbols found:"
+          echo "$unprefixed" "$unprefixed_refs"
+          exit 1
+        fi
+
     - name: Build and run consumer of installed UMF
       run: |
-        cmake -S ${{github.workspace}}/test/install_test -B ${{github.workspace}}/install_test-build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_PREFIX_PATH="${{env.INSTL_DIR}}"
+        cmake -S ${{github.workspace}}/test/install_test -B ${{github.workspace}}/install_test-build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_PREFIX_PATH="${{env.INSTL_DIR}}" -DUMF_TEST_LINK_USER_HWLOC=ON
         cmake --build ${{github.workspace}}/install_test-build -j $(nproc)
         ctest --test-dir ${{github.workspace}}/install_test-build --output-on-failure
 

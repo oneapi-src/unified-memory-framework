@@ -404,9 +404,10 @@ elseif(UMF_LINK_HWLOC_STATICALLY)
                 ${CMAKE_COMMAND} -E env "CC=${UMF_HWLOC_CC}"
                 "CXX=${UMF_HWLOC_CXX}" <SOURCE_DIR>/configure
                 --prefix=<INSTALL_DIR> --enable-static=yes --enable-shared=no
-                --disable-libxml2 --disable-pci --disable-levelzero
-                --disable-opencl --disable-cuda --disable-nvml --disable-libudev
-                --disable-rsmi CFLAGS=-fPIC CXXFLAGS=-fPIC
+                --with-hwloc-symbol-prefix=umf_hwloc_ --disable-libxml2
+                --disable-pci --disable-levelzero --disable-opencl
+                --disable-cuda --disable-nvml --disable-libudev --disable-rsmi
+                CFLAGS=-fPIC CXXFLAGS=-fPIC
             BUILD_COMMAND make
             BUILD_IN_SOURCE TRUE
             INSTALL_COMMAND make install
