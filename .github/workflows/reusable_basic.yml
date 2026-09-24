@@ -216,6 +216,52 @@ jobs:
         --umf-version ${{env.UMF_VERSION}}
         ${{ matrix.shared_library == 'ON' && '--shared-library' || '' }}
 
+  ubuntu-static_hwloc_installed_umf:
+    name: "Ubuntu static UMF + static hwloc, installed UMF (bundled=${{matrix.use_bundled_hwloc}})"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        build_type: [Release]
+        use_bundled_hwloc: ['OFF', 'ON']
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        fetch-depth: 0
+
+    - name: Install dependencies
+      if: matrix.use_bundled_hwloc == 'OFF'
+      run: sudo apt-get update && sudo apt-get install -y autoconf automake libtool
+
+    - name: Configure build
+      run: >
+        cmake
+        -B ${{env.BUILD_DIR}}
+        -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
+        -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+        -DUMF_BUILD_SHARED_LIBRARY=OFF
+        -DUMF_BUILD_TESTS=OFF
+        -DUMF_BUILD_EXAMPLES=OFF
+        -DUMF_FORMAT_CODE_STYLE=OFF
+        -DUMF_DEVELOPER_MODE=ON
+        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=OFF
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
+        -DUMF_BUILD_CUDA_PROVIDER=OFF
+        -DUMF_LINK_HWLOC_STATICALLY=ON
+        -DUMF_USE_BUNDLED_HWLOC=${{matrix.use_bundled_hwloc}}
+
+    - name: Build and install UMF
+      run: |
+        cmake --build ${{env.BUILD_DIR}} -j $(nproc)
+        cmake --install ${{env.BUILD_DIR}}
+
+    - name: Build and run consumer of installed UMF
+      run: |
+        cmake -S ${{github.workspace}}/test/install_test -B ${{github.workspace}}/install_test-build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_PREFIX_PATH="${{env.INSTL_DIR}}"
+        cmake --build ${{github.workspace}}/install_test-build -j $(nproc)
+        ctest --test-dir ${{github.workspace}}/install_test-build --output-on-failure
+
   windows-build:
     env:
       BUILD_DEBUG_DIR : "${{github.workspace}}/debug/build"
@@ -555,6 +601,48 @@ jobs:
     - name: Run tests
       working-directory: ${{env.BUILD_DIR}}
       run: ctest -C ${{matrix.build_type}} --output-on-failure --test-dir test
+
+  windows-static_hwloc_installed_umf:
+    name: "Windows static UMF + static hwloc, installed UMF (bundled=${{matrix.use_bundled_hwloc}})"
+    strategy:
+      matrix:
+        build_type: [Release]
+        use_bundled_hwloc: ['OFF', 'ON']
+
+    runs-on: 'windows-latest'
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        fetch-depth: 0
+
+    - name: Configure build
+      run: >
+        cmake
+        -B ${{env.BUILD_DIR}}
+        -DCMAKE_INSTALL_PREFIX="${{env.INSTL_DIR}}"
+        -DUMF_BUILD_SHARED_LIBRARY=OFF
+        -DUMF_BUILD_TESTS=OFF
+        -DUMF_BUILD_EXAMPLES=OFF
+        -DUMF_FORMAT_CODE_STYLE=OFF
+        -DUMF_DEVELOPER_MODE=ON
+        -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=OFF
+        -DUMF_BUILD_LEVEL_ZERO_PROVIDER=OFF
+        -DUMF_BUILD_CUDA_PROVIDER=OFF
+        -DUMF_LINK_HWLOC_STATICALLY=ON
+        -DUMF_USE_BUNDLED_HWLOC=${{matrix.use_bundled_hwloc}}
+
+    - name: Build and install UMF
+      run: |
+        cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}} -j $Env:NUMBER_OF_PROCESSORS
+        cmake --install ${{env.BUILD_DIR}} --config ${{matrix.build_type}}
+
+    - name: Build and run test of installed UMF
+      run: |
+        cmake -S ${{github.workspace}}/test/install_test -B ${{github.workspace}}/install_test-build -DCMAKE_PREFIX_PATH="${{env.INSTL_DIR}}"
+        cmake --build ${{github.workspace}}/install_test-build --config ${{matrix.build_type}}
+        ctest --test-dir ${{github.workspace}}/install_test-build -C ${{matrix.build_type}} --output-on-failure
 
   macos-build:
     strategy:
