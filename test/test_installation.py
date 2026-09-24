@@ -1,4 +1,4 @@
-#  Copyright (C) 2024-2025 Intel Corporation
+#  Copyright (C) 2024-2026 Intel Corporation
 #
 #  Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 #  SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -107,7 +107,7 @@ class UmfInstaller:
 
         for pool in self.pools:
             lib.append(f"lib/{lib_prefix}{pool}.{lib_ext_static}")
-        if platform.system() == "Windows" and self.hwloc:
+        if self.hwloc and (platform.system() == "Windows" or not self.shared_library):
             lib.append(f"lib/{lib_prefix}hwloc.{lib_ext_static}")
         if self.shared_library:
             lib.append(f"lib/{lib_prefix}umf.{lib_ext_shared}")
