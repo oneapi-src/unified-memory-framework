@@ -679,7 +679,7 @@ jobs:
     - name: Install user hwloc
       if: matrix.use_bundled_hwloc == 'ON'
       run: |
-        vcpkg install hwloc:x64-windows
+        vcpkg install --classic hwloc:x64-windows
         echo "$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows\bin" >> $env:GITHUB_PATH
 
     - name: Build and run test of installed UMF
