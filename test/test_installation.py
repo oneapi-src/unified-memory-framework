@@ -107,8 +107,10 @@ class UmfInstaller:
 
         for pool in self.pools:
             lib.append(f"lib/{lib_prefix}{pool}.{lib_ext_static}")
-        if self.hwloc and (platform.system() == "Windows" or not self.shared_library):
+        if self.hwloc and platform.system() == "Windows":
             lib.append(f"lib/{lib_prefix}hwloc.{lib_ext_static}")
+        elif self.hwloc and not self.shared_library:
+            lib.append(f"lib/{lib_prefix}umf_hwloc.{lib_ext_static}")
         if self.shared_library:
             lib.append(f"lib/{lib_prefix}umf.{lib_ext_shared}")
             if platform.system() == "Windows" and self.umfd_lib:
