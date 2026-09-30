@@ -84,6 +84,23 @@ set(UMF_HWLOC_NAME
     "hwloc"
     CACHE STRING "Custom name for hwloc library w/o extension")
 list(APPEND UMF_OPTIONS_LIST UMF_HWLOC_NAME)
+set(UMF_HWLOC_SOURCE_DIR
+    ""
+    CACHE
+        PATH
+        "Path to local hwloc sources used instead of fetching them (with UMF_LINK_HWLOC_STATICALLY)"
+)
+list(APPEND UMF_OPTIONS_LIST UMF_HWLOC_SOURCE_DIR)
+
+if(NOT DEFINED UMF_HWLOC_REPO)
+    set(UMF_HWLOC_REPO
+        "https://github.com/open-mpi/hwloc.git"
+        CACHE
+            STRING
+            "hwloc git repository URL or local mirror path (with UMF_LINK_HWLOC_STATICALLY)"
+    )
+endif()
+
 set(UMF_INSTALL_RPATH
     ""
     CACHE
@@ -267,23 +284,44 @@ if(NOT UMF_LINK_HWLOC_STATICALLY)
         # add PATH to DLL on Windows
         set(DLL_PATH_LIST
             "${DLL_PATH_LIST};PATH=path_list_append:${LIBHWLOC_DLL_DIRS}")
+        if(UMF_HWLOC_SOURCE_DIR)
+            message(
+                WARNING
+                    "UMF_HWLOC_SOURCE_DIR is ignored, because UMF_LINK_HWLOC_STATICALLY is OFF and system hwloc was found"
+            )
+        endif()
     else()
         set(UMF_LINK_HWLOC_STATICALLY ON)
     endif()
 endif()
 
 if(UMF_LINK_HWLOC_STATICALLY)
-    if(NOT DEFINED UMF_HWLOC_REPO)
-        set(UMF_HWLOC_REPO "https://github.com/open-mpi/hwloc.git")
-    endif()
     if(NOT DEFINED UMF_HWLOC_TAG)
         set(UMF_HWLOC_TAG hwloc-2.13.0)
     endif()
 
-    message(
-        STATUS
-            "Will fetch hwloc from ${UMF_HWLOC_REPO} (tag: ${UMF_HWLOC_TAG}) and link it statically"
-    )
+    if(UMF_HWLOC_SOURCE_DIR)
+        if(NOT IS_DIRECTORY "${UMF_HWLOC_SOURCE_DIR}")
+            message(
+                FATAL_ERROR
+                    "UMF_HWLOC_SOURCE_DIR (${UMF_HWLOC_SOURCE_DIR}) is not a directory"
+            )
+        endif()
+        # A directory URL is copied into the build tree, so the local clone is
+        # not patched or built in place.
+        set(UMF_HWLOC_SOURCE_ARGS URL ${UMF_HWLOC_SOURCE_DIR})
+        message(
+            STATUS
+                "Will use local hwloc sources from ${UMF_HWLOC_SOURCE_DIR} and link it statically"
+        )
+    else()
+        set(UMF_HWLOC_SOURCE_ARGS GIT_REPOSITORY ${UMF_HWLOC_REPO} GIT_TAG
+                                  ${UMF_HWLOC_TAG})
+        message(
+            STATUS
+                "Will fetch hwloc from ${UMF_HWLOC_REPO} (tag: ${UMF_HWLOC_TAG}) and link it statically"
+        )
+    endif()
 
     if(WINDOWS)
         set(HWLOC_ENABLE_TESTING OFF)
@@ -291,11 +329,8 @@ if(UMF_LINK_HWLOC_STATICALLY)
         set(HWLOC_SKIP_TOOLS ON)
         set(HWLOC_SKIP_INCLUDES ON)
 
-        FetchContent_Declare(
-            hwloc_targ
-            GIT_REPOSITORY ${UMF_HWLOC_REPO}
-            GIT_TAG ${UMF_HWLOC_TAG}
-            SOURCE_SUBDIR contrib/windows-cmake/)
+        FetchContent_Declare(hwloc_targ ${UMF_HWLOC_SOURCE_ARGS} SOURCE_SUBDIR
+                                        contrib/windows-cmake/)
         FetchContent_MakeAvailable(hwloc_targ)
 
         set(HWLOC_LIB_PATH "")
@@ -348,15 +383,22 @@ if(UMF_LINK_HWLOC_STATICALLY)
                    " --gcc-toolchain=${CMAKE_CXX_COMPILER_EXTERNAL_TOOLCHAIN}")
         endif()
 
+        set(UMF_HWLOC_PATCH_CMD
+            "git apply --reverse --check ${PROJECT_SOURCE_DIR}/cmake/fix_coverity_issues.patch || git apply ${PROJECT_SOURCE_DIR}/cmake/fix_coverity_issues.patch"
+        )
+        if(UMF_HWLOC_SOURCE_DIR)
+            # Drop build artifacts copied over from an already built local tree
+            set(UMF_HWLOC_PATCH_CMD
+                "(test ! -f Makefile || make distclean) && (${UMF_HWLOC_PATCH_CMD})"
+            )
+        endif()
+
         ExternalProject_Add(
             hwloc_targ
             PREFIX ${hwloc_targ_PREFIX}
-            GIT_REPOSITORY ${UMF_HWLOC_REPO}
-            GIT_TAG ${UMF_HWLOC_TAG}
+            ${UMF_HWLOC_SOURCE_ARGS}
             UPDATE_DISCONNECTED TRUE
-            PATCH_COMMAND
-                sh -c
-                "git apply --reverse --check ${PROJECT_SOURCE_DIR}/cmake/fix_coverity_issues.patch || git apply ${PROJECT_SOURCE_DIR}/cmake/fix_coverity_issues.patch"
+            PATCH_COMMAND sh -c "${UMF_HWLOC_PATCH_CMD}"
             CONFIGURE_COMMAND ${CMAKE_COMMAND} -E env "CC=${UMF_HWLOC_CC}"
                               "CXX=${UMF_HWLOC_CXX}" <SOURCE_DIR>/autogen.sh
             COMMAND
@@ -548,6 +590,8 @@ if(WINDOWS AND UMF_USE_DEBUG_POSTFIX)
             -DUMF_BUILD_FUZZTESTS=OFF
             -DUMF_LINK_HWLOC_STATICALLY=${UMF_LINK_HWLOC_STATICALLY}
             -DUMF_HWLOC_NAME=${UMF_HWLOC_NAME}
+            -DUMF_HWLOC_SOURCE_DIR="${UMF_HWLOC_SOURCE_DIR}"
+            -DUMF_HWLOC_REPO="${UMF_HWLOC_REPO}"
             -DUMF_INSTALL_RPATH=${UMF_INSTALL_RPATH} -DUMF_DEVELOPER_MODE=OFF
             -DUMF_FORMAT_CODE_STYLE=OFF -DUMF_TESTS_FAIL_ON_SKIP=OFF
             -DUMF_USE_ASAN=OFF -DUMF_USE_UBSAN=OFF -DUMF_USE_TSAN=OFF
