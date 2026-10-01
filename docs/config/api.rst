@@ -141,7 +141,7 @@ TODO: Add general information about memspaces.
 
 Memspace
 ------------------------------------------
-.. doxygenfile:: experimental/memspace.h
+.. doxygenfile:: memspace.h
     :sections: define enum typedef func
 
 Mempolicy             
@@ -154,7 +154,7 @@ TODO: Add general information about mempolicies.
 
 Mempolicy
 ------------------------------------------
-.. doxygenfile:: experimental/mempolicy.h
+.. doxygenfile:: mempolicy.h
     :sections: define enum typedef func
 
 Memtarget
@@ -167,7 +167,7 @@ TODO: Add general information about memtargets.
 
 Memtarget
 ------------------------------------------
-.. doxygenfile:: experimental/memtarget.h
+.. doxygenfile:: memtarget.h
     :sections: define enum typedef func
 
 Memory Properties
@@ -187,7 +187,7 @@ strategies and improved interoperability with heterogeneous systems.
 
 Memory Properties
 ------------------------------------------
-.. doxygenfile::  experimental/memory_properties.h
+.. doxygenfile:: memory_properties.h
     :sections: define enum typedef func var
 
 Inter-Process Communication
