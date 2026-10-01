@@ -137,6 +137,27 @@ if(UMF_BUILD_SHARED_LIBRARY)
                    VERSION ${PROJECT_VERSION}
                    SOVERSION ${PROJECT_VERSION_MAJOR})
 else()
+    if(UMF_LINK_HWLOC_STATICALLY)
+        # hwloc fetched on Windows installs its own archive
+        if(UMF_USE_BUNDLED_HWLOC OR NOT WINDOWS)
+            # A UMF-specific name, so find_library(hwloc) never picks this copy
+            set(UMF_HWLOC_ARCHIVE_NAME
+                "${CMAKE_STATIC_LIBRARY_PREFIX}umf_hwloc${CMAKE_STATIC_LIBRARY_SUFFIX}"
+            )
+            install(
+                FILES "${LIBHWLOC_LIBRARIES}"
+                DESTINATION ${CMAKE_INSTALL_LIBDIR}
+                RENAME ${UMF_HWLOC_ARCHIVE_NAME})
+        else()
+            get_filename_component(UMF_HWLOC_ARCHIVE_NAME
+                                   "${LIBHWLOC_LIBRARIES}" NAME)
+        endif()
+        set(UMF_LIBS
+            ${UMF_LIBS}
+            "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_LIBDIR}/${UMF_HWLOC_ARCHIVE_NAME}>"
+        )
+    endif()
+
     add_umf_library(
         NAME umf
         TYPE STATIC
