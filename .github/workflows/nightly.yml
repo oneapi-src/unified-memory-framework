@@ -6,6 +6,9 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 4 * * *'
+  pull_request:
+    paths:
+      - '.github/workflows/nightly.yml'
 
 permissions:
   contents: read
@@ -484,9 +487,9 @@ jobs:
     uses: ./.github/workflows/reusable_qemu.yml
     with:
       short_run: false
-      # Beside the 2 LTS Ubuntu, we also test this on the latest Ubuntu -  to be updated
-      # every 6 months, so we verify the latest version of packages (compilers, etc.).
-      os: "['ubuntu-22.04', 'ubuntu-24.04', 'ubuntu-25.04']"
+      # Test it on 3 LTS Ubuntu images, we may also test this on some latest Ubuntu,
+      # so we could verify the newest version of packages (compilers, etc.).
+      os: "['ubuntu-22.04', 'ubuntu-24.04', 'ubuntu-26.04']"
 
   Benchmarks:
     uses: ./.github/workflows/reusable_benchmarks.yml

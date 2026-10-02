@@ -6,6 +6,9 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 1 * * 6' # every Saturday at 01:00 UTC
+  pull_request:
+    paths:
+      - '.github/workflows/weekly.yml'
 
 env:
   BUILD_DIR : "${{github.workspace}}/build"
@@ -25,7 +28,7 @@ jobs:
         compiler: [{c: gcc, cxx: g++}, {c: clang, cxx: clang++}, {c: icx, cxx: icpx}]
         # TSAN is mutually exclusive with other sanitizers
         sanitizers: [{asan: ON, ubsan: ON, tsan: OFF}, {asan: OFF, ubsan: OFF, tsan: ON}]
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     steps:
     - name: Checkout
