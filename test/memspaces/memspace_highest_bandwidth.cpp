@@ -1,4 +1,4 @@
-// Copyright (C) 2024-2025 Intel Corporation
+// Copyright (C) 2024-2026 Intel Corporation
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -96,7 +96,8 @@ TEST_F(numaNodesTest, PerCoreBandwidthPlacement) {
                                   HWLOC_CPUBIND_THREAD | HWLOC_CPUBIND_STRICT),
                 0);
             initiator.location.cpuset = here;
-            initiator.type = HWLOC_LOCATION_TYPE_CPUSET;
+            initiator.type =
+                hwloc_location_type_alias::HWLOC_LOCATION_TYPE_CPUSET;
 
             hwloc_obj_t bestnode;
             hwloc_memattr_get_best_target(topo, HWLOC_MEMATTR_ID_BANDWIDTH,

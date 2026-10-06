@@ -12,6 +12,8 @@ env:
   INSTL_DIR : "${{github.workspace}}/install-dir"
   COVERAGE_DIR : "${{github.workspace}}/coverage"
   COVERAGE_NAME : "exports-coverage-basic"
+  HWLOC_SRC_DIR : "${{github.workspace}}/hwloc-src"
+  HWLOC_MIRROR_DIR : "${{github.workspace}}/hwloc-mirror.git"
 
 jobs:
   ubuntu-build:
@@ -111,7 +113,29 @@ jobs:
             install_tbb: 'ON'
             link_hwloc_statically: 'ON'
             cmake_ver: 'default'
-    name: Basic (${{matrix.os}}, build_type=${{matrix.build_type}}, compilers=${{matrix.compiler.c}}/${{matrix.compiler.cxx}}, shared_library=${{matrix.shared_library}}, level_zero_provider=${{matrix.level_zero_provider}}, cuda_provider=${{matrix.cuda_provider}}, install_tbb=${{matrix.install_tbb}}, link_hwloc_statically=${{matrix.link_hwloc_statically}}, cmake_ver=${{matrix.cmake_ver}})
+          # test static hwloc built from a local clone (UMF_HWLOC_SOURCE_DIR)
+          - os: ubuntu-24.04
+            build_type: Release
+            compiler: {c: gcc, cxx: g++}
+            shared_library: 'ON'
+            level_zero_provider: 'ON'
+            cuda_provider: 'ON'
+            install_tbb: 'ON'
+            link_hwloc_statically: 'ON'
+            local_hwloc: 'source'
+            cmake_ver: 'default'
+          # test static hwloc cloned from a local git mirror (UMF_HWLOC_REPO)
+          - os: ubuntu-22.04
+            build_type: Release
+            compiler: {c: gcc, cxx: g++}
+            shared_library: 'ON'
+            level_zero_provider: 'ON'
+            cuda_provider: 'ON'
+            install_tbb: 'ON'
+            link_hwloc_statically: 'ON'
+            local_hwloc: 'mirror'
+            cmake_ver: 'default'
+    name: Basic (${{matrix.os}}, build_type=${{matrix.build_type}}, compilers=${{matrix.compiler.c}}/${{matrix.compiler.cxx}}, shared_library=${{matrix.shared_library}}, level_zero_provider=${{matrix.level_zero_provider}}, cuda_provider=${{matrix.cuda_provider}}, install_tbb=${{matrix.install_tbb}}, link_hwloc_statically=${{matrix.link_hwloc_statically}}, cmake_ver=${{matrix.cmake_ver}}${{ matrix.local_hwloc && format(', local_hwloc={0}', matrix.local_hwloc) || '' }})
 
     steps:
     - name: Checkout
@@ -144,6 +168,14 @@ jobs:
         VERSION=$(git describe --tags --abbrev=0 | grep -oP '\d+\.\d+\.\d+')
         echo "UMF_VERSION=$VERSION" >> $GITHUB_ENV
 
+    - name: Clone hwloc sources
+      if: matrix.local_hwloc == 'source'
+      run: git clone --depth 1 -b hwloc-2.3.0 https://github.com/open-mpi/hwloc.git ${{env.HWLOC_SRC_DIR}}
+
+    - name: Create hwloc git mirror
+      if: matrix.local_hwloc == 'mirror'
+      run: git clone --mirror https://github.com/open-mpi/hwloc.git ${{env.HWLOC_MIRROR_DIR}}
+
     - name: Configure build
       run: >
         ${{ matrix.compiler.cxx == 'icpx' && '. /opt/intel/oneapi/setvars.sh &&' || ''}} 
@@ -161,6 +193,8 @@ jobs:
         -DUMF_BUILD_LIBUMF_POOL_JEMALLOC=ON
         -DUMF_TESTS_FAIL_ON_SKIP=ON
         -DUMF_LINK_HWLOC_STATICALLY=${{matrix.link_hwloc_statically}}
+        ${{ matrix.local_hwloc == 'source' && format('-DUMF_HWLOC_SOURCE_DIR={0}', env.HWLOC_SRC_DIR) || '' }}
+        ${{ matrix.local_hwloc == 'mirror' && format('-DUMF_HWLOC_REPO={0}', env.HWLOC_MIRROR_DIR) || '' }}
         ${{ matrix.build_type == 'Debug' && matrix.compiler.c == 'gcc' && '-DUMF_USE_COVERAGE=ON' || '' }}
         ${{ matrix.llvm_linker || '' }}
 
