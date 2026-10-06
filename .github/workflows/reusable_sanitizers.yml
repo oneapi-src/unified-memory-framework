@@ -17,8 +17,8 @@ jobs:
         compiler: [{c: gcc, cxx: g++}, {c: clang, cxx: clang++}, {c: icx, cxx: icpx}]
         # TSAN is mutually exclusive with other sanitizers
         sanitizers: [{asan: ON, ubsan: ON, tsan: OFF}, {asan: OFF, ubsan: OFF, tsan: ON}]
-    name: Sanitizers (ubuntu-22.04, compilers=${{matrix.compiler.c}}/${{matrix.compiler.cxx}}, asan=${{matrix.sanitizers.asan}}, ubsan=${{matrix.sanitizers.ubsan}}, tsan=${{matrix.sanitizers.tsan}})
-    runs-on: ubuntu-22.04
+    name: Sanitizers (ubuntu-24.04, compilers=${{matrix.compiler.c}}/${{matrix.compiler.cxx}}, asan=${{matrix.sanitizers.asan}}, ubsan=${{matrix.sanitizers.ubsan}}, tsan=${{matrix.sanitizers.tsan}})
+    runs-on: ubuntu-24.04
 
     steps:
     - name: Checkout
