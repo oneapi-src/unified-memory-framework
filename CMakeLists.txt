@@ -354,10 +354,15 @@ if(UMF_LINK_HWLOC_STATICALLY)
                     "Either install it, or set UMF_LINK_HWLOC_STATICALLY=OFF and install hwloc >= 2.3.0 in your system."
             )
         endif()
+        FetchContent_Declare(
+            hwloc_targ_sources ${UMF_HWLOC_SOURCE_ARGS} SOURCE_SUBDIR
+                               "non-existing-dir")
+        FetchContent_MakeAvailable(hwloc_targ_sources)
+
         include(ExternalProject)
 
         set(hwloc_targ_PREFIX ${CMAKE_BINARY_DIR}/hwloc_targ-prefix)
-        set(hwloc_targ_SOURCE_DIR ${hwloc_targ_PREFIX}/src/hwloc_targ)
+        set(hwloc_targ_SOURCE_DIR ${hwloc_targ_sources_SOURCE_DIR})
         set(hwloc_targ_BINARY_DIR ${hwloc_targ_PREFIX})
 
         # CC/CXX/CFLAGS/CXXFLAGS are not forwarded by CMake into the autotools
@@ -396,7 +401,9 @@ if(UMF_LINK_HWLOC_STATICALLY)
         ExternalProject_Add(
             hwloc_targ
             PREFIX ${hwloc_targ_PREFIX}
-            ${UMF_HWLOC_SOURCE_ARGS}
+            SOURCE_DIR ${hwloc_targ_SOURCE_DIR}
+            DOWNLOAD_COMMAND ""
+            UPDATE_COMMAND ""
             UPDATE_DISCONNECTED TRUE
             PATCH_COMMAND sh -c "${UMF_HWLOC_PATCH_CMD}"
             CONFIGURE_COMMAND ${CMAKE_COMMAND} -E env "CC=${UMF_HWLOC_CC}"
