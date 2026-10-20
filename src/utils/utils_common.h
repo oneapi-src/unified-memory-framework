@@ -14,9 +14,13 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 
 #include <umf/base.h>
 #include <umf/memory_provider.h>
+
+#include "utils_load_library.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -79,6 +83,23 @@ static inline int utils_env_var_has_str(const char *envvar, const char *str) {
 
 // check if we are running in the proxy library
 static inline int utils_is_running_in_proxy_lib(void) {
+    // check if the proxy library is loaded using /proc/self/maps
+    FILE *fp = fopen("/proc/self/maps", "r");
+    if (!fp) {
+        perror("Failed to open /proc/self/maps");
+        return -1;
+    }
+
+    char line[256];
+    while (fgets(line, sizeof(line), fp)) {
+        if (strstr(line, "libumf_proxy.so") != NULL) {
+            fclose(fp);
+            return 1; // Shared object is loaded
+        }
+    }
+    fclose(fp);
+
+    // check if the proxy library is loaded using LD_PRELOAD
     return utils_env_var_get_str("LD_PRELOAD", "libumf_proxy.so") ? 1 : 0;
 }
 
