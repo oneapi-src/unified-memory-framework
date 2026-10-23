@@ -240,17 +240,17 @@ umf_result_t umfCUDAMemoryProviderParamsCreate(
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
+    utils_init_once(&cu_is_initialized, init_cu_global_state);
+    if (Init_cu_global_state_failed) {
+        LOG_FATAL("Loading CUDA symbols failed");
+        return UMF_RESULT_ERROR_DEPENDENCY_UNAVAILABLE;
+    }
+
     umf_cuda_memory_provider_params_handle_t params_data =
         umf_ba_global_alloc(sizeof(umf_cuda_memory_provider_params_t));
     if (!params_data) {
         LOG_ERR("Cannot allocate memory for CUDA Memory Provider params");
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-    }
-
-    utils_init_once(&cu_is_initialized, init_cu_global_state);
-    if (Init_cu_global_state_failed) {
-        LOG_FATAL("Loading CUDA symbols failed");
-        return UMF_RESULT_ERROR_DEPENDENCY_UNAVAILABLE;
     }
 
     // initialize context and device to the current ones
