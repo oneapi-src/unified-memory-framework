@@ -2,6 +2,9 @@
 // Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
+#include <limits>
+#include <string>
+
 #include <umf/experimental/ctl.h>
 #include <umf/memory_provider.h>
 #include <umf/providers/provider_file_memory.h>
@@ -380,6 +383,11 @@ TEST(FileProviderName, default_name_null_handle) {
     EXPECT_STREQ(name, "FILE");
 }
 
+TEST(FileProviderName, null_name) {
+    auto ret = umfFileMemoryProviderOps()->get_name(nullptr, nullptr);
+    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
 TEST_P(FileProviderParamsDefault, free_size_0_ptr_not_null) {
     umf_result_t umf_result =
         umfMemoryProviderFree(provider.get(), INVALID_PTR, 0);
@@ -623,4 +631,86 @@ TEST_P(FileProviderParamsShared, IPC_file_not_exist) {
 
     umf_result = umfMemoryProviderFree(provider.get(), ptr, size);
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
+}
+
+TEST_F(test, create_NULL_params) {
+    umf_memory_provider_handle_t hProvider = nullptr;
+    auto ret = umfMemoryProviderCreate(umfFileMemoryProviderOps(), nullptr,
+                                       &hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    ASSERT_EQ(hProvider, nullptr);
+}
+
+TEST_F(test, params_NULL_name) {
+    umf_file_memory_provider_params_handle_t params = nullptr;
+    umf_result_t ret = umfFileMemoryProviderParamsCreate(FILE_PATH, &params);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(params, nullptr);
+
+    ret = umfFileMemoryProviderParamsSetName(params, nullptr);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    ret = umfFileMemoryProviderParamsDestroy(params);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfFileMemoryProviderParamsSetName(nullptr, "test");
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, params_long_name) {
+    auto params = get_file_params_default(FILE_PATH);
+    ASSERT_NE(params.get(), nullptr);
+
+    const std::string long_name(1024, 'x');
+    auto ret =
+        umfFileMemoryProviderParamsSetName(params.get(), long_name.c_str());
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    umf_test::provider_unique_handle_t provider;
+    providerCreateExt({umfFileMemoryProviderOps(), params.get()}, &provider);
+    ASSERT_NE(provider.get(), nullptr);
+
+    const char *name = nullptr;
+    ret = umfMemoryProviderGetName(provider.get(), &name);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(name, nullptr);
+    EXPECT_EQ(strncmp(name, long_name.c_str(), 63), 0);
+    EXPECT_EQ(name[63], '\0');
+}
+
+TEST_P(FileProviderParamsDefault, get_NULL_name) {
+    auto ret = umfMemoryProviderGetName(provider.get(), nullptr);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, params_protection_flag) {
+    umf_file_memory_provider_params_handle_t params = nullptr;
+    umf_result_t ret = umfFileMemoryProviderParamsCreate(FILE_PATH, &params);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(params, nullptr);
+
+    // test all valid combinations
+    for (unsigned protection = UMF_PROTECTION_NONE;
+         protection < (UMF_PROTECTION_MAX - 1) << 1; ++protection) {
+        ret = umfFileMemoryProviderParamsSetProtection(params, protection);
+        ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    }
+
+    ret = umfFileMemoryProviderParamsDestroy(params);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+}
+
+TEST_F(test, params_invalid_protection_flag) {
+    auto params = get_file_params_default(FILE_PATH);
+    ASSERT_NE(params.get(), nullptr);
+
+    auto ret = umfFileMemoryProviderParamsSetProtection(params.get(), 0);
+    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    for (unsigned bit = 4; bit < std::numeric_limits<unsigned>::digits; ++bit) {
+        unsigned invalid_protection = 1u << bit;
+        ret = umfFileMemoryProviderParamsSetProtection(params.get(),
+                                                       invalid_protection);
+        EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    }
 }

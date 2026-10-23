@@ -277,6 +277,10 @@ TEST_P(umfCUDAProviderTest, getName) {
     ASSERT_EQ(umf_result, UMF_RESULT_SUCCESS);
     ASSERT_STREQ(name, "CUDA");
 
+    // negative case - pass NULL as a name pointer
+    umf_result = umfMemoryProviderGetName(provider, nullptr);
+    ASSERT_EQ(umf_result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
     umfMemoryProviderDestroy(provider);
 }
 
@@ -361,6 +365,16 @@ TEST(umfCUDAProviderOps, default_name_null_handle) {
     auto ret = umfCUDAMemoryProviderOps()->get_name(nullptr, &name);
     EXPECT_EQ(ret, UMF_RESULT_SUCCESS);
     EXPECT_STREQ(name, "CUDA");
+}
+
+TEST(umfCUDAProviderOps, null_name) {
+    auto ret = umfCUDAMemoryProviderOps()->get_name(nullptr, nullptr);
+    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_P(umfCUDAProviderTest, cudaProviderNullName) {
+    EXPECT_EQ(umfCUDAMemoryProviderParamsSetName(params, nullptr),
+              UMF_RESULT_ERROR_INVALID_ARGUMENT);
 }
 
 TEST_P(umfCUDAProviderTest, allocInvalidSize) {
@@ -469,6 +483,12 @@ TEST_P(umfCUDAProviderTest, cudaProviderNullParams) {
 
     res =
         umfCUDAMemoryProviderParamsSetMemoryType(nullptr, expected_memory_type);
+    EXPECT_EQ(res, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    res = umfCUDAMemoryProviderParamsSetAllocFlags(nullptr, 0);
+    EXPECT_EQ(res, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    res = umfCUDAMemoryProviderParamsSetName(nullptr, "test");
     EXPECT_EQ(res, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 }
 
