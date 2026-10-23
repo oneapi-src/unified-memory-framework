@@ -429,6 +429,11 @@ if(UMF_LINK_HWLOC_STATICALLY)
         set(LIBHWLOC_INCLUDE_DIRS ${hwloc_targ_BINARY_DIR}/include)
         set(LIBHWLOC_LIBRARIES ${hwloc_targ_BINARY_DIR}/lib/libhwloc.a)
         set(LIBHWLOC_FOUND TRUE)
+
+        if(NOT UMF_BUILD_SHARED_LIBRARY)
+            install(FILES ${LIBHWLOC_LIBRARIES}
+                    DESTINATION ${CMAKE_INSTALL_LIBDIR})
+        endif()
     endif()
 endif() # UMF_LINK_HWLOC_STATICALLY
 
