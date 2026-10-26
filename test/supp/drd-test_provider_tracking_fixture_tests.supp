@@ -1,0 +1,10 @@
+{
+   [false-positive] Atomic critnib root load in umfMemoryTrackerAdd
+   drd:ConflictingAccess
+   fun:utils_atomic_load_acquire_ptr
+   fun:critnib_find
+   fun:umfMemoryTrackerAdd
+   fun:trackingAlloc
+   fun:umfMemoryProviderAlloc
+   ...
+}

@@ -37,6 +37,17 @@
 }
 
 {
+   False-positive ConflictingAccess in jemalloc arena destruction
+   drd:ConflictingAccess
+   fun:arena_reset_finish_background_thread
+   fun:arena_i_destroy_ctl
+   fun:je_ctl_byname
+   fun:op_finalize
+   fun:umfPoolDestroy
+   ...
+}
+
+{
    False-positive ConflictingAccess in tbbmalloc
    drd:ConflictingAccess
    ...
