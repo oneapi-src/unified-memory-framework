@@ -1081,6 +1081,14 @@ umf_result_t umfFileMemoryProviderParamsSetProtection(
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
     }
 
+    // UMF_PROTECTION_MAX - 1 is the highest valid flag bit.
+    // Reject unknown bits and zero (NOTE: UMF_PROTECTION_NONE == 1)
+    const unsigned VALID_FLAGS_ALL = ((UMF_PROTECTION_MAX - 1) << 1) - 1;
+    if (protection & ~VALID_FLAGS_ALL || protection == 0) {
+        LOG_ERR("Incorrect memory protection flags: %u", protection);
+        return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
     hParams->protection = protection;
 
     return UMF_RESULT_SUCCESS;
