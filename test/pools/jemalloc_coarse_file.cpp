@@ -7,6 +7,8 @@
 
 #include "pool_coarse.hpp"
 
+#define FILE_PATH ((char *)"tmp_file_jemalloc_coarse_file")
+
 void *getFileParamsDefault() {
     umf_file_memory_provider_params_handle_t file_params = NULL;
     umf_result_t res =

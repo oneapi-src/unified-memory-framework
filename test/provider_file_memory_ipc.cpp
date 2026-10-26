@@ -15,7 +15,7 @@
 
 using umf_test::test;
 
-#define FILE_PATH ((char *)"tmp_file")
+#define FILE_PATH ((char *)"tmp_file_provider_file_memory_ipc")
 
 void *createFileParamsShared() {
     umf_file_memory_provider_params_handle_t file_params = NULL;

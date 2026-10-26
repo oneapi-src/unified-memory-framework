@@ -16,7 +16,7 @@
 
 using umf_test::test;
 
-#define FILE_PATH ((char *)"tmp_file")
+#define FILE_PATH ((char *)"tmp_file_provider_file_memory")
 #define INVALID_PTR ((void *)0x01)
 
 typedef enum purge_t {
