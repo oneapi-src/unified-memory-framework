@@ -10,6 +10,7 @@
 #endif
 
 #include <cerrno>
+#include <string>
 
 #include <umf/experimental/ctl.h>
 #include <umf/memory_provider.h>
@@ -335,6 +336,11 @@ TEST(DevDaxProviderName, default_name_null_handle) {
     EXPECT_STREQ(name, "DEVDAX");
 }
 
+TEST(DevDaxProviderName, null_name) {
+    auto ret = umfDevDaxMemoryProviderOps()->get_name(nullptr, nullptr);
+    EXPECT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
 TEST_P(umfProviderTest, free_size_0_ptr_not_null) {
     umf_result_t umf_result =
         umfMemoryProviderFree(provider.get(), INVALID_PTR, 0);
@@ -577,4 +583,57 @@ TEST_F(test, create_wrong_size_0) {
 
     ret = umfDevDaxMemoryProviderParamsDestroy(wrong_params);
     ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+}
+
+TEST_F(test, create_NULL_params) {
+    umf_memory_provider_handle_t hProvider = nullptr;
+    auto ret = umfMemoryProviderCreate(umfDevDaxMemoryProviderOps(), nullptr,
+                                       &hProvider);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    ASSERT_EQ(hProvider, nullptr);
+}
+
+TEST_F(test, params_NULL_name) {
+    umf_devdax_memory_provider_params_handle_t params = nullptr;
+    auto ret =
+        umfDevDaxMemoryProviderParamsCreate("/dev/dax0.0", 4096, &params);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(params, nullptr);
+
+    ret = umfDevDaxMemoryProviderParamsSetName(params, nullptr);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+
+    ret = umfDevDaxMemoryProviderParamsDestroy(params);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    ret = umfDevDaxMemoryProviderParamsSetName(nullptr, "test");
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(test, params_long_name) {
+    auto params = create_devdax_params();
+    if (!params.get()) {
+        GTEST_SKIP() << "devdax params unavailable";
+    }
+
+    const std::string long_name(1024, 'x');
+    auto ret =
+        umfDevDaxMemoryProviderParamsSetName(params.get(), long_name.c_str());
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+
+    umf_test::provider_unique_handle_t provider;
+    providerCreateExt({umfDevDaxMemoryProviderOps(), params.get()}, &provider);
+    ASSERT_NE(provider.get(), nullptr);
+
+    const char *name = nullptr;
+    ret = umfMemoryProviderGetName(provider.get(), &name);
+    ASSERT_EQ(ret, UMF_RESULT_SUCCESS);
+    ASSERT_NE(name, nullptr);
+    EXPECT_EQ(strncmp(name, long_name.c_str(), 63), 0);
+    EXPECT_EQ(name[63], '\0');
+}
+
+TEST_P(umfProviderTest, get_NULL_name) {
+    auto ret = umfMemoryProviderGetName(provider.get(), nullptr);
+    ASSERT_EQ(ret, UMF_RESULT_ERROR_INVALID_ARGUMENT);
 }

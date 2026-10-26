@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024-2025 Intel Corporation
+ * Copyright (C) 2024-2026 Intel Corporation
  *
  * Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -47,6 +47,8 @@ umf_result_t umfFileMemoryProviderParamsSetPath(
 /// @param  hParams handle to the parameters of the File Memory Provider.
 /// @param  protection protection. Combination of \p umf_mem_protection_flags_t flags
 /// @return UMF_RESULT_SUCCESS on success or appropriate error code on failure.
+/// @return UMF_RESULT_ERROR_INVALID_ARGUMENT if \p hParams is NULL, \p protection
+///         is zero, or \p protection contains unsupported bits.
 umf_result_t umfFileMemoryProviderParamsSetProtection(
     umf_file_memory_provider_params_handle_t hParams, unsigned protection);
 
