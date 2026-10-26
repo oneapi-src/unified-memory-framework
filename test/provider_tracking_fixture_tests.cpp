@@ -17,7 +17,7 @@
 
 #include "poolFixtures.hpp"
 
-#define FILE_PATH ((char *)"tmp_file")
+#define FILE_PATH ((char *)"tmp_file_provider_tracking_fixture_tests")
 
 struct provider_from_pool : public umf_test::provider_base_t {
     umf_memory_pool_handle_t pool;

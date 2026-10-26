@@ -17,7 +17,7 @@ using umf_test::KB;
 using umf_test::MB;
 using umf_test::test;
 
-#define FILE_PATH ((char *)"tmp_file")
+#define FILE_PATH ((char *)"tmp_file_disjoint_pool_file_prov")
 
 umf_memory_provider_ops_t UMF_MALLOC_MEMORY_PROVIDER_OPS =
     umf_test::providerMakeCOps<umf_test::provider_ba_global, void>();
