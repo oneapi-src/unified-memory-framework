@@ -47,8 +47,8 @@ jobs:
           genhtml --no-function-coverage -o html_report total_coverage 2>&1 | tee output.txt
           mkdir coverage_report
           mv html_report ./coverage_report/
-          tail -n2 output.txt >> $GITHUB_STEP_SUMMARY
-          echo "COV_OUT=$(tail -n1 output.txt | grep -oP "lines[.]+: [\d.]+%" | cut -d ' ' -f2 | tr -d '%')" >> $GITHUB_OUTPUT
+          grep -E "^\s*(source files|lines)\.*:" output.txt >> $GITHUB_STEP_SUMMARY
+          echo "COV_OUT=$(grep -oP "^\s*lines\.+: \K[\d.]+(?=%)" output.txt)" >> $GITHUB_OUTPUT
 
       - name: Upload coverage report
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

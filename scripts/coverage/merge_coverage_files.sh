@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (C) 2024 Intel Corporation
+# Copyright (C) 2024-2026 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -17,6 +17,10 @@ OPTS=""
 for file in $(ls -1 ${PREFIX}-*); do
 	OPTS="$OPTS -a $file"
 done
+
+# Function coverage is not used in the report and it fails to merge,
+# because some functions are defined in #if/#else branches of the same file.
+OPTS="$OPTS --rc function_coverage=0"
 
 set -x
 
