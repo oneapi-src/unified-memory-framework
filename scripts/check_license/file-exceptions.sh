@@ -17,6 +17,7 @@ grep -v -E -e 'benchmark/ubench.h' \
            -e 'licensing/third-party-programs.txt' \
            -e 'scripts/assets/images/.*' \
            -e 'scripts/qemu/requirements.txt' \
+           -e '^src/deps/' \
            -e 'src/uthash/.*' \
            -e 'src/uthash/utlist.h' \
            -e 'src/uthash/uthash.h' \
