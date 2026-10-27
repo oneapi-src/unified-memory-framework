@@ -184,7 +184,7 @@ else()
     endif()
 
     if(NOT DEFINED UMF_JEMALLOC_TAG)
-        set(UMF_JEMALLOC_TAG 5.3.0)
+        set(UMF_JEMALLOC_TAG 5.4.0)
     endif()
 
     message(
