@@ -113,6 +113,16 @@ jobs:
             install_tbb: 'ON'
             link_hwloc_statically: 'ON'
             cmake_ver: 'default'
+          # test installing static UMF with bundled static hwloc
+          - os: ubuntu-22.04
+            build_type: Release
+            compiler: {c: gcc, cxx: g++}
+            shared_library: 'OFF'
+            level_zero_provider: 'ON'
+            cuda_provider: 'ON'
+            install_tbb: 'ON'
+            link_hwloc_statically: 'ON'
+            cmake_ver: 'default'
           # test static hwloc built from a local clone (UMF_HWLOC_SOURCE_DIR)
           - os: ubuntu-24.04
             build_type: Release
@@ -237,6 +247,7 @@ jobs:
         ${{ matrix.install_tbb == 'ON' && matrix.shared_library == 'ON' && '--proxy' || '' }}
         --umf-version ${{env.UMF_VERSION}}
         ${{ matrix.shared_library == 'ON' && '--shared-library' || '' }}
+        ${{ matrix.link_hwloc_statically == 'ON' && matrix.shared_library == 'OFF' && '--hwloc' || '' }}
 
   windows-build:
     env:

@@ -36,6 +36,18 @@ add_subdirectory(coarse)
 
 set(UMF_LIBS umf_utils umf_ba umf_coarse $<BUILD_INTERFACE:${UMF_HWLOC_NAME}>)
 
+if(UMF_LINK_HWLOC_STATICALLY
+   AND NOT UMF_BUILD_SHARED_LIBRARY
+   AND NOT WINDOWS)
+    # BUILD_INTERFACE is omitted from installed exports, so installed consumers
+    # need a separate dependency on the bundled archive at a relocatable path.
+    list(
+        APPEND
+        UMF_LIBS
+        "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_LIBDIR}/libumf_hwloc.a>"
+    )
+endif()
+
 set(UMF_SOURCES
     ctl/ctl.c
     ctl/ctl_defaults.c
