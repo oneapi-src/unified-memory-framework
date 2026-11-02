@@ -7,6 +7,28 @@
 }
 
 {
+   [false-positive] Atomic critnib lookup in umfMemoryTrackerGetIpcInfo
+   drd:ConflictingAccess
+   fun:utils_atomic_load_acquire_ptr
+   fun:find_le
+   fun:critnib_find
+   fun:umfMemoryTrackerGetIpcInfo
+   fun:umfCloseIPCHandle
+   ...
+}
+
+{
+   [false-positive] Atomic critnib lookup in trackingCloseIpcHandle
+   drd:ConflictingAccess
+   fun:utils_atomic_load_acquire_ptr
+   fun:critnib_get
+   fun:trackingCloseIpcHandle
+   fun:umfMemoryProviderCloseIPCHandle
+   fun:umfCloseIPCHandle
+   ...
+}
+
+{
    [false-positive] Atomic critnib child load in trackingGetIpcHandle
    drd:ConflictingAccess
    fun:utils_atomic_load_acquire_ptr
