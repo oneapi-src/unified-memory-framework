@@ -7,6 +7,17 @@
 }
 
 {
+   [false-positive] Atomic critnib child load in trackingGetIpcHandle
+   drd:ConflictingAccess
+   fun:utils_atomic_load_acquire_ptr
+   fun:critnib_get
+   fun:trackingGetIpcHandle
+   fun:umfMemoryProviderGetIPCHandle
+   fun:umfGetIPCHandle
+   ...
+}
+
+{
    [false-positive] Double check locking pattern in trackingOpenIpcHandle
    drd:ConflictingAccess
    fun:utils_atomic_load_acquire_ptr
