@@ -434,7 +434,8 @@ if(UMF_LINK_HWLOC_STATICALLY)
             install(
                 FILES ${LIBHWLOC_LIBRARIES}
                 DESTINATION ${CMAKE_INSTALL_LIBDIR}
-                RENAME libumf_hwloc.a)
+                RENAME libumf_hwloc.a
+                COMPONENT umf)
         endif()
     endif()
 endif() # UMF_LINK_HWLOC_STATICALLY
@@ -1078,19 +1079,30 @@ if(WINDOWS AND UMF_USE_DEBUG_POSTFIX)
         COMPONENT umfd)
 endif()
 
-install(FILES ${PROJECT_SOURCE_DIR}/LICENSE.TXT
-        DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/doc/${PROJECT_NAME}/")
+install(
+    FILES ${PROJECT_SOURCE_DIR}/LICENSE.TXT
+    DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/doc/${PROJECT_NAME}/"
+    COMPONENT umf)
 install(
     FILES ${PROJECT_SOURCE_DIR}/licensing/third-party-programs.txt
-    DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/doc/${PROJECT_NAME}/licensing/")
+    DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/doc/${PROJECT_NAME}/licensing/"
+    COMPONENT umf)
 
-install(DIRECTORY examples DESTINATION "${CMAKE_INSTALL_DOCDIR}")
+install(
+    DIRECTORY examples
+    DESTINATION "${CMAKE_INSTALL_DOCDIR}"
+    COMPONENT umf)
 
 # Add the include directory and the headers target to the install.
-install(DIRECTORY "${PROJECT_SOURCE_DIR}/include/"
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(
+    DIRECTORY "${PROJECT_SOURCE_DIR}/include/"
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    COMPONENT umf)
 
-install(TARGETS umf_headers EXPORT ${PROJECT_NAME}-targets)
+install(
+    TARGETS umf_headers
+    EXPORT ${PROJECT_NAME}-targets
+    COMPONENT umf)
 
 # Add the list of installed targets to the install. This includes the namespace
 # which all installed targets will be prefixed with, e.g. for the headers target
@@ -1099,7 +1111,8 @@ install(
     EXPORT ${PROJECT_NAME}-targets
     FILE ${PROJECT_NAME}-targets.cmake
     NAMESPACE ${PROJECT_NAME}::
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+    COMPONENT umf)
 
 # Configure the package versions file for use in find_package when installed.
 write_basic_package_version_file(
@@ -1114,9 +1127,11 @@ configure_package_config_file(
     INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
 
 # Add the package files to the install.
-install(FILES ${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}-config.cmake
-              ${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}-config-version.cmake
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+install(
+    FILES ${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}-config.cmake
+          ${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}-config-version.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+    COMPONENT umf)
 
 # Configure uninstall commands
 configure_file("${PROJECT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
