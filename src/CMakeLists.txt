@@ -214,7 +214,10 @@ target_include_directories(
            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/uthash>
            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
-install(TARGETS umf EXPORT ${PROJECT_NAME}-targets)
+install(
+    TARGETS umf
+    EXPORT ${PROJECT_NAME}-targets
+    COMPONENT umf)
 
 if(UMF_PROXY_LIB_ENABLED)
     add_subdirectory(proxy_lib)

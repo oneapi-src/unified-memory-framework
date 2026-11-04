@@ -1,4 +1,4 @@
-# Copyright (C) 2025 Intel Corporation
+# Copyright (C) 2025-2026 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -24,5 +24,8 @@ target_include_directories(umf_ba
                            PRIVATE ${UMF_CMAKE_SOURCE_DIR}/src/base_alloc)
 
 if(NOT UMF_BUILD_SHARED_LIBRARY)
-    install(TARGETS umf_ba EXPORT ${PROJECT_NAME}-targets)
+    install(
+        TARGETS umf_ba
+        EXPORT ${PROJECT_NAME}-targets
+        COMPONENT umf)
 endif()

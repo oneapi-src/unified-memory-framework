@@ -1,4 +1,4 @@
-# Copyright (C) 2024-2025 Intel Corporation
+# Copyright (C) 2024-2026 Intel Corporation
 # Under the Apache License v2.0 with LLVM Exceptions. See LICENSE.TXT.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -20,5 +20,8 @@ target_include_directories(
             ${UMF_CMAKE_SOURCE_DIR}/src/ravl)
 
 if(NOT UMF_BUILD_SHARED_LIBRARY)
-    install(TARGETS umf_coarse EXPORT ${PROJECT_NAME}-targets)
+    install(
+        TARGETS umf_coarse
+        EXPORT ${PROJECT_NAME}-targets
+        COMPONENT umf)
 endif()
