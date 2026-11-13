@@ -23,10 +23,17 @@
 
 static void *ze_lib_handle = NULL;
 
+#if UMF_BUILD_LEVEL_ZERO_PROVIDER
+static void fini_ze_ipc_lock(void);
+#endif
+
 void fini_ze_global_state(void) {
     if (ze_lib_handle) {
         utils_close_library(ze_lib_handle);
         ze_lib_handle = NULL;
+#if UMF_BUILD_LEVEL_ZERO_PROVIDER
+        fini_ze_ipc_lock();
+#endif
     }
 }
 
@@ -147,6 +154,16 @@ typedef struct ze_ops_t {
 static ze_ops_t g_ze_ops;
 static UTIL_ONCE_FLAG ze_is_initialized = UTIL_ONCE_FLAG_INIT;
 static bool Init_ze_global_state_failed;
+// Serializes zeMemGetIpcHandle()/zeMemPutIpcHandle() calls. Concurrent Get/Put
+// of IPC handles for the same allocation is not thread-safe in some Level Zero
+// GPU drivers and may corrupt the driver's internal IPC handle bookkeeping,
+// leading to a crash in a subsequent zeMemPutIpcHandle() call.
+static utils_mutex_t ze_ipc_lock;
+
+static void fini_ze_ipc_lock(void) {
+    utils_mutex_destroy_not_free(&ze_ipc_lock);
+}
+
 static __TLS ze_result_t TLS_last_native_error;
 static const char *DEFAULT_NAME = "LEVEL_ZERO";
 
@@ -464,6 +481,14 @@ static void init_ze_global_state(void) {
         utils_close_library(lib_handle);
         return;
     }
+
+    if (!utils_mutex_init(&ze_ipc_lock)) {
+        LOG_FATAL("Failed to initialize Level Zero IPC lock");
+        Init_ze_global_state_failed = true;
+        utils_close_library(lib_handle);
+        return;
+    }
+
     ze_lib_handle = lib_handle;
 }
 
@@ -1101,8 +1126,10 @@ static umf_result_t ze_memory_provider_get_ipc_handle(void *provider,
 
     if (ze_provider->use_import_export_for_IPC == 0) {
         // default - IPC API
+        utils_mutex_lock(&ze_ipc_lock);
         ze_result = g_ze_ops.zeMemGetIpcHandle(ze_provider->context, ptr,
                                                &ze_ipc_data->ze_handle);
+        utils_mutex_unlock(&ze_ipc_lock);
         if (ze_result != ZE_RESULT_SUCCESS) {
             LOG_ERR("zeMemGetIpcHandle() failed.");
             return ze2umf_result(ze_result);
@@ -1153,8 +1180,10 @@ static umf_result_t ze_memory_provider_put_ipc_handle(void *provider,
         return UMF_RESULT_SUCCESS;
     }
 
+    utils_mutex_lock(&ze_ipc_lock);
     ze_result = g_ze_ops.zeMemPutIpcHandle(ze_provider->context,
                                            ze_ipc_data->ze_handle);
+    utils_mutex_unlock(&ze_ipc_lock);
     if (ze_result != ZE_RESULT_SUCCESS) {
         LOG_ERR("zeMemPutIpcHandle() failed.");
         return ze2umf_result(ze_result);
