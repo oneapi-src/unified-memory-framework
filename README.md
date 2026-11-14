@@ -143,6 +143,7 @@ List of options provided by CMake:
 | UMF_LINK_HWLOC_STATICALLY | Link UMF with HWLOC library statically (proxy library will be disabled on Windows+Debug build) | ON/OFF | OFF |
 | UMF_HWLOC_SOURCE_DIR | Path to local hwloc sources used instead of fetching them (with UMF_LINK_HWLOC_STATICALLY) | path | "" |
 | UMF_HWLOC_REPO | hwloc git repository URL or local mirror path (with UMF_LINK_HWLOC_STATICALLY) | URL/path | https://github.com/open-mpi/hwloc.git |
+| UMF_USE_BUNDLED_HWLOC | Use prebuilt x86-64 hwloc from `src/deps/hwloc` (requires `UMF_LINK_HWLOC_STATICALLY=ON`) | ON/OFF | OFF |
 
 ## Architecture: memory pools and providers
 
