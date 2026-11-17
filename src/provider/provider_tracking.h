@@ -79,6 +79,9 @@ umf_result_t umfTrackingMemoryProviderGetMemoryProperties(
     umf_memory_provider_handle_t provider, const void *ptr,
     umf_memory_properties_handle_t *props);
 
+size_t umfTrackingMemoryProviderGetIpcCacheWaiterCount(
+    umf_memory_provider_handle_t provider, const void *ptr);
+
 umf_result_t umfMemoryTrackerIterateAll(int (*func)(uintptr_t key, void *value,
                                                     void *privdata),
                                         void *privdata);

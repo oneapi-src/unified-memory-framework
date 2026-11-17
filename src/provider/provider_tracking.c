@@ -789,12 +789,24 @@ umf_result_t umfMemoryTrackerGetIpcInfo(const void *ptr,
     return UMF_RESULT_SUCCESS;
 }
 
+// Initialization state of an IPC cache entry. Only one thread performs the
+// upstream Get; concurrent Get callers wait on init_mutex until the entry is
+// READY or FAILED (single-flight get-or-create per allocation).
+#define IPC_CACHE_INIT_IN_PROGRESS 0
+#define IPC_CACHE_INIT_READY 1
+#define IPC_CACHE_INIT_FAILED 2
+
 // Cache entry structure to store provider-specific IPC data.
 // providerIpcData is a Flexible Array Member because its size varies
 // depending on the provider.
 typedef struct ipc_cache_value_t {
     uint64_t handle_id;
     uint64_t ipcDataSize;
+    utils_mutex_t init_mutex;
+    int init_state;
+    umf_result_t init_result;
+    uint8_t is_retiring;
+    size_t waiter_count;
     char providerIpcData[];
 } ipc_cache_value_t;
 
@@ -804,6 +816,7 @@ typedef struct umf_tracking_memory_provider_t {
     tracker_address_space_t *address_space;
     umf_memory_pool_handle_t pool;
     critnib *ipcCache;
+    utils_mutex_t ipcCacheMutex;
     ipc_opened_cache_handle_t hIpcMappedCache;
 } umf_tracking_memory_provider_t;
 
@@ -824,6 +837,25 @@ static umf_result_t trackingAlloc(void *hProvider, size_t size,
     if (ret != UMF_RESULT_SUCCESS || !ptr) {
         return ret;
     }
+
+    utils_mutex_lock(&p->ipcCacheMutex);
+    void *cache_ref = NULL;
+    ipc_cache_value_t *cache_value =
+        critnib_get(p->ipcCache, (uintptr_t)ptr, &cache_ref);
+    if (cache_value) {
+        uint8_t is_retiring = 0;
+        utils_atomic_load_acquire_u8(&cache_value->is_retiring, &is_retiring);
+        if (is_retiring) {
+            if (critnib_remove_release(p->ipcCache, (uintptr_t)ptr) != 0) {
+                LOG_ERR("failed to remove retired IPC cache entry, ptr=%p",
+                        ptr);
+            }
+        }
+    }
+    if (cache_ref) {
+        critnib_release(p->ipcCache, cache_ref);
+    }
+    utils_mutex_unlock(&p->ipcCacheMutex);
 
     ret =
         umfMemoryTrackerAdd(p->hTracker, p->address_space, p->pool, ptr, size);
@@ -1052,11 +1084,17 @@ static umf_result_t trackingFree(void *hProvider, void *ptr, size_t size) {
     umf_result_t ret_remove = UMF_RESULT_ERROR_UNKNOWN;
     umf_tracking_memory_provider_t *p =
         (umf_tracking_memory_provider_t *)hProvider;
+    ipc_cache_value_t *cache_value = NULL;
+    void *cache_ref = NULL;
+    int cache_lock_held = 0;
+    int wait_for_init = 0;
+    int init_state = IPC_CACHE_INIT_FAILED;
 
     // umfMemoryTrackerRemove should be called before umfMemoryProviderFree
     // to avoid a race condition. If the order would be different, other thread
     // could allocate the memory at address `ptr` before a call to umfMemoryTrackerRemove
     // resulting in inconsistent state.
+    utils_mutex_lock(&p->ipcCacheMutex);
     if (ptr) {
         ret_remove = umfMemoryTrackerRemove(p->hTracker, p->address_space, ptr);
         if (ret_remove != UMF_RESULT_SUCCESS) {
@@ -1068,10 +1106,48 @@ static umf_result_t trackingFree(void *hProvider, void *ptr, size_t size) {
         }
     }
 
-    void *ref_value = NULL;
-    void *value = critnib_remove(p->ipcCache, (uintptr_t)ptr, &ref_value);
-    if (value) {
-        ipc_cache_value_t *cache_value = (ipc_cache_value_t *)value;
+    cache_value = critnib_get(p->ipcCache, (uintptr_t)ptr, &cache_ref);
+    if (!cache_value) {
+        cache_value = umf_ba_global_alloc(sizeof(*cache_value));
+        if (cache_value) {
+            memset(cache_value, 0, sizeof(*cache_value));
+            cache_value->init_state = IPC_CACHE_INIT_FAILED;
+            utils_atomic_store_release_u8(&cache_value->is_retiring, 1);
+            if (utils_mutex_init(&cache_value->init_mutex) == NULL) {
+                umf_ba_global_free(cache_value);
+                cache_value = NULL;
+            } else if (critnib_insert(p->ipcCache, (uintptr_t)ptr, cache_value,
+                                      0 /*update*/) != 0) {
+                utils_mutex_destroy_not_free(&cache_value->init_mutex);
+                umf_ba_global_free(cache_value);
+                cache_value = NULL;
+            } else {
+                cache_value =
+                    critnib_get(p->ipcCache, (uintptr_t)ptr, &cache_ref);
+                assert(cache_value && cache_ref);
+            }
+        }
+        if (!cache_value) {
+            // With no tombstone available, prevent a getter from inserting
+            // an entry until this allocation has been freed.
+            cache_lock_held = 1;
+        }
+    } else {
+        utils_atomic_increment_size_t(&cache_value->waiter_count);
+        utils_atomic_store_release_u8(&cache_value->is_retiring, 1);
+        wait_for_init = 1;
+    }
+    if (!cache_lock_held) {
+        utils_mutex_unlock(&p->ipcCacheMutex);
+        if (wait_for_init) {
+            utils_mutex_lock(&cache_value->init_mutex);
+            init_state = cache_value->init_state;
+            utils_atomic_decrement_size_t(&cache_value->waiter_count);
+            utils_mutex_unlock(&cache_value->init_mutex);
+        }
+    }
+
+    if (cache_value && init_state == IPC_CACHE_INIT_READY) {
         ret = umfMemoryProviderPutIPCHandle(p->hUpstream,
                                             cache_value->providerIpcData);
         if (ret != UMF_RESULT_SUCCESS) {
@@ -1081,11 +1157,28 @@ static umf_result_t trackingFree(void *hProvider, void *ptr, size_t size) {
         }
     }
 
-    if (ref_value) {
-        critnib_release(p->ipcCache, ref_value);
+    ret = umfMemoryProviderFree(p->hUpstream, ptr, size);
+    if (cache_value) {
+        utils_mutex_lock(&p->ipcCacheMutex);
+        void *current_ref = NULL;
+        void *current_value =
+            critnib_get(p->ipcCache, (uintptr_t)ptr, &current_ref);
+        if (current_value == cache_value &&
+            critnib_remove_release(p->ipcCache, (uintptr_t)ptr) != 0) {
+            LOG_ERR("failed to remove retired IPC cache entry, ptr=%p", ptr);
+        }
+        if (current_ref) {
+            critnib_release(p->ipcCache, current_ref);
+        }
+        utils_mutex_unlock(&p->ipcCacheMutex);
+    }
+    if (cache_ref) {
+        critnib_release(p->ipcCache, cache_ref);
+    }
+    if (cache_lock_held) {
+        utils_mutex_unlock(&p->ipcCacheMutex);
     }
 
-    ret = umfMemoryProviderFree(p->hUpstream, ptr, size);
     if (ret != UMF_RESULT_SUCCESS) {
         LOG_ERR("upstream provider failed to free the memory");
         // Do not add memory back to the tracker,
@@ -1112,11 +1205,33 @@ static umf_result_t trackingInitialize(const void *params, void **ret) {
         return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    *provider = *((const umf_tracking_memory_provider_t *)params);
+    const umf_tracking_memory_provider_t *provider_params = params;
+    provider->hUpstream = provider_params->hUpstream;
+    provider->hTracker = provider_params->hTracker;
+    provider->address_space = provider_params->address_space;
+    provider->pool = provider_params->pool;
+    provider->ipcCache = provider_params->ipcCache;
+    provider->hIpcMappedCache = provider_params->hIpcMappedCache;
     if (provider->hUpstream == NULL || provider->hTracker == NULL ||
         provider->address_space == NULL || provider->pool == NULL ||
         provider->ipcCache == NULL) {
+        if (provider->hIpcMappedCache) {
+            umfIpcOpenedCacheDestroy(provider->hIpcMappedCache);
+        }
+        if (provider->ipcCache) {
+            critnib_delete(provider->ipcCache);
+        }
+        umf_ba_global_free(provider);
         return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (utils_mutex_init(&provider->ipcCacheMutex) == NULL) {
+        if (provider->hIpcMappedCache) {
+            umfIpcOpenedCacheDestroy(provider->hIpcMappedCache);
+        }
+        critnib_delete(provider->ipcCache);
+        umf_ba_global_free(provider);
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
     }
 
     *ret = provider;
@@ -1189,6 +1304,7 @@ static umf_result_t trackingFinalize(void *provider) {
     umfIpcOpenedCacheDestroy(p->hIpcMappedCache);
 
     critnib_delete(p->ipcCache);
+    utils_mutex_destroy_not_free(&p->ipcCacheMutex);
 
     umf_ba_global_free(provider);
     return UMF_RESULT_SUCCESS;
@@ -1270,90 +1386,162 @@ static umf_result_t trackingGetIpcHandle(void *provider, const void *ptr,
         (umf_tracking_memory_provider_t *)provider;
     umf_result_t ret = UMF_RESULT_SUCCESS;
     size_t ipcDataSize = 0;
-    int cached = 0;
     ipc_cache_value_t *cache_value = NULL;
     umf_ipc_data_t *ipcUmfData = getIpcDataFromIpcHandle(providerIpcData);
     void *ref_value = NULL;
 
-    do {
+    for (;;) {
+        utils_mutex_lock(&p->ipcCacheMutex);
         void *value = critnib_get(p->ipcCache, (uintptr_t)ptr, &ref_value);
-        if (value) { //cache hit
+        if (value) {
+            // Cache hit (or hit on an in-progress/failed entry). Wait for the
+            // creating thread to finish initializing the entry.
             cache_value = (ipc_cache_value_t *)value;
-            cached = 1;
-        } else { //cache miss
+            utils_atomic_increment_size_t(&cache_value->waiter_count);
+            utils_mutex_unlock(&p->ipcCacheMutex);
+            utils_mutex_lock(&cache_value->init_mutex);
+            utils_atomic_decrement_size_t(&cache_value->waiter_count);
+            int init_state = cache_value->init_state;
+            umf_result_t init_result = cache_value->init_result;
+            uint8_t is_retiring = 0;
+            utils_atomic_load_acquire_u8(&cache_value->is_retiring,
+                                         &is_retiring);
+            if (init_state == IPC_CACHE_INIT_READY && !is_retiring) {
+                memcpy(providerIpcData, cache_value->providerIpcData,
+                       (size_t)cache_value->ipcDataSize);
+                ipcUmfData->handle_id = cache_value->handle_id;
+            }
+            utils_mutex_unlock(&cache_value->init_mutex);
+
             if (ref_value) {
                 critnib_release(p->ipcCache, ref_value);
                 ref_value = NULL;
             }
 
-            ret = umfMemoryProviderGetIPCHandleSize(p->hUpstream, &ipcDataSize);
-            if (ret != UMF_RESULT_SUCCESS) {
-                LOG_ERR("upstream provider failed to get the size of IPC "
-                        "handle");
-                return ret;
-            }
-
-            if (ipcDataSize > SIZE_MAX - sizeof(ipc_cache_value_t)) {
-                LOG_ERR("upstream provider IPC handle size is too large");
+            if (is_retiring) {
                 return UMF_RESULT_ERROR_INVALID_ARGUMENT;
             }
+            if (init_state == IPC_CACHE_INIT_READY) {
+                return UMF_RESULT_SUCCESS;
+            }
+            // Creator failed (and will/has remove the entry). Propagate the
+            // upstream error except provider-specific errors, whose native
+            // details are thread-local to the creator.
+            if (init_result == UMF_RESULT_ERROR_MEMORY_PROVIDER_SPECIFIC) {
+                return UMF_RESULT_ERROR_UNKNOWN;
+            }
+            return init_result != UMF_RESULT_SUCCESS ? init_result
+                                                     : UMF_RESULT_ERROR_UNKNOWN;
+        }
 
-            size_t value_size = sizeof(ipc_cache_value_t) + ipcDataSize;
-            cache_value = umf_ba_global_alloc(value_size);
-            if (!cache_value) {
-                LOG_ERR("failed to allocate cache_value");
+        if (ref_value) {
+            critnib_release(p->ipcCache, ref_value);
+            ref_value = NULL;
+        }
+
+        // Cache miss: insert a placeholder first so only one thread calls
+        // upstream Get for this allocation (single-flight get-or-create).
+        // Keep the cache mutex until insertion so free cannot retire the
+        // allocation between the miss and placeholder creation.
+        ret = umfMemoryProviderGetIPCHandleSize(p->hUpstream, &ipcDataSize);
+        if (ret != UMF_RESULT_SUCCESS) {
+            utils_mutex_unlock(&p->ipcCacheMutex);
+            LOG_ERR("upstream provider failed to get the size of IPC handle");
+            return ret;
+        }
+
+        if (ipcDataSize > SIZE_MAX - sizeof(ipc_cache_value_t)) {
+            utils_mutex_unlock(&p->ipcCacheMutex);
+            LOG_ERR("upstream provider IPC handle size is too large");
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        }
+
+        size_t value_size = sizeof(ipc_cache_value_t) + ipcDataSize;
+        cache_value = umf_ba_global_alloc(value_size);
+        if (!cache_value) {
+            utils_mutex_unlock(&p->ipcCacheMutex);
+            LOG_ERR("failed to allocate cache_value");
+            return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+        }
+
+        memset(cache_value, 0, value_size);
+        cache_value->init_state = IPC_CACHE_INIT_IN_PROGRESS;
+        cache_value->init_result = UMF_RESULT_SUCCESS;
+        if (utils_mutex_init(&cache_value->init_mutex) == NULL) {
+            utils_mutex_unlock(&p->ipcCacheMutex);
+            LOG_ERR("failed to initialize IPC cache mutex");
+            umf_ba_global_free(cache_value);
+            return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+        }
+
+        // Hold init_mutex across insert so concurrent getters block until
+        // upstream Get completes (or fails).
+        utils_mutex_lock(&cache_value->init_mutex);
+
+        void *cache_ref = NULL;
+        int insRes = critnib_insert(p->ipcCache, (uintptr_t)ptr,
+                                    (void *)cache_value, 0 /*update*/);
+        if (insRes == 0) {
+            void *inserted_value =
+                critnib_get(p->ipcCache, (uintptr_t)ptr, &cache_ref);
+            assert(inserted_value == cache_value && cache_ref);
+            (void)inserted_value;
+        }
+        utils_mutex_unlock(&p->ipcCacheMutex);
+        if (insRes != 0) {
+            utils_mutex_unlock(&cache_value->init_mutex);
+            utils_mutex_destroy_not_free(&cache_value->init_mutex);
+            umf_ba_global_free(cache_value);
+            cache_value = NULL;
+            if (insRes == ENOMEM) {
+                LOG_ERR("insert to IPC cache failed due to OOM");
                 return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
             }
-
-            ret = umfMemoryProviderGetIPCHandle(p->hUpstream, ptr, size,
-                                                cache_value->providerIpcData);
-            if (ret != UMF_RESULT_SUCCESS) {
-                LOG_ERR("upstream provider failed to get IPC handle");
-                umf_ba_global_free(cache_value);
-                return ret;
-            }
-
-            cache_value->handle_id = utils_atomic_increment_u64(&IPC_HANDLE_ID);
-            cache_value->ipcDataSize = ipcDataSize;
-
-            int insRes = critnib_insert(p->ipcCache, (uintptr_t)ptr,
-                                        (void *)cache_value, 0 /*update*/);
-            if (insRes == 0) {
-                cached = 1;
-            } else {
-                // critnib_insert might fail in 2 cases:
-                // 1. Another thread created cache entry. So we need to
-                //    clean up allocated handle and try to read again from
-                //    the cache. Alternative approach could be insert empty
-                //    cache_value and only if insert succeed get actual IPC
-                //    handle and fill the cache_value structure under the lock.
-                //    But this case should be rare enough.
-                // 2. critnib failed to allocate memory internally. We need
-                //    to cleanup and return corresponding error.
-                ret = umfMemoryProviderPutIPCHandle(
-                    p->hUpstream, cache_value->providerIpcData);
-                umf_ba_global_free(cache_value);
-                if (ret != UMF_RESULT_SUCCESS) {
-                    LOG_ERR("upstream provider failed to put IPC handle");
-                    return ret;
-                }
-                if (insRes == ENOMEM) {
-                    LOG_ERR("insert to IPC cache failed due to OOM");
-                    return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
-                }
-            }
+            // EEXIST: another thread won the insert; retry and join its flight.
+            continue;
         }
-    } while (!cached);
 
-    memcpy(providerIpcData, cache_value->providerIpcData,
-           cache_value->ipcDataSize);
-    ipcUmfData->handle_id = cache_value->handle_id;
+        ret = umfMemoryProviderGetIPCHandle(p->hUpstream, ptr, size,
+                                            cache_value->providerIpcData);
+        if (ret != UMF_RESULT_SUCCESS) {
+            LOG_ERR("upstream provider failed to get IPC handle");
+            cache_value->init_result = ret;
+            cache_value->init_state = IPC_CACHE_INIT_FAILED;
+            // Unlock before remove_release: free may be waiting on init_mutex
+            // and remove_release may free cache_value when it drops the last
+            // ref.
+            utils_mutex_unlock(&cache_value->init_mutex);
+            utils_mutex_lock(&p->ipcCacheMutex);
+            void *current_ref = NULL;
+            void *current_value =
+                critnib_get(p->ipcCache, (uintptr_t)ptr, &current_ref);
+            uint8_t is_retiring = 0;
+            utils_atomic_load_acquire_u8(&cache_value->is_retiring,
+                                         &is_retiring);
+            // Free owns retiring entries until upstream free completes.
+            if (current_value == cache_value && !is_retiring &&
+                critnib_remove_release(p->ipcCache, (uintptr_t)ptr) != 0) {
+                LOG_ERR("failed to remove failed IPC cache entry, ptr=%p", ptr);
+            }
+            if (current_ref) {
+                critnib_release(p->ipcCache, current_ref);
+            }
+            utils_mutex_unlock(&p->ipcCacheMutex);
+            critnib_release(p->ipcCache, cache_ref);
+            return ret;
+        }
 
-    if (ref_value) {
-        critnib_release(p->ipcCache, ref_value);
+        cache_value->handle_id = utils_atomic_increment_u64(&IPC_HANDLE_ID);
+        cache_value->ipcDataSize = ipcDataSize;
+        cache_value->init_state = IPC_CACHE_INIT_READY;
+        // Copy while still holding init_mutex so free cannot drop the entry
+        // under us.
+        memcpy(providerIpcData, cache_value->providerIpcData, ipcDataSize);
+        ipcUmfData->handle_id = cache_value->handle_id;
+        utils_mutex_unlock(&cache_value->init_mutex);
+        critnib_release(p->ipcCache, cache_ref);
+        return UMF_RESULT_SUCCESS;
     }
-
-    return ret;
 }
 
 static umf_result_t trackingPutIpcHandle(void *provider,
@@ -1559,6 +1747,8 @@ umf_memory_provider_ops_t UMF_TRACKING_MEMORY_PROVIDER_OPS = {
 static void free_ipc_cache_value(void *unused, void *ipc_cache_value) {
     (void)unused;
     if (ipc_cache_value) {
+        ipc_cache_value_t *cache_value = (ipc_cache_value_t *)ipc_cache_value;
+        utils_mutex_destroy_not_free(&cache_value->init_mutex);
         umf_ba_global_free(ipc_cache_value);
     }
 }
@@ -1582,6 +1772,30 @@ umf_result_t umfTrackingMemoryProviderGetMemoryProperties(
     *props = &info->props;
     return UMF_RESULT_SUCCESS;
 }
+
+#ifdef UMF_TESTING
+size_t umfTrackingMemoryProviderGetIpcCacheWaiterCount(
+    umf_memory_provider_handle_t provider, const void *ptr) {
+    umf_tracking_memory_provider_t *tracking =
+        umfMemoryProviderGetPriv(provider);
+    void *ref_value = NULL;
+    size_t waiter_count = 0;
+
+    utils_mutex_lock(&tracking->ipcCacheMutex);
+    ipc_cache_value_t *cache_value =
+        critnib_get(tracking->ipcCache, (uintptr_t)ptr, &ref_value);
+    if (cache_value) {
+        utils_atomic_load_acquire_size_t(&cache_value->waiter_count,
+                                         &waiter_count);
+    }
+    if (ref_value) {
+        critnib_release(tracking->ipcCache, ref_value);
+    }
+    utils_mutex_unlock(&tracking->ipcCacheMutex);
+
+    return waiter_count;
+}
+#endif
 
 umf_result_t umfTrackingMemoryProviderCreate(
     umf_memory_provider_handle_t hUpstream, umf_memory_pool_handle_t hPool,
@@ -1621,6 +1835,11 @@ umf_result_t umfTrackingMemoryProviderCreate(
 
     params.hIpcMappedCache =
         umfIpcOpenedCacheCreate(ipcOpenedCacheEvictionCallback);
+    if (!params.hIpcMappedCache) {
+        critnib_delete(params.ipcCache);
+        LOG_ERR("failed to create opened IPC cache");
+        return UMF_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+    }
 
     LOG_DEBUG("upstream=%p, tracker=%p, "
               "pool=%p, ipcCache=%p, hIpcMappedCache=%p",
