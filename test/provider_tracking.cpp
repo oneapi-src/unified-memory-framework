@@ -1083,6 +1083,84 @@ TEST(TrackingProviderIpcConcurrencyTest, failed_get_preserves_retiring_entry) {
     }
 }
 
+TEST(TrackingProviderIpcConcurrencyTest, delayed_get_rejects_freed_allocation) {
+    std::array<uint64_t, 16> allocation;
+    tracking_ipc_test_state state;
+    state.reuse_ptr = allocation.data();
+    umf_memory_provider_handle_t raw_provider = nullptr;
+    umf_memory_pool_handle_t raw_pool = nullptr;
+    ASSERT_EQ(create_tracking_ipc_test_pool(&state, &raw_provider, &raw_pool),
+              UMF_RESULT_SUCCESS);
+    umf_test::provider_unique_handle_t provider(raw_provider,
+                                                &umfMemoryProviderDestroy);
+    umf_test::pool_unique_handle_t pool(raw_pool, &umfPoolDestroy);
+    umf_ipc_handler_handle_t handler = nullptr;
+    ASSERT_EQ(umfPoolGetIPCHandler(pool.get(), &handler), UMF_RESULT_SUCCESS);
+    auto tracking_provider =
+        reinterpret_cast<umf_memory_provider_handle_t>(handler);
+    size_t ipc_handle_size = 0;
+    ASSERT_EQ(
+        umfMemoryProviderGetIPCHandleSize(tracking_provider, &ipc_handle_size),
+        UMF_RESULT_SUCCESS);
+    void *ptr = umfPoolMalloc(pool.get(), sizeof(allocation));
+    ASSERT_EQ(ptr, allocation.data());
+    auto original = tracking_ipc_get(ptr, sizeof(allocation), ipc_handle_size,
+                                     tracking_provider, provider.get());
+    ASSERT_EQ(original.result, UMF_RESULT_SUCCESS);
+
+    std::mutex gate;
+    std::condition_variable cv;
+    bool started = false;
+    bool resume = false;
+    tracking_ipc_get_result delayed;
+    std::thread getter([&] {
+        {
+            std::unique_lock<std::mutex> lock(gate);
+            started = true;
+            cv.notify_all();
+            // Pause before the provider's first cache lookup, without
+            // retaining any allocation metadata across Free.
+            cv.wait(lock, [&] { return resume; });
+        }
+        delayed = tracking_ipc_get(ptr, sizeof(allocation), ipc_handle_size,
+                                   tracking_provider, provider.get());
+    });
+    {
+        std::unique_lock<std::mutex> lock(gate);
+        cv.wait(lock, [&] { return started; });
+    }
+    EXPECT_EQ(umfPoolFree(pool.get(), ptr), UMF_RESULT_SUCCESS);
+    {
+        std::lock_guard<std::mutex> lock(gate);
+        resume = true;
+        cv.notify_all();
+    }
+    getter.join();
+    EXPECT_EQ(delayed.result, UMF_RESULT_ERROR_INVALID_ARGUMENT);
+    {
+        std::lock_guard<std::mutex> lock(state.mutex);
+        EXPECT_EQ(state.get_calls, 1u);
+        EXPECT_EQ(state.put_calls, 1u);
+    }
+
+    void *reused_ptr = umfPoolMalloc(pool.get(), sizeof(allocation));
+    ASSERT_EQ(reused_ptr, ptr);
+    auto replacement =
+        tracking_ipc_get(reused_ptr, sizeof(allocation), ipc_handle_size,
+                         tracking_provider, provider.get());
+    EXPECT_EQ(replacement.result, UMF_RESULT_SUCCESS);
+    EXPECT_NE(replacement.handle_id, original.handle_id);
+    EXPECT_NE(replacement.provider_data, original.provider_data);
+    EXPECT_EQ(umfPoolFree(pool.get(), reused_ptr), UMF_RESULT_SUCCESS);
+    {
+        std::lock_guard<std::mutex> lock(state.mutex);
+        EXPECT_EQ(state.get_calls, 2u);
+        EXPECT_EQ(state.put_handles,
+                  (std::vector<uint64_t>{original.provider_data,
+                                         replacement.provider_data}));
+    }
+}
+
 TEST(TrackingProviderIpcConcurrencyTest, old_free_preserves_replacement_entry) {
     std::array<uint64_t, 16> allocation;
     tracking_ipc_test_state state;

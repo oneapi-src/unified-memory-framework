@@ -1439,6 +1439,32 @@ static umf_result_t trackingGetIpcHandle(void *provider, const void *ptr,
             ref_value = NULL;
         }
 
+        // Free removes tracker metadata under this mutex. A delayed getter
+        // must not start a new flight after the retirement entry is removed.
+        int is_live = 0;
+        for (int level = 0; level < MAX_LEVELS_OF_ALLOC_SEGMENT_MAP; level++) {
+            void *alloc_ref = NULL;
+            tracker_alloc_info_t *info =
+                critnib_get(p->address_space->alloc_segments_map[level],
+                            (uintptr_t)ptr, &alloc_ref);
+            if (info && info->props.pool == p->pool) {
+                is_live = 1;
+            }
+            if (alloc_ref) {
+                critnib_release(p->address_space->alloc_segments_map[level],
+                                alloc_ref);
+            }
+            if (is_live) {
+                break;
+            }
+        }
+        if (!is_live) {
+            utils_mutex_unlock(&p->ipcCacheMutex);
+            LOG_ERR("cannot get IPC handle for an untracked allocation, ptr=%p",
+                    ptr);
+            return UMF_RESULT_ERROR_INVALID_ARGUMENT;
+        }
+
         // Cache miss: insert a placeholder first so only one thread calls
         // upstream Get for this allocation (single-flight get-or-create).
         // Keep the cache mutex until insertion so free cannot retire the
