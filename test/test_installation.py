@@ -242,6 +242,53 @@ class UmfInstaller:
                 print(line)
             sys.exit("Installation test - FAILED")
 
+    def validate_hwloc_symbols(self) -> None:
+        """
+        Verifies that installed UMF libraries do not export unprefixed hwloc
+        symbols, which would clash with an hwloc linked by the application
+        """
+
+        if platform.system() != "Linux":
+            print(f"hwloc symbols check - SKIPPED on {platform.system()}", flush=True)
+            return
+
+        lib_dir = Path(self.install_dir, "lib")
+        libs = [
+            (lib, ["nm", "-g", "--defined-only"]) for lib in sorted(lib_dir.glob("*.a"))
+        ]
+        libs += [
+            (lib, ["nm", "-D", "--defined-only"])
+            for lib in sorted(lib_dir.glob("*.so*"))
+            if not lib.is_symlink()
+        ]
+
+        failed = False
+        for lib, nm_cmd in libs:
+            cmd = nm_cmd + [str(lib)]
+            try:
+                result = subprocess.run(
+                    cmd, capture_output=True, text=True, check=True
+                )  # nosec B603
+            except (OSError, subprocess.CalledProcessError) as e:
+                sys.exit(f"Error: command '{' '.join(cmd)}' failed: {e}")
+
+            symbols = [
+                fields[2]
+                for fields in map(str.split, result.stdout.splitlines())
+                if len(fields) == 3
+            ]
+
+            unprefixed = sorted({s for s in symbols if s.startswith("hwloc_")})
+            if unprefixed:
+                failed = True
+                print(f"{lib.name} exports unprefixed hwloc symbols:", flush=True)
+                for symbol in unprefixed:
+                    print(f"  {symbol}")
+
+        if failed:
+            sys.exit("hwloc symbols check - FAILED")
+        print("hwloc symbols check - PASSED", flush=True)
+
     def uninstall_umf(self) -> None:
         """
         Run the UMF uninstallation CMake target.
@@ -361,6 +408,7 @@ class UmfInstallationTester:
 
         umf_installer.install_umf()
         umf_installer.validate_installed_files()
+        umf_installer.validate_hwloc_symbols()
 
         print("Installation test - PASSED", flush=True)
 
