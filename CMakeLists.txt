@@ -380,12 +380,12 @@ if(UMF_LINK_HWLOC_STATICALLY)
             string(APPEND UMF_HWLOC_CXX " --sysroot=${CMAKE_SYSROOT}")
         endif()
         if(CMAKE_C_COMPILER_EXTERNAL_TOOLCHAIN AND CMAKE_C_COMPILER_ID MATCHES
-                                                   "Clang")
+                                                   "Clang|IntelLLVM")
             string(APPEND UMF_HWLOC_CC
                    " --gcc-toolchain=${CMAKE_C_COMPILER_EXTERNAL_TOOLCHAIN}")
         endif()
         if(CMAKE_CXX_COMPILER_EXTERNAL_TOOLCHAIN AND CMAKE_CXX_COMPILER_ID
-                                                     MATCHES "Clang")
+                                                     MATCHES "Clang|IntelLLVM")
             string(APPEND UMF_HWLOC_CXX
                    " --gcc-toolchain=${CMAKE_CXX_COMPILER_EXTERNAL_TOOLCHAIN}")
         endif()
