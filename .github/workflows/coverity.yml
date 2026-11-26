@@ -75,3 +75,38 @@ jobs:
         --form version="$COMMIT_ID" \
         --form description="$BRANCH_NAME:$COMMIT_ID" \
         https://scan.coverity.com/builds\?project\=oneapi-src%2Funified-memory-framework
+
+  outstanding:
+    name: Coverity outstanding defects
+    # checks results of the last completed analysis (the new submission is analyzed asynchronously)
+    if: github.repository == 'oneapi-src/unified-memory-framework'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check server-side analysis status
+      run: |
+        BADGE=https://scan.coverity.com/projects/29761/badge.svg
+        STATUS=$(curl -fsSL "$BADGE" | grep -oP '<text[^>]*>\K[^<]+' | tail -n 1)
+        if [ -z "$STATUS" ]; then
+          echo "::error::Could not read analysis status from $BADGE"
+          exit 1
+        fi
+        echo "Coverity Scan analysis status: $STATUS" | tee -a "$GITHUB_STEP_SUMMARY"
+        if [[ "$STATUS" == *fail* ]]; then
+          echo "::error::Coverity Scan server-side analysis failed"
+          exit 1
+        fi
+
+    - name: Check outstanding defects
+      if: ${{ !cancelled() }}
+      run: |
+        URL=https://scan.coverity.com/projects/oneapi-src-unified-memory-framework
+        COUNT=$(curl -fsSL "$URL" | grep -B1 '<dt>Outstanding</dt>' | grep -oP '<em>\K[0-9,]+' | tr -d ',')
+        if [ -z "$COUNT" ]; then
+          echo "::error::Could not read outstanding defects count from $URL"
+          exit 1
+        fi
+        echo "Outstanding Coverity defects: $COUNT ($URL)" | tee -a "$GITHUB_STEP_SUMMARY"
+        if [ "$COUNT" -gt 0 ]; then
+          echo "::error::$COUNT outstanding Coverity defect(s)"
+          exit 1
+        fi
