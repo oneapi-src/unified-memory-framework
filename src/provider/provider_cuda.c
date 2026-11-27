@@ -160,9 +160,9 @@ static umf_result_t cu2umf_result(CUresult result) {
     }
 }
 
-// Devices without virtual memory management support cannot report
-// a granularity, so use the value VMM-capable devices report.
-#define CU_FALLBACK_GRANULARITY (2 * 1024 * 1024)
+// Fallbacks for devices without virtual memory management support.
+#define CU_FALLBACK_MIN_GRANULARITY 256
+#define CU_FALLBACK_RECOMMENDED_GRANULARITY (2 * 1024 * 1024)
 
 static CUresult cu_get_granularity(CUdevice device,
                                    CUmemAllocationGranularity_flags option,
@@ -174,10 +174,12 @@ static CUresult cu_get_granularity(CUdevice device,
     CUresult cu_result = g_cu_ops.cuMemGetAllocationGranularity(
         granularity, &allocProps, option);
     if (cu_result == CUDA_ERROR_NOT_SUPPORTED) {
+        *granularity = (option == CU_MEM_ALLOC_GRANULARITY_RECOMMENDED)
+                           ? CU_FALLBACK_RECOMMENDED_GRANULARITY
+                           : CU_FALLBACK_MIN_GRANULARITY;
         LOG_DEBUG("cuMemGetAllocationGranularity() not supported on device "
                   "%d, using fallback granularity %zu",
-                  (int)device, (size_t)CU_FALLBACK_GRANULARITY);
-        *granularity = CU_FALLBACK_GRANULARITY;
+                  (int)device, *granularity);
         return CUDA_SUCCESS;
     }
     return cu_result;
