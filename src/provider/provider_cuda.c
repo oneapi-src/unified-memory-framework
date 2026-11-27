@@ -442,6 +442,7 @@ static umf_result_t cu_memory_provider_post_initialize(void *provider) {
     CUresult cu_result = cu_get_granularity(
         cu_provider->device, CU_MEM_ALLOC_GRANULARITY_MINIMUM, &min_alignment);
     if (cu_result != CUDA_SUCCESS) {
+        umf_ba_global_free(cu_provider);
         return cu2umf_result(cu_result);
     }
 
