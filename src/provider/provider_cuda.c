@@ -160,6 +160,31 @@ static umf_result_t cu2umf_result(CUresult result) {
     }
 }
 
+// Fallbacks for devices without virtual memory management support.
+#define CU_FALLBACK_MIN_GRANULARITY 256
+#define CU_FALLBACK_RECOMMENDED_GRANULARITY (2 * 1024 * 1024)
+
+static CUresult cu_get_granularity(CUdevice device,
+                                   CUmemAllocationGranularity_flags option,
+                                   size_t *granularity) {
+    CUmemAllocationProp allocProps = {0};
+    allocProps.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
+    allocProps.type = CU_MEM_ALLOCATION_TYPE_PINNED;
+    allocProps.location.id = device;
+    CUresult cu_result = g_cu_ops.cuMemGetAllocationGranularity(
+        granularity, &allocProps, option);
+    if (cu_result == CUDA_ERROR_NOT_SUPPORTED) {
+        *granularity = (option == CU_MEM_ALLOC_GRANULARITY_RECOMMENDED)
+                           ? CU_FALLBACK_RECOMMENDED_GRANULARITY
+                           : CU_FALLBACK_MIN_GRANULARITY;
+        LOG_DEBUG("cuMemGetAllocationGranularity() not supported on device "
+                  "%d, using fallback granularity %zu",
+                  (int)device, *granularity);
+        return CUDA_SUCCESS;
+    }
+    return cu_result;
+}
+
 static void initialize_cu_ctl(void) {
     CTL_REGISTER_MODULE(&cu_memory_ctl_root, stats);
     cu_memory_ctl_root.root[cu_memory_ctl_root.first_free++] = (umf_ctl_node_t){
@@ -416,12 +441,8 @@ static umf_result_t cu_memory_provider_post_initialize(void *provider) {
     // CUDA alloc functions doesn't allow to provide user alignment - get the
     // minimum one from the driver
     size_t min_alignment = 0;
-    CUmemAllocationProp allocProps = {0};
-    allocProps.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
-    allocProps.type = CU_MEM_ALLOCATION_TYPE_PINNED;
-    allocProps.location.id = cu_provider->device;
-    CUresult cu_result = g_cu_ops.cuMemGetAllocationGranularity(
-        &min_alignment, &allocProps, CU_MEM_ALLOC_GRANULARITY_MINIMUM);
+    CUresult cu_result = cu_get_granularity(
+        cu_provider->device, CU_MEM_ALLOC_GRANULARITY_MINIMUM, &min_alignment);
     if (cu_result != CUDA_SUCCESS) {
         umf_ba_global_free(cu_provider);
         return cu2umf_result(cu_result);
@@ -642,13 +663,8 @@ static umf_result_t cu_memory_provider_get_min_page_size(void *provider,
 
     cu_memory_provider_t *cu_provider = (cu_memory_provider_t *)provider;
 
-    CUmemAllocationProp allocProps = {0};
-    allocProps.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
-    allocProps.type = CU_MEM_ALLOCATION_TYPE_PINNED;
-    allocProps.location.id = cu_provider->device;
-
-    CUresult cu_result = g_cu_ops.cuMemGetAllocationGranularity(
-        pageSize, &allocProps, CU_MEM_ALLOC_GRANULARITY_MINIMUM);
+    CUresult cu_result = cu_get_granularity(
+        cu_provider->device, CU_MEM_ALLOC_GRANULARITY_MINIMUM, pageSize);
 
     return cu2umf_result(cu_result);
 }
@@ -660,13 +676,8 @@ cu_memory_provider_get_recommended_page_size(void *provider, size_t size,
 
     cu_memory_provider_t *cu_provider = (cu_memory_provider_t *)provider;
 
-    CUmemAllocationProp allocProps = {0};
-    allocProps.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
-    allocProps.type = CU_MEM_ALLOCATION_TYPE_PINNED;
-    allocProps.location.id = cu_provider->device;
-
-    CUresult cu_result = g_cu_ops.cuMemGetAllocationGranularity(
-        pageSize, &allocProps, CU_MEM_ALLOC_GRANULARITY_RECOMMENDED);
+    CUresult cu_result = cu_get_granularity(
+        cu_provider->device, CU_MEM_ALLOC_GRANULARITY_RECOMMENDED, pageSize);
 
     return cu2umf_result(cu_result);
 }
