@@ -173,6 +173,37 @@ jobs:
         working-directory: ${{env.BUILD_RELEASE_DIR}}
         run: ctest -C Release --output-on-failure --test-dir test
 
+      - name: "[Lin] Stress Level Zero IPC handle tests"
+        if: matrix.os == 'Ubuntu' && inputs.provider == 'LEVEL_ZERO' && matrix.shared_library == 'ON'
+        working-directory: ${{env.BUILD_RELEASE_DIR}}/test
+        run: |
+          for round in $(seq 1 50); do
+            pids=()
+            logs=()
+            for worker in $(seq 1 8); do
+              log="$RUNNER_TEMP/l0-ipc-${round}-${worker}.log"
+              logs+=("$log")
+              ./test_provider_level_zero_dlopen_global \
+                --gtest_filter='*Concurrent*Get*PutHandles*' >"$log" 2>&1 &
+              pids+=("$!")
+            done
+
+            failed=0
+            for pid in "${pids[@]}"; do
+              if ! wait "$pid"; then
+                failed=1
+              fi
+            done
+
+            if [ "$failed" -ne 0 ]; then
+              for log in "${logs[@]}"; do
+                cat "$log"
+              done
+              exit 1
+            fi
+            rm "${logs[@]}"
+          done
+
       - name: Run examples (Release)
         working-directory: ${{env.BUILD_RELEASE_DIR}}
         run: ctest --output-on-failure --test-dir examples -C Release

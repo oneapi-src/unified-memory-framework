@@ -134,13 +134,26 @@ if(UMF_BUILD_SHARED_LIBRARY)
         set(CMAKE_INSTALL_RPATH "${UMF_INSTALL_RPATH}")
     endif()
 
+    set(UMF_TEST_EXPORTS "")
+    if(UMF_BUILD_TESTS)
+        set(UMF_TEST_EXPORTS
+            "        umfTrackingMemoryProviderGetIpcCacheWaiterCount;")
+    endif()
+    configure_file(libumf.map ${CMAKE_CURRENT_BINARY_DIR}/libumf.map @ONLY)
+
     add_umf_library(
         NAME umf
         TYPE SHARED
         SRCS ${UMF_SOURCES}
         LIBS ${UMF_LIBS}
-        LINUX_MAP_FILE ${CMAKE_CURRENT_SOURCE_DIR}/libumf.map
+        LINUX_MAP_FILE ${CMAKE_CURRENT_BINARY_DIR}/libumf.map
         WINDOWS_DEF_FILE ${CMAKE_CURRENT_SOURCE_DIR}/libumf.def)
+    if(LINUX)
+        set_property(
+            TARGET umf
+            APPEND
+            PROPERTY LINK_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libumf.map)
+    endif()
     set(UMF_COMMON_COMPILE_DEFINITIONS ${UMF_COMMON_COMPILE_DEFINITIONS}
                                        "UMF_SHARED_LIBRARY")
     set_target_properties(
@@ -165,6 +178,9 @@ endif()
 
 target_link_directories(umf PRIVATE ${UMF_PRIVATE_LIBRARY_DIRS})
 target_compile_definitions(umf PRIVATE ${UMF_COMMON_COMPILE_DEFINITIONS})
+if(UMF_BUILD_TESTS)
+    target_compile_definitions(umf PRIVATE UMF_TESTING=1)
+endif()
 
 add_dependencies(umf umf_ba umf_coarse umf_utils)
 
