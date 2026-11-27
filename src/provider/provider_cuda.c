@@ -423,7 +423,7 @@ static umf_result_t cu_memory_provider_post_initialize(void *provider) {
     CUresult cu_result = g_cu_ops.cuMemGetAllocationGranularity(
         &min_alignment, &allocProps, CU_MEM_ALLOC_GRANULARITY_MINIMUM);
     if (cu_result != CUDA_SUCCESS) {
-        umf_ba_global_free(cu_provider);
+        LOG_ERR("cuMemGetAllocationGranularity() failed.");
         return cu2umf_result(cu_result);
     }
 
